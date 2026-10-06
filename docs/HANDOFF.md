@@ -152,7 +152,7 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   (`decisions.best_alternative`, `beyond_alternative`, demotion, the value concepts named, `WeekStrip`); the matchup
   evidence (`research.matchup_evidence`: history · what changed · implication · `forecast_treatment` "contextual
   only"; the matchup tiebreak dropped when the corners changed); My Week's `review` lines ("No clear upgrade"),
-  "What changed", the pane trimmed, the language table, the I-E leftovers; **usage tracking** (`usage.events`,
+  "What changed" (the "News feed" since Wave I-N), the pane trimmed, the language table, the I-E leftovers; **usage tracking** (`usage.events`,
   `scripts/hosted_usage.sql` run by the sync, `POST /api/usage`, the console's Usage page — no new secret; the table
   appears on Neon at the next nightly; `GET /api/usage/summary` says `ready`).
 
@@ -167,7 +167,7 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   their odds, week 4 stays flat); v3.1 measured and off (M5: the cold-start prior is the keep worth finishing — on
   the stat line, v3.2); team units' season value, the Finder on season value above replacement, unknown is not zero
   (IG-1); the event store `events.events` written by the overlay / the news line / PlayerWire's briefs and read by
-  "What changed" and the matchup evidence (IG-2; `scripts/hosted_events.sql` by the sync; `LEAGUE_LAB_EVENTS=off`,
+  "What changed" (the News feed) and the matchup evidence (IG-2; `scripts/hosted_events.sql` by the sync; `LEAGUE_LAB_EVENTS=off`,
   `LEAGUE_LAB_EVENTS_ESPN_NEWS=off`); the validation harness — `ops.lineup_record` frozen at kickoff,
   `mart_decision_record` / `mart_decision_calls`, `league-lab validate`, `/api/record` `decisions`, About's block
   (V-1; the first numbers are small-sample and unflattering: −1.2 a team a week on the rebuilt weeks 1–2 of Scrubs;
@@ -227,6 +227,28 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   failures by name against a run of `main` on the same database, never by count. **After the push the PO verifies live**
   (STATUS PO section): `/api/ratelimit` first.
 
+
+* **Wave I-N (2026-10-06, Tuesday 09:20 – 13:00 ET; six Opus devs, an independent security review, a fix round;
+  STATUS § "Wave I-N" PO section first)**: **`/` is the home page** when no league is remembered (`routes/Home.svelte`;
+  `/home` always; a manager's `/` is still My Week) and `/leagues` is only "open your league". **The blog** is
+  markdown files in `blog/` (front matter; `blog/README.md`; a push publishes; `api/league_lab_api/blog.py`,
+  `lib/md.ts` `mdDoc` — escape-first, extend it there and nowhere else; the shell's per-path meta tags are built in
+  `main.py`'s SPA fallback; `docs/BLOG.md`). **Reference keys are a closed family of 160**
+  (`platforms.parse_reference` is the one parser; `refleague.py`; never parse a key elsewhere — `is_reference` /
+  `label`), the bar's scoring picker (`components/scoring/`), a value without a league (rv1.0), the free trade
+  calculator (`freetrade.py`); **"No league" is never shown**. **The matchup board** (`matchup_board.py`:
+  `matchup_context` is scoring-free and never raises — the home and DFS read it; the corner is NOT in the
+  projection, the defense IS: a test pins the words to the feature list). **DFS** opens with no file (context chips
+  with "in the projection" / "not", `dfs.SIGNAL_INPUTS`), **published slates** are files in `dfs/slates/` (none
+  ships; nothing fetches a salary), stacks and exposure. **My Week**: an open spot is its own roster alert
+  (`myweek.open_spots`; pairing only through legal replacements), the words are "Roster alert" and "News feed";
+  **every keyed `{#each}` carries an index-suffixed key and every screen sits in a `<svelte:boundary>`** (keep both
+  when adding a list or a screen: a duplicate key blanked Team on the live site). **League outlook**
+  (`outlook.py`: chunked simulation, one at a time, canonical league key before any cache). `render.yaml` is
+  **`plan: standard`** (2 GB). `api/Dockerfile` copies `blog/` and `dfs/slates/` (a new top-level folder the server
+  reads needs a `COPY` **and** a `.dockerignore` line). Known and left: the horizon view reads the database's
+  `now()` (the suites' five Monday-night failures; do not "fix" one read path alone — the API and the console must
+  share one clock).
 * **Yahoo is "coming soon" again (2026-10-05 evening; STATUS § "PO — Yahoo refuses the app")**: Yahoo has not approved
   the app's Fantasy access, so the sign-in works and every data call is refused (401 / 403
   `additional_authorization_required`); a friend was told "expired, connect again" four times, then "league is private

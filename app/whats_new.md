@@ -3,6 +3,31 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 6 (afternoon) · a home page and a blog, trades and values without a league, matchups for everyone, power rankings
+
+- **A home page.** isuckatfantasy.io now opens on this week's top projections, the matchups to target, how our
+  projections have actually done (the bad numbers too), and the tools — before it asks you for anything.
+- **A blog.** Analysis lives at isuckatfantasy.io/blog; a link to a post shows a proper preview when you share it.
+- **Browse in your scoring.** Pick PPR, Half PPR, Standard, ESPN's or Yahoo's default, add superflex, TE premium,
+  6-point passing touchdowns and your league's size. Every player gets a **value**, and the **trade calculator works
+  without a league**: add players to each side and it says who gets more, by how much, and whether the gap is bigger
+  than the uncertainty.
+- **Matchups for everyone.** Players · Matchups lists every receiver this week, player by player: the defense he
+  faces, the cornerback likely across from him and how sure we are, with a search. Tight ends, running backs and
+  quarterbacks too. With your league open, switch between **My players** and **Everyone**.
+- **DFS with no upload to start.** The DFS tab opens on this week's projections in DraftKings or FanDuel scoring with
+  what the projection does *not* hold beside each player — the cornerback matchup, a rising or falling role, the
+  betting total — and a short **Worth a look** list. Lineups can now **stack** a quarterback with his receivers.
+  Salaries still come from the site's own file; when a week's file is published here, nobody has to upload it.
+- **My Week speaks plainly.** "Change needed" is now **Roster alert**, "What changed" is the **News feed**, and an
+  empty lineup spot says what to do: "Your quarterback spot is open: Mahomes and Young are on a bye. Add a
+  quarterback before Sunday 1:00 PM ET," with a link to the waiver wire. The Team screen no longer goes blank when
+  two spots are open (that was a bug this morning), and no screen can hang on its loading blocks any more.
+- **League: power rankings and the rest of the season.** Every team ranked by what its best lineup should score per
+  week from here, and the season played out up to 10,000 times: projected record, playoff odds, top seed. Context,
+  not a promise — the screen says what it assumes.
+- **Finding your leagues.** On a computer your leagues now appear right beside the box you typed your username in.
+
 ## Oct 6 · no password, the full stat tables, accounts with a passkey, DFS
 
 - **No password any more, and no league needed to look around.** Open isuckatfantasy.io and tap **Browse the lab**:

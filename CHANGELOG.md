@@ -4,6 +4,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-06 — Wave I-N
 
+- **PO — the wave merged, reviewed and hardened.** Six branches (IN-1 … IN-6) on `integ/IN`, the full suites run by
+  the PO on the merged tree (API 1,021 passed, root 1,537 passed; no failure that `main` does not have, by name), an
+  independent security review (nothing Critical or High; two Mediums — the DFS slate listing rebuilt every slate on
+  every call past four files, a cold League outlook grew to ~450 MB for a very large league — and five Lows, all
+  fixed in a second round by the same devs). The PO's joins: `lib/api.ts` rebuilt block by block (the home reads
+  IN-3's real board types), a **Home** tab while browsing, the invitation card's scoring words; `api/Dockerfile` +
+  `.dockerignore` copy `blog/` and `dfs/slates/`; **`render.yaml` `plan: standard`** (2 GB, 1 CPU, $25 a month —
+  Andrew's call). IN-5's pinned-clock mechanism for the horizon view was taken back out (it split the API's week
+  from the console's in the suites; `db.py` and the view are exactly `967b2d9`'s). docs/STATUS.md § "Wave I-N".
 - **IN-3 — matchups for everyone.** `/matchups` lays out every player at a position this week, player by player (WR by
   default, TE / RB / QB): his game, his projection and range in the chosen scoring, the defense against his position,
   for a wide receiver the cornerback likely across from him (rank, certainty, shutdown corner, his history against
@@ -32,7 +41,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   measure, tables that scroll by themselves), `lib/md.ts` `mdDoc` (headings, lists, quotes, tables, code, our pictures —
   escaped first). Link previews per path in the HTML shell (`og:*`, `twitter:card`, canonical; `web/public/og.png`),
   robots points at the sitemap. The launch post "How to read this site's numbers"; `blog/README.md` for writing one.
-  `docs/BLOG.md`, `docs/handbacks/IN-1.md`.
+  `docs/BLOG.md`, docs/STATUS.md § "Wave I-N" → IN-1.
 - **IN-4 — DFS without the homework.** `/dfs` opens on the week's board with the context the projection does not hold
   (the matchup from IN-3's `matchup_context`, the role trend, the betting line; each labelled "In the projection" / "Not
   in the projection" from the model's own input list) and "Worth a look" per position (context, no backtest, said so);
@@ -52,7 +61,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   "None" too). The five tests that turned red at week 4's last kickoff: the view `mart_league_roster_horizon` decides
   "this week" by the database's `now()` while the suites pin week 4 — diagnosed, not fixed (a clean fix needs every
   read path, API, console and root package, on one clock). `api/tests/test_in5.py` (Andrew's morning from the
-  database's week-5 rows), `web/e2e/in5`, `docs/handbacks/IN-5.md`.
+  database's week-5 rows), `web/e2e/in5`, docs/STATUS.md § "Wave I-N" → IN-5.
 <!-- ---- end IN-5 -->
 - **IN-6 — the League screen's power rankings and the rest of the season** (`GET /api/league/outlook`, `outlook.py`,
   `components/league/Outlook.svelte`; METRICS § "Power rankings and the season outlook", ol1.0): every team ranked by

@@ -1307,7 +1307,7 @@ Malik Willis, RB 107.8, WR 124.5, TE 111.3 — real managers roster by name, nee
 and a 10-team league is shallower than a 12-team one), so `ref:half` reads 24–34 points above Scrubs at RB / WR / TE (the gap between the two replacement levels)
 and its top QBs are worth 25–58 where Scrubs' are 0–28. At K and DEF they do not rank alike: Scrubs' best free kicker
 (Cameron Dicker, 129.9) is the best kicker projected, so every kicker there is worth 0, while a typical league rosters
-the top 12. The hand-back has the table (docs/handbacks/IN-2.md).
+the top 12. The hand-back has the table (docs/STATUS.md § "Wave I-N" → IN-2).
 
 **The trade calculator without a league** (`freetrade.py`): per side the values added up and the side's season points
 with an 80% range (each player's rest-of-season P10–P90 read as a normal, players independent: the variances add);

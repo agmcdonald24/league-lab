@@ -10960,3 +10960,1201 @@ scroll (4×): script 0.2–0.5 s, style 0.09–0.42 s, layout 0.12–0.47 s. A *
 
 The merge with IM-1: run `e2e/im2` against IM-1's API answer (re-record with `save_im2_fixtures.py`) and check the
 `full` list's order reads well under the groups; decide whether the CSV keeps the browser fallback.
+
+## Wave I-N (Iteration 24)
+
+### PO merge — Wave I-N, 2026-10-06 (Tuesday 09:20 – 13:00 ET; the daytime build: a home and a blog, the lab without a league, DFS without the homework, the league's outlook)
+
+* **Why**: Andrew, 09:19 ET, minutes after Wave I-M went live, walking the public site with no league: a **home
+  page** and a **blog** "so I can start writing and sharing analysis"; the **trade calculator without a league**
+  with scoring choices ("the way that Yahoo scores things, or ESPN … PPR versus half PPR versus standard"); the
+  player box "references that you don't, like, no league, which is just kind of a weird" and should show a **value**;
+  **matchups** without a league ("a search for a player … each player by player with what the matchups are, at
+  least for receivers"); **DFS** — "I don't think making somebody upload the DFS salaries is a very solid user
+  experience … players to potentially target … beyond what the model can provide for. Like cornerback matchups";
+  the **league setup screen** on a desktop ("where did they go? … a point where people probably bounce"); My Week's
+  words ("**roster alert** instead of change needed", "**Start Kelsey out of your lineup**. Like, what does that
+  mean?", "What changed" → "**news feed**"); "My Team and then Team, it's just **not loading**"; League **power
+  rankings** and **rest of season projections**; and "I was also under the assumption we would be upping that
+  memory to 2g". The brief is `/home/claude/waveIN/BRIEF.md` in the sandbox (not in the repo).
+* **The hotfix first (09:20–09:40, `967b2d9`, pushed by Andrew before the wave).** The Team screen was blank on the
+  live site: his roster had **two open starting spots** (QB and TE — Mahomes, Bryce Young and Kelce on a bye), the
+  API sent the word `"nan"` as each open spot's Sleeper id (a frame's NaN through `str()`), the roster list is keyed
+  by id and Svelte stops on a duplicate key (`each_key_duplicate` in the console; the screen stayed on its loading
+  blocks). Older than Wave I-M: the first week with two open spots. `decisions._sid`, the list's key, a first wording
+  fix; `api/tests/test_in0.py`. Found by the PO in the browser pane from Andrew's one sentence.
+* **How it ran**: six Opus devs in one message from `main` `967b2d9` at 09:45 (32 – 77 minutes each; a lighter test
+  rule than Wave I-M — each dev ran its own tests and the test files of the modules it edited, **the PO ran the full
+  suites on the merged tree**, because six full runs on two cores cost Wave I-M an hour); merged IN-3, IN-2, IN-1,
+  IN-4, IN-5, IN-6 on `integ/IN` (conflicts: CHANGELOG / WORDS / the registry seed kept both; `lib/api.ts`
+  rebuilt as main + each branch's appended block, in order — git had interleaved two blocks; `App.svelte`: IN-5's
+  screen boundary around IN-1's home and blog; `main.py`: the routers in order); the PO's joins (below); **an
+  independent security review** of the merged tree (a seventh Opus agent that wrote none of it; nothing Critical or
+  High, two Mediums, five Lows); a fix round by IN-1, IN-3, IN-4, IN-5 and IN-6 on its findings and on the merged
+  suites' failures; the suites again; QA.
+* **Delivered** (the six hand-backs below were `docs/handbacks/IN-<N>.md` on the branches and live here now; the
+  screenshots stay in `docs/handbacks/in<N>/`):
+  * **IN-1 — a home page, league setup on a desktop, the blog.** `/home` always, and `/` when no league is
+    remembered (a returning manager's `/` is still My Week): the name, one sentence, "Open your league" / "Browse
+    players" and **this week's top projections with their ranges** above the fold at 1300×800 and 375×667; below,
+    "Matchups to target this week" (IN-3's board, favorable rows, highest projection first), **how the projections
+    have done** (About's own grades, the weak spots first: "quarterbacks are our weak spot: 6.5 points off on
+    average, against 5.4 in past seasons"), the newest posts, the tools as tiles. Every module hides when its call
+    fails. `/leagues` is only "open your league" now: from 900 px the leagues render **beside** the form, on a phone
+    directly under the field, scrolled into view and focused, "Looking…" on the button, "No leagues for that username
+    this season." in the same place (an e2e asserts the first league row is inside the viewport at 1300×700 and
+    375×667). **The blog**: a post is a markdown file `blog/<yyyy-mm-dd>-<slug>.md` with a small front matter, and a
+    push publishes it (`blog/README.md`, `blog/_template.md`, `docs/BLOG.md`); `GET /api/blog`, `/api/blog/{slug}`,
+    `/blog/rss.xml`, `/blog/img/{name}` (png / jpg / webp, 2 MB, first-bytes check), `/sitemap.xml`, `robots.txt`;
+    `/blog` and `/blog/<slug>`; `lib/md.ts` `mdDoc` (headings, lists, quotes, tables, code, pictures from `/blog/img/`
+    only — escaping first, no raw HTML); a ```` ```players ```` block renders live Stats rows. **Links that preview**:
+    per-path `<title>`, description, canonical, `og:*` and `twitter:card` in the HTML shell (text escaped, the path
+    only picks from a fixed set or a slug in the index), `web/public/og.png`. One launch post, written by the site:
+    "How to read this site's numbers". `usage.py` SCREENS gained home / blog / post **and dfs** (Wave I-M's DFS views
+    were being stored as "other").
+  * **IN-2 — the lab without a league.** The reference key is a closed family of **160** (`ref:<ppr|half|std|espn|
+    yahoo>[.sf][.tep][.p6][.t8|.t10|.t14]`, one parser: `platforms.parse_reference`; 20 distinct scorings, 5 of them a
+    fitted reference, 15 priced on request with the nearest reference's range scaled — every answer's
+    `pricing.words` says which). ESPN default = PPR with −2 per interception; Yahoo default = Half PPR, −1 (verified
+    by the PO against help.yahoo.com/kb/SLN6489); Sleeper has no single default and the picker says so. **The scoring
+    picker** in the bar (scoring with its rule line, superflex, TE premium, 6-point passing TD, 8 / 10 / 12 / 14
+    teams; in the URL, remembered on the device as `ll.scoring`). **"No league" is gone from every surface**, the
+    API's `league_name` included. **A value for every player** (rv1.0, METRICS § "Value without a league"): season
+    points over the league path's window above the replacement level of a typical league of the chosen shape — on
+    the pane, the player page, a sortable Stats column (and the CSV) and Compare; against League of Scrubs the top 12
+    rank alike (Spearman RB 1.00, WR 1.00, TE 0.98, QB 0.90; K / DEF do not — every kicker is worth 0 in Scrubs).
+    **The trade calculator without a league**: `GET /api/trade-calc/free` (`freetrade.py`; gsis ids, ≤ 6 a side), the
+    gap in words with its 80 % range, how much of it is one player, the roster-spot effect stated, shareable by URL;
+    browsing, the tabs are **Home · Players · Trades · DFS** and Trades is the calculator, never the invitation card.
+    The league calculator's path is unchanged.
+  * **IN-3 — matchups for everyone.** `/matchups` is a board: every player at a position this week (WR default, TE /
+    RB / QB), his game, projection and range in the chosen scoring, the defense against his position, for a wide
+    receiver the corner likely across from him (rank, certainty, shutdown tag, his history), one matchup tone; search
+    (`q=`, 2–40 characters, a pandas substring — never SQL), filter by game and tone, three sorts, paged; a row opens
+    the existing evidence; with a league **My players · Everyone**. `matchup_board.matchup_context(season, week)`
+    (scoring-free, never raises, its own memo region) is what the home and DFS read; `GET /api/matchups/board`. **What
+    is true about the projection**: the defense against his position **is** an input (`opp_allowed_*`,
+    `opp_rank_std`), the cornerback **is not**, and the corner calls have never been graded as a forecast — the
+    screen says so once and a test fails if a corner feature is ever added without the words changing. The tone: the
+    defense's, moved only by a *likely* corner call (an unclear call never moves it). Coverage, week 5: 43 WRs with a
+    likely corner, 90 unclear, 74 no call. Warm 15–19 ms, cold 0.6 s.
+  * **IN-4 — DFS without the homework.** `/dfs` opens on the week's board with **no file**: every player in
+    DraftKings / FanDuel scoring with his range and context chips — **matchup** (IN-3), **role trend** (his last two
+    games against his season before them: target, carry and snap share, summed numerator over summed denominator;
+    week 5: 65 up, 45 down of 402), **game environment** (over/under, spread, implied team total from
+    `analytics.dim_game`: 15 of 15 games) — each marked **in the projection** or **not** (read from
+    `projections.FEATURES_BY_POSITION`; a test asserts every signal at every position: defense, role shares and the
+    betting line are inputs; the corner and the weather are not). **"Worth a look"**: at least two signals in his
+    favour, one of them outside the projection, none against him outside it — context, not a graded forecast, said
+    on the screen (week 5: 4 receivers). **Published slates**: `dfs/slates/<season>-w<ww>-<dk|fd>[-label].csv` in the
+    repo (the site's own export; `dfs/slates/README.md`), `GET /api/dfs/slates`, `GET /api/dfs/slate/{id}`, `slate_id`
+    on `POST /api/dfs/lineups` — when one is published `/dfs` opens on its values and the upload is the quieter second
+    path. **No real salary file ships** (we have none; nothing fetches one). The optimiser gained **stacks** (QB + 1
+    or 2 pass catchers, a bring-back, no defense against my QB) and **maximum exposure**; same 5-second budget.
+    Not built: a weather column (the forecast lives in `intermediate.int_game_weather`, which the API's role cannot
+    read — it needs an `analytics` relation).
+  * **IN-5 — My Week says what it means; no screen goes blank.** An incoming player is paired only with one he can
+    legally replace (Hall's condition over position kinds, exact against plain matching on 2,000 random lineups,
+    direct eligibility only above 24 starting slots); **an open spot nobody on the roster can fill is its own roster
+    alert** with a way out: *"Your quarterback spot is open: Mahomes and Young are on a bye. Add a quarterback before
+    Sun 1:00 PM ET."* → "Find a quarterback on Waivers ›" (`/waivers?position=QB`). Andrew's morning, before: "Make
+    2 changes: Washington at FLEX (or Croskey-Merritt: a coin flip) in place of Mahomes; Croskey-Merritt out of your
+    lineup." / "Start Kelce out of your lineup." — after: the two open-spot alerts and "Start Jefferson at FLEX (or
+    Boston: a coin flip) in place of Croskey-Merritt." **"Change needed" → "Roster alert"; "What changed" → "News
+    feed".** Reasons in words ("is in your IR slot"). **42 keyed lists in 19 files** now carry keys that cannot
+    collide; **two `<svelte:boundary>` blocks** in `App.svelte` (the whole app; each screen with the bar kept): a
+    render error shows "This screen hit a problem" + Reload and sends a GA `exception` with the screen's name, never
+    loading blocks forever (an e2e feeds a screen a duplicate-key answer); `_sid` covers the other id-from-a-frame
+    spots, and a test walks Team / My Week / League / Waivers of both house leagues for any `"nan"` / `"None"` text.
+    **The five tests that went red Monday ~20:00 ET are explained** (not fixed): the view
+    `analytics.mart_league_roster_horizon` picks "this week" with the database's `now()`; week 4's last kickoff was
+    Monday 20:15 ET, so the view moved to week 5 while the suites pin week 4.
+  * **IN-6 — the League screen: power rankings and the rest of the season.** `GET /api/league/outlook`
+    (`outlook.py`, `heavy` bucket, off the event loop, one simulation at a time, memo regions `outlook` and
+    `outlook_schedule`). **Power rankings**: one stated metric — the points each team's best lineup is expected to
+    score per week over the rest of the season — with record, points for and its rank, points against, "Hard / Soft
+    schedule so far", the schedule left; **no arrows** (last week's rest-of-season board is not stored, and the
+    screen says why). **Rest of season**: up to 10,000 simulated seasons (fewer in a very large league; the number
+    run is in the answer), the first week from the week's odds' own pieces (within 0.62 – 0.82 points of
+    `/api/league/week-odds`), later weeks from the board's lineup totals widened; projected record with its middle
+    80 %, playoff odds (ties on wins to points for), top seed, a bye when the bracket has byes; "In" / "Out" only
+    when certain on wins alone; **no title odds** (the bracket is not simulated). **Checked against the past**: the
+    2024–25 seasons of both house leagues replayed from week 5 (44 teams): Brier **0.179** against 0.245 for a flat
+    guess and 0.273 for "today's standings order" (0.139 from week 8, 0.089 from week 11) — a proxy (each player's
+    projection held flat, no injuries, the spread borrowed from 2026), said as such. Sleeper leagues get everything;
+    MFL gets the rankings and the record (MFL does not publish how many teams make the playoffs); leagues with
+    divisions get no playoff columns, with the reason.
+* **The PO's joins and lines** (commits `cd56421` and after):
+  * `lib/api.ts`: IN-1 had guessed IN-3's board types (`Board`, a second `BoardRow` and `MatchupTone`): removed; the
+    home reads `MatchupBoard` / `BoardRow` (`proj_points`, `p10`, `p90`, `context.tone`, `context.words`).
+  * `TopBar.svelte`: a **Home** tab while browsing (section `home`, IN-2's `REF_ORDER` had kept the place); with a
+    league the tabs are unchanged and Home / Blog are in the ⋯ menu.
+  * `App.svelte`: the invitation card says the scoring with `refScoringLabel` (a shaped key read "in PPR ·
+    superflex · 10 teams scoring").
+  * `api/Dockerfile` + `.dockerignore`: `COPY blog /srv/blog`, `COPY dfs/slates /srv/dfs/slates` (without them the
+    blog is empty and no slate is ever published on Render).
+  * **`render.yaml`: `plan: standard`** — 2 GB, 1 CPU, $25 a month (was Starter: 512 MB, 0.5 CPU, $7). Andrew's
+    call (09:19: "I was also under the assumption we would be upping that memory to 2g"); the PO told him the price
+    and that memory was at 226 of 512 MB before putting the line in. Still one uvicorn process.
+  * **IN-5's pinned-clock mechanism was taken back out** (the PO's decision, IN-5's revert): as built — a dbt macro
+    reading a `league_lab.now` setting in the horizon view, `db._run` sending it when the clock is pinned — it made
+    the API read the view at the pinned week while the Streamlit twin and the root package read it at the
+    database's now(): 7 new parity failures on the merged tree for 5 fixed, and a change to the API's central query
+    path and a production view for the sandbox's sake. `git diff 967b2d9 -- api/league_lab_api/db.py dbt/macros
+    dbt/models` is empty. A clean fix gives every read path one clock; not built.
+* **The independent review** (docs/SECURITY_PUBLIC.md § 12; the reviewer ran the merged tree on fixtures with the
+  limiter off to measure raw cost). Nothing Critical or High; Wave I-M's two High fixes still hold (the solver with
+  every stack option on a 768-player near-tie pool: 3.7 – 4.1 s, +10 MB). Fixed in the round:
+  * **M1** `GET /api/dfs/slates` rebuilt every offered slate on every call once more than 4 were offered (a 4-entry
+    cache under a 16-file limit: 3.0 s / 1.3 s / 1.4 s per call with 8 files). Dormant today (the folder ships
+    empty). Now the listing never builds a slate (counts kept from a one-time match per file); the cache holds 16.
+  * **M2** a cold `/api/league/outlook` grew with league size (32 teams × 24 starters × 17 weeks: 249 MB + 210 MB,
+    1.5 s) and four could run at once. Now chunked with tallies only (**7 MB + 4 MB** at every size), the season
+    count capped by size, every check before any draw, one simulation at a time (wait 5 s, then 429 `busy`), hard
+    limits (32 teams, 30 starters, 18 weeks), the schedule cached 6 hours per league (a second cold build: 12
+    provider calls → 0).
+  * **L1** the outlook's cache key and house check used the raw `league` string (a padded house id was a different,
+    non-house league and a fresh build every time): canonicalised first. **L2** the matchup board's 24-entry region
+    was shared by the per-scoring boards and the week-wide entries (cycling scorings evicted the week): the week has
+    its own region (`matchup_week`). **L3** `myweek`'s chain check scaled badly with starting slots (45 slots: 1.9 s
+    → 0.01 s). **L4** the published pool is built in the threadpool. **L5** three `re.match` + `$` checks (blog
+    slug and picture name, slate id) accepted a trailing newline: `fullmatch`.
+  * Sound as built: the page shell (the path only selects, everything escaped; `/blog/%22%3E%3Cscript…`, CR/LF and
+    `..%2f` give the default or 404), blog pictures (traversal, svg, symlinks, first bytes, size), `mdDoc`
+    (escape-first; a picture inside a link's target no longer lands in the attribute), the 160 reference keys (the
+    parser accepts exactly those; caches use the canonical key), `q=` on the board, the slate id (looked up, never
+    a path), the crash card (a fixed sentence; analytics gets the route's name only).
+* **Verified** (the merged tree, this sandbox's database: 2026 through week 4, the suites pinned to
+  2026-10-03T16:00Z, so the data-state failures of `main` remain and are compared **by name**):
+  * API suite: **1,021 passed**, 92 failed — every one on `main`'s list by name, 0 new (`check_api.sh`; +195
+    tests over the hotfix's 826). Root suite: **1,537 passed**, 4 failed — the 4 known, 0 new. ruff, the copy
+    standard, `npm run lint` (189 files, 0 warnings) and the build clean.
+  * e2e on fixtures (the whole set, phone and desktop, on the merged build): **483 passed**, 7 skipped, 0 failed
+    (9.3 minutes; 441 before the wave).
+  * PO's QA at 375 and 1300 on the merged build (the fixture API on :8744, Playwright; 12 screens × 2 sizes: the
+    home, `/leagues`, the blog and a post, Stats on `ref:half`, the calculator on `ref:ppr.sf`, the board browsing
+    and with a league, `/dfs`, My Week, Team, League): no sideways scroll, no loading block left on any screen, no
+    console error but the outside headshots the sandbox cannot reach. One thing seen and left: on the fixtures'
+    finished week 4, a submitted lineup holding a player who is no longer on the roster reads "Take player no longer
+    on your roster out of your lineup." — a fixture state a live Sleeper lineup cannot be in; the live week is
+    checked after the push.
+* **Not done / next**: the live checks after the push (the home, a post's preview card in a real chat, the picker,
+  the calculator, the board, `/dfs`, the outlook for a real Sleeper league — the future weeks' pairings were only
+  assumed from fixtures — and memory on the 2 GB plan); **a salary source** — a file in `dfs/slates/` a week (30
+  seconds, Andrew's call against each site's terms before the first one) or a licensed feed (Fantasy Nerds, $499 a
+  year, DraftKings / FanDuel / Yahoo); an editor for the blog that is not "a file and a push"; a weather relation in
+  `analytics` for DFS; movement arrows (store each week's rest-of-season board); title odds (simulate the bracket);
+  one clock for every read path (the horizon view; the five tests); "Worth a look" has no record behind it — grade
+  it before it is trusted; the board lists games that have kicked off; the board's defense rank is the reference
+  mart's while the heatmap under it is the league's (a place or two apart in a house league); MFL's playoff count in
+  `platforms.py` is a guess (`min(2**rounds, n)` says all 12 make it in 70587 — the outlook does not use it); Wave
+  I-M's list (a passkey on a real phone, a real DraftKings and FanDuel file through the parsers, provider budgets
+  shared by all visitors, the 50 % range grade after weeks 4–6, a role-change Stats column, MFL's lineup maxima).
+
+
+### IN-1 hand-back — a home page, the league-setup screen on a desktop, the blog (Wave I-N, 2026-10-06)
+
+**Task**: IN-1 of `/home/claude/waveIN/BRIEF.md` (Wave I-N, Iteration 24). **Branch** `dev/IN1` from `main` `967b2d9`,
+worktree `/home/claude/wt-in1`. Plan sections: the brief's § IN-1 (1–6) and § "Interfaces fixed now" (the blog's list;
+IN-3's board as a reader). Screenshots: `docs/handbacks/in1/` (375 and 1300; `*-full-*` are whole pages).
+
+#### Done / not done (the package's numbered list)
+
+1. **Home — done.** `web/src/routes/Home.svelte` (+ `components/home/home.ts`, pure). `/home` always; `/` when no league is
+   in the URL nor remembered on the device (`router.svelte.ts` reads `ll.league`; a returning manager's `/` is My Week).
+   In the frame (tabs, search, the drawer) on the reference league. Above the fold at **1300 × 800 and 375 × 667** (e2e
+   asserts the boxes): the name, one sentence (IM-3's front-door sentence), **Open your league** / **Browse players**,
+   and **This week's top projections** (Half PPR, QB · RB · WR · TE, 5 rows). Below: **Matchups to target this week**
+   (IN-3's `GET /api/matchups/board?league=ref:half&position=WR&sort=tone&limit=5`; hidden on any failure — on this
+   branch it is a 404), **How the projections have done** (About's own grades: average miss this season vs the
+   backtest, inside the range vs the 80% aim, the worse positions in the bad color and the lead sentence naming the
+   weakest first — "quarterbacks are our weak spot: 6.5 points off on average, against 5.4 in past seasons"; then the
+   record's line from `/api/record`), **From the blog** (newest 3), **the tools** as tiles (Players, Trade calculator
+   `/trade-calc?league=ref:half`, Matchups, DFS). Every module hides itself when its call fails (no error card on the
+   home). IM-3's front door left `/leagues` (moved here).
+   **The projections' range — read this**: no existing route lists *this week's* range for a reference key (`/api/ros`
+   has this week's projection `week_points` but the rest-of-season range; `/api/players` has no projection; DFS
+   projections are DraftKings / FanDuel scoring). So the module reads **IN-3's board first** (rows with a projection and
+   `p10` / `p90` → "range 9.4–25.4") and, when the board is missing, falls back to `/api/ros` sorted by `week_points`
+   with the **season's** range, labelled as such ("season 173 (141–204)" and a footnote that says which). The board
+   reader is tolerant (`home.ts` `fromBoard`: `projection` as a number or `{proj_points, p10, p90}`, else `proj` /
+   `proj_points`; tone / words at the row or under `context` / `matchup`) — **at the merge, check IN-3's field names**
+   against `fromBoard` / `toneOf` (two small functions; e2e `home: when the matchup board answers…` shows the shape I
+   assumed).
+2. **League setup on a desktop — done.** `routes/Leagues.svelte`: three parts — the form (header, steps, platform, the
+   platform's box), **the results**, the extras (what the platform gives, the guest line, the account). A phone stacks
+   them in that order (the leagues come right under the field, no longer under the provider cards); from 900 px the
+   results sit **beside** the form, at the top (`max-w-6xl`, `26rem` + the rest), with "Your leagues show here once you
+   find them" before a search. After **Find my leagues** (and a league link, MFL, ESPN, Yahoo): the results scroll into
+   view when they are not already near the top and **take focus** (`tabindex=-1`, a region); the button says
+   "Looking…" and is disabled (`aria-busy`); "No leagues for that username this season." in the same place. **Proved**:
+   e2e types `fixture_user`, holds the answer to see the loading state, then asserts the first league row's box inside
+   the viewport at **1300 × 700** (and the field still in view, nothing scrolled) and at **375 × 667**, focus on the
+   results; the empty case's line in view too.
+3. **The blog — done**, players block included. API `api/league_lab_api/blog.py`: the folder read once (memo region
+   `blog`, ≤ 4 entries, 1 h), strict slug, nothing from a URL opened (a test patches `Path.open` / `read_text` and asks
+   12 hostile slugs), drafts only with `LEAGUE_LAB_BLOG_DRAFTS=on`, an absent folder = an empty blog. Routes
+   `GET /api/blog?limit=` (1–50), `GET /api/blog/{slug}`, `GET /blog/rss.xml`, `GET /blog/img/{name}` (png / jpg / webp,
+   first bytes checked, ≤ 2 MB, no link, SVG refused, 30-day cache), `GET /sitemap.xml`. Screens `/blog` and
+   `/blog/<slug>` (`routes/Blog.svelte`, `components/blog/PostBody.svelte`): a 44rem measure beside an aside at 1300,
+   tables that scroll inside their own box at 375 (asserted), the date, minutes, **Copy link** (asserted on the
+   clipboard; no clipboard → the address in a field), more posts, "No post at that address." `lib/md.ts` gained
+   **`mdDoc`** (headings, ordered lists, quotes, tables with alignment, `code` and fenced code, `---`, *italic*,
+   pictures from `/blog/img/` only), escaping first; `md()` untouched. A player link opens the drawer (asserted).
+   **The players block** (`components/blog/PlayersBlock.svelte`): the first ```` ```players ```` fence (gsis ids and
+   column ids, one per line or `cols: a, b`; ≤ 12 players, ≤ 8 columns) → those players' rows of the Stats frame
+   (`/api/players?league=ref:half&position=ALL&window=season&limit=1000`, the Stats screen's own request, cached) in
+   the Stats screen's own `StatsTable`, per game, sortable, "Live: this season to date, per game, in Half PPR scoring".
+4. **Links that preview — done.** The SPA fallback puts each path's preview into the shell between `<!-- ll:seo -->`
+   markers (`web/index.html`): `<title>`, description, canonical, `og:title / description / type / url / image`
+   (+ 1200 × 630), `twitter:card summary_large_image` (+ title / description / image), a post's
+   `article:published_time`; escaped (a hostile title tested); for `/`, `/home`, `/blog`, a post (unknown → the blog's
+   preview with **404**), `/players`, `/matchups`, `/trade-calc`, `/dfs`; anything else the file as it is. `/` keeps
+   `<title>isuckatfantasy</title>` (the image workflow greps it). `web/public/og.png` (1200 × 630, 104 KB, a Playwright
+   screenshot of a small HTML card). `/sitemap.xml`; `robots.txt` points at it. **CSP**: the inline script is
+   untouched; `test_in1` checks the served page's inline script hash is the one in the served policy, and the built app
+   on the fixture API with GA forced on showed **0 CSP violations** on `/`, `/home`, `/blog`, a post, `/leagues`.
+5. **Two launch pieces — done.** `blog/2026-10-06-how-to-read-this-sites-numbers.md` (author isuckatfantasy: the
+   projection, the two ranges and their measured coverage, how the record is kept, where we have been wrong — QB order
+   0.39 vs 0.59 and miss 6.5 vs 5.4, TE 3.5 vs 3.0, the market gap, the lineups' −1.2 on two rebuilt weeks, what a
+   projection does not know; numbers from `/api/about` on this database and docs/METRICS.md / HANDOFF). `blog/README.md`
+   (file name, front matter, players link and block, pictures, `draft: true`, push to publish) and `blog/_template.md`.
+   Analytics: one `page_view` per post path (App's GA effect now follows the slug: post → post counts; asserted).
+6. **Docs — done.** `docs/BLOG.md`, `docs/WORDS.md` § "The home page, the setup screen, the blog", `CHANGELOG.md`
+   (created `## 2026-10-06 — Wave I-N`), this file, the screenshots.
+
+#### Files
+
+Mine: `api/league_lab_api/blog.py` (new), `api/tests/test_in1.py` (new), the SPA fallback + one router block in
+`api/league_lab_api/main.py`, `web/src/routes/{Home,Blog}.svelte` (new), `web/src/components/home/home.ts`,
+`web/src/components/blog/{PostBody,PlayersBlock}.svelte` (new), `web/src/App.svelte`, `web/src/routes/Leagues.svelte`,
+`web/src/lib/router.svelte.ts`, `web/index.html`, `web/public/{og.png,robots.txt}`, `blog/**`, `docs/BLOG.md`,
+`web/e2e/in1/fixtures.spec.ts`, `web/fixtures/in1/api_in1.json` (158 KB, recorded from the fixture API; ROS rows
+trimmed of `why`, the Stats frame kept to three players), `docs/handbacks/IN-1.md`, `docs/handbacks/in1/*.png`.
+`web/src/components/Login.svelte` not touched (nothing needed).
+
+**Edits outside my files** (each in an `IN-1` block): `api/league_lab_api/ratelimit.py` (`PAGES_READ` /
+`PAGES_READ_PREFIX` + two lines at the top of `bucket_for`: the feed, the sitemap and the pictures are `read`;
+`/api/blog*` was already `read` by default — asserted), `api/league_lab_api/usage.py` (`SCREENS` += `home`, `blog`,
+`post`, **and `dfs`** — IM-5's screen was missing: DFS views were stored as "other" and `test_u1`'s router check failed
+on `main`; it passes now), `web/src/components/TopBar.svelte` (⋯ menu: **Home**, **Blog**; IN-2 owns the tabs),
+`web/src/lib/api.ts` (types and paths at the end), `web/src/lib/md.ts` (`mdDoc` appended, the brief's "extend it"),
+`docs/WORDS.md`, `CHANGELOG.md`. **Existing e2e changed on purpose** ("/" without a league is the home now): 13
+`page.goto("/")` → `"/leagues"` in `fixtures.spec.ts`, `i0b`, `i0c` ×2, `ic3` ×2, `ic4`, `ie0`, `ie2`, `ig3`, `ih2`,
+`ih3`, `v2`; `fixtures.spec.ts`'s gated walk goes home → **Open your league**; `im3`'s first test asserts the home
+(the front door's new place) and the second `/leagues`' form instead of the front door.
+
+#### Schema in / out
+
+No database change, nothing written. New answers: `GET /api/blog` `{"posts": [{slug, title, date, summary, author,
+tags, minutes, image}]}` (+ `draft: true` with drafts on); `GET /api/blog/{slug}` the same + `markdown`, 404
+`{"error": "No post at that address.", "code": "no_post"}`; `/blog/rss.xml` (RSS 2.0), `/sitemap.xml`, `/blog/img/*`.
+The HTML shell's head per path (above).
+
+#### The PO lines I need
+
+* `api/Dockerfile`, after `COPY src/league_lab /srv/src/league_lab`: **`COPY blog /srv/blog`** (`blog.folder()` is
+  `<ROOT>/blog` = `/srv/blog` in the image; without the line the blog is empty on Render, never an error).
+* `render.yaml`: nothing. **Never** set `LEAGUE_LAB_BLOG_DRAFTS` there.
+* `docs/STATUS.md`: the IN-1 line from this file's summary. `app/whats_new.md`: "A home page with this week's top
+  projections and how they have done; a blog (the first post: how to read this site's numbers); the league setup shows
+  your leagues right beside the box on a computer."
+* Optional: `scripts/copy_standard.py` `GLOBS` += `"blog/**/*.md"` (posts are user-facing; the sweep does not read them
+  today). Optional: the image workflow's smoke could `curl -sf …/blog/rss.xml` and `…/sitemap.xml`.
+* At the merge with IN-3: check `home.ts` `fromBoard` / `toneOf` against the board's real rows (see 1).
+  With IN-2: put **Home** in the no-league tab bar (route name `home`, path `/home`); my menu items can stay.
+
+#### New environment variables / dependencies
+
+`LEAGUE_LAB_BLOG_DIR` (default `<repo>/blog`), `LEAGUE_LAB_BLOG_DRAFTS` (off; `on` lists drafts). No new dependency.
+
+#### Evidence (commands run, results; this box, 2 shared cores)
+
+* `cd api && OMP_NUM_THREADS=1 PYTHONPATH=. uv run pytest -q tests/test_in1.py tests/test_static.py tests/test_im3.py
+  tests/test_auth.py tests/test_ik4.py tests/test_im4.py` → **140 passed** (test_in1: 27 — front matter, what is not a
+  post, drafts, a repeated slug, an absent folder, list / post / limits, 12 hostile slugs never opened, RSS valid and
+  escaped, the sitemap, robots, 11 bad pictures refused, the previews per path, the CSP hash, a shell without markers,
+  the buckets, the launch post's links).
+* `tests/test_u1.py` → 19 passed, 2 failed (`test_no_name_username_or_ip_in_a_row`, `test_the_sync_keeps…`: this
+  sandbox's usage schema / sync file — `check_api.sh` deselects the file); `test_the_row_is_allow_listed` failed on
+  `main` (IM-5's `dfs`) and passes now. The full API suite: not run (the brief).
+* `uv run ruff check src app tests api` clean; `uv run python scripts/copy_standard.py --check` clean; `cd web && npm
+  run lint` (182 files, 0 errors / warnings) and `npm run build` clean (the first bundle `index-*.js` 229.6 KB, gzip 72
+  KB, includes the home; `Blog-*.js` 11 KB its own chunk).
+* `FIXTURES_PORT=8710 npx playwright test --config playwright.fixtures.config.ts e2e/in1` → **15 passed**, 3 skipped
+  (the setup test runs one size per project): the home above the fold at both sizes and its modules hiding (the board
+  missing; every call failing), the home with a board, setup at 1300 × 700 and 375 × 667, the blog (list, post, share,
+  the demo post with every markdown piece, raw HTML as text, the players block, the drawer, GA), the missing / empty
+  blog, the menu, `mdDoc`'s escaping. The changed specs: `im3 i0b i0c ic3 ic4 ie0 ie2 ig3 ih2 ih3 v2` → 71 passed /
+  1 skipped; `e2e/fixtures.spec.ts` → 34 passed. **The whole fixtures e2e** (one run, 12.7 min, before the last two home
+  fixes below): **443 passed, 1 failed, 6 skipped** — the failure `il5 … Watching / Watch, Remove` [desktop] is a GA
+  event read racing the load (`watchlist_remove` not yet pushed); alone it passes (7 / 7). After the fixes: `in1`, `im3`
+  and `fixtures.spec.ts` again → 15 + 43 passed.
+* Found by the "every call failing" test and fixed: the projections module's effect read the state it wrote, so a
+  failed load retried forever (`untrack`); the module now hides when nothing loaded.
+* The built app on the fixture API (`LEAGUE_LAB_GATE=open`, GA forced on, gtag stubbed): **0 CSP violations** on `/`,
+  `/home`, `/blog`, a post, `/leagues`; every answer's policy carries the inline script's hash.
+* Timings on the fixture API (warm): `/api/blog` 2–3 ms, a post 2 ms, a post's shell 2 ms, RSS 2 ms, sitemap 2 ms.
+
+#### Limitations
+
+* The home's top projections show this week's **range** only once IN-3's board answers (above); until then the
+  season's range, said so.
+* "Matchups to target" assumes the board accepts `sort=tone` and that its first rows are the friendliest; it hides on
+  any non-200.
+* `/` without a league renders the home during the boot request: with `LEAGUE_LAB_GATE=password` the home shows for a
+  moment before the password screen (its calls answer 401 and the modules stay hidden). The gate is open today.
+* A post's date is shown as written (no scheduling; `draft: true` holds one back). One players block per post.
+* The shell's per-path preview reads the post index (a memo entry): a slug that is not a post costs a dict lookup.
+
+#### Seen, not mine
+
+* `TopBar`'s "No league ·" and About's `grade_note` ("…not No league · Half PPR's") still say "No league" (IN-2's
+  words, `league_name` for a reference key).
+* `GET /api` (no slash) answers the SPA shell with 200 (the fallback); harmless.
+
+#### Next
+
+The PO's `COPY blog /srv/blog`; the merge checks with IN-2 (the Home tab) and IN-3 (the board's rows); Andrew's first
+post from `blog/_template.md`.
+
+#### Fix round (2026-10-06, branch `fix/IN1` from `integ/IN` `cd56421`)
+
+* **Review L5**: `blog.py` uses `fullmatch` for `FILE_NAME`, `IMG_NAME` (the post's `image:` and the picture route) and
+  `SLUG`: with `re.match` a `$`-anchored pattern accepted a trailing newline. `test_in1`
+  `test_a_trailing_newline_is_not_a_slug_nor_a_picture` (a file name, a picture actually named `chart.png\n` on disk,
+  `%0a` / `%0A` on both routes, a slug in the index) fails on the old code, passes now.
+* **Review nit (`md.ts`)**: `inline` holds each link's opening tag aside (U+E001) until the end and refuses a target that
+  holds a placeholder, so a picture, code, bold or italic written inside a link's target never lands in its `href`
+  (`[x](/p![a](/blog/img/a.png))` is the words "x"); bold / italic around a link still wrap it. `md()`'s output for
+  ordinary sentences is unchanged. Cases in the e2e's markdown test.
+* **The home on the real board** (fixture API from the merged tree, 8761): "Matchups to target" and this week's range
+  ("range 7.3–28.8") come from `/api/matchups/board`. Read wrong with real data, fixed: (1) the note said the matchup is
+  "not added to" the projection — the defense against his position **is** a projection input (the board's own
+  `projection_words`); now "The defense he faces is already in his projection; who plays cornerback is not."; (2) the
+  board's sentence names both possible corners on an unclear call (every WR this week): five rows ran a page long — the
+  home shows the defense's sentence, plus the corner's only when the call is likely (`home.ts` `homeWords`); (3) "to
+  target" lists favorable rows only (sorted by tone, highest projection first among them); (4) each row shows his
+  projection ("16.8 this week"). The recording `web/fixtures/in1/api_in1.json` now carries the board's real answers
+  (each position by projection, WR by tone); the spec's default is that board, a second test keeps the 404 fallback.
+  Screenshots: `home-{phone,desktop}.png`, `home-full-*.png` (the e2e on the real answers), `home-live-{375,1300}.png`
+  and `home-live-full-*.png` (straight from the fixture API).
+
+### IN-2 hand-back — the lab without a league: scoring choices, a value for every player, the trade calculator
+
+**Task**: Wave I-N, IN-2 (docs: `/home/claude/waveIN/BRIEF.md` § IN-2). **Branch**: `dev/IN2` from `main` `967b2d9`.
+**Plan sections touched**: ANY_LEAGUE § reference keys, METRICS (a new definition, rv1.0), WORDS, CHANGELOG.
+
+#### Done, against the numbered list
+
+1. **Scoring choices — done.** The key is a closed family: `ref:<ppr|half|std|espn|yahoo>[.sf][.tep][.p6][.t8|.t10|.t14]`,
+   canonical, lower case, strictly parsed in one place (`platforms.parse_reference`, `ref_key`, `REF_KEYS`; the web's
+   `lib/refleague.ts` `parseRef` is the same grammar). **160 valid keys** (5 scorings × superflex × TE premium × 6-pt pass
+   TD × 4 sizes); 20 distinct scorings, 5 of them a fitted reference exactly (`ref:half` = `ref:yahoo` = `scrubs`,
+   `ref:ppr`, `ref:std`, `ref:ppr.tep` = `te_premium`); the other 15 are priced on request with the nearest reference's
+   range stretched (`anyleague.approximate_ranges`), and every answer's `pricing.words` says which ("Priced in Half PPR:
+   the ranges are fitted for this scoring every night." / "Priced on request in ESPN default: … the nearest scoring we
+   fit every night (PPR), stretched …"). ESPN default = PPR with −2 per interception; Yahoo default = Half PPR's offense
+   exactly (−1 per interception) — a test per differing rule (receptions, interceptions) prices a stat line in both.
+   The picker (`components/scoring/ScoringPicker.svelte`, where the league picker is): scoring with its rule line, the
+   Sleeper sentence, superflex / TE premium / 6-pt pass TD, 8 / 10 / 12 / 14 teams; "PPR +2" on a phone; the choice is in
+   the URL (`league=`) and remembered on the device (`prefs.refKey` / `ll.scoring`, try/catch; never `ll.league`);
+   **Open your league** stays beside it. "No league" is gone: the API's `league_name` for a reference key is the key in
+   words ("Half PPR", "PPR · superflex · 10 teams"), `platforms.SHORT/LONG["reference"]` = "Any league".
+   Caches: a key's priced weeks and rest of season are keyed by its scoring (`Shape.scoring_key`: ≤ 20 entries for 160
+   keys); the value tables live in a new memo region `ref_values` (≤ 24 keys, 10 minutes, ~0.3 MB a key); `shape()`
+   refuses every key outside `REF_KEYS` before any cache is read (tested: a hostile key is 404 and never an entry).
+2. **A value for every player without a league — done.** `refleague.values_from` (one function): season points over
+   the league path's market window (this week → week 18, `anyleague.ros_table`) minus the replacement level of a
+   *typical league of the chosen shape* (T teams start QB, 2 RB, 2 WR, TE, FLEX, SUPER_FLEX if superflex, K, DEF; FLEX /
+   SUPER_FLEX filled from the best left; bench 6 a team over QB/RB/WR/TE in proportion to the starting spots).
+   docs/METRICS.md § "Value without a league" (rv1.0, registry row `reference_value`). Shown on: the pane and the player
+   page (the Value block leads with "**Value 153** — WR1 by value: 281 projected points over weeks 4–18, against 128 for
+   the best free WR (Tre Harris)." and "Value in a 10-team PPR league, two quarterbacks (superflex): …"), the **Stats
+   table** (a `Value` column beside the points in every preset, sortable, in the CSV; sorted by value the server sorts
+   before it cuts the page), and **Compare** (a "Value (a typical league)" row).
+3. **The trade calculator with no league — done.** `GET /api/trade-calc/free?league=&give=&get=` (`freetrade.py`,
+   `research` bucket; gsis ids `^00-\d{7}$`, ≤ 6 a side, one side per player, 400 / 404 in words); the Trades tab opens
+   it when browsing (`/trades?league=ref:…` redirects there; never the invitation card). Two sides by search; per player
+   value, rank by value, this week's projection and range, per game over the season left; per side the value and the
+   80% range of its season points; the gap in words with its 80% range ("You get more: 188 points of season value
+   (likely +120 to +256)." / "About even: …, inside the uncertainty"), how much of it is one player, the roster-spot
+   effect stated (one replacement-level player, 0 above replacement, not added), "Open your league to see what this
+   does to your lineup." Shareable by URL; Swap sides. **The league calculator's path, payloads and tests are unchanged**
+   (TradeCalc.svelte wraps its markup in `{#if isRef(league)} <FreeTrade/> {:else} …unchanged… {/if}`; the e2e suites
+   of the league calculator, Trades, the drawer and the navigation pass untouched: 118 + 34).
+4. **The pane and the player page while browsing — done.** Head: the key in words ("PPR · superflex · 10 teams · week
+   4"); the value block (2); every "rostered by / free agent / your team" line is absent (header, Availability, Value,
+   search hits' "· free agent", the How-to-read bullets rewritten for browsing, "League of Scrubs scoring" → "Half PPR
+   scoring" in the matchup evidence); the foot: "Open your league to see who has him and what he is worth to your
+   team." (the page: "Priced in PPR · superflex · 10 teams." before it; its Back says "Players").
+5. **Tests and docs — done.** `api/tests/test_in2.py` (39), e2e `web/e2e/in2/fixtures.spec.ts` (4 walks × 375 / 1300,
+   recordings `web/fixtures/in2/api_in2.json`), ANY_LEAGUE § "The family of reference keys", METRICS § "Value without a
+   league", WORDS § "The lab without a league", CHANGELOG.
+
+Also (small, in my files): the reference league now has a typical bracket (6 playoff teams, 4 at 8 teams), so a card's
+"Rest of season" runs to week 17 (16), where IM-3's ran to week 15 (`playoff_teams` was missing → one round).
+
+**Not done**: nothing on the list. Not in scope / left: draft picks; ESPN's and Yahoo's own K / DEF tables (the seed's
+are used, said in the picker data and ANY_LEAGUE); App.svelte's invitation card (IN-1's file) still reads "You are
+browsing without a league, in {refLabel(league)} scoring" — with a shaped key that reads "in PPR · superflex · 10 teams
+scoring": IN-1 should use `refScoringLabel(league)` (exported).
+
+#### Files
+
+Mine: `api/league_lab_api/refleague.py`, new `api/league_lab_api/freetrade.py`, `src/league_lab/platforms.py` (the
+reference block + `check_key`), `web/src/lib/refleague.ts`, `web/src/lib/prefs.ts` (one marked block),
+`web/src/components/TopBar.svelte`, `web/src/components/PlayerPane.svelte`, `web/src/routes/Player.svelte`,
+`web/src/routes/Trades.svelte`, `web/src/routes/decisions/TradeCalc.svelte` (the branch only), new
+`web/src/components/scoring/{ScoringPicker,FreeTrade}.svelte`, new `api/tests/test_in2.py`, new `web/e2e/in2/`,
+`web/fixtures/in2/`, `docs/handbacks/in2/*.png`, this file.
+
+Edits outside my files (marked `IN-2`): `api/league_lab_api/main.py` (the player card hook; `/api/players` and
+`/api/players.csv` hooks for the value column; `/api/compare` hook; the router registration after IM-5's),
+`api/league_lab_api/ratelimit.py` (`RESEARCH_EXACT |= {"/api/trade-calc/free"}`), `web/src/lib/api.ts` (block at the
+end), `web/src/routes/Players.svelte` (`ros_value` in the All preset's default columns; no "whose" chips while
+browsing, even while loading), `web/src/routes/Compare.svelte` (one row), `dbt/seeds/metric_registry.csv` (one appended
+row, IN-6's file this wave — the root test `test_every_documented_metric_has_a_registry_row` needs it; no dbt run),
+`api/tests/test_im3.py` (one expected string, on purpose: `league_name` "No league · Half PPR" → "Half PPR"),
+`web/e2e/im3/fixtures.spec.ts` (on purpose: the picker instead of the select; My Team / Waivers are not tabs while
+browsing and Trades is the calculator), `docs/WORDS.md` (the two IM-3 rows pointing here + a section),
+`docs/ANY_LEAGUE.md`, `docs/METRICS.md`, `CHANGELOG.md`.
+
+#### Schema in / out
+
+No new relation, nothing written to the database. Reads: `analytics_seeds.reference_scorings` (or the seed file),
+the NFL-wide board through `anyleague.ros_table` / `price_week`, `analytics.dim_game`, `analytics.dim_player` (names of
+unknown ids). Out: `GET /api/trade-calc/free` → `{league_id, league_name, scoring_label, assumes, value_words, pricing
+{fitted, reference, words}, window {first, last, words}, give / get {players [{gsis_id, player_name, position, team,
+value, ros_points, ros_p10, ros_p90, value_rank_pos, pos_rank, replacement, outlook {week, points, p10, p90, bye,
+per_game, games}, no_projection}], n, value, ros_points, low, high, sd, unknown}, verdict {even, lean, gap, low, high,
+one_player, words}, roster_spots {you_get_back, replacement_points, replacement_position, replacement_name, words} |
+null, league_words, max_side}`. Additive on reference keys only: the player card's `ref_value`, `foot`, `scoring`;
+the Stats frame's `ros_value` + catalogue entry + preset column; `/api/compare`'s `a.ros_value`, `b.ros_value`,
+`value_assumes`. Real leagues: no field changed.
+
+#### Commands and evidence
+
+* `cd api && OMP_NUM_THREADS=1 uv run pytest -q tests/test_in2.py` → **39 passed**; the existing files of the modules
+  I edited: `tests/test_im3.py tests/test_ik4.py tests/test_im4.py tests/test_ik3.py` → **143 passed** (im3 again after
+  the last change: 63 passed).
+* `/home/claude/waveIN/check_root.sh /home/claude/wt-in2` → 4 failed (the known list), 1462 passed, **0 new**.
+* `uv run ruff check src app tests api` → clean; `uv run python scripts/copy_standard.py --check` → clean;
+  `cd web && npm run lint && npm run build` → 0 errors, 0 warnings, built.
+* e2e (`FIXTURES_PORT=8720 npx playwright test --config playwright.fixtures.config.ts …`): `e2e/in2` **8 passed** on the
+  recordings and 8 passed live against the fixture API (`IN2_LIVE=http://localhost:8762`); `e2e/im3` 9 passed (1
+  desktop-only skip); the suites that touch the calculator, the tabs, the pane — `decisions ia2 ib1 ib2 ie0 ie1 ie2 if2
+  ig1 ii1 ii2 inf1` — **118 passed**; `e2e/fixtures.spec.ts` **34 passed**.
+* Screenshots (375 × 812 and 1300 × 900): `docs/handbacks/in2/in2-{picker,stats,pane,pane-value,player,calc}-{phone,
+  desktop}.png` — no sideways scroll at 375 (asserted); at 1300 the picker is a panel under the bar, the calculator's
+  sides sit side by side, the Stats table uses the width with the pane beside it.
+* Timings on this box (fixture API, 2 cores shared by six): the free calculator **cold 1.67 s** for a scoring priced on
+  request in a cold process (`ref:espn.sf.t14`), 0.56 s for `ref:half`, **warm 10–20 ms**; a browsing player card
+  cold 2.47 s / warm 0.27 s; the Stats frame with the value column cold 1.88 s / warm 0.45 s; `value_table` cold
+  0.79 s, another shape of the same scoring 0.01 s. Memory: `ref_values` 0.9 MB after three keys; RSS 206 MB.
+
+#### The sanity table: the top 12 by value at each position, `ref:half` beside League of Scrubs
+
+League of Scrubs is Half PPR, 10 teams, real rosters (its value: `MARKET_SQL` − `REPLACEMENT_SQL`, the trade
+calculator's market score). **The season points are identical** for every skill player below (the reference prices
+the nightly's own lines; two defenses differ by 0.2–0.4), so the values differ only by the replacement level. They rank
+alike at RB and WR (Spearman 1.00), TE 0.98 and QB 0.90 (Scrubs' ties at 0); the level differs: Scrubs' waiver wire
+holds better players than a typical league leaves free (QB Malik Willis 243.1, RB 107.8, WR 124.5, TE 111.3: real
+managers roster by name, need and byes, not by our projection), so `ref:half` reads 24–34 points higher at RB / WR / TE,
+and its top quarterbacks are worth 25–58 where Scrubs' are 0–28. **Where they do not rank alike**: K (Scrubs' best free
+kicker, Cameron Dicker 129.9, is the best kicker projected: every kicker there is 0) and DEF (Spearman 0.48: values of
+0–8 points, ties at 0 in Scrubs). `ref:half.t10` (the same size as Scrubs) sits between the two, as it should.
+
+**QB** — replacement: `ref:half` 212.6 (Justin Herbert), `ref:half.t10` 221.7, Scrubs 243.1; Spearman `ref:half` vs Scrubs over these 12: 0.90
+
+| player | season pts (ref) | season pts (Scrubs) | value `ref:half` | value `ref:half.t10` | value Scrubs |
+|---|---|---|---|---|---|
+| Patrick Mahomes | 270.7 | 270.7 | 58.1 | 49.1 | 27.7 |
+| Dak Prescott | 266.1 | 266.1 | 53.5 | 44.4 | 23.1 |
+| Kyler Murray | 256.9 | 256.9 | 44.3 | 35.3 | 13.9 |
+| Josh Allen | 248.3 | 248.3 | 35.6 | 26.6 | 5.2 |
+| Drake Maye | 243.4 | 243.4 | 30.8 | 21.7 | 0.3 |
+| Malik Willis | 243.1 | 243.1 | 30.4 | 21.4 | 0.0 |
+| Jacoby Brissett | 238.8 | 238.8 | 26.2 | 17.2 | 0.0 |
+| Jared Goff | 237.8 | 237.8 | 25.2 | 16.1 | 0.0 |
+| C.J. Stroud | 237.8 | 237.8 | 25.2 | 16.1 | 0.0 |
+| Brock Purdy | 237.8 | 237.8 | 25.1 | 16.1 | 0.0 |
+| Matthew Stafford | 237.4 | 237.4 | 24.8 | 15.7 | 0.0 |
+| Deshaun Watson | 237.2 | 237.2 | 24.6 | 15.5 | 0.0 |
+
+**RB** — replacement: `ref:half` 81.5 (George Holani), `ref:half.t10` 93.9, Scrubs 107.8; Spearman `ref:half` vs Scrubs over these 12: 1.00
+
+| player | season pts (ref) | season pts (Scrubs) | value `ref:half` | value `ref:half.t10` | value Scrubs |
+|---|---|---|---|---|---|
+| Bijan Robinson | 283.4 | 283.4 | 201.9 | 189.5 | 175.6 |
+| Jahmyr Gibbs | 249.4 | 249.4 | 167.8 | 155.5 | 141.6 |
+| Jonathan Taylor | 232.7 | 232.7 | 151.1 | 138.8 | 124.9 |
+| James Cook | 227.0 | 227.0 | 145.5 | 133.1 | 119.3 |
+| Christian McCaffrey | 221.0 | 221.0 | 139.5 | 127.2 | 113.3 |
+| Kyren Williams | 217.1 | 217.1 | 135.5 | 123.2 | 109.3 |
+| Javonte Williams | 213.2 | 213.2 | 131.6 | 119.3 | 105.4 |
+| Derrick Henry | 212.7 | 212.7 | 131.2 | 118.8 | 104.9 |
+| Kenneth Walker III | 210.8 | 210.8 | 129.3 | 116.9 | 103.1 |
+| Ashton Jeanty | 204.1 | 204.1 | 122.5 | 110.2 | 96.3 |
+| Chuba Hubbard | 190.5 | 190.5 | 109.0 | 96.6 | 82.8 |
+| Jaylen Warren | 189.2 | 189.2 | 107.6 | 95.3 | 81.4 |
+
+**WR** — replacement: `ref:half` 90.2 (Kendrick Bourne), `ref:half.t10` 103.2, Scrubs 124.5; Spearman `ref:half` vs Scrubs over these 12: 1.00
+
+| player | season pts (ref) | season pts (Scrubs) | value `ref:half` | value `ref:half.t10` | value Scrubs |
+|---|---|---|---|---|---|
+| Puka Nacua | 230.0 | 230.0 | 139.8 | 126.8 | 105.4 |
+| Chris Olave | 220.2 | 220.2 | 130.0 | 117.0 | 95.6 |
+| Amon-Ra St. Brown | 216.0 | 216.0 | 125.8 | 112.8 | 91.5 |
+| Jaxon Smith-Njigba | 208.2 | 208.2 | 118.0 | 105.0 | 83.6 |
+| CeeDee Lamb | 206.1 | 206.1 | 115.9 | 103.0 | 81.6 |
+| Drake London | 193.4 | 193.4 | 103.2 | 90.2 | 68.9 |
+| Davante Adams | 191.4 | 191.4 | 101.2 | 88.2 | 66.9 |
+| Nico Collins | 190.9 | 190.9 | 100.7 | 87.7 | 66.4 |
+| Michael Wilson | 188.2 | 188.2 | 98.0 | 85.0 | 63.7 |
+| Tee Higgins | 183.4 | 183.4 | 93.2 | 80.2 | 58.9 |
+| Tetairoa McMillan | 180.9 | 180.9 | 90.7 | 77.7 | 56.3 |
+| DeVonta Smith | 176.4 | 176.4 | 86.2 | 73.2 | 51.9 |
+
+**TE** — replacement: `ref:half` 86.9 (Tyler Higbee), `ref:half.t10` 99.1, Scrubs 111.3; Spearman `ref:half` vs Scrubs over these 12: 0.98
+
+| player | season pts (ref) | season pts (Scrubs) | value `ref:half` | value `ref:half.t10` | value Scrubs |
+|---|---|---|---|---|---|
+| Trey McBride | 180.9 | 180.9 | 94.0 | 81.8 | 69.6 |
+| Brock Bowers | 148.7 | 148.7 | 61.8 | 49.6 | 37.4 |
+| Tucker Kraft | 138.9 | 138.9 | 52.0 | 39.8 | 27.6 |
+| Sam LaPorta | 133.5 | 133.5 | 46.6 | 34.3 | 22.1 |
+| Tyler Warren | 127.4 | 127.4 | 40.5 | 28.3 | 16.1 |
+| Travis Kelce | 116.1 | 116.1 | 29.2 | 16.9 | 4.7 |
+| George Kittle | 116.0 | 116.0 | 29.1 | 16.9 | 4.6 |
+| Dalton Schultz | 113.7 | 113.7 | 26.8 | 14.6 | 2.4 |
+| T.J. Hockenson | 111.3 | 111.3 | 24.4 | 12.2 | 0.0 |
+| Cade Otton | 110.0 | 110.0 | 23.1 | 10.9 | 0.0 |
+| Harold Fannin Jr. | 108.6 | 108.6 | 21.7 | 9.5 | 0.0 |
+| Dalton Kincaid | 107.2 | 107.2 | 20.3 | 8.1 | 0.0 |
+
+**K** — replacement: `ref:half` 112.6 (Andre Szmyt), `ref:half.t10` 113.7, Scrubs 129.9; Spearman `ref:half` vs Scrubs over these 12: —
+
+| player | season pts (ref) | season pts (Scrubs) | value `ref:half` | value `ref:half.t10` | value Scrubs |
+|---|---|---|---|---|---|
+| Cameron Dicker | 129.9 | 129.9 | 17.3 | 16.2 | 0.0 |
+| Ka'imi Fairbairn | 126.7 | 126.7 | 14.1 | 13.0 | 0.0 |
+| Daniel Carlson | 123.2 | 123.2 | 10.6 | 9.5 | 0.0 |
+| Nick Folk | 122.1 | 122.1 | 9.5 | 8.5 | 0.0 |
+| Will Reichard | 121.5 | 121.5 | 9.0 | 7.9 | 0.0 |
+| Dominic Zvada | 120.7 | 120.7 | 8.1 | 7.0 | 0.0 |
+| Chase McLaughlin | 118.9 | 118.9 | 6.3 | 5.2 | 0.0 |
+| Chris Boswell | 117.7 | 117.7 | 5.1 | 4.0 | 0.0 |
+| Jason Myers | 115.4 | 115.4 | 2.8 | 1.8 | 0.0 |
+| Brandon Aubrey | 114.0 | 114.0 | 1.4 | 0.3 | 0.0 |
+| Harrison Butker | 113.7 | 113.7 | 1.1 | 0.0 | 0.0 |
+| Matt Gay | 113.0 | 113.0 | 0.4 | 0.0 | 0.0 |
+
+**DEF** — replacement: `ref:half` 103.9 (Tampa Bay Buccaneers), `ref:half.t10` 104.9, Scrubs 111.5; Spearman `ref:half` vs Scrubs over these 12: 0.48
+
+| player | season pts (ref) | season pts (Scrubs) | value `ref:half` | value `ref:half.t10` | value Scrubs |
+|---|---|---|---|---|---|
+| Seattle Seahawks | 112.2 | 112.2 | 8.4 | 7.4 | 0.7 |
+| Houston Texans | 111.2 | 111.2 | 7.4 | 6.4 | 0.0 |
+| Washington Commanders | 111.1 | 111.5 | 7.2 | 6.2 | 0.0 |
+| Jacksonville Jaguars | 109.2 | 109.2 | 5.3 | 4.3 | 0.0 |
+| Cleveland Browns | 108.2 | 108.2 | 4.3 | 3.3 | 0.0 |
+| Pittsburgh Steelers | 107.9 | 107.9 | 4.1 | 3.1 | 0.0 |
+| New Orleans Saints | 107.4 | 107.4 | 3.5 | 2.5 | 0.0 |
+| Minnesota Vikings | 106.3 | 106.3 | 2.4 | 1.4 | 0.0 |
+| New England Patriots | 106.1 | 106.1 | 2.2 | 1.2 | 0.0 |
+| Atlanta Falcons | 106.1 | 106.1 | 2.2 | 1.2 | 0.0 |
+| Carolina Panthers | 104.9 | 104.7 | 1.0 | 0.0 | 0.0 |
+| Denver Broncos | 104.1 | 104.1 | 0.2 | 0.0 | 0.0 |
+
+#### Limitations
+
+* The typical league is a model, not a market: no keeper costs, no draft picks, this season only; bench fixed at 6;
+  K / DEF use the seed's kicking and defense rules for ESPN / Yahoo defaults.
+* The calculator's 80% range reads each player's weeks as independent normals (the rest-of-season range's own
+  assumption): a role change or an injury moves the weeks together, so the real range is wider (the card says so).
+* A player card for a reference key carries two windows: "Rest of season" (to a typical league's final, week 17) in the
+  Projection block and the value's "Points, wk 4–18" (the market window). Both are labelled.
+* Kickers' and defenses' value rank like a typical league, not like Scrubs (above).
+
+#### The PO lines I need
+
+* `app/whats_new.md` (yours): "- **Browse with your scoring.** Pick PPR, Half PPR, Standard, ESPN's or Yahoo's default,
+  superflex, TE premium, 6-point passing touchdowns and the league size — every player gets a value, and the trade
+  calculator works without a league."
+* Nothing in `api/Dockerfile`, `render.yaml`, the workflows or the scripts (no new folder, no env variable).
+
+#### For whoever merges next to me
+
+* IN-1 adds Home in TopBar: `refSections` orders browsing tabs Home · Players · Trades · DFS by section key (`home`
+  first if that is its key); a section the list does not know goes last. IN-1's App.svelte invite line: use
+  `refScoringLabel(league)` (above).
+* Everyone: `refleague.label(key)` / `refLabel(league)` is the key in words (it may carry "superflex · 10 teams");
+  for "… scoring" use `refScoringLabel` (web) / `refleague.shape(key).scoring_words` (API).
+
+#### Next task
+
+Measure how far real leagues' scorings sit from the five fitted references (ANY_LEAGUE § "The ranges") now that 15
+scorings are priced on request; a K / DEF reference for ESPN's and Yahoo's own tables.
+
+### IN-3 — matchups for everyone: the board, with search (Wave I-N, 2026-10-06)
+
+**Task**: Wave I-N package IN-3 (`/home/claude/waveIN/BRIEF.md` § "IN-3"). **Branch** `dev/IN3` from `main` `967b2d9`.
+Andrew, 09:19 ET: "even with, like, the no league, the matchups. We could either do, like, a search for a player kind
+of thing, or just start laying them out, like each player by player with what the matchups are, at least for
+receivers" — and, for DFS, "if somebody's going against a shutdown corner, that could be maybe taken into
+consideration".
+
+#### Done, against the numbered list
+
+1. **The board** (`/matchups`): every player at a position with a game this week, player by player — WR (default),
+   TE, RB, QB. A row: the player (headshot, team, injury status), the game (vs / at, kickoff in ET), the projection
+   and its range in the chosen scoring, the defense against his position (tone chip + "gives up the 7th-most to
+   WRs"), for a WR the corner call ("McDuffie #3 of 74" likely · "Woolen #8 or Mitchell #9" unclear · "No call", the
+   certainty, **Shutdown corner** when every named corner is one), and the one matchup tone. Search (server-side `q=`,
+   2–40 characters, debounced, in the URL), filter by game and by tone (with counts), sort by projection / best
+   matchup / easiest corner (WR), paged 25 at a time (Previous / Next, "Showing 1–25 of 219 wide receivers"). A row
+   opens the sentence, the named corners, the certainty in words, his history against the likely corner, and the
+   matchup evidence (`MatchupEvidence`, IF-3's object — nothing new invented), plus a link that opens the player's
+   drawer. With a league and a team: **My players · Everyone** (default My players = the screen as before; Everyone =
+   the board + who has him). Browsing (`ref:*`, or a league with no team) shows the board alone; the defense heatmap
+   stays under it. `/matchups` with no league at all opens on `ref:half` (as `/dfs` does).
+2. **`matchup_context(season, week, gsis_ids=None)`** and **`GET /api/matchups/board`** — exactly the brief's
+   interface (`api/league_lab_api/matchup_board.py`; first working version committed at 09:50 ET, `376f905`).
+   docs/INTERFACES.md § IN-3 has both shapes and how to import it lazily.
+3. **Honesty.** Read from `src/league_lab/projections.py` `BASE_FEATURES`: the defense against the position **is**
+   an input (`opp_allowed_std`, `opp_allowed_l4`, `opp_rank_std`, `f_opp_allowed_diff`, `league_allowed_avg`, as of the
+   week from `mart_defense_vs_position`) and so are the betting lines; **who plays cornerback is not**. The corner calls
+   are not graded as a forecast: the only check is METRICS § Cornerback matchups' 2025 check of the *lean* (the named
+   corner drew 0.204 of his targets on a clear call vs 0.141 for the other outside corner). The screen says it twice in
+   two sizes: under the controls "Projected points in Half PPR scoring. The defense is in the projection; the corner
+   is not (context only)." and under the board the full sentence + the tone rule. `test_in3.py` parses the feature
+   list: a corner input added to the projection fails it.
+4. **Speed, tests, e2e, docs** — below.
+
+**Beyond the list (small, conservative)**: a corner the call names who is **not expected to play** (the availability
+overlay through `cards.corner_personnel`, the evidence's own read: listed on the depth chart, not expected) makes the
+read "no call" — the context never says "faces a shutdown corner" about a corner who is out. The evidence is kept per
+week for every league (it is league-free), so a warm board is 15–25 ms.
+
+#### How the single tone is formed (`matchup_board.combine_tone`)
+
+The defense's tone (IB-3's cut: 10 of 32 at each end, `mart_defense_vs_position_current`, one scale for every league)
+is the base. The corner moves it **only on a likely call** (his located targets lean 15+ points to one side):
+
+| defense \ likely corner | favorable (target) | neutral (solid) | difficult (shutdown) | unclear / no call / unranked |
+|---|---|---|---|---|
+| favorable | favorable | favorable | **neutral** | favorable |
+| neutral | **favorable** | neutral | **difficult** | neutral |
+| difficult | **neutral** | difficult | difficult | difficult |
+| none | none | none | none | none |
+
+An unclear call never moves it (tested over every combination); a solid or unranked corner never moves it; no
+defense read → no tone ("No read": unknown is not neutral). Coverage shows how rarely the corner moves it (below).
+
+#### Files
+
+* New: `api/league_lab_api/matchup_board.py`, `api/tests/test_in3.py`, `web/src/components/matchups/Board.svelte`,
+  `web/src/components/matchups/ToneChip.svelte`, `web/e2e/in3/fixtures.spec.ts`, `web/fixtures/in3/api_in3.json`
+  (recorded from the fixture API, 527 KB), `docs/INTERFACES.md`, `docs/handbacks/IN-3.md`, `docs/handbacks/in3/*.png`.
+* Mine, edited: `web/src/routes/Matchups.svelte` (the switch, the board, "per game", the scoring words for a reference
+  key: "Half PPR", never a league name it does not have). `research.py`, `MatchupEvidence.svelte`, `Heatmap.svelte`:
+  unchanged.
+* **Edits outside my files** (marked `---- IN-3` blocks): `api/league_lab_api/main.py` (the router, after IM-5's),
+  `api/league_lab_api/ratelimit.py` (`bucket_for`: `/api/matchups/board` → `research`), `web/src/lib/api.ts` (types +
+  `boardPath`, at the end), `web/src/App.svelte` (`/matchups` without a league → `ref:half`, after the PO's `/dfs`
+  effect), `docs/WORDS.md` (§ "Matchups for everyone"), `docs/METRICS.md` (§ "Matchups for everyone", before "Value to
+  my lineup"), `CHANGELOG.md` (the `## 2026-10-06 — Wave I-N` heading created at the top, one bullet).
+* No new env variable, no new dependency, no relation, nothing written to the database.
+
+#### Schema
+
+In: `mart_player_week_projections` (the week's players and team), `dim_game`, `mart_defense_vs_position_current`,
+`mart_cb_matchups` + `mart_cb_rankings` (through `research.cb_meaning`), `cards.corner_personnel`'s reads, the
+league's projections (`research.projections`), `dim_player`, the ownership reads of `research.rostered`.
+Out: `matchup_context` → `{gsis_id: {opponent, home, defense{tone, tough_rank, n_ranked, words}, cb{tone, certainty,
+corner, corner_rank, shutdown, words} | None, tone, words}}`; the board → INTERFACES.md § IN-3. Memory: one region
+`matchup_board` (≤ 24 entries, 10 min): the week's context, one frame per league scoring, the corners, the evidence.
+
+#### Evidence (the numbers)
+
+* **Tests**: `api/tests/test_in3.py` **54 passed** (~3 s): the tone table (42 cases) and "unclear never moves it",
+  the projection's feature list, the bucket, `matchup_context` with a missing mart → `{}`, never raises (a dead
+  database, a bad season), the shape and the tone rule on every player of week 4, the copy is the reader's own; the
+  board on `ref:half` (non-empty, sorted, **no ownership field at any depth**, TE has no corner), on League of Scrubs
+  (ownership present), `q=` as text (`%%`, `%a%`, `a_`, `__`, `'; drop table x; --`, `\\`, `a%`, `*?`, `12`,
+  `<script>` → 200 with 0 rows; 1 and 41 characters → 400), paging (5 + 5 = 10, far offset empty; limit 0 / 101,
+  offset −1 / 5,001, position K, a bad tone / sort / game → 400 / 422; `ref:nope` → 404), filters and sorts (game,
+  each tone = its count, tone order, corner order with unranked last), a corner who is out → no call.
+  `api/tests/test_im3.py` (ratelimit's tests) **63 passed**. `ruff check src app tests api` clean.
+  `scripts/copy_standard.py --check` clean. `npm run lint && npm run build` clean (179 files, 0 errors).
+* **e2e** `web/e2e/in3` **6 passed** on the recordings (phone at 375, desktop at 1300): browsing — 25 rows, the
+  honest lines, no switch, never "No league" / "rostered by" / "Free agent", no sideways scroll, the board wider than
+  900 px at 1300; search "Nacua" → one row → the evidence ("not in the forecast") → the drawer link; `/matchups` with
+  no league → `ref:half`; a league — My players (the cornerback section) → Everyone → "Who has him" → tone filter →
+  back to My players. Also run against the live fixture API (`IN3_LIVE=http://localhost:8763`, which recorded the
+  answers): 4 passed. The existing Matchups e2e (`fixtures.spec.ts`, `ia1`, `ib3`, `ii2`, filtered on "Matchups"):
+  **10 passed**. Screenshots: `docs/handbacks/in3/` (board, evidence, everyone — phone and desktop).
+* **Timings** (the fixture API over HTTP on this box, six devs on two cores; WR, `ref:half`): **cold 0.59–0.64 s** (a
+  fresh process), **warm 15–19 ms** (target 150 ms / 1.5 s); League of Scrubs 58 ms first / 22 ms warm; `q=chase` 10 ms; `limit=100` 0.16–0.20 s the first time, 25 ms warm. `matchup_context(2026, 4)`: 172 ms cold,
+  6 ms warm (792 players). Answer sizes: 115 KB raw / ~12 KB gzipped for 25 rows (the evidence is most of it).
+  Memory: the region held **4.2 MB** after every position of five leagues was paged through.
+* **Coverage** (`ref:half`, this database): **week 4** (the pinned decision week) — 219 WRs with a projection and a
+  game: **36 likely, 96 unclear, 87 no call** (all "too few targets with a direction to tell his side"); 14 face only
+  shutdown corners (7 on a likely call); the corner moved the tone for **6**; of the 41 projected 8+ points, 6 likely
+  and 35 unclear. **Week 5**: 207 — 43 likely, 90 unclear, 74 no call; the corner moved 9. Tones at WR, week 4: 69
+  favorable, 81 neutral, 69 difficult.
+
+#### Limitations (said straight)
+
+* The corner read is mostly "unclear" for the receivers people start (35 of 41 at 8+ points): good receivers move
+  around and public data has no alignment. So the corner rarely moves the tone; DFS will mostly see the defense's read.
+* A receiver facing two shutdown corners on an **unclear** call shows "Shutdown corner" beside a tone the corner did not
+  move (the brief's rule: an unclear call never moves the tone). The row's words say "either … could be across from him".
+* The defense read is the reference mart's (Half PPR points allowed, one scale) on every league, as the interface
+  says; the heatmap under the board ranks in the league's own scoring, so a house league can differ by a place or two.
+* "Not expected to play" depends on the availability overlay (off on the fixture API: nothing in this sandbox was
+  marked out); with it on, a status update reaches the board within the region's 10 minutes.
+* Rows include games already kicked off in the decision week (the pinned Saturday has Thursday's game played), as
+  every other screen does; no lock mark.
+* Corner calls are not graded as a forecast (no backtest of tone against points) — a candidate for the next wave.
+
+#### The PO lines I need
+
+None are required: no Dockerfile, render, workflow or nightly change. Suggested, optional:
+* `app/whats_new.md` (newest on top): "**Matchups for everyone**: every receiver's matchup this week, player by
+  player — the defense against his position and the cornerback likely across from him — with a search. Open your
+  league for 'Everyone' with who has him."
+* `docs/SECURITY_PUBLIC.md` § 1's table lists the research routes in the `read` bucket (stale since IM-3's fix
+  round): add `/api/matchups/board` beside `/matchups/*` under `research`.
+* STATUS / HANDOFF: the hand-back above.
+
+#### Seen, not mine
+
+* The TopBar still reads "No league · Half PPR", and every research answer's `league_name` for a reference key is
+  "No league · Half PPR" (`refleague.league`): IN-2's (the board's screen never shows `league_name`).
+* `docs/INTERFACES.md` did not exist on `main`; created here with § IN-3 only.
+* Matchups' heatmap caption said "Points each defense gives up a game to each position" (the copy standard's "per
+  game"; the checker did not catch it in Svelte text) — fixed in my file.
+
+#### Commands
+
+`OMP_NUM_THREADS=1 uv run pytest tests/test_in3.py tests/test_im3.py -q` (api/) · `uv run ruff check src app tests
+api` · `uv run python scripts/copy_standard.py --check` · `npm run lint && npm run build` (web/) ·
+`FIXTURES_PORT=8730 SHOTS_IN3=../docs/handbacks/in3 npx playwright test --config playwright.fixtures.config.ts e2e/in3`
+· re-record: the fixture API on 8763 serving `web/dist`, then `IN3_LIVE=http://localhost:8763 … e2e/in3`.
+
+#### Next
+
+Grade the corner: replay 2025 with as-of calls and ask whether a likely shutdown corner moves a receiver's points
+against his projection (by certainty); only then may the corner enter the projection or a DFS ranking.
+
+### IN-4 hand-back — DFS without the homework: no upload to start, context beyond the projection, stacks
+
+**Task**: Wave I-N (Iteration 24), IN-4. **Branch**: `dev/IN4` from `main` `967b2d9`. **Docs touched**: `docs/DFS.md`
+(rewritten for the new flow: § What it does, § Context, § Published slates, § Lineups — stacks / exposure, § The API,
+§ Limitations), `docs/WORDS.md` (§ "DFS without the homework"), `CHANGELOG.md` (one bullet under Wave I-N),
+`dfs/slates/README.md` (new). Screenshots: `docs/handbacks/in4/` (375 and 1300).
+
+#### Done, against the numbered list
+
+1. **DFS opens useful with no file — done.** `/dfs` shows the board at once with context chips (dashed = not in the
+   projection), the sentences one tap away, "What the projection already holds" (one line a signal), and **Worth a
+   look** per position. Signals: **matchup** (defense vs position + the WR's corner, from IN-3's `matchup_context`,
+   imported lazily; "Matchup: not available here." without it); **role trend** (last 2 games played vs the games
+   before, ≥ 2; target / carry / snap share, summed ÷ summed; ±5 / ±10 share points; "role up", "role down" or
+   nothing); **game environment** (over/under, spread, implied team total). **Weather: not built into the screen** —
+   see "in the projection" below and the PO line.
+2. **Published slates — done.** `dfs/slates/<season>-w<ww>-<dk|fd>[-<label>].csv`, read once (`LEAGUE_LAB_DFS_SLATES`,
+   default `<repo>/dfs/slates`), same parser and limits, ≤ 16 files; `GET /api/dfs/slates` (offered: this week and
+   next; `not_offered` with the reason; `unreadable` with the reason, never served), `GET /api/dfs/slate/{id}` (strict
+   pattern, then a lookup — never a path; the same answer as `POST /api/dfs/slate`, tested field by field),
+   `POST /api/dfs/lineups` takes `slate_id`. `/dfs` opens on the published slate's values; the upload is under "Use a
+   different contest's file"; an upload over it has "Back to the published slate". **No real salary file ships.**
+3. **Stacks and exposure — done.** `dfs.Stack(with_qb 0/1/2, bring_back, no_def_vs_qb)`: rows only, one per team
+   (`Q_t` = its QBs), the objective unchanged; showdown says stacks do not apply; an impossible rule is named (each rule
+   tried alone on the base rows). `max_exposure` 10–100 %: each player in at most max(1, ⌊share·N⌋) lineups (always-in
+   players exempt). Same 5-second budget, n ≤ 20, one solve at a time. Context chips beside each lineup's players.
+4. **Tests and docs — done.** `tests/test_in4_dfs.py` (72), `api/tests/test_in4.py` (24), `web/e2e/in4` (3 tests × phone
+   375 / desktop 1300 = 6). `docs/DFS.md` rewritten (it still says the parsers are unverified against real exports).
+
+**Not done / deviations (said plainly)**
+* **Weather column**: the forecast is loaded (`intermediate.int_game_weather`: week 5 has 9 outdoor games with a
+  forecast, 6 domes) but the API's role (`league_lab_app`) is refused on `intermediate` and `raw`
+  (`InsufficientPrivilege`, checked) and no `analytics` relation carries it; this wave ships no new relation, so there
+  is no weather column. `dfs.weather_flag` is built and tested for when a mart publishes it (PO decision).
+* **"Worth a look" rule changed** from "≥ 2 favourable signals not in the projection" (it can never fire: only the corner
+  call is both outside the projection and able to be favourable) to "**≥ 2 favourable, ≥ 1 of them outside the
+  projection, no difficult signal outside it**" — `dfs.WORTH_MIN_FAVOURABLE` / `WORTH_MIN_OUTSIDE`, one line to change.
+  Without IN-3's module the list is empty and the screen says why.
+* A stacked build of 20 lineups often stops at the 5-second budget on this loaded box (numbers below); notes say so.
+
+#### Each signal: in the projection or not, and how that was established
+
+Read from `projections.FEATURES_BY_POSITION` (model v3.3) through `dfs.SIGNAL_INPUTS`; asserted for every (signal,
+position) in `test_each_label_is_read_from_the_models_input_list`.
+* Defense vs his position — **in** (`opp_rank_std`, `opp_allowed_std`, `opp_allowed_l4`, `f_opp_allowed_diff`).
+* Cornerback call — **not in** (no input is made of `mart_cb_matchups`).
+* Role trend (target / carry / snap share) — **in** (`target_share_l3/_std`, `carry_share_*`, `snap_pct_*`; the model
+  reads last 3 games and the season). Routes per dropback — **not in** (`route_participation_l3` excluded), and NULL in
+  2026 (0 of ~1,300 game rows have routes), so never shown.
+* Game environment — **in** (`implied_team_total`, `spread_line`, `total_line`).
+* Weather — **not in** (plan D3's `wx_*` groups are not in the list).
+
+**Betting lines for 2026 week 5: yes** — `analytics.dim_game` has `spread_line` and `total_line` for 15 of 15 games
+(weeks 3–4: 16 / 16; weeks 6–7: none yet).
+
+#### Numbers (this sandbox, six devs on two cores)
+
+* Coverage, week 5 (DraftKings board): role trend read for 402 backs / receivers / tight ends with a game → 65 up, 45
+  down (board: WR 30 / 24, RB 16 / 13, TE 13 / 6); lines for all 30 teams; published synthetic DK file 597 of 599
+  matched (FanDuel 598 / 598).
+* Timings: context reads cold 1.41 s (once per week, 10 min); projections warm 0.06–0.15 s (348 KB; **32 KB gzipped**;
+  520 KB with the matchup signal); `GET /api/dfs/slates` cold 0.69 s, warm 0.01 s; `GET /api/dfs/slate/{id}` cold
+  0.60 s, warm 0.05–0.13 s (583 KB, **67 KB gzipped**).
+* Lineups, 20 asked, published DK slate: no stack 4.83 s (20/20 proven); QB+2 + bring-back + no DEF vs QB 5.04 s (7, 6
+  proven); QB+1 + 30 % exposure 5.03 s (18, 17 proven); FanDuel QB+2 + bring-back 5.20 s (12, 11 proven). Per-QB rows
+  gave 4 / 11 / 8 in the same budget; team-level rows are the tighter LP.
+* Memory: `dfs_context` 0.13 MB a week (4 entries); `dfs_published` 1.4 MB a built slate (4 entries); a parsed published
+  file 0.42 MB (≤ 16 files read).
+
+#### Commands run (all green)
+
+`uv run pytest tests/test_in4_dfs.py tests/test_im5_dfs.py` → 220 passed · `cd api && uv run pytest tests/test_in4.py
+tests/test_im5.py` → 43 passed; `tests/test_im3.py` (+ im5) 82 passed; `tests/test_ik4.py tests/test_im4.py` 43 passed
+· `uv run ruff check src app tests api` clean · `uv run python scripts/copy_standard.py --check` clean · `cd web && npm
+run lint && npm run build` clean · `FIXTURES_PORT=8740 npx playwright test --config playwright.fixtures.config.ts e2e/in4
+e2e/im5` → 12 passed · `/home/claude/waveIN/check_root.sh /home/claude/wt-in4` → no new failures (4 known) · a live
+smoke on :8764 (published list, slate, gzip sizes, a FanDuel stacked build, `/dfs` 200).
+
+#### The PO lines I need
+
+* `api/Dockerfile`, after `COPY src/league_lab /srv/src/league_lab`: `COPY dfs/slates /srv/dfs/slates` (the default
+  path is `ROOT/dfs/slates` = `/srv/dfs/slates` in the image; `LEAGUE_LAB_DFS_SLATES` overrides).
+* Optional (a decision): a weather column needs the forecast in an `analytics` relation (or a grant on
+  `intermediate.int_game_weather` to `league_lab_app` and the hosted sync) — not done, by the "no new relation" rule.
+
+#### Edits outside my files
+
+`api/league_lab_api/ratelimit.py` — a 4-line marked block `# ---- IN-4` at the top of `bucket_for`: `/api/dfs/slates`
+and `/api/dfs/slate/…` (GETs) are `research` (IM-5's `HEAVY_PREFIX = "/api/dfs/slate"` would otherwise make them heavy).
+`CHANGELOG.md` (one bullet; created the Wave I-N heading at the top), `docs/WORDS.md` (a new section + one parenthesis in
+IM-5's head row). No edit to `main.py` (the new routes ride on IM-5's router), `lib/api.ts`, router or App.
+
+**New env**: `LEAGUE_LAB_DFS_SLATES` (optional; default `<repo>/dfs/slates`). **New dependencies**: none. **New
+relations**: none (reads `analytics.fct_player_game`, `analytics.dim_game`, both already on the hosted copy).
+
+#### Interfaces
+
+* Reads IN-3's `matchup_board.matchup_context(season, week, gsis_ids)` lazily (`try/except`); tests fake it with the
+  brief's exact shape (`sys.modules`). The e2e recordings `projections_dk_matchup.json` / `slate_published_dk.json`
+  carry that **test fake's** matchup words (said in the spec's header) — re-record after the merge if wanted.
+* New answer fields: players `context` / `worth` / `worth_reasons`; `worth_a_look`, `context_meta` on the projections
+  and slate answers; `published`, `slate_id`, `label` on slates; lineups take `slate_id`, `stack`, `max_exposure`.
+
+#### Seen, not mine
+
+* The TopBar still says "No league ·" beside the scoring picker (IN-2's file; rule 9).
+* `dfs.RATE_BUCKETS` (IM-5) says `/api/dfs/projections` is `read`; `ratelimit.py` puts it in `research` (the limiter is
+  right; the dict is stale — `test_im5.py` pins it, so left).
+* Republishing a site's salary file on a public page: a person downloads it by hand (no automated collection), but
+  whether showing it publicly is within each site's terms is Andrew's call before the first file is pushed.
+
+#### Next
+
+Re-record the in4 fixtures on the merged tree (IN-3's real matchup words); a weather mart (PO); a backtest of "Worth a
+look" once a few weeks of published slates exist (the record should say whether it helps before it is dressed as one).
+
+#### Fix round (after the merge on `integ/IN` and the independent review; branch `fix/IN4`)
+
+* **M1**: `GET /api/dfs/slates` never builds a slate — matched / unmatched counts once per file (`match_counts`: the
+  priced pool + `dfs.match`), kept with the file; `dfs_published` sized to `MAX_PUBLISHED` (16). Test: 8 files, three
+  listings → 0 builds, ≤ 8 matches, the third call < 0.5 s. On :8764 with the file already read: 3–4 ms a listing.
+* **L4**: `_published_pool` runs in the thread pool. **L5**: slate ids and file names by `fullmatch` (`…\n`, `%0a`,
+  `%0d%0a` → 404, tested).
+* `test_board_with_context_and_no_matchup_module` makes the lazy import fail itself (the package attribute removed,
+  `sys.modules` entry None). `dfs.RATE_BUCKETS` says `research` for projections (as `ratelimit.py`); `test_im5.py` updated.
+* Re-recorded `projections_dk_matchup.json` and `slate_published_dk.json` from the merged tree's fixture API (:8764):
+  IN-3's real context. Week 5 "Worth a look": **WR 4, RB 0, TE 0, QB 0** on both the board and the published slate (7
+  likely soft-corner calls in all; 4 also have a second favourable signal) — not empty, not 40+: the rule stays. The e2e
+  count on the published slate is now 4. Screenshots replaced.
+* Seen, not mine: `tests/test_metric_registry.py::test_every_documented_metric_has_a_registry_row` fails on `integ/IN`
+  itself (IN-3's `mb1.0` in docs/METRICS.md has no `metric_registry.csv` row) — the one new root failure.
+
+### IN-5 — My Week says what it means, and no screen can go blank (Wave I-N, 2026-10-06)
+
+Branch `dev/IN5` from `main` `967b2d9` (the PO's hotfix). Dev IN-5. Worktree `/home/claude/wt-in5`.
+
+#### Andrew's morning — before / after
+
+The database holds the nightly's **week-5 rows**: League of Scrubs roster 2 has its QB and TE slots empty (Mahomes,
+Young, Kelce on a bye; Coleman and Charbonnet on IR). With the clock pinned to his report (Tue 09:20 ET) and his Sleeper
+lineup reconstructed (Mahomes at QB, Kelce at TE, Croskey-Merritt in the second FLEX — the sandbox's Sleeper fixture is
+an older roster), the three versions of `myweek.build_actions` on the same rows and cards:
+
+| | My Week's actions |
+|---|---|
+| before (the code live at 09:20) | "Start Jefferson at FLEX (or Boston: a coin flip) in place of **Kelce**." · "**Start** Mahomes out of your lineup." |
+| PO hotfix (`967b2d9`) | "Start Jefferson at FLEX (or Boston: a coin flip) in place of Kelce." · "Take Mahomes out of your lineup." |
+| **IN-5** | "Your quarterback spot is open: Mahomes and Young are on a bye. Add a quarterback before Sun 1:00 PM ET." · "Your tight end spot is open: Kelce is on a bye. Add a tight end before Sun 1:00 PM ET." · "Start Jefferson at FLEX (or Boston: a coin flip) in place of Croskey-Merritt." |
+
+The hand-built frame of the brief (two open spots, six who cannot play, one FLEX coin flip; `test_in5.morning()`)
+reproduces Andrew's exact live sentences on the old code — "Make 2 changes: Washington at FLEX (or Croskey-Merritt: a
+coin flip) in place of Mahomes; Croskey-Merritt out of your lineup." and "Start Kelce out of your lineup." — and gives
+"Your quarterback spot is open: Mahomes and Young are on a bye. Add a quarterback before Sun 1:00 PM ET." · "Your tight
+end spot is open: Kelce is on a bye and Ferguson is out. Add a tight end before Sun 1:00 PM ET." + the review line
+"Washington or Croskey-Merritt at FLEX: a coin flip, 0.1 points apart; your lineup has Croskey-Merritt — no clear
+upgrade." (0.06 apart: under the 0.5-point action bar, as before). Each open spot's reason: "Nobody else on your roster
+can play quarterback this week. Mahomes is still in your Sleeper lineup: start the player you add in his place."; its
+link **Find a quarterback on Waivers ›** (`/waivers?position=QB`).
+
+#### Done (the numbered list)
+
+1. **Open spots** (`api/league_lab_api/myweek.py`, marked `IN-5`): `fits` (bipartite matching: the submitted lineup
+   with the swap made still fits its slot codes — the slot chain), the pairing takes a direct fit first, then a chain
+   fit, never the old fallback `ins[0]`; ties sorted by key (the old order followed a `set`). `open_spots`: one action
+   per open slot type (the best lineup's `is_empty_slot` starters), kind `change` (a roster alert, urgency 1, first
+   among same-time actions), `open_slot` {slot_type, slots, position, words, players, named}, `href`, `href_label`;
+   the outs it takes over leave the pairs. `open_deadline`: the kickoff most of the roster's games still to start share
+   (the main slate), earliest on a tie, "before his game kicks off" when none. The coin-flip clause once per action and
+   never for a player the same action takes out. `more_words`: "1 more roster alert: …". `REASON_WORDS`: the build's
+   reasons in words ("is in your IR slot", "is on your taxi squad", "is locked on your bench (his game has started)")
+   where the old fallback said "can't play (IR slot)" — swaps and open spots alike.
+2. **Words**: "Change needed" → **Roster alert** (`lib/week.ts` `STATUS_WORD` / `ACTION_WORD`; the API never sent it);
+   "What changed" → **News feed** (`lib/feed.ts` `NEWS_FEED`, MyWeek's heading; testid `what-changed` kept). WORDS.md §
+   "My Week says what it means" + the three dictionary rows; `copy_standard.py --check` clean.
+3. (a) e2e `web/e2e/in5` (10 tests: 5 × 375 / 1300) on `web/fixtures/in5/` (recorded through the real routes by
+   `test_record_andrews_morning`, `IN5_RECORD=1`; `team_open_nan.json` = the 09:20 answer with both open ids "nan").
+   (b) keyed `{#each}` audit below. (c) `App.svelte`: two `<svelte:boundary>` blocks (the whole app; each screen in the
+   frame, the bar stays), reset when the screen changes; `ErrorCard crashed={screen}`: "This screen hit a problem" +
+   Reload + GA `exception` {description: "screen: team", fatal: false, screen_name}. (d) `str()` ids on the way out:
+   `decisions._alt_player` (sleeper_id, the name fallback), `od_transactions` and `recent_adds` (transaction_id — a
+   missing one is `w<round>-<n>`, never "None" — and sleeper_player_id) through `decisions._sid`, which now refuses
+   "None" / "null" too; `test_no_nan_text_on_the_house_answers` walks Team, My Week, League and Waivers for both house
+   leagues (0 bad values), `test_record_andrews_morning` the open-spot answers (0).
+4. **The five tests that turned red Monday ~20:00 ET** (`test_ia2` partners, `test_ib0` one-lineup-total × 2 dynasty,
+   `test_ii1` Folk × 2): `analytics.mart_league_roster_horizon` is a **view** whose "this week" is the first REG week
+   with `kickoff_at > now()` — the database's clock. Week 4's last kickoff was 2026-10-06 00:15 UTC (Mon 20:15 ET): the
+   view moved to weeks 5–8 while the pinned suites are in week 4. **Diagnosed, not fixed.** A first fix (the API
+   sending its pinned clock as a setting the view read before `now()`) was built and taken back out in the fix round:
+   with the view rebuilt it made the API read week 4 while the Streamlit twin and the root package's layer read week 5
+   — two read paths, two weeks, 7 new failures on the merged tree — and in production (nothing pinned) it buys nothing.
+   A clean fix needs every read path (API, console, root package) to share one clock; not built.
+
+#### Keyed `{#each}` audit (175 keyed in `web/src`)
+
+Changed to `` `${id}#${i}` `` (cannot collide: the suffix is the place) — 42 lists in 19 files: LineChart (points ×2),
+Picker (leagues, rosters), ScheduleTable (weeks), Table (every caller's `rowKey`), Tabs (items), TopBar (search hits),
+stats/StatsTable (rows), About (features by rank, positions, calls, decision weeks, byPosition), Account (leagues,
+connections, passkeys), Compare (hits, next4), MyWeek (the calls behind Why?, the cards), Players (selected ×3: a URL
+can repeat a player), Receivers, Ros (rows, why pieces), Team (slots, slot groups, slot strength, weekly, record weeks,
+calls, league rows; the roster: the PO's hotfix), Trends, Waivers (top 3, view moves, stashes, free agents), Watchlist,
+WeekStrip. Left (client-defined constants, closed sets, column definitions, Map-grouped lists — unique by construction).
+**Not changed, other packages' files** (an API id that could in principle repeat; each a one-line change if the owner
+wants it): Heatmap rows/cols, MatchupEvidence `missing` (gsis), Matchups starters / corner rows (gsis) — IN-3; PlayerPane
+metrics (label), Player why pieces (stat), Trades packages (sleeper_id), TradeCalc others / unavailable / give / get /
+cut / starters in-out / weekly — IN-2; Dfs projRows / unmatched / skipped / under / over — IN-4; League standings / luck /
+bench (roster_id), matchups (week), games (matchup_id), draft (pick_no) — IN-6; Leagues provider league / team lists —
+IN-1. The boundaries catch any of them: a duplicate there is an error card, never a blank screen.
+
+#### Evidence
+
+* `api/tests/test_in5.py` **18 tests**, all pass (7 s). `test_in0.py` passes.
+* Modules edited — their API test files (37 files: myweek's 32 + decisions' transactions / alternatives): **72 failed /
+  504 passed / 10 skipped** (661 s); 66 on `known_api_failures.txt`; the other **6 fail the same on `main`'s API code at
+  10:30 ET** (`test_ig2` × 3: the event store's status / brief lines; `test_u1` × 3: usage rows) — not mine, see below.
+  A re-run of 10 files (incl. ia2 / ib0 / ii1): 25 failed / 90 passed, all on the known list; after
+  the last `myweek.py` change (12 My Week files): 23 failed / 144 passed / 6 skipped, all on the known list.
+* `ruff check src app tests api` clean; `npm run lint` (177 files, 0 warnings) and `npm run build` clean;
+  `copy_standard.py --check` clean; `league-lab dbt parse` clean.
+* e2e `in5`: **10 passed** (375 and 1300). On `main`'s web code the same spec fails 3: the words, the duplicate-key
+  answers (blank screen), the render error (blank screen). The two e2e files whose words changed on purpose:
+  `e2e/ib3` (`/Change needed/` → `/Roster alert/`), `e2e/ie1` (`"Change needed"` → `"Roster alert"`). **Full fixtures
+  suite: 441 passed / 3 skipped / 0 failed** (11.4 min; 431 before + the 10 new).
+* Team's open rows also link to Waivers at the position ("Find one on Waivers ›", `lib/week.ts` `waiversFor`); the
+  Team-related e2e specs (ii4, ic4, ik3, ii0, v2, decisions, ih2: 72) pass after it.
+* Screenshots (`docs/handbacks/in5/`): My Week, Team (the "nan" answer) and its roster card, the error card — each phone
+  and desktop; no
+  sideways scroll at 375, the screen's column > 900 px at 1300.
+
+#### Words changed on purpose (old string → where)
+
+`api/tests/test_ie1.py` ("1 more change" → "1 more roster alert"), `web/e2e/ib3`, `web/e2e/ie1`, `docs/WORDS.md` (rows
+104, 148, 173 + the new section), `docs/DESIGN.md` (136), `docs/HOSTING.md` (727, 767), `docs/ANY_LEAGUE.md` (606).
+Not changed: test names and comments that call the block "What changed" (internal names); `MatchupEvidence`'s "What
+changed" (the corners line — another thing); `app/lib/table.py` "What changed" (the role-change column); the empty
+line "Nothing has changed since the morning build." (recorded in 9 fixture answers).
+
+#### PO lines
+
+* `docs/PROJECT_PLAN.md:455` "a status per call — Change needed, Already set," → "Roster alert (was Change needed),
+  Already set,"; `docs/HANDOFF.md:155, 170` "What changed" → "the News feed (was What changed)".
+* `app/whats_new.md` (new top entry): "My Week says what it means: a starting spot nobody on your roster can fill is
+  its own roster alert, with who cannot play and a link to Waivers at that position; 'Change needed' is now 'Roster
+  alert', 'What changed' is now 'News feed'; a screen that hits a problem shows a card with Reload instead of going
+  blank." Its older entries (lines 110, 143) name "What changed" as history — leave them.
+* Console pages: none carries "Change needed" or the news block's "What changed" (grep of `app/`).
+
+#### Edits outside my files
+
+`api/league_lab_api/decisions.py` (`_sid` "None"; `_alt_player`; `od_transactions`, `recent_adds` — six lines, marked),
+`web/src/App.svelte` (IN-1's: a script
+block + two boundary blocks, marked), `web/src/lib/api.ts` (types at the end, marked), `web/src/components/TopBar.svelte`
+(IN-2's: one key), 17 unowned screens / components (one key each), `docs/WORDS.md`, `CHANGELOG.md`, docs above.
+No new env variable, no new dependency, nothing written to the database.
+
+#### Limitations / next
+
+* The deadline is the roster's main slate, not the free agent's own kickoff (a Monday-night quarterback can be added
+  later); the words say "before".
+* The five tests stay red until "this week" comes from one clock on every read path (the root suite's four week-state
+  failures may have the same cause: not checked).
+* Next: the owners' one-line keys above; a real Sleeper lineup with two open spots
+  once one exists in the fixtures.
+
+#### Fix round (after the merge, branch `fix/IN5` on `integ/IN` `cd56421`)
+
+* **The pinned-view change taken back out**: `api/league_lab_api/db.py` and `dbt/models/marts/edge/mart_league_roster_horizon.sql`
+  as on `967b2d9`, `dbt/macros/league_lab_now.sql` deleted, its two tests removed; item 4 above keeps the diagnosis only.
+* **Reviewer L3 — the slot-chain search bounded** (`myweek.pair_moves`, `fits_positions`): players of one position are
+  interchangeable, so the chain check is Hall's condition over the position kinds (exact; agrees with the plain matching
+  on 2,000 random lineups), memoised per (positions, slots) for the call and asked once per position of the incoming
+  players; above `MAX_CHAIN_SLOTS` = 24 starting slots the pairing uses direct eligibility only. The synthetic worst case
+  (every match fails): 15 / 30 / 45 starting slots 0.024 / 0.325 / 1.872 s before → 0.011 / 0.007 / 0.009 s after (with the
+  chain check forced on at 45: 0.010 s). `test_45_starting_slots_pair_fast_and_legally` (0.012 s, the FLEX outs paired
+  with FLEX-eligible starters, no quarterback "replaced"), `test_the_chain_check_is_the_matching` (24 slots: the chain
+  pairs; 25: direct only).
+
+### IN-6 hand-back — the League screen: power rankings and the rest of the season (Wave I-N, 2026-10-06)
+
+**Task**: BRIEF § IN-6 (Andrew: "some power rankings, or, like, rest of season projections"). **Branch** `dev/IN6` from
+`main` `967b2d9`. **Definitions**: docs/METRICS.md § "Power rankings and the season outlook" (ol1.0).
+
+#### Done / not done (the brief's numbered list)
+
+1. **Power rankings — done.** One stated metric: each team's best lineup's expected points per week over the rest of
+   the season (the trade engine's `window_board(ctx, "ros")`: today's rosters, this week on the availability overlay,
+   IR / taxi / NFL IR carried out, every later week from the rest-of-season projections; each week re-solved, averaged
+   to the league's final). Columns beside it: record, points for + rank, points against, the record-vs-points gap in
+   words (≥ 3 places apart: "3–0 on the 7th-most points: a soft schedule so far"), schedule left (opponents' power
+   number per game, rank 1 = hardest). **No arrows**: last week's rest-of-season board is not stored (`ops.projections`
+   is refit in place; `ops.lineup_record` freezes only each week's own lineup), so last week's ranking cannot be rebuilt
+   — `movement: null` and a line on the screen saying why.
+2. **The rest of the season — done.** 10,000 seasons, numpy, fixed seed, sync route (thread pool) in the `heavy`
+   bucket, `memo` region `outlook` (≤ 48 entries, key = league, house / on demand, build stamp, overlay stamp; TTL 10 min
+   house / 2 min on demand). First week left = the week's odds' own pieces over the whole league (one copula, the same
+   pairs, the same shrink applied per game); later weeks = the board's lineup totals, spread from each lineup's own
+   ranges widened by 1/0.60, plus a 3%-per-week drift (assumed, stated). Outputs: projected record (mean + middle 80%),
+   playoff odds (wins, then points for — stated), top seed, bye (2^⌈log₂ spots⌉ − spots top seeds), clinched / out
+   proven on wins alone. **No title odds** (bracket not simulated). Providers: Sleeper house + on demand = everything;
+   MFL = power + projected record, **no playoff columns** (MFL's export has no playoff team count; the screen says so);
+   leagues with divisions = no playoff columns (said); ESPN through the same seam, unverified; Yahoo pending. A league
+   with no readable outlook keeps the rankings + one line why.
+3. **Assumptions + a check — done.** The screen says once: rosters as today, best lineups, known injuries only, the
+   further out the wider; "Context, not a graded forecast"; "No title odds". **Replay** of 2024 + 2025 (both house
+   leagues, 44 teams) from weeks 5 / 8 / 11 with what was known then (standings before, rosters that week, each player's
+   walk-forward projection that week held flat — the old rest-of-season board is not stored —, byes, K/DEF at their
+   ppg, the real pairings; the chain's 2026 cv; no injuries): **Brier 0.179 from week 5** (flat spots/teams 0.245,
+   today's standings order 0.273), 0.139 from week 8, 0.089 from week 11. Buckets (132, not independent): 0–10% 3% → 0/22;
+   10–30% 21% → 19%; 30–50% 39% → 22%; 50–70% 62% → 80%; 70–90% 79% → 76%; 90–100% 96% → 10/10. The drift (0 / 3 / 6%)
+   is invisible in it (0.135 / 0.136 / 0.137). **Self-consistency**: odds sum to the spots, top seed to 1 (tests);
+   clinched reads 100%, eliminated 0% (test); **first week vs `/api/league/week-odds`** on both house leagues' week 5:
+   worst gap **0.45 pts** (Scrubs, 5 games), **0.62 pts** (dynasty, 6 games); a hand-built league held to 1 pt (test).
+   The replay script was QA and is not committed; the method is in METRICS.
+4. **The screen — done.** `/league`: "Power rankings" and "Rest of season" are the first two blocks after the screen's
+   answer line; a table with the team column fixed and the numbers scrolling inside the card at 375 (no page scroll),
+   bars at 1300 (per-week bar, the 10–90% win band with the mean tick, the playoff bar); my team marked (wash + left
+   rule + "(you)"); every column header's ⓘ opens its definition (the Metrics tile's tap pattern). Light and dark.
+5. **Tests — done.** `api/tests/test_in6.py` (17): certain winner, identical teams (equal within 4 SE, same seed same
+   draws), sums to spots / byes, the tie-break, clinched / eliminated, first week vs `lineup_win_probability` (1 pt),
+   14 teams under 2 s, the drift widens later weeks, the gap words, `ref:half` → `needs_league` + bucket `heavy`, both
+   house leagues end to end, cache keyed by league and build, a missing schedule week (rankings stay, the reason names
+   the week), MFL (no playoff odds + reason), the schedule reader (double header, missing week), the house settings from
+   the nightly when Sleeper does not answer. METRICS + 3 registry rows (`power_ranking`, `projected_record`,
+   `playoff_odds`, ol1.0); WORDS § IN-6; e2e `web/e2e/in6` (6: 375 + 1300, dark + light).
+
+**Not done**: movement arrows (not honestly computable — see 1); title odds (bracket not simulated); ESPN / Yahoo not
+exercised (no fixture with a full schedule); the replay is a proxy (flat projections, no injuries, cv borrowed).
+
+#### Files
+
+New: `api/league_lab_api/outlook.py`, `api/tests/test_in6.py`, `api/tests/fixtures/make_in6_schedule.py` + 27
+**synthetic** `api/tests/fixtures/sleeper/matchups_<league>_<6..14>.json` (a round robin, NOT the leagues' real
+schedules — the fixture API can then show the outlook), `web/src/components/league/Outlook.svelte`, `…/league/outlook.ts`,
+`web/e2e/in6/fixtures.spec.ts`, `web/fixtures/in6/outlook_*.json` (recorded from the fixture API, timings dropped),
+`docs/handbacks/in6/*.png`. Edited (mine): `web/src/routes/League.svelte`, `docs/METRICS.md`,
+`dbt/seeds/metric_registry.csv` (seed edit only, no dbt run). **`decisions.py` is not touched** (outlook reads its
+`STANDINGS_SQL`, `od_league_marts`, `trade_context`, `window_board`).
+
+**Edits outside my files** (marked `IN-6`): `api/league_lab_api/main.py` (router include after IM-5's block, before the
+SPA fallback — it must stay above `api_404`), `api/league_lab_api/ratelimit.py` (`HEAVY_EXACT |= {"/api/league/outlook"}`
+after `LEAGUE_SETUP`), `web/src/lib/api.ts` (types + `outlookPath` at the end), `docs/WORDS.md` (section before "Adding to
+it"), `CHANGELOG.md` (created `## 2026-10-06 — Wave I-N` above the hotfix, one bullet). Shared fixtures: new files only.
+
+**Interface** `GET /api/league/outlook?league=&team=&source=` → `{league_id, season, version "ol1.0", played_weeks,
+roster_id, power: {rows[{roster_id, team_name, manager_name, rank, per_week, wins, losses, ties, standing, points_for,
+points_for_rank, points_against, points_against_rank, gap_words, schedule_left, schedule_left_rank, schedule_left_games,
+mine}], weeks, span, words, note, movement: null, movement_note}, outlook: {available, reason, weeks, seasons,
+playoff_teams, playoff_week_start, byes, tiebreak, playoff_reason, assumptions[4], drift, shrink, first_week[{week, a, b,
+p, p_raw}], first_week_number, rows[{roster_id, wins_mean, wins_p10, wins_p90, games_left, wins_left_mean,
+points_for_mean, playoff, top_seed, bye, rank_mean, status, mine}]}, definitions{8}, timings_ms}`. `ref:*` → 404
+`needs_league`; unknown team → 404; `source` other than `sleeper` → 400.
+
+#### Numbers (this box: 2 cores, six devs, load 2–3 while measured)
+
+Simulation alone (10,000 seasons): 12-team house leagues **0.36–0.45 s cold**; a 14-team synthetic league 0.22–0.25 s
+(test budget 2 s). Whole answer cold: Scrubs 1.0 s, dynasty 1.7 s, MFL 70587 7.1 s (6.2 s = the on-demand rest-of-season
+board, the same the trade screens build and memoize); warm < 1 ms. Answer ~10 KB.
+
+#### Commands
+
+`uv run pytest -q api/tests/test_in6.py` (17 passed, 14.5 s) · `api/tests/test_im3.py` (63 passed) ·
+`uv run pytest -q tests/test_metric_registry.py` (3 passed) · `uv run ruff check src app tests api` (clean) ·
+`scripts/copy_standard.py --check` (clean) · `cd web && npm run lint && npm run build` (clean) ·
+`FIXTURES_PORT=8760 npx playwright test --config playwright.fixtures.config.ts e2e/in6` (6 passed); also the League
+screens' existing e2e (`e2e/decisions -g "league: luck"`, `e2e/ic4`, `e2e/ih3`: 20 passed — there the outlook call has no
+recording and the block shows its 404 line; nothing asserts its absence).
+
+#### The PO lines I need
+
+* `app/whats_new.md`: "- **League: power rankings and the rest of the season.** Every team ranked by what its best
+  lineup should score per week from here, and the season played out 10,000 times: projected record, playoff odds, top
+  seed. Context, not a promise: it says what it assumes."
+* docs/STATUS.md / HANDOFF.md: the Wave I-N line (route, region `outlook`, the synthetic schedule fixtures).
+* Live check after deploy: `/api/league/outlook?league=1389709692405551104&team=2` — confirms Sleeper's
+  `/matchups/<week>` answers future weeks with pairings (assumed, not verifiable here); if a future week comes back
+  empty the screen says "the schedule for week N is not available from the league".
+
+#### Seen, not mine
+
+* Sandbox: `mart_league_standings` counts 3 games while `fct_league_matchup` has week 4 points, the board's `this_week`
+  is 5 and the pinned clock's decision week is 4 — the outlook treats week 4 as the first week (all games in, at their
+  points). The on-demand fixture league (last_scored_leg 2, decision week 4) gets "week 3's results are not final yet".
+* `platforms.py` MFL: `playoff_teams = min(2**rounds, n)` — for 70587 (4 playoff weeks) that is all 12 teams; any screen
+  reading it as a fact is misled (I do not).
+* MFL fixture `liveScoring_4.json`: most week-4 starters read as played with 0 points, so `/api/league/week-odds` shows
+  several 50% "games" (both sides at 0) — a fixture artifact the outlook reproduces faithfully.
+
+#### Fix round (2026-10-06, branch `fix/IN6` from `integ/IN` `cd56421`; the review's M2, L1, the fan-out)
+
+* **M2 — memory and work.** Seasons by size (`seasons_for`: 10,000; 4,500 for 32 × 10 × 11; 2,000 for 32 × 24 × 17;
+  never under 1,000; `outlook.seasons` and the screen say the number run). Chunks with tallies (wins histogram in
+  halves, place counts, summed points for); the first week drawn in ~64k-number chunks into team totals only; the
+  copula rooted per NFL game; one vectorised quantile step per knot set (`ppf_group`, equal to `Predictive.ppf` to
+  1e-14). Checks before any draw (teams ≤ 32, weeks ≤ 18, starters ≤ 30 → the reason; the range rule). One simulation
+  at a time per process (`_SIM`, 5 s wait, then 429 `busy` in plain words, nothing cached; the screen retries 3 × 3 s).
+  Peak MB / s (tracemalloc, load ~0.2), first week + rest: 12×10×11 **7 / 0.20 + 4 / 0.11** (was 37 / 0.16 + 50 / 0.10);
+  32×10×11 **7 / 0.30 + 4 / 0.19** (was 100 / 0.52 + 134 / 0.30); 32×24×17 **7 / 0.71 + 4 / 0.17** (was 249 / 1.53 + 208 / 0.44).
+* **L1 — the key.** `outlook()` canonicalises with `A.check_id` (= `platforms.check_key`) before `D.house` and the cache
+  key; a key naming no league is 404. Test: `%20`-, tab- and newline-padded Scrubs ids → the same answer, one build.
+* **Fan-out.** Schedule kept 6 h per league (`memo` region `outlook_schedule`, ≤ 256), read through the provider client
+  (the week's odds' matchups cache). Provider calls for a cold Scrubs outlook: 12 (settings + weeks 4–14) before and
+  after on the first; a second cold one inside the 6 h: **0** (was 12 once the client's 5-minute matchups cache expired).
+* `ratelimit.py`'s comment says what is true (up to 10,000 seasons, fewer in a big league, one at a time).
+* Checks: `test_in6.py` 25 passed (8 new); `test_im3.py` 63 passed; ruff, copy standard, lint, build clean; e2e in6 +
+  the League specs (ic4, ih3, decisions "league: luck") 24 passed. First week vs `/api/league/week-odds` (week 5): worst
+  0.62 pts (Scrubs), 0.82 (dynasty). Chunked vs before on the same inputs and seed: largest playoff change 1.5 pts
+  (Scrubs), 1.2 (dynasty), mean wins 0.06, P10/P90 unchanged.
+* Seen on `integ/IN`, not mine: the house boards now start at week 4 (span "weeks 4–16"; was 5–16 on `dev/IN6`), so the
+  power numbers moved by up to ±2 per week from the merged tree, not from this round; `tests/test_metric_registry.py`
+  fails on `mb1.0` (IN-3's METRICS section has no registry row).

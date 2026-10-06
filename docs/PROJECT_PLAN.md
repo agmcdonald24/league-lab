@@ -452,7 +452,7 @@ opponent's total under the overlay; v3.1 (expected-bonus pricing, the fringe lev
 2. *Make the main navigation match the tasks*: My Team · Waivers · Trades · Players, with player search always
    available. "Decisions" hides two of the most valuable features; put the weekly lineup and season planning within
    My Team; Trends, Matchups and receiving analytics within Players; move About out of the primary navigation.
-3. *Make My Week distinguish an actual change from reassurance*: a status per call — Change needed, Already set,
+3. *Make My Week distinguish an actual change from reassurance*: a status per call — Change needed ("Roster alert" since Wave I-N), Already set,
    Close call. The default card = the recommendation, its strength, one reason, a Compare button; ranges and detail
    behind "Why?". The current cards repeat names and overlapping numbers.
 4. *Extend the research pane pattern*: open the pane from lineup rows, waiver candidates and trade lists; the full
@@ -597,6 +597,28 @@ cite them); the validation harness (`ops.lineup_record` frozen at kickoff, `mart
 regret, the coin flips' calibration, news-affected cases; the first numbers are small-sample and unflattering, said
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
+
+### Iteration 24 — Wave I-N (2026-10-06, Tuesday 09:20 – 13:00 ET; the daytime build)
+
+Andrew, walking the public site with no league the morning Wave I-M went live: a home page and a blog "so I can start
+writing and sharing analysis", the trade calculator and a player value without a league with scoring choices,
+matchups laid out player by player with a search, DFS that does not start with an upload and looks "beyond what the
+model can provide for. Like cornerback matchups", the league-setup screen on a desktop, My Week's words, a Team screen
+that was "not loading", League power rankings and rest-of-season projections, and 2 GB of memory. **The hotfix
+first** (`967b2d9`: Team was blank for a roster with two open spots — both rows carried the id `"nan"`). Six devs:
+**IN-1** the home (`/home`; `/` without a remembered league), `/leagues` with the results beside the form, the blog
+(markdown files in `blog/`, RSS, sitemap, link previews; `docs/BLOG.md`); **IN-2** 160 reference keys (PPR / Half /
+Standard / ESPN / Yahoo × superflex × TE premium × 6-point TD × league size), the scoring picker, a value for every
+player without a league (rv1.0), `GET /api/trade-calc/free`; **IN-3** the matchup board (`GET /api/matchups/board`,
+`matchup_board.matchup_context`); **IN-4** DFS with no file (context chips: matchup, role trend, game environment —
+each marked in or not in the projection; "Worth a look"; published slates in `dfs/slates/`; stacks and exposure);
+**IN-5** open spots as their own roster alert, "Roster alert" / "News feed", collision-proof list keys and
+`<svelte:boundary>` on every screen; **IN-6** `GET /api/league/outlook` (power rankings on one stated metric; up to
+10,000 simulated seasons: projected record, playoff odds, top seed; a 2024–25 replay: Brier 0.179 vs 0.245 flat).
+An independent security review (nothing High; two Mediums, five Lows — all fixed). `render.yaml` `plan: standard`.
+Acceptance and evidence: `docs/STATUS.md` § "Wave I-N". **Next**: the live checks; a salary source for DFS (a weekly
+file or a licensed feed — Andrew's call); a blog editor; a weather relation for DFS; movement arrows and title odds;
+one clock for every read path; grade "Worth a look"; then Wave I-M's and I-L's lists.
 
 ### Iteration 23 — Wave I-M (2026-10-05/06, Monday night 22:45 – 02:00 ET; the overnight push)
 

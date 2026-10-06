@@ -218,12 +218,56 @@ off] · `LEAGUE_LAB_CPU_WAIT_S` [20] · `LEAGUE_LAB_USAGE_PER_HOUR` [1200] · `L
 `LEAGUE_LAB_MAX_UPLOAD_KB` [2048], `LEAGUE_LAB_CSP` [on]. `/api/status` → `ratelimit` adds `coarse`, `all_clients`,
 `cpu` and `usage`.
 
+## 12. Wave I-N: the new routes, a second independent review, its fix round (2026-10-06)
+
+Wave I-N (docs/STATUS.md § "Wave I-N") added a home page, a blog, 160 reference scoring keys, a trade calculator
+without a league, the matchup board, published DFS slates with stacks, and the League outlook. A seventh agent that
+wrote none of it reviewed the merged tree (`cd56421`) on fixtures with the limiter off to measure raw cost.
+
+**Every new route and its bucket** (`ratelimit.bucket_for`):
+
+| Route | Bucket | Cost, measured |
+|---|---|---|
+| GET `/api/blog`, `/api/blog/{slug}`, `/blog/rss.xml`, `/blog/img/{name}`, `/sitemap.xml` | read | 2–3 ms (the index is cached hourly) |
+| GET `/{path}` (the page shell, now with per-path meta tags) | not limited, as before | one stat + string joins |
+| GET `/api/trade-calc/free` | research (heavy for a league this process has not seen → 400) | 0.6–1.7 s cold per scoring, 10–20 ms warm |
+| GET `/api/matchups/board` | research (heavy for an unseen league) | 0.6 s cold, 15–19 ms warm; 435 KB at `limit=100` |
+| GET `/api/dfs/slates`, `/api/dfs/slate/{id}` | research | 3–4 ms; one build per slate, then cached (16 × ~1.4 MB) |
+| POST `/api/dfs/lineups` (+ `slate_id`, stacks, exposure) | heavy | 3.7–4.1 s with every option on 768 players, +10 MB; one at a time |
+| GET `/api/league/outlook` | heavy + needs a league | 0.7 s cold for a 12-team house league; 7 MB + 4 MB at every size; one simulation at a time |
+
+**Findings and fixes** (nothing Critical or High; Wave I-M's two High fixes — the parser limits, the solver's budget
+and one-at-a-time lock — still hold):
+
+| # | Finding (severity) | Fixed by |
+|---|---|---|
+| M1 | `GET /api/dfs/slates` rebuilt every offered slate on every call once more than 4 were offered (a 4-entry cache under a 16-file limit: 3.0 s / 1.3 s / 1.4 s per call with 8 files, each holding the DFS lock and a CPU slot). Dormant: `dfs/slates/` ships empty | the listing never builds a slate — the matched / unmatched counts come from one match per file, kept with the file; the built-slate cache holds `MAX_PUBLISHED` (16). A test: 8 files, three listings, 0 builds |
+| M2 | A cold `/api/league/outlook` grew with league size (32 teams × 24 starters × 17 weeks: 249 MB + 210 MB, 1.5 s), drew before checking it could answer, and four could run at once; ~15–20 provider calls per unknown league | simulated in chunks keeping tallies only (7 MB + 4 MB at every size); the season count capped by size (10,000 → 2,000 for the largest; the number run is in the answer); every check before any draw; one simulation at a time (wait 5 s, then 429 `busy`); hard limits (32 teams, 30 starters, 18 weeks: the rankings still answer); the schedule cached 6 h per league (a second cold build: 12 calls → 0) |
+| L1 | The outlook's cache key and house check used the raw `league` string (`…%20`, a tab: a fresh build each, and a padded house id took the on-demand path) | `A.check_id` first; a key that names no league is 404 |
+| L2 | The matchup board's 24-entry region held both the per-scoring boards and the week-wide entries (cycling 20 scorings evicted the week) | the week-wide entries have their own region (`matchup_week`, 8 entries) |
+| L3 | `myweek`'s chain check in the pairing loop scaled badly with starting slots (45 slots: 1.9 s) | Hall's condition over position kinds, memoised per call; direct eligibility only above 24 slots (45 slots: 0.01 s) |
+| L4 | `_published_pool` ran on the event loop (18 ms) | in the threadpool |
+| L5 | `re.match` + `$` accepted a trailing newline in the blog's slug and picture name and the slate id (harmless: an exact lookup followed) | `fullmatch` everywhere; tests with `\n` and `%0a` |
+
+**Checked and sound as built**: the page shell (the path only selects from a fixed set or a slug in the post index;
+every value escaped; `/blog/%22%3E%3Cscript%3E…`, an encoded CR/LF and `..%2f` give the default, the blog's preview
+or 404; the CSP header and the inline-script hash intact); blog pictures (traversal, `.svg`, symlinks, the resolved
+folder, the first bytes, 2 MB); the blog's limits (300 posts of 200 KB, drafts off unless
+`LEAGUE_LAB_BLOG_DRAFTS=on` — **never set it on Render**); `mdDoc` (escape-first; links only in-app or https to the
+allow-listed hosts; pictures only from `/blog/img/`; placeholders cannot be forged; a link's target with a
+placeholder in it is not made a link); the reference keys (exactly 160 parse; caches use the canonical key; at most
+20 priced scorings); the free calculator (ids `^00-\d{7}$`, ≤ 6 a side, parameterised SQL); the board's `q=` (a
+pandas substring, `%` and `_` are text; `limit` 1–100, `offset` ≤ 5,000); the slate id (looked up in what was read,
+never joined to a path); the crash card (a fixed sentence; analytics gets the route's name from a closed set).
+New environment variables: `LEAGUE_LAB_BLOG_DIR`, `LEAGUE_LAB_BLOG_DRAFTS`, `LEAGUE_LAB_DFS_SLATES` — none is set on
+Render.
+
 ## What is left, by severity
 
 | Severity | Item | Where |
 |---|---|---|
 | Medium | Verify the limiter's keying live (§ 2, two curl lines) before trusting the numbers | the PO, after the deploy |
-| Medium | Provider budgets are global: many addresses opening unknown leagues spend Sleeper's / MFL's budget for everyone ("busy") | `sleeper_client` / `mfl_client` buckets |
+| Medium | Provider budgets are global: many addresses opening unknown leagues spend Sleeper's / MFL's budget for everyone ("busy"). Wave I-N's League outlook reads a league's remaining weeks (~12–20 calls on its first build; cached 6 h after) — the same budget, reached with fewer requests | `sleeper_client` / `mfl_client` buckets |
 | Low | `--forwarded-allow-ips='*'` makes `request.client` client-written on Render; nothing in the app trusts it now, but a future reader would | `api/Dockerfile` (the PO): keep, and say so in the Dockerfile's comment, or set Render's proxy range if Render publishes one |
 | Low | Other clients follow redirects anywhere (only their fixed hosts could send one) | `sleeper_client`, `espn_client`, `yahoo_client`, `news_feed`, `injury_feed` |
 | Low | `/api/status` and `/api/usage/summary` are public: operational numbers (memory, cache ages, counts) — no secret, no league id | consider a token for them later |
