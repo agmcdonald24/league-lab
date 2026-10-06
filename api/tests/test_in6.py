@@ -237,3 +237,29 @@ def test_myfantasyleague_has_no_playoff_odds_and_says_why(client):
         assert all(r["playoff"] is None and r["bye"] is None for r in ol["rows"])
     else:
         assert ol["reason"]
+
+
+def test_the_schedule_reader_keeps_double_headers_and_names_the_missing_week():
+    class Fake:
+        def matchups(self, lid, w):
+            if w == 7:
+                return []
+            # a double header: roster 1 plays 2 (matchup 1) and 3 (matchup 2); a bye row has no matchup_id
+            return [{"roster_id": 1, "matchup_id": 1}, {"roster_id": 2, "matchup_id": 1}, {"roster_id": 1, "matchup_id": 2},
+                    {"roster_id": 3, "matchup_id": 2}, {"roster_id": 4, "matchup_id": None}]
+    games, missing = O.schedule(Fake(), "x", [5, 6])
+    assert missing is None and games[5] == [(1, 2), (1, 3)]
+    games, missing = O.schedule(Fake(), "x", [5, 6, 7, 8])
+    assert missing == 7 and set(games) == {5, 6}
+
+
+@needs_db
+def test_sleeper_not_answering_the_house_league_reads_its_settings_from_the_nightly(client, monkeypatch):
+    from league_lab import anyleague as A
+    O._cache.clear()
+    def down(self, lid):
+        raise A.SleeperUnavailable("down")
+    monkeypatch.setattr(type(A.sleeper()), "league", down)
+    ins = O._league_inputs(SCRUBS, True)
+    assert ins["lg"]["settings"]["playoff_week_start"] == 15 and ins["lg"]["settings"]["playoff_teams"] == 4
+    O._cache.clear()

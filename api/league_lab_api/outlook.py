@@ -349,6 +349,9 @@ def _standings_frame(st: pd.DataFrame, names: Mapping[int, dict]) -> pd.DataFram
     return pd.concat([f, pd.DataFrame(extra, columns=cols)], ignore_index=True) if extra else f
 
 
+DIM_SQL = "select playoff_week_start, playoff_teams from analytics.dim_league_season where league_id = %s"
+
+
 def _league_inputs(league_id: str, is_house: bool) -> dict:
     """The league's settings, names, standings so far and the provider's key: {"lg", "lid", "names", "standings",
     "played" (the last week counted in the standings), "season"}."""
@@ -362,6 +365,11 @@ def _league_inputs(league_id: str, is_house: bool) -> dict:
             lg = client.league(A.check_id(league_id)) or {}
         except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
             lg = {}
+        if not (lg.get("settings") or {}).get("playoff_week_start"):     # Sleeper not answering: the nightly's copy
+            ls = query(DIM_SQL, (league_id,))
+            if not ls.empty and pd.notna(ls["playoff_week_start"].iloc[0]):
+                got = {k: int(ls[k].iloc[0]) for k in ("playoff_week_start", "playoff_teams") if pd.notna(ls[k].iloc[0])}
+                lg = {**lg, "settings": {**(lg.get("settings") or {}), **got}}
         return {"lg": lg, "lid": str(league_id), "names": names, "standings": _standings_frame(st, names),
                 "played": played, "season": int(cards.league_season(league_id))}
     lg, rosters, users = D._sleeper_league(league_id)
@@ -511,6 +519,10 @@ def _build(league_id: str, is_house: bool, source: str | None, seasons: int) -> 
                 if missing is not None:
                     reason = f"the schedule for week {missing} is not available from the league"
                 else:
+                    for w in remaining:                       # the schedule left (power rankings' column)
+                        for a, b in games.get(w, ()):
+                            left_games.setdefault(a, []).append(b)
+                            left_games.setdefault(b, []).append(a)
                     sides, why = week_sides(lid, is_house, season, w0, rids)
                     if sides is None:
                         reason = why
@@ -543,10 +555,6 @@ def _build(league_id: str, is_house: bool, source: str | None, seasons: int) -> 
                             byes = byes_for(spots)
                             wins0 = {r: rec[r][0] + 0.5 * rec[r][2] for r in rids}
                             res = play_out(rids, remaining, tot, games, wins0, pf, spots, byes)
-                            for w in remaining:
-                                for a, b in games.get(w, ()):
-                                    left_games.setdefault(a, []).append(b)
-                                    left_games.setdefault(b, []).append(a)
                             flags = clinch_flags(rids, wins0, {r: len(left_games.get(r, [])) for r in rids}, spots) if spots else {}
                             for r in rids:
                                 row = {"roster_id": r, **res["teams"][r], "status": flags.get(r)}
