@@ -49,6 +49,14 @@ paid DFS data provider) or each site's written permission, a store for the salar
   First Name and Last Name (FanDuel). The first row has: …"), a missing column, over **1 MB**, over **2,000 rows**, not
   text, no player readable. A row with an id that is not a site id (`=1+1`), an unknown position or a salary that is
   not a number is **skipped and listed** with its row number and reason.
+* **Bounded work (the security review, IM-5 fix)**: before parsing, a line with over 400 commas is refused; after it, a
+  row over **200 columns** (`MAX_COLS`) or a cell over **300 characters** (`MAX_CELL`); the header is searched in the
+  first 15 rows, a block tried only where a known header word (`HEADER_WORDS`) follows an empty cell — linear in the
+  file. The review's body (`"a,,"` repeated to 1 MB) is refused in milliseconds (it took ~1,000 s before).
+  A body over the server's Guard limit (`LEAGUE_LAB_MAX_UPLOAD_KB`, 2 MB on `/api/dfs/`) is refused by the Guard (413
+  "That is more than this server takes in one request."); between 1 MB and that limit, by the route (413 "… under 1
+  MB"); the screen shows one sentence for either: "That file is too big: a salary file is under 1 MB. …" (and refuses a
+  file or a paste over 1 MB before sending it).
 * **Formulas**: a cell like `=cmd|' /C calc'!A0` is text to us, never evaluated; the CSV we **produce** prefixes any
   cell starting with `=`, `+`, `-`, `@`, a tab or a carriage return with an apostrophe (`dfs.safe_cell`, OWASP's rule).
 * **Unverified until Andrew uploads a real file**: the exact header spellings; whether DraftKings' `Name` for a
@@ -171,13 +179,24 @@ points per $1,000, 4.55 high-end per $1,000. Reason: "Olave's share of the targe
 * **Always in / Leave out** from the table (the brief's locks and excludes; the screen never says "lock"). **Players
   who cannot play** (the availability overlay, else the nightly's injury report, else the file's own FanDuel indicator:
   O, IR, D, NA) are left out unless set to "Always in", and listed under the lineups.
-* **Time box**: 1 second per lineup (`SOLVE_SECONDS`, HiGHS' `time_limit`). On timeout the best lineup found so far is
-  returned with `proven: false` and the card says "The solver's 1-second budget ran out: the best lineup it found, not
-  proven the best."; if none was found the search stops and says so. Measured on this sandbox (2 cores, five devs
-  building at once; the synthetic 597-player DraftKings slate): the first lineup 0.1–0.3 s; 20 cash lineups 4–13 s in
-  all (median 0.4–0.7 s each, 16–20 of 20 proven), 20 tournament lineups ~13–18 s (7–18 of 20 proven); FanDuel's
-  four-per-team rule makes the 3rd–5th tournament lineups reach the 1-second box. Render's Starter has half a CPU:
-  expect about twice that — the reason both POSTs are `heavy` in IM-3's limiter.
+* **Time box (IM-5 fix)**: **5 seconds for all the lineups of one request** (`SOLVE_SECONDS`, shared by the solves:
+  each gets what is left). A solve cut short returns its best lineup with `proven: false` (the card: "The solver's
+  budget ran out: the best lineup it found, not proven the best."); the lineups found before the budget ran out are
+  returned and the notes say "The 5-second budget ran out after 14 lineups: those are the ones shown." The matrix is
+  built once as `scipy.sparse` (a few nonzeros a row); each next lineup adds one sparse row.
+* **Limits, checked before any solve** (`api/league_lab_api/dfs.py` `_lineups_in`; `dfs.MAX_*`): at most **800 players**
+  (a full Sunday main slate is ~600 rows on DraftKings; 800 leaves room for a Sunday-to-Monday slate), **16 games and 32
+  teams** (a showdown: 1 game, 2 teams), ids and keys ≤ 40 characters, names ≤ 80, salaries in (0, 100,000], captain
+  salaries in (0, 150,000], projections / low-end / high-end finite and in [−20, 150], ≤ 9 players always in. The
+  screen sends only the players who can play (or are set always in), the highest projected first past 800.
+* **One at a time, off the event loop**: both POSTs run in the thread pool behind a process-wide semaphore of one. A
+  second DFS request waits up to 2 seconds, then answers **429** `{"code": "busy", "error": "Another lineup is being
+  built right now. Try again in a few seconds.", "retry_after_s": 5}` (`Retry-After: 5`); the screen shows the words.
+* **Measured (IM-5 fix, this sandbox under load)**: 800 players × 16 games, 1 lineup: 0.12 s, +8 MB peak RSS; 600
+  players, 20 lineups: DraftKings 4.81 s (20 of 20, all proven), +13.5 MB; FanDuel 5.00 s (the budget: 14 lineups, 13
+  proven), +31 MB; the review's 2,000-player request: refused in 7 ms before any solve (it took 42 s and 437 MB before).
+  A maximal legitimate upload (2,000 rows, 0.2 MB): 0.49 s of CPU cold, 0.27 s warm, +28 MB (matching is dictionary
+  lookups, the fit a least-squares line per position: both linear).
 * **The lineup's range**: the low-end / high-end outcome of the total if the players' weeks were independent (each
   player's spread from his own P10–P90 as a normal, the variances added). Teammates and opponents are not independent
   (a shootout lifts both): the real range is wider, and the card says so.
@@ -193,8 +212,8 @@ browser (`isuckatfantasy-<contest>-<n>-lineups.csv`).
 
 | Route | In | Out | Limiter (IM-3's terms; `dfs.RATE_BUCKETS`) |
 |---|---|---|---|
-| `GET /api/dfs/projections?site=dk\|fd&week=&position=&limit=` | — | `{site, site_name, season, week, players: [{key, gsis_id, player_name, position, team, opponent, proj, p10, p25, p75, p90, status, out, matchup}], reference, scoring, bonus_at_odds}` (a team on a bye left out; default week: the app's week rule) | `read` |
-| `POST /api/dfs/slate?week=` | the file's text (`text/csv`, or JSON `{"text": …}`) | `{site, contest, contest_label, cap, season, week, games, players: [...], unmatched, skipped, matched_by, counts, fit: {position: {slope_per_1000, intercept, n, rmse, words} \| null}, undervalued: [keys], overpriced: [keys], notes, scoring, bonus_at_odds}`; the week = the one whose games the file lists (`dfs.detect_week`), else `?week=`, else this week | `heavy` |
+| `GET /api/dfs/projections?site=dk\|fd&week=&position=&limit=` (week: this week or the next only, else 400 `bad_week`) | — | `{site, site_name, season, week, players: [{key, gsis_id, player_name, position, team, opponent, proj, p10, p25, p75, p90, status, out, matchup}], reference, scoring, bonus_at_odds}` (a team on a bye left out; default week: the app's week rule) | `read` |
+| `POST /api/dfs/slate?week=` | the file's text (`text/csv`, or JSON `{"text": …}`) | `{site, contest, contest_label, cap, season, week, games, players: [...], unmatched, skipped, matched_by, counts, fit: {position: {slope_per_1000, intercept, n, rmse, words} \| null}, undervalued: [keys], overpriced: [keys], notes, scoring, bonus_at_odds}`; the week = `?week=`, else the one whose games the file lists (`dfs.detect_week`), else this week — this week or the next only (else 400 "That file's games are week 11's: DFS shows this week (week 4) and next week (week 5) only.") | `heavy` |
 | `POST /api/dfs/lineups` | `{contest, players (as returned), locks, excludes, mode: cash \| tournament, n: 1–20}` | `{lineups: [{slots: [{slot, key, multiplier, salary, proj, upload_id, name, position, team, gsis_id}], salary, salary_left, proj, ceiling_sum, low, high, proven, mode}], notes, solve_ms, left_out, upload_csv, filename}` | `heavy` |
 
 No league and no team on any route; `require_auth` like every data route (the gate keeps working either way).

@@ -56,7 +56,7 @@
     {:else}
       No range: a player has no low-end or high-end outcome.
     {/if}
-    {#if !lineup.proven}<br />The solver's 1-second budget ran out: the best lineup it found, not proven the best.{/if}
+    {#if !lineup.proven}<br />The solver's budget ran out: the best lineup it found, not proven the best.{/if}
   </p>
   <button type="button" class="mt-2 min-h-9 rounded-md border border-line-strong px-3 text-sm font-semibold text-ink-2 hover:text-ink" onclick={copy} data-testid="dfs-copy"
     >{copied ? "Copied" : "Copy"}</button

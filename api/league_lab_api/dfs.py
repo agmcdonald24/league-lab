@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import math
+import threading
 from typing import Any
 
 import pandas as pd
@@ -26,6 +27,7 @@ from fastapi.responses import JSONResponse
 from league_lab import anyleague as A
 from league_lab import dfs as D
 from league_lab import memo
+from starlette.concurrency import run_in_threadpool
 
 from . import availability
 from .applib import cards, ui
@@ -35,6 +37,34 @@ router = APIRouter()
 RATE_BUCKETS = {"/api/dfs/slate": "heavy", "/api/dfs/lineups": "heavy", "/api/dfs/projections": "read"}
 NO_STORE = {"Cache-Control": "no-store"}
 _priced = memo.region("dfs", ttl=600.0, max_entries=8)
+# ---- IM-5 fix (the security review): DFS work (parsing a file, pricing, solving) runs in the thread pool, never on the
+# event loop, and ONE at a time per process: a second request waits up to BUSY_WAIT_S, then answers 429 `busy`
+_WORK = threading.Semaphore(1)
+BUSY_WAIT_S = 2.0
+BUSY_WORDS = "Another lineup is being built right now. Try again in a few seconds."
+LIMIT = {"str": 40, "name": 80}                 # the longest id / key, team-game string, name a request may carry
+PROJ_RANGE = (-20.0, 150.0)                     # a projection, low-end or high-end outcome outside it is not ours
+
+
+class Busy(Exception):
+    pass
+
+
+def _busy() -> JSONResponse:
+    return JSONResponse({"error": BUSY_WORDS, "detail": BUSY_WORDS, "code": "busy", "retry_after_s": 5},
+                        status_code=429, headers={**NO_STORE, "Retry-After": "5"})
+
+
+async def _one_at_a_time(fn, *args, **kw):
+    """``fn`` in the thread pool behind the process-wide DFS semaphore (a bounded wait, then ``Busy``)."""
+    def run():
+        if not _WORK.acquire(timeout=BUSY_WAIT_S):
+            raise Busy
+        try:
+            return fn(*args, **kw)
+        finally:
+            _WORK.release()
+    return await run_in_threadpool(run)
 
 SCHEDULE_SQL = """select week, home_team, away_team, kickoff_at from analytics.dim_game
                   where season = %s and season_type = 'REG'"""
@@ -83,13 +113,18 @@ def _site(site: str) -> str:
 
 
 def _season_week(week: int | None) -> tuple[int, int]:
+    """The week asked, which must be this week (the app's week rule) or the next one: any other answers 400 in words
+    (each week priced is ~0.4-1 s of CPU, and the memo keeps 8)."""
     season = ui.current_season()
     if season is None:
         raise Bad("The numbers are not ready yet. Try again in a few minutes.", "not_ready", 503)
-    w = int(week) if week is not None else cards.decision_week(int(season))
-    if w is None or not 1 <= int(w) <= 22:
+    now = cards.decision_week(int(season))
+    if now is None:
         raise Bad("No week to show: the regular season is over.", "no_week", 404)
-    return int(season), int(w)
+    w = int(now) if week is None else int(week)
+    if w not in (int(now), int(now) + 1):
+        raise Bad(f"DFS shows this week (week {now}) and next week (week {int(now) + 1}) only.", "bad_week")
+    return int(season), w
 
 
 def priced(site: str, season: int, week: int) -> pd.DataFrame:
@@ -294,20 +329,32 @@ async def _body_text(request: Request) -> str:
 async def slate(request: Request, week: int | None = Query(default=None)):
     try:
         text = await _body_text(request)
-        sl = D.parse(text)
-        del text                                         # nothing of the file is kept past this request
-        season = ui.current_season()
-        if season is None:
-            raise Bad("The numbers are not ready yet. Try again in a few minutes.", "not_ready", 503)
-        sched = query(SCHEDULE_SQL, (int(season),))
-        found = D.detect_week(sl.games, sched)
-        season, w = _season_week(week if week is not None else found)
+        out = await _one_at_a_time(_slate_work, text, week)
+    except Busy:
+        return _busy()
     except D.SlateError as exc:
         return _err(exc, 413 if exc.code == "too_large" else 400)
     except Bad as exc:
         return _err(exc)
-    out = build_slate(sl, season, w, week_from_file=found is not None and week is None)
     return JSONResponse(_clean(out), headers=NO_STORE)
+
+
+def _slate_work(text: str, week: int | None) -> dict:
+    """The slate's whole answer, in a worker thread (parse, the week, price, match, value, the reasons)."""
+    sl = D.parse(text)
+    del text                                             # nothing of the file is kept past this request
+    season = ui.current_season()
+    if season is None:
+        raise Bad("The numbers are not ready yet. Try again in a few minutes.", "not_ready", 503)
+    sched = query(SCHEDULE_SQL, (int(season),))
+    found = D.detect_week(sl.games, sched)
+    try:
+        season, w = _season_week(week if week is not None else found)
+    except Bad as exc:
+        if exc.code == "bad_week" and week is None and found is not None:
+            raise Bad(f"That file's games are week {found}'s: {exc}", "bad_week") from exc
+        raise
+    return build_slate(sl, season, w, week_from_file=found is not None and week is None)
 
 
 def build_slate(sl: D.Slate, season: int, w: int, *, week_from_file: bool) -> dict:
@@ -400,27 +447,14 @@ async def lineups(request: Request):
         raw = await request.body()
         if len(raw) > 2_000_000:
             raise Bad("Too many players in the request.", "too_large", 413)
-        body = json.loads(raw.decode("utf-8") or "{}")
-        if not isinstance(body, dict):
-            raise Bad("The request was not a slate.", "bad_request")
-        contest = str(body.get("contest") or "")
-        if contest not in D.CONTESTS:
-            raise Bad("contest is dk_classic, dk_showdown or fd_full.", "bad_contest")
-        ps = body.get("players")
-        if not isinstance(ps, list) or not ps or len(ps) > D.MAX_ROWS:
-            raise Bad("Add the salary file first: no players in the request.", "no_players")
-        players = [_player_in(p) for p in ps]
-        mode = "tournament" if str(body.get("mode") or "cash") == "tournament" else "cash"
-        n = int(body.get("n") or 1)
-        if not 1 <= n <= D.MAX_LINEUPS:
-            raise Bad(f"Build 1 to {D.MAX_LINEUPS} lineups.", "bad_n")
-        locks = [str(x) for x in (body.get("locks") or [])][:9]
-        excludes = [str(x) for x in (body.get("excludes") or [])][: D.MAX_ROWS]
+        contest, players, mode, n, locks, excludes = _lineups_in(raw)
+        res = await _one_at_a_time(D.solve_lineups, players, contest, mode=mode, n=n, locks=locks, excludes=excludes)
+    except Busy:
+        return _busy()
     except (ValueError, TypeError, UnicodeDecodeError):
         return _err(Bad("The request was not a slate.", "bad_request"))
     except Bad as exc:
         return _err(exc)
-    res = D.solve_lineups(players, contest, mode=mode, n=n, locks=locks, excludes=excludes)
     by = {p["key"]: p for p in players}
     out = []
     for lu in res.lineups:
@@ -437,6 +471,45 @@ async def lineups(request: Request):
                 "upload_csv": D.upload_csv(contest, out) if out else None,
                 "filename": f"isuckatfantasy-{contest}-{len(out)}-lineups.csv"}
     return JSONResponse(_clean(body_out), headers=NO_STORE)
+
+
+def _lineups_in(raw: bytes) -> tuple:
+    """The lineups request, checked BEFORE any solve: a contest we know, 1-800 players each well formed, at most 16 games
+    and 32 teams (a showdown: 1 game, 2 teams), 1-20 lineups, the always-in / left-out lists bounded."""
+    body = json.loads(raw.decode("utf-8") or "{}")
+    if not isinstance(body, dict):
+        raise Bad("The request was not a slate.", "bad_request")
+    contest = str(body.get("contest") or "")
+    if contest not in D.CONTESTS:
+        raise Bad("contest is dk_classic, dk_showdown or fd_full.", "bad_contest")
+    ps = body.get("players")
+    if not isinstance(ps, list) or not ps:
+        raise Bad("Add the salary file first: no players in the request.", "no_players")
+    if len(ps) > D.MAX_PLAYERS:
+        raise Bad(f"Too many players for one build: at most {D.MAX_PLAYERS:,} (a full Sunday slate is about 600).",
+                  "too_many_players")
+    players = [_player_in(p) for p in ps]
+    games = {p["game"] or p["team"] for p in players}
+    teams = {p["team"] for p in players}
+    max_g, max_t = (1, 2) if contest == "dk_showdown" else (D.MAX_GAMES, D.MAX_TEAMS)
+    if len(games) > max_g or len(teams) > max_t:
+        raise Bad(f"That is {len(games)} games and {len(teams)} teams: this contest has at most {max_g} game"
+                  f"{'s' if max_g != 1 else ''} and {max_t} teams.", "too_many_games")
+    mode = "tournament" if str(body.get("mode") or "cash") == "tournament" else "cash"
+    n = int(body.get("n") or 1)
+    if not 1 <= n <= D.MAX_LINEUPS:
+        raise Bad(f"Build 1 to {D.MAX_LINEUPS} lineups.", "bad_n")
+    locks, excludes = body.get("locks") or [], body.get("excludes") or []
+    if not isinstance(locks, list) or not isinstance(excludes, list) or len(locks) > 9 or len(excludes) > D.MAX_PLAYERS:
+        raise Bad("At most 9 players always in, and a left-out list no longer than the slate.", "bad_request")
+    return contest, players, mode, n, [_bounded(x, "key") for x in locks], [_bounded(x, "key") for x in excludes]
+
+
+def _bounded(v: Any, what: str, size: int = LIMIT["str"]) -> str:
+    s = "" if v is None else str(v)
+    if len(s) > size:
+        raise Bad(f"A player's {what} is longer than a salary file's.", "bad_player")
+    return s
 
 
 def _num(v, *, name: str, required: bool = False) -> float | None:
@@ -461,11 +534,20 @@ def _player_in(p: Any) -> dict:
     if not 0 < sal <= 100_000:
         raise Bad("A player's salary is out of range.", "bad_player")
     cpt = _num(p.get("cpt_salary"), name="captain salary")
-    return {"key": str(p.get("key"))[:40], "site_id": str(p.get("site_id") or p.get("key"))[:40],
-            "cpt_id": None if p.get("cpt_id") is None else str(p.get("cpt_id"))[:40],
-            "name": str(p.get("name") or p.get("player_name") or "")[:80], "position": pos, "salary": int(sal),
-            "cpt_salary": None if cpt is None else int(cpt), "team": str(p.get("team") or "")[:4] or None,
-            "game": str(p.get("game") or "")[:20] or None, "opponent": str(p.get("opponent") or "")[:4] or None,
-            "gsis_id": str(p.get("gsis_id") or "")[:16] or None, "proj": _num(p.get("proj"), name="projection"),
-            "p10": _num(p.get("p10"), name="low-end outcome"), "p90": _num(p.get("p90"), name="high-end outcome"),
-            "out": bool(p.get("out")), "status": str(p.get("status") or "")[:30] or None}
+    if cpt is not None and not 0 < cpt <= 150_000:
+        raise Bad("A player's captain salary is out of range.", "bad_player")
+    nums = {k: _num(p.get(k), name=w) for k, w in (("proj", "projection"), ("p10", "low-end outcome"),
+                                                   ("p90", "high-end outcome"))}
+    if any(v is not None and not PROJ_RANGE[0] <= v <= PROJ_RANGE[1] for v in nums.values()):
+        raise Bad("A player's projection is out of range.", "bad_player")
+    key = _bounded(p.get("key"), "key")
+    if not key:
+        raise Bad("A player in the request has no key.", "bad_player")
+    return {"key": key, "site_id": _bounded(p.get("site_id") or key, "id"),
+            "cpt_id": None if p.get("cpt_id") is None else _bounded(p.get("cpt_id"), "id"),
+            "name": _bounded(p.get("name") or p.get("player_name"), "name", LIMIT["name"]), "position": pos,
+            "salary": int(sal), "cpt_salary": None if cpt is None else int(cpt),
+            "team": _bounded(p.get("team"), "team", 4) or None, "game": _bounded(p.get("game"), "game", 20) or None,
+            "opponent": _bounded(p.get("opponent"), "opponent", 4) or None,
+            "gsis_id": _bounded(p.get("gsis_id"), "id", 16) or None, **nums,
+            "out": bool(p.get("out")), "status": _bounded(p.get("status"), "status", 30) or None}

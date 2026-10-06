@@ -138,6 +138,7 @@ export interface Lineups {
 }
 
 export const MAX_BYTES = 1_000_000;
+export const MAX_PLAYERS = 800; // ---- IM-5 fix: the lineups route's cap (league_lab.dfs.MAX_PLAYERS)
 
 export const projectionsPath = (site: Site, week?: number | null) => `/api/dfs/projections?site=${site}&limit=1000${week ? `&week=${week}` : ""}`;
 
