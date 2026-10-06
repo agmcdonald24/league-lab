@@ -12,6 +12,7 @@
   import PlayerCardView from "../components/PlayerCard.svelte";
   import SectionBox from "../components/Section.svelte";
   import ScheduleTable from "../components/ScheduleTable.svelte"; // ---- IF-4
+  import { isRef, PANE_FOOT, refLabel } from "../lib/refleague"; // ---- IN-2: browsing without a league
 
   let { gsis, league, team, onauth }: { gsis: string; league: string | null; team: number | null; onauth: () => void } = $props();
 
@@ -19,7 +20,9 @@
   let error = $state<string | null>(null);
 
   const ctx = $derived({ league, team });
-  const home = $derived(withContext("/", ctx));
+  // ---- IN-2: browsing without a league, "home" is Players (My Week needs a league)
+  const browsing = $derived(isRef(league));
+  const home = $derived(withContext(browsing ? "/players" : "/", ctx));
   // the sections in the card's order (lib/card.ts: the research pane shows the same card)
   const sections = $derived(data ? cardSections(data) : []);
   const headLine = $derived(data ? cardHeadLine(data) : "");
@@ -65,7 +68,7 @@
     onclick={() => back(home)}
     data-testid="back"
   >
-    <span aria-hidden="true" class="text-xl leading-none">‹</span>{route.current.depth > 0 ? "Back" : "My week"}
+    <span aria-hidden="true" class="text-xl leading-none">‹</span>{route.current.depth > 0 ? "Back" : browsing ? "Players" : "My week"}
   </button>
 </div>
 
@@ -144,5 +147,11 @@
       </p>
     {/if}
     <Expander title="How to read this" testid="howto"><Md text={howtoWords(data.howto)} {ctx} block class="text-base leading-snug" /></Expander>
+    <!-- ---- IN-2: browsing without a league — the scoring, and one quiet line at the foot -->
+    {#if browsing}
+      <p class="border-t border-line pt-3 text-sm text-ink-3" data-testid="player-foot">
+        Priced in {refLabel(league)}. <a class="ll-link" href="/leagues">{data.foot ?? PANE_FOOT}</a>
+      </p>
+    {/if}
   {/if}
 </main>

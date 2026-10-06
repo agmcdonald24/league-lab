@@ -42,6 +42,20 @@
     { key: "dfs", label: "DFS", screens: [{ name: "dfs", label: "DFS", path: "/dfs" }] },
     // ---- end IM-5
   ];
+  // ---- IN-2 (Wave I-N): the tabs while browsing without a league, in this order (a tab another package adds — Home —
+  // keeps its place in the list; one this list does not name goes last); a screen that needs a team is left out
+  const REF_ORDER = ["home", "players", "trades", "dfs"];
+  const REF_HIDDEN = new Set<string>(["myteam", "waivers"]);
+  const REF_SCREENS_HIDDEN = new Set<string>(["trades", "week", "team", "league", "waivers", "watchlist"]);
+  export function refSections<T extends { key: string; screens: { name: RouteName }[] }>(all: T[]): T[] {
+    const rank = (k: string) => (REF_ORDER.indexOf(k) < 0 ? REF_ORDER.length : REF_ORDER.indexOf(k));
+    return all
+      .filter((s) => !REF_HIDDEN.has(s.key))
+      .map((s) => ({ ...s, screens: s.screens.filter((x) => !REF_SCREENS_HIDDEN.has(x.name)) }))
+      .filter((s) => s.screens.length > 0)
+      .sort((a, b) => rank(a.key) - rank(b.key));
+  }
+  // ---- end IN-2
   export function sectionOf(name: RouteName): Section | null {
     if (name === "receivers") return "players"; // ---- II-3: the role cards sit under Players
     return SECTIONS.find((s) => s.screens.some((x) => x.name === name))?.key ?? null;
@@ -64,7 +78,8 @@
   import { navigate, route, setParams } from "../lib/router.svelte";
   import Picker, { OTHER } from "./Picker.svelte";
   import { account, loadStatus as loadAccount } from "../lib/account.svelte"; // ---- IK-4: the ⋯ menu's Account item
-  import { isRef, REF_KEYS, REF_LABEL } from "../lib/refleague"; // ---- IM-3: the reference picker
+  import { isRef } from "../lib/refleague"; // ---- IM-3: the reference picker
+  import ScoringPicker from "./scoring/ScoringPicker.svelte"; // ---- IN-2: the scoring choices without a league
 
   let {
     options,
@@ -108,10 +123,14 @@
     return s ?? (here === "player" || here === "about" || here === "watchlist" ? lastSection : null); // IL-5: watchlist
   });
   const href = (path: string) => withContext(path, ctx);
+  // ---- IN-2 (Wave I-N): browsing without a league the tab bar reads Home · Players · Trades · DFS — My Team and
+  // Waivers are behind "Open your league" — and Trades is the calculator alone (never the invitation card)
+  const sections = $derived(isRef(league) ? refSections(SECTIONS) : SECTIONS);
+  // ---- end IN-2
   // a tab opens its first screen
-  const tabs = $derived(SECTIONS.map((s) => ({ key: s.key, label: s.label, href: href(s.screens[0].path) })));
+  const tabs = $derived(sections.map((s) => ({ key: s.key, label: s.label, href: href(s.screens[0].path) })));
   // the second row: the screens of the tab on screen (not on a player's page or About: no screen of the row is there)
-  const sub = $derived(SECTIONS.find((s) => s.key === sectionOf(here) && s.screens.length > 1)?.screens ?? []);
+  const sub = $derived(sections.find((s) => s.key === sectionOf(here) && s.screens.length > 1)?.screens ?? []);
 
   // ---- the search field: a player's name → the research pane
   let q = $state("");
@@ -288,25 +307,8 @@
 
     <div class="order-3 min-w-0 flex-1 wide:ml-auto wide:w-[22rem] wide:flex-none xl:order-4 xl:ml-0 xl:w-[20rem]">
       {#if isRef(league)}
-        <!-- ---- IM-3: browsing without a league — "No league · Half PPR ▾" (PPR / Half PPR / Standard) and the way in -->
-        <div class="flex min-w-0 items-center gap-2" data-testid="ref-picker">
-          <label class="flex shrink-0 items-center gap-1 text-sm" for="ll-ref">
-            <span class="hidden shrink-0 text-ink-2 sm:inline">No league ·</span>
-            <span class="sr-only sm:hidden">No league, scoring</span>
-            <select
-              id="ll-ref"
-              class="ll-input w-[7.5rem] shrink-0 py-1.5 text-sm font-semibold"
-              value={league}
-              onchange={(e) => setParams({ league: e.currentTarget.value, team: null })}
-              data-testid="ref-select"
-            >
-              {#each REF_KEYS as k (k)}<option value={k}>{REF_LABEL[k]}</option>{/each}
-            </select>
-          </label>
-          <a href="/leagues" class="inline-flex min-h-10 shrink-0 items-center rounded-md bg-accent px-3 text-sm font-semibold whitespace-nowrap text-on-accent" data-testid="ref-open"
-            >Open your league</a
-          >
-        </div>
+        <!-- ---- IN-2: browsing without a league — the scoring picker ("Half PPR ▾") and the way in (was IM-3's select) -->
+        <ScoringPicker {league} />
       {:else}
         <Picker leagues={options} {league} {rosters} {team} onleague={pickLeague} onteam={pickTeam} />
       {/if}
