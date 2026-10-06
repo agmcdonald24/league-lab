@@ -7,7 +7,38 @@ export const SITES: { key: Site; label: string }[] = [
   { key: "fd", label: "FanDuel" },
 ];
 
-export interface ProjRow {
+// ---- IN-4 (Wave I-N): context beyond the projection (api/league_lab_api/dfs.py context_for; docs/DFS.md § Context)
+export type Tone = "favorable" | "neutral" | "difficult" | null;
+export interface Signal {
+  signal: "defense" | "corner" | "role" | "routes" | "game" | "weather";
+  label: string;
+  tone: Tone;
+  words: string;
+  in_projection: boolean;
+  projection_words: string;
+  trend?: "up" | "down" | null;
+  shutdown?: boolean;
+  certainty?: string | null;
+  implied?: number | null;
+}
+export interface ContextMeta {
+  matchup: boolean;
+  matchup_words: string | null;
+  lines: boolean;
+  forecast: boolean;
+  projection: Record<string, Record<string, boolean>>;
+  in_words: string;
+  out_words: string;
+  words: string;
+  worth_rule: string;
+}
+export interface WithContext {
+  context?: Signal[];
+  worth?: boolean;
+  worth_reasons?: string[];
+}
+
+export interface ProjRow extends WithContext {
   key: string;
   gsis_id: string | null;
   player_name: string;
@@ -34,6 +65,8 @@ export interface Projections {
   reference: string | null;
   scoring: string[];
   bonus_at_odds: boolean;
+  worth_a_look?: Record<string, string[]>;
+  context_meta?: ContextMeta | null;
 }
 
 export interface SlatePlayer extends Omit<ProjRow, "player_name"> {
@@ -96,6 +129,11 @@ export interface Slate {
   notes: string[];
   scoring: string[];
   bonus_at_odds: boolean;
+  worth_a_look?: Record<string, string[]>;
+  context_meta?: ContextMeta | null;
+  published?: boolean;
+  slate_id?: string | null;
+  label?: string;
 }
 
 export interface LineupSlot {
@@ -165,8 +203,55 @@ async function post<T>(path: string, body: BodyInit, type: string): Promise<T> {
 /** The salary file's text → the slate (parsed in one request; the server keeps nothing). */
 export const postSlate = (text: string) => post<Slate>("/api/dfs/slate", text, "text/csv");
 
-export const postLineups = (body: { contest: string; players: SlatePlayer[]; locks: string[]; excludes: string[]; mode: string; n: number }) =>
-  post<Lineups>("/api/dfs/lineups", JSON.stringify(body), "application/json");
+export interface StackRules {
+  with_qb: 0 | 1 | 2;
+  bring_back: boolean;
+  no_def_vs_qb: boolean;
+}
+export const postLineups = (body: {
+  contest?: string;
+  players?: SlatePlayer[];
+  slate_id?: string;
+  locks: string[];
+  excludes: string[];
+  mode: string;
+  n: number;
+  stack?: StackRules | null;
+  max_exposure?: number | null;
+}) => post<Lineups>("/api/dfs/lineups", JSON.stringify(body), "application/json");
+
+// ---- IN-4: published slates — the site's salary file for this week, on the server (no upload to start)
+export interface PublishedRow {
+  id: string;
+  site: Site;
+  site_name: string;
+  label: string;
+  season: number;
+  week: number;
+  contest: string;
+  contest_label: string;
+  on_file: number;
+  matched: number | null;
+  unmatched: number | null;
+}
+export interface PublishedList {
+  season: number;
+  week: number;
+  slates: PublishedRow[];
+  not_offered: { id: string; reason: string }[];
+  unreadable: { file: string; reason: string }[];
+}
+export const loadPublishedList = (site: Site) => get<PublishedList>(`/api/dfs/slates?site=${site}`);
+export const loadPublished = (id: string) => get<Slate>(`/api/dfs/slate/${encodeURIComponent(id)}`);
+
+/** The chip's short words for a signal (the sentence is in its title and the row's detail). */
+export function chipWords(s: Signal): string {
+  if (s.signal === "role" || s.signal === "routes") return s.trend === "down" ? "Role down" : "Role up";
+  if (s.signal === "corner") return s.shutdown ? "Shutdown corner" : s.tone === "favorable" ? "Soft corner" : s.tone === "difficult" ? "Tough corner" : "Corner unclear";
+  if (s.signal === "defense") return s.tone === "favorable" ? "Soft defense" : s.tone === "difficult" ? "Tough defense" : "Defense average";
+  if (s.signal === "game") return `Team total ${s.implied?.toFixed(1) ?? "—"}`;
+  return "Weather";
+}
 
 // the slate stays in this tab (memory + sessionStorage), one per site; never in localStorage, never on the server
 const KEY = (site: Site) => `ll.dfs.slate.${site}`;
