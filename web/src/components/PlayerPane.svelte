@@ -37,6 +37,7 @@
   import Expander from "./Expander.svelte"; // ---- IF-4
   import Md from "./Md.svelte"; // ---- IF-4
   import ScheduleTable from "./ScheduleTable.svelte"; // ---- IF-4
+  import { isRef, PANE_FOOT, refLabel, refScoringLabel } from "../lib/refleague"; // ---- IN-2: the scoring in the head, the foot line
 
   let { league, team, onauth }: { league: string; team: number | null; onauth: () => void } = $props();
 
@@ -191,6 +192,9 @@
   }
   // ---- end IL-5
 
+  // ---- IN-2 (Wave I-N): browsing without a league the head says the scoring ("Half PPR · superflex"), never "No league"
+  const scoringHead = $derived(data ? (isRef(league) ? refLabel(league) : `${data.league_name} scoring`) : "");
+  // ---- end IN-2
   const SEP = " · ";
   const newsLabel = (n: NewsItem) => (n.about === "league" ? "League news" : "News");
 </script>
@@ -290,6 +294,10 @@
       <Expander title="Schedule" testid="pane-schedule"><ScheduleTable rows={d.schedule} position={d.position} testid="pane-schedule-table" /></Expander>
     {/if}
     <!-- ---- end IF-4 -->
+    <!-- ---- IN-2: browsing without a league, one quiet line at the foot (who has him is a league's to say) -->
+    {#if isRef(league)}
+      <p class="border-t border-line pt-3 text-sm text-ink-3" data-testid="pane-foot"><a class="ll-link" href="/leagues">{d.foot ?? PANE_FOOT}</a></p>
+    {/if}
   </div>
 {/snippet}
 
@@ -305,7 +313,7 @@
 
 {#snippet gamelogPanel(d: PlayerCard)}
   <div data-testid="drawer-gamelog">
-    <GameLog gsis={d.gsis_id} {league} season={d.season} {onauth} leagueName={d.league_name} />
+    <GameLog gsis={d.gsis_id} {league} season={d.season} {onauth} leagueName={isRef(league) ? refScoringLabel(league) : d.league_name} /><!-- IN-2: the scoring -->
   </div>
 {/snippet}
 
@@ -392,7 +400,7 @@
         <div class="min-w-0 flex-1">
           <h2 bind:this={titleEl} id="drawer-title" tabindex="-1" class="ll-label truncate outline-none" data-testid="pane-title">{title}</h2>
           {#if data}
-            <p class="truncate text-xs text-ink-3" data-testid="drawer-league">{data.league_name} scoring{data.week ? ` · week ${data.week}` : ""}</p>
+            <p class="truncate text-xs text-ink-3" data-testid="drawer-league">{scoringHead}{data.week ? ` · week ${data.week}` : ""}</p>
           {/if}
         </div>
         <button
@@ -457,7 +465,7 @@
       <header class="sticky top-0 z-10 flex items-center gap-1 border-b border-line bg-page/95 px-4 py-2 backdrop-blur">
         <div class="min-w-0 flex-1">
           <h2 id="drawer-expanded-title" class="ll-label truncate">{title}</h2>
-          {#if data}<p class="truncate text-xs text-ink-3">{data.league_name} scoring{data.week ? ` · week ${data.week}` : ""}</p>{/if}
+          {#if data}<p class="truncate text-xs text-ink-3">{scoringHead}{data.week ? ` · week ${data.week}` : ""}</p>{/if}
         </div>
         <button
           type="button"

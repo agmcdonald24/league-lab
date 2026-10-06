@@ -501,7 +501,7 @@ def test_research_routes_answer_a_reference_key_without_owners(api, path, params
 @needs_db
 def test_reference_points_are_in_the_reference_scoring(api):
     rows = {k: api.get("/api/players", params={"league": k, "position": "WR", "limit": 40}).json() for k in refleague.KEYS}
-    assert rows["ref:half"]["league_name"] == "No league · Half PPR"
+    assert rows["ref:half"]["league_name"] == "Half PPR"          # IN-2: the scoring, never "No league"
     pts = {k: {p["gsis_id"]: p["points"] for p in v["players"]} for k, v in rows.items()}
     common = set(pts["ref:ppr"]) & set(pts["ref:half"]) & set(pts["ref:std"])
     assert len(common) >= 20

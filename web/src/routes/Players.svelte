@@ -10,6 +10,7 @@
   // ---- IM-2 (Wave I-M): two views one tap apart — "Key stats" (the preset's columns) and "Full table" (every column
   // for the position that we have, under group headers; components/stats/) — group toggles, every player ("Showing 50
   // of 291 — Show all"), Download CSV (GET /api/players.csv, or built here when the API has no such route).
+  import { isRef } from "../lib/refleague"; // ---- IN-2
   import { statsCsvPath, statsPath, type StatsColumn, type StatsFrame, type StatsRow } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
@@ -85,7 +86,8 @@
 
   // ---- the columns: the preset's defaults, or the URL's pick (the column picker)
   const cat = $derived(new Map((r.data?.catalogue ?? []).map((c) => [c.id, c])));
-  const ALL_COLS = ["games", "points", "targets", "target_share", "carries", "carry_share", "snap_share"];
+  // ---- IN-2: + the value while browsing (`ros_value`: only a reference key's catalogue has it; elsewhere it drops out)
+  const ALL_COLS = ["games", "points", "ros_value", "targets", "target_share", "carries", "carry_share", "snap_share"];
   const preset = $derived(r.data?.presets.find((p) => p.key === group) ?? null);
   const defaults = $derived(preset ? preset.columns : ALL_COLS);
   const picked = $derived((params.get("cols") ?? "").split(",").filter((c) => c && cat.has(c)));
@@ -195,7 +197,8 @@
   }
 
   // ---- IM-2: ownership columns only when the answer has them (a reference league — IM-3's `ref:` keys — has none)
-  const owned = $derived(!r.data || r.data.players.length === 0 || r.data.players.some((p) => "rostered_by_roster_id" in p));
+  // ---- IN-2: browsing (a reference key) never shows the "whose" chips, not even while the table loads
+  const owned = $derived(!isRef(league) && (!r.data || r.data.players.length === 0 || r.data.players.some((p) => "rostered_by_roster_id" in p)));
   const ownerOf = (p: StatsRow) => ownerWord(p, team);
   const mine = (p: StatsRow) => team !== null && p.rostered_by_roster_id === team;
   const href = (p: StatsRow) => withContext(`/player/${p.gsis_id}`, ctx);

@@ -25,6 +25,7 @@
   import WindowControl from "./decisions/WindowControl.svelte";
   import WeekStrip from "./decisions/WeekStrip.svelte"; // ---- IF-2: the week strip, both sides
   import TradeCard from "./decisions/TradeCard.svelte"; // ---- II-1: the trade card (plausibility, both sides, reasons)
+  import { isRef } from "../lib/refleague"; // ---- IN-2
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -58,6 +59,12 @@
       .then((v) => still() && set(v))
       .catch((e) => still() && fail(e));
   }
+
+  // ---- IN-2 (Wave I-N): browsing without a league, Trades is the calculator (never the invitation card)
+  $effect(() => {
+    if (isRef(league)) navigate(`/trade-calc?league=${encodeURIComponent(league)}`, { replace: true });
+  });
+  // ---- end IN-2
 
   // the answer (best partner over the window)
   $effect(() => {

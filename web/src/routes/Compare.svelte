@@ -135,6 +135,8 @@
         { label: "Games", get: (s) => s.ros?.games, show: (v) => fmt.whole(v) },
         { label: "Rank at his position", get: (s) => s.ros?.pos_rank, show: (v) => (v == null ? "—" : `#${v}`), lowerIsBetter: true },
         { label: "Playoff weeks", get: (s) => s.ros?.playoff_points, show: (v) => fmt.whole(v), points: true },
+        // ---- IN-2: browsing, the value in a typical league of the picked shape (absent on a real league: hidden)
+        { label: "Value (a typical league)", get: (s) => s.ros_value, show: (v) => fmt.whole(v), points: true },
       ],
     },
   ];

@@ -35,6 +35,8 @@
   import TeamBadge from "../../components/TeamBadge.svelte";
   import Dial from "./Dial.svelte";
   import WindowControl from "./WindowControl.svelte";
+  import FreeTrade from "../../components/scoring/FreeTrade.svelte"; // ---- IN-2: the calculator without a league
+  import { isRef } from "../../lib/refleague"; // ---- IN-2
 
   let { league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -312,6 +314,11 @@
   </Card>
 {/snippet}
 
+<!-- ---- IN-2 (Wave I-N): browsing without a league (`ref:` keys) the calculator is FreeTrade; the league path below is
+     unchanged -->
+{#if isRef(league)}
+  <FreeTrade {league} {onauth} />
+{:else}
 <main class="space-y-4" data-testid="trade-calc">
   {#if team === null}
     <p class="ll-empty" data-testid="pick-team-first">Pick your team above: the calculator then shows what a trade does to both lineups, and how much the other team would want it.</p>
@@ -561,3 +568,5 @@
     </Expander>
   {/if}
 </main>
+{/if}
+<!-- ---- end IN-2 -->

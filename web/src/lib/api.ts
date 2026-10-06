@@ -2280,3 +2280,95 @@ export const boardPath = (league: string, b: BoardQuery) => {
   return `/api/matchups/board?${p.toString()}`;
 };
 // ---- end IN-3
+// ---- IN-2 (Wave I-N): the lab without a league — a player's value on a reference key (the card's `ref_value`, its
+// foot line) and the trade calculator without a league (GET /api/trade-calc/free; api/league_lab_api/freetrade.py)
+export interface RefPricing {
+  fitted: boolean;
+  reference: string | null;
+  words: string;
+}
+export interface RefValue {
+  value: number | null;
+  ros_points: number | null;
+  replacement: number;
+  replacement_name: string | null;
+  position: string;
+  value_rank_pos: number;
+  pos_rank: number | null;
+  from_week: number | null;
+  last_week: number | null;
+  teams: number;
+  superflex: boolean;
+  bench: number;
+  assumes: string;
+  words: string | null;
+  pricing: RefPricing;
+}
+export interface PlayerCard {
+  ref_value?: RefValue | null;
+  foot?: string | null;
+  scoring?: { key: string; label: string; pricing: RefPricing } | null;
+}
+export interface FreeTradeOutlook {
+  week: number | null;
+  points: number | null;
+  p10: number | null;
+  p90: number | null;
+  bye: boolean;
+  per_game: number | null;
+  games: number | null;
+}
+export interface FreeTradePlayer {
+  gsis_id: string;
+  player_name: string | null;
+  position: string | null;
+  team: string | null;
+  value: number | null;
+  ros_points: number | null;
+  ros_p10?: number | null;
+  ros_p90?: number | null;
+  value_rank_pos?: number;
+  pos_rank?: number | null;
+  replacement?: number | null;
+  outlook?: FreeTradeOutlook;
+  no_projection: boolean;
+  why?: string;
+}
+export interface FreeTradeSide {
+  players: FreeTradePlayer[];
+  n: number;
+  value: number | null;
+  ros_points: number | null;
+  low: number | null;
+  high: number | null;
+  sd: number | null;
+  unknown: string[];
+}
+export interface FreeTrade {
+  league_id: string;
+  league_name: string;
+  assumes: string;
+  value_words: string | null;
+  pricing: RefPricing;
+  window: { first: number | null; last: number | null; words: string | null };
+  give: FreeTradeSide;
+  get: FreeTradeSide;
+  verdict: {
+    even: boolean | null;
+    lean: "give" | "get" | null;
+    gap: number | null;
+    low: number | null;
+    high: number | null;
+    one_player: { gsis_id: string; player_name: string; value: number; share: number; words: string } | null;
+    words: string;
+  };
+  roster_spots: { you_get_back: number; replacement_points: number | null; replacement_position: string | null; replacement_name: string | null; words: string } | null;
+  league_words: string;
+  max_side: number;
+}
+export interface CompareSide {
+  ros_value?: number | null; // a reference key only: the value without a league (refleague.compare_values)
+}
+export const freeTradePath = (league: string, give: string[], getIds: string[]) =>
+  `/api/trade-calc/free?league=${encodeURIComponent(league)}&give=${encodeURIComponent(give.join(","))}&get=${encodeURIComponent(getIds.join(","))}`;
+// ---- end IN-2

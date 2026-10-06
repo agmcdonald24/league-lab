@@ -121,7 +121,7 @@ test("a first visit: the front door, Browse the lab, Players · Stats in Half PP
   await page.getByTestId("browse-lab").click();
   await expect(page).toHaveURL(/\/players\?league=ref(%3A|:)half/);
   await expect(page.getByTestId("ref-picker")).toBeVisible();
-  await expect(page.getByTestId("ref-select")).toHaveValue("ref:half");
+  await expect(page.getByTestId("ref-button")).toContainText("Half PPR"); // ---- IN-2: the scoring picker (was a select)
   await expect(page.getByTestId("ref-open")).toHaveText("Open your league");
   await expect(page.getByTestId("players")).toBeVisible();
   await expect(page.getByTestId("players").getByRole("link", { name: /Smith-Njigba|St\. Brown|Chase|Nacua|Jefferson|Lamb/ }).first()).toBeVisible({ timeout: 30_000 });
@@ -133,22 +133,31 @@ test("a first visit: the front door, Browse the lab, Players · Stats in Half PP
   expect(calls.some((c) => /^\/api\/leagues\/ref/.test(decodeURIComponent(c)))).toBe(false); // no team picker asked for
   // the scoring switch: PPR in the URL, the same screen
   const ppr = page.waitForResponse((r) => r.url().includes("/api/players?") && /league=ref(%3A|:)ppr/.test(r.url()));
-  await page.getByTestId("ref-select").selectOption("ref:ppr");
+  await page.getByTestId("ref-button").click(); // ---- IN-2: the picker's panel (was a select)
+  await page.getByTestId("ref-base-ppr").click();
   expect((await ppr).status()).toBe(200);
   await expect(page).toHaveURL(/league=ref(%3A|:)ppr/);
-  await expect(page.getByTestId("ref-select")).toHaveValue("ref:ppr");
+  await page.getByTestId("ref-done").click();
+  await expect(page.getByTestId("ref-button")).toContainText("PPR");
   await expect(page.getByTestId("players").getByRole("link", { name: /Smith-Njigba|St\. Brown|Chase|Nacua|Jefferson|Lamb/ }).first()).toBeVisible({ timeout: 30_000 });
   if (LIVE) expect(google.some((u) => u.startsWith("https://www.googletagmanager.com/gtag/js")), "gtag.js loaded under the CSP").toBe(true);
   expect(csp, csp.join("\n")).toEqual([]);
 });
 
-test("My Team, Waivers and Trades invite you to open your league; Players' tabs work", async ({ context, page }, info) => {
+// ---- IN-2 (Wave I-N): browsing, My Team and Waivers are not tabs (they are behind "Open your league") and Trades is the
+// calculator without a league; their screens, opened by a link, still invite
+test("My Team and Waivers invite you to open your league; Trades is the calculator; Players' tabs work", async ({ context, page }, info) => {
   await api(context);
   const csp = await cspWatch(page);
   await page.goto("/trends?league=ref:half");
   await expect(page.getByTestId("ref-picker")).toBeVisible();
-  for (const tab of ["myteam", "waivers", "trades"]) {
-    await page.getByTestId(`tab-${tab}`).click();
+  await expect(page.getByTestId("tab-myteam")).toHaveCount(0);
+  await expect(page.getByTestId("tab-waivers")).toHaveCount(0);
+  await page.getByTestId("tab-trades").click();
+  await expect(page.getByTestId("free-trade")).toBeVisible();
+  await expect(page.getByTestId("invite-card")).toHaveCount(0);
+  for (const tab of ["myteam", "waivers"]) {
+    await page.goto(tab === "myteam" ? "/?league=ref:half" : "/waivers?league=ref:half");
     const card = page.getByTestId("invite-card");
     await expect(card).toBeVisible();
     await expect(card).toContainText("Open your league to see your lineup, waivers and trades.");

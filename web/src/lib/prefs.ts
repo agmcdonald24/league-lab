@@ -8,6 +8,7 @@ const KEY_USER_LEAGUES = "ll.userLeagues"; // the last answer of /api/leagues?us
 const KEY_MFL = "ll.mflLeagues"; // I0-B: the MyFantasyLeague leagues opened on this phone (the switcher lists them)
 const keyTeam = (league: string) => `ll.team.${league}`;
 const KEY_PLATFORM = "ll.platform"; // ---- II-5: the setup screen's fantasy platform
+const KEY_REF = "ll.scoring"; // ---- IN-2: the scoring picked while browsing (a reference key, lib/refleague.ts)
 
 /** A MyFantasyLeague league remembered on this phone (from GET /api/leagues?mfl=). */
 export interface RememberedMfl {
@@ -97,6 +98,13 @@ export const prefs = {
   },
   setPlatform: (p: "sleeper" | "mfl" | "espn" | "yahoo") => write(KEY_PLATFORM, p),
   // ---- end II-5
+  // ---- IN-2 (Wave I-N): the scoring picked while browsing without a league (a reference key, never "the league")
+  refKey: (): string | null => {
+    const v = read(KEY_REF);
+    return v && /^ref:[a-z0-9.]{2,28}$/.test(v) ? v : null;
+  },
+  setRefKey: (key: string) => write(KEY_REF, key),
+  // ---- end IN-2
 };
 
 // ---- IK-4 (Wave I-K): accounts — signed in, the picks also go to the server (lib/account.svelte.ts sets `remote`);
