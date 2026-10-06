@@ -1556,9 +1556,14 @@ absent). **Scoring-free**: one scale for every league.
   | neutral | favorable | neutral | difficult | neutral |
   | difficult | neutral | difficult | difficult | difficult |
   | none | none | none | none | none |
-* `words` = the defense's sentence and the corner's ("…; Trent McDuffie is likely across from him: the 3rd-hardest of
-  74 starting corners to throw on (a shutdown corner)"; ", but" when the two point opposite ways).
-* Cached per (season, week) in the memory budget's `matchup_board` region (≤ 24 entries, 10 minutes; ~800 players).
+* `words` = the defense's sentence and the corner's, short enough for a home row or a DFS chip (the merge's fix):
+  "…; Trent McDuffie (a shutdown corner, #3 of 74) is likely across from him" · "…; either Woolen (shutdown, #8 of 69)
+  or Mitchell (shutdown, #9 of 69) could be across from him" · "…; no corner call: too few targets to tell his side";
+  ", but" when the two point opposite ways. The corner's kind (shutdown / easy to throw on / average) carries the
+  direction of the rank (#1 = the hardest to throw on). 86 characters on average, 151 at most (week 4).
+* Cached per (season, week) in the memory budget's `matchup_week` region (≤ 8 entries: the context, the corners now,
+  the evidence; 10 minutes; ~800 players); each league scoring's board frame in `matchup_board` (≤ 24, least recently
+  used first), so cycling the 20 reference scorings never evicts the week (the review's L2, fixed at the merge).
   Never raises: a missing mart, a week without games or any error → `{}`. Measured on the sandbox (week 4, 792
   players): 172 ms cold, 6 ms warm.
 
@@ -1575,7 +1580,7 @@ easiest corner to throw on first, no ranked corner last); `limit` 1–100 (25), 
 depend on the league (its ranks are the reference mart's): it is kept per week for every league. Timings on the
 sandbox (the fixture API over HTTP, WR, `ref:half`, six workers sharing two cores): **cold 0.59–0.64 s** (a fresh
 process: the pool, the week's board, the prices), **warm 15–19 ms** (a house league 22 ms; `limit=100` 25 ms warm,
-0.16–0.20 s the first time its rows' evidence is built). Memory: the `matchup_board` region held 4.2 MB with every
+0.16–0.20 s the first time its rows' evidence is built). Memory: the two regions held 4.2 MB with every
 position of five leagues paged through (the week's context, five league frames, the corners, ~580 players' evidence).
 
 **What is in the projection, and what is not** (`IN_PROJECTION`, asserted against `projections.BASE_FEATURES` by

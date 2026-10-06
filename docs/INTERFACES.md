@@ -43,7 +43,7 @@ gsis_id -> {"opponent": "KC", "home": bool | None,
   "Matchups for everyone".
 * **In the projection?** The defense against the position is (the projection's opponent features); the corner is not.
   A screen that shows the corner says "not in the projection" (`matchup_board.PROJECTION_WORDS` has the sentence).
-* **Cost**: a few cached queries per (season, week), kept 10 minutes in the `matchup_board` memory region; ~170 ms
+* **Cost**: a few cached queries per (season, week), kept 10 minutes in the `matchup_week` memory region (apart from the per-scoring boards' `matchup_board`); ~170 ms
   cold, ~6 ms warm. Each call returns its own copy. Never raises.
 
 ### `GET /api/matchups/board`

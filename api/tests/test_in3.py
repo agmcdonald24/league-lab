@@ -69,14 +69,14 @@ def test_the_route_is_in_the_research_bucket():
 
 # ------------------------------------------------------------------------------------------- matchup_context
 def test_matchup_context_with_a_missing_mart_is_empty(monkeypatch):
-    MB._cache.clear()
+    MB.clear()
     monkeypatch.setattr(MB, "missing_relations", lambda names: list(names))
     assert MB.matchup_context(2026, 4) == {}
     assert MB.matchup_context(2026, 4, ["00-0036963"]) == {}
 
 
 def test_matchup_context_never_raises(monkeypatch):
-    MB._cache.clear()
+    MB.clear()
 
     def boom(*_a, **_k):
         raise RuntimeError("the database went away")
@@ -89,7 +89,7 @@ def test_matchup_context_never_raises(monkeypatch):
 
 @needs_db
 def test_matchup_context_shape_and_tone_rule():
-    MB._cache.clear()
+    MB.clear()
     assert MB.matchup_context(2026, 40) == {}                         # a week with no games
     ctx = MB.matchup_context(2026, 4)
     assert len(ctx) > 300
@@ -212,7 +212,7 @@ def test_board_filters_and_sorts(client):
 def test_a_corner_who_is_not_expected_to_play_is_no_call(monkeypatch):
     """The call names a corner the overlay says cannot play (cards.corner_personnel: listed, not expected): the read is
     "no call" — never "faces a shutdown corner" who is out — and the tone is the defense's alone."""
-    MB._cache.clear()
+    MB.clear()
     row = MB.query("""select gsis_id, opponent, likely_cover_gsis_id, likely_cover_name, likely_cover_slot
                       from analytics.mart_cb_matchups where season = 2026 and week = 4 and position = 'WR'
                         and call_status = 'called' and call_strength = 'clear' order by gsis_id limit 1""").iloc[0]
@@ -226,10 +226,36 @@ def test_a_corner_who_is_not_expected_to_play_is_no_call(monkeypatch):
                     "expected": [], "depth_chart_at": "2026-10-01T00:00:00Z"} for d in defenses}
 
     monkeypatch.setattr(MB.cards, "corner_personnel", personnel)
-    MB._cache.clear()
+    MB.clear()
     after = MB.matchup_context(2026, 4, [row.gsis_id])[row.gsis_id]
     assert after["cb"] == {"tone": None, "certainty": "no call", "corner": None, "corner_rank": None, "shutdown": False,
                            "words": f"no corner call: {row.likely_cover_name}, named on his side, is not expected to play"}
     assert after["tone"] == after["defense"]["tone"]
     assert "not expected to play" in after["words"]
-    MB._cache.clear()
+    MB.clear()
+
+
+@needs_db
+def test_cycling_league_scorings_keeps_the_week_cached(client, monkeypatch):
+    """Review L2 (the merge): the per-scoring boards have their own bounded region, so paging every reference scoring
+    and both house leagues (22 boards) never evicts the week-wide entries — the context, the corners, the evidence.
+    The boards' region is cut to 10 here so the 22 boards do evict each other: the week stays."""
+    from league_lab import platforms
+
+    MB.clear()
+    monkeypatch.setattr(MB._cache, "max_entries", 10)
+    scorings = sorted({platforms.ref_key(b, tep=t, p6=p) for b in platforms.REF_BASES for t in (False, True)
+                       for p in (False, True)})
+    leagues = [*scorings, SCRUBS, "1321941740235550720"]
+    assert len(leagues) == 22
+    week = None
+    for lg in leagues:
+        j = client.get(BOARD, params={"league": lg, "limit": 3}).json()
+        assert j["rows"], lg
+        week = j["week"]
+    assert len(MB._cache) == 10                                        # the boards evicted each other
+    assert len(MB._week) <= MB.WEEK_ENTRIES
+    for kind in ("ctx", "pers", "ev"):
+        assert MB._week.get((kind, 2026, week)) is not None, kind      # the week did not move
+    assert MB.BOARD_ENTRIES >= 22                                      # in production every scoring fits
+    MB.clear()

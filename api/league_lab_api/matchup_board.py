@@ -54,13 +54,26 @@ GAME_ID = re.compile(r"^\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}$")
 NAME_CHARS = re.compile(r"^(?:[^\W\d_]|[ .'\-])+$")     # what a player's name is made of: anything else (%, _, digits) matches nobody
 TONE_ORDER = {"favorable": 0, "neutral": 1, "difficult": 2}
 CONTEXT_TTL_S = 600.0
-# ---- the memory budget (docs/DEPLOY.md § Memory): one region. Keys: ("ctx", season, week) — the week's context, ~600
-# players, ~0.5 MB; ("board", <research._ctx_key>, season, week) — one league scoring's week frame (~600 rows, ~0.2 MB);
-# ("pers", season, week) — the corners now of every defense (~30 KB); ("ev", season, week) — the matchup evidence of the
-# players the board has shown (≤ ~800, ~3 KB each). Seasons and weeks come from the decision week (no user input);
-# league keys are the research memo's keys (a house league, or a scoring). At most 24 entries.
-_cache = memo.region("matchup_board", ttl=CONTEXT_TTL_S, max_entries=24)
+# ---- the memory budget (docs/DEPLOY.md § Memory): two regions, so cycling league scorings never evicts the week.
+# `matchup_week` (≤ 8 entries, three per week): ("ctx", season, week) — the week's context, ~800 players, ~0.5 MB;
+# ("pers", season, week) — the corners now of every defense (~30 KB); ("ev", season, week) — the matchup evidence of
+# the players the board has shown (≤ ~800, ~3 KB each). Seasons and weeks come from the decision week (no user input).
+# `matchup_board` (≤ 24 entries, least recently used first): ("board", <research._ctx_key>, season, week) — one league
+# scoring's week frame (~600 rows, ~0.2 MB); keys are the research memo's (a house league, or one of the 20 reference
+# scorings, or an on-demand league's scoring). Both 10 minutes; both inside the one byte budget.
+WEEK_ENTRIES, BOARD_ENTRIES = 8, 24
+_week = memo.region("matchup_week", ttl=CONTEXT_TTL_S, max_entries=WEEK_ENTRIES)
+_cache = memo.region("matchup_board", ttl=CONTEXT_TTL_S, max_entries=BOARD_ENTRIES)
 
+
+def clear() -> None:
+    """Both regions emptied (tests; a data refresh would wait out the 10 minutes)."""
+    _week.clear()
+    _cache.clear()
+
+NO_CALL_SHORT = {"too few targets with a direction to tell his side": "too few targets to tell his side"}
+CORNER_KIND = {"shutdown": "a shutdown corner", "target": "easy to throw on", "solid": "an average corner"}
+CORNER_KIND_SHORT = {"shutdown": "shutdown", "target": "easy", "solid": "average"}   # two corners in one sentence
 IN_PROJECTION = ("opp_allowed_std", "opp_allowed_l4", "opp_rank_std", "f_opp_allowed_diff", "league_allowed_avg")
 PROJECTION_WORDS = ("What the projection counts: the points each defense has allowed to the position (this season, the "
                     "last 4 games and its rank) and the betting lines. Who plays cornerback is not in it: the corner "
@@ -133,21 +146,31 @@ def _corner_read(r: dict) -> dict:
     shutdown = bool(named) and all(c.get("label") == "shutdown" and c.get("rank") is not None for c in named)
     n = R._rank(r.get("cb_n_ranked"))
 
-    def who(c: dict) -> str:
-        return str(c.get("name") or "an unnamed corner")
+    def who(c: dict, short: bool = False) -> str:
+        name = c.get("name")
+        if not name:
+            return "an unnamed corner"
+        return (cards.last_name(str(name)) or str(name)) if short else str(name)
 
+    def tag(c: dict, short: bool = False) -> str:
+        """'a shutdown corner, #3 of 74' · 'easy to throw on, #66 of 69' · 'an average corner, #30 of 74' · 'unranked'
+        (#1 = the hardest to throw on: the quarter's words carry the direction)."""
+        if c.get("rank") is None:
+            return "unranked"
+        kind = (CORNER_KIND_SHORT if short else CORNER_KIND).get(str(c.get("label")), "ranked")
+        return f"{kind}, #{c['rank']}{f' of {n}' if n else ''}"
+
+    # IN-3 fix (the merge's read of the home and DFS): short enough for a home row and a DFS chip; the board's opened
+    # row keeps each corner's full rank words (cb_detail)
     if m["certainty"] == "likely" and first is not None:
-        ranked = first.get("rank") is not None
-        words = (f"{who(first)} is likely across from him: {first['words']}" if ranked
-                 else f"{who(first)} is likely across from him: unranked (too few snaps to rank)")
-        if shutdown:
-            words += " (a shutdown corner)"
+        words = f"{who(first)} ({tag(first)}) is likely across from him"
+    elif m["certainty"] == "unclear" and len(named) > 1:
+        words = f"either {' or '.join(f'{who(c, True)} ({tag(c, True)})' for c in named)} could be across from him"
     elif m["certainty"] == "unclear" and named:
-        names = " or ".join(f"{who(c)} ({c['words']})" if c.get("rank") is not None else f"{who(c)} (unranked)"
-                            for c in named)
-        words = f"either {names} could be across from him: his targets split about evenly"
+        words = f"{who(first)} ({tag(first)}) may be across from him; the other side is as likely"
     else:
-        words = "no corner call: " + str(m["certainty_words"]).split(": ", 1)[-1]
+        why = str(m["certainty_words"]).split(": ", 1)[-1]
+        words = "no corner call: " + NO_CALL_SHORT.get(why, why)
     ctx = {"tone": m["tone"] if m["tone"] in TONES else None, "certainty": m["certainty"],
            "corner": first.get("name") if first else None, "corner_rank": first.get("rank") if first else None,
            "shutdown": shutdown, "words": words}
@@ -191,7 +214,7 @@ def _sentence(defense: dict, cb: dict | None, tone: str | None) -> str | None:
 def _week_frame(season: int, week: int) -> dict | None:
     """The cached week: {"rows": {gsis_id: context}, "detail": {gsis_id: corner detail}, "frame": players, "games"}."""
     key = ("ctx", int(season), int(week))
-    hit = _cache.get(key)
+    hit = _week.get(key)
     if hit is not None:
         return hit
     if missing_relations(("mart_player_week_projections", "dim_game", "mart_defense_vs_position_current")):
@@ -241,7 +264,7 @@ def _week_frame(season: int, week: int) -> dict | None:
         rows[g] = {"opponent": opp, "home": None if pd.isna(p["is_home"]) else bool(p["is_home"]),
                    "defense": dread, "cb": cb, "tone": tone, "words": _sentence(dread, cb, tone)}
     out = {"rows": rows, "detail": detail, "frame": frame, "games": games}
-    _cache.put(key, out)
+    _week.put(key, out)
     return out
 
 
@@ -337,14 +360,14 @@ def _week_rows(ctx: R.Ctx, season: int, week: int, wk: dict) -> pd.DataFrame:
 
 def _personnel(season: int, week: int, defenses: list[str]) -> dict:
     key = ("pers", int(season), int(week))
-    hit = _cache.get(key)
+    hit = _week.get(key)
     if hit is None:
         hit = {"defs": set(), "p": {}}
     want = [d for d in defenses if d not in hit["defs"]]
     if want:
         got = cards.corner_personnel(want, int(season), int(week))
         hit = {"defs": hit["defs"] | set(want), "p": {**hit["p"], **got}}
-        _cache.put(key, hit)
+        _week.put(key, hit)
     return {d: copy.deepcopy(hit["p"][d]) for d in defenses if d in hit["p"]}
 
 
@@ -356,7 +379,7 @@ def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int) -> dict[str,
     # the evidence does not depend on the league (its ranks are the reference mart's): kept per week for every league,
     # each player computed once (the answer is rebuilt by the JSON cleaner, so the cached objects are never changed)
     key = ("ev", int(season), int(week))
-    have: dict = _cache.get(key) or {}
+    have: dict = _week.get(key) or {}
     want = [r for r in rows if r["gsis_id"] not in have]
     if not want:
         return {r["gsis_id"]: have[r["gsis_id"]] for r in rows}
@@ -378,7 +401,7 @@ def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int) -> dict[str,
         except Exception:  # noqa: BLE001 - the evidence is context: a row without it still stands
             out[r["gsis_id"]] = None
     have = {**have, **out}
-    _cache.put(key, have)
+    _week.put(key, have)
     return {r["gsis_id"]: have.get(r["gsis_id"]) for r in rows_all}
 
 
