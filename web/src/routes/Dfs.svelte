@@ -20,6 +20,8 @@
   import LineupCard from "../components/dfs/LineupCard.svelte";
   import {
     loadProjections,
+    MAX_BYTES,
+    MAX_PLAYERS,
     money,
     postLineups,
     postSlate,
@@ -62,9 +64,16 @@
   let busy = $state(false);
   let fileError = $state<string | null>(null);
 
+  // ---- IM-5 fix: a file over 1 MB never leaves the tab; a 413 from either layer (the server's Guard or the route)
+  // reads the same plain sentence
+  const TOO_BIG = "That file is too big: a salary file is under 1 MB. Export the contest's player list again and add that file.";
   async function addFile(text: string) {
-    busy = true;
     fileError = null;
+    if (new TextEncoder().encode(text).length > MAX_BYTES) {
+      fileError = TOO_BIG;
+      return;
+    }
+    busy = true;
     lineups = null;
     try {
       const s = await postSlate(text);
@@ -73,6 +82,7 @@
       saveSlate(s.site, s);
     } catch (e) {
       if (e instanceof Unauthorized) onauth();
+      else if (e instanceof ApiError && e.status === 413) fileError = TOO_BIG;
       else fileError = e instanceof ApiError ? e.message : "Cannot reach isuckatfantasy right now. Try again in a minute.";
     } finally {
       busy = false;
@@ -140,6 +150,7 @@
   let lineups = $state<Lineups | null>(null);
   let building = $state(false);
   let buildError = $state<string | null>(null);
+  const leftOut = $derived((slate?.players ?? []).filter((p) => p.out && picks[p.key] !== "in")); // ---- IM-5 fix: told here, not sent
   const locks = $derived(Object.keys(picks).filter((k) => picks[k] === "in"));
   const excludes = $derived(Object.keys(picks).filter((k) => picks[k] === "out"));
   function setPick(key: string, v: string) {
@@ -153,7 +164,19 @@
     building = true;
     buildError = null;
     try {
-      lineups = await postLineups({ contest: slate.contest, players: slate.players, locks, excludes, mode, n: Math.max(1, Math.min(20, Math.round(n) || 1)) });
+      // ---- IM-5 fix: the server takes at most 800 players: those who can play (or are set always in), the highest
+      // projected first when a slate is bigger
+      const pool = slate.players.filter((p) => (p.proj !== null && !p.out) || picks[p.key] === "in");
+      const kept = pool.length <= MAX_PLAYERS ? pool : [...pool.filter((p) => picks[p.key] === "in"), ...pool.filter((p) => picks[p.key] !== "in").sort((a, b) => (b.proj ?? 0) - (a.proj ?? 0))].slice(0, MAX_PLAYERS);
+      const keys = new Set(kept.map((p) => p.key));
+      lineups = await postLineups({
+        contest: slate.contest,
+        players: kept,
+        locks: locks.filter((k) => keys.has(k)),
+        excludes: excludes.filter((k) => keys.has(k)),
+        mode,
+        n: Math.max(1, Math.min(20, Math.round(n) || 1)),
+      });
     } catch (e) {
       if (e instanceof Unauthorized) onauth();
       else buildError = e instanceof ApiError ? e.message : "Cannot reach isuckatfantasy right now. Try again in a minute.";
@@ -366,8 +389,8 @@
       {#if buildError}<p class="text-sm text-bad" role="alert">{buildError}</p>{/if}
       {#if lineups}
         {#each lineups.notes as note, i (i)}<p class="text-sm text-ink-2" data-testid="dfs-build-note">{note}</p>{/each}
-        {#if lineups.left_out.length}
-          <p class="text-sm text-ink-3">Left out (cannot play): {lineups.left_out.map((p) => `${p.name}${p.status ? ` (${p.status})` : ""}`).join(", ")}.</p>
+        {#if leftOut.length}
+          <p class="text-sm text-ink-3">Left out (cannot play): {leftOut.map((p) => `${p.name}${p.status ? ` (${p.status})` : ""}`).join(", ")}.</p>
         {/if}
         {#if lineups.lineups.length}
           <div class="flex flex-wrap items-center gap-2">

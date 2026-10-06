@@ -494,7 +494,7 @@ def test_impossible_cap_says_so():
     for p in ps:
         p["salary"] = 9000
     res = D.solve_lineups(ps, "dk_classic")
-    assert res.lineups == [] and res.notes == ["No lineup fits the cap and the rules with these locks and excludes."]
+    assert res.lineups == [] and res.notes == ["No lineup fits the cap and the rules with these players set to always in and left out."]
 
 
 def test_lineup_range_is_wider_than_none_and_ordered():
@@ -517,3 +517,49 @@ def test_optimiser_agrees_when_no_lineup_is_legal():
     assert _brute(ps, "fd_full") < 0
     res = D.solve_lineups(ps, "fd_full")
     assert res.lineups == [] and "No lineup fits" in res.notes[0]
+
+
+# ------------------------------------------------------------------------------------------------ IM-5 fix: bounded work
+@pytest.mark.parametrize("body", [
+    "a,," * 333_333,                                            # one row of 666,666 cells (the review's body)
+    ("a,," * 130 + "\n") * 2_500,                               # rows of 261 cells, ~1 MB
+    ("position,," * 100 + "\n") * 15 + "x\n" * 1000,            # many header-word block starts in the search rows
+    ("Name," + "x" * 5000 + "\n") * 150,                        # giant cells
+])
+def test_hostile_shapes_are_refused_fast(body):
+    import time as _t
+    assert len(body.encode()) <= D.MAX_BYTES
+    t0 = _t.perf_counter()
+    with pytest.raises(D.SlateError):
+        D.parse(body)
+    assert _t.perf_counter() - t0 < 1.0
+
+
+def test_solver_refuses_oversized_requests_before_solving():
+    big = [{"key": f"p{i}", "position": "WR", "team": "BUF", "game": f"g{i}", "salary": 3000, "proj": 5.0, "p90": 9.0,
+            "p10": 1.0, "out": False} for i in range(D.MAX_PLAYERS + 1)]
+    assert "at most 800" in D.solve_lineups(big, "dk_classic").notes[0]
+    many_games = big[:200]
+    res = D.solve_lineups(many_games, "dk_classic")
+    assert res.lineups == [] and "at most 16 games" in res.notes[0] and res.solve_ms == []
+
+
+def test_one_time_budget_for_all_the_lineups():
+    import time as _t
+    rng = random.Random(3)
+    games = [f"G{g}" for g in range(14)]
+    ps = []
+    for i in range(600):
+        pos = rng.choice(["QB", "RB", "RB", "WR", "WR", "WR", "TE", "DEF"])
+        g = rng.choice(games)
+        proj = round(rng.uniform(1, 25), 2)
+        ps.append({"key": f"k{i}", "position": pos, "team": f"{g}{i % 2}", "game": g,
+                   "salary": rng.randrange(3000, 9000, 100), "proj": proj, "p90": round(proj * 1.7, 2),
+                   "p10": round(proj * 0.4, 2), "out": False})
+    t0 = _t.perf_counter()
+    res = D.solve_lineups(ps, "dk_classic", n=20, time_limit=1.0)
+    took = _t.perf_counter() - t0
+    assert took < 2.5                                         # one budget for the whole request, plus the build
+    assert 1 <= len(res.lineups) <= 20
+    if len(res.lineups) < 20:
+        assert any("budget ran out" in n for n in res.notes)

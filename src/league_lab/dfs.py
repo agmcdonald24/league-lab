@@ -40,8 +40,12 @@ import pandas as pd
 # ------------------------------------------------------------------------------------------------ limits
 MAX_BYTES = 1_000_000          # the file's size cap (a real slate file is 20-120 KB)
 MAX_ROWS = 2_000               # rows after the header (a full Sunday main slate is ~600 on DraftKings)
+MAX_COLS = 200                 # columns in a row (a salary file has 9-16; DraftKings' entry template ~30)
+MAX_CELL = 300                 # characters in a cell (a name, "BUF@MIA 10/11/2026 01:00PM ET")
 MAX_LINEUPS = 20
-SOLVE_SECONDS = 1.0            # the time box per lineup (HiGHS' time_limit)
+MAX_PLAYERS = 800              # players in one lineups request: a full Sunday main slate is ~600 rows on DraftKings
+MAX_GAMES, MAX_TEAMS = 16, 32  # an NFL week has at most 16 games
+SOLVE_SECONDS = 5.0            # the time box for ALL the lineups of one request (HiGHS' time_limit, shared)
 # HiGHS stops when the lineup is within this share of the best possible: 1e-5 of a 150-point lineup is 0.0015 points,
 # under the 0.005 step every total moves in (projections to the hundredth; a captain's x1.5) — so "proven" here is
 # proven best, and the search does not spend its second closing a gap no lineup could fill
@@ -206,6 +210,12 @@ def _norm_header(h: str) -> str:
     return re.sub(r"\s+", " ", str(h or "").replace("﻿", "").strip().strip('"').lower())
 
 
+# the words a salary file's header is made of: a block of columns is tried only where one of them starts it
+HEADER_WORDS = frozenset({"position", "name + id", "name", "id", "roster position", "salary", "game info", "teamabbrev",
+                          "avgpointspergame", "first name", "nickname", "last name", "fppg", "played", "game", "team",
+                          "opponent", "injury indicator", "injury details", "tier"})
+
+
 def _kind(header: list[str]) -> str | None:
     hs = set(header)
     if "salary" not in hs:
@@ -264,17 +274,30 @@ def parse(text: str | bytes) -> Slate:
     text = text.lstrip("﻿")
     if "\x00" in text:
         raise SlateError("That file is not text: a salary file is a CSV (comma-separated text).", "not_text")
+    # bounded before any parsing (linear, no row held whole): a row of hundreds of columns, a giant cell
+    for i, line in enumerate(text.splitlines()[: MAX_ROWS + 20], start=1):
+        if line.count(",") > 2 * MAX_COLS:
+            raise SlateError(f"Row {i} of that file has over {MAX_COLS} columns: a salary file has about 10. Export the "
+                             "contest's player list again and add that file unchanged.", "too_many_columns")
     try:
         rows = list(csv.reader(io.StringIO(text)))
     except csv.Error as exc:
         raise SlateError(f"That file could not be read as a CSV ({exc}).", "not_csv") from exc
+    for i, r in enumerate(rows, start=1):
+        if len(r) > MAX_COLS:
+            raise SlateError(f"Row {i} of that file has {len(r)} columns: a salary file has about 10. Export the "
+                             "contest's player list again and add that file unchanged.", "too_many_columns")
+        if any(len(c) > MAX_CELL for c in r):
+            raise SlateError(f"Row {i} of that file has a cell over {MAX_CELL} characters: not a salary file's. Export "
+                             "the contest's player list again and add that file unchanged.", "cell_too_long")
     # the header: the first row (of the first 15) that names a known site's columns; a column offset is allowed
     # (DraftKings' entry template puts the player list to the right of the entries)
     hdr_i, kind, offset = None, None, 0
     for i, r in enumerate(rows[:15]):
         norm = [_norm_header(c) for c in r]
         for off in range(len(norm)):
-            if norm[off] and (off == 0 or not norm[off - 1]):        # a block of columns starts here
+            # a block starts here: a known header word after an empty cell (or the row's start) — linear in the row
+            if norm[off] in HEADER_WORDS and (off == 0 or not norm[off - 1]):
                 k = _kind(norm[off:])
                 if k:
                     hdr_i, kind, offset = i, k, off
@@ -710,15 +733,20 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
     ``players``: dicts with ``key``, ``position`` (ours), ``salary``, ``team``, ``game`` (any id of his game),
     ``proj``, ``p90``, ``p10``, ``out`` (cannot play: left out unless locked) and, in showdown, ``cpt_salary`` (no
     captain row: FLEX only). ``mode``: ``cash`` maximises the projection, ``tournament`` the high-end outcome (a player
-    without one is left out). Exact: an integer program solved to optimality (HiGHS, ``MIP_GAP``: exact at the inputs' hundredths) in at most
-    ``time_limit`` seconds a lineup; past that the best lineup found is returned with ``proven: false``, or the search
-    stops and says so."""
+    without one is left out). Exact: an integer program solved to optimality (HiGHS, ``MIP_GAP``: exact at the inputs'
+    hundredths). ``time_limit`` (``SOLVE_SECONDS``, 5) is the budget for ALL the lineups: a solve cut short returns its
+    best lineup with ``proven: false``; the lineups found before the budget ran out are returned and the notes say so.
+    At most ``MAX_PLAYERS`` players, ``MAX_GAMES`` games, ``MAX_TEAMS`` teams (refused in words before any solve)."""
+    from scipy import sparse
     from scipy.optimize import Bounds, LinearConstraint, milp
+    t_start = time.perf_counter()
     c = CONTESTS[contest]
     n = max(1, min(int(n), MAX_LINEUPS))
     locks, excludes = set(map(str, locks)), set(map(str, excludes))
     notes: list[str] = []
     obj_key = "p90" if mode == "tournament" else "proj"
+    if len(players) > MAX_PLAYERS:
+        return LineupResult([], [f"Too many players for one build: at most {MAX_PLAYERS:,}."], [])
     pool = []
     for p in players:
         k = str(p["key"])
@@ -733,11 +761,15 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
         if p.get("out") and k not in locks:
             continue
         pool.append(p)
+    n_games = len({str(p.get("game") or p.get("team")) for p in pool})
+    n_teams = len({str(p.get("team")) for p in pool})
+    if n_games > MAX_GAMES or n_teams > MAX_TEAMS:
+        return LineupResult([], [f"That is {n_games} games and {n_teams} teams: an NFL slate has at most {MAX_GAMES} games."], [])
     # variables. Classic / full roster (no multiplier): ONE per player (in the lineup or not), each position's count
     # between its own slots and its own + the FLEX slots that admit it — the same lineups as a slot-by-slot model
-    # without its symmetry (an RB at RB2 or at FLEX is one lineup), which made the next-N search miss its time box;
-    # the slots are assigned after the solve (``_assign``). Showdown: (player, CPT | FLEX), a captain needing a
-    # captain row.
+    # without its symmetry (an RB at RB2 or at FLEX is one lineup); the slots are assigned after the solve
+    # (``_assign``). Showdown: (player, CPT | FLEX), a captain needing a captain row. The constraint matrix is built
+    # ONCE, sparse (a few nonzeros a row); each next lineup adds one sparse row.
     flat = all(g.multiplier == 1.0 for g in c.groups)
     var: list[tuple[int, int]] = []
     elig_all = frozenset().union(*(g.elig for g in c.groups))
@@ -762,47 +794,17 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
     def sal(i: int, gi: int) -> float:
         return float(pool[i]["cpt_salary"] if mult(gi) != 1.0 else pool[i]["salary"])
 
-    pts = np.array([float(pool[i][obj_key]) * mult(gi) for i, gi in var])
-    rows, lo, hi = [], [], []
-
-    def add(coef: dict[int, float], lb: float, ub: float) -> None:
-        r = np.zeros(nv)
-        for j, v in coef.items():
-            r[j] += v
-        rows.append(r)
-        lo.append(lb)
-        hi.append(ub)
-
     by_player: dict[int, list[int]] = {}
-    for j, (i, _gi) in enumerate(var):
-        by_player.setdefault(i, []).append(j)
-    if flat:
-        for pos in sorted(elig_all):
-            own = sum(g.count for g in c.groups if g.elig == frozenset({pos}))
-            flex = sum(g.count for g in c.groups if pos in g.elig and len(g.elig) > 1)
-            add({j: 1.0 for j, (i, _g) in enumerate(var) if pool[i]["position"] == pos}, float(own), float(own + flex))
-        add(dict.fromkeys(range(nv), 1.0), float(c.size), float(c.size))
-    else:
-        for gi, g in enumerate(c.groups):
-            add({j: 1.0 for j, (_i, g2) in enumerate(var) if g2 == gi}, g.count, g.count)
-    for i, js in by_player.items():
-        locked = str(pool[i]["key"]) in locks
-        add(dict.fromkeys(js, 1.0), 1.0 if locked else 0.0, 1.0)
-    for k in locks:
-        if not any(str(pool[i]["key"]) == k for i in by_player):
-            name = next((p.get("name") for p in players if str(p["key"]) == k), k)
-            notes.append(f"{name} is set to always in but cannot fill a slot in this contest: left out.")
-    add({j: sal(i, gi) for j, (i, gi) in enumerate(var)}, 0.0, float(c.cap))
+    by_pos: dict[str, list[int]] = {}
+    by_group: dict[int, list[int]] = {}
     teams: dict[str, list[int]] = {}
     games: dict[str, list[int]] = {}
-    for j, (i, _gi) in enumerate(var):
+    for j, (i, gi) in enumerate(var):
+        by_player.setdefault(i, []).append(j)
+        by_pos.setdefault(pool[i]["position"], []).append(j)
+        by_group.setdefault(gi, []).append(j)
         teams.setdefault(str(pool[i].get("team")), []).append(j)
         games.setdefault(str(pool[i].get("game") or pool[i].get("team")), []).append(j)
-    if c.max_per_team:
-        for _t, js in teams.items():
-            add(dict.fromkeys(js, 1.0), 0.0, float(c.max_per_team))
-    # "players from at least N games" (DraftKings classic) / "… N teams" (showdown): one binary y per game (team) after
-    # the x's, y_k <= the sum of game k's x's, sum y >= N
     spread: list[tuple[dict[str, list[int]], int, str]] = []
     if c.min_games:
         spread.append((games, c.min_games, "game"))
@@ -813,48 +815,88 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
             notes.append(f"The slate has {len(groups)} {word}{'s' if len(groups) != 1 else ''} we value: "
                          f"{SITE_NAMES[c.site]} needs players from {need}.")
             return LineupResult([], notes, [])
-    a = np.array(rows) if rows else np.zeros((0, nv))
     extra = sum(len(g) for g, _n, _w in spread)
-    if extra:
-        a = np.hstack([a, np.zeros((a.shape[0], extra))])
-        lo, hi = list(lo), list(hi)
-        at = nv
-        for groups, need, _w in spread:
-            first = at
-            for _g, js in groups.items():
-                r = np.zeros(nv + extra)
-                r[js] = -1.0
-                r[at] = 1.0
-                a = np.vstack([a, r])
-                lo.append(-np.inf)
-                hi.append(0.0)
-                at += 1
-            r = np.zeros(nv + extra)
-            r[first:at] = 1.0
-            a = np.vstack([a, r])
-            lo.append(float(need))
-            hi.append(float(at - first))
-        pts = np.concatenate([pts, np.zeros(extra)])
-    integrality = np.ones(nv + extra)
     width = nv + extra
-    cuts: list[np.ndarray] = []
+    rr: list[int] = []
+    cc: list[int] = []
+    vv: list[float] = []
+    lo: list[float] = []
+    hi: list[float] = []
+
+    def add(cols: Sequence[int], vals: Sequence[float] | float, lb: float, ub: float) -> None:
+        r = len(lo)
+        vals = [float(vals)] * len(cols) if isinstance(vals, (int, float)) else vals
+        rr.extend([r] * len(cols))
+        cc.extend(cols)
+        vv.extend(vals)
+        lo.append(lb)
+        hi.append(ub)
+
+    lb_var = np.zeros(width)
+    if flat:
+        for pos in sorted(elig_all):
+            own = sum(g.count for g in c.groups if g.elig == frozenset({pos}))
+            flex = sum(g.count for g in c.groups if pos in g.elig and len(g.elig) > 1)
+            add(by_pos.get(pos, []), 1.0, float(own), float(own + flex))
+        add(list(range(nv)), 1.0, float(c.size), float(c.size))
+        for i, js in by_player.items():                    # "always in": the player's variable fixed at 1
+            if str(pool[i]["key"]) in locks:
+                lb_var[js] = 1.0
+    else:
+        for gi, g in enumerate(c.groups):
+            add(by_group.get(gi, []), 1.0, float(g.count), float(g.count))
+        for i, js in by_player.items():                    # a player is the captain or a FLEX, not both
+            add(js, 1.0, 1.0 if str(pool[i]["key"]) in locks else 0.0, 1.0)
+    for k in locks:
+        if not any(str(pool[i]["key"]) == k for i in by_player):
+            name = next((p.get("name") for p in players if str(p["key"]) == k), k)
+            notes.append(f"{name} is set to always in but cannot fill a slot in this contest: left out.")
+    add(list(range(nv)), [sal(i, gi) for i, gi in var], 0.0, float(c.cap))
+    if c.max_per_team:
+        for _t, js in teams.items():
+            add(js, 1.0, 0.0, float(c.max_per_team))
+    # "players from at least N games" (DraftKings classic) / "… N teams" (showdown): one binary y per game (team) after
+    # the x's, y_k <= the sum of game k's x's, sum y >= N
+    at = nv
+    for groups, need, _w in spread:
+        first = at
+        for _g, js in groups.items():
+            add([*js, at], [-1.0] * len(js) + [1.0], -np.inf, 0.0)
+            at += 1
+        add(list(range(first, at)), 1.0, float(need), float(at - first))
+    base = sparse.csr_matrix((vv, (rr, cc)), shape=(len(lo), width))
+    pts = np.concatenate([np.array([float(pool[i][obj_key]) * mult(gi) for i, gi in var]), np.zeros(extra)])
+    integrality = np.ones(width)
+    bounds = Bounds(lb_var, np.ones(width))
+    cut_rows: list[list[int]] = []
     lineups: list[dict] = []
     times: list[float] = []
+    deadline = t_start + float(time_limit)
     for _k in range(n):
-        A_ = np.vstack([a, *cuts]) if cuts else a
-        lo_ = lo + [-np.inf] * len(cuts)
-        hi_ = hi + [float(c.size - 1)] * len(cuts)
+        left = deadline - time.perf_counter()
+        if left < 0.05:
+            notes.append(f"The {time_limit:g}-second budget ran out after {len(lineups)} lineup"
+                         f"{'s' if len(lineups) != 1 else ''}: those are the ones shown.")
+            break
+        if cut_rows:
+            cuts = sparse.csr_matrix((np.ones(sum(len(r) for r in cut_rows)),
+                                      ([k for k, r in enumerate(cut_rows) for _ in r], [j for r in cut_rows for j in r])),
+                                     shape=(len(cut_rows), width))
+            a_ = sparse.vstack([base, cuts], format="csr")
+        else:
+            a_ = base
+        lo_ = lo + [-np.inf] * len(cut_rows)
+        hi_ = hi + [float(c.size - 1)] * len(cut_rows)
         t0 = time.perf_counter()
-        res = milp(-pts, constraints=LinearConstraint(A_, lo_, hi_), integrality=integrality,
-                   bounds=Bounds(np.zeros(width), np.ones(width)),
-                   options={"time_limit": float(time_limit), "mip_rel_gap": MIP_GAP, "disp": False})
+        res = milp(-pts, constraints=LinearConstraint(a_, lo_, hi_), integrality=integrality, bounds=bounds,
+                   options={"time_limit": max(0.05, left), "mip_rel_gap": MIP_GAP, "disp": False})
         times.append(round((time.perf_counter() - t0) * 1000, 1))
         if res.x is None:
             if res.status == 1:
-                notes.append(f"The solver used its {time_limit:g}-second budget before finding lineup {len(lineups) + 1}: "
+                notes.append(f"The {time_limit:g}-second budget ran out before lineup {len(lineups) + 1} was found: "
                              "stopped there.")
             elif not lineups:
-                notes.append("No lineup fits the cap and the rules with these locks and excludes.")
+                notes.append("No lineup fits the cap and the rules with these players set to always in and left out.")
             else:
                 notes.append(f"Only {len(lineups)} different lineup{'s' if len(lineups) != 1 else ''} fit the cap and the rules.")
             break
@@ -863,10 +905,7 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
         if flat:
             chosen = _assign(c, pool, [i for i, _g in chosen])
         lineups.append(_lineup(c, pool, chosen, proven=res.status == 0, mode=mode))
-        cut = np.zeros(width)
-        for i in {i for i, _gi in chosen}:
-            cut[by_player[i]] = 1.0
-        cuts.append(cut)
+        cut_rows.append(sorted(j for i in {i for i, _gi in chosen} for j in by_player[i]))
     return LineupResult(lineups, notes, times)
 
 

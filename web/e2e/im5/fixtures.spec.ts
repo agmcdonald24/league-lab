@@ -24,6 +24,8 @@ async function dfsApi(context: BrowserContext): Promise<string[]> {
     if (url.pathname === "/api/dfs/projections") return send(200, read(`projections_${url.searchParams.get("site") === "fd" ? "fd" : "dk"}.json`));
     if (url.pathname === "/api/dfs/slate") {
       const text = req.postData() ?? "";
+      // ---- IM-5 fix: the server's Guard refuses a body over its upload limit with its own 413 words
+      if (text.includes("GUARD_413")) return send(413, JSON.stringify({ error: "That is more than this server takes in one request.", code: "too_large" }));
       return /Name \+ ID/.test(text) && /Salary/.test(text) ? send(200, read("slate_dk_classic.json")) : send(400, read("slate_error.json"));
     }
     if (url.pathname === "/api/dfs/lineups") return send(200, read("lineups_dk_cash3.json"));
@@ -78,6 +80,10 @@ for (const scheme of ["dark", "light"] as const) {
     await page.getByTestId("dfs-paste").fill("Player,Team,Cost\nJosh Allen,BUF,7900");
     await page.getByTestId("dfs-paste-add").click();
     await expect(page.getByTestId("dfs-file-error")).toContainText("does not look like a DraftKings or FanDuel salary file");
+    // a 413 from either layer reads one plain sentence
+    await page.getByTestId("dfs-paste").fill("GUARD_413");
+    await page.getByTestId("dfs-paste-add").click();
+    await expect(page.getByTestId("dfs-file-error")).toHaveText("That file is too big: a salary file is under 1 MB. Export the contest's player list again and add that file.");
 
     // the salary file
     await page.getByTestId("dfs-file").setInputFiles(SALARIES);

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import logging
 from pathlib import Path
 
@@ -114,8 +115,12 @@ def test_dk_showdown_slate_one_line_for_the_slate(client):
 
 @needs_db
 def test_json_body_and_week_override(client):
-    r = client.post("/api/dfs/slate", json={"text": DK_CLASSIC}, params={"week": 6})
-    assert r.status_code == 200 and r.json()["week"] == 6
+    r = client.post("/api/dfs/slate", json={"text": DK_CLASSIC}, params={"week": 4})
+    assert r.status_code == 200 and r.json()["week"] == 4
+    # IM-5 fix: only this week (4 under the pinned clock) and the next
+    r = client.post("/api/dfs/slate", json={"text": DK_CLASSIC}, params={"week": 9})
+    assert r.status_code == 400 and r.json()["code"] == "bad_week"
+    assert r.json()["error"] == "DFS shows this week (week 4) and next week (week 5) only."
 
 
 @needs_db
@@ -123,15 +128,22 @@ def test_hostile_files_are_refused_in_words(client):
     r = client.post("/api/dfs/slate", content=(FX / "hostile_wrong_headers.csv").read_bytes())
     assert r.status_code == 400 and r.json()["code"] == "not_a_salary_file"
     assert r.json()["error"].startswith("That does not look like a DraftKings or FanDuel salary file")
+    # IM-5 fix: over the Guard's upload limit (LEAGUE_LAB_MAX_UPLOAD_KB, 2 MB): the Guard's 413 in words, before the
+    # route; between our 1 MB cap and the Guard's: ours (the screen says the same sentence for either, on a 413)
     big = (DK_CLASSIC * 60).encode()
     assert len(big) > 3_000_000
     r = client.post("/api/dfs/slate", content=big)
-    assert r.status_code == 413 and "under 1 MB" in r.json()["error"]
+    assert r.status_code == 413 and r.json()["code"] == "too_large"
+    assert r.json()["error"] == "That is more than this server takes in one request."
+    mid = (DK_CLASSIC * 25).encode()
+    assert 1_000_000 < len(mid) < 2_000_000
+    r = client.post("/api/dfs/slate", content=mid)
+    assert r.status_code == 413 and r.json()["code"] == "too_large" and "under 1 MB" in r.json()["error"]
 
 
 @needs_db
 def test_formula_cells_are_text_and_the_upload_neutralises_them(client):
-    b = _slate(client, (FX / "hostile_formulas.csv").read_text())
+    b = _slate(client, (FX / "hostile_formulas.csv").read_text(), week=5)     # its one game is BUF@MIA (week 11's)
     assert [s["reason"] for s in b["skipped"]] == ["its ID is not a DraftKings player id",
                                                    "its salary is not a number"]
     assert b["players"] == [] and b["unmatched"][0]["name"].startswith("=cmd")
@@ -194,7 +206,7 @@ def test_lineups_refuse_bad_requests(client):
     for body, code in (({"contest": "x", "players": [{}]}, "bad_contest"), ({"contest": "dk_classic"}, "no_players"),
                        ({"contest": "dk_classic", "players": [{"position": "QB", "salary": "a"}]}, "bad_request"),
                        ({"contest": "dk_classic", "players": [{"position": "LB", "salary": 1}]}, "bad_player"),
-                       ({"contest": "dk_classic", "players": [{"position": "QB", "salary": 5000}], "n": 50}, "bad_n")):
+                       ({"contest": "dk_classic", "players": [{"key": "a", "position": "QB", "salary": 5000}], "n": 50}, "bad_n")):
         r = client.post("/api/dfs/lineups", json=body)
         assert r.status_code == 400 and r.json()["code"] == code, (body, r.text)
 
@@ -204,3 +216,60 @@ def test_one_memo_region_and_the_rate_buckets():
     from league_lab_api import dfs as api_dfs
     assert api_dfs.RATE_BUCKETS == {"/api/dfs/slate": "heavy", "/api/dfs/lineups": "heavy",
                                     "/api/dfs/projections": "read"}
+
+
+# ------------------------------------------------------------------------------------------------ IM-5 fix: bounded work
+def test_the_reviews_hostile_body_is_refused_fast(client):
+    import time
+    body = ("a,," * 333_000).encode()
+    t0 = time.perf_counter()
+    r = client.post("/api/dfs/slate", content=body)
+    assert r.status_code == 400 and r.json()["code"] == "too_many_columns"
+    assert time.perf_counter() - t0 < 1.0
+
+
+def test_hostile_lineups_requests_are_refused_before_any_solve(client, monkeypatch):
+    import time
+
+    from league_lab_api import dfs as api_dfs
+    called = []
+    monkeypatch.setattr(api_dfs.D, "solve_lineups", lambda *a, **k: called.append(1))
+    p = {"position": "WR", "salary": 3000, "proj": 5.0, "p90": 9.0, "p10": 1.0, "team": "BUF"}
+    t0 = time.perf_counter()
+    r = client.post("/api/dfs/lineups", json={"contest": "dk_classic",
+                                               "players": [p | {"key": f"k{i}", "game": f"g{i}"} for i in range(2000)]})
+    assert r.status_code == 400 and r.json()["code"] == "too_many_players" and time.perf_counter() - t0 < 1.5
+    r = client.post("/api/dfs/lineups", json={"contest": "dk_classic",
+                                               "players": [p | {"key": f"k{i}", "game": f"g{i}"} for i in range(17)]})
+    assert r.status_code == 400 and r.json()["code"] == "too_many_games"
+    r = client.post("/api/dfs/lineups", json={"contest": "dk_showdown",
+                                               "players": [p | {"key": f"k{i}", "game": f"g{i % 2}"} for i in range(6)]})
+    assert r.status_code == 400 and r.json()["code"] == "too_many_games"
+    for bad in ({"proj": 1e9}, {"key": "x" * 41}, {"name": "n" * 81}, {"salary": -5}, {"p90": float("inf")}):
+        r = client.post("/api/dfs/lineups", content=json.dumps({"contest": "dk_classic", "players": [p | {"key": "a", "game": "g"} | bad]}).replace("Infinity", "1e999"),
+                        headers={"content-type": "application/json"})
+        assert r.status_code == 400, bad
+    assert called == []
+
+
+def test_a_second_build_while_one_runs_is_told_to_wait(client, monkeypatch):
+    from league_lab_api import dfs as api_dfs
+    monkeypatch.setattr(api_dfs, "BUSY_WAIT_S", 0.1)
+    assert api_dfs._WORK.acquire(timeout=1)
+    try:
+        r = client.post("/api/dfs/lineups", json={"contest": "dk_classic", "players": [
+            {"key": "a", "position": "QB", "salary": 5000, "proj": 10.0, "team": "BUF", "game": "g"}]})
+        assert r.status_code == 429 and r.json()["code"] == "busy" and r.headers["retry-after"] == "5"
+        assert r.json()["error"] == "Another lineup is being built right now. Try again in a few seconds."
+        r = client.post("/api/dfs/slate", content=DK_CLASSIC.encode())
+        assert r.status_code == 429 and r.json()["code"] == "busy"
+    finally:
+        api_dfs._WORK.release()
+
+
+@needs_db
+def test_projections_only_this_week_and_the_next(client):
+    assert client.get("/api/dfs/projections", params={"site": "dk", "week": 5}).status_code == 200
+    r = client.get("/api/dfs/projections", params={"site": "dk", "week": 12})
+    assert r.status_code == 400 and r.json()["code"] == "bad_week"
+    assert client.get("/api/dfs/projections", params={"site": "fd", "week": 3}).status_code == 400
