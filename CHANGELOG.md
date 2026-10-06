@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-06 — Wave I-O
+
+- **IO-3 — the blog editor.** Andrew writes on the site, on his phone if he likes: `/blog/new` and `/blog/edit/<id>`
+  (**Write** in the ⋯ menu and on `/blog`, for an account listed in `LEAGUE_LAB_EDITORS` only — no password, no token;
+  unset, the editor does not exist). Title, summary, tags, author line, address, the markdown body with a live preview
+  through `mdDoc` (side by side at 1300, Write / Preview at 375), a toolbar with **Player** and **Players table**,
+  drafts that save themselves (and stay on the device when the connection drops), a two-tab conflict shown in words,
+  Publish / Unpublish / Delete (30 days to restore), **Download every post** (the files' own markdown, one zip), and
+  **New post from…** three starters filled from this week's numbers on Half PPR (written in, never published by
+  themselves). Posts live in a new `blog` schema (`scripts/hosted_blog.sql`: `blog.posts`, `blog.revisions`, ≤ 30 MB);
+  the public list, a post, RSS, the sitemap and the link previews serve them beside the files. Without the schema or
+  the variable the blog is exactly the files'. The Account screen shows **Your account id** with Copy. docs/BLOG.md.
+
 ## 2026-10-06 — Wave I-N
 
 - **PO — the wave merged, reviewed and hardened.** Six branches (IN-1 … IN-6) on `integ/IN`, the full suites run by
