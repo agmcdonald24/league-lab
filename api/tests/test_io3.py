@@ -284,6 +284,11 @@ def test_slug_rules_and_the_file_collision(editor, folder):
     other = new_post(editor, title="Other")
     r = save(editor, other, slug=p["slug"])
     assert r.json()["slug_problem"] == "taken" and r.json()["slug"] == "other"
+    # an address made from the title (never typed) moves on to the next free one instead of complaining
+    r = save(editor, r.json(), slug=p["slug"], slug_auto=True)
+    assert r.json()["slug"] == f"{p['slug']}-2" and "slug_problem" not in r.json()
+    r2 = save(editor, r.json(), slug=p["slug"], slug_auto=True)                       # stable: the same answer again
+    assert r2.json()["slug"] == f"{p['slug']}-2"
     r = save(editor, p, slug="my-own-address")
     assert r.json()["slug"] == "my-own-address" and "slug_problem" not in r.json()
     p = r.json()

@@ -406,3 +406,23 @@ test("a picture: uploaded from the editor, checked by its first bytes, shown in 
   await inert(page, '[data-testid="editor-preview"]');
   await page.screenshot({ path: join(SHOTS, `io3-picture-${isMobile ? 375 : 1300}.png`), fullPage: true });
 });
+
+test("two drafts with one title: the second's address moves on to -2 with no complaint, and keeps following the title", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the same code path at 375");
+  test.setTimeout(90_000);
+  await asEditor(page);
+  const t = `Same title ${randomBytes(3).toString("hex")}`;
+  const base = t.toLowerCase().replace(/ /g, "-");
+  for (let i = 0; i < 2; i++) {
+    await page.goto(`${API}/blog/new`);
+    await page.getByTestId("editor-title").fill(t);
+    await expect(page).toHaveURL(/\/blog\/edit\//, { timeout: 15_000 });
+    await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  }
+  await expect(page.getByTestId("editor-slug")).toHaveValue(`${base}-2`);
+  await expect(page.getByTestId("editor-slug-words")).toHaveCount(0);
+  await page.getByTestId("editor-title").fill(`${t} part two`);
+  await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  await expect(page.getByTestId("editor-slug")).toHaveValue(`${base}-part-two`);
+  await expect(page.getByTestId("editor-slug-words")).toHaveCount(0);
+});

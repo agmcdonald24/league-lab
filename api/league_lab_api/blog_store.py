@@ -176,6 +176,7 @@ class PostIn(BaseModel):
 class SaveIn(PostIn):
     revision: int = Field(ge=1, le=10_000_000)
     autosave: bool = False
+    slug_auto: bool = False        # the address was made from the title, not typed: a taken one moves on to -2, -3 …
 
 
 class PublishIn(BaseModel):
@@ -377,6 +378,18 @@ def get_revision(uid: str, post_id: str, rid: int) -> dict[str, Any]:
     return {"revision": r[0], "title": r[1], "body": r[2], "saved_at": _iso(r[3])}
 
 
+def _free_slug(c: psycopg.Connection, base: str, files: set[str], own: str | None = None) -> str:
+    """``base``, else ``base-2``, ``base-3`` … — the first no file, no reserved word and no other post holds."""
+    slug, n = base, 1
+    while slug in RESERVED or slug in files or c.execute("select 1 from blog.posts where slug = %s and id is distinct "
+                                                         "from %s", (slug, own)).fetchone():
+        n += 1
+        slug = f"{base[:74]}-{n}"
+        if n > 50:
+            return f"draft-{uuid.uuid4().hex[:12]}"
+    return slug
+
+
 def create(uid: str, p: PostIn) -> dict[str, Any]:
     f = clean(p)
     wanted = (p.slug or "").strip() or slug_from(f["title"] or "draft")
@@ -388,13 +401,7 @@ def create(uid: str, p: PostIn) -> dict[str, Any]:
             raise _err(409, "too_many", f"The blog holds {MAX_POSTS} posts at most. Delete one first.")
         _room(c, f["body_bytes"] * 2)
         base = wanted if slug_problem(wanted) in (None, "taken_by_file") else slug_from(f["title"] or "draft")
-        slug, n = base, 1
-        while slug in RESERVED or slug in files or c.execute("select 1 from blog.posts where slug = %s", (slug,)).fetchone():
-            n += 1
-            slug = f"{base[:74]}-{n}"
-            if n > 50:
-                slug = f"draft-{uuid.uuid4().hex[:12]}"
-                break
+        slug = _free_slug(c, base, files)
         r = c.execute(f"insert into blog.posts (slug, title, summary, body, body_bytes, minutes, tags, author, status, "
                       f"account_id) values (%s, %s, %s, %s, %s, %s, %s, %s, 'draft', %s) returning {COLS}, body",
                       (slug, f["title"], f["summary"], f["body"], f["body_bytes"], f["minutes"], f["tags"], f["author"],
@@ -437,7 +444,10 @@ def save(uid: str, post_id: str, s: SaveIn) -> dict[str, Any]:
                 if problem is None and c.execute("select 1 from blog.posts where slug = %s and id <> %s",
                                                  (want, post_id)).fetchone():
                     problem = "taken"
-                if problem is None:
+                if problem in ("taken", "taken_by_file", "reserved") and s.slug_auto:
+                    # the address follows the title (the writer never typed one): the next free one, no complaint
+                    slug, problem = _free_slug(c, slug_from(want), files, post_id), None
+                elif problem is None:
                     slug = want
         rev = cur["revision"] + 1
         r = c.execute(f"update blog.posts set slug = %s, title = %s, summary = %s, body = %s, body_bytes = %s, "

@@ -96,7 +96,8 @@ export const editorApi = {
   post: (id: string) => call<EditorPost>("GET", `/api/blog/posts/${encodeURIComponent(id)}`),
   revision: (id: string, rid: number) => call<{ revision: number; title: string; body: string; saved_at: string | null }>("GET", `/api/blog/posts/${encodeURIComponent(id)}/revisions/${rid}`),
   create: (d: Draft) => call<EditorPost>("POST", "/api/blog/posts", d),
-  save: (id: string, d: Draft, revision: number, autosave: boolean) => call<EditorPost>("PUT", `/api/blog/posts/${encodeURIComponent(id)}`, { ...d, revision, autosave }),
+  save: (id: string, d: Draft, revision: number, autosave: boolean, slugAuto = false) =>
+    call<EditorPost>("PUT", `/api/blog/posts/${encodeURIComponent(id)}`, { ...d, revision, autosave, slug_auto: slugAuto }),
   publish: (id: string, revision: number) => call<EditorPost>("POST", `/api/blog/posts/${encodeURIComponent(id)}/publish`, { revision }),
   unpublish: (id: string) => call<EditorPost>("POST", `/api/blog/posts/${encodeURIComponent(id)}/unpublish`),
   remove: (id: string) => call<EditorPost>("DELETE", `/api/blog/posts/${encodeURIComponent(id)}`),

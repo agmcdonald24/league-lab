@@ -166,12 +166,12 @@
     saveState = "saving";
     inFlight = (async () => {
       try {
-        const p = post ? await editorApi.save(post.id, d, post.revision, auto) : await editorApi.create(d);
+        const p = post ? await editorApi.save(post.id, d, post.revision, auto, !slugTouched) : await editorApi.create(d);
         const first = !post;
         post = { ...p, body: d.body };
         sent.text = text;
         slugWords = p.slug_words ?? null;
-        if (p.slug !== slug && (first || p.slug_problem)) {
+        if (p.slug !== slug && (first || p.slug_problem || !slugTouched)) {
           slug = p.slug; // the server's address (a file or another post held the one asked for)
           sent.text = JSON.stringify(draft());
         }
