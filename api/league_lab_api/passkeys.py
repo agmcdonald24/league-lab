@@ -71,7 +71,7 @@ from .settings import APP_NAME
 log = logging.getLogger("league_lab_api.passkeys")
 
 # py_webauthn pulls in `cryptography` and pyOpenSSL: ~16 MB of memory once imported (measured next to the app's own
-# libraries; docs/handbacks/IM-4.md). On a 512 MB server it is imported at the first ceremony, not at start-up.
+# libraries; docs/STATUS.md § "IM-4"). On a 512 MB server it is imported at the first ceremony, not at start-up.
 # The image always has it (api/uv.lock); without it the status says passkeys are not ready.
 LIBRARY = importlib.util.find_spec("webauthn") is not None
 _W: dict[str, Any] = {}

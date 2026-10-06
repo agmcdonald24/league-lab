@@ -176,7 +176,7 @@ test("signed out: one line to sign in, no Watch in the drawer; accounts off: one
   await server.attach(context);
   await page.goto(`/watchlist?${Q}`);
   await expect(page.getByTestId("watchlist-signin")).toHaveText(
-    "Sign in to keep a watchlist on any device: sign in with your email, then tap ☆ Watch on any player's card.",
+    "Sign in to keep a watchlist on any device: sign in or make an account, then tap ☆ Watch on any player's card.",
   );
   await expect(page.getByTestId("watchlist-signin-link")).toHaveAttribute("href", "/account");
   await expect(page.getByTestId("watchlist-rows")).toHaveCount(0);

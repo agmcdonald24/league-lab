@@ -10047,3 +10047,905 @@ compare against it)
    X" counts games X was on the roster (active, reserve, inactive) and did not play — a healthy scratch counts; the
    `player_id_map` relationship is a warning, not an error (2 players); RBs get no separation / YAC over expected
    (NGS does not publish them).
+
+
+## Wave I-M (Iteration 23)
+
+### PO merge — Wave I-M, 2026-10-05/06 (Monday night 22:45 – Tuesday 02:00 ET; the overnight push: full stat tables, open doors, passkey accounts, DFS)
+
+* **Why**: Andrew, 22:26 ET: "I'd like you to try a significant push next iteration overnight. Adding the full
+  tables, some sort of login/account so people can save their stuff and not have to reconnect each time, maybe lets
+  lose the password and add an option to view some of the non team specific features without having to choose
+  team/league to access, dfs recomendations/undervalues." On "the full tables": the Players tables shown in full
+  without clicking into a player, with more advanced metrics (aDOT, EPA …), and the two empty WR / TE columns. He left
+  two choices open ("No preference"); the PO took **both sign-in methods** (passkeys built tonight, the emailed link
+  ready for a Resend key) and **fully public** (no password, rate limits, one switch back). The brief is
+  `/home/claude/waveIM/BRIEF.md` in the sandbox (not in the repo); five Opus devs in one message from `main`
+  `ab50682`, 1 h 02 – 1 h 43 each; merged IM-1, IM-3, IM-4, IM-5, IM-2 (`integ/IM`); **an independent security review**
+  of the merged tree (a sixth Opus agent that wrote none of it); a fix round by IM-3, IM-4 and IM-5 on its findings;
+  the PO's lines; the suites; QA.
+* **Delivered** (the hand-backs below):
+  * **IM-1 — the Stats tables' data.** 51 → **101 columns**, each with definition, numerator, denominator, status and a
+    reason when null: EPA (total, per target / carry / dropback), success rates, first downs, WOPR, RACR, deep targets
+    and share, looks inside the 10, TD rates, yards per reception / touch, AY/A, TD / INT / sack rates, scramble yards,
+    a QB's rushing share of his points, expected points and **points over expected**, seven more Next Gen Stats
+    fields, PFR's weekly advanced stats (drops, broken tackles, yards before / after contact per carry, pressures, bad
+    throws; joined PFR id → gsis id through the id map, 7 of 1,290 2026 rows unmapped and counted by a test). Two
+    marked **unavailable** with the reason (PFR publishes them per season only). New `int_player_game_efficiency` →
+    `analytics.mart_player_game_advanced` (9.3 MB; the sync windows it to ~2.1 MB) so `fct_player_game` and the 54
+    models under it are not rebuilt. Catalogue rows carry `group`; presets lead with 14 columns and carry `full`;
+    **`GET /api/players.csv`**. **The two empty columns Andrew saw** (separation, YAC over expected) are not a bug:
+    they wait for the nightly to build `mart_player_ngs_week` on Neon — on the clone 40 of the top 40 WR / TE by
+    targets have both, and every receiver without one has no week with 5+ targets (NGS's rule).
+  * **IM-2 — the Stats tables' screen.** "Key stats" and **"Full table"** one tap apart (Full table from 900 px, Key
+    stats on a phone): every column for the position under group headers, the player column and both header rows
+    sticky, sideways scroll inside the table, sort on any column, group chips, "Show all 291", Download CSV; past 100
+    rows only the rows near the screen are in the page (a brisk scroll at 453 rows × 46 columns: 17–19 ms a frame on
+    the desktop, 18–56 ms on a phone slowed 4×).
+  * **IM-3 — the doors open.** `LEAGUE_LAB_GATE=open|password` (the PO set `open` in `render.yaml`; `password`
+    brings the beta password back with no code change). **Reference leagues** `ref:ppr` / `ref:half` / `ref:std`
+    (`refleague.py`): the 13 research routes answer them with no team and no ownership fields; the decision routes
+    answer 404 `needs_league` and the web shows an invitation card. A front door ("Browse the lab" / "Open your
+    league"), the "No league · Half PPR ▾" picker. The limiter (`ratelimit.py`: `read` 300 / min, `research` 60,
+    `heavy` 20, `write` 60, per client by an HMAC of the address — `CF-Connecting-IP` on Render, IPv6 by /64 with a
+    second key per /48 — a ceiling for all clients together, at most 4 research / heavy requests running at once), the
+    Guard (`security.py`: cross-site writes refused, body limits, a CSP the built app and GA pass with 0 violations),
+    `docs/SECURITY_PUBLIC.md`, robots / Open Graph tags.
+  * **IM-4 — accounts without email.** Passkeys (WebAuthn, py_webauthn 3.0.1: discoverable credentials, challenges
+    server-side and single use, sign count, origins from `LEAGUE_LAB_PASSKEY_ORIGINS` = `https://isuckatfantasy.io`):
+    "Create an account with a passkey" saves this browser's leagues, default, Stats views and a Yahoo / ESPN
+    connection; "Sign in with a passkey" on another device brings them back; add / list / remove passkeys (never the
+    only way in). `accounts.passkeys`, `accounts.passkey_challenges`, `users.email` optional. **`LEAGUE_LAB_ACCOUNTS=auto`
+    turns accounts on by itself** when the API secret is set and the tables exist — i.e. **at the first nightly after
+    the push** (the sync applies `scripts/hosted_accounts.sql`), for everyone, with the method `passkey` (the emailed
+    link joins when a Resend key exists).
+  * **IM-5 — DFS.** `/dfs` (a fifth tab; no league needed): this week's projections in DraftKings / FanDuel scoring
+    before any file; with **the site's own salary file** (the user's export — nothing is fetched: both sites forbid
+    automated collection and the PO's tools cannot open them): points per $1,000, **undervalued / overpriced**
+    against a straight line fitted salary → projection within position on the slate, with the reason the app already
+    has; an exact lineup optimiser (cash / tournament, always-in / leave-out, up to 20 lineups, the site's team rules;
+    equal to brute force on 24 small slates) and the site's upload CSV. `docs/DFS.md`. **Unverified against a real
+    file**: the two files' headers, defense names, team codes, the upload shapes — the fixtures are synthetic.
+* **The independent review (01:00 ET) said "not safe to open the gate as built" — two Highs, four Mediums — and all
+  were fixed before the merge was called done**: (High) the DFS salary-file parser's header search was quadratic and
+  ran on the event loop (a 60 KB body froze every request for 3.8 s; ≈ 1,000 s at the 1 MB cap) → linear, refused in
+  milliseconds; (High) the lineup solver took 42 s and 437 MB for a hostile 2,000-player request, on the event loop →
+  off the loop behind a semaphore of one, ≤ 800 players / 16 games / 32 teams checked first, one sparse matrix, one
+  5-second budget for the request (+11 MB measured by the PO for 18 lineups); (Medium) `view=LINEUP` escaped the heavy
+  bucket and the `needs_league` rule; the `read` bucket priced research at nothing (→ the `research` bucket, a league
+  not seen in 10 minutes charged to `heavy`, 4 CPU slots); IPv6 rotation (→ the /48 key and the all-clients ceiling;
+  the accounts' limits by `ratelimit.client_group`, global ceilings of 30 new accounts an hour / 200 a day counted in
+  the database, usage rows capped); the Sleeper, MFL and ESPN clients' caches never evicted (→ pruned and capped at
+  1,500 entries); (Low) `/api/docs` off, markdown links pinned to in-app paths and our own hosts, an over-long
+  credential id answers 400. The PO re-ran the reviewer's own scripts on the fixed tree: the hostile bodies are refused
+  in < 1 ms, `LINEUP` in any case is `heavy`, the 2,000-player request is a 400 in 38 ms, `/api/docs` 404.
+* **PO, on the merge**: `render.yaml` `LEAGUE_LAB_GATE: open`; `sync_to_hosted.sh` windows
+  `mart_player_game_advanced`; the Dockerfile's note on `--forwarded-allow-ips` (it makes `request.client` the
+  client-written hop: nothing may key on it); `ratelimit.client_group` and `accounts.client_ip` on it; the Stats CSV
+  link says `per_game=1`; DFS's GET is a read, its POSTs heavy; `/dfs` with no league opens in the frame on
+  `ref:half` (the tabs stay, a name opens the drawer); the watchlist's signed-out line; Stats' headline names
+  receiving yards only for a receiver (QA: "Josh Allen … 0.3 receiving yards per game"); WORDS' lineup budget and busy
+  sentence; `test_f3` follows the cache's pruning; `il5`'s e2e the new line. On the main database: `uv sync` (the new
+  dependency), `hosted_accounts.sql`, `dbt seed --select metric_registry`, `dbt build --select
+  int_player_game_efficiency mart_player_game_advanced mart_player_ngs_week` (29 pass, 1 warn: the id-map relationship,
+  as before).
+* **Checks** (this session's database: 2026 through week 4, the suites pinned to 2026-10-03 — the week-state tests
+  fail before and after, compared by name against `known_api_failures.txt`): API **824 passed / 92 failed** / 13
+  skipped — the 92 are all on the known list (the 90 of Monday afternoon + five that began failing on unchanged code
+  around 20:00 ET, four devs confirming on `ab50682`: `test_ia2` partners, `test_ib0` one-lineup-total × 2 (dynasty),
+  `test_ii1` Folk × 2 — something on those paths reads the real date; not found tonight); root **1,462 passed / 4
+  failed** / 3 skipped (the same four); ruff, `copy_standard --check`, `npm run lint` (177 files) and the build clean;
+  fixtures e2e **431 passed** / 3 skipped (two `il5` lines followed the watchlist's new words). 256 API + root tests and
+  ~50 e2e tests are new. QA on the fixture API (gate open, accounts on) at 375 and 1300: the front door; Stats on
+  `ref:half` — Full table, 94 columns under 12 group headers, no ownership column; Stats on a house league; the
+  invitation card on Trades; DFS before a file, then DraftKings' synthetic file (597 of 599 valued, undervalued /
+  overpriced with reasons); the account screen (passkey and email both offered); My Week on a house league — no
+  console error, no sideways page scroll.
+* **Verified live: nothing yet.** After the push: `/api/health`; `/api/session` `gate: false` with no cookie;
+  **`/api/ratelimit`** (SECURITY_PUBLIC § 2: `keyed_by` must be `cf-connecting-ip` and a spoofed header must not
+  change the key — if Render does not pass that header the limiter falls back to its proxy's hop and the PO sets
+  `LEAGUE_LAB_CLIENT_IP`); the response headers and the CSP in a real browser with GA; the front door and Stats on a
+  phone; `/dfs`; `/api/account/status` (`enabled: false … tables missing` until the nightly, then `methods:
+  ["passkey"]`) and a real passkey on a phone; Stats' new columns (they need the nightly's `dbt build` and sync:
+  `mart_player_game_advanced` and the PFR rows on Neon).
+* **Decisions the PO took (Andrew may reverse)**: the site is public from this deploy (`LEAGUE_LAB_GATE: password`
+  in `render.yaml` reverses it); accounts turn on by themselves at the first nightly after the push
+  (`LEAGUE_LAB_ACCOUNTS=off` on Render holds them); a passkey-only account that loses every device is gone (said on the
+  screen); Full table is the desktop default; DFS takes the user's file and fetches nothing; DFS values DraftKings'
+  yardage bonuses at their odds; new accounts are capped at 30 an hour / 200 a day; `/api/docs` is off; one lineup
+  build at a time for the whole server (5 seconds at most).
+* **Not done / next**: the live checks above; Andrew uploads one real DraftKings and one real FanDuel salary file
+  (the parsers are built from the documented shapes); real devices for passkeys (iPhone, Android, Windows Hello); the
+  unpinned date read behind the five tests; provider budgets are shared by all visitors (a busy public hour can make
+  league setup say "busy": SECURITY_PUBLIC "left", Medium); the other provider clients follow redirects (only their
+  fixed hosts could send one); `/api/status` and `/api/usage/summary` are public (no secrets, but the PO's QA numbers);
+  DFS has no ownership, stacking or late swap; the Stats table's very fast fling still stutters at 450 rows; a
+  database at the suites' pinned week for a green run; the stable week label for MFL moves; MFL's live trade.
+
+
+### IM-3 2026-10-05/06 — the doors open: the gate, the limiter, the security pass, reference leagues (branches `dev/IM3`, `fix/IM3`)
+
+**Branch** `dev/IM3` (from `main` `ab50682`), worktree `/home/claude/wt-im3`. Plan section: Wave I-M brief § IM-3.
+The security write-up is `docs/SECURITY_PUBLIC.md` (what was checked, changed, left by severity).
+
+#### Done / not done (the package's numbered list)
+
+1. **The gate as a switch — done.** `LEAGUE_LAB_GATE` = `open` | `password` (`auth.gate()`); unset or misspelt = the old
+   rule; `open` ignores the password; `password` without a password keeps the door shut (a token signed with the
+   empty-password key is refused — that was a real hole for that state). `/api/session` keeps its shape
+   (`gate: true|false`, so `test_auth`'s exact asserts hold and the web follows it unchanged); `/api/status` adds
+   `gate: "open"|"password"`.
+2. **Rate limits — done.** `api/league_lab_api/ratelimit.py`, one pure-ASGI middleware; buckets read 300/min burst 150,
+   heavy 20/min burst 20, write 60/min burst 30 (reasons in SECURITY_PUBLIC § 2); 429 + `Retry-After` + the JSON;
+   `ErrorCard` kind `limited` with the calm line; `/api/health` and static files not limited; the client = HMAC of
+   `CF-Connecting-IP` on Render (`RENDER` set), else the last `X-Forwarded-For` entry, else the peer; IPv6 by /64;
+   bounded (5,000 per bucket, LRU after the free sweep); `GET /api/ratelimit` probe; `/api/status` → `ratelimit`.
+3. **Security pass — done**, `docs/SECURITY_PUBLIC.md`: route inventory; CSRF (the Guard, `security.py`); SSRF
+   (hostile links through every setup parameter, outbound recorded; MFL redirects pinned to MFL; dot usernames
+   refused); error bodies (the 502's `cause` → log; non-ASCII tokens no longer 500); headers incl. a CSP tested on the
+   built app with GA on (0 violations); private-league caches with the door open (re-tested); body limits; SQL params
+   (read, nothing to change). Left: 2 Medium, 7 Low/Info (the table at the end of the doc).
+4. **Reference league keys — done.** `api/league_lab_api/refleague.py` (+ a hook in `platforms.py`): `ref:ppr` /
+   `ref:half` / `ref:std` on Stats, Trends, Matchups (defense, corners), Compare, a player's card and games, search,
+   receivers, About, the record (the reference league's model record, Half PPR, no lineup record), `/api/ros` (points
+   views); every ownership field absent; decision routes (`/api/my-week`, waivers, trades partners / lists /
+   evaluate, team, league, `ros?view=lineup`, week-odds, scoring-check, events, a league's rosters) → 404
+   `{"code": "needs_league", "error": "Open your league to see this."}`. `stats.py` / `research.py` / `player.py`
+   untouched (the Router resolves the key).
+5. **The web without a league — done.** Front door on `Leagues.svelte` (two lines, **Browse the lab** →
+   `/players?league=ref:half`, **Open your league**, the record's line + About); the bar's "No league · Half PPR ▾"
+   (PPR / Half PPR / Standard) + **Open your league**; My Team / Waivers / Trades (and Team, League, Calculator,
+   Watchlist) show the invitation card; ref keys never stored (`prefs` untouched, App skips them); `?league=ref:half`
+   in the URL; GA `platform: "none"`. DFS: no tab added (IM-5 owns it; its routes take no league, so it works).
+   **Not done (IM-2's file)**: Players · Stats still shows the "Everyone / Yours / Free agents / Other teams" chips and
+   the "Team in league" column for a reference key; the column reads "—" now (`research.ownerWord` with no owner field),
+   not "free agent". The line IM-2 / the PO needs: in `Players.svelte`, wrap the `who` chips and the "Team in league"
+   header + cell in `{#if !isRef(league)}` (`import { isRef } from "../lib/refleague"`).
+6. **Search engines — done.** `web/index.html`: description, canonical `https://isuckatfantasy.io/`, Open Graph +
+   `twitter:card`; `web/public/robots.txt` (allow `/`, disallow `/api/`). About's GA words checked: still true.
+7. **Tests — done.** `api/tests/test_im3.py` 53 tests; `web/e2e/im3/fixtures.spec.ts` 4 tests × 2 projects (375 /
+   1300), recordings `web/fixtures/im3/api_im3.json` (464 KB; lists trimmed to 60 rows).
+
+#### Files
+
+Mine: `api/league_lab_api/{auth,main}.py`, new `ratelimit.py`, `refleague.py`, `security.py`; `web/src/App.svelte`,
+`components/TopBar.svelte`, `routes/Leagues.svelte`, new `lib/refleague.ts`, `web/index.html`, `web/public/robots.txt`;
+`api/tests/test_im3.py`, `web/e2e/im3/`, `web/fixtures/im3/`; docs `SECURITY_PUBLIC.md` (new), `WORDS.md` § "The open
+door", `ANY_LEAGUE.md` § "Reference league keys", `CHANGELOG.md` (the Wave I-M heading, created).
+
+Edits outside my files (each a few lines inside `IM-3` markers): `src/league_lab/platforms.py` (`REF_PREFIX`,
+`REFERENCE`, `is_reference`, `provider_of` → `reference`, `check_key`, `Router.serving`, SHORT / LONG),
+`src/league_lab/mfl_client.py` (redirect handler), `src/league_lab/sleeper_client.py` (dot usernames),
+`api/tests/conftest.py` (`LEAGUE_LAB_RATE_LIMIT=off` for the suite), `web/src/lib/api.ts` (`get()` keeps the error's
+JSON on `ApiError`), `web/src/lib/remote.svelte.ts` (`limited`, `needsleague` kinds), `web/src/components/ErrorCard.svelte`
+(the needs-league invite), `web/src/lib/analytics.ts` (platform `none`), `web/src/lib/research.ts` (`ownerWord` "—").
+
+#### Schema in / out
+
+No database change, nothing written. New answers: `GET /api/ratelimit`; `/api/status` `ratelimit`, `gate`; 429 / 403 /
+413 bodies (`code` `rate_limited` / `cross_site` / `too_large`); 404 `needs_league`; the 502 `provider_down` body no
+longer has `cause`.
+
+#### New environment variables (all optional)
+
+`LEAGUE_LAB_GATE` (unset = old rule) · `LEAGUE_LAB_RATE_LIMIT` (on) · `LEAGUE_LAB_RATE_READ` (`300,150`) ·
+`LEAGUE_LAB_RATE_HEAVY` (`20,20`) · `LEAGUE_LAB_RATE_WRITE` (`60,30`) · `LEAGUE_LAB_RATE_CLIENTS` (5000) ·
+`LEAGUE_LAB_CLIENT_IP` (`auto` = `edge` on Render, `peer` elsewhere) · `LEAGUE_LAB_PROXY_HOPS` (1) ·
+`LEAGUE_LAB_ALLOWED_HOSTS` (the three public hosts) · `LEAGUE_LAB_MAX_BODY_KB` (256) · `LEAGUE_LAB_MAX_UPLOAD_KB`
+(2048) · `LEAGUE_LAB_CSP` (on). No new dependency.
+
+#### The PO lines I need
+
+* `render.yaml`, under the service's `envVars`: `- key: LEAGUE_LAB_GATE` / `value: open` (the switch; `password` brings
+  the beta back). Keep `LEAGUE_LAB_APP_PASSWORD` as it is (ignored while open; the way back). Optional, not needed:
+  `LEAGUE_LAB_RATE_LIMIT` (on by default).
+* `api/Dockerfile`: no change required. Recommended comment above `CMD`: "`--forwarded-allow-ips='*'` makes
+  request.client the client-written first X-Forwarded-For hop: never key anything on it (ratelimit.py reads
+  CF-Connecting-IP)".
+* After the deploy: the two-line live check in SECURITY_PUBLIC § 2 (`/api/ratelimit`).
+* IM-5's merge: its `POST /api/dfs/*` routes are already in the heavy bucket (`ratelimit.HEAVY_PREFIX`) and their
+  bodies up to 2 MB (`security.body_limit`); no constant to wire.
+
+#### Evidence (commands run, results)
+
+* `cd api && OMP_NUM_THREADS=1 PYTHONPATH=. uv run pytest -q tests/test_im3.py tests/test_auth.py tests/test_static.py`
+  → **60 passed** (test_im3: 53 — the gate ×5, the limiter ×9, the Guard ×6, SSRF ×4, the private ESPN league with the
+  door open, reference keys: 13 research routes without owners, the three scorings priced PPR > Half > Standard for 20+
+  receivers, 10 decision routes + the trade POST / rosters → `needs_league`, `ref:bogus` 404, a house league keeps its
+  owners, the league's shape).
+* The limiter's memory (`test_memory_is_bounded`, tracemalloc): 20,000 addresses, all in debt in all three buckets →
+  **4,970 held per bucket, 1,307 KB in all** (≈ 436 KB a bucket; a bucket keeps only clients in debt, so an ordinary
+  day holds a few hundred).
+* `/home/claude/waveIM/check_api.sh /home/claude/wt-im3` → `92 failed, 752 passed, 13 skipped, 41 deselected in
+  995.03s`; **NEW failures**: `tests/test_ia2.py::test_partners_route_applies_both_rules`,
+  `tests/test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-off]` / `[dynasty-overlay-on]`,
+  `tests/test_ii1.py::test_folk_package_is_not_promoted`, `tests/test_ii1.py::test_folk_package_on_the_clone_rosters`.
+  **Not mine**: the same five fail with `main`'s `main.py`, `auth.py`, `platforms.py`, `mfl_client.py`,
+  `sleeper_client.py` and `conftest.py` checked out in this worktree (10 failed / 3 passed on that selection, the same
+  assertions: `market_note` None, Team 120.17 vs My Week 106.71 on the dynasty, the Folk package) — data-state
+  failures missing from the known list. 3 known failures passed.
+* `/home/claude/waveIM/check_root.sh /home/claude/wt-im3` → `4 failed, 1314 passed, 3 skipped`; **NEW failures: none**.
+* `cd web && npm run lint && npm run build` clean; `uv run ruff check src app tests api` clean;
+  `uv run python scripts/copy_standard.py --check` clean.
+* `FIXTURES_PORT=8630 npx playwright test --config playwright.fixtures.config.ts e2e/im3` → 8 passed (fixtures);
+  `IM3_LIVE=http://localhost:8753 …` (the fixture API serving web/dist, the real headers, GA on) → 4 passed, **0 CSP
+  violations**, gtag.js requested. Screenshots looked at, 375 and 1300: the front door, Stats on `ref:half` with the
+  picker, the invitation card (`web/e2e/.out/im3-*.png`; one fix made after looking: the picker's select was clipped
+  at 1300).
+* The whole fixtures e2e → **401 passed, 1 failed** (`[desktop] e2e/ib1 … the player's page keeps the tab bar and the
+  search field; Back goes where you came from`: the URL kept `&q=st.+brown` for a moment); re-run alone → **1 passed**.
+* Seen while running the fixture API (the PO's recipe): the web's `POST /api/usage` makes the server try an insert that
+  fails with `UndefinedTable` (nothing written: `league_lab` has no `usage.events`); the availability overlay tried
+  `site.api.espn.com` (refused by the sandbox's proxy) — the recipe does not set `LEAGUE_LAB_AVAILABILITY=off`.
+  Playwright closing pages mid-request logs `ClientDisconnect` tracebacks from `POST /api/usage` (harmless).
+
+#### Limitations
+
+* The client address on Render is decided from what Render's edge is known to do (Cloudflare, `CF-Connecting-IP`), not
+  observed: verify with `/api/ratelimit` after the deploy (SECURITY_PUBLIC § 2).
+* The Stats screen's "whose players" chips and "Team in league" column still show for a reference key (IM-2's file; the
+  line is above). Season (`/ros`) works for points; its "Value to my lineup" view answers `needs_league` through the
+  error card's invitation.
+* `/api/record` for `ref:ppr` / `ref:std` is the Half PPR record, said in `scoring_note`.
+
+#### Next
+
+The PO's merge (`render.yaml` `LEAGUE_LAB_GATE: open`), the live `/api/ratelimit` check, IM-2's two-line hide on Stats,
+then Accounts' `client_ip` onto `ratelimit.scope_client` (IM-4).
+
+
+### IM-4 2026-10-05/06 — passkeys (branches `dev/IM4`, `fix/IM4`, database `league_lab_im4`)
+
+**Task**: IM-4 of `/home/claude/waveIM/BRIEF.md` (Wave I-M). **Branch**: `dev/IM4` from `main` `ab50682`, worktree
+`/home/claude/wt-im4`, database `league_lab_im4` (the only one written). **Docs touched**: `docs/ACCOUNTS.md`
+§ "Passkeys" (new), `docs/HOSTING.md` § "Accounts" (the switch, one env row, a passkeys paragraph), `docs/WORDS.md`
+§ "Passkeys" (new), `CHANGELOG.md` (one bullet under `## 2026-10-06 — Wave I-M`).
+
+#### Done / not done against the package
+
+| # | Item | State |
+|---|---|---|
+| 1 | `passkeys.py` on py_webauthn: registration + authentication, discoverable credentials, UV preferred, attestation none; challenge server-side, single use, 5 min; sign count; rp id + origins from `LEAGUE_LAB_PASSKEY_ORIGINS`; another host → clear words; localhost only under the test switch | **done** |
+| 2 | Schema: `accounts.passkeys`, `accounts.users.email` optional, a WebAuthn user handle per user, grants | **done** (+ `accounts.passkey_challenges`) |
+| 3 | The switch: `auto` = secret + tables, methods `passkey` / `email`; status says why; no 500s before the nightly applies the SQL | **done** |
+| 4 | The account in the app: create with a passkey (this browser's leagues, default, views, connection saved), sign in on another device, add another, list with labels and last use, remove (never the last way in), sign out, delete, no-WebAuthn line, email form when a mailer exists, both offered plainly | **done** |
+| 5 | Session and limits as phase 1; ceremonies rate-limited per IP hash (10 / 30 an hour); an Origin check on every state-changing account route | **done** |
+| 6 | `api/tests/test_im4.py` with a software authenticator; `web/e2e/im4/` with Chromium's virtual authenticator at 375 and 1300 | **done** |
+| 7 | ACCOUNTS § Passkeys (flows, storage, recovery said on screen + "add an email" when a mailer exists), WORDS | **done** ("Add an email" is built: API + screen) |
+
+#### Files
+
+* `api/league_lab_api/passkeys.py` (new): the four ceremony routes + `DELETE /api/account/passkeys/{id}`, registered on
+  `accounts.router` (so **no edit to `main.py`**: accounts.py imports passkeys at its end; either import order works).
+* `api/league_lab_api/accounts.py`: the switch by method (`READY_SQL`, `passkeys_ready`, `methods`, `why_not`), the
+  status fields, `same_site` (the router's dependency), `allow(key, n, per_s)`, `me()` → `passkeys`, `sign_in`;
+  `verify(…, attach_to)` ("add an email"); the email routes need a mailer (`email_off`).
+* `scripts/hosted_accounts.sql`: the IM-4 part (below). `api/pyproject.toml`, `api/uv.lock`: `webauthn>=3.0.1`.
+* `web/src/lib/account.svelte.ts`, `web/src/routes/Account.svelte`, `web/src/components/AccountEntry.svelte`.
+* Tests: `api/tests/test_im4.py` (new, 19 tests), `web/e2e/im4/fixtures.spec.ts` (new, 2 tests × phone / desktop).
+* Outside my files (smallest edits): `api/tests/test_ik4.py` (3 assertions follow the new switch / the script's
+  allowed `alter`s / 10 tables; its recording test records an email-only server), `web/fixtures/ik4/*.json`
+  (re-recorded: + `methods`, `why`, `passkey_home`, `passkey_here`, `passkeys`, `sign_in`), `docs/HOSTING.md`,
+  `docs/WORDS.md`, `CHANGELOG.md`.
+
+#### Schema in / out (`scripts/hosted_accounts.sql`, idempotent, applied twice on the clone)
+
+```
+alter table accounts.users alter column email drop not null;                 -- keeps every row
+alter table accounts.users add column if not exists webauthn_handle bytea;    -- + unique index, + a 16–64 byte check (DO block)
+create table if not exists accounts.passkeys (id, user_id → users on delete cascade, credential_id unique, public_key,
+  sign_count, transports text[], label, backed_up, created_at, last_used_at)
+create table if not exists accounts.passkey_challenges (challenge_hash pk = sha256, purpose create|add|login, user_id,
+  user_handle, browser_hash = sha256(ll_passkey cookie), rp_id, origin, ip_hash, created_at, expires_at, used_at)
+grant select, insert, update, delete … accounts.passkeys, accounts.passkey_challenges to league_lab_app
+delete from accounts.passkey_challenges where created_at < now() - interval '1 day';   -- retention
+```
+
+Sizes: a passkey row ≈ 300 B, a challenge row ≈ 250 B (kept a day). Nothing new for the analytics sync.
+
+**What must run on Neon, and how the server notices.** Nothing new to add: the nightly's existing IK-4 block
+(`scripts/sync_to_hosted.sh`: `psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction -f
+scripts/hosted_accounts.sql`) runs the new part as the owner on the next nightly after the merge (or Actions → nightly →
+Run workflow). The server runs `accounts.READY_SQL` once a minute until it sees both tables with the app role's INSERT,
+`users.webauthn_handle` and a nullable `users.email`; then `/api/account/status` → `"enabled": true, "methods":
+["passkey"]` and **accounts are on for everyone** (Render already has `LEAGUE_LAB_API_SECRET`). Before that: `enabled:
+false, reason: "not_ready", why: {passkey: "not_ready", email: "no_mailer"}` — exactly today's behaviour (no sign-in
+shown). Optional: the sync's log line could also print `(select count(*) from accounts.passkeys) || ' passkeys'`.
+
+#### Decisions (each reversible)
+
+* **Challenge storage: a table, not a sealed cookie** — single use needs server state (a sealed cookie can be replayed
+  until it expires). Looked up by the SHA-256 of the answer's challenge, spent under `select … for update` before any
+  verification (a failed answer spends it too), then checked against purpose, browser cookie, site, expiry.
+* **Bound to the browser** with a random value in `ll_passkey` (HttpOnly, SameSite=Strict, path `/api/account/passkey`,
+  5 min) — another browser cannot finish a ceremony (login CSRF / relayed challenges).
+* **The rp id** = the shortest allow-listed host the origin belongs to. A passkey is tied to it: moving the site off
+  `isuckatfantasy.io` strands every passkey (said in HOSTING / ACCOUNTS).
+* **Same-site guard** (`accounts.same_site`): Go 1.25's CrossOriginProtection rule with our allow-list —
+  `Sec-Fetch-Site: same-origin|none` passes; otherwise `Origin` on the list, the public URL, or the request's own Host
+  (no `Sec-Fetch-Site`); `Origin: null` never; neither header = not a browser (passes; carries nobody's cookie).
+  Keeps Render's `*.onrender.com` address working for the emailed link.
+* **Removing the last way in is refused** (409 `last_sign_in`, the screen shows "Your only way in"), rather than
+  allowed with a warning: an account with no way in cannot be fixed later.
+* **"Add an email"**: the existing link flow; opened while signed in to a passkey-only account it adds the address
+  (`{ok, email, added: true}`), unless another account has it (409 `email_taken`, the link not spent).
+* **py_webauthn imported lazily** (first ceremony): it brings `cryptography` + pyOpenSSL, measured **+16 MB RSS** next
+  to the app's libraries (+26 MB alone); start-up imports none of it.
+* `user.name` on the device: "isuckatfantasy · Oct 5, 2026" (or the email). Labels: fixed words from the User-Agent.
+* The status recordings for IK-4's e2e stay an email-only server (its screens are the link flow).
+
+#### Commands and evidence
+
+```
+cd api && uv add webauthn                         # 3.0.1 (+ cbor2 6.1.5, cffi 2.1.1, cryptography 50.0.2, pyasn1 0.6.4,
+                                                  #   pyasn1-modules 0.4.2, pycparser 3.0, pyopenssl 26.4.0)
+psql "<pipeline dsn>" -v ON_ERROR_STOP=1 -q --single-transaction -f scripts/hosted_accounts.sql   # twice, both OK
+cd api && OMP_NUM_THREADS=1 PYTHONPATH=. uv run pytest -q tests/test_im4.py tests/test_ik4.py tests/test_il5.py
+cd web && npm run lint && npm run build
+cd web && FIXTURES_PORT=8640 npx playwright test --config playwright.fixtures.config.ts e2e/im4 e2e/ik4 e2e/il5
+uv run ruff check src app tests api ; uv run python scripts/copy_standard.py --check
+```
+
+* Dependency: wheels (x86_64, cp313 / abi3 / py3) **5.9 MB** (cryptography 4.75 MB), installed **≈ 19 MB** (cryptography
+  15 MB). All are binary wheels: `python:3.13-slim` needs no compiler; **no Dockerfile change** (`uv sync --frozen`).
+* `test_im4.py` 19 passed; with `test_ik4.py`, `test_il5.py`, `test_auth.py`: **65 passed, 1 failed** — the failure
+  is `test_il5.py::test_watchlist_rows_in_a_league`, on the known-failure list (the clone's week state).
+* `/home/claude/waveIM/check_api.sh /home/claude/wt-im4` (twice: on `4aba615`, 20 min, and on the final code `1d59a7c`,
+  8 min — the same answer both times): `92 failed, 718 passed, 13 skipped, 41 deselected`; NEW failures: `test_ia2.py::test_partners_route_applies_both_rules`,
+  `test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-off]` / `[dynasty-overlay-on]`,
+  `test_ii1.py::test_folk_package_is_not_promoted`, `test_ii1.py::test_folk_package_on_the_clone_rosters` — **all five
+  fail identically at `main` `ab50682` on this clone** (main's tree extracted to a scratch folder, run against
+  `league_lab_im4`: the same 5 + the 5 known `ib0` variants fail): the clone's data state, not this branch.
+* `/home/claude/waveIM/check_root.sh /home/claude/wt-im4`: `4 failed, 1314 passed, 3 skipped`; NEW failures: none.
+* Web: `npm run lint` clean (svelte-check 0 errors / 0 warnings), `npm run build` OK; `ruff check src app tests api`
+  clean; `scripts/copy_standard.py --check` clean.
+* e2e: `e2e/im4` 4 passed (phone 375 + desktop 1300, against the real API on :8754); with `e2e/ik4` and `e2e/il5`:
+  24 passed. The whole fixtures run (`FIXTURES_PORT=8640`, 11.4 min, the im4 spec starting and stopping the API on :8754 by itself): **398 passed, 2 skipped (ih1:277, ii6:216 — skipped by their own conditions), 0 failed**; the il5 test known to be flaky passed.
+* Memory: importing py_webauthn (+ cryptography, pyOpenSSL) **+16 MB RSS** beside the app's libraries — lazy, so only
+  after the first passkey ceremony in a process; nothing at start-up (checked: `webauthn`, `cryptography`, `OpenSSL`
+  absent from `sys.modules` after `import league_lab_api.main`).
+* Screenshots looked at: `web/e2e/.out/im4-{signed-out,account,two-passkeys,removed-passkey,unsupported}-{phone,desktop}.png`
+  (375 and 1300; no sideways scroll asserted on each). One fix from looking: the "Add an email" field's placeholder was
+  cut at 375 — a visible label now.
+
+#### Limitations
+
+* Verified live: **no** (needs the merge and a nightly). Real devices (iPhone Safari, Android Chrome, Windows Hello)
+  were not tried: Chromium's virtual authenticator and a software ES256 key only.
+* "Add an email" has no e2e (the stub mailer's link stays in the API process); `test_im4` covers it.
+* The ⋯ menu's "Sign in to save your leagues" (TopBar, IM-3's file) and the watchlist's signed-out line ("…sign in with
+  your email, then tap ☆ Watch…", `Watchlist.svelte`, not mine) still say email on a passkey-only server.
+* No conditional mediation (autofill), no `signalUnknownCredential` after a removal (a removed passkey stays listed on
+  the device; the screen says so).
+* The client address for the limits is `accounts.client_ip` (the first `X-Forwarded-For` hop), as phase 1; IM-3 is
+  deciding the trustworthy header — one place to change.
+
+#### Seen, not mine
+
+* The five devs share one scratchpad folder (`/tmp/claude-0/-home-claude/<session>/scratchpad`): another dev's
+  Playwright run wrote into my `e2e_full.out` mid-run (its log listed `wt-im5` paths). My final logs use `im4-` names;
+  the numbers above are from those.
+* `Watchlist.svelte`'s signed-out line and the ⋯ menu (TopBar) still say "sign in with your email" (see Limitations).
+* `api/Dockerfile` runs uvicorn with `--forwarded-allow-ips='*'`, so `request.client.host` is the first
+  `X-Forwarded-For` hop, which a client can set (IM-3's rate-limit question; phase 1's `accounts.client_ip` reads the
+  same hop).
+* Request bodies are parsed before any size check of mine (the passkey answer is capped at 32 KB after parsing): a
+  server-wide body limit is IM-3's security pass.
+
+#### Next task
+
+The PO merges, the nightly applies the SQL, then on a phone: `/account` → Create an account with a passkey → a laptop
+(same iCloud / Google account, or "use a phone" QR) → Sign in with a passkey → the leagues come back.
+
+
+### IM-5 2026-10-05/06 — DFS (branches `dev/IM5`, `fix/IM5`)
+
+**Branch** `dev/IM5` (from `main` `ab50682`), worktree `/home/claude/wt-im5`. Database `league_lab`, **read only**
+(nothing written). Plan sections: the wave brief § IM-5 (items 1–6). The contract: `docs/DFS.md`.
+
+#### Done / not done (the brief's numbered list)
+
+| # | Item | State |
+|---|---|---|
+| 1 | `src/league_lab/dfs.py`: sites as data (DK classic, DK showdown, FD full roster), scoring through Sleeper keys (`scoring.price_projected`, `kdef.price`) with a test per rule, both parsers (BOM, quotes, extra columns, any order, header search + column offset, site / contest detection, refusal in words, 1 MB / 2,000 rows), matching (team codes, unique normalised name + position + team, first-initial step, defense by team; unmatched / ambiguous listed with the reason, never valued), re-pricing + range (nearest reference, scaled), points per $1,000, the slate's straight line per position (≥ 8 or none), gap / z / rank, undervalued / overpriced, ceiling per $1,000, reasons (the app's `cards.reason_pieces`, else `why.explain`'s chain), exact optimiser (MILP, cash / tournament, locks / excludes, DK ≥ 2 games, showdown both teams, FD ≤ 4 a team, next N ≤ 20 distinct, out players excluded and listed, 1 s a lineup with a stated timeout), upload CSV with formula neutralisation | **done** |
+| 2 | `api/league_lab_api/dfs.py`: `POST /api/dfs/slate`, `POST /api/dfs/lineups`, `GET /api/dfs/projections` — no league, no team, never stored or logged, one memo region (`dfs`), `RATE_BUCKETS` constant (`heavy` for the POSTs) | **done** |
+| 3 | `web/src/routes/Dfs.svelte` + `components/dfs/`: the DFS tab, site switch, projections before a file + the three-step how-to, file / drop / paste, tab memory + `sessionStorage` + Remove file, the slate header with "See unmatched", Undervalued / Overpriced (top 8, position chips, reason), the full sortable value table, Build lineups (cash / tournament, Always in / Leave out, 1–20), lineup cards (players, salary left, total, range, Copy), Download for upload; names open the drawer when a league is open; 375 and 1300, dark and light | **done** (see "approximate" for names with no league) |
+| 4 | The words (on the screen and in WORDS): estimates + the record on About (link); "against this slate's salaries, not a promise"; the footer line verbatim; no "lock" / "guaranteed" / "free money" / "beat" (the e2e checks the screen's own text; a player named Drew Lock is a name, not a word) | **done** |
+| 5 | Fixtures: synthetic DK classic / DK showdown / FD full from the database's week-5 players (first line says SYNTHETIC), two hostile files, the 3 MB file built in the test; tests `tests/test_im5_dfs.py`, `api/tests/test_im5.py`, `web/e2e/im5/` | **done** |
+| 6 | `docs/DFS.md`: what it does, the scoring tables ("as of October 2026 — check the site's rules page"), matching, the value with a worked example, what is approximate / unverified, why salaries are not fetched and what fetching would need, the limitations | **done** |
+
+#### Files
+
+New: `src/league_lab/dfs.py`, `api/league_lab_api/dfs.py`, `web/src/routes/Dfs.svelte`, `web/src/components/dfs/{dfs.ts,
+FileBox.svelte, HowTo.svelte, LineupCard.svelte}`, `docs/DFS.md`, docs/STATUS.md § "IM-5", `docs/handbacks/im5/*.png`
+(10 screenshots, 0.6 MB), `tests/test_im5_dfs.py`, `api/tests/test_im5.py`, `api/tests/fixtures/dfs/` (generator + 5
+CSVs, 140 KB), `web/e2e/im5/fixtures.spec.ts`, `web/fixtures/im5/*.json` (recorded answers, 0.7 MB).
+Changed: `docs/WORDS.md` (§ "DFS"), `CHANGELOG.md` (the Wave I-M heading + one bullet).
+**Edits outside my files** (IM-3's, each in an `IM-5` block):
+* `api/league_lab_api/main.py` (before "the web app"): `from . import dfs as dfs_mod  # noqa: E402 …` and
+  `app.include_router(dfs_mod.router, dependencies=[Depends(require_auth)])` between `# ---- IM-5 …` / `# ---- end IM-5`.
+* `web/src/lib/router.svelte.ts`: `| "dfs";` added to `RouteName` (after `"watchlist"`), `"/dfs": "dfs", // ---- IM-5` in `NAMED`.
+* `web/src/App.svelte`: `dfs: () => import("./routes/Dfs.svelte"),` in `LAZY`; and before `{:else if r.name === "leagues"
+  || !league}` a 4-line branch `{:else if r.name === "dfs" && !league}` rendering the screen alone (no frame: TopBar
+  needs a league today). With IM-3's no-league mode the PO can drop that branch and let `/dfs?league=ref:half` render in
+  the frame (the screen takes `league = null` or any key; it never sends the league to the API).
+* `web/e2e/ib1/fixtures.spec.ts` (IB-1's navigation test, no owner tonight): `{ tab: "dfs", label: "DFS", first: "dfs",
+  subs: [] }` appended to `TABS`, and its two `toHaveCount(4)` on the tab bar → `toHaveCount(TABS.length)` (the fifth tab).
+* `web/src/components/TopBar.svelte`: `| "dfs"` in `Section`; `{ key: "dfs", label: "DFS", screens: [{ name: "dfs",
+  label: "DFS", path: "/dfs" }] }` at the end of `SECTIONS`; an icon branch (a price tag) in `icon`. On a phone the bottom
+  bar holds five tabs (78 px each at 390).
+
+#### Schema in / out
+
+In (read only): `ops.projection_lines`, `ops.projection_ranges`, `ops.kd_lines`, `ops.kd_ranges`,
+`analytics_seeds.reference_scorings`, `analytics.mart_player_week_projections` (status), `analytics.mart_kd_week`,
+`analytics.dim_game`, `analytics.dim_player` (the "no projection" reason), `analytics.mart_defense_vs_position_current`,
+`analytics.mart_player_week_features` + `analytics.fct_player_game` + `analytics.dim_team` (the reasons, `cards.REASON_SQL`).
+Every one is already published to Neon. Out: nothing stored; **no new relation, nothing for the sync**.
+
+#### Commands
+
+```bash
+OMP_NUM_THREADS=1 uv run pytest -q tests/test_im5_dfs.py -p no:cacheprovider                       # 142 passed
+cd api && OMP_NUM_THREADS=1 PYTHONPATH=. uv run pytest -q tests/test_im5.py -p no:cacheprovider     # 15 passed
+cd api && PYTHONPATH=. uv run python tests/fixtures/dfs/make_synthetic.py                          # the synthetic files (read-only)
+cd web && npm run lint && npm run build && FIXTURES_PORT=8650 npx playwright test --config playwright.fixtures.config.ts e2e/im5   # 6 passed
+uv run ruff check src app tests api                                                                 # clean
+uv run python scripts/copy_standard.py --check                                                      # exit 0
+/home/claude/waveIM/check_root.sh /home/claude/wt-im5 ; /home/claude/waveIM/check_api.sh /home/claude/wt-im5
+```
+
+#### Evidence (numbers)
+
+* **Tests added**: 142 root (`tests/test_im5_dfs.py`: 28 player rules, 9 bonus edges, 1 bonus-at-its-odds, 28 defense
+  rules, 8 kicker rules, 1 contests-as-data, parsers 15, matching 15, value 3, optimiser 24 brute-force cases + 9, the
+  week 1), 15 API, 6 e2e (3 × phone / desktop).
+* **Brute force**: the MILP's best lineup equals exhaustive enumeration on 24 small slates (DK classic, FD full, DK
+  showdown × 4 seeds × cash / tournament) and agrees on an infeasible FD slate.
+* **Matching, synthetic week 5**: DK classic **597 of 599** (567 by name, 30 defenses by team; the 2 unmatched are the
+  planted ones: "Zzyzx Notaplayer" not found, Puka Nacua listed on MIA → "we have that name as WR on LA"); the sites'
+  spellings planted (Marvin Harrison, Brian Thomas without "Jr.", AJ Brown, CJ Stroud, TJ Hockenson) all matched; FD
+  full **598 of 598** (568 + 30); DK showdown (BUF@LAR) **40 of 40**. 0 matched by the initial step on these files.
+* **The value lists** (DK classic): 89 undervalued, 97 overpriced of 597 (z ≥ 1 / ≤ −1 and ≥ 1 point); the screen shows 8.
+  Lines: QB 5.21, RB 3.57, WR 2.99, TE 3.12, DST 2.95 points per $1,000 (n 89 / 135 / 206 / 137 / 30). **These say
+  nothing about usefulness: the synthetic salaries are made from our own projections.**
+* **Solve times** (this sandbox, 2 cores shared by five devs; the 597-player DK slate): the first lineup 0.08–0.3 s;
+  3 cash lineups 0.18 / 0.20 / 0.37 s; 20 cash 4–13 s in all (median 0.36–0.68 s, max 1.0 s, 16–20 of 20 proven); 20
+  tournament 13–18 s (7–18 proven); FD tournament: lineups 3–5 reach the 1-s box (best found, `proven: false`, the card
+  says so); showdown 5 tournament lineups 0.23–0.52 s each. Before the one-variable-per-player change (`5562651`) 20 DK
+  lineups took 18 s with a 1.8 s maximum.
+* **Route timings** (fixture API, this box): `GET /api/dfs/projections` 0.37 s cold, 0.10 s warm; `POST /api/dfs/slate`
+  (DK, 599 rows) 0.93 s; pricing a site-week 34 ms (FD) – 434 ms (DK, first call: M2's curves).
+* **Memory**: one region `dfs`, at most 8 entries, 10 minutes: **0.35 MB** a site-week (DK 628 rows, FD 598).
+* **Check scripts**: root — `4 failed, 1456 passed, 3 skipped`, **NEW failures: none**. API — `92 failed, 714 passed,
+  13 skipped, 41 deselected in 1701.20s`, NEW failures: `test_ia2.py::test_partners_route_applies_both_rules`,
+  `test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-off]` and `[dynasty-overlay-on]`,
+  `test_ii1.py::test_folk_package_is_not_promoted`, `test_ii1.py::test_folk_package_on_the_clone_rosters`. **Not IM-5's**:
+  the same five fail with `main.py` put back to `ab50682` (no DFS route registered; 10 failed / 3 passed for those
+  tests' 13 cases either way), and another dev's run of the script printed the same five at the same hour — they read
+  the trade / lineup state of the house leagues (data or clock), not investigated further.
+* **Fixtures e2e (whole suite)**: `400 passed, 2 skipped, 0 failed, 0 flaky` in 11.5 min (with IB-1's tab test updated for
+  the fifth tab; the il5 "saved players" test passed first time). IM-5's own spec: 6 passed.
+* **A trap on this box**: the scratchpad directory is shared by the five devs; fixed file names there
+  (`check_api.out`, `e2e_full.out`) were overwritten by other devs' runs. My numbers come from my own processes' private
+  logs (`/tmp/tmp.4z8YOf89ds` for the API check; `im5_*` files for the e2e).
+
+#### What is approximate or unverified
+
+* **The file formats** (DK and FD headers, defense names / team codes, FD's id shape and defense word, DK's showdown
+  pairing) and **the upload headers** are from documentation and memory: unverified until Andrew uploads a real file
+  (docs/DFS.md lists each). The parser is tolerant, so a different column order or an extra column does not matter; a
+  renamed required column is refused in words.
+* **The scoring tables** as remembered for October 2026 — DK's points allowed on the field only, FD's 2-point return
+  not projected.
+* **The range**: borrowed from the nearest reference scoring (DK → `ppr`, FD → `scrubs`) and scaled — ends ~0.2–0.8
+  points off a fitted range on the house leagues, more at QB; DK's +3 bonuses widen the true high end a little more.
+* **DK's bonuses are priced at their odds** regardless of the record's mode (`dfs.BONUS_AT_ODDS`; on this clone the
+  week-5 record is `flat`): the PO's call to keep or flip.
+* **A lineup's range** assumes independent weeks (the card says the real range is wider).
+* **No league open**: player names are plain text (the drawer and the player page need a league today); with a league
+  in the URL every name opens the drawer and every link keeps `league` / `team`. After IM-3's `ref:` keys the
+  no-league screen could link names with `league=ref:half` (a one-line change in `Dfs.svelte`'s `href`).
+* The phone hides the table's salary / projection columns (they read under the name), so sorting by salary is a
+  640 px+ control.
+
+#### The PO lines I need
+
+* **IM-3's limiter**: `POST /api/dfs/slate` and `POST /api/dfs/lineups` in the `heavy` bucket, `GET /api/dfs/projections`
+  in `read` (`league_lab_api.dfs.RATE_BUCKETS` holds exactly that map).
+* `app/whats_new.md` (PO-owned), newest on top: "**DFS (new tab)**: add your DraftKings or FanDuel salary file and see
+  this week's projections in the site's scoring, who is undervalued against the slate's salaries, and lineups you can
+  download for the site's upload. The file stays in your browser."
+* `docs/STATUS.md` / `docs/HANDOFF.md`: one line pointing at `docs/DFS.md` and this hand-back.
+* Optional (IM-1 owns them tonight): `docs/METRICS.md` / `dbt/seeds/metric_registry.csv` rows for the on-request DFS
+  numbers (points per $1,000, the slate's line and gap) if the PO wants them registered — they are defined in
+  `docs/DFS.md`; nothing in the warehouse computes them.
+
+#### New env variables, dependencies
+
+None. (`scipy` was already a dependency of both projects; no npm package added; `web/node_modules` still the symlink.)
+
+#### Next
+
+Andrew uploads a real DraftKings and FanDuel file (any slate): check the header words, the defense names and team
+codes, FD's defense word and id shape, the showdown pairing, then a real upload of the produced CSV; fix any word in
+`dfs._DK_REQUIRED` / `_FD_REQUIRED` / `POSITION` / `TEAM_ALIASES` / `CONTESTS[...].upload_header` and mark them verified in
+docs/DFS.md. Then: late swap (kick-off times are in DK's file), a stack rule, FD single game.
+
+
+### IM-1 2026-10-05/06 — the Stats tables' data (branch `dev/IM1`, database `league_lab_im1`)
+
+**Task**: Wave I-M package IM-1 (`/home/claude/waveIM/BRIEF.md` § IM-1). **Branch**: `dev/IM1` from `main` `ab50682`
+(commits `IM-1: …`; the last one is named in the PO message). **Database**: `league_lab_im1` (the only writer; 2026 through
+week 4). Plan sections: docs/METRICS.md § "The Stats Explorer" → new § "More columns, every one honest (adv1.0)";
+docs/DATA_INVENTORY.md; docs/WORDS.md § "The Stats tables' columns (Wave I-M, IM-1)".
+
+#### Done / not done (the package's numbered list)
+
+1. **The two empty columns — done, no bug.** On the clone `analytics.mart_player_ngs_week` is built (26,381 rows; 2026:
+   NGS weeks 1–4). The WR / TE preset's `separation` and `yac_over_expected` fill: **40 of the top 40 receivers by
+   targets have both** (the 40th has 23 targets). Of every WR / TE with a game: WR 96 / 184, TE 37 / 107 have a value.
+   The rest have none because NGS publishes a receiver's week only with **5+ targets**: on the clone every WR / TE
+   player-week with 5+ targets has an NGS row (287 / 287) and only one with 4 does; the receivers without a value have
+   at most 10 targets in the season and at most 4 in any week. They show — with "No Next Gen Stats week in this window:
+   NGS publishes a week only when he clears its minimum (5+ targets …), so this is unknown, not zero." The live site's
+   blank columns are the missing mart only (the first nightly builds it; `stats.NGS_NOT_BUILT` says so meanwhile).
+   Test: `test_the_two_empty_columns_fill_for_2026_with_the_mart_built`.
+2. **New columns from data already in the database — done** (all the brief lists): EPA total and per target / carry /
+   dropback; success rate (receiving, rushing, dropbacks); first downs (receiving, rushing) and per target / carry; WOPR;
+   RACR; deep targets, deep-target share (of the team's deep targets) and deep targets as a share of his targets;
+   targets / carries inside the 10; touchdown rates (per target, per carry, per pass attempt); yards per reception; yards
+   per touch; expected fantasy points (total) and points over expected (+ per game); QB: AY/A, TD %, INT %, sack %,
+   scramble yards (scrambles existed), rushing share of his fantasy points. **Deviation, said plainly**: the play-by-play
+   numerators are not added to `int_player_game_pbp` but to a new intermediate beside it
+   (`int_player_game_efficiency`) feeding a new mart — widening `int_player_game_pbp` rebuilds `fct_player_game` and the
+   54 models under it (`dbt ls --select int_player_game_pbp+`: the whole projection chain), too long on this box and a
+   wider `fct_player_game` on the hosted copy.
+3. **New feeds — done for PFR weekly and the remaining NGS fields.** The 2026 weekly PFR files were downloaded
+   (`data/raw/nflverse/pfr_advstats_{rec,rush,pass}/advstats_week_*_2026.parquet`, git-ignored; through week 4,
+   published in season) and their columns read: the loader and `raw.nfl_pfr_advstats_*` already existed (2018 →; the
+   clone already held 2026 weeks 1–4, so nothing was reloaded and `src/league_lab/ingest/**` is unchanged). Built:
+   drops, drops per target, broken tackles, broken tackles per touch, yards before / after contact per carry, bad throws
+   per attempt, times pressured, pressured per dropback. **Unavailable with the reason** (PFR publishes them in season
+   files only, so no window can use them): receiving yards after contact, on-target throws. NGS: cushion, receivers'
+   intended air yards, rushing efficiency, carries against 8+ in the box, time to the line of scrimmage (new in the
+   mart), aggressiveness, QB intended air yards. NGS has **no catch percentage over expected**: no column claims one.
+   PFR joins PFR id → gsis id through `analytics.player_id_map` only; unmapped rows: **7 of 1,290 2026 rows (3
+   players)** — `dbt/tests/assert_pfr_advstats_rows_map_to_gsis.sql` (warn > 0, error > 25) and
+   `test_pfr_rows_join_by_id_and_the_unmapped_are_counted`.
+4. **The catalogue's shape — done.** Every row has `group` (the twelve, `stats.GROUPS`; the API also returns
+   `groups`); the catalogue is ordered group by group in that order, display order inside a group
+   (`stats.GROUP_ORDER`). `PRESETS` keep `wrte` / `rb` / `qb`, lead with 14 columns each (WR / TE incl. aDOT, air-yard
+   share, EPA per target) and carry `full` (every column that applies to the position and is available, catalogue order;
+   the API computes it per season: `stats.presets(catalogue)`). A noisy rate carries `minimum: {field, n}` (the sample
+   below which the screen should grey it; the field is in the row). `GET /api/players.csv`: the same parameters plus
+   `cols=` | `preset=` + `view=key|full`, `per_game=1`; a header of labels; `text/csv`;
+   `isuckatfantasy-stats-<season>[-playoffs]-<positions>-<window>[-weeks-a-b].csv`; streamed from the same frame;
+   unknown = empty cell; text starting `= + - @` disarmed with `'`; an unknown column is a 400 in words; a league
+   without rosters (IM-3's `ref:` keys) gets no "Rostered by" column (absent, not empty).
+5. **Rules — done.** Rates are summed numerator / summed denominator (tests on hand-built frames and SQL reconciliation
+   on the clone); a zero or meaningless denominator is null (RACR with air yards ≤ 0, rushing share with points ≤ 0);
+   PFR counts divide only by the games PFR covered. Timings and memory below.
+6. **dbt — done.** Built on the clone: `int_player_game_efficiency`, `mart_player_game_advanced`, `mart_player_ngs_week`
+   (+ tests); nothing downstream of them (`dbt ls --select <them>+` lists only themselves). The nightly's full
+   `dbt build` picks them up (no selector change); the nightly's `ingest nfl` already loads `pfr_advstats_*`.
+7. **Docs — done.** DATA_INVENTORY (50 rows + the PFR feed row + the metrics row; existing rows' exposure refreshed),
+   METRICS § adv1.0, 14 registry rows (seed reloaded on the clone), WORDS, CHANGELOG, DEPLOY's region list.
+
+**Not done**: nothing of the list is left unbuilt. Not attempted: the screen (IM-2's), PFR rows recovered through
+`int_pfr_gsis_map` (it would map 2 of the 3 unmapped players; the brief says `player_id_map`).
+
+#### Files
+
+* dbt: `dbt/models/intermediate/int_player_game_efficiency.sql` (new), `dbt/models/marts/nfl/mart_player_game_advanced.sql`
+  (new), `dbt/models/marts/nfl/mart_player_ngs_week.sql` (+2 columns), both `schema.yml`s, `dbt/tests/assert_pfr_advstats_rows_map_to_gsis.sql`
+  (new), `dbt/seeds/metric_registry.csv` (+14).
+* API: `api/league_lab_api/stats.py` (catalogue, groups, presets, the advanced merge, aggregate, points, CSV helpers,
+  the `stats_agg` region); `api/tests/test_im1.py` (new, 17 tests).
+* Outside my files (smallest edits): `api/league_lab_api/research.py` (4 lines in `players()` / `stats_frame()`:
+  `presets(cat)`, `groups`, `ctx.scoring` into `points()`, `aggregate_window`), `api/league_lab_api/main.py` (one
+  self-contained `# ---- IM-1` block: the `/api/players.csv` route), `docs/DEPLOY.md` (one word: `stats_agg` in the
+  region list), `CHANGELOG.md`, `docs/WORDS.md`.
+
+#### Schema in / out
+
+* In: `analytics.fct_play`, `analytics.fct_player_game`, `analytics.player_id_map`, `staging.stg_nflverse__pfr_advstats_{rec,rush,pass}`,
+  `staging.stg_nflverse__ngs_*`.
+* Out: `intermediate.int_player_game_efficiency` (gsis_id, game_id; 55,986 rows, 8.7 MB; not published);
+  **`analytics.mart_player_game_advanced`** (gsis_id, game_id unique; season, season_type, week, team;
+  target / carry / dropback successes, dropback_epa, scramble_yards, team_deep_targets; has_pfr_rec / _rush / _pass,
+  pfr_drops, pfr_carries, pfr_rush_yards_before / after_contact, pfr_broken_tackles, pfr_bad_throws, pfr_pass_drops,
+  pfr_times_pressured / hurried / hit / blitzed — 59,606 rows 2016–2026, **9.3 MB**, ≈ 2.1 MB for the hosted window of
+  3 seasons); `analytics.mart_player_ngs_week` + `avg_time_to_los`, `rec_avg_intended_air_yards` (3.2 → 3.5 MB).
+* API: `/api/players?window=…` rows gain the new fields for the requested positions; `catalogue[]` gains `group` and
+  (some) `minimum`; `presets[].full`; `groups`. A QB-only request no longer carries receiving fields (receiving columns
+  now list RB / WR / TE). New route `GET /api/players.csv`.
+
+#### Commands
+
+```bash
+uv run league-lab dbt build --select int_player_game_efficiency mart_player_game_advanced mart_player_ngs_week
+uv run league-lab dbt test --select assert_pfr_advstats_rows_map_to_gsis      # WARN 7
+uv run league-lab dbt seed --select metric_registry && uv run league-lab dbt test --select metric_registry
+cd api && OMP_NUM_THREADS=1 PYTHONPATH=. uv run pytest -q tests/test_im1.py tests/test_ii3.py tests/test_il1.py tests/test_inf2.py -p no:cacheprovider
+uv run ruff check src app tests api && uv run python scripts/copy_standard.py --check
+/home/claude/waveIM/check_api.sh /home/claude/wt-im1 ; /home/claude/waveIM/check_root.sh /home/claude/wt-im1
+```
+
+#### Evidence
+
+* **Tests added**: `api/tests/test_im1.py`, 17 tests (catalogue shape and groups; every new rate's numerator /
+  denominator / aggregation / reason and its `minimum` field; presets 10–14 + `full`; window arithmetic on hand-built
+  frames — 6 / 12 successes = 50%, not the 30% mean of weekly rates; deep share 3 / 6, not the mean of 40% and 100%;
+  PFR drops divided by the PFR-covered game's targets only; zero / meaningless denominators null; QB rates; points over
+  expected on the same games; the rushing share priced with the league's scoring; CSV cells; on the clone: the two
+  NGS columns, SQL reconciliation of success rate / EPA per target / deep share / drop rate (≥ 100 receivers), EPA per
+  dropback / success / pressure rate (≥ 25 QBs), a one-week window, the mart missing → the reason and no failure, the
+  unmapped PFR count, the CSV against the JSON frame; the CSV without an ownership field). Result: **17 passed**; with `test_ii3.py`, `test_il1.py`,
+  `test_inf2.py`: **48 passed, 2 skipped** (the skips are the recording tests). dbt: the 15 new schema tests pass;
+  `assert_pfr_advstats_rows_map_to_gsis` WARN 7 (by design). `tests/test_metric_registry.py`,
+  `test_nightly_relations.py`, `test_app_guards.py`: 10 passed. Ruff clean; `copy_standard.py --check` clean.
+* **The PO's check scripts** (run twice for the API — at `576d05b`'s parent and at `576d05b`, identical results; root
+  once at `576d05b`; the last commit after them, `72bcab3`, only drops the CSV's "Rostered by" column for a league
+  without rosters, and `test_im1.py` passes on it, 17 / 17):
+
+  ```
+  check_api.sh:  === summary: 94 failed, 711 passed, 15 skipped, 41 deselected in 1291.97s (0:21:31)
+  === NEW failures (not in /home/claude/waveIM/known_api_failures.txt):
+  tests/test_ia2.py::test_partners_route_applies_both_rules
+  tests/test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-off]
+  tests/test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-on]
+  tests/test_ii1.py::test_folk_package_is_not_promoted
+  tests/test_ii1.py::test_folk_package_on_the_clone_rosters
+  === known failures that now pass (fine: data-state tests):
+  1          (tests/test_ib0.py::test_the_trade_board_this_week_is_the_context)
+  check_root.sh: === summary: 4 failed, 1314 passed, 3 skipped in 293.90s (0:04:53)
+  === NEW failures (not in /home/claude/waveIM/known_root_failures.txt):
+  (none)
+  ```
+
+  **The five "new" API failures are not this branch's**: the base package (`git archive ab50682 api/league_lab_api
+  api/tests`, run with the same venv against `league_lab_im1`) fails the same five (10 failed, 3 passed for the three
+  test functions, the known Scrubs / MFL / test-league variants included). They are the Trade Finder, the trade
+  evaluator's Folk package and Team / My Week lineup totals on the dynasty league — none reads `stats.py` or the new
+  relations; they depend on this clone's data state (the PO's known list was made on another database), not on the code.
+* **Timings** (`/api/players?league=<Scrubs>&position=WR&window=season`, TestClient, fresh process each; the base
+  `ab50682` package and this branch alternated three times on the loaded box — load average 6–8 on 2 cores):
+
+  | | cold | warm (median of 5) | answer (50 rows) |
+  |---|---|---|---|
+  | before (`ab50682`) | 0.49 / 0.41 / 0.61 s | 0.28 / 0.15 / 0.22 s | 124 KB |
+  | after (this branch) | 0.73 / 0.62 / 0.88 s | 0.087 / 0.077 / 0.113 s | 217 KB |
+
+  Without the per-window aggregate cache the branch's warm request was 0.23–0.46 s against 0.16–0.36 s (101 columns
+  made the aggregate the request's largest cost); the window aggregate is NFL-wide, so it is now kept per window (memo
+  region `stats_agg`, ≤ 8 entries). Cold is ~0.2 s slower (the advanced mart's read + the wider aggregate).
+* **Memory** (`memo.frame_bytes`, what the budget counts): the season frame (region `stats`) 56 → 89 columns — 2026
+  weeks 1–4 **0.59 → 0.93 MB**, a full season (2025) **2.53 → 3.95 MB** (+1.4 MB at most per season held); pandas'
+  deep count 0.99 → 1.33 MB and 4.23 → 5.65 MB. New region `stats_agg`: 0.63 MB per window (2026 season), 0.81 MB
+  (2025), at most 8 → ≤ 6.5 MB, inside `LEAGUE_LAB_CACHE_MB`'s LRU.
+* **Relation sizes** (local, tables + indexes): `analytics.mart_player_game_advanced` **9.3 MB** (59,606 rows, 2016–2026;
+  2024–2026 = 13,461 rows ≈ **2.1 MB** if windowed); `analytics.mart_player_ngs_week` **3.2 → 3.5 MB**;
+  `intermediate.int_player_game_efficiency` 8.7 MB (not published). `scripts/hosted_relations.py` already lists
+  `analytics.mart_player_game_advanced` for the API (stats.py names it).
+* **Coverage** (Scrubs, 2026 season window, min games 1): WR 184, RB 111, TE 107, QB 51 players; the table below.
+
+##### Every new column (50): id, label, group, status, 2026 coverage on the clone (players with a value / with a game)
+
+| id | label | group | status | WR | RB | TE | QB |
+|---|---|---|---|---|---|---|---|
+| `yards_per_reception` | Receiving yards per reception | Receiving | derived | 156 / 184 | 87 / 111 | 91 / 107 | n/a |
+| `receiving_first_downs` | Receiving first downs | Receiving | present | 184 / 184 | 111 / 111 | 107 / 107 | n/a |
+| `rushing_first_downs` | Rushing first downs | Rushing | present | 184 / 184 | 111 / 111 | 107 / 107 | 51 / 51 |
+| `yards_per_touch` | Yards per touch | Rushing | derived | 159 / 184 | 103 / 111 | 91 / 107 | n/a |
+| `adjusted_yards_per_attempt` | Adjusted yards per attempt | Passing | derived | n/a | n/a | n/a | 49 / 51 |
+| `td_rate` | Touchdown passes per attempt | Passing | derived | n/a | n/a | n/a | 49 / 51 |
+| `int_rate` | Interceptions per attempt | Passing | derived | n/a | n/a | n/a | 49 / 51 |
+| `sack_rate` | Sacks per dropback | Passing | derived | n/a | n/a | n/a | 49 / 51 |
+| `scramble_yards` | Scramble yards | Passing | derived | n/a | n/a | n/a | 51 / 51 |
+| `rushing_points_share` | Share of his fantasy points from rushing | Passing | derived | n/a | n/a | n/a | 47 / 51 |
+| `wopr` | Weighted opportunity rating (WOPR) | Air yards | derived | 184 / 184 | 111 / 111 | 107 / 107 | n/a |
+| `racr` | Receiver air conversion ratio (RACR) | Air yards | derived | 169 / 184 | 31 / 111 | 89 / 107 | n/a |
+| `deep_targets` | Deep targets (20+ air yards) | Air yards | derived | 174 / 184 | 103 / 111 | 96 / 107 | n/a |
+| `deep_target_share` | Deep-target share (of his team's deep targets) | Air yards | derived | 174 / 184 | 101 / 111 | 96 / 107 | n/a |
+| `deep_target_rate` | Deep targets, share of his targets | Air yards | derived | 172 / 184 | 88 / 111 | 95 / 107 | n/a |
+| `inside_10_targets` | Targets inside the 10 | Red zone | derived | 174 / 184 | 103 / 111 | 96 / 107 | n/a |
+| `inside_10_carries` | Carries inside the 10 | Red zone | derived | 174 / 184 | 103 / 111 | 96 / 107 | 51 / 51 |
+| `receiving_epa` | Receiving EPA | Efficiency | derived | 172 / 184 | 88 / 111 | 96 / 107 | n/a |
+| `epa_per_target` | EPA per target | Efficiency | derived | 172 / 184 | 88 / 111 | 95 / 107 | n/a |
+| `receiving_success_rate` | Receiving success rate | Efficiency | derived | 172 / 184 | 88 / 111 | 95 / 107 | n/a |
+| `first_downs_per_target` | First downs per target | Efficiency | derived | 172 / 184 | 88 / 111 | 95 / 107 | n/a |
+| `receiving_td_rate` | Touchdowns per target | Efficiency | derived | 172 / 184 | 88 / 111 | 95 / 107 | n/a |
+| `rushing_epa` | Rushing EPA | Efficiency | derived | 36 / 184 | 96 / 111 | 8 / 107 | 49 / 51 |
+| `epa_per_carry` | EPA per carry | Efficiency | derived | 36 / 184 | 96 / 111 | 8 / 107 | 49 / 51 |
+| `rushing_success_rate` | Rushing success rate | Efficiency | derived | 36 / 184 | 96 / 111 | 8 / 107 | 49 / 51 |
+| `first_downs_per_carry` | First downs per carry | Efficiency | derived | 36 / 184 | 96 / 111 | 8 / 107 | 49 / 51 |
+| `rushing_td_rate` | Touchdowns per carry | Efficiency | derived | 36 / 184 | 96 / 111 | 8 / 107 | 49 / 51 |
+| `dropback_epa` | EPA on dropbacks | Efficiency | derived | n/a | n/a | n/a | 49 / 51 |
+| `epa_per_dropback` | EPA per dropback | Efficiency | derived | n/a | n/a | n/a | 49 / 51 |
+| `passing_success_rate` | Dropback success rate | Efficiency | derived | n/a | n/a | n/a | 49 / 51 |
+| `expected_points` | Expected fantasy points | Expected points | derived | 174 / 184 | 103 / 111 | 96 / 107 | 51 / 51 |
+| `points_over_expected` | Points over expected | Expected points | derived | 174 / 184 | 103 / 111 | 96 / 107 | 51 / 51 |
+| `cushion` | Average cushion (yards) | Next Gen Stats | derived | 96 / 184 | n/a | 37 / 107 | n/a |
+| `ngs_intended_air_yards` | Intended air yards per target (Next Gen Stats) | Next Gen Stats | derived | 96 / 184 | n/a | 37 / 107 | n/a |
+| `rush_efficiency` | Rushing efficiency (Next Gen Stats) | Next Gen Stats | derived | n/a | 45 / 111 | n/a | n/a |
+| `stacked_box_rate` | Carries against 8+ defenders in the box | Next Gen Stats | derived | n/a | 45 / 111 | n/a | n/a |
+| `time_to_los` | Time to the line of scrimmage (seconds) | Next Gen Stats | derived | n/a | 45 / 111 | n/a | n/a |
+| `aggressiveness` | Aggressiveness (throws into tight windows) | Next Gen Stats | derived | n/a | n/a | n/a | 42 / 51 |
+| `ngs_pass_intended_air_yards` | Intended air yards per attempt (Next Gen Stats) | Next Gen Stats | derived | n/a | n/a | n/a | 42 / 51 |
+| `drops` | Drops | Advanced (PFR) | derived | 162 / 184 | 84 / 111 | 91 / 107 | n/a |
+| `drop_rate` | Drops per target | Advanced (PFR) | derived | 162 / 184 | 84 / 111 | 91 / 107 | n/a |
+| `broken_tackles` | Broken tackles | Advanced (PFR) | derived | 165 / 184 | 99 / 111 | 91 / 107 | n/a |
+| `broken_tackle_rate` | Broken tackles per touch | Advanced (PFR) | derived | 149 / 184 | 98 / 111 | 87 / 107 | n/a |
+| `yards_before_contact_per_carry` | Yards before contact per carry | Advanced (PFR) | derived | n/a | 91 / 111 | n/a | 45 / 51 |
+| `yards_after_contact_per_carry` | Yards after contact per carry | Advanced (PFR) | derived | n/a | 91 / 111 | n/a | 45 / 51 |
+| `rec_yards_after_contact` | Receiving yards after contact | Advanced (PFR) | unavailable | — | — | — | n/a |
+| `bad_throw_rate` | Bad throws per attempt | Advanced (PFR) | derived | n/a | n/a | n/a | 46 / 51 |
+| `times_pressured` | Times pressured | Advanced (PFR) | derived | n/a | n/a | n/a | 46 / 51 |
+| `pressure_rate` | Pressured per dropback | Advanced (PFR) | derived | n/a | n/a | n/a | 46 / 51 |
+| `on_target_rate` | On-target throws per attempt | Advanced (PFR) | unavailable | n/a | n/a | n/a | — |
+
+#### The PO lines I need (PO-owned files)
+
+* `scripts/sync_to_hosted.sh` line 135 — add `mart_player_game_advanced` to the windowed tables (it has `season`; 9.3 MB
+  in full → ≈ 2.1 MB for 3 seasons):
+  `SLIM_TABLES="fct_player_game fct_player_game_league mart_player_week_features mart_player_week_rankings mart_player_context mart_player_recent_form mart_player_expected_points mart_player_trends mart_player_season mart_player_season_team mart_receiver_vs_cb player_team_history mart_player_game_advanced"  # IL-1: the Role block's "games without X" reads 2024 on; IM-1: the Stats advanced numerators`
+  Without it the sync publishes the whole 9.3 MB (still inside Neon's budget, ≈ 300 MB used of 512).
+* Nothing else: `scripts/hosted_relations.py` already picks the mart up from `stats.py`; the nightly's full `dbt build`
+  and its `ingest nfl` (which loads `pfr_advstats_*`) need no change; `app/whats_new.md` — if the PO wants a line:
+  "Players · Stats: 50 more numbers per player — EPA, success rate, WOPR, deep targets, drops, broken tackles, yards
+  after contact, pressures and more — and a Download CSV."
+
+#### Limitations (honest list)
+
+* The live site shows the new columns only after the first nightly builds `mart_player_game_advanced` and the sync
+  publishes it; until then they are — with "These columns arrive with the nightly update; they are not on this copy
+  yet." and leave the Full table (tested). The EPA / first-down / deep / inside-10 / AY/A / rates-on-the-stat-line
+  columns come from `fct_player_game` and work at once.
+* Dropback EPA is the play's EPA (a receiver's fumble after the catch counts against the passer): `fct_play` has no
+  `qb_epa`. Bad throws per attempt keeps spikes and throwaways in the attempts (PFR's own rate does not). Both are said
+  in the definitions.
+* PFR coverage is "the games PFR lists him in": a receiver with no target in a game has no PFR row, so his drops per
+  game divide by all his games (true: no target, no drop), while his drop rate divides by the PFR-covered games'
+  targets. 2 of the 3 unmapped 2026 PFR players (Hibner, Strand) are in `int_pfr_gsis_map` but not in
+  `player_id_map` — the map, not this mart, would have to change.
+* NGS's rushing "weeks" sample counter keys on RYOE (IL-1's choice), so for 2016–17 (no RYOE) the hover of efficiency /
+  8+ box / time to the line says 0 NGS weeks although the values exist.
+* Counts from `int_player_game_pbp` (deep targets, inside-10 / red-zone looks) are null, not 0, for a player who played
+  but was never on the end of a play (10 of 184 WRs on the clone) — the existing red-zone columns behave the same.
+* The catalogue answer is bigger (101 entries; the 50-row JSON 124 → 217 KB before gzip). IM-2 may want a
+  `catalogue=0` switch later; not built.
+
+#### Next task
+
+IM-2 reads `group`, `groups`, `presets[].full`, `minimum` and `/api/players.csv`. After the merge: the PO's
+`SLIM_TABLES` line, a nightly, then check the live Stats Full table (WR / TE: separation and YAC over expected filled;
+the PFR columns present).
+
+
+### IM-2 2026-10-05/06 — the Stats tables' screen (branch `dev/IM2`, web only)
+
+**Task**: Wave I-M, IM-2 (`/home/claude/waveIM/BRIEF.md` § IM-2). **Branch**: `dev/IM2` from `main` `ab50682`.
+**Dev**: Claude (Opus), worktree `/home/claude/wt-im2`, web only, database `league_lab` read-only (nothing written).
+
+#### What was built, against the numbered list
+
+| # | Item | State |
+|---|---|---|
+| 1 | Two views one tap apart: **Key stats** (preset columns) / **Full table** (every column for the position that is available, catalogue order, group headers); `group` / `full` derived when absent (`GROUPS` map in `components/stats/columns.ts`; full = catalogue columns whose `positions` include the position and `available` is true); `?view=`; remembered; Full from 900 px, Key on a phone | **Done.** The API's `group` / `full` win when present (e2e on a hand-added IM-1 shape). Remembered **on this device** (`accountPrefs.statsTable()`, localStorage `ll.stats.table`) — a phone and a desktop keep their own; a saved view keeps `view`, `hide`, `off` (they are in its address). Not pushed to the account (see Limitations). |
+| 2 | Built for width: sticky player column + sticky header rows; sideways scroll inside the box only; right-aligned tabular figures; sort on any column (sorted column marked); group toggles over the column picker; row hover / tap highlight; the dash's reason on hover / tap; small samples greyed; per game / totals on every column that has both; the existing filters | **Done.** Sorting stays client-side over the whole frame (the screen already fetches `limit=1000`, every row of the window; the API's `sort=` / `dir=` go into the CSV link). "Small samples greyed": the screen had no such rule on `main` (`SAMPLE` in `stats.py` names the sample fields only), so `SMALL` in `columns.ts` sets one per rate (targets < 10, receptions < 8, carries < 15, pass attempts < 30, charted targets < 10, NGS targets < 10 / receptions < 8 / carries < 20 / pass attempts < 50). In the Full table the picker ticks columns on / off (`off=`); in Key stats it edits `cols=` as before. |
+| 3 | All the players: "Showing 50 of 184 — Show all"; smooth at 400 rows × 40 columns on a phone; measure | **Done.** "Showing 50 of 291" + **Show all 291** / **Show the first 50**. Chunked rendering was not enough (see § Timings): past 100 rows the table renders only the rows near the box's visible part (8 rows overscan each side), spacer rows keep the height, the column widths are measured once and fixed, `aria-rowcount` / `aria-rowindex` say the size. No dependency. |
+| 4 | Download CSV: a link to `GET /api/players.csv` with the current parameters; 404 → built in the browser | **Done.** `<a href="/api/players.csv?…" download>`; a click fetches it: `text/csv` → saved under the server's filename (`data-from="server"`); 404 (today) or no answer → the file is built from every filtered row and the columns on screen (`data-from="browser"`). Nothing to switch at the merge: with IM-1's route present the route is used automatically; drop the fallback if you prefer one path. |
+| 5 | 375: Key stats default; Full table works; sticky name column ≤ 120 px (short name + team); "swipe for more →" until the first sideways scroll; group row sticky with the column row; the drawer still opens; dark and light | **Done.** Name column 120 px (checkbox, "J. Smith-Njigba" by CSS — the link's text and accessible name stay the whole name —, position + team badges; no headshot under 640 px). |
+| 6 | Accessibility: real `<table>`, scoped headers, `aria-sort`, group headers as `colgroup` + header cells, focus visible, the sticky column never covers a focused cell | **Done.** Row headers are `<th scope="row">`; a `<caption>` (sr-only) names the view and sort; narrow groups show a short name ("Games") with the whole name for screen readers; `scroll-padding` keeps focus clear of the sticky column and header (e2e). |
+| 7 | Tests: `web/e2e/im2/fixtures.spec.ts` on recordings of today's API + one with a hand-added `group` / `full`; screenshots 375 / 1300 light / dark | **Done.** 9 tests × 2 projects (18). Recordings: `web/fixtures/im2/api_im2.json` (WR / TE and ALL, League of Scrubs, 2026 weeks 1–4, from the fixture API on `league_lab`; `web/fixtures/save_im2_fixtures.py` re-records), `web/fixtures/im2/im1_shape.json` (IM-1's shape by hand: groups that differ from the client's map, a `full` list leaving out Charted targets, one new column the rows do not carry: Drops → a dash with its reason). |
+
+#### Files
+
+Mine: `web/src/components/stats/StatsTable.svelte` (new), `web/src/components/stats/columns.ts` (new),
+`web/src/routes/Players.svelte`, `web/src/lib/api.ts` (Stats types: `StatsColumn.group?`, `StatsPreset.full?`,
+`statsCsvPath`), `web/e2e/im2/fixtures.spec.ts`, `web/fixtures/im2/*`, `web/fixtures/save_im2_fixtures.py`,
+`docs/WORDS.md` § "The Stats tables (Wave I-M, IM-2)", `CHANGELOG.md` (one bullet under `## 2026-10-06 — Wave I-M`,
+created), this file and `docs/handbacks/im2/*.png`.
+
+**Edits outside my files** (smallest possible):
+- `web/src/lib/prefs.ts` (+9 lines, owned by no package): `accountPrefs.statsTable()` / `setStatsTable()` and the key
+  `ll.stats.table`.
+- `web/e2e/ii3/fixtures.spec.ts` (2 lines): the sticky-column check reads the row's first `th, td` (the name cell is a
+  row header now), and the column-picker test opens `&view=key` (from 1300 px the screen now opens on the Full table,
+  where every column is already ticked).
+- `docs/DESIGN.md`: rule 6 notes the Stats table as the one sideways-scrolling table; a new § "The Stats table".
+
+**Schema in / out**: reads `GET /api/players?window=…` as today (`catalogue[].group` and `presets[].full` optional);
+calls `GET /api/players.csv?league&limit=1000&position&window[&basis][&weeks]&sort&dir&cols=<catalogue ids>&mode=game|total[&who][&team][&nfl][&q][&min_games]`
+(IM-1: `mode` is mine — per game or totals for the columns that have both; ignore it or honour it).
+No new env variable, no new dependency, no new relation, no new cache region.
+
+#### Commands and evidence
+
+- `cd web && npm run lint` (eslint + svelte-check `--fail-on-warnings` + tsc): **0 errors, 0 warnings**.
+  `npm run build`: **ok** (Players chunk 39 kB, 13.8 kB gzip before the stats components; see the build log).
+- `FIXTURES_PORT=8620 npx playwright test --config playwright.fixtures.config.ts e2e/im2`: **18 passed**.
+- Whole fixtures e2e (`FIXTURES_PORT=8620 npx playwright test --config playwright.fixtures.config.ts`, 414 tests, run
+  alongside two other devs' suites): **411 passed, 1 failed, 2 skipped** (14.6 min). The failure is the known flaky
+  `e2e/il5` "signed in: the saved players in this league, …" — on the **desktop** project this time (its GA events read
+  one short: `["watchlist_remove", "watchlist_add"]` for three); re-run alone: **2 passed** (phone and desktop).
+- `uv run python scripts/copy_standard.py --check`: **clean** (exit 0). `uv run ruff check web/fixtures/save_im2_fixtures.py`: clean.
+- `/home/claude/waveIM/check_root.sh /home/claude/wt-im2`: `4 failed, 1314 passed, 3 skipped` — **NEW failures: none**.
+- `/home/claude/waveIM/check_api.sh /home/claude/wt-im2`: `92 failed, 699 passed, 13 skipped, 41 deselected` — NEW
+  failures (verbatim):
+  ```
+  tests/test_ia2.py::test_partners_route_applies_both_rules
+  tests/test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-off]
+  tests/test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-on]
+  tests/test_ii1.py::test_folk_package_is_not_promoted
+  tests/test_ii1.py::test_folk_package_on_the_clone_rosters
+  ```
+  **Not this branch**: `git diff ab50682 -- api src tests app dbt scripts` is empty (the code under test is `main`'s,
+  byte for byte); the five fail the same way alone (5 failed in 7.5 s): `sanity.market_note` None, `KeyError: 'before'`
+  (test_ib0.py:74), the folk package's gain `-8.71`. They read the shared `league_lab`'s week state — the known list
+  looks incomplete for this database (or its state moved since the list was made); nothing here wrote to it.
+
+##### Timings (the e2e test "400 rows x 40 columns"; recording: every position, **453 rows × 46 columns = 20,838 cells**)
+
+The box: 2 cores shared with four other devs (load average 7–10 while measuring), headless Chromium (software
+compositing). "Phone" = the phone project at 375 px with CPU throttled 4× (CDP `Emulation.setCPUThrottlingRate`);
+"desktop" = 1300 px, no throttle. Frames are rAF intervals (16.7 ms = 60 fps). Several runs; ranges given.
+
+| | All rows in the page, rendered in chunks (first build) | Windowed past 100 rows (shipped) |
+|---|---|---|
+| Show all → every row in the table, desktop | 1.5–2.4 s (longest frame 133 ms) | **0.11–0.48 s** (longest frame 50–150 ms) |
+| Show all, phone 4× | 6.3–9.3 s (longest frame 600 ms) | **0.26–1.08 s** (longest frame 50–550 ms) |
+| Re-sort all rows, desktop / phone 4× | 0.7–1.0 s / 3.6–4.2 s | **0.10–0.35 s / 0.30–0.81 s** |
+| Scroll, desktop (p50 / p95 frame) | 60–100 ms / 90–300 ms | **16.7–18.8 ms / 23–78 ms** (brisk: 3,000 px down + across in 2 s) |
+| Scroll, phone 4× (p50 / p95 frame) | 77–151 ms / 145–380 ms | **18–56 ms / 41–540 ms** (same brisk scroll; the tail tracks the box's load) |
+| Rows in the page after Show all | 453 | 28–37 |
+| Baseline: the first 50 rows, same scroll | p50 16.7 ms everywhere | p50 16.2–17 ms |
+
+Why windowed: an A/B on the same build (desktop, brisk scroll, CSS injected) — all name cells sticky: p50 80 ms;
+`tbody th { position: static }`: p50 21 ms; no sticky header either: p50 17.5 ms. Every sticky name cell is a layer the
+browser re-places each scroll frame; 450 of them dominate. Making only nearby rows sticky (IntersectionObserver) was
+worse (p50 242 ms): toggling `position` re-lays out the whole 20,000-cell table. Main-thread work during the 2 s phone
+scroll (4×): script 0.2–0.5 s, style 0.09–0.42 s, layout 0.12–0.47 s. A **fling** (every row and column in 2 s,
+~12,000 px/s) still janks: 270–610 ms frames (the whole window is rebuilt each frame).
+
+#### Screenshots (`docs/handbacks/im2/`, 256-colour PNGs at CSS pixels)
+
+`im2-full-1300-dark.png`, `im2-full-1300-light.png`, `im2-full-375-dark.png`, `im2-full-375-light.png`,
+`im2-key-375-dark.png`, `im2-key-375-light.png` — WR / TE, League of Scrubs, sorted by target share.
+
+#### Limitations (said plainly)
+
+- **The remembered view is per device**, not per account: an account restore would need one line in IM-4's
+  `lib/account.svelte.ts` (`restore`); I did not add it (a phone and a desktop want different defaults).
+- **Windowed mode** (Show all past 100 rows): the browser's find-in-page sees only the rows near the visible part; Tab
+  from the last rendered row leaves the table (keyboard users reach the rest by scrolling the box or sorting). A fling
+  janks (above).
+- **A dash's reason** is in the cell's title (hover; Chrome exposes it as the cell's description) and a note on a tap;
+  dash cells are not keyboard-focusable (thousands of tab stops otherwise).
+- **Small-sample thresholds** are client constants (`SMALL`); if IM-1's catalogue carries a minimum sample, wire it there.
+- **Group order** per position is the client's (`ORDER` in `columns.ts`: the position's own stats first); inside a group
+  the answer's order is kept.
+- The CSV from the browser holds every filtered row (not only the 50 on screen), shares as percent numbers
+  ("Target share (%)", 26.5), unknown as an empty cell; text a spreadsheet would run as a formula is neutralised.
+
+#### PO lines I need
+
+- `app/whats_new.md` (PO-owned), one entry: "**Stats: the full table.** Players · Stats now has two views: Key stats
+  and Full table — every number we have for the position, grouped (Receiving, Air yards, Red zone, Next Gen Stats…).
+  Tap a group to hide it, sort any column, show every player, and download the table as a CSV."
+- `docs/STATUS.md` (PO-owned): the § "Wave I-M" IM-2 line from this file's summary.
+
+#### Seen, not mine
+
+- The fixture API recipe (rule 6) leaves the availability overlay on: my API on :8752 tried `site.api.espn.com` twice
+  (the proxy refused; I stopped the API once the recordings were saved). `LEAGUE_LAB_AVAILABILITY=off` in the recipe
+  would keep a fixture API off the network.
+- `routes/Players.svelte` on `main`: the search's 250 ms debounced `setParams` survived the screen — a fast tap on a
+  player's "Full player page" put `q=…` on the player page's address (`e2e/ib1` "the player's page keeps the tab bar"
+  failed once on that). Fixed here (the timer is cleared when the screen unmounts).
+
+#### Next
+
+The merge with IM-1: run `e2e/im2` against IM-1's API answer (re-record with `save_im2_fixtures.py`) and check the
+`full` list's order reads well under the groups; decide whether the CSV keeps the browser fallback.

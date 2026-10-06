@@ -3,6 +3,25 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 6 · no password, the full stat tables, accounts with a passkey, DFS
+
+- **No password any more, and no league needed to look around.** Open isuckatfantasy.io and tap **Browse the lab**:
+  every player's stats, trends, matchups and projections in PPR, Half PPR or Standard scoring. Open your league (as
+  before) when you want your lineup, waivers and trades.
+- **Stats: the full table.** Players · Stats has two views now: **Key stats** and **Full table** — every number we
+  have for the position, grouped (Receiving, Air yards, Red zone, Efficiency, Next Gen Stats, …). Sort any column, tap
+  a group to hide it, show every player, download the table as a CSV. Fifty new numbers: EPA per target and per
+  carry, success rate, first downs, WOPR, deep targets, points over expected, drops, broken tackles, yards after
+  contact, pressure rate and more. They fill in with the next nightly update; a dash always says why.
+- **An account, if you want one: a passkey, no password and no email.** "Create an account with a passkey" uses your
+  phone's or computer's own lock (Face ID, a fingerprint or its PIN) and keeps your leagues, your team in each and your
+  saved views on any device. It appears after the next nightly update. Lose every device and the account is gone:
+  add a second passkey.
+- **DFS (new tab).** This week's projections in DraftKings or FanDuel scoring; add the contest's salary file (the
+  site's own "Export to CSV") to see points per $1,000, who is **undervalued** against that slate's salaries and why,
+  and lineups you can download for the site's upload. The file stays in your browser. Estimates, not promises: the
+  model's record is on About.
+
 ## Oct 5 (evening) · a player's role, Next Gen Stats, MyFantasyLeague moves and live scores, a watchlist
 
 - **Yahoo leagues are "coming soon" again.** Yahoo has to switch on our access to fantasy data and has not yet, so

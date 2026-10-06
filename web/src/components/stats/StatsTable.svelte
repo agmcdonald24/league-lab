@@ -51,7 +51,7 @@
   // ---- every row, without a long frame: up to WINDOW_FROM rows render as they are; past that ("Show all": 450 rows x
   // 45 columns = 20,000 cells, each name cell a sticky layer the browser re-places on every scroll frame) only the rows
   // in and near the box's visible part are in the page (OVERSCAN rows each side), spacer rows keep the scroll height,
-  // and the table says how many rows it has (aria-rowcount / aria-rowindex). Measured in docs/handbacks/IM-2.md.
+  // and the table says how many rows it has (aria-rowcount / aria-rowindex). Measured in docs/STATUS.md § "IM-2".
   const WINDOW_FROM = 100;
   const OVERSCAN = 8;
   const target = $derived(Math.min(rows.length, limit));

@@ -336,6 +336,6 @@ sideways). Use it for any screen whose job is reading many numbers across many p
   in the page (8 rows of overscan each side), spacer rows keep the height, the column widths are measured once and fixed
   (`table-layout: fixed`: no column jumps while scrolling), and the table states its size (`aria-rowcount`,
   `aria-rowindex`). Why: every sticky name cell is a layer the browser re-places on each scroll frame — 450 of them took
-  a frame from 17 ms to 80 ms on the test box (`docs/handbacks/IM-2.md` § Timings).
+  a frame from 17 ms to 80 ms on the test box (docs/STATUS.md § "IM-2" § Timings).
 - **A phone**: "Swipe for more →" over the table's right edge until the first sideways scroll.
 

@@ -598,6 +598,24 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 23 — Wave I-M (2026-10-05/06, Monday night 22:45 – 02:00 ET; the overnight push)
+
+Andrew: "a significant push next iteration overnight. Adding the full tables, some sort of login/account so people
+can save their stuff and not have to reconnect each time, maybe lets lose the password and add an option to view some
+of the non team specific features without having to choose team/league to access, dfs recomendations/undervalues."
+Five devs: **IM-1** the Stats tables' data (51 → 101 columns: EPA, success rates, first downs, WOPR / RACR, deep
+targets, points over expected, more Next Gen Stats, PFR's weekly advanced stats; `mart_player_game_advanced`; the
+CSV route); **IM-2** the Stats screen's "Full table" (every column under group headers, sticky name and headers, all
+the players, CSV); **IM-3** the site public — the gate as a switch, reference leagues `ref:ppr|half|std` for
+browsing with no league, the rate limiter, the Guard and CSP, `docs/SECURITY_PUBLIC.md`; **IM-4** accounts by
+passkey (no email, no third party; on at the first nightly after the push); **IM-5** DFS from the site's own salary
+file (value per $1,000, undervalued / overpriced against the slate, exact lineups, the upload CSV; `docs/DFS.md`).
+An independent security review of the merged tree, then a fix round (two Highs in DFS, four Mediums in the public
+hardening — all fixed). Acceptance and evidence: `docs/STATUS.md` § "Wave I-M". **Next**: the live checks
+(`/api/ratelimit`, the CSP, a passkey on a real phone, a real DraftKings and FanDuel file), then the candidates in
+the STATUS PO section's "Not done / next" and Wave I-L's list (the 50 % range grade after weeks 4–6, a role-change
+Stats column, MFL's lineup maxima and playoff bracket, one waiver search shared across a league's rosters).
+
 ### Iteration 22 — Wave I-L (2026-10-05, Monday 12:20–15:10 ET; the deferred list)
 
 Andrew: "idk whats on tap for the next wave but proceed." Five devs on Wave I-K's deferred list: **IL-1** the

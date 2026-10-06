@@ -205,6 +205,28 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   supported with no deploy; `ll_session`'s path is `/api`. Run `scripts/measure_memory.py` before touching the
   directory or the Finder again.
 
+* **Wave I-M (2026-10-05/06, Monday night 22:45 – 02:00 ET; five Opus devs, an independent security review, a fix
+  round; STATUS § "Wave I-M" PO section first)**: **the site is public** — `render.yaml` `LEAGUE_LAB_GATE: open`
+  (`password` brings the beta password back; `auth.py`), a front door, **reference leagues** `ref:ppr` / `ref:half` /
+  `ref:std` (`api/league_lab_api/refleague.py`: research routes with no team and no ownership; decision routes answer
+  `needs_league`), the limiter (`ratelimit.py`: buckets `read` / `research` / `heavy` / `write`, the client from
+  `CF-Connecting-IP` on Render, IPv6 by /64 and /48, an all-clients ceiling, 4 CPU slots — **a new route goes in the
+  right bucket in `bucket_for`**; `ratelimit.client_group` is the one name of a visitor; never key on `request.client`:
+  uvicorn's `--forwarded-allow-ips='*'` makes it client-written), the Guard (`security.py`: cross-site writes, body
+  sizes, the CSP — a new outside host or inline script must pass it), `docs/SECURITY_PUBLIC.md` (what was checked and
+  what is left). **Stats**: 101 columns in 12 groups (`stats.py` `CATALOGUE`; `mart_player_game_advanced`, PFR weekly),
+  "Key stats" / "Full table" (`web/src/components/stats/`), `GET /api/players.csv`. **Accounts by passkey**
+  (`passkeys.py`, `accounts.passkeys`; `LEAGUE_LAB_ACCOUNTS=auto` turns them on when the nightly has applied
+  `scripts/hosted_accounts.sql` — for everyone; ceilings of 30 new accounts an hour / 200 a day; `docs/ACCOUNTS.md`
+  § Passkeys). **DFS** (`src/league_lab/dfs.py`, `api/league_lab_api/dfs.py`, `/dfs`, `docs/DFS.md`): the user's
+  DraftKings / FanDuel salary file → value, undervalued / overpriced, exact lineups; **nothing is fetched from either
+  site** (their terms; the PO's tools cannot open them) and the parsers are **unverified against a real file**; the
+  two POSTs run off the event loop one at a time (a semaphore) with a 5-second budget — keep it that way: the server
+  is one process. **The sandbox's suites**: 92 API and 4 root tests fail on any tree in this session's database (2026
+  through week 4, the clock pinned to 2026-10-03; five of them read the real date somewhere — unfound): compare
+  failures by name against a run of `main` on the same database, never by count. **After the push the PO verifies live**
+  (STATUS PO section): `/api/ratelimit` first.
+
 * **Yahoo is "coming soon" again (2026-10-05 evening; STATUS § "PO — Yahoo refuses the app")**: Yahoo has not approved
   the app's Fantasy access, so the sign-in works and every data call is refused (401 / 403
   `additional_authorization_required`); a friend was told "expired, connect again" four times, then "league is private

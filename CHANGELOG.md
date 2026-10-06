@@ -4,6 +4,17 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-06 — Wave I-M
 
+- **PO — the wave merged, reviewed and hardened; the site is public from this deploy.** Five branches (IM-1 … IM-5)
+  on `integ/IM`; an independent security review of the merged tree found two Highs in DFS (a quadratic salary-file
+  parser and an unbounded lineup solve, both on the event loop) and four Mediums in the public hardening (a
+  case-sensitive `view=` check, research priced as a cheap read, IPv6 rotation, provider caches that never evicted) —
+  all fixed in a second round by the same devs and re-checked by the PO with the reviewer's own scripts.
+  `render.yaml`: **`LEAGUE_LAB_GATE: open`** (`password` brings the beta password back). `sync_to_hosted.sh` windows
+  `mart_player_game_advanced`. One name for a visitor (`ratelimit.client_group`: the limiter's source, IPv6 by /64) —
+  the accounts' limits use it. `/dfs` with no league opens on the reference league. Accounts turn on by themselves
+  (passkeys) at the first nightly after the push. Checks: API 824 passed / 92 failed (all on the known data-state
+  list), root 1,462 / 4, e2e 431 (`docs/STATUS.md` § "Wave I-M" PO section).
+
 - **IM-1 — the Stats tables' data: more metrics, every one honest.** Andrew's two empty WR / TE columns (separation, YAC
   over expected) fill once the nightly builds `mart_player_ngs_week`: on the clone all 40 of the top 40 receivers by
   targets have both, and every receiver without one had no week with 5+ targets (NGS's rule). 50 new Stats columns (51 →
@@ -13,7 +24,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   Pro Football Reference's weekly drops, broken tackles, yards before / after contact, bad throws and pressures — new
   `analytics.mart_player_game_advanced` (+ `int_player_game_efficiency`), PFR joined by id through `player_id_map`
   (unmapped rows counted). Every column has a `group`; presets lead with 14 columns and carry a `full` list;
-  `GET /api/players.csv`. docs/METRICS.md § "More columns" (adv1.0), DATA_INVENTORY, WORDS; `docs/handbacks/IM-1.md`.
+  `GET /api/players.csv`. docs/METRICS.md § "More columns" (adv1.0), DATA_INVENTORY, WORDS; docs/STATUS.md § "IM-1".
 - **IM-3 — the open door.** `LEAGUE_LAB_GATE` = `open` | `password` (unset: today's rule — password when
   `LEAGUE_LAB_APP_PASSWORD` is set); `open` ignores the password, `password` with no password keeps the door shut. A rate
   limiter on every `/api/` route but the health check (`ratelimit.py`: per client, keyed by an HMAC of
