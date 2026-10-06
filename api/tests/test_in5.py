@@ -335,29 +335,3 @@ def test_record_andrews_morning(client, monkeypatch):
             if x["role"] == "empty":
                 x["sleeper_id"] = "nan"
         (IN5_FIXTURES / "team_open_nan.json").write_text(json.dumps(nan))
-
-
-# ------------------------------------------------------------------ 4. the database's "now" follows the pinned clock
-def test_the_pinned_clock_reaches_the_database_setting(monkeypatch):
-    from league_lab import clock
-
-    from league_lab_api import db
-    with clock.pinned("2026-10-03T16:00:00Z"):
-        assert db.pinned_now() == "2026-10-03T16:00:00+00:00"
-    monkeypatch.delenv(clock.ENV, raising=False)
-    clock.unpin()
-    assert db.pinned_now() is None                         # production: nothing is sent, the views read now()
-
-
-@needs_db
-def test_a_statement_reads_the_pinned_clock():
-    """`league_lab.now` is set for the one statement (dbt's `league_lab_now()` reads it before now(); the horizon view
-    `mart_league_roster_horizon` decides "this week" with it once the nightly rebuilds the view)."""
-    from league_lab import clock
-
-    from league_lab_api import db
-    sql = "select coalesce(nullif(current_setting('league_lab.now', true), '')::timestamptz, now()) as t"
-    with clock.pinned("2026-10-03T16:00:00Z"):
-        db.clear_cache()
-        assert pd.Timestamp(db.query(sql)["t"].iloc[0]) == pd.Timestamp("2026-10-03T16:00:00Z")
-    db.clear_cache()

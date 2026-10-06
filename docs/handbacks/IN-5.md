@@ -52,14 +52,11 @@ link **Find a quarterback on Waivers ›** (`/waivers?position=QB`).
 4. **The five tests that turned red Monday ~20:00 ET** (`test_ia2` partners, `test_ib0` one-lineup-total × 2 dynasty,
    `test_ii1` Folk × 2): `analytics.mart_league_roster_horizon` is a **view** whose "this week" is the first REG week
    with `kickoff_at > now()` — the database's clock. Week 4's last kickoff was 2026-10-06 00:15 UTC (Mon 20:15 ET): the
-   view moved to weeks 5–8 while the pinned suites are in week 4. Fix: dbt macro `league_lab_now()` =
-   `coalesce(nullif(current_setting('league_lab.now', true), '')::timestamptz, now())` in the view; `db._run` sends the
-   pinned clock as `set_config('league_lab.now', …, true)` in the statement's transaction **only when the clock is
-   pinned** (LEAGUE_LAB_NOW / `clock.pin`; production sends nothing: the view reads `now()` as before). Verified
-   read-only: the view's body at the pinned clock gives weeks 4–7 (5–8 at 09:20 Tuesday); with that body substituted
-   for the view (a scratch plugin, deleted), `test_ia2` partners and `test_ii1` Folk × 2 pass; `test_ib0` dynasty × 2
-   read `mart_league_roster_value` / `_slot_strength`, views over the horizon view, which a substitution cannot reach —
-   expected to pass once the view is rebuilt, **not verified** (no dbt run here).
+   view moved to weeks 5–8 while the pinned suites are in week 4. **Diagnosed, not fixed.** A first fix (the API
+   sending its pinned clock as a setting the view read before `now()`) was built and taken back out in the fix round:
+   with the view rebuilt it made the API read week 4 while the Streamlit twin and the root package's layer read week 5
+   — two read paths, two weeks, 7 new failures on the merged tree — and in production (nothing pinned) it buys nothing.
+   A clean fix needs every read path (API, console, root package) to share one clock; not built.
 
 ## Keyed `{#each}` audit (175 keyed in `web/src`)
 
@@ -83,7 +80,7 @@ IN-1. The boundaries catch any of them: a duplicate there is an error card, neve
 * Modules edited — their API test files (37 files: myweek's 32 + decisions' transactions / alternatives): **72 failed /
   504 passed / 10 skipped** (661 s); 66 on `known_api_failures.txt`; the other **6 fail the same on `main`'s API code at
   10:30 ET** (`test_ig2` × 3: the event store's status / brief lines; `test_u1` × 3: usage rows) — not mine, see below.
-  Re-run after the `db.py` change (10 files incl. ia2 / ib0 / ii1): 25 failed / 90 passed, all on the known list; after
+  A re-run of 10 files (incl. ia2 / ib0 / ii1): 25 failed / 90 passed, all on the known list; after
   the last `myweek.py` change (12 My Week files): 23 failed / 144 passed / 6 skipped, all on the known list.
 * `ruff check src app tests api` clean; `npm run lint` (177 files, 0 warnings) and `npm run build` clean;
   `copy_standard.py --check` clean; `league-lab dbt parse` clean.
@@ -114,14 +111,11 @@ line "Nothing has changed since the morning build." (recorded in 9 fixture answe
   alert', 'What changed' is now 'News feed'; a screen that hits a problem shows a card with Reload instead of going
   blank." Its older entries (lines 110, 143) name "What changed" as history — leave them.
 * Console pages: none carries "Change needed" or the news block's "What changed" (grep of `app/`).
-* **The view**: the next nightly rebuilds `mart_league_roster_horizon` with `league_lab_now()` (production behaviour
-  unchanged); on this sandbox `uv run league-lab dbt run --select mart_league_roster_horizon` then the five tests.
 
 ## Edits outside my files
 
 `api/league_lab_api/decisions.py` (`_sid` "None"; `_alt_player`; `od_transactions`, `recent_adds` — six lines, marked),
-`api/league_lab_api/db.py` (`pinned_now`, `_run`), `dbt/macros/league_lab_now.sql` (new),
-`dbt/models/marts/edge/mart_league_roster_horizon.sql` (one line + comment), `web/src/App.svelte` (IN-1's: a script
+`web/src/App.svelte` (IN-1's: a script
 block + two boundary blocks, marked), `web/src/lib/api.ts` (types at the end, marked), `web/src/components/TopBar.svelte`
 (IN-2's: one key), 17 unowned screens / components (one key each), `docs/WORDS.md`, `CHANGELOG.md`, docs above.
 No new env variable, no new dependency, nothing written to the database.
@@ -130,7 +124,7 @@ No new env variable, no new dependency, nothing written to the database.
 
 * The deadline is the roster's main slate, not the free agent's own kickoff (a Monday-night quarterback can be added
   later); the words say "before".
-* The Streamlit twin and the root package's own database layer do not send `league_lab.now` (the root suite's four
-  week-state failures may have the same cause: not checked).
-* Next: the owners' one-line keys above; the view rebuild and the five tests; a real Sleeper lineup with two open spots
+* The five tests stay red until "this week" comes from one clock on every read path (the root suite's four week-state
+  failures may have the same cause: not checked).
+* Next: the owners' one-line keys above; a real Sleeper lineup with two open spots
   once one exists in the fixtures.
