@@ -134,6 +134,10 @@ def bucket_for(method: str, path: str, query: str = "") -> str | None:
         return "write"
     if path in RESEARCH_EXACT or path.startswith(RESEARCH_PREFIX):
         return "research"
+    # ---- IN-3 (Wave I-N): the matchup board prices the week and aggregates (matchup_board.py)
+    if path == "/api/matchups/board":
+        return "research"
+    # ---- end IN-3
     return "read"
 
 

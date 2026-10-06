@@ -846,6 +846,12 @@ from . import dfs as dfs_mod  # noqa: E402 - the block stays self-contained
 app.include_router(dfs_mod.router, dependencies=[Depends(require_auth)])
 # ---- end IM-5
 
+# ---- IN-3 (Wave I-N): matchups for everyone — GET /api/matchups/board (league_lab_api/matchup_board.py; research bucket)
+from . import matchup_board as matchup_board_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(matchup_board_mod.router, dependencies=[Depends(require_auth)])
+# ---- end IN-3
+
 
 # ---- IM-3 (Wave I-M): the public site's doors. The rate limiter (ratelimit.py) inside the Guard (security.py: cross-site
 # writes, body sizes, the response headers on every answer, a 429 included); both outermost, ahead of the routes.
