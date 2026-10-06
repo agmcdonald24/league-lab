@@ -2185,3 +2185,98 @@ export interface WaiverDeadline {
   waiver_order?: number | null; // MFL waiver order: the team's place
 }
 // ---- end IL-2
+
+// ---- IN-3 (Wave I-N): matchups for everyone — GET /api/matchups/board?league=&position=&q=&game=&tone=&sort=&limit=&offset=
+// (api/league_lab_api/matchup_board.py). `context` is matchup_board.matchup_context's shape (DFS and the home read it too).
+export type MatchupTone = "favorable" | "neutral" | "difficult";
+export interface MatchupContext {
+  opponent: string;
+  home: boolean | null;
+  defense: { tone: MatchupTone | null; tough_rank: number | null; n_ranked: number | null; words: string | null };
+  cb: {
+    tone: MatchupTone | null;
+    certainty: "likely" | "unclear" | "no call";
+    corner: string | null;
+    corner_rank: number | null;
+    shutdown: boolean;
+    words: string | null;
+  } | null;
+  tone: MatchupTone | null;
+  words: string | null;
+}
+export interface BoardCorner {
+  name: string | null;
+  side: string | null;
+  rank: number | null;
+  label: string | null;
+  words: string | null;
+  tone: MatchupTone | null;
+}
+export interface BoardRow {
+  gsis_id: string;
+  player_name: string;
+  position: string;
+  team: string | null;
+  headshot_url: string | null;
+  report_status: string | null;
+  opponent: string;
+  is_home: boolean | null;
+  kickoff_at: string | null;
+  game_id: string;
+  proj_points: number | null;
+  p10: number | null;
+  p25: number | null;
+  p75: number | null;
+  p90: number | null;
+  rostered_by_roster_id?: number | null; // absent without a league (`ref:` keys)
+  rostered_by_team?: string | null;
+  context: MatchupContext;
+  cb_detail: { n_ranked: number | null; certainty_words: string | null; history: string | null; named: BoardCorner[] } | null;
+  matchup_evidence: MatchupEvidence | null;
+}
+export interface BoardGame {
+  game_id: string;
+  home: string;
+  away: string;
+  kickoff_at: string | null;
+}
+export interface MatchupBoard {
+  league_id: string;
+  league_name: string;
+  season: number;
+  week: number | null;
+  position: string;
+  q: string | null;
+  game: string | null;
+  tone: string | null;
+  sort: string;
+  limit: number;
+  offset: number;
+  scoring: string;
+  projection_words: string;
+  tone_words: string;
+  position_note: string | null;
+  rows: BoardRow[];
+  total: number;
+  games: BoardGame[];
+  counts: Partial<Record<MatchupTone | "none", number>>;
+  notice?: string;
+}
+export interface BoardQuery {
+  position: string;
+  q: string;
+  game: string;
+  tone: string;
+  sort: string;
+  offset: number;
+  limit: number;
+}
+export const boardPath = (league: string, b: BoardQuery) => {
+  const p = new URLSearchParams({ league, position: b.position, limit: String(b.limit), offset: String(b.offset) });
+  if (b.q.trim().length >= 2) p.set("q", b.q.trim());
+  if (b.game) p.set("game", b.game);
+  if (b.tone) p.set("tone", b.tone);
+  if (b.sort && b.sort !== "projection") p.set("sort", b.sort);
+  return `/api/matchups/board?${p.toString()}`;
+};
+// ---- end IN-3

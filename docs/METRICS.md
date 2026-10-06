@@ -1474,6 +1474,71 @@ the citation is ESPN's (or Sleeper's) record of it, dated with the report's time
 unreachable; a depth-chart change): `event` and `url` are null and the overlay's status, source and date stay. The
 words and the numbers do not change.
 
+## Matchups for everyone: the board and the one tone (mb1.0, IN-3, Wave I-N, 2026-10-06; `matchup_board.matchup_context`, `GET /api/matchups/board`)
+
+**The context** (`matchup_board.matchup_context(season, week, gsis_ids=None)`; DFS and the home read it). One entry per
+QB / RB / WR / TE with a game in the week: the week's projection rows (`mart_player_week_projections`, one row per
+player) plus every receiver `mart_cb_matchups` lists for the week; the game from `dim_game` (a player on a bye is
+absent). **Scoring-free**: one scale for every league.
+* `defense` = `mart_defense_vs_position_current` (season to date, the reference league's Half PPR points allowed)
+  through `research.defense_meaning`: `tough_rank` (1 = gives up the fewest points to the position), `n_ranked`, the
+  tone (the IB-3 cut: 10 of 32 at each end), `words` ("Atlanta gives up the 7th-most points to receivers").
+* `cb` (wide receivers only; `None` for TE / RB / QB) = the week's `mart_cb_matchups` row through `research.cb_meaning`:
+  `certainty` likely (his located targets lean 15+ points to one side) / unclear (either outside corner) / no call;
+  `corner` = the corner named first and `corner_rank` his two-season rank (1 = hardest to throw on, of `cb_n_ranked`);
+  `shutdown` = every named corner is a shutdown corner (the top quarter): on a likely call the one, on an unclear call
+  both; the corner's `tone` = its quarter (shutdown → difficult, solid → neutral, target → favorable; IB-3's rule for an
+  unclear call). A receiver with no row for the game: "no call". **A corner the call names who is not expected to
+  play** (listed on the depth chart, but the availability overlay says he cannot play: `cards.corner_personnel`, the
+  matchup evidence's own read) → "no call" ("no corner call: Trent McDuffie, named on his side, is not expected to
+  play"): the context never says "a shutdown corner" about a corner who is out; the row's evidence names who is
+  expected instead.
+* **`tone` — the one read of the two** (`combine_tone`). The defense's tone is the base; the corner moves it only on a
+  **likely** call: a likely difficult (shutdown) or favorable (target) corner moves a neutral defense to its side,
+  confirms the same side, and cancels the opposite side to neutral. A solid corner, an unranked one, an unclear call or
+  no call never moves it; no defense read → no tone (unknown is not neutral).
+
+  | defense \ likely corner | favorable | neutral | difficult | unclear / no call / unranked |
+  |---|---|---|---|---|
+  | favorable | favorable | favorable | neutral | favorable |
+  | neutral | favorable | neutral | difficult | neutral |
+  | difficult | neutral | difficult | difficult | difficult |
+  | none | none | none | none | none |
+* `words` = the defense's sentence and the corner's ("…; Trent McDuffie is likely across from him: the 3rd-hardest of
+  74 starting corners to throw on (a shutdown corner)"; ", but" when the two point opposite ways).
+* Cached per (season, week) in the memory budget's `matchup_board` region (≤ 24 entries, 10 minutes; ~800 players).
+  Never raises: a missing mart, a week without games or any error → `{}`. Measured on the sandbox (week 4, 792
+  players): 172 ms cold, 6 ms warm.
+
+**The board** (`GET /api/matchups/board?league=&position=WR|TE|RB|QB&q=&game=&tone=&sort=&limit=&offset=`, the
+`research` bucket). Rows: every player at the position with a game and a projection in the league's scoring this week
+(`research.projections`: the league mart for a house league, the week priced on request otherwise), the game (home /
+away, kickoff), the projection and its range (low-end p10 – high-end p90), the context, the corner detail (the named
+corners in words, the certainty in words, his history against the likely corner) and the matchup evidence
+(`research.matchup_evidence` on the reference mart, as the player card has it). A real league adds who has him; a
+reference key never does. `q` = 2–40 characters, matched as text on the name (letters only after normalising; a
+character no name has — `%`, `_`, a digit — matches nobody); `game` = one of the week's `dim_game` ids; `tone` =
+favorable / neutral / difficult / none; `sort` = projection (default) / tone (best matchup first) / corner (the
+easiest corner to throw on first, no ranked corner last); `limit` 1–100 (25), `offset` 0–5,000. The evidence does not
+depend on the league (its ranks are the reference mart's): it is kept per week for every league. Timings on the
+sandbox (the fixture API over HTTP, WR, `ref:half`, six workers sharing two cores): **cold 0.59–0.64 s** (a fresh
+process: the pool, the week's board, the prices), **warm 15–19 ms** (a house league 22 ms; `limit=100` 25 ms warm,
+0.16–0.20 s the first time its rows' evidence is built). Memory: the `matchup_board` region held 4.2 MB with every
+position of five leagues paged through (the week's context, five league frames, the corners, ~580 players' evidence).
+
+**What is in the projection, and what is not** (`IN_PROJECTION`, asserted against `projections.BASE_FEATURES` by
+`api/tests/test_in3.py`): the defense against the position **is** an input (`opp_allowed_std`, `opp_allowed_l4`,
+`opp_rank_std`, `f_opp_allowed_diff`, `league_allowed_avg`, read as of the week from `mart_defense_vs_position`), and
+so are the betting lines; **who plays cornerback is not**. The corner calls are a lean from where his targets go,
+checked on 2025 for which corner draws his targets (§ Cornerback matchups: 0.204 of his targets on a clear call against
+0.141 for the other outside corner); **whether a tough corner lowers a receiver's points has not been graded**. The
+screen says both, once.
+
+**Coverage** (the sandbox's database, `ref:half`): week 4 (the pinned decision week), 219 wide receivers with a
+projection and a game — **36 likely, 96 unclear, 87 no call** (all "too few targets with a direction to tell his
+side"); 14 face shutdown corners only (7 on a likely call); the corner moved the tone for **6**. Among the 41 projected
+8+ points: 6 likely, 35 unclear. Week 5: 207 — 43 likely, 90 unclear, 74 no call; the corner moved 9.
+
 ## "Value to my lineup" (IB-3, Wave I-B, 2026-10-03; `ondemand.lineup_values`, `/api/ros?view=lineup&team=`)
 
 What a player is worth to **one roster's best lineup** over the weeks left (this week to the league's final), summed

@@ -12,12 +12,19 @@
   import { toCb, toDefense } from "../lib/shapes";
   import { fmt, SERIES, teamLabel } from "../lib/theme";
   import Card from "../components/Card.svelte";
+  import Chips from "../components/Chips.svelte"; // ---- IN-3
   import Expander from "../components/Expander.svelte";
   import Heatmap from "../components/Heatmap.svelte";
   import Md from "../components/Md.svelte";
   import MatchupEvidence from "../components/MatchupEvidence.svelte"; // ---- IF-3
   import PlayerRow from "../components/PlayerRow.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
+  // ---- IN-3 (Wave I-N): matchups for everyone — the board (every player at a position this week, with search); with a
+  // league and a team the screen gains "My players · Everyone" (default: mine, as before; Everyone adds who has him)
+  import Board from "../components/matchups/Board.svelte";
+  import { isRef, refLabel } from "../lib/refleague";
+  import { route, setParams } from "../lib/router.svelte";
+  // ---- end IN-3
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -27,7 +34,11 @@
   $effect(() => c.load(team === null ? null : researchPaths.cb(league, team), onauth));
 
   const ctx = $derived({ league, team });
-  const leagueName = $derived(options.find((o) => o.league_id === league)?.name ?? "this league");
+  // ---- IN-3: browsing says the scoring ("Half PPR"), never a league name it does not have
+  const leagueName = $derived(isRef(league) ? refLabel(league) : (options.find((o) => o.league_id === league)?.name ?? "this league"));
+  const browsing = $derived(isRef(league) || team === null);
+  const view = $derived(browsing || route.current.params.get("view") === "everyone" ? "everyone" : "mine");
+  // ---- end IN-3
   const cell = $derived(new Map((d.data?.teams ?? []).map((t) => [`${t.defense}|${t.position}`, t])));
   const nDef = $derived(new Set((d.data?.teams ?? []).map((t) => t.defense)).size || 32);
   const starters = $derived(
@@ -157,10 +168,28 @@
   </article>
 {/snippet}
 
+<!-- ---- IN-3: the heatmap card, on both views (the board's view keeps it under the board) -->
+{#snippet defenseCard()}
+  {#if d.data}
+    <Card title="Defense vs position" testid="defense">
+      <p class="mb-3 text-sm leading-snug text-ink-2">
+        Points each defense gives up per game to each position{d.data.weeks_used ? `, weeks 1–${d.data.weeks_used}` : ""}, in {leagueName} scoring.
+        <strong class="text-good">▲ Favorable</strong>: one of the 10 that give up the most; <strong class="text-bad">▼ Difficult</strong>: one of the 10
+        that give up the fewest; the rest neutral.{#if starters.length && view === "mine"}&nbsp;Ringed: your starters' matchups this week (their defenses come first).{/if}
+      </p>
+      <Heatmap {rows} {cols} cell={heatCell} marked={view === "mine" ? marked : {}} tones />
+    </Card>
+  {/if}
+{/snippet}
+
 <main class="space-y-5" data-testid="matchups">
-  <ScreenHead eyebrow="Research · Matchups" title={d.data?.week ? `Your matchups, week ${d.data.week}` : "Matchups"}>
+  <ScreenHead eyebrow="Research · Matchups" title={d.data?.week ? `${view === "everyone" ? "Matchups" : "Your matchups"}, week ${d.data.week}` : "Matchups"}>
     {#snippet answer()}
-      {#if best}
+      {#if view === "everyone"}
+        <span data-testid="board-answer"
+          >Every player's matchup this week: the defense against his position and, for a receiver, the corner likely across from him.</span
+        >
+      {:else if best}
         <span data-testid="matchups-answer"
           >Best matchup in your lineup: <strong>{best.player_name}</strong> ({best.position}) {best.is_home ? "vs" : "at"}
           {teamLabel(best.opponent)}, who {wordsOf(best.m)}: <strong style="color:{TONE_COLOR[toneOf(best.m) ?? 'neutral']}">{TONE_WORD[toneOf(best.m) ?? "neutral"].toLowerCase()}</strong>{#if worst}. Toughest: <strong>{worst.player_name}</strong> ({worst.position}) {worst.is_home
@@ -174,7 +203,26 @@
     {/snippet}
   </ScreenHead>
 
-  {#if d.error}
+  <!-- ---- IN-3: with a league and a team, the switch; browsing, the board alone -->
+  {#if !browsing}
+    <Chips
+      items={[
+        { key: "mine", label: "My players" },
+        { key: "everyone", label: "Everyone" },
+      ]}
+      current={view}
+      label="Whose matchups"
+      testid="matchups-view"
+      onpick={(k) => setParams({ view: k === "everyone" ? "everyone" : null })}
+    />
+  {/if}
+  {#if view === "everyone"}
+    <div class="grid grid-cols-1 gap-5">
+      <Board {league} {team} {onauth} owners={!isRef(league)} />
+      {@render defenseCard()}
+    </div>
+  {:else if d.error}
+    <!-- ---- end IN-3 -->
     <p class="ll-error">{d.error}</p>
   {:else if !d.data}
     <div class="space-y-3" aria-label="Loading" data-testid="loading">
@@ -229,14 +277,7 @@
         {/if}
       </div>
 
-      <Card title="Defense vs position" testid="defense">
-        <p class="mb-3 text-sm leading-snug text-ink-2">
-          Points each defense gives up a game to each position{d.data.weeks_used ? `, weeks 1–${d.data.weeks_used}` : ""}, in {leagueName} scoring.
-          <strong class="text-good">▲ Favorable</strong>: one of the 10 that give up the most; <strong class="text-bad">▼ Difficult</strong>: one of the 10
-          that give up the fewest; the rest neutral.{#if starters.length}&nbsp;Ringed: your starters' matchups this week (their defenses come first).{/if}
-        </p>
-        <Heatmap {rows} {cols} cell={heatCell} {marked} tones />
-      </Card>
+      {@render defenseCard()}
     </div>
 
     <Expander title="How to read this" testid="howto">

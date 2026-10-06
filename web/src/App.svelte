@@ -95,6 +95,11 @@
   $effect(() => {
     if (phase === "ready" && r.name === "dfs" && !league) setParams({ league: REF_DEFAULT });
   });
+  // ---- IN-3: /matchups with no league at all → the board on the reference league (a shared board link opens for anyone)
+  $effect(() => {
+    if (phase === "ready" && r.name === "matchups" && !league) setParams({ league: REF_DEFAULT });
+  });
+  // ---- end IN-3
 
   // remember the pick and keep the URL shareable (replace: no extra Back step)
   $effect(() => {

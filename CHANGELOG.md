@@ -2,6 +2,17 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-06 — Wave I-N
+
+- **IN-3 — matchups for everyone.** `/matchups` lays out every player at a position this week, player by player (WR by
+  default, TE / RB / QB): his game, his projection and range in the chosen scoring, the defense against his position,
+  for a wide receiver the cornerback likely across from him (rank, certainty, shutdown corner, his history against
+  him), and one matchup tone for the two; search by name, filter by game and tone, sort by projection, matchup or
+  corner, paged; a row opens the matchup evidence. With a league and a team: **My players · Everyone** (who has him).
+  The screen says once what the projection counts (the defense: yes; the corner: no, ungraded). New
+  `matchup_board.matchup_context` (read by DFS and the home) and `GET /api/matchups/board` (`research` bucket);
+  docs/INTERFACES.md § IN-3, METRICS § "Matchups for everyone", WORDS.
+
 ## 2026-10-06 — hotfix: the Team screen with two open lineup spots
 
 - **PO — Team was blank for a roster with two open starting spots** (Andrew's, week 5: QB and TE both open, Mahomes,
