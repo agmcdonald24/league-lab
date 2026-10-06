@@ -1488,7 +1488,11 @@ absent). **Scoring-free**: one scale for every league.
   `corner` = the corner named first and `corner_rank` his two-season rank (1 = hardest to throw on, of `cb_n_ranked`);
   `shutdown` = every named corner is a shutdown corner (the top quarter): on a likely call the one, on an unclear call
   both; the corner's `tone` = its quarter (shutdown → difficult, solid → neutral, target → favorable; IB-3's rule for an
-  unclear call). A receiver with no row for the game: "no call".
+  unclear call). A receiver with no row for the game: "no call". **A corner the call names who is not expected to
+  play** (listed on the depth chart, but the availability overlay says he cannot play: `cards.corner_personnel`, the
+  matchup evidence's own read) → "no call" ("no corner call: Trent McDuffie, named on his side, is not expected to
+  play"): the context never says "a shutdown corner" about a corner who is out; the row's evidence names who is
+  expected instead.
 * **`tone` — the one read of the two** (`combine_tone`). The defense's tone is the base; the corner moves it only on a
   **likely** call: a likely difficult (shutdown) or favorable (target) corner moves a neutral defense to its side,
   confirms the same side, and cancels the opposite side to neutral. A solid corner, an unranked one, an unclear call or

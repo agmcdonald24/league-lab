@@ -206,3 +206,30 @@ def test_board_filters_and_sorts(client):
     known = [k for k in ranks if k is not None]
     assert known == sorted(known, reverse=True)                        # the easiest corner first
     assert ranks[: len(known)] == known                                 # no ranked corner: last
+
+
+@needs_db
+def test_a_corner_who_is_not_expected_to_play_is_no_call(monkeypatch):
+    """The call names a corner the overlay says cannot play (cards.corner_personnel: listed, not expected): the read is
+    "no call" — never "faces a shutdown corner" who is out — and the tone is the defense's alone."""
+    MB._cache.clear()
+    row = MB.query("""select gsis_id, opponent, likely_cover_gsis_id, likely_cover_name, likely_cover_slot
+                      from analytics.mart_cb_matchups where season = 2026 and week = 4 and position = 'WR'
+                        and call_status = 'called' and call_strength = 'clear' order by gsis_id limit 1""").iloc[0]
+    before = MB.matchup_context(2026, 4, [row.gsis_id])[row.gsis_id]
+    assert before["cb"]["certainty"] == "likely" and before["cb"]["corner"] == row.likely_cover_name
+
+    def personnel(defenses, season, week, statuses=None):
+        return {d: {"kind": "changed" if d == row.opponent else "same", "regulars": [], "missing": [],
+                    "listed": [{"gsis_id": row.likely_cover_gsis_id, "name": row.likely_cover_name,
+                                "slot": row.likely_cover_slot}] if d == row.opponent else [],
+                    "expected": [], "depth_chart_at": "2026-10-01T00:00:00Z"} for d in defenses}
+
+    monkeypatch.setattr(MB.cards, "corner_personnel", personnel)
+    MB._cache.clear()
+    after = MB.matchup_context(2026, 4, [row.gsis_id])[row.gsis_id]
+    assert after["cb"] == {"tone": None, "certainty": "no call", "corner": None, "corner_rank": None, "shutdown": False,
+                           "words": f"no corner call: {row.likely_cover_name}, named on his side, is not expected to play"}
+    assert after["tone"] == after["defense"]["tone"]
+    assert "not expected to play" in after["words"]
+    MB._cache.clear()

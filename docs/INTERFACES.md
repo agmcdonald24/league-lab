@@ -34,7 +34,9 @@ gsis_id -> {"opponent": "KC", "home": bool | None,
 * **Scoring-free**: `tough_rank` 1 = the defense that gives up the fewest points to the position (one scale for every
   league, `mart_defense_vs_position_current`); `corner_rank` 1 = the corner hardest to throw on (of `cb_n_ranked`,
   two seasons). `cb` is `None` for TE / RB / QB; for a WR without a call it is `{"certainty": "no call", "tone": None,
-  "corner": None, "corner_rank": None, "shutdown": False, "words": "no corner call: …"}`.
+  "corner": None, "corner_rank": None, "shutdown": False, "words": "no corner call: …"}` — also when a corner the call
+  names is not expected to play (the availability overlay): "no corner call: X, named on his side, is not expected to
+  play".
 * **`tone`**: the defense's tone, moved by the corner only on a likely call (a likely shutdown corner turns neutral
   into difficult, a likely easy one turns it favorable, a corner against the defense's read cancels it to neutral); an
   unclear call, no call, a solid or unranked corner never moves it; no defense read, no tone. The table: METRICS §

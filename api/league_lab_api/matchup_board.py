@@ -156,6 +156,25 @@ def _corner_read(r: dict) -> dict:
     return {"ctx": ctx, "detail": detail}
 
 
+def _not_playing(season: int, week: int, defenses: list[str]) -> dict[str, dict[str, str]]:
+    """defense -> {gsis_id: name} of its listed corners who are not expected to play this week (the availability
+    overlay: Out, Doubtful, IR …; ``cards.corner_personnel``, the matchup evidence's own read). A defense without a
+    depth chart before the game, or no overlay, has none."""
+    try:
+        pers = _personnel(season, week, defenses)
+    except Exception:  # noqa: BLE001 - the overlay is never load-bearing: the depth chart's call stands
+        return {}
+    out = {}
+    for d, p in pers.items():
+        if p.get("kind") not in ("changed", "same"):
+            continue
+        exp = {e.get("gsis_id") for e in p.get("expected") or []}
+        gone = {c["gsis_id"]: c.get("name") for c in p.get("listed") or [] if c.get("gsis_id") not in exp}
+        if gone:
+            out[d] = gone
+    return out
+
+
 def _sentence(defense: dict, cb: dict | None, tone: str | None) -> str | None:
     d = defense.get("words")
     if cb is None:
@@ -191,6 +210,7 @@ def _week_frame(season: int, week: int) -> dict | None:
             players = pd.concat([players, pd.DataFrame(extra)], ignore_index=True)
     frame = players.merge(games, on="team", how="inner")
     defense = _defense(season)
+    gone = _not_playing(season, week, sorted({str(r.get("opponent")) for r in cb_of.values() if r.get("opponent")}))
     rows: dict[str, dict] = {}
     detail: dict[str, dict] = {}
     for p in frame.to_dict("records"):
@@ -199,7 +219,18 @@ def _week_frame(season: int, week: int) -> dict | None:
         cb = None
         if pos == "WR":
             r = cb_of.get(g)
-            if r is not None and r.get("opponent") == opp:
+            named: list = []
+            if r is not None and r.get("call_status") == "called":
+                named = [r.get("likely_cover_gsis_id")] + ([r.get("other_cover_gsis_id")] if r.get("call_strength") != "clear" else [])
+            away = gone.get(opp) or {}
+            absent = [str(away[x] or "a corner") for x in named if isinstance(x, str) and x in away]
+            if r is not None and r.get("opponent") == opp and absent:
+                # a corner the call names is not expected to play: no call (never "faces a shutdown corner" who is out);
+                # the row's evidence says who is expected instead
+                cb = {"tone": None, "certainty": "no call", "corner": None, "corner_rank": None, "shutdown": False,
+                      "words": f"no corner call: {' and '.join(absent)}, named on his side, "
+                               f"{'is' if len(absent) == 1 else 'are'} not expected to play"}
+            elif r is not None and r.get("opponent") == opp:
                 read = _corner_read(r)
                 cb, detail[g] = read["ctx"], read["detail"]
             else:
@@ -228,8 +259,9 @@ def matchup_context(season: int, week: int, gsis_ids: list[str] | None = None) -
     the fewest points to the position; ``corner_rank`` 1 = the corner hardest to throw on). **The tone**: the defense's,
     moved by the corner only on a likely call — a likely shutdown corner (difficult) or an easy one (favorable) moves a
     neutral defense to its side, confirms the same side, and cancels the opposite side to neutral; an unclear call, no
-    call, a solid or unranked corner never moves it; no defense read, no tone. A player on a bye is absent. Never raises:
-    a missing mart or week gives {}."""
+    call, a solid or unranked corner never moves it; no defense read, no tone. A corner the call names who is not
+    expected to play (the availability overlay, ``cards.corner_personnel``) makes it "no call". A player on a bye is
+    absent. Never raises: a missing mart or week gives {}."""
     try:
         wk = _week_frame(int(season), int(week))
         if wk is None:
