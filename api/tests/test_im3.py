@@ -310,6 +310,7 @@ def test_csp_allows_the_inline_prefetch_by_its_hash(tmp_path):
 
 def test_provider_errors_keep_their_cause_to_the_log(api, monkeypatch):
     from league_lab import anyleague as A
+
     from league_lab_api import ondemand
 
     def down(*_a, **_k):
