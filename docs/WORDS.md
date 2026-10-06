@@ -371,6 +371,26 @@ labels, tooltips, summaries, accessibility labels and generated text, the consol
 | the account page | "Yahoo: connected 2026-10-05 — it comes back on any device you sign in on." · "ESPN: needs reconnecting (it no longer opens your leagues)." + **Reconnect ESPN** · "No Yahoo or ESPN connection saved. Connect one on the league setup screen while signed in and it follows you." | a token, a GUID or a cookie value on screen |
 | a provider switched off (`/api/providers` status `off`) | "ESPN leagues: not available right now. Sleeper and MyFantasyLeague leagues work as before." in place of the form | a form that can only fail |
 
+## DFS (Wave I-M, IM-5; docs/DFS.md)
+
+| Where | The words we use | Never |
+|---|---|---|
+| the screen's head (`/dfs`) | **Daily fantasy values** · before a file: "This week's projections in DraftKings scoring. Add the contest's salary file to see who is undervalued against its salaries." · after: "597 of 599 players on your DraftKings file valued; 89 project above what their salary buys on this slate." | "picks", "plays of the day" |
+| the honesty line, under the site switch | "Projections are estimates, not promises: the model's record is on About." (a link to About) | a promise of any outcome |
+| undervalued (the list's head) | **Undervalued** · "Projected well above what his salary buys at his position on this slate. Against this slate's salaries, not a promise." | "lock", "guaranteed", "free money", "beat", "can't miss", "smash" |
+| overpriced | **Overpriced** · "Projected well below what his salary buys at his position on this slate." | "fade" as an order |
+| a value row | "▲ +5.8 vs the slate's line (12.8) · 2.73 pts per $1,000" then the app's own reason (the matchup, the role, the betting line, an injury tag) or "Why this number: 7.7 targets → 4.7 catches → 67 yards → 0.39 TDs → 14.3 points this week (DraftKings scoring)." | a reason the numbers do not carry |
+| the slate's line (the expander "How the slate's line is drawn") | "At WR on this slate, each $1,000 of salary buys 3.0 projected points (a straight line through 206 priced players; a typical player sits 1.6 points off it)." · none: "fewer than 8 priced players, no line." | "regression", "residual", "z-score" |
+| the slate's head | "DraftKings classic · week 5 · 15 games" · "597 players matched to ours, 2 not matched (not valued). Salary cap $50,000." · "Week 5: the week whose games the file lists." · **See unmatched (2)**: "We never guess a player: these are not valued and not in lineups." then each reason ("no projection for him this week (unknown, not 0)", "listed as WR on MIA; we have that name as WR on LA", "ambiguous: 2 of our WRs on PIT match (…); not valued") | a silent drop; a guessed match |
+| a refused file | "That does not look like a DraftKings or FanDuel salary file: expected a column named Salary and either Name + ID and TeamAbbrev (DraftKings) or First Name and Last Name (FanDuel). …" · "That file is 3.6 MB: a salary file is under 1 MB. …" · "That looks like a FanDuel single-game file …: only the full-roster contest is read yet." | "invalid input", an HTTP code |
+| the file box | "Add the DraftKings salary file to see value" · "Drop the CSV here, choose it, or paste its text. It stays in this tab." · **Choose the file** · **Paste the text** · **Remove file** | "upload" (nothing is kept) |
+| where the file is (three steps) | DraftKings: "… open the contest and go to its draft page …" · "Above the player list, tap Export to CSV: the file is DKSalaries.csv." · FanDuel: "… Download players list …" · "Add that file here (or paste its text). We read it in this tab and keep nothing." | — |
+| the table's control | **Lineups**: **Either** / **Always in** / **Leave out** (the optimiser's locks and excludes) | "lock" |
+| build | **Build lineups** · **Cash: projected points** / **Tournament: high-end outcome** · "The best lineups under the $50,000 cap and DraftKings' roster rules, each different by at least one player. … Players who cannot play are left out unless you put them in." | "optimal", "winning lineup" |
+| a lineup card | "Lineup 1 · 123.7 projected · $0 left" · "Low-end to high-end outcome: 94.6–152.7 (if the players' weeks were independent; teammates and opponents move together, so the real range is wider)." · on a timeout: "The solver's 1-second budget ran out: the best lineup it found, not proven the best." · **Copy** · **Download for upload (3 lineups)** "The CSV DraftKings' lineup upload takes, with the file's own player ids." | a win chance; "cash line" |
+| the scoring expander | **How DraftKings scores it** — one line a rule, then "As DraftKings publishes it, October 2026: check the site's rules page." | — |
+| the footer (every DFS screen) | "isuckatfantasy is not affiliated with DraftKings or FanDuel. Daily fantasy contests are not offered or legal everywhere and are for adults: check your state's rules." | — |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

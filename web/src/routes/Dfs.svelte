@@ -176,6 +176,7 @@
   const projRows = $derived((proj?.players ?? []).filter((p) => projPos === "ALL" || p.position === projPos).slice(0, 40));
 
   const name = (p: { player_name?: string | null; name?: string }) => p.player_name ?? p.name ?? "";
+  const poss = (site: string) => (site.endsWith("s") ? `${site}'` : `${site}'s`); // DraftKings' · FanDuel's
   const gapWords = (g: number | null) => (g === null ? "—" : fmt.signed(g));
   const href = (gsis: string | null) => (gsis && league ? withContext(`/player/${gsis}`, ctx) : null);
   const contestWords = (s: Slate) => `${s.site_name} ${s.contest_label.replace(/^(DraftKings|FanDuel) /, "")} · week ${s.week} · ${s.games.length} game${s.games.length === 1 ? "" : "s"}`;
@@ -359,7 +360,7 @@
         >
       </div>
       <p class="text-sm text-ink-3">
-        The best lineups under the {money(slate.cap)} cap and {slate.site_name}'s roster rules, each different by at least one player.
+        The best lineups under the {money(slate.cap)} cap and {poss(slate.site_name)} roster rules, each different by at least one player.
         {locks.length ? `${locks.length} always in. ` : ""}{excludes.length ? `${excludes.length} left out. ` : ""}Players who cannot play are left out unless you put them in.
       </p>
       {#if buildError}<p class="text-sm text-bad" role="alert">{buildError}</p>{/if}
@@ -373,7 +374,7 @@
             <button type="button" class="min-h-10 rounded-md border border-line-strong px-4 text-sm font-semibold" onclick={download} data-testid="dfs-download"
               >Download for upload ({lineups.lineups.length} lineup{lineups.lineups.length === 1 ? "" : "s"})</button
             >
-            <span class="text-sm text-ink-3">The CSV {slate.site_name}'s lineup upload takes, with the file's own player ids.</span>
+            <span class="text-sm text-ink-3">The CSV {poss(slate.site_name)} lineup upload takes, with the file's own player ids.</span>
           </div>
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 wide:grid-cols-3" data-testid="dfs-lineups">
             {#each lineups.lineups as lu, i (i)}<LineupCard lineup={lu} index={i} cap={lineups.cap} {league} {team} {site} />{/each}
