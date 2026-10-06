@@ -25,7 +25,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.testclient import TestClient
 
-from league_lab_api import accounts, main, passkeys
+from league_lab_api import accounts, main, passkeys, ratelimit, security
 from league_lab_api.main import app
 from league_lab_api.settings import ROOT
 
@@ -171,6 +171,13 @@ def api(monkeypatch, schema):
         yield c
     accounts.reset()
     _cleanup()
+
+
+@pytest.fixture
+def xff(monkeypatch):
+    """---- IM-4 fix: the limiter reads X-Forwarded-For (as test_im3 configures it), so the addresses a test sends are
+    distinct clients; the accounts' per-address limits follow it (accounts.client_ip = ratelimit.client_group)."""
+    monkeypatch.setattr(ratelimit, "_limiter", ratelimit.Limiter(mode="x-forwarded-for", enabled=False))
 
 
 def create_account(c: TestClient, key: SoftKey | None = None) -> SoftKey:
@@ -436,7 +443,7 @@ def test_a_wrong_origin_or_rp_id_is_refused(api):
         assert r.json()["code"] in ("passkey_wrong_site", "cross_site")
     r = api.post("/api/account/passkey/login/options", headers={"Origin": "https://evil.example",
                                                                  "Sec-Fetch-Site": "same-origin"})
-    assert r.status_code == 400 and r.json()["error"] == words              # same-origin to the guard, not on the list
+    assert r.status_code == 403 and r.json()["code"] == "cross_site"        # the Origin decides (IM-3's Guard, ours)
     # the device signed for another origin (a phishing page relaying our challenge)
     o = options(api)
     r = api.post("/api/account/passkey/login/verify", json={"credential": key.get(o, origin="https://evil.example")})
@@ -608,8 +615,7 @@ def test_every_state_changing_account_route_refuses_another_site(api):
         for h in hostile:
             r = api.request(method, path, json=body, headers=h)
             assert r.status_code == 403 and r.json()["code"] == "cross_site", (method, path, h, r.text)
-            assert r.json()["error"] == ("This request came from another website, so it was refused. Open "
-                                         "isuckatfantasy.io and try again.")
+            assert r.json()["error"] == security.CROSS_SITE == "This request came from another site, so it was refused."
     assert api.get("/api/account/me").status_code == 200                    # still signed in: nothing happened
     # allowed: the site itself (Origin on the list, or the request's own host), a same-origin fetch, a non-browser
     for h in ({"Origin": ORIGIN}, {"Sec-Fetch-Site": "same-origin"}, {"Sec-Fetch-Site": "none"}, {}):
@@ -619,12 +625,11 @@ def test_every_state_changing_account_route_refuses_another_site(api):
     with TestClient(app, base_url="https://isuckatfantasy.onrender.com") as other:      # Render's own address
         r = other.post("/api/account/logout", json={}, headers={"Origin": "https://isuckatfantasy.onrender.com"})
         assert r.status_code == 200
-        r = other.post("/api/account/logout", json={}, headers={"Origin": "https://isuckatfantasy.onrender.com",
-                                                                "Sec-Fetch-Site": "cross-site"})
-        assert r.status_code == 403
+        r = other.post("/api/account/logout", json={}, headers={"Origin": "https://evil.example"})
+        assert r.status_code == 403 and r.json()["code"] == "cross_site"
 
 
-def test_the_ceremonies_are_rate_limited(api):
+def test_the_ceremonies_are_rate_limited(api, xff):
     create_account(api)                                                       # 1 of the 10 registrations this hour
     api.cookies.clear()
     codes = [api.post("/api/account/passkey/register/options").status_code for _ in range(10)]
@@ -740,3 +745,140 @@ def test_a_passkey_account_adds_an_email(api):
     r = api.post("/api/account/verify", json={"token": token})                # the link was kept
     assert r.status_code == 200 and r.json() == {"ok": True, "email": f"added@{DOMAIN}"}
     assert api.get("/api/account/me").json()["passkeys"][0]["label"] == "iPhone · Safari"
+
+
+# ---------------------------------------------------------------- IM-4 fix round (the review)
+def test_the_same_site_guard_holds_without_the_guard_middleware(monkeypatch, schema):
+    """(c) accounts.same_site by itself: an app with the account routes and no security.Guard in front."""
+    from fastapi import FastAPI
+    _env(monkeypatch)
+    accounts.reset()
+    bare = FastAPI()
+    bare.add_exception_handler(accounts.AccountError, lambda _r, exc: accounts.error_response(exc))
+    bare.include_router(accounts.router)
+    with TestClient(bare, base_url=ORIGIN) as c:
+        for h in ({"Origin": "https://evil.example"}, {"Origin": "null"}, {"Sec-Fetch-Site": "cross-site"},
+                  {"Origin": "https://evil.example", "Sec-Fetch-Site": "same-origin"}):
+            for method, path in (("POST", "/api/account/logout"), ("POST", "/api/account/passkey/login/options"),
+                                 ("DELETE", "/api/account")):
+                r = c.request(method, path, json={}, headers=h)
+                assert r.status_code == 403, (h, path, r.text)
+                assert r.json() == {"error": security.CROSS_SITE, "detail": security.CROSS_SITE, "code": "cross_site"}
+        for h in ({"Origin": ORIGIN}, {"Sec-Fetch-Site": "same-origin"}, {}):
+            assert c.post("/api/account/logout", json={}, headers=h).status_code == 200, h
+    accounts.reset()
+
+
+def test_new_accounts_have_global_ceilings_and_sign_in_keeps_working(api, monkeypatch):
+    """The hour's and the day's new accounts are counted in the database; past either ceiling creation answers calm
+    words (at the options and, authoritatively, at the verify), and a passkey sign-in still works."""
+    made = q("select count(*) filter (where created_at > now() - interval '1 hour'), count(*) from accounts.users "
+             "where created_at > now() - interval '1 day'")[0]
+    monkeypatch.setenv(passkeys.NEW_PER_HOUR_ENV, str(made[0] + 1))
+    key = create_account(api)                                                 # the last one this hour
+    api.cookies.clear()
+    r = api.post("/api/account/passkey/register/options")
+    words = "New accounts are paused for a little while. Try again later."
+    assert r.status_code == 429 and r.json() == {"error": words, "detail": words, "code": "accounts_paused"}
+    assert sign_in(api, key)["status"] == 200                                 # sign-in is never paused
+    # the verify counts again: options taken under the ceiling, the ceiling reached before the answer comes back
+    monkeypatch.setenv(passkeys.NEW_PER_HOUR_ENV, str(made[0] + 2))
+    api.cookies.clear()
+    o = api.post("/api/account/passkey/register/options").json()["options"]
+    monkeypatch.setenv(passkeys.NEW_PER_HOUR_ENV, str(made[0] + 1))
+    k2 = SoftKey()
+    r = api.post("/api/account/passkey/register/verify", json={"credential": k2.create(o)})
+    assert r.status_code == 429 and r.json()["code"] == "accounts_paused"
+    assert q("select count(*) from accounts.passkeys where credential_id = %s", k2.cred_id)[0][0] == 0
+    # the day's ceiling the same way
+    monkeypatch.setenv(passkeys.NEW_PER_HOUR_ENV, "1000")
+    monkeypatch.setenv(passkeys.NEW_PER_DAY_ENV, str(made[1] + 1))
+    assert api.post("/api/account/passkey/register/options").json()["code"] == "accounts_paused"
+    monkeypatch.delenv(passkeys.NEW_PER_DAY_ENV)
+    assert api.post("/api/account/passkey/register/options").status_code == 200
+    assert (passkeys.NEW_PER_HOUR, passkeys.NEW_PER_DAY, passkeys.OPEN_MAX) == (30, 200, 1000)
+
+
+def test_old_challenges_are_pruned_and_open_ones_are_bounded(api, monkeypatch):
+    stale = secrets.token_bytes(32)
+    q("insert into accounts.passkey_challenges (challenge_hash, purpose, browser_hash, rp_id, origin, created_at, "
+      "expires_at) values (%s, 'login', %s, %s, %s, now() - interval '20 minutes', now() - interval '15 minutes') "
+      "returning 1", sha(stale), sha(b"x"), RP, ORIGIN)
+    passkeys._pruned["at"] = -1e18
+    assert api.post("/api/account/passkey/login/options").status_code == 200
+    assert q("select count(*) from accounts.passkey_challenges where challenge_hash = %s", sha(stale))[0][0] == 0
+    open_now = q("select count(*) from accounts.passkey_challenges where created_at > now() - interval '5 minutes'")[0][0]
+    monkeypatch.setenv(passkeys.OPEN_MAX_ENV, str(open_now))
+    r = api.post("/api/account/passkey/login/options")
+    assert r.status_code == 429 and r.json()["code"] == "passkeys_busy"
+    assert r.json()["error"] == "Passkeys are busy just now. Try again in a few minutes."
+
+
+def test_sessions_per_account_are_capped(api):
+    key = create_account(api)
+    uid = MADE[-1]
+    for _ in range(accounts.MAX_SESSIONS + 3):
+        api.tick(4)                                                           # the answers' bucket: 20 a minute
+        assert sign_in(api, key)["status"] == 200
+    assert q("select count(*) from accounts.sessions where user_id = %s", uid)[0][0] == accounts.MAX_SESSIONS
+    assert api.get("/api/account/me").status_code == 200                      # the newest session is the one kept
+
+
+def test_the_in_memory_limiter_has_a_hard_size(api):
+    for n in range(accounts.MAX_BUCKETS + 1500):                               # all at one moment: nothing idle to sweep
+        accounts.allow(f"pk-login:{n:064x}", 30, 3600.0)
+    assert len(accounts._buckets) <= accounts.MAX_BUCKETS
+    assert f"pk-login:{accounts.MAX_BUCKETS + 1499:064x}" in accounts._buckets     # the newest stay, the oldest went
+
+
+def test_a_credential_id_over_1023_bytes_is_refused_in_words(api):
+    key = SoftKey()
+    key.cred_id = secrets.token_bytes(1100)
+    api.cookies.clear()
+    o = api.post("/api/account/passkey/register/options").json()["options"]
+    r = api.post("/api/account/passkey/register/verify", json={"credential": key.create(o)})
+    assert r.status_code == 400 and r.json()["code"] == "passkey_too_big", r.text     # ours: the library takes it
+    assert q("select count(*) from accounts.passkeys where credential_id = %s", key.cred_id)[0][0] == 0
+    # the key's bound the same way (lowered here: an ES256 COSE key is 77 bytes)
+    monkeypatch_key = passkeys.KEY_MAX
+    passkeys.KEY_MAX = 64                                                       # an ES256 COSE key is 77 bytes
+    try:
+        k2 = SoftKey()
+        o = api.post("/api/account/passkey/register/options").json()["options"]
+        r = api.post("/api/account/passkey/register/verify", json={"credential": k2.create(o)})
+        assert r.status_code == 400 and r.json() == {
+            "error": "We cannot keep that passkey: its id or key is longer than a passkey's may be. Try another device "
+                     "or browser.", "detail": "We cannot keep that passkey: its id or key is longer than a passkey's "
+                     "may be. Try another device or browser.", "code": "passkey_too_big"}
+    finally:
+        passkeys.KEY_MAX = monkeypatch_key
+
+
+def test_the_accounts_client_follows_the_limiters_configuration(api, monkeypatch):
+    """accounts.client_ip = ratelimit.client_group: the limiter's source, mode and hops; IPv6 by its /64."""
+    from starlette.requests import Request
+
+    def req(headers: dict[str, str]) -> Request:
+        return Request({"type": "http", "method": "POST", "path": "/", "client": ("10.0.0.1", 5000),
+                        "headers": [(k.lower().encode(), v.encode()) for k, v in headers.items()]})
+
+    monkeypatch.setattr(ratelimit, "_limiter", ratelimit.Limiter(mode="x-forwarded-for", enabled=False))
+    a, b = "2001:db8:1:2::1", "2001:db8:1:2:ffff:ffff:ffff:9"
+    assert accounts.client_ip(req({"X-Forwarded-For": a})) == accounts.client_ip(req({"X-Forwarded-For": b})) == \
+        "2001:db8:1:2::/64"
+    assert accounts.client_ip(req({"X-Forwarded-For": "2001:db8:1:3::1"})) == "2001:db8:1:3::/64"
+    codes = [api.post("/api/account/passkey/register/options", headers={"X-Forwarded-For": (a, b)[i % 2]}).status_code
+             for i in range(11)]
+    assert codes == [200] * 10 + [429]                                        # one /64: one client
+    assert api.post("/api/account/passkey/register/options",
+                    headers={"X-Forwarded-For": "2001:db8:1:3::1"}).status_code == 200   # another /64
+    monkeypatch.setattr(ratelimit, "_limiter", ratelimit.Limiter(mode="true-client-ip", enabled=False))
+    assert accounts.client_ip(req({"True-Client-IP": "198.51.100.8", "X-Forwarded-For": "203.0.113.1"})) == "198.51.100.8"
+    assert accounts.client_ip(req({"X-Forwarded-For": "203.0.113.1"})) == "10.0.0.1"    # no header: the peer
+    accounts.reset()
+    codes = [api.post("/api/account/passkey/register/options", headers={"True-Client-IP": "198.51.100.8",
+                                                                        "X-Forwarded-For": f"203.0.113.{i}"}).status_code
+             for i in range(11)]
+    assert codes == [200] * 10 + [429]                                        # X-Forwarded-For buys nothing here
+    assert api.post("/api/account/passkey/register/options",
+                    headers={"True-Client-IP": "198.51.100.9"}).status_code == 200
