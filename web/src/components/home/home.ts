@@ -58,7 +58,22 @@ export function fromRos(players: RosPlayer[], n = 5): TopRow[] {
 }
 
 export function toneOf(r: BoardRow): { tone: MatchupTone | null; words: string | null } {
-  return { tone: r.context?.tone ?? null, words: r.context?.words ?? null };
+  return { tone: r.context?.tone ?? null, words: homeWords(r) };
+}
+
+const sentence = (w: string) => (/[.!?]$/.test(w) ? w : `${w}.`).replace(/^./, (c) => c.toUpperCase());
+
+/** The home's one line for a matchup (IN-1 fix round, read with the real board): the defense's sentence — what the
+ *  tone stands on — plus the corner's only when the call is likely (an unclear call never moves the tone, and two
+ *  corners' ranks in a row made five rows a page long). The board's full sentence is one tap away (Matchups). */
+export function homeWords(r: BoardRow): string | null {
+  const c = r.context;
+  if (!c) return null;
+  const d = c.defense?.words ?? null;
+  const cb = c.cb && c.cb.certainty === "likely" ? c.cb.words : null;
+  if (d && cb) return `${sentence(d)} ${sentence(cb)}`;
+  if (d) return sentence(d);
+  return c.words ?? null;
 }
 
 export const TONE_WORDS = { favorable: "Favorable", neutral: "Neutral", difficult: "Difficult" } as const;

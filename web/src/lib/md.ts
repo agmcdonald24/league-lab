@@ -43,18 +43,25 @@ export function trustedHttps(raw: string): boolean {
   }
 }
 
-function inline(text: string, ctx: LinkContext): string {
-  let out = escapeHtml(text);
+function inline(text: string, ctx: LinkContext, more?: (html: string) => string): string {
+  // ---- IN-1 fix round: a link's opening tag is held aside (U+E001) until the end, so nothing marked up later — bold,
+  // italic, a picture or code (mdDoc's U+E000 placeholders) — can land inside its href; a target holding a placeholder
+  // is not a link at all. U+E001 in the text itself is dropped (it is the mark).
+  const tags: string[] = [];
+  const tag = (html: string) => `\uE001${tags.push(html) - 1}\uE001`;
+  let out = escapeHtml(text.replace(/\uE001/g, ""));
   // links: [label](href) — label and href are already escaped; only our "/..." paths and https to our hosts stay links
   out = out.replace(/\[([^\]]*)\]\(([^)\s]*)\)/g, (_m, label: string, href: string) => {
     const raw = href.replace(/&amp;/g, "&");
-    if (inAppPath(raw)) return `<a href="${escapeHtml(withContext(raw, ctx))}" class="ll-link">${label}</a>`;
-    if (trustedHttps(raw)) return `<a href="${escapeHtml(raw)}" rel="noopener" target="_blank" class="ll-link">${label}</a>`;
+    if (/[\uE000\uE001]/.test(raw)) return label; // a picture or code inside the target: the words, never a link
+    if (inAppPath(raw)) return `${tag(`<a href="${escapeHtml(withContext(raw, ctx))}" class="ll-link">`)}${label}</a>`;
+    if (trustedHttps(raw)) return `${tag(`<a href="${escapeHtml(raw)}" rel="noopener" target="_blank" class="ll-link">`)}${label}</a>`;
     return label;
   });
   out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   out = out.replace(/ {2}\n/g, "<br>");
-  return out;
+  if (more) out = more(out);
+  return out.replace(/\uE001(\d+)\uE001/g, (_m, i: string) => tags[Number(i)]);
 }
 
 /** Markdown → HTML: paragraphs, "- " bullet lists, inline bold / links / hard breaks. */
@@ -90,8 +97,8 @@ function inlineDoc(text: string, ctx: LinkContext): string {
   rest = rest.replace(/!\[([^\]]*)\]\(([^)\s]*)\)/g, (_m, alt: string, src: string) =>
     hold(BLOG_IMG.test(src) ? `<img src="${src}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" class="ll-md-img">` : escapeHtml(alt)),
   );
-  let out = inline(rest, ctx); // escapes, then links / bold / hard breaks
-  out = out.replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>");
+  // escapes, then links / bold / hard breaks, then italic — all before the links' tags come back (none inside an href)
+  const out = inline(rest, ctx, (h) => h.replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>"));
   return out.replace(/\uE000(\d+)\uE000/g, (_m, i: string) => held[Number(i)]);
 }
 
