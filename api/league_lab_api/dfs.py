@@ -41,7 +41,7 @@ from .db import query
 from .settings import ROOT, env
 
 router = APIRouter()
-RATE_BUCKETS = {"/api/dfs/slate": "heavy", "/api/dfs/lineups": "heavy", "/api/dfs/projections": "read"}
+RATE_BUCKETS = {"/api/dfs/slate": "heavy", "/api/dfs/lineups": "heavy", "/api/dfs/projections": "research"}  # as ratelimit
 # IN-4: the published slates' two GETs price a slate once and keep it: research (ratelimit.bucket_for, a marked block)
 RATE_BUCKETS_IN4 = {"/api/dfs/slates": "research", "/api/dfs/slate/{slate_id}": "research"}
 NO_STORE = {"Cache-Control": "no-store"}
@@ -468,7 +468,7 @@ async def lineups(request: Request):
         if sid is not None:                              # ---- IN-4: a published slate's players, from the server
             built = await run_in_threadpool(_cached_slate, sid) or await _one_at_a_time(built_slate, sid)
             contest = built["contest"]
-            players = _published_pool(built, locks)
+            players = await run_in_threadpool(_published_pool, built, locks)    # fix round L4: off the event loop
             outs_from = built["players"]
         res = await _one_at_a_time(D.solve_lineups, players, contest, mode=mode, n=n, locks=locks, excludes=excludes,
                                    stack=stack, max_exposure=exposure)
@@ -765,7 +765,10 @@ def _with_context(players: list[dict], season: int, week: int, by: str) -> tuple
 # strict pattern (``dfs.SLATE_ID_RE``) and is looked up in what was read — never joined to a path.
 _published_lock = threading.Lock()
 _published: dict | None = None
-_built = memo.region("dfs_published", ttl=600.0, max_entries=4)      # ~1.4 MB a built slate (measured): 4 = ~6 MB
+# ~1.4 MB a built slate (measured): sized for everything that can be offered (MAX_PUBLISHED files, ~22 MB at most —
+# the memo budget evicts past its share), so a visitor cycling through the offered slates never flushes it (fix round M1)
+_built = memo.region("dfs_published", ttl=600.0, max_entries=D.MAX_PUBLISHED)
+_counts_lock = threading.Lock()
 NOT_PUBLISHED = "No published slate by that name for this week."
 
 
@@ -856,7 +859,29 @@ def built_slate(slate_id: str) -> dict:
     out = build_slate(pub["slate"], season, pub["week"], week_from_file=False)
     out.update({"slate_id": slate_id, "published": True, "label": pub["label"]})
     _built.put(key, out)
+    with _counts_lock:
+        pub.setdefault("counts", {"matched": out["counts"]["matched"], "unmatched": out["counts"]["unmatched"]})
     return out
+
+
+def match_counts(slate_id: str) -> dict:
+    """The file's matched / unmatched counts for the listing (fix round M1): computed ONCE per file, lazily — the
+    week's priced pool (the ``dfs`` region) and ``dfs.match``, no value, no context, no build — and kept with the file
+    as two numbers. The listing never builds a slate."""
+    pub = published()["slates"][slate_id]
+    with _counts_lock:
+        if "counts" in pub:
+            return pub["counts"]
+    season, _now = _this_week()
+    sl = pub["slate"]
+    pr = priced(sl.site, season, pub["week"])
+    try:
+        directory = query(DIRECTORY_SQL, (int(season) - 1,))
+    except Exception:  # noqa: BLE001 - no directory: the counts do not need it (it only words the unmatched reasons)
+        directory = None
+    matched, unmatched, _how = D.match(sl.players, pr[["key", "player_name", "position", "team"]], directory)
+    with _counts_lock:
+        return pub.setdefault("counts", {"matched": len(matched), "unmatched": len(unmatched)})
 
 
 def _cached_slate(slate_id: str, week: tuple[int, int] | None = None) -> dict | None:
@@ -889,16 +914,14 @@ async def slates(site: str | None = None):
             continue
         row = {k: m[k] for k in ("id", "site", "label", "season", "week", "contest", "contest_label", "on_file")}
         row["site_name"] = D.SITE_NAMES[m["site"]]
-        b = _cached_slate(sid, (season, now))
-        if b is None:
+        n = m.get("counts")                       # fix round M1: two numbers kept with the file; never a build here
+        if n is None:
             try:
-                b = await _one_at_a_time(built_slate, sid)
-            except Busy:
-                b = None
-            except Bad:
-                b = None
-        row["matched"] = None if b is None else b["counts"]["matched"]
-        row["unmatched"] = None if b is None else b["counts"]["unmatched"]
+                n = await _one_at_a_time(match_counts, sid)
+            except (Busy, Bad):
+                n = None                           # said as unknown (a dash), tried again on the next listing
+        row["matched"] = None if n is None else n["matched"]
+        row["unmatched"] = None if n is None else n["unmatched"]
         offered.append(row)
     offered.sort(key=lambda r: (r["week"], r["site"], r["label"] != "main", r["label"]))
     return JSONResponse(_clean({"season": season, "week": now, "slates": offered, "not_offered": other,

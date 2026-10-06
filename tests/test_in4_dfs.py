@@ -28,13 +28,14 @@ def test_slate_names(name, expect):
 
 @pytest.mark.parametrize("name", ["DKSalaries.csv", "2026-w5-dk.csv", "2026-w05-yahoo.csv", "2026-w05-dk-Main.csv",
                                   "2026-w05-dk-main.CSV", "2026-w00-dk.csv", "2026-w23-dk.csv", "../2026-w05-dk.csv",
-                                  "2026-w05-dk-a_b.csv", "2026-w05-dk.csv.bak", "", "2026-w05-dk-" + "x" * 21 + ".csv"])
+                                  "2026-w05-dk-a_b.csv", "2026-w05-dk.csv.bak", "", "2026-w05-dk.csv\n", "2026-w05-dk-" + "x" * 21 + ".csv"])
 def test_other_names_are_not_slates(name):
     assert D.slate_name(name) is None
 
 
 @pytest.mark.parametrize("sid", ["../../etc/passwd", "2026-w05-dk", "2026-w05-dk-main/../x", "2026-w05-dk-main.csv",
-                                 "2026-w05-dk-MAIN", "2026-w05-dk-main\x00", "%2e%2e", "", None, "2026-w05-dk-" + "a" * 30])
+                                 "2026-w05-dk-MAIN", "2026-w05-dk-main\x00", "2026-w05-dk-main\n",
+                                 "2026-w05-dk-main\r\n", "%2e%2e", "", None, "2026-w05-dk-" + "a" * 30])
 def test_hostile_ids_are_refused(sid):
     assert not D.slate_id_ok(sid)
 

@@ -54,7 +54,8 @@ checks them against the model's own input list, `projections.FEATURES_BY_POSITIO
 model, only the corner call is both outside the projection and able to be favourable — so that rule could never fire.
 The rule used: **at least 2 favourable signals, at least 1 of them not in the projection, and no difficult signal
 outside it** (`dfs.WORTH_MIN_FAVOURABLE`, `WORTH_MIN_OUTSIDE`: one line to change). In practice: receivers likely
-facing a soft corner with another signal for them. Without IN-3's module the list is empty and the screen says why.
+facing a soft corner with another signal for them — with IN-3's real context for 2026 week 5, **4 receivers** (7 likely
+soft-corner calls on the board; no RB, TE or QB, by construction: only receivers get a corner call). Without IN-3's module the list is empty and the screen says why.
 Ordered by projection on the board, by points per $1,000 on a slate; who cannot play is left off. **There is no
 backtest behind it** and the screen says so.
 
@@ -79,7 +80,11 @@ or fewer than 4 games). Betting lines for all 30 teams playing.
   read; anything else is 404 "No published slate by that name for this week." (tested with `../`, an encoded slash,
   `.csv`, capitals, 300 characters).
 * **The answer** is exactly `POST /api/dfs/slate`'s for that file (tested field by field) plus `slate_id`, `published`,
-  `label`; built once and kept in the `dfs_published` region (4 entries, ~1.4 MB each, 10 minutes).
+  `label`; built once and kept in the `dfs_published` region (16 entries — everything that can be offered — ~1.4 MB
+  each, 10 minutes). **The listing never builds a slate** (fix round, review M1): its matched / unmatched counts are
+  worked out once per file (the week's priced pool and the match, no value, no context) and kept with the file as two
+  numbers; with 8 files offered, three listings run the match at most once per file and build nothing
+  (`test_the_listing_never_builds_a_slate`).
 * **Lineups by id**: `POST /api/dfs/lineups` with `slate_id` in place of `players`: the server takes the slate's own
   players (who can play, or are set always in; the highest projected first past 800).
 * **Terms**: a person downloads the file by hand from the contest page (no automated collection); whether republishing
@@ -302,8 +307,8 @@ No league and no team on any route; `require_auth` like every data route (the ga
 `Cache-Control: no-store` on both POSTs. **Never stored or logged**: no logging call in the module, the text is dropped
 after parsing (`test_the_file_is_never_logged`). One memory region, `dfs` (the week's board priced per site, kept 10
 minutes, at most 8 entries): **0.35 MB** per site-week (DraftKings 628 rows, FanDuel 598). IN-4 adds two: `dfs_context`
-(the week's role trends and lines, 4 entries, **0.13 MB** each) and `dfs_published` (a built published slate, 4 entries,
-**1.4 MB** each). No new table, nothing new published to Neon (the context reads `analytics.fct_player_game` and
+(the week's role trends and lines, 4 entries, **0.13 MB** each) and `dfs_published` (a built published slate, 16
+entries, **1.4 MB** each). No new table, nothing new published to Neon (the context reads `analytics.fct_player_game` and
 `analytics.dim_game`, already there).
 
 **Measured (IN-4, the clone, loaded box)**: the board with its context — the context's reads cold 1.41 s (once per week

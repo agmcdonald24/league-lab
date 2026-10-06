@@ -1148,7 +1148,7 @@ MAX_PUBLISHED = 16                     # files read from the folder at most (two
 def slate_name(filename: str) -> dict | None:
     """``2026-w05-dk.csv`` -> ``{id: 2026-w05-dk-main, season: 2026, week: 5, site: dk, label: main}``; None for any
     other name (it is listed as unreadable, never served)."""
-    m = SLATE_FILE_RE.match(filename or "")
+    m = SLATE_FILE_RE.fullmatch(filename or "")      # fullmatch: "$" alone would take a trailing newline
     if not m:
         return None
     week = int(m["week"])
@@ -1161,7 +1161,7 @@ def slate_name(filename: str) -> dict | None:
 
 def slate_id_ok(slate_id: str | None) -> bool:
     """A published slate's id as the API takes it: the strict pattern, nothing else (never a path)."""
-    return bool(SLATE_ID_RE.match(str(slate_id or ""))) and len(str(slate_id)) <= 40
+    return bool(SLATE_ID_RE.fullmatch(str(slate_id or ""))) and len(str(slate_id)) <= 40
 
 
 # ------------------------------------------------------------------------------------------------ context (IN-4)
