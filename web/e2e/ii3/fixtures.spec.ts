@@ -108,7 +108,7 @@ test("windows: last 3 games played vs last 3 calendar weeks vs a week range; tot
 });
 
 test("the column picker: definitions, verified extras, routes unavailable in-season with the reason; — never 0", async ({ page }, info) => {
-  await page.goto(scrubs("&position=WRTE"));
+  await page.goto(scrubs("&position=WRTE&view=key")); // IM-2: the picker adds to Key stats (the Full table has them all)
   await page.getByTestId("stats-columns").locator("summary").click();
   await expect(page.getByTestId("col-routes")).toBeDisabled();
   await expect(page.getByTestId("col-why-routes")).toContainText("Not available");
@@ -130,7 +130,7 @@ test("sticky player column and header on a phone; 2–4 side by side; saved view
   await expect(page).toHaveURL(/\/players\?.*position=WRTE/);
   await expect(page.getByTestId("sub-players")).toHaveAttribute("aria-current", "page");
   const box = page.getByTestId("stats-scroll");
-  const firstCell = page.getByTestId("players-table").getByTestId("players-table-row").first().locator("td").first();
+  const firstCell = page.getByTestId("players-table").getByTestId("players-table-row").first().locator("th, td").first(); // IM-2: a row header (th scope=row)
   const before = (await firstCell.boundingBox())!;
   await box.evaluate((el) => el.scrollBy({ left: 400 }));
   await page.waitForTimeout(100);
