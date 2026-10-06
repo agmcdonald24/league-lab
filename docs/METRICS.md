@@ -1519,9 +1519,12 @@ corners in words, the certainty in words, his history against the likely corner)
 reference key never does. `q` = 2–40 characters, matched as text on the name (letters only after normalising; a
 character no name has — `%`, `_`, a digit — matches nobody); `game` = one of the week's `dim_game` ids; `tone` =
 favorable / neutral / difficult / none; `sort` = projection (default) / tone (best matchup first) / corner (the
-easiest corner to throw on first, no ranked corner last); `limit` 1–100 (25), `offset` 0–5,000. Timings on the sandbox
-(fixture API, WR, `ref:half`): **cold 0.62 s** (a fresh process: the pool, the board, the prices), **warm 56–63 ms**;
-a house league warm 63 ms.
+easiest corner to throw on first, no ranked corner last); `limit` 1–100 (25), `offset` 0–5,000. The evidence does not
+depend on the league (its ranks are the reference mart's): it is kept per week for every league. Timings on the
+sandbox (the fixture API over HTTP, WR, `ref:half`, six workers sharing two cores): **cold 0.59–0.64 s** (a fresh
+process: the pool, the week's board, the prices), **warm 15–19 ms** (a house league 22 ms; `limit=100` 25 ms warm,
+0.16–0.20 s the first time its rows' evidence is built). Memory: the `matchup_board` region held 4.2 MB with every
+position of five leagues paged through (the week's context, five league frames, the corners, ~580 players' evidence).
 
 **What is in the projection, and what is not** (`IN_PROJECTION`, asserted against `projections.BASE_FEATURES` by
 `api/tests/test_in3.py`): the defense against the position **is** an input (`opp_allowed_std`, `opp_allowed_l4`,
