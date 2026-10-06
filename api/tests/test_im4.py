@@ -710,3 +710,35 @@ def test_the_passkey_tables_and_their_grants():
         fks = conn.execute("select confdeltype from pg_constraint where conrelid = 'accounts.passkeys'::regclass "
                            "and contype = 'f'").fetchall()
         assert fks == [("c",)]                                                # on delete cascade: the account takes them
+
+
+def test_a_passkey_account_adds_an_email(api):
+    """With a mailer, a passkey-only account adds its email through the emailed link (a second way in); an address that
+    already has an account is refused in words and the link is kept for signing in to that account."""
+    import re
+
+    def link(email: str) -> str:
+        assert api.post("/api/account/login", json={"email": email}).status_code == 202
+        return re.search(r"#signin=([A-Za-z0-9_-]+)",
+                         [m for m in accounts.STUB.sent if m["to"] == email][-1]["text"]).group(1)
+
+    key = create_account(api)
+    uid = MADE[-1]
+    session = api.cookies.get(accounts.COOKIE)
+    r = api.post("/api/account/verify", json={"token": link(f"added@{DOMAIN}")})
+    assert r.status_code == 200 and r.json() == {"ok": True, "email": f"added@{DOMAIN}", "added": True}
+    assert q("select email from accounts.users where id = %s", uid)[0][0] == f"added@{DOMAIN}"
+    me = api.get("/api/account/me").json()
+    assert me["email"] == f"added@{DOMAIN}" and me["sign_in"] == {"passkeys": 1, "email": True}
+    assert api.cookies.get(accounts.COOKIE) != session                       # a fresh session for the same account
+    assert sign_in(api, key)["email"] == f"added@{DOMAIN}"                   # the passkey still opens it
+    # another passkey-only account cannot take an address that has an account
+    create_account(api)
+    token = link(f"added@{DOMAIN}")
+    r = api.post("/api/account/verify", json={"token": token})
+    assert r.status_code == 409 and r.json()["code"] == "email_taken"
+    assert r.json()["error"] == "That email already has its own account. Sign out, then open the link again to sign in to that account."
+    api.post("/api/account/logout", json={})
+    r = api.post("/api/account/verify", json={"token": token})                # the link was kept
+    assert r.status_code == 200 and r.json() == {"ok": True, "email": f"added@{DOMAIN}"}
+    assert api.get("/api/account/me").json()["passkeys"][0]["label"] == "iPhone · Safari"

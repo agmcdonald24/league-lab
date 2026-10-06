@@ -437,8 +437,10 @@ def request_link(email_raw: Any, ip: str) -> None:
         raise AccountError(502, "mail_failed", "We could not send the email. Try again in a few minutes.") from None
 
 
-def verify(token: Any, ip: str, user_agent: str | None) -> tuple[str, str]:
-    """(session id, email) for a live link; the link is spent. AccountError 400 `link_invalid` otherwise."""
+def verify(token: Any, ip: str, user_agent: str | None, attach_to: str | None = None) -> tuple[str, str]:
+    """(session id, email) for a live link; the link is spent. AccountError 400 `link_invalid` otherwise.
+    ---- IM-4: `attach_to` = a signed-in account with no email (a passkey-only one): the link's address is **added** to it
+    (a second way in) when no other account has that address; when one has, 409 `email_taken` and the link is not spent."""
     _require_email()
     if not allow(f"check-ip:{_mac('ip', ip).hex()}", CHECKS_PER_MIN):
         raise AccountError(429, "rate_limited", "Too many tries from here. Wait a few minutes.")
@@ -447,11 +449,24 @@ def verify(token: Any, ip: str, user_agent: str | None) -> tuple[str, str]:
         raise bad
 
     def tx(c: psycopg.Connection):
+        if attach_to is not None:                                           # ---- IM-4: "add an email"
+            live = c.execute("select user_email from accounts.login_links where token_hash = %s and used_at is null and "
+                             "expires_at > now() for update", (_hash_token(token),)).fetchone()
+            if live is not None and c.execute("select 1 from accounts.users where email = %s and id <> %s",
+                                              (live[0], attach_to)).fetchone():
+                return "taken"
         row = c.execute("update accounts.login_links set used_at = now() where token_hash = %s and used_at is null "
                         "and expires_at > now() returning user_email", (_hash_token(token),)).fetchone()
         if row is None:
             return None
         email = row[0]
+        if attach_to is not None and c.execute(
+                "update accounts.users set email = %s, last_seen_at = now() where id = %s and email is null and "
+                "deleted_at is null", (email, attach_to)).rowcount == 1:
+            sid = c.execute(f"insert into accounts.sessions (user_id, expires_at, user_agent_family) values (%s, now() + "
+                            f"interval '{SESSION_DAYS} days', %s) returning id",
+                            (attach_to, agent_family(user_agent))).fetchone()[0]
+            return str(sid), email
         uid = c.execute("insert into accounts.users (email, last_seen_at) values (%s, now()) on conflict (email) do "
                         "update set last_seen_at = now(), deleted_at = null returning id", (email,)).fetchone()[0]
         sid = c.execute(f"insert into accounts.sessions (user_id, expires_at, user_agent_family) values (%s, now() + "
@@ -461,6 +476,9 @@ def verify(token: Any, ip: str, user_agent: str | None) -> tuple[str, str]:
     got = db.run_rw(tx)
     if got is None:
         raise bad
+    if got == "taken":
+        raise AccountError(409, "email_taken", "That email already has its own account. Sign out, then open the link "
+                           "again to sign in to that account.")
     return got
 
 
@@ -844,12 +862,17 @@ def login_route(body: LoginIn, request: Request) -> JSONResponse:
 
 @router.post("/verify")
 def verify_route(body: VerifyIn, request: Request) -> JSONResponse:
-    sid, email = verify(body.token, client_ip(request), request.headers.get("user-agent"))
-    resp = _ok({"email": email})
+    try:                                          # ---- IM-4: signed in with no email: the link adds the address
+        who = current_user(request) if state()[0] else None
+    except psycopg.Error:
+        who = None
+    attach = who[0] if who is not None and not who[1] else None
+    sid, email = verify(body.token, client_ip(request), request.headers.get("user-agent"), attach_to=attach)
+    uid = db.run_rw(lambda c: c.execute("select user_id from accounts.sessions where id = %s", (sid,)).fetchone()[0])
+    resp = _ok({"email": email, "added": True} if attach and str(uid) == attach else {"email": email})
     _set_cookie(resp, request, sid)
     # ---- IL-5: this device's Yahoo / ESPN connection joins the account; the account's come back to this device
     from . import connections
-    uid = db.run_rw(lambda c: c.execute("select user_id from accounts.sessions where id = %s", (sid,)).fetchone()[0])
     connections.sync(request, resp, str(uid), adopt=True)
     # ---- end IL-5
     return resp
