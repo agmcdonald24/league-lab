@@ -72,6 +72,7 @@ HEAVY_EXACT = frozenset({
     "/api/my-week", "/api/waivers", "/api/trades/evaluate", "/api/trades/partners", "/api/trades/lists", "/api/team",
     "/api/league", "/api/league/week-odds", "/api/league/scoring-check", "/api/yahoo/connect", "/api/yahoo/callback",
     "/api/yahoo/leagues",
+    "/api/usage/summary", "/api/events",          # the PO's QA reads: uncached database queries, public with the door open
 })
 HEAVY_PREFIX = ("/api/dfs/",)          # IM-5: the salary file and the lineups (stateless, but they solve)
 LEAGUE_SETUP = frozenset({"username", "mfl", "mfl_search", "sleeper", "espn", "yahoo", "yahoo_me"})

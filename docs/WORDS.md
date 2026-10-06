@@ -371,6 +371,20 @@ labels, tooltips, summaries, accessibility labels and generated text, the consol
 | the account page | "Yahoo: connected 2026-10-05 — it comes back on any device you sign in on." · "ESPN: needs reconnecting (it no longer opens your leagues)." + **Reconnect ESPN** · "No Yahoo or ESPN connection saved. Connect one on the league setup screen while signed in and it follows you." | a token, a GUID or a cookie value on screen |
 | a provider switched off (`/api/providers` status `off`) | "ESPN leagues: not available right now. Sleeper and MyFantasyLeague leagues work as before." in place of the form | a form that can only fail |
 
+## The open door (Wave I-M, IM-3)
+
+| Where | The words we use | Never |
+|---|---|---|
+| the front door (first visit, no league) | "Our own projections for every player, his trends and his matchups, priced in your scoring — then your lineup, waivers and trades once you open your league." · **Browse the lab** · **Open your league** · the record's line (scored: "Through week 4, we called … right; Sleeper's numbers called …"; before: "Our record against Sleeper's own projections is kept week by week, from the first week both are saved before kickoff.") + **How we keep score** (About) | "sign up", "free trial", a wall in front of the screens |
+| the bar, browsing without a league | "No league · **Half PPR** ▾" (PPR / Half PPR / Standard) and **Open your league** | "Demo", "Guest", a made-up league name |
+| My Team / Waivers / Trades without a league | "Open your league to see your lineup, waivers and trades." · "You are browsing without a league, in Half PPR scoring. Open your league on Sleeper, MyFantasyLeague, ESPN or Yahoo and this screen shows your own team." · **Open your league** · **Keep browsing players** | an error, a warning sign, "not found" |
+| a decision answer for a reference key (API) | "Open your league to see this." (`code: needs_league`) | "league not found" |
+| "Team in league" without a league | "—" (the API sends no owner) | "free agent" for every player |
+| the rate limit (429) | "Too many requests from this connection. Try again in N seconds." ("… in a second." for one) | "rate limited", "abuse", "banned", a blank screen |
+| a cross-site write refused (403, API only) | "This request came from another site, so it was refused." | — |
+| a body too large (413, API only) | "That is more than this server takes in one request." | — |
+| the record for PPR / Standard | "Our record is kept in Half PPR scoring (4 points a passing touchdown): the scoring of the league we project every morning." | a record that seems to be in a scoring it was not kept in |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

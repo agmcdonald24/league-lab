@@ -2,6 +2,20 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-06 — Wave I-M
+
+- **IM-3 — the open door.** `LEAGUE_LAB_GATE` = `open` | `password` (unset: today's rule — password when
+  `LEAGUE_LAB_APP_PASSWORD` is set); `open` ignores the password, `password` with no password keeps the door shut. A rate
+  limiter on every `/api/` route but the health check (`ratelimit.py`: per client, keyed by an HMAC of
+  `CF-Connecting-IP` on Render, buckets read 300/min burst 150 · heavy 20/min burst 20 · write 60/min burst 30, 429 with
+  `Retry-After`, `LEAGUE_LAB_RATE_LIMIT=off`, `GET /api/ratelimit` to verify the keying live); the Guard
+  (`security.py`: cross-site writes refused by `Origin` / `Sec-Fetch-Site`, bodies bounded, `nosniff`,
+  `Referrer-Policy`, a CSP the app and GA pass with `frame-ancestors 'none'`, HSTS on https); provider errors no longer
+  echo their cause; MFL redirects only to `*.myfantasyleague.com`. Reference league keys `ref:ppr` / `ref:half` /
+  `ref:std` (`refleague.py`) on every research route without ownership, `needs_league` on the decision routes; the web's
+  front door ("Browse the lab"), the "No league · Half PPR ▾" picker and the invitation cards; title / description /
+  Open Graph / canonical and `robots.txt`. `docs/SECURITY_PUBLIC.md`.
+
 ## 2026-10-05 — Wave I-L
 
 - **PO — Yahoo refuses the app, and the app said so wrongly.** A friend connected with Yahoo four times in three minutes

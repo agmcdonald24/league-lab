@@ -109,6 +109,8 @@ def test_buckets_by_route():
               "/api/league/scoring-check", "/api/leagues/123/rosters", "/api/yahoo/connect", "/api/dfs/slate"):
         assert b("GET", p) == "heavy", p
     assert b("POST", "/api/trades/evaluate") == "heavy" and b("POST", "/api/dfs/lineups") == "heavy"
+    assert b("GET", "/api/usage/summary") == "heavy" and b("GET", "/api/events", "league=1&team=2") == "heavy"
+    assert b("GET", "/api/status") == "read" and b("GET", "/api/session") == "read"
     assert b("GET", "/api/ros", "league=1&view=lineup&team=2") == "heavy" and b("GET", "/api/ros", "league=1") == "read"
     for m, p in (("POST", "/api/usage"), ("POST", "/api/login"), ("PUT", "/api/account/leagues"),
                  ("DELETE", "/api/account"), ("POST", "/api/espn/connect")):
