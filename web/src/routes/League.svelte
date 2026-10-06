@@ -33,11 +33,9 @@
   let error = $state<string | null>(null);
   const ctx = $derived({ league, team });
   // ---- IO-2: the share link and the guest strip (the imports above)
-  let info = $state<LeagueOutlookMoved | null>(null);
-  $effect(() => {
-    void league;
-    info = null;
-  });
+  let outlookInfo = $state<LeagueOutlookMoved | null>(null);
+  // the outlook's answer for THIS league only (the canonical key: lower-case, no padding)
+  const info = $derived(outlookInfo && outlookInfo.league_id.toLowerCase() === league.trim().toLowerCase() ? outlookInfo : null);
   const shareable = $derived(!isRef(league) && (platformOf(league) === "sleeper" || platformOf(league) === "mfl") && info?.shareable !== false);
   const shareUrl = $derived(`${location.origin}/league?league=${/^[A-Za-z0-9:]+$/.test(league) ? league : encodeURIComponent(league)}`);
   let shared = $state<"idle" | "copied" | "manual">("idle");
@@ -254,7 +252,7 @@
 
   <!-- ---- IN-6 (Wave I-N): the first two blocks — power rankings and the rest of the season. IO-2: asked at once, beside
        the screen's own answer (not after it), the power rankings first -->
-  {#if !error}<Outlook {league} {team} {onauth} onload={(d) => (info = d)} />{/if}
+  {#if !error}<Outlook {league} {team} {onauth} onload={(d) => (outlookInfo = d)} />{/if}
 
   {#if data}
 
