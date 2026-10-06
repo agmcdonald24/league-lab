@@ -302,6 +302,16 @@ def scope_client(scope, lim: Limiter | None = None) -> tuple[str, object]:
     return client_address(_headers(scope), peer, lim.mode, lim.hops)
 
 
+def client_group(scope, lim: Limiter | None = None) -> str:
+    """PO (the Wave I-M review): the one name of a visitor for every other per-client limit (the accounts' sign-in
+    limits) — the limiter's own source, mode and hops, an IPv4 address as it is and an IPv6 address as its /64 (one
+    subscriber's block: rotating inside it buys nothing). A text, to be HMAC'd by the caller; never stored as it is."""
+    _source, address = scope_client(scope, lim)
+    if isinstance(address, ipaddress.IPv6Address):
+        return str(ipaddress.IPv6Network((int(address) >> 64 << 64, 64)))
+    return str(address)
+
+
 def refusal(wait_s: float, bucket: str) -> tuple[int, list[tuple[bytes, bytes]], bytes]:
     n = max(1, math.ceil(wait_s))
     words = WORDS_ONE if n == 1 else WORDS.format(n=n)

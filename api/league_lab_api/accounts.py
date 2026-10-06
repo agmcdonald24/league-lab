@@ -308,9 +308,7 @@ def client_ip(request: Request) -> str:
     # --forwarded-allow-ips='*' copies it into request.client — so the address is IM-3's (ratelimit.client_address:
     # the edge's header on Render, else the hop our proxy appended, else the peer), the same key the limiter uses.
     from . import ratelimit
-    headers = {k.lower(): v for k, v in request.scope.get("headers") or []}
-    _source, addr = ratelimit.client_address(headers, request.client.host if request.client else None)
-    return str(addr)
+    return ratelimit.client_group(request.scope)
 
 
 def agent_family(ua: str | None) -> str:
