@@ -9082,6 +9082,13 @@ compare against it)
   events read one short: `watchlist_remove` not yet in), **8 of 8 green re-run alone**: a timing flake in that test,
   not this change (a Sleeper league, no Yahoo code on its path); to fix with the next web change. The pending screen
   at 375: the disabled "Connect with Yahoo — coming soon", the four-sentence note, no form, no sideways scroll.
+* **Verified live** (2026-10-05 21:17 ET, `8446cb7`; the Blueprint sync set the env row with the push):
+  `/api/providers` `yahoo_configured: false`, `yahoo_pending: true`; `/api/yahoo/status` `configured: true, open: false,
+  access.switch: "pending"`; `/api/leagues?yahoo_me=1` `configured: false, pending: true` with the pending note;
+  `/api/leagues?yahoo=1598462` 404 `yahoo_not_configured` "Yahoo leagues are not open here yet …" + "Nothing is wrong
+  with your league or your Yahoo sign-in …"; `/leagues?platform=yahoo`: the disabled "Connect with Yahoo — coming
+  soon", the note, no Connect link, no form. `/api/status` `memory`: RSS 240 MB after these reads, the directory 8.7
+  MB. **Not yet seen: Yahoo's own answer** (`access.last_refusal` is null — nobody has probed since the deploy).
 * **Decisions the PO took (Andrew may reverse)**: Yahoo's button is off for everyone until the probe answers ok (one
   word in `render.yaml` to turn it back on); the friend's existing connection is kept (his cookie is untouched: when
   Yahoo opens the access his leagues list without another sign-in, for 60 days).
@@ -9158,10 +9165,15 @@ compare against it)
   "Emanuel Wilson · RB — Knight Train (you) · week 4"; no console errors but the blocked headshot host. **Not a green
   suite on this database**: one at the suites' pinned week (the Mac's 2026-10-03 backup, then `dbt build` + `project`
   at HEAD) is the rebuild for the next wave that needs the whole set green.
-* **Verified live after the deploy**: pending Andrew's push — the PO watches the `image` run and Render, then reads `mfl:70587`
-  League and Waivers against MFL's export again (the Oct 3 and Oct 4 moves listed; `/api/providers` MFL transactions
-  without the tail). The result is in the project handoff (`claude/league-lab-handoff-2026-10-05b.md`) and the next
-  commit's STATUS line.
+* **Verified live after the deploy** (2026-10-05 21:17 ET, `league-lab.onrender.com` `8446cb7`; Andrew pushed `93deea5`
+  at 16:57 ET — `image` #19 failed at GitHub, "The job was not acquired by Runner of type hosted", no deploy — and
+  `8446cb7` at 21:12 ET: `image` #20 green in 1 m 35 s, Render deployed by itself): `/api/league?league=mfl:70587` lists
+  **12 moves, MFL's export 12, the same timestamp-franchise keys in the same order** — Knight Train Oct 4 (add Emanuel
+  Wilson, drop Jadarian Price) and Big Mac Attack Oct 3 (add Jordan Addison, drop Croskey-Merritt and Sadiq) lead,
+  under week 4; the app's clock was already on week 5 (Monday night's kickoff) and MFL's on 4 — round 5 empty, nothing
+  twice; the unit swap reads "Carolina Panthers QB" / "New York Giants QB", no `mfl:` name in 25 rows;
+  `/api/waivers?league=mfl:70587&team=1` "Recently added": 5 adds in weeks 4–5, "Emanuel Wilson — Knight Train (you)"
+  first, then Jordan Addison; `/api/providers` MFL transactions words without the tail.
 * **Not done / next**: a trade on a live MFL league (none exists to check); the week label that never changes (above);
   the first nightly after Wave I-L (Tue 2026-10-06 07:37 ET: the run green, `/api/status` `odds_grades` a row, Stats'
   NGS columns filled) — a check-in is scheduled for 09:00 ET.

@@ -215,7 +215,8 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   resource that names no league "that league is private". **Yahoo's actual answer has not been seen yet** (the old
   code threw it away): the first probe after the deploy shows it. Andrew was given the Client ID and the form's text
   for `sports.yahoo.com/developer/access/` at 17:20 ET (he had never been asked to send it); Yahoo's attribution line
-  is on the Yahoo league screens now.
+  is on the Yahoo league screens now. **Live since 21:14 ET (`8446cb7`)**, MFL's moves and the pending screen verified
+  (STATUS, both PO sections); `image` #19 (`93deea5`) had failed at GitHub (no runner), so nothing deployed between.
 
 * **Wave I-K (2026-10-05, Monday 08:40–12:30 ET; four Opus devs; STATUS § "Wave I-K" PO section first)**: **ESPN**
   leagues on demand (`espn:<id>`, public read-only, unofficial; private via the manager's cookies behind
