@@ -101,7 +101,7 @@ def limited(api, monkeypatch):
 def test_buckets_by_route():
     b = ratelimit.bucket_for
     assert b("GET", "/api/health") is None and b("GET", "/") is None and b("GET", "/assets/x.js") is None
-    assert b("GET", "/api/players", "league=1&position=WR") == "read"
+    assert b("GET", "/api/players", "league=1&position=WR") == "research"          # IM-3 fix: was read
     assert b("GET", "/api/leagues") == "read" and b("GET", "/api/leagues", "username=andrew") == "heavy"
     for q in ("mfl=70587", "sleeper=1", "espn=4242", "yahoo=461.l.1", "yahoo_me=1", "mfl_search=addicts"):
         assert b("GET", "/api/leagues", q) == "heavy", q
@@ -111,7 +111,7 @@ def test_buckets_by_route():
     assert b("POST", "/api/trades/evaluate") == "heavy" and b("POST", "/api/dfs/lineups") == "heavy"
     assert b("GET", "/api/usage/summary") == "heavy" and b("GET", "/api/events", "league=1&team=2") == "heavy"
     assert b("GET", "/api/status") == "read" and b("GET", "/api/session") == "read"
-    assert b("GET", "/api/ros", "league=1&view=lineup&team=2") == "heavy" and b("GET", "/api/ros", "league=1") == "read"
+    assert b("GET", "/api/ros", "league=1&view=lineup&team=2") == "heavy" and b("GET", "/api/ros", "league=1") == "research"
     for m, p in (("POST", "/api/usage"), ("POST", "/api/login"), ("PUT", "/api/account/leagues"),
                  ("DELETE", "/api/account"), ("POST", "/api/espn/connect")):
         assert b(m, p) == "write", (m, p)
@@ -204,7 +204,8 @@ def test_numbers_by_env(monkeypatch):
     assert lim.enabled and (lim.buckets["heavy"].per_minute, lim.buckets["heavy"].burst) == (10, 4)
     assert (lim.buckets["write"].per_minute, lim.buckets["write"].burst) == ratelimit.DEFAULTS["write"]
     assert lim.buckets["read"].max_clients == 777
-    assert ratelimit.DEFAULTS == {"read": (300.0, 150.0), "heavy": (20.0, 20.0), "write": (60.0, 30.0)}
+    assert ratelimit.DEFAULTS == {"read": (300.0, 150.0), "research": (60.0, 40.0), "heavy": (20.0, 20.0),
+                                  "write": (60.0, 30.0)}
 
 
 def test_memory_is_bounded():
@@ -215,7 +216,7 @@ def test_memory_is_bounded():
     before = tracemalloc.take_snapshot()
     for n in range(20_000):                                   # 20,000 distinct addresses, each one request in debt
         ip = ipaddress.IPv4Address(0x0A000000 + n)
-        for b in ("read", "heavy", "write"):
+        for b in lim.buckets:
             lim.check(b, ip)
         clock.t += 0.000001                     # all in debt at once: the LRU has to evict
     after = tracemalloc.take_snapshot()
@@ -224,8 +225,25 @@ def test_memory_is_bounded():
     held = {n: b.clients() for n, b in lim.buckets.items()}
     assert all(v <= ratelimit.MAX_CLIENTS for v in held.values()), held
     assert all(b.evicted > 0 for b in lim.buckets.values())
-    print(f"\nlimiter memory, 3 buckets x {held}: {size / 1024:.0f} KB")
-    assert size < 1.6 * 1024 * 1024
+    print(f"\nlimiter memory, IPv4, {len(held)} buckets x {held}: {size / 1024:.0f} KB")
+    assert size < 2.2 * 1024 * 1024
+    # IM-3 fix: IPv6, every address in its own /48 — the coarse buckets (heavy, write) fill too, and stay bounded
+    lim6 = ratelimit.Limiter(clock=clock)
+    tracemalloc.start()
+    before = tracemalloc.take_snapshot()
+    for n in range(20_000):
+        ip = ipaddress.IPv6Address((0x20010DB8 << 96) + (n << 80) + 1)
+        for b in lim6.buckets:
+            lim6.check(b, ip)
+        clock.t += 0.000001
+    after = tracemalloc.take_snapshot()
+    tracemalloc.stop()
+    size6 = sum(s.size_diff for s in after.compare_to(before, "filename"))
+    coarse = {n: b.clients() for n, b in lim6.coarse.items()}
+    assert all(v <= ratelimit.MAX_CLIENTS for v in coarse.values()), coarse
+    print(f"limiter memory, IPv6 (a /48 each), buckets {[b.clients() for b in lim6.buckets.values()]} + /48 {coarse}: "
+          f"{size6 / 1024:.0f} KB")
+    assert size6 < 3.2 * 1024 * 1024
     # a client whose bucket is full again is forgotten at no cost: after a quiet minute the sweep empties the table
     clock.t += 3600
     for b in lim.buckets.values():
@@ -534,3 +552,133 @@ def test_reference_league_shape():
     assert P.provider_of("ref:half") == "reference" and P.check_key("Ref:Std") == "ref:std"
     with pytest.raises(P.LeagueNotFound):
         P.check_key("ref:xyz")
+
+
+# ====================================================================================== IM-3 fix (the Wave I-M review)
+def test_lineup_views_are_heavy_and_need_a_league_in_any_spelling(api):
+    b = ratelimit.bucket_for
+    for q in ("view=LINEUP&team=2", "view=Lineup", "view=%20lineup%20", "view=+lineup", "view=points&view=lineup",
+              "view=OUTLOOK&team=2", "view=upgrades"):
+        assert b("GET", "/api/ros", f"league=1&{q}") == "heavy", q
+    assert b("GET", "/api/ros", "league=1&view=Points") == "research"
+    for v in ("LINEUP", "Lineup", " lineup ", "Outlook", "UPGRADES"):
+        r = api.get("/api/ros", params={"league": "ref:half", "view": v, "team": 1})
+        assert r.status_code == 404 and r.json()["code"] == "needs_league", (v, r.text[:200])
+    r = api.get("/api/ros", params={"league": " REF:HALF ", "view": "lineup", "team": 1})
+    assert r.status_code == 404 and r.json()["code"] == "needs_league"
+
+
+def test_research_bucket_and_unseen_leagues(limited):
+    c, lim, clock = limited
+    b = ratelimit.bucket_for
+    for p in ("/api/players", "/api/players.csv", "/api/trends", "/api/compare", "/api/matchups/defense", "/api/receivers",
+              "/api/player/00-0036963", "/api/player/00-0036963/games", "/api/about", "/api/record", "/api/dfs/projections"):
+        assert b("GET", p, "league=ref:half") == "research", p
+    assert b("GET", "/api/search", "league=1&q=al") == "read" and b("GET", "/api/session") == "read"
+    assert ratelimit.DEFAULTS["research"] == (60.0, 40.0)
+    seen = ratelimit.Seen(clock=clock)
+    assert seen.fresh("ref:half") and not seen.fresh("123")
+    seen.mark("123")
+    assert seen.fresh("123") and seen.fresh(" 123".strip())
+    clock.t += ratelimit.SEEN_TTL_S + 1
+    assert not seen.fresh("123")
+    small = ratelimit.Seen(cap=3, clock=clock)
+    for i in range(10):
+        small.mark(str(i))
+    assert len(small.at) == 3
+
+
+def test_an_unseen_league_is_charged_to_heavy(limited):
+    """Research for a league this process has not answered: heavy (20 at once in the fixture limiter: 2)."""
+    c, lim, clock = limited
+    ratelimit.reset(ratelimit.Limiter({"read": (60, 50), "research": (60, 50), "heavy": (6, 2), "write": (30, 3)},
+                                      clock=clock))
+    codes = [c.get("/api/players", params={"league": f"77777777777777{i:04d}"}).status_code for i in range(3)]
+    assert codes[:2] != [429, 429] and codes[2] == 429                       # three new leagues: the third is refused
+    assert c.get("/api/players", params={"league": "77777777777777xxxx"}).json().get("bucket") == "heavy"
+
+
+def test_cpu_slots_bound_work_in_flight():
+    import asyncio
+    s = ratelimit.Slots(2, 0.2)
+
+    async def run():
+        assert await s.acquire() and await s.acquire()
+        t0 = asyncio.get_running_loop().time()
+        ok = await s.acquire()                                               # full: waits, then refused
+        waited = asyncio.get_running_loop().time() - t0
+        s.release()
+        assert await s.acquire()                                             # a slot back: in at once
+        return ok, waited
+    ok, waited = asyncio.run(run())
+    assert ok is False and waited >= 0.2 and s.refused == 1 and s.info()["slots"] == 2
+    assert ratelimit.Slots(0, 0).info()["slots"] == 0
+
+
+def test_busy_answer_when_every_client_together_is_over(limited):
+    c, lim, clock = limited
+    ratelimit.reset(ratelimit.Limiter({"read": (60, 50), "research": (60, 50), "heavy": (60, 50), "write": (30, 3)},
+                                      clock=clock, global_={"heavy": (6, 3)}))
+    codes = [c.get("/api/waivers", params={"league": "1"}, headers={}).status_code for _ in range(4)]
+    assert codes[3] == 503
+    r = c.get("/api/waivers", params={"league": "1"})
+    assert r.status_code == 503 and r.json()["code"] == "busy" and int(r.headers["retry-after"]) >= 1
+
+
+def test_ipv6_site_shares_the_heavy_and_write_buckets(limited, monkeypatch):
+    c, lim, clock = limited
+    monkeypatch.setenv("RENDER", "true")
+    ratelimit.reset(ratelimit.Limiter({"heavy": (6, 2), "write": (30, 2)}, clock=clock,
+                                      coarse={"heavy": (12, 4), "write": (60, 4)}, global_={}))
+    ok = 0
+    for i in range(10):                                                       # ten /64s inside one /48
+        r = c.get("/api/waivers", params={"league": "1"}, headers={"CF-Connecting-IP": f"2001:db8:aa:{i:x}::1"})
+        ok += r.status_code != 429
+    assert ok == 4                                                            # the /48's burst, not 10 × 2
+    assert c.get("/api/waivers", params={"league": "1"}, headers={"CF-Connecting-IP": "2001:db8:bb::1"}).status_code != 429
+    assert ratelimit.COARSE == {"heavy": (60.0, 60.0), "write": (180.0, 90.0)}
+
+
+def test_usage_rows_have_an_hourly_ceiling(api, monkeypatch):
+    clock = Clock()
+    ceil = ratelimit.HourlyCeiling(5, 2, clock=clock)
+    assert [ceil.allow("a") for _ in range(3)] == [True, True, False]        # 2 a visitor
+    assert [ceil.allow(g) for g in ("b", "b", "c", "d")] == [True, True, True, False]   # 5 in all
+    clock.t += 3600
+    assert ceil.allow("a") and ceil.info()["this_hour"] == 1
+    assert (ratelimit.USAGE_PER_HOUR, ratelimit.USAGE_PER_CLIENT) == (1200, 120)
+    # the route stays silent when refused: 204 whatever happens
+    from league_lab_api import usage as usage_mod
+    sent: list = []
+    monkeypatch.setattr(usage_mod, "enabled", lambda: True)
+    monkeypatch.setattr(usage_mod, "submit", lambda ev: sent.append(ev))
+    monkeypatch.setattr(ratelimit, "_usage", ratelimit.HourlyCeiling(100, 2))
+    codes = [api.post("/api/usage", content=b'{"screen": "week"}').status_code for _ in range(4)]
+    assert codes == [204] * 4 and len(sent) == 2                              # a fresh cookie each time buys nothing
+
+
+def test_provider_caches_are_bounded():
+    from league_lab.sleeper_client import prune_cache
+    cache = {f"/league/{i}": (1000.0 + i, 0.0 + i, "league", {}) for i in range(100)}
+    cache["/players/nfl"] = (0.0, 0.0, "players", {})
+    assert prune_cache(cache, now=1000.0, cap=50, keep_stale_s=3600) == 100 - 44
+    assert len(cache) == 45 and "/players/nfl" in cache and "/league/99" in cache and "/league/0" not in cache
+    stale = {"/a": (10.0, 5.0, "league", {}), "/b": (5000.0, 6.0, "league", {})}
+    assert prune_cache(stale, now=4000.0, cap=50, keep_stale_s=3600) == 1 and list(stale) == ["/b"]
+
+
+def test_sleeper_client_cache_stays_under_the_cap(monkeypatch):
+    from league_lab import sleeper_client as S
+    monkeypatch.setenv(S.CACHE_MAX_ENV, "60")
+    monkeypatch.delenv(S.FIXTURES_ENV, raising=False)
+    cl = S.Sleeper(fetch=lambda path: {"league_id": path.rsplit("/", 1)[-1], "name": "x"},
+                   bucket=S.TokenBucket(100_000), cache_path=None)
+    for i in range(300):
+        cl.league(str(10_000 + i))
+    assert len(cl._cache) <= 60
+
+
+def test_api_docs_are_off_unless_switched_on(api):
+    from league_lab_api import main
+    assert main.API_DOCS is False and app.docs_url is None and app.openapi_url is None
+    assert api.get("/api/docs").status_code == 404 and api.get("/api/openapi.json").status_code == 404

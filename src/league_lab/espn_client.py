@@ -79,7 +79,14 @@ from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
-from .sleeper_client import LeagueNotFound, SleeperBusy, SleeperUnavailable, TokenBucket
+from .sleeper_client import (
+    LeagueNotFound,
+    SleeperBusy,
+    SleeperUnavailable,
+    TokenBucket,
+    cache_max,
+    prune_cache,
+)
 
 ESPN_API = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl"
 FIXTURES_ENV = "LEAGUE_LAB_ESPN_LEAGUE_FIXTURES"
@@ -848,7 +855,11 @@ class ESPN:
         data = trim(kind, data)
         with self._lock:
             self._cache[key] = (now + TTL_S[kind], now, kind, data)
+            prune_cache(self._cache, now)                                     # ---- IM-3 fix: bounded (sleeper_client)
             self._read_at[f"{kind}|{lid}|{season}"] = self.wall()
+            if len(self._read_at) > 2 * cache_max():                                 # ---- IM-3 fix: bounded too
+                for k in list(self._read_at)[:len(self._read_at) - cache_max()]:
+                    del self._read_at[k]
         return data
 
     def _note_access(self, lid: str, season: int, data: Mapping, dg: str | None) -> None:

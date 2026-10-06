@@ -7,7 +7,8 @@ severity (**High**: fix before opening; **Medium**: fix soon after; **Low**: not
 
 **Verdict: nothing High is left.** The door can open with `LEAGUE_LAB_GATE: open`. Two Medium items (the client
 address on Render must be verified live once — § 2; the provider budgets are global, not per visitor — § 1) and a
-handful of Low ones are listed at the end.
+handful of Low ones are listed at the end. **§ 11** is the fix round after the independent review of the merged tree
+(seven findings, all fixed).
 
 ## 1. The gate, and every route with the door open
 
@@ -50,14 +51,17 @@ One pure-ASGI middleware ahead of every route; `/api/health` and the web app's f
 
 | Bucket | Per minute | At once | Why these numbers |
 |---|---|---|---|
-| read | 300 | 150 | one screen asks 2–8 things and the web keeps its answers 5 minutes, so a person tapping a new screen every second for a minute stays under it, and ten people behind one address (an office, a carrier's shared address) using the app normally do too |
+| read | 300 | 150 | the cheap answers (session, status, search, providers, the account): one screen asks 2–8 things and the web keeps its answers 5 minutes, so a person tapping a new screen every second for a minute stays under it, and ten people behind one address using the app normally do too |
+| research | 60 | 40 | (review fix) the answers that aggregate or price on request — Stats and its CSV, Trends, Matchups, Compare, a player's card and games, Receivers, About, the record, Season's points views, DFS projections — cost 0.3–1.2 s of CPU cold; a person opening Stats, "Show all", the CSV, a dozen player cards (two calls each) and a few filters in one minute stays under 40; one a second after that |
 | heavy | 20 | 20 | every decision screen of four leagues opened in a row, then one every 3 seconds — each can cost a provider call or 1–3 s of the one CPU |
 | write | 60 | 30 | a usage count per screen view, sign-ins and account saves; no one taps 30 screens in a second |
 
 Refused: **429** `{"error": "Too many requests from this connection. Try again in N seconds.", "code": "rate_limited",
 "retry_after_s": N, "bucket": …}` + `Retry-After: N`; the web shows the line through `ErrorCard` (kind `limited`).
-Switches: `LEAGUE_LAB_RATE_LIMIT=off`; `LEAGUE_LAB_RATE_READ` / `_HEAVY` / `_WRITE` = `"<per minute>,<burst>"`;
-`LEAGUE_LAB_RATE_CLIENTS` (default 5,000 per bucket); `LEAGUE_LAB_CLIENT_IP`; `LEAGUE_LAB_PROXY_HOPS`.
+Switches: `LEAGUE_LAB_RATE_LIMIT=off`; `LEAGUE_LAB_RATE_READ` / `_RESEARCH` / `_HEAVY` / `_WRITE` = `"<per minute>,<burst>"`;
+`LEAGUE_LAB_RATE_HEAVY_48` / `_WRITE_48` (an IPv6 /48); `LEAGUE_LAB_RATE_HEAVY_ALL` / `_RESEARCH_ALL` / `_WRITE_ALL`
+(every client together); `LEAGUE_LAB_RATE_CLIENTS` (default 5,000 per bucket); `LEAGUE_LAB_CLIENT_IP`;
+`LEAGUE_LAB_PROXY_HOPS`; `LEAGUE_LAB_CPU_SLOTS` / `LEAGUE_LAB_CPU_WAIT_S`. The full table is § 11.
 `/api/status` → `ratelimit` (buckets, clients held, refusals, evictions, how requests were keyed).
 
 **Memory.** Each bucket keeps one number per client — the moment its bucket is full again (the token bucket in its
@@ -192,16 +196,36 @@ interpolate module constants only. Nothing to change.
 (`OWNERSHIP`, at any depth) and the decision routes with 404 `needs_league` — tested on every route; a house league keeps
 its owners. A reference key is never stored on the device.
 
+## 11. The fix round after the independent review (2026-10-06)
+
+| # | Finding (severity) | Fixed by |
+|---|---|---|
+| 1 | `view=LINEUP` escaped the heavy bucket and the `ref:` rule (Medium) | `ratelimit.norm` / `lineup_view`: one spelling (stripped, lower-cased; `+` / `%20` decoded; any of a repeated `view=`) for the bucket, `needs_league` and `ondemand.ros`; `outlook` / `upgrades` (they solve a roster's lineups too) are heavy and need a league. Checked the same class elsewhere: the league key is stripped / lower-cased in `is_reference`; the router is case-sensitive (`/API/…` and `//api/…` reach the web app, never a route); a trailing slash is a 307 to the classified path; parameter names are case-sensitive in FastAPI (an unknown name is ignored, not routed) |
+| 2 | The read bucket did not match what research costs (Medium) | the `research` bucket (60 a minute, 40 at once — § 2); a research request for a league this process has not answered in the last 10 minutes (an on-demand league: provider fan-out) is charged to `heavy` (`ratelimit.Seen`: any client, 5,000 leagues, oldest first); **CPU slots**: at most `LEAGUE_LAB_CPU_SLOTS` (4) research / heavy requests in flight across every client, the rest wait — holding no worker thread — up to 20 s, then 503 "busy"; a slot is given back when the answer starts (a slow reader never holds one). Four: one process on a fraction of a core gains nothing from more CPU work at once, and four keeps provider waits overlapping |
+| 3 | IPv6 rotation inside a /48 (Medium) | a second key for `heavy` (60 a minute, 60 at once) and `write` (180, 90) per IPv6 /48 (IPv4: the address is already the key); a ceiling for every client together — heavy 300 / 150, research 1,200 / 600, write 3,000 / 1,000 — answered 503 "busy" (the web's "Busy right now. Try again in a minute."). Memory, measured: IPv4, 20,000 addresses in debt in all four buckets → 1,741 KB; IPv6, each in its own /48 → 2,606 KB (four buckets + two /48 tables, 4,970 held each) |
+| 4 | The Sleeper client's answer cache grew without end (Medium) | `sleeper_client.prune_cache`: an expired answer is kept one hour past its expiry (what "busy" or a provider failure serves instead of an error), then dropped at the next insert; past `LEAGUE_LAB_PROVIDER_CACHE_MAX` (1,500 entries ≈ 500 leagues) the least recently fetched go; the player directory is never dropped by count. **MFL** and **ESPN** had the same cache: the same rule, and their read-time maps are capped too. **Yahoo**: already bounded (400 entries, expired first). **The injury feed**: one answer. **The news feed**: one entry per ESPN athlete asked for — an ESPN id comes only from our id table (a request names a player id, never an ESPN id), so bounded by the players who have one (a few thousand, a few KB each) |
+| 5 | Usage rows: a fresh cookie per request bought a row (Medium) | `ratelimit.usage_ceiling`: 1,200 rows an hour in all (≈ 30 times a Sunday's busiest real hour: ~50 managers × 20 screens a day) and 120 an hour per visitor (`client_group`); a refused count answers 204 like an accepted one. At the ceiling: ~29,000 rows a day, ~4 MB |
+| 6 | `/api/docs` and `/api/openapi.json` open in both modes (Low) | off unless `LEAGUE_LAB_API_DOCS=on` |
+| 7 | `md.ts` took `//evil.example` and `/\evil.example` for in-app links; provider text flows into the sentences (Low) | an in-app path is `/` followed by neither `/` nor `\`; an outside link stays a link only when https to a host the app links to itself (espn.com, sleeper.com / .app, myfantasyleague.com, yahoo.com, nfl.com, draftkings.com, fanduel.com, isuckatfantasy.io; no user, no port) — anything else renders as its label, plain text. Provider names are not escaped further: with links pinned, the worst a team name can do is bold its own text or link to one of our own paths. Tested with six hostile team names |
+
+New environment variables (all optional; defaults in brackets): `LEAGUE_LAB_RATE_RESEARCH` [`60,40`] ·
+`LEAGUE_LAB_RATE_HEAVY_48` [`60,60`] · `LEAGUE_LAB_RATE_WRITE_48` [`180,90`] · `LEAGUE_LAB_RATE_HEAVY_ALL` [`300,150`] ·
+`LEAGUE_LAB_RATE_RESEARCH_ALL` [`1200,600`] · `LEAGUE_LAB_RATE_WRITE_ALL` [`3000,1000`] · `LEAGUE_LAB_CPU_SLOTS` [4; 0 =
+off] · `LEAGUE_LAB_CPU_WAIT_S` [20] · `LEAGUE_LAB_USAGE_PER_HOUR` [1200] · `LEAGUE_LAB_USAGE_PER_CLIENT_HOUR` [120] ·
+`LEAGUE_LAB_PROVIDER_CACHE_MAX` [1500] · `LEAGUE_LAB_API_DOCS` [off]. Earlier: `LEAGUE_LAB_GATE`, `LEAGUE_LAB_RATE_LIMIT`
+[on], `LEAGUE_LAB_RATE_READ` [`300,150`], `_HEAVY` [`20,20`], `_WRITE` [`60,30`], `LEAGUE_LAB_RATE_CLIENTS` [5000],
+`LEAGUE_LAB_CLIENT_IP` [auto], `LEAGUE_LAB_PROXY_HOPS` [1], `LEAGUE_LAB_ALLOWED_HOSTS`, `LEAGUE_LAB_MAX_BODY_KB` [256],
+`LEAGUE_LAB_MAX_UPLOAD_KB` [2048], `LEAGUE_LAB_CSP` [on]. `/api/status` → `ratelimit` adds `coarse`, `all_clients`,
+`cpu` and `usage`.
+
 ## What is left, by severity
 
 | Severity | Item | Where |
 |---|---|---|
 | Medium | Verify the limiter's keying live (§ 2, two curl lines) before trusting the numbers | the PO, after the deploy |
 | Medium | Provider budgets are global: many addresses opening unknown leagues spend Sleeper's / MFL's budget for everyone ("busy") | `sleeper_client` / `mfl_client` buckets |
-| Low | Accounts' `client_ip` takes the first `X-Forwarded-For` hop (spoofable behind `--forwarded-allow-ips='*'`); use `ratelimit.scope_client` | `accounts.py` (IM-4) |
 | Low | `--forwarded-allow-ips='*'` makes `request.client` client-written on Render; nothing in the app trusts it now, but a future reader would | `api/Dockerfile` (the PO): keep, and say so in the Dockerfile's comment, or set Render's proxy range if Render publishes one |
 | Low | Other clients follow redirects anywhere (only their fixed hosts could send one) | `sleeper_client`, `espn_client`, `yahoo_client`, `news_feed`, `injury_feed` |
 | Low | `/api/status` and `/api/usage/summary` are public: operational numbers (memory, cache ages, counts) — no secret, no league id | consider a token for them later |
-| Low | `/api/docs` renders blank under the CSP | `main.py` (`docs_url`) |
 | Low | 422 answers echo the requester's own input | FastAPI default |
 | Info | GA: no cookie banner (PO call 2026-10-04); About says GA is used and what is sent — still true with no password. A public launch to EU / UK visitors needs Consent Mode first (HOSTING § Google Analytics) | Andrew's call |
