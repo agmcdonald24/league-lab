@@ -163,7 +163,7 @@
   $effect(() => {
     void cols.length;
     void visible.length;
-    const id = requestAnimationFrame(measure); // after the frame's layout, never a forced one per chunk
+    const id = requestAnimationFrame(measure); // after the frame's layout, never a forced one per render
     return () => cancelAnimationFrame(id);
   });
   $effect(() => {

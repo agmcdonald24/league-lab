@@ -41,9 +41,25 @@ No new env variable, no new dependency, no new relation, no new cache region.
 - `cd web && npm run lint` (eslint + svelte-check `--fail-on-warnings` + tsc): **0 errors, 0 warnings**.
   `npm run build`: **ok** (Players chunk 39 kB, 13.8 kB gzip before the stats components; see the build log).
 - `FIXTURES_PORT=8620 npx playwright test --config playwright.fixtures.config.ts e2e/im2`: **18 passed**.
-- Whole fixtures e2e: see § "Whole suite" below.
+- Whole fixtures e2e (`FIXTURES_PORT=8620 npx playwright test --config playwright.fixtures.config.ts`, 414 tests, run
+  alongside two other devs' suites): **411 passed, 1 failed, 2 skipped** (14.6 min). The failure is the known flaky
+  `e2e/il5` "signed in: the saved players in this league, …" — on the **desktop** project this time (its GA events read
+  one short: `["watchlist_remove", "watchlist_add"]` for three); re-run alone: **2 passed** (phone and desktop).
 - `uv run python scripts/copy_standard.py --check`: **clean** (exit 0). `uv run ruff check web/fixtures/save_im2_fixtures.py`: clean.
-- PO scripts: see § "Check scripts".
+- `/home/claude/waveIM/check_root.sh /home/claude/wt-im2`: `4 failed, 1314 passed, 3 skipped` — **NEW failures: none**.
+- `/home/claude/waveIM/check_api.sh /home/claude/wt-im2`: `92 failed, 699 passed, 13 skipped, 41 deselected` — NEW
+  failures (verbatim):
+  ```
+  tests/test_ia2.py::test_partners_route_applies_both_rules
+  tests/test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-off]
+  tests/test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-on]
+  tests/test_ii1.py::test_folk_package_is_not_promoted
+  tests/test_ii1.py::test_folk_package_on_the_clone_rosters
+  ```
+  **Not this branch**: `git diff ab50682 -- api src tests app dbt scripts` is empty (the code under test is `main`'s,
+  byte for byte); the five fail the same way alone (5 failed in 7.5 s): `sanity.market_note` None, `KeyError: 'before'`
+  (test_ib0.py:74), the folk package's gain `-8.71`. They read the shared `league_lab`'s week state — the known list
+  looks incomplete for this database (or its state moved since the list was made); nothing here wrote to it.
 
 ### Timings (the e2e test "400 rows x 40 columns"; recording: every position, **453 rows × 46 columns = 20,838 cells**)
 
