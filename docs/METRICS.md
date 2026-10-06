@@ -2527,7 +2527,7 @@ screen says so ("Context, not a graded forecast").
 
 ### Projected record, playoff odds, top seed, bye (the season outlook)
 
-`SEASONS` = 10,000 simulated seasons of the **remaining regular-season schedule** (the weeks after the last week in
+Up to `SEASONS` = 10,000 simulated seasons (fewer in a big league: § Bounds below) of the **remaining regular-season schedule** (the weeks after the last week in
 the standings, to `playoff_week_start` − 1), fixed seed (the same answer on a reload).
 
 * **The first week left** (normally this week): the week's odds' own pieces (§ Win probability — the week): every
@@ -2602,13 +2602,38 @@ By bucket of the predicted playoff odds (all 132): 0–10% predicted 3% → 0 of
 production outlook is sharper than the replay's (the real rest-of-season board, ranges per player, injuries), so this
 grades the method, not the live numbers.
 
-Cost (this box, 2 cores shared by six developers, load 2–3): the simulation of a 12-team league (10,000 seasons, the
-whole-league copula of ~120 starters, 10 weeks) 0.36–0.45 s cold; a 14-team synthetic league 0.22–0.25 s; the inputs on
-top (the league's standings, the rest-of-season board — shared with Trades — and every roster's context — shared with
-the week's odds): League of Scrubs 1.0 s cold in all, the dynasty 1.7 s, MFL 70587 7.1 s (6.2 s of it the on-demand
-board the trade screens build too); warm < 1 ms (`memo` region `outlook`, ≤ 48 answers of ~10 KB, keyed by league,
-house / on demand, the build's stamp and the overlay's; 10 minutes on a house league, 2 on demand). The route is in the
-`heavy` bucket and runs in the thread pool.
+**Bounds (the fix round after the I-N review, M2 / L1).** One outlook runs on a public one-process server, so:
+* **Seasons by size**: `seasons_for` = 10,000, fewer when teams × max(weeks left, starters per team) passes
+  `WORK_BUDGET` (1.6 million): a 12-team league gets 10,000, 32 teams × 10 starters × 11 weeks 4,500, 32 × 24 × 17
+  2,000, never under 1,000. The answer's `outlook.seasons` and the screen's line say the number run.
+* **Chunks, tallies**: the first week is drawn ~64,000 numbers at a time (each chunk's starters' points summed into the
+  team totals, then dropped); the season ~250,000 at a time, played out and counted (a histogram of final wins in
+  halves, the distribution of final places, summed points for) — memory is flat in the season count (apart from the
+  first week's team totals, seasons × teams numbers: 2.5 MB at most). The copula is rooted per NFL game (the matrix is
+  block-diagonal: a pair `relationship` cannot name is 0), and the quantile step runs for every range with the same
+  knots at once (`ppf_group` = `Predictive.ppf`, column for column).
+* **Checks before a draw**: teams ≤ 32, weeks left ≤ 18, starters per team ≤ 30 (beyond: the power rankings answer
+  and the outlook says why), then the schedule, the rosters and the week's odds' range rule — only then the simulation.
+* **One simulation at a time** in the process (a lock; a second waits up to 5 s, then 429 `busy`: "Another league's
+  season is being simulated right now. Try again in a few seconds." — nothing cached; the screen asks again 3 s later,
+  up to 3 times), on top of the `heavy` bucket and the CPU slots.
+* **The league key is canonical first** (`platforms.check_key`: padded, tabbed or upper-case spellings are the league
+  they name), so the house check and the cache key see one spelling.
+* **The schedule is kept** per league for 6 hours (`memo` region `outlook_schedule`, ≤ 256 leagues, ~2 KB each;
+  future pairings do not change), read through the provider client (whose matchups cache the week's odds fill). A cold
+  outlook for League of Scrubs asks the provider 12 times (the league's settings + weeks 4–14); a second cold one inside
+  the 6 hours 0 times.
+
+Peak memory (tracemalloc) and seconds of the simulation, through the functions, load ~0.2: 12 teams × 10 starters × 11
+weeks (10,000 seasons) first week **7 MB / 0.20 s**, the rest **4 MB / 0.11 s** (before: 37 MB / 0.16 s + 50 MB / 0.10
+s); 32 × 10 × 11 (4,500 seasons) 7 MB / 0.30 s + 4 MB / 0.19 s (before, 10,000: 100 MB / 0.52 s + 134 MB / 0.30 s);
+32 × 24 × 17 (2,000 seasons) 7 MB / 0.71 s + 4 MB / 0.17 s (before, 10,000: 249 MB / 1.53 s + 208 MB / 0.44 s). On the
+house leagues, cold: the simulation 0.17–0.19 s, the whole answer 0.67 s (League of Scrubs, the dynasty); warm < 1
+ms (`memo` region `outlook`, ≤ 48 answers of ~10 KB, keyed by the canonical league, house / on demand, the build's
+stamp and the overlay's; 10 minutes on a house league, 2 on demand). Against the version before the chunks, on the same
+inputs and seed: the largest change in a playoff chance 1.5 points (League of Scrubs) and 1.2 (the dynasty), mean
+wins 0.06, P10 / P90 none — Monte Carlo error. The first week against `/api/league/week-odds` (week 5): worst 0.62
+points (Scrubs) and 0.82 (the dynasty).
 
 ## Rest of season (ros1.0, plan E2, Wave E, 2026-10-01; `mart_player_ros_projection`, `app/lib/ros.py`)
 

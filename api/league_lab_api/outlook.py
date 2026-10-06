@@ -47,12 +47,14 @@ access is pending.
 from __future__ import annotations
 
 import math
+import threading
 import time
 from collections.abc import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Response
+from fastapi.responses import JSONResponse
 from league_lab import anyleague as A
 from league_lab import decisions as WP  # the week's win probability: one model in the product
 from league_lab import memo
@@ -67,11 +69,28 @@ from .myweek import NotFound
 router = APIRouter()
 VERSION = "ol1.0"
 SEASONS = 10_000               # Monte Carlo error of a 50% playoff chance: ±0.5 points (one standard error)
+MIN_SEASONS = 1_000            # the fewest a big league gets (±1.6 points)
+WORK_BUDGET = 1_600_000        # seasons × teams × max(weeks, starters per team): a 12-team league gets all 10,000
+CHUNK_CELLS = 250_000          # numbers in one chunk's array (2 MB of float64): memory flat in the season count
+FIRST_CELLS = 64_000           # the first week's chunks (a draw per starter; the quantile step makes ~10 temporaries)
+MAX_TEAMS, MAX_STARTERS, MAX_WEEKS = 32, 30, 18                # beyond these: the power rankings only, and why
 SEED = 20261006
 DRIFT = 0.03                   # the per-week random walk of a team's level, as a share of its weekly points (assumed)
 PATH = "/api/league/outlook"
 TTL_S = {"house": 600.0, "sleeper": 120.0}
 _cache = memo.region("outlook", ttl=TTL_S["house"], max_entries=48)   # one small answer per league (~10 KB)
+# future pairings do not change: a league's remaining schedule is kept for hours ({week: [(a, b)]}, ~2 KB a league)
+SCHEDULE_TTL_S = 6 * 3600.0
+_schedules = memo.region("outlook_schedule", ttl=SCHEDULE_TTL_S, max_entries=256)
+# ONE outlook simulation at a time in the process (on top of the heavy bucket and the CPU slots): a second waits up
+# to BUSY_WAIT_S, then the route answers 429 `busy` (nothing is cached)
+_SIM = threading.Lock()
+BUSY_WAIT_S = 5.0
+BUSY_WORDS = "Another league's season is being simulated right now. Try again in a few seconds."
+
+
+class Busy(Exception):
+    pass
 
 ASSUMES = ("rosters as they are today (no trades, claims or drops ahead)", "every team starts its best lineup",
            "known injuries only (a player out today is out this week; injured reserve stays out)",
@@ -105,22 +124,15 @@ def _dist(r: Mapping):
     return d if kind == "range" else None
 
 
-def first_week_draws(sides: Mapping[int, Sequence[Mapping]], *, n: int = SEASONS, seed: int = SEED,
-                     k: float = WP.WEEK_SHRINK) -> dict:
-    """Every team's total in the first week left, ``n`` joint draws (the week's odds' pieces for the whole league).
-
-    ``sides``: roster id -> starters (``myweek.win_starters`` rows with ``actual`` set where the game is in). Returns
-    ``teams``, ``totals`` (n × T: the raw joint draws, played games at their points — ``lineup_win_probability``'s
-    totals for the whole league; the calibration is applied per game in ``play_out``), ``expected`` (T), ``spread`` (T:
-    the raw standard deviation of each lineup's total over every starter's range, played or not — its pre-game
-    spread), ``ranged_share`` (T). ``k`` is kept for the signature's sake (the first week is not widened)."""
+def prepare(sides: Mapping[int, Sequence[Mapping]]) -> dict:
+    """The first week's pieces without a single draw (cheap): every starter's centred range, who plays for whom, the
+    fixed points (games in; starters with no range), ``expected`` and ``ranged_share`` per team (the week's odds' rule
+    is checked on these before anything is simulated), the starters per team."""
     teams = sorted(int(t) for t in sides)
     cols: dict[str, int] = {}
-    dists, meta, played_mask = [], [], []
+    dists, meta, played_mask, owners = [], [], [], []
     fixed = np.zeros(len(teams))
-    point = np.zeros(len(teams))
     expected = np.zeros(len(teams))
-    members: list[list[int]] = [[] for _ in teams]
     ranged_val = np.zeros(len(teams))
     abs_val = np.zeros(len(teams))
     for ti, t in enumerate(teams):
@@ -131,7 +143,7 @@ def first_week_draws(sides: Mapping[int, Sequence[Mapping]], *, n: int = SEASONS
             expected[ti] += act if act is not None else (0.0 if v is None else v)
             abs_val[ti] += abs(v or 0.0) if act is None else 0.0
             if d is None:
-                (fixed if act is not None else point)[ti] += act if act is not None else (0.0 if v is None else v)
+                fixed[ti] += act if act is not None else (0.0 if v is None else v)
                 continue
             if act is None:
                 ranged_val[ti] += abs(v or 0.0)
@@ -140,28 +152,28 @@ def first_week_draws(sides: Mapping[int, Sequence[Mapping]], *, n: int = SEASONS
             key = r.get("key")
             key = f"_{t}_{i}" if not isinstance(key, str) or not key else key
             if key in cols:                          # one player is on one roster: a repeat is the same draw
-                members[ti].append(cols[key])
+                owners[cols[key]].append(ti)
                 continue
             cols[key] = len(dists)
             dists.append(WP._centred(d, v))
             meta.append(r)
             played_mask.append(act is not None)
-            members[ti].append(cols[key])
-    m = len(dists)
+            owners.append([ti])
     share = np.where(abs_val > 0, ranged_val / np.where(abs_val > 0, abs_val, 1.0), 1.0)
-    out = {"teams": teams, "expected": expected, "ranged_share": share, "n_starters": m}
-    if m == 0:
-        tot = np.tile(fixed + point, (n, 1))
-        return {**out, "totals": tot, "spread": np.zeros(len(teams))}
     keys = list(cols)
-    perm = sorted(range(m), key=lambda j: str(keys[j]))         # draws assigned in key order, as the week's odds do
-    pos = {old: new for new, old in enumerate(perm)}
-    dists, meta = [dists[j] for j in perm], [meta[j] for j in perm]
-    played = np.array([played_mask[j] for j in perm], dtype=bool)
-    members = [[pos[j] for j in mem] for mem in members]
-    corr = np.eye(m)
-    # only a pair ``relationship`` can name correlates (same NFL team, or one's team is the other's opponent): the
-    # candidates of a player are those indexed under his team or his opponent — every pair the week's odds would see
+    perm = sorted(range(len(dists)), key=lambda j: str(keys[j]))     # draws assigned in key order, as the week's odds do
+    return {"teams": teams, "expected": expected, "ranged_share": share, "fixed": fixed,
+            "dists": [dists[j] for j in perm], "meta": [meta[j] for j in perm], "owners": [owners[j] for j in perm],
+            "played": np.array([played_mask[j] for j in perm], dtype=bool),
+            "starters": {t: len(sides[t]) for t in teams}}
+
+
+def _blocks(meta: Sequence[Mapping]) -> list[tuple[np.ndarray, np.ndarray | None]]:
+    """The copula's correlation in independent blocks: only a pair ``relationship`` can name correlates (same NFL team,
+    or one's team is the other's opponent), so the matrix is block-diagonal by NFL game. Each block repaired
+    (``_nearest_corr``) and rooted on its own — the same as the whole matrix (a block-diagonal matrix's eigenvectors are
+    its blocks'), at a fraction of the cost. [(column indices, root or None for a lone column)]."""
+    m = len(meta)
     by_team: dict[str, list[int]] = {}
     by_opp: dict[str, list[int]] = {}
     pos_of: list = []
@@ -174,6 +186,14 @@ def first_week_draws(sides: Mapping[int, Sequence[Mapping]], *, n: int = SEASONS
             by_team.setdefault(r["team"], []).append(j)
         if isinstance(r.get("opponent"), str) and r.get("opponent"):
             by_opp.setdefault(r["opponent"], []).append(j)
+    parent = list(range(m))
+
+    def find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    rho: dict[tuple[int, int], float] = {}
     for a, ra in enumerate(meta):
         if pos_of[a] in WP.KD_POSITIONS or not isinstance(ra.get("team"), str) or not ra.get("team"):
             continue
@@ -184,48 +204,147 @@ def first_week_draws(sides: Mapping[int, Sequence[Mapping]], *, n: int = SEASONS
             if b <= a:
                 continue
             rb = meta[b]
-            rho = WP.pair_rho(WP.relationship(ra.get("team"), ra.get("opponent"), rb.get("team"), rb.get("opponent")),
-                              pos_of[a], pos_of[b])
-            if rho:
-                corr[a, b] = corr[b, a] = rho
-    corr = WP._nearest_corr(corr)
-    w, v = np.linalg.eigh(corr)
-    root = v * np.sqrt(np.maximum(w, 0.0))
-    rng = np.random.default_rng(seed)
-    z = rng.standard_normal((n, m)) @ root.T
-    u = np.clip(WP._std_normal_cdf(z), 1e-12, 1 - 1e-12)
-    x = np.column_stack([dists[j].ppf(u[:, j]) for j in range(m)])
-    totals = np.empty((n, len(teams)))
-    spread = np.zeros(len(teams))
-    for ti, mem in enumerate(members):
-        mem = np.array(mem, dtype=int)
-        live = mem[~played[mem]] if len(mem) else mem
-        r_live = x[:, live].sum(axis=1) if len(live) else np.zeros(n)
-        totals[:, ti] = fixed[ti] + point[ti] + r_live
-        spread[ti] = float(x[:, mem].sum(axis=1).std()) if len(mem) else 0.0
-    return {**out, "totals": np.maximum(totals, 0.0), "spread": spread}
+            r_ = WP.pair_rho(WP.relationship(ra.get("team"), ra.get("opponent"), rb.get("team"), rb.get("opponent")),
+                             pos_of[a], pos_of[b])
+            if r_:
+                rho[(a, b)] = r_
+                parent[find(a)] = find(b)
+    groups: dict[int, list[int]] = {}
+    for j in range(m):
+        groups.setdefault(find(j), []).append(j)
+    out = []
+    for idx in groups.values():
+        idx_a = np.array(sorted(idx), dtype=int)
+        if len(idx_a) == 1:
+            out.append((idx_a, None))
+            continue
+        where = {j: i for i, j in enumerate(idx_a)}
+        c = np.eye(len(idx_a))
+        for (a, b), r_ in rho.items():
+            if a in where and b in where:
+                c[where[a], where[b]] = c[where[b], where[a]] = r_
+        c = WP._nearest_corr(c)
+        w, v = np.linalg.eigh(c)
+        out.append((idx_a, (v * np.sqrt(np.maximum(w, 0.0))).T))
+    return out
+
+
+def chunk_rows(width: int, cells: int | None = None) -> int:
+    """Seasons per chunk so that one chunk's array holds about ``cells`` numbers (default ``CHUNK_CELLS``; 50 … 2,000
+    rows)."""
+    return int(min(2000, max(50, (cells or CHUNK_CELLS) // max(1, width))))
+
+
+def ppf_group(lv: np.ndarray, vals: np.ndarray, u: np.ndarray) -> np.ndarray:
+    """``Predictive.ppf`` for many ranges with the same knots at once: ``lv`` (K levels), ``vals`` (g × K values),
+    ``u`` (c × g probabilities) -> c × g points. The same function, column for column (linear between the knots; below
+    the first, linear and never under 0; above the last, the exponential tail with a continuous density)."""
+    K = len(lv)
+    idx = np.clip(np.searchsorted(lv, u, side="right") - 1, 0, K - 2)
+    g = np.arange(vals.shape[0])[None, :]
+    l0, l1 = lv[idx], lv[idx + 1]
+    v0, v1 = vals[g, idx], vals[g, idx + 1]
+    out = v0 + (np.clip(u, lv[0], lv[-1]) - l0) / (l1 - l0) * (v1 - v0)
+    half = int(np.searchsorted(lv, 0.5))
+    slope_lo = np.maximum((vals[:, 1] - vals[:, 0]) / (lv[1] - lv[0]), (vals[:, half] - vals[:, 0]) / (lv[half] - lv[0]))
+    slope_hi = np.maximum((vals[:, -1] - vals[:, -2]) / (lv[-1] - lv[-2]), (vals[:, -1] - vals[:, half]) / (lv[-1] - lv[half]))
+    low = u < lv[0]
+    if low.any():
+        floor = np.minimum(0.0, vals[:, 0])[None, :]
+        below = np.maximum(vals[:, 0][None, :] - slope_lo[None, :] * (lv[0] - u), floor)
+        out = np.where(low, below, out)
+    high = u > lv[-1]
+    if high.any():
+        sc = ((1.0 - lv[-1]) * slope_hi)[None, :]
+        above = vals[:, -1][None, :] + sc * np.log((1.0 - lv[-1]) / (1.0 - np.where(high, u, 0.5)))
+        out = np.where(high, above, out)
+    return out
+
+
+def first_week_draws(sides: Mapping[int, Sequence[Mapping]] | None = None, *, n: int = SEASONS, seed: int = SEED,
+                     k: float = WP.WEEK_SHRINK, prep: dict | None = None) -> dict:
+    """Every team's total in the first week left, ``n`` joint draws (the week's odds' pieces for the whole league),
+    drawn in chunks of seasons: only the team totals are kept (n × T), never a draw per starter.
+
+    ``sides``: roster id -> starters (``myweek.win_starters`` rows with ``actual`` set where the game is in), or
+    ``prep`` (``prepare``'s answer). Returns ``teams``, ``totals`` (n × T: the raw joint draws, played games at their
+    points — ``lineup_win_probability``'s totals for the whole league; the calibration is applied per game in
+    ``simulate``), ``expected`` (T), ``spread`` (T: the raw standard deviation of each lineup's total over every
+    starter's range, played or not — its pre-game spread), ``ranged_share`` (T). ``k`` is kept for the signature's
+    sake (the first week is not widened)."""
+    pr = prep if prep is not None else prepare(sides or {})
+    teams, dists, owners, played = pr["teams"], pr["dists"], pr["owners"], pr["played"]
+    T, m = len(teams), len(dists)
+    out = {"teams": teams, "expected": pr["expected"], "ranged_share": pr["ranged_share"], "n_starters": m}
+    if m == 0:
+        return {**out, "totals": np.tile(pr["fixed"], (n, 1)), "spread": np.zeros(T)}
+    blocks = _blocks(pr["meta"])
+    groups: dict[tuple, list[int]] = {}                      # the ranges by their knots (3 or 5): one ppf per group
+    for j, d in enumerate(dists):
+        groups.setdefault(tuple(d.levels), []).append(j)
+    gv = [(np.asarray(lv), np.array(cols, dtype=int), np.array([dists[j].values for j in cols], dtype=float))
+          for lv, cols in groups.items()]
+    own = np.zeros((m, T))                                    # starter -> his team (a key on two rosters: both)
+    for j, ts in enumerate(owners):
+        for ti in ts:
+            own[j, ti] = 1.0
+    own_live = own * (~played)[:, None]
+    totals = np.empty((n, T))
+    s1, s2 = np.zeros(T), np.zeros(T)
+    rows = chunk_rows(m, FIRST_CELLS)
+    for ci, lo in enumerate(range(0, n, rows)):
+        c = min(rows, n - lo)
+        rng = np.random.default_rng([seed, ci])
+        z = rng.standard_normal((c, m))
+        for idx, root in blocks:
+            if root is not None:
+                z[:, idx] = z[:, idx] @ root
+        np.clip(WP._std_normal_cdf(z), 1e-12, 1 - 1e-12, out=z)               # z is now u
+        for lv, cols, vals in gv:
+            z[:, cols] = ppf_group(lv, vals, z[:, cols])                        # ... and now each starter's points
+        pre = z @ own
+        totals[lo:lo + c] = np.maximum(pr["fixed"][None, :] + z @ own_live, 0.0)
+        s1 += pre.sum(axis=0)
+        s2 += (pre * pre).sum(axis=0)
+        del z, pre
+    var = np.maximum(s2 / n - (s1 / n) ** 2, 0.0)
+    return {**out, "totals": totals, "spread": np.sqrt(var)}
 
 
 # ------------------------------------------------------------------------------------------- the season
+def seasons_for(teams: int, weeks: int, starters: int) -> int:
+    """How many seasons a league of this shape gets: ``SEASONS`` (10,000), fewer when teams × max(weeks, starters per
+    team) would take more than ``WORK_BUDGET`` cells (in 500s, never under 1,000)."""
+    per = max(1, int(teams)) * max(1, int(weeks), int(starters))
+    n = WORK_BUDGET // per // 500 * 500
+    return int(min(SEASONS, max(MIN_SEASONS, n)))
+
+
 def season_totals(teams: Sequence[int], weeks: Sequence[int], mean: Mapping[tuple[int, int], float],
                   cv: Mapping[int, float], level: Mapping[int, float], *, first: np.ndarray | None = None,
-                  n: int = SEASONS, seed: int = SEED, k: float = WP.WEEK_SHRINK, drift: float = DRIFT) -> np.ndarray:
-    """(n, T, W) points per simulated season, team and week. ``first`` (n × T): the first week's draws (the copula);
-    without it the first week is drawn like the others with no drift. A later week h weeks after the first: its
-    projected best lineup ``mean[(t, w)]`` + N(0, (cv_t · mean / k)²) + the team's drift (a random walk, step
-    ``drift`` · ``level[t]``, h steps). Floored at 0."""
+                  n: int = SEASONS, seed: int | Sequence[int] = SEED, k: float = WP.WEEK_SHRINK,
+                  drift: float = DRIFT) -> np.ndarray:
+    """(n, T, W) points per simulated season, team and week (one chunk: ``simulate`` calls it per chunk). ``first``
+    (n × T): the first week's draws (the copula); without it the first week is drawn like the others with no drift. A
+    later week h weeks after the first: its projected best lineup ``mean[(t, w)]`` + N(0, (cv_t · mean / k)²) + the
+    team's drift (a random walk, step ``drift`` · ``level[t]``, h steps). Floored at 0."""
     T, W = len(teams), len(weeks)
-    rng = np.random.default_rng(seed + 1)
+    rng = np.random.default_rng(seed + 1 if isinstance(seed, int) else [*seed, 1])
     mu = np.array([[mean.get((int(t), int(w)), 0.0) for w in weeks] for t in teams], dtype=float)       # T × W
     sd = np.array([max(0.0, cv.get(int(t), 0.0)) for t in teams])[:, None] * mu / k
-    eps = rng.standard_normal((n, T, W))
-    steps = rng.standard_normal((n, T, W)) * (drift * np.array([max(0.0, level.get(int(t), 0.0)) for t in teams]))[None, :, None]
+    out = rng.standard_normal((n, T, W))
+    out *= sd[None, :, :]
+    steps = rng.standard_normal((n, T, W))
+    steps *= (drift * np.array([max(0.0, level.get(int(t), 0.0)) for t in teams]))[None, :, None]
     steps[:, :, 0] = 0.0                                      # the first week left: today's lineups, no drift
-    walk = np.cumsum(steps, axis=2)
-    out = mu[None, :, :] + sd[None, :, :] * eps + walk
+    np.cumsum(steps, axis=2, out=steps)
+    out += steps
+    del steps
+    out += mu[None, :, :]
     if first is not None and W:
         out[:, :, 0] = first
-    return np.maximum(out, 0.0)
+    np.maximum(out, 0.0, out=out)
+    return out
 
 
 def byes_for(spots: int | None) -> int:
@@ -248,42 +367,143 @@ def clinch_flags(teams: Sequence[int], wins: Mapping[int, float], left: Mapping[
     return out
 
 
-def calibrated_result(diff: np.ndarray, k: float = WP.WEEK_SHRINK) -> tuple[np.ndarray, float, float]:
-    """Side a's result per draw (1 win, ½ tie, 0 loss) from its raw margin ``diff``, with the week's odds' calibration:
-    p_raw = P(diff > 0) (a tie half), p = ``shrink_week``(p_raw, k); a wins the draws whose margin is above the
-    margin's (1 − p) quantile. A settled game (no spread) keeps its result. Returns (results, p_raw, p)."""
+def threshold(diff: np.ndarray, k: float = WP.WEEK_SHRINK) -> tuple[float | None, float, float]:
+    """The week's odds' calibration of one game from every draw's raw margin ``diff``: p_raw = P(diff > 0) (a tie
+    half), p = ``shrink_week``(p_raw, k), and the margin's (1 − p) quantile ``q`` side a must beat (None: a settled game
+    or no shrink — the raw result stands). Returns (q, p_raw, p)."""
     raw = (diff > 0) + 0.5 * (diff == 0)
     p_raw = float(raw.mean())
     p = WP.shrink_week(p_raw, k)
     if p <= 0.0 or p >= 1.0 or float(diff.std()) == 0.0 or abs(p - p_raw) < 1e-12:
-        return raw.astype(float), p_raw, p
-    q = float(np.quantile(diff, 1.0 - p))
-    return (diff > q).astype(float), p_raw, p
+        return None, p_raw, p
+    return float(np.quantile(diff, 1.0 - p)), p_raw, p
+
+
+def _result(diff: np.ndarray, q: float | None) -> np.ndarray:
+    return (diff > 0) + 0.5 * (diff == 0) if q is None else (diff > q).astype(float)
+
+
+def calibrated_result(diff: np.ndarray, k: float = WP.WEEK_SHRINK) -> tuple[np.ndarray, float, float]:
+    """Side a's result per draw (1 win, ½ tie, 0 loss) from its raw margin ``diff``, with the week's odds' calibration:
+    a wins the draws whose margin is above the margin's (1 − p) quantile (``threshold``). Returns (results, p_raw, p)."""
+    q, p_raw, p = threshold(diff, k)
+    return _result(diff, q).astype(float), p_raw, p
+
+
+class _Tally:
+    """The seasons' answer kept as counts, never per season: per team a histogram of final wins (in halves), the
+    distribution of final places, the summed points for."""
+
+    def __init__(self, teams: Sequence[int], wins0: Mapping[int, float], cap: float):
+        self.T = len(teams)
+        self.halves = int(round(2 * cap)) + 1
+        self.hist = np.zeros((self.T, self.halves), dtype=np.int64)
+        self.place = np.zeros((self.T, self.T), dtype=np.int64)
+        self.pf = np.zeros(self.T)
+        self.n = 0
+
+    def add(self, wins: np.ndarray, pf: np.ndarray) -> None:
+        c = wins.shape[0]
+        key = wins * 1e6 + pf                                 # wins first, then points for (points < 1e6)
+        order = np.argsort(-key, axis=1, kind="stable")
+        rank = np.empty_like(order)
+        rank[np.arange(c)[:, None], order] = np.arange(self.T)[None, :]
+        h = np.clip(np.rint(wins * 2).astype(np.int64), 0, self.halves - 1)
+        for i in range(self.T):
+            self.hist[i] += np.bincount(h[:, i], minlength=self.halves)
+            self.place[i] += np.bincount(rank[:, i], minlength=self.T)
+        self.pf += pf.sum(axis=0)
+        self.n += c
+
+    def row(self, i: int, wins0: float, games_left: int, spots: int | None, byes: int) -> dict:
+        n, h = self.n, self.hist[i]
+        halves = np.arange(self.halves) / 2.0
+        cdf = np.cumsum(h)
+        mean = float((h * halves).sum() / n)
+        return {"wins_mean": round(mean, 2), "wins_p10": float(halves[np.searchsorted(cdf, 0.10 * n)]),
+                "wins_p90": float(halves[np.searchsorted(cdf, 0.90 * n)]), "games_left": int(games_left),
+                "wins_left_mean": round(mean - wins0, 2), "points_for_mean": round(float(self.pf[i] / n), 1),
+                "playoff": None if not spots else round(float(self.place[i, :spots].sum() / n), 4),
+                "top_seed": round(float(self.place[i, 0] / n), 4),
+                "bye": None if not spots or not byes else round(float(self.place[i, :byes].sum() / n), 4),
+                "rank_mean": round(float((self.place[i] * np.arange(self.T)).sum() / n) + 1, 2)}
+
+
+def simulate(teams: Sequence[int], weeks: Sequence[int], mean: Mapping[tuple[int, int], float], cv: Mapping[int, float],
+             level: Mapping[int, float], games: Mapping[int, Sequence[tuple[int, int]]], wins0: Mapping[int, float],
+             pf0: Mapping[int, float], spots: int | None, byes: int = 0, *, first: np.ndarray | None = None,
+             n: int = SEASONS, seed: int = SEED, k: float = WP.WEEK_SHRINK, drift: float = DRIFT,
+             calibrate_first: bool = True) -> dict:
+    """``n`` seasons in chunks (``chunk_rows`` of teams × weeks): each chunk drawn (``season_totals``), played out and
+    counted (``_Tally``), then dropped — memory is flat in the season count apart from ``first`` (n × T). The first
+    week's games are decided with the week's odds' calibration (``threshold`` over all of ``first``'s draws); later
+    weeks by the points drawn (already widened). Returns per team the final wins (mean, P10, P90), points for (mean),
+    playoff / top-seed / bye shares and the mean place; per game of the first week P(a wins) (raw and calibrated)."""
+    T, W = len(teams), len(weeks)
+    ix = {int(t): i for i, t in enumerate(teams)}
+    gl = {int(w): [(a, b) for a, b in games.get(int(w), ()) if a in ix and b in ix] for w in weeks}
+    played = np.zeros(T, dtype=int)
+    for w in weeks:
+        for a, b in gl[int(w)]:
+            played[ix[a]] += 1
+            played[ix[b]] += 1
+    w0 = np.array([float(wins0.get(int(t), 0.0)) for t in teams])
+    p0 = np.array([float(pf0.get(int(t), 0.0)) for t in teams])
+    tally = _Tally(teams, wins0, float((w0 + played).max()) if T else 0.0)
+    q0: dict[tuple[int, int], float | None] = {}
+    first_rows: list[dict] = []
+    if W:
+        for a, b in gl[int(weeks[0])]:
+            if first is not None and calibrate_first:
+                d = first[:, ix[a]] - first[:, ix[b]]
+                q, p_raw, _p = threshold(d, k)
+                q0[(a, b)] = q
+                first_rows.append({"week": int(weeks[0]), "a": int(a), "b": int(b),
+                                   "p": round(float(_result(d, q).mean()), 4), "p_raw": round(p_raw, 4)})
+    rows = chunk_rows(T * max(1, W))
+    seen: dict[tuple[int, int], float] = {}
+    for ci, lo in enumerate(range(0, n, rows)):
+        c = min(rows, n - lo)
+        tot = season_totals(teams, weeks, mean, cv, level, first=None if first is None else first[lo:lo + c], n=c,
+                            seed=[seed, ci], k=k, drift=drift)
+        wins = np.tile(w0, (c, 1))
+        for wi, w in enumerate(weeks):
+            for a, b in gl[int(w)]:
+                d = tot[:, ix[a], wi] - tot[:, ix[b], wi]
+                res = _result(d, q0.get((a, b))) if wi == 0 and (a, b) in q0 else (d > 0) + 0.5 * (d == 0)
+                wins[:, ix[a]] += res
+                wins[:, ix[b]] += 1.0 - res
+                if wi == 0 and (a, b) not in q0:
+                    seen[(a, b)] = seen.get((a, b), 0.0) + float(res.sum())
+        tally.add(wins, p0[None, :] + tot.sum(axis=2))
+        del tot, wins
+    if W and not q0:
+        first_rows = [{"week": int(weeks[0]), "a": int(a), "b": int(b), "p": round(seen.get((a, b), 0.0) / n, 4), "p_raw": None}
+                      for a, b in gl[int(weeks[0])]]
+    out = {int(t): tally.row(ix[int(t)], float(w0[ix[int(t)]]), int(played[ix[int(t)]]), spots, byes) for t in teams}
+    return {"teams": out, "first_week": first_rows, "seasons": int(n)}
 
 
 def play_out(teams: Sequence[int], weeks: Sequence[int], totals: np.ndarray, games: Mapping[int, Sequence[tuple[int, int]]],
              wins0: Mapping[int, float], pf0: Mapping[int, float], spots: int | None, byes: int = 0, *,
              calibrate_first: bool = True, k: float = WP.WEEK_SHRINK) -> dict:
-    """The seasons played out: per team the final wins (mean, P10, P90), losses (mean), points for (mean), playoff /
-    top-seed / bye shares; per game of the first week P(a wins) (raw and calibrated). Order: wins (a tie half), then
-    points for. The first week's games are decided by ``calibrated_result`` (``calibrate_first``); later weeks by the
-    points drawn (already widened in ``season_totals``)."""
+    """Already-drawn seasons (``totals``, n × T × W: a test's hand-built league) played out and counted as ``simulate``
+    does — the first week's games with the week's odds' calibration over these draws (``calibrate_first``)."""
     T = len(teams)
-    n = totals.shape[0]
     ix = {int(t): i for i, t in enumerate(teams)}
-    wins = np.tile(np.array([float(wins0.get(int(t), 0.0)) for t in teams]), (n, 1))
-    played = np.zeros(T)
+    n = totals.shape[0]
+    gl = {int(w): [(a, b) for a, b in games.get(int(w), ()) if a in ix and b in ix] for w in weeks}
+    played = np.zeros(T, dtype=int)
+    w0 = np.array([float(wins0.get(int(t), 0.0)) for t in teams])
+    wins = np.tile(w0, (n, 1))
     first: list[dict] = []
     for wi, w in enumerate(weeks):
-        for a, b in games.get(int(w), ()):
-            if a not in ix or b not in ix:
-                continue
-            ta, tb = totals[:, ix[a], wi], totals[:, ix[b], wi]
+        for a, b in gl[int(w)]:
+            d = totals[:, ix[a], wi] - totals[:, ix[b], wi]
             if wi == 0 and calibrate_first:
-                res, p_raw, _p = calibrated_result(ta - tb, k)
+                res, p_raw, _p = calibrated_result(d, k)
             else:
-                res = (ta > tb) + 0.5 * (ta == tb)
-                p_raw = None
+                res, p_raw = (d > 0) + 0.5 * (d == 0), None
             wins[:, ix[a]] += res
             wins[:, ix[b]] += 1.0 - res
             played[ix[a]] += 1
@@ -291,25 +511,10 @@ def play_out(teams: Sequence[int], weeks: Sequence[int], totals: np.ndarray, gam
             if wi == 0:
                 first.append({"week": int(w), "a": int(a), "b": int(b), "p": round(float(res.mean()), 4),
                               "p_raw": None if p_raw is None else round(p_raw, 4)})
-    pf = np.array([float(pf0.get(int(t), 0.0)) for t in teams])[None, :] + totals.sum(axis=2)
-    key = wins * 1e6 + pf                                     # wins first, then points for (points < 1e6)
-    order = np.argsort(-key, axis=1, kind="stable")
-    rank = np.empty_like(order)
-    rank[np.arange(n)[:, None], order] = np.arange(T)[None, :]
-    rows = {}
-    for t in teams:
-        i = ix[int(t)]
-        w = wins[:, i]
-        g0 = float(wins0.get(int(t), 0.0))
-        rows[int(t)] = {"wins_mean": round(float(w.mean()), 2), "wins_p10": float(np.percentile(w, 10)),
-                        "wins_p90": float(np.percentile(w, 90)), "games_left": int(played[i]),
-                        "wins_left_mean": round(float(w.mean()) - g0, 2),
-                        "points_for_mean": round(float(pf[:, i].mean()), 1),
-                        "playoff": None if not spots else round(float((rank[:, i] < spots).mean()), 4),
-                        "top_seed": round(float((rank[:, i] == 0).mean()), 4),
-                        "bye": None if not spots or not byes else round(float((rank[:, i] < byes).mean()), 4),
-                        "rank_mean": round(float(rank[:, i].mean()) + 1, 2)}
-    return {"teams": rows, "first_week": first, "seasons": int(n)}
+    tally = _Tally(teams, wins0, float((w0 + played).max()) if T else 0.0)
+    tally.add(wins, np.array([float(pf0.get(int(t), 0.0)) for t in teams])[None, :] + totals.sum(axis=2))
+    out = {int(t): tally.row(ix[int(t)], float(w0[ix[int(t)]]), int(played[ix[int(t)]]), spots, byes) for t in teams}
+    return {"teams": out, "first_week": first, "seasons": int(n)}
 
 
 # ------------------------------------------------------------------------------------------- reading a league
@@ -387,22 +592,33 @@ def _league_inputs(league_id: str, is_house: bool) -> dict:
 
 def schedule(client, lid: str, weeks: Sequence[int]) -> tuple[dict[int, list[tuple[int, int]]], int | None]:
     """{week: [(a, b), …]} from the provider's matchups (a double header's two games both listed), and the first week
-    with no pairings (None when every week has some)."""
+    with no pairings (None when every week has some). Read through the provider client (its own matchups cache is the
+    one the week's odds fill) and kept per league in ``_schedules`` for ``SCHEDULE_TTL_S``: a week already kept is
+    never asked for again (pairings do not change)."""
+    kept: dict[int, list[tuple[int, int]]] = dict(_schedules.get(str(lid)) or {})
     out: dict[int, list[tuple[int, int]]] = {}
+    missing = None
     for w in weeks:
+        if int(w) in kept:
+            out[int(w)] = kept[int(w)]
+            continue
         try:
             ms = client.matchups(lid, int(w))
         except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
-            return out, int(w)
+            missing = int(w)
+            break
         by: dict = {}
         for m in ms or []:
             if m.get("matchup_id") is not None and m.get("roster_id") is not None:
                 by.setdefault(m["matchup_id"], set()).add(int(m["roster_id"]))
         pairs = [tuple(sorted(r)) for _mid, r in sorted(by.items(), key=lambda kv: str(kv[0])) if len(r) == 2]
         if not pairs:
-            return out, int(w)
-        out[int(w)] = [(int(a), int(b)) for a, b in pairs]
-    return out, None
+            missing = int(w)
+            break
+        out[int(w)] = kept[int(w)] = [(int(a), int(b)) for a, b in pairs]
+    if kept:
+        _schedules.put(str(lid), kept)
+    return out, missing
 
 
 def week_sides(lid: str, is_house: bool, season: int, week: int, rids: Sequence[int]) -> tuple[dict[int, list[dict]] | None, str | None]:
@@ -440,7 +656,13 @@ def _stamp() -> tuple:
 
 
 def outlook(league_id: str, team: int | None = None, *, source: str | None = None, seasons: int = SEASONS) -> dict:
-    """``GET /api/league/outlook``: the power rankings and the rest of the season (module docstring)."""
+    """``GET /api/league/outlook``: the power rankings and the rest of the season (module docstring). The key is made
+    canonical first (``platforms.check_key``: " 1389…104", "1389…104\t" and "MFL:70587" are the leagues they name), so
+    the house check and the cache key never see a padded spelling; a key that names no league is 404."""
+    try:
+        league_id = A.check_id(league_id)
+    except A.LeagueNotFound as exc:
+        raise NotFound(str(exc)) from exc
     is_house = D.house(league_id, source)
     key = (str(league_id), is_house, int(seasons), _stamp())
     hit = _cache.get(key)
@@ -459,6 +681,94 @@ def _mine(ans: dict, team: int | None) -> dict:
         out["outlook"] = {**ans["outlook"], "rows": [{**r, "mine": team is not None and r["roster_id"] == int(team)}
                                                      for r in ans["outlook"]["rows"]]}
     return out
+
+
+def _season_outlook(ol: dict, out_rows: list, left_games: dict, timings: dict, *, lid: str, is_house: bool, season: int,
+                    settings: dict, platform: str, played: int, weeks, rids: list[int], lineup: dict, level: dict,
+                    rec: dict, pf: dict, seasons: int) -> str | None:
+    """The rest of the season into ``ol`` / ``out_rows`` (and the schedule left into ``left_games``), or the reason
+    there is none. Every check that can say no runs before anything is simulated; the simulation itself holds the
+    process-wide lock (``_SIM``)."""
+    t3 = time.perf_counter()
+    pws = int(settings.get("playoff_week_start") or 0)
+    if not pws:
+        return "this league's regular-season length is not known from its settings"
+    remaining = list(range(played + 1, pws))
+    if not remaining:
+        return "the regular season is over"
+    if len(rids) > MAX_TEAMS:
+        return f"this league has {len(rids)} teams: the outlook simulates leagues of up to {MAX_TEAMS}"
+    if len(remaining) > MAX_WEEKS:
+        return f"{len(remaining)} regular-season weeks are left: the outlook simulates up to {MAX_WEEKS}"
+    board_weeks = set(int(w) for w in weeks)
+    w0 = remaining[0]
+    first_wk = int(cards.decision_week(season) or 0) if season else 0
+    uncovered = [w for w in remaining[1:] if w not in board_weeks]
+    if w0 not in board_weeks and w0 != first_wk:
+        return f"week {w0}'s results are not final yet: the outlook returns once the league has scored it"
+    if uncovered:
+        return f"no projections for week {uncovered[0]} yet"
+    games, missing = schedule(A.sleeper(), lid, remaining)
+    if missing is not None:
+        return f"the schedule for week {missing} is not available from the league"
+    for w in remaining:                                       # the schedule left (power rankings' column)
+        for a, b in games.get(w, ()):
+            left_games.setdefault(a, []).append(b)
+            left_games.setdefault(b, []).append(a)
+    sides, why = week_sides(lid, is_house, season, w0, rids)
+    if sides is None:
+        return why
+    most = max((len(v) for v in sides.values()), default=0)
+    if most > MAX_STARTERS:
+        return f"a lineup here has {most} starters: the outlook simulates up to {MAX_STARTERS}"
+    pr = prepare(sides)
+    if (pr["ranged_share"] < MW.MIN_RANGED_SHARE).any() or not pr["dists"]:      # the week's odds' rule, before a draw
+        return MW.WIN_NO_RANGE
+    n = min(int(seasons), seasons_for(len(rids), len(remaining), most))
+    timings["inputs_ms"] = round((time.perf_counter() - t3) * 1000, 1)       # schedule + rosters
+    if not _SIM.acquire(timeout=BUSY_WAIT_S):
+        raise Busy()
+    try:
+        t4 = time.perf_counter()
+        fw = first_week_draws(prep=pr, n=n)
+        exp = dict(zip(fw["teams"], fw["expected"], strict=True))
+        spr = dict(zip(fw["teams"], fw["spread"], strict=True))
+        cvs = {t: spr[t] / exp[t] for t in fw["teams"] if exp[t] > 0 and spr[t] > 0}
+        if not cvs:
+            return MW.WIN_NO_RANGE
+        med = float(np.median(list(cvs.values())))
+        cv = {t: cvs.get(t, med) for t in rids}
+        means = {**lineup, **{(t, w0): float(exp[t]) for t in fw["teams"]}}
+        first = fw["totals"][:, [fw["teams"].index(t) for t in rids]]
+        del fw
+        spots = int(settings.get("playoff_teams") or 0) or None
+        playoff_reason = None
+        if platform == "mfl":
+            playoff_reason = "MyFantasyLeague does not share how many teams make the playoffs, so playoff odds are left out"
+        elif int(settings.get("divisions") or 0) > 1:
+            playoff_reason = "this league has divisions: division winners' places are not simulated"
+        elif not spots:
+            playoff_reason = "this league's playoff spots are not in its settings"
+        if playoff_reason:
+            spots = None
+        byes = byes_for(spots)
+        wins0 = {r: rec[r][0] + 0.5 * rec[r][2] for r in rids}
+        res = simulate(rids, remaining, means, cv, level, games, wins0, pf, spots, byes, first=first, n=n)
+        timings["simulation_ms"] = round((time.perf_counter() - t4) * 1000, 1)
+    finally:
+        _SIM.release()
+    flags = clinch_flags(rids, wins0, {r: len(left_games.get(r, [])) for r in rids}, spots) if spots else {}
+    for r in rids:
+        row = {"roster_id": r, **res["teams"][r], "status": flags.get(r)}
+        if flags.get(r) == "clinched":
+            row["playoff"] = 1.0
+        elif flags.get(r) == "eliminated":
+            row["playoff"], row["bye"], row["top_seed"] = 0.0, (0.0 if byes else None), 0.0
+        out_rows.append(row)
+    ol.update({"available": True, "weeks": remaining, "seasons": n, "playoff_teams": spots,
+               "byes": byes if spots else None, "playoff_reason": playoff_reason, "first_week": res["first_week"],
+               "first_week_number": w0})
+    return None
 
 
 def _build(league_id: str, is_house: bool, source: str | None, seasons: int) -> dict:
@@ -500,78 +810,9 @@ def _build(league_id: str, is_house: bool, source: str | None, seasons: int) -> 
                 "playoff_week_start": pws or None, "byes": None, "tiebreak": "points for", "playoff_reason": None,
                 "assumptions": list(ASSUMES), "drift": DRIFT, "shrink": WP.WEEK_SHRINK, "first_week": [], "rows": []}
     left_games: dict[int, list[int]] = {r: [] for r in rids}
-    t3 = time.perf_counter()
-    reason = None
-    first_wk = int(cards.decision_week(season) or 0) if season else 0
-    if not pws:
-        reason = "this league's regular-season length is not known from its settings"
-    else:
-        remaining = list(range(played + 1, pws))
-        if not remaining:
-            reason = "the regular season is over"
-        else:
-            board_weeks = set(int(w) for w in weeks)
-            w0 = remaining[0]
-            uncovered = [w for w in remaining[1:] if w not in board_weeks]
-            if w0 not in board_weeks and w0 != first_wk:
-                reason = f"week {w0}'s results are not final yet: the outlook returns once the league has scored it"
-            elif uncovered:
-                reason = f"no projections for week {uncovered[0]} yet"
-            else:
-                games, missing = schedule(A.sleeper(), lid, remaining)
-                if missing is not None:
-                    reason = f"the schedule for week {missing} is not available from the league"
-                else:
-                    for w in remaining:                       # the schedule left (power rankings' column)
-                        for a, b in games.get(w, ()):
-                            left_games.setdefault(a, []).append(b)
-                            left_games.setdefault(b, []).append(a)
-                    sides, why = week_sides(lid, is_house, season, w0, rids)
-                    if sides is None:
-                        reason = why
-                    else:
-                        timings["inputs_ms"] = round((time.perf_counter() - t3) * 1000, 1)   # schedule + rosters
-                        t4 = time.perf_counter()
-                        fw = first_week_draws(sides, n=seasons)
-                        exp = dict(zip(fw["teams"], fw["expected"], strict=True))
-                        spr = dict(zip(fw["teams"], fw["spread"], strict=True))
-                        cvs = {t: spr[t] / exp[t] for t in fw["teams"] if exp[t] > 0 and spr[t] > 0}
-                        med = float(np.median(list(cvs.values()))) if cvs else None
-                        if med is None or (fw["ranged_share"] < MW.MIN_RANGED_SHARE).any():   # the week's odds' rule
-                            reason = MW.WIN_NO_RANGE
-                        else:
-                            cv = {t: cvs.get(t, med) for t in rids}
-                            means = {**lineup, **{(t, w0): float(exp[t]) for t in fw["teams"]}}
-                            first = fw["totals"][:, [fw["teams"].index(t) for t in rids]]
-                            tot = season_totals(rids, remaining, means, cv, level, first=first, n=seasons)
-                            spots = int(settings.get("playoff_teams") or 0) or None
-                            playoff_reason = None
-                            if platform == "mfl":
-                                playoff_reason = ("MyFantasyLeague does not share how many teams make the playoffs, "
-                                                  "so playoff odds are left out")
-                            elif int(settings.get("divisions") or 0) > 1:
-                                playoff_reason = "this league has divisions: division winners' places are not simulated"
-                            elif not spots:
-                                playoff_reason = "this league's playoff spots are not in its settings"
-                            if playoff_reason:
-                                spots = None
-                            byes = byes_for(spots)
-                            wins0 = {r: rec[r][0] + 0.5 * rec[r][2] for r in rids}
-                            res = play_out(rids, remaining, tot, games, wins0, pf, spots, byes)
-                            flags = clinch_flags(rids, wins0, {r: len(left_games.get(r, [])) for r in rids}, spots) if spots else {}
-                            for r in rids:
-                                row = {"roster_id": r, **res["teams"][r], "status": flags.get(r)}
-                                if flags.get(r) == "clinched":
-                                    row["playoff"] = 1.0
-                                elif flags.get(r) == "eliminated":
-                                    row["playoff"], row["bye"], row["top_seed"] = 0.0, (0.0 if byes else None), 0.0
-                                out_rows.append(row)
-                            ol.update({"available": True, "weeks": remaining, "playoff_teams": spots, "byes": byes if spots else None,
-                                       "playoff_reason": playoff_reason, "first_week": res["first_week"],
-                                       "first_week_number": w0})
-    ol["reason"] = reason
-    if "inputs_ms" in timings:
-        timings["simulation_ms"] = round((time.perf_counter() - t4) * 1000, 1)
+    ol["reason"] = _season_outlook(ol, out_rows, left_games, timings, lid=lid, is_house=is_house, season=season,
+                                   settings=settings, platform=platform, played=played, weeks=weeks, rids=rids,
+                                   lineup=lineup, level=level, rec=rec, pf=pf, seasons=seasons)
 
     sched_left = {}
     for r in rids:
@@ -605,4 +846,8 @@ def league_outlook(league: str, response: Response, team: int | None = None, sou
     from .main import _json
     if source not in (None, "sleeper"):
         raise D.BadRequest("source is sleeper or nothing")
-    return _json(outlook(league, team, source=source), response)
+    try:
+        return _json(outlook(league, team, source=source), response)
+    except Busy:
+        return JSONResponse({"error": BUSY_WORDS, "detail": BUSY_WORDS, "code": "busy", "retry_after_s": 3},
+                            status_code=429, headers={"Cache-Control": "no-store", "Retry-After": "3"})

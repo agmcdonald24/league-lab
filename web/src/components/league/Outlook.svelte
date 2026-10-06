@@ -24,15 +24,26 @@
       return;
     }
     data = null;
-    get<LeagueOutlook>(path)
-      .then((d) => {
-        if (league === l && team === t) data = d;
-      })
-      .catch((e) => {
-        if (league !== l || team !== t) return;
-        if (e instanceof Unauthorized) onauth();
-        else error = e instanceof ApiError && e.status === 404 && e.message ? e.message : errorWords(e); // the API's reason
-      });
+    let tries = 0;
+    const ask = () =>
+      get<LeagueOutlook>(path)
+        .then((d) => {
+          if (league === l && team === t) data = d;
+        })
+        .catch((e) => {
+          if (league !== l || team !== t) return;
+          if (e instanceof Unauthorized) return onauth();
+          // one season simulation at a time on the server: a 429 `busy` is asked again a few seconds later (3 times)
+          const busy = e instanceof ApiError && e.status === 429 && (e.body as { code?: string } | null)?.code === "busy";
+          if (busy && tries++ < 3) {
+            setTimeout(() => {
+              if (league === l && team === t) void ask();
+            }, 3000);
+            return;
+          }
+          error = e instanceof ApiError && e.status === 404 && e.message ? e.message : errorWords(e); // the API's reason
+        });
+    void ask();
   });
 
   // one definition open per block (a header tap opens it; the same tap closes it)

@@ -31,6 +31,16 @@ def _season(teams, weeks, mean_of, cv=0.2, drift=0.0, n=4000, seed=7):
     return O.season_totals(teams, weeks, means, {t: cv for t in teams}, level, n=n, seed=seed, drift=drift)
 
 
+@pytest.fixture(autouse=True)
+def _outlook_caches():
+    """Every test starts with no kept outlook and no kept schedule (both are process-wide regions)."""
+    O._cache.clear()
+    O._schedules.clear()
+    yield
+    O._cache.clear()
+    O._schedules.clear()
+
+
 FOUR = [1, 2, 3, 4]
 WEEKS = [5, 6, 7, 8, 9, 10]
 GAMES = {w: [(1, 2), (3, 4)] if i % 3 == 0 else [(1, 3), (2, 4)] if i % 3 == 1 else [(1, 4), (2, 3)]
@@ -263,3 +273,111 @@ def test_sleeper_not_answering_the_house_league_reads_its_settings_from_the_nigh
     ins = O._league_inputs(SCRUBS, True)
     assert ins["lg"]["settings"]["playoff_week_start"] == 15 and ins["lg"]["settings"]["playoff_teams"] == 4
     O._cache.clear()
+
+
+# ------------------------------------------------------------------------------------------- the fix round (M2, L1, the fan-out)
+def test_the_quantile_step_for_many_ranges_is_predictive_ppf():
+    rng = np.random.default_rng(3)
+    u = np.concatenate([rng.uniform(1e-12, 1 - 1e-12, 2000), [1e-12, 0.1, 0.25, 0.5, 0.75, 0.9, 1 - 1e-12]])
+    for five in (True, False):
+        ds = []
+        for _ in range(20):
+            p10 = rng.uniform(-2, 10)
+            p50, p90 = p10 + rng.uniform(0, 10), p10 + rng.uniform(10, 25)
+            ds.append(WP.Predictive.from_quantiles(p10, p50, p90, *((rng.uniform(p10, p50), rng.uniform(p50, p90)) if five else ())))
+        got = O.ppf_group(np.asarray(ds[0].levels), np.array([d.values for d in ds]), np.tile(u[:, None], (1, len(ds))))
+        assert np.abs(got - np.column_stack([d.ppf(u) for d in ds])).max() < 1e-9
+
+
+def test_the_season_count_is_capped_by_the_league_size():
+    assert O.seasons_for(12, 11, 10) == 10_000 and O.seasons_for(14, 10, 10) == 10_000
+    assert O.seasons_for(32, 11, 10) == 4_500 and O.seasons_for(32, 17, 24) == 2_000
+    assert O.seasons_for(32, 18, 30) == 1_500 and O.seasons_for(10_000, 18, 30) == O.MIN_SEASONS
+
+
+def test_memory_is_flat_in_the_season_count():
+    """Chunks of seasons, only the tallies kept: 10,000 seasons peak within a few MB of 1,000."""
+    import tracemalloc
+    nfl = ["KC", "BUF", "DAL", "PHI", "SF", "DET", "MIA", "CIN", "BAL", "LAC", "GB", "MIN", "SEA", "LA", "HOU", "NYJ"]
+    teams = list(range(1, 13))
+    sides = {t: _lineup(f"t{t}_", 0.0, nfl[t % 8:] + nfl[: t % 8]) for t in teams}
+    weeks = list(range(5, 16))
+    games = {w: [(teams[i], teams[-1 - i]) for i in range(6)] for w in weeks}
+    peaks = {}
+    for n in (1_000, 10_000):
+        tracemalloc.start()
+        fw = O.first_week_draws(sides, n=n)
+        O.simulate(teams, weeks, {(t, w): 110.0 for t in teams for w in weeks}, {t: 0.2 for t in teams},
+                   {t: 110.0 for t in teams}, games, {t: 1.0 for t in teams}, {t: 300.0 for t in teams}, 6, 2,
+                   first=fw["totals"], n=n)
+        peaks[n] = tracemalloc.get_traced_memory()[1] / 2 ** 20
+        tracemalloc.stop()
+        del fw
+    assert peaks[10_000] < 16 and peaks[10_000] - peaks[1_000] < 4, peaks
+
+
+def test_the_hard_limits_answer_why_before_anything_is_read(monkeypatch):
+    monkeypatch.setattr(O, "schedule", lambda *a, **k: pytest.fail("the schedule was read"))
+    common = dict(lid="1", is_house=True, season=2026, settings={"playoff_week_start": 15, "playoff_teams": 4},
+                  platform="sleeper", played=3, weeks=tuple(range(4, 17)), lineup={}, level={}, rec={}, pf={},
+                  seasons=O.SEASONS)
+    why = O._season_outlook({}, [], {}, {}, rids=list(range(1, 34)), **common)
+    assert why == "this league has 33 teams: the outlook simulates leagues of up to 32"
+    why = O._season_outlook({}, [], {}, {}, rids=[1, 2], **{**common, "settings": {"playoff_week_start": 21}, "played": 0})
+    assert why == "20 regular-season weeks are left: the outlook simulates up to 18"
+
+
+def test_no_range_and_too_many_starters_are_answered_before_a_single_draw(monkeypatch):
+    monkeypatch.setattr(O, "first_week_draws", lambda *a, **k: pytest.fail("drew before the checks"))
+    monkeypatch.setattr(O, "schedule", lambda client, lid, weeks: ({w: [(1, 2)] for w in weeks}, None))
+    monkeypatch.setattr(O.cards, "decision_week", lambda season: 4)
+    common = dict(lid="1", is_house=True, season=2026, settings={"playoff_week_start": 8, "playoff_teams": 2},
+                  platform="sleeper", played=3, weeks=(4, 5, 6, 7), lineup={}, level={}, rec={}, pf={}, seasons=O.SEASONS)
+    no_range = {1: [{"key": "a", "position": "WR", "value": 10.0, "actual": None}], 2: [{"key": "b", "position": "WR", "value": 9.0, "actual": None}]}
+    monkeypatch.setattr(O, "week_sides", lambda *a, **k: (no_range, None))
+    assert O._season_outlook({}, [], {}, {}, rids=[1, 2], **common) == O.MW.WIN_NO_RANGE
+    big = {1: [_row(f"a{i}", "WR", "KC", "BUF", 5.0) for i in range(31)], 2: [_row("b", "WR", "DAL", "PHI", 9.0)]}
+    monkeypatch.setattr(O, "week_sides", lambda *a, **k: (big, None))
+    assert O._season_outlook({}, [], {}, {}, rids=[1, 2], **common) == "a lineup here has 31 starters: the outlook simulates up to 30"
+
+
+@needs_db
+def test_padded_league_keys_are_the_same_league_and_one_build(client, monkeypatch):
+    builds = []
+    real = O._build
+    monkeypatch.setattr(O, "_build", lambda *a, **k: builds.append(a[0]) or real(*a, **k))
+    a = client.get(f"/api/league/outlook?league={SCRUBS}").json()
+    for padded in (f"{SCRUBS}%20", f"%20{SCRUBS}", f"{SCRUBS}%09", f"%0A{SCRUBS}%20"):
+        b = client.get(f"/api/league/outlook?league={padded}")
+        assert b.status_code == 200 and b.json()["power"]["rows"] == a["power"]["rows"]
+        assert b.json()["outlook"]["available"] and b.json()["league_id"] == SCRUBS
+    assert builds == [SCRUBS]
+    assert client.get("/api/league/outlook?league=13897096924055511x").status_code == 404
+    assert builds == [SCRUBS]
+
+
+@needs_db
+def test_a_second_cold_outlook_makes_no_provider_call(client):
+    from league_lab import anyleague as A
+    before = A.sleeper().calls
+    assert client.get(f"/api/league/outlook?league={SCRUBS}").json()["outlook"]["available"]
+    first = A.sleeper().calls - before
+    assert first == 1 + 11                    # the league's settings + the pairings of weeks 4-14, once
+    O._cache.clear()                           # the answer gone, the schedule kept
+    before = A.sleeper().calls
+    assert client.get(f"/api/league/outlook?league={SCRUBS}").json()["outlook"]["available"]
+    assert A.sleeper().calls - before == 0
+    assert len(O._schedules) == 1
+
+
+@needs_db
+def test_one_simulation_at_a_time_then_429_busy_and_nothing_kept(client, monkeypatch):
+    monkeypatch.setattr(O, "BUSY_WAIT_S", 0.05)
+    assert O._SIM.acquire(timeout=1)
+    try:
+        r = client.get(f"/api/league/outlook?league={SCRUBS}")
+    finally:
+        O._SIM.release()
+    assert r.status_code == 429 and r.json()["code"] == "busy" and r.headers["retry-after"] == "3"
+    assert r.json()["error"] == O.BUSY_WORDS and len(O._cache) == 0
+    assert client.get(f"/api/league/outlook?league={SCRUBS}").json()["outlook"]["available"]
