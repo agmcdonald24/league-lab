@@ -132,6 +132,19 @@ test_in1.py test_im3.py` **130 passed** (36.5 s, load ~2.6) · `/home/claude/wav
 `FIXTURES_PORT=8820 npx playwright test --config playwright.fixtures.config.ts e2e/io2 e2e/in6 e2e/ic4 e2e/ih3`
 30 passed; `e2e/decisions -g league` 8 passed; last run (title odds in) `e2e/io2 e2e/in6` 14 passed.
 
+## The public site (for SECURITY_PUBLIC — IO-4's file this wave)
+
+* **A new write path any visitor triggers**: opening a League screen builds the outlook, which offers one row. Bounded:
+  one row per league-week (an upsert), Sleeper / MFL keys only (canonical, `platforms.check_key`, and the table's
+  CHECK on the key's shape), ≤ 8 KB, 20 new non-kept leagues a day, 200 held, 20 weeks; a bounded queue (64, then
+  dropped) and one writer thread; the app role gets SELECT / INSERT / UPDATE on this one table, no DELETE (the owner
+  prunes). The route itself is unchanged: `heavy`, one simulation at a time, `needs_league`.
+* **The page shell** (not rate limited) reads the store for a League link at most 120 times a minute in all, each key's
+  answer (hit or miss) kept 10 minutes in a 1,024-entry region; the value is escaped; a private / malformed key never
+  reads anything. No provider call, no simulation (tested on the fixture client's call count).
+* **Private leagues**: ESPN / Yahoo keys get no button, no row, no card; their League routes stay behind IK-1's gate
+  (tested with the door open).
+
 ## What the site does without the schema (rule 10)
 
 `outlook.snapshots` missing (the deploy before the nightly) or `LEAGUE_LAB_OUTLOOK_STORE=off`: the probe says not
