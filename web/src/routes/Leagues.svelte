@@ -860,7 +860,7 @@
     {#if !mine && !sleeperLeague && !provLeague && !mfl && !mflFound && !mflSaved.length}
       <div class="hidden rounded-lg border border-dashed border-line-strong p-6 text-base text-ink-3 wide:block" data-testid="setup-results-empty">
         Your leagues show here once you find them.
-        <a class="ll-link" href="/home">Or look around without a league ›</a>
+        <a class="ll-link" href="/home">Or look around first ›</a>
       </div>
     {/if}
   </section>
