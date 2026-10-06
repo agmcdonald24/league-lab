@@ -139,8 +139,8 @@ def _sid(sid) -> str | None:
     """A player's Sleeper id as text; an open lineup slot has none (a frame turns its None into NaN: never "nan")."""
     if sid is None or (isinstance(sid, float) and sid != sid):
         return None
-    s = str(sid)
-    return s if s and s.lower() != "nan" else None
+    s = str(sid).strip()
+    return s if s and s.lower() not in ("nan", "none", "null") else None           # ---- IN-5: "None" too
 
 
 def _player(sid, gsis, name, position, team=None, b: dict | None = None) -> dict:

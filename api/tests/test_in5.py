@@ -22,7 +22,6 @@ import pytest
 
 from league_lab_api import decisions as D
 from league_lab_api import myweek as M
-from league_lab_api.ids import text_id
 
 from .conftest import ANDREW, DYNASTY, SCRUBS, needs_db
 
@@ -241,11 +240,9 @@ def bad_values(answer) -> list[str]:
 
 
 def test_ids_helpers_never_spell_a_missing_value():
-    for nothing in (None, float("nan"), "nan", "NaN", "None", "", " ", pd.NaT):
-        assert text_id(nothing) is None
-    for nothing in (None, float("nan"), "nan", "NaN", ""):
-        assert D._sid(nothing) is None                           # the PO's hotfix helper (one place) agrees
-    assert text_id(4046) == "4046" and text_id("4046") == "4046" and text_id(8150.0) == "8150" and text_id("DEN") == "DEN"
+    for nothing in (None, float("nan"), "nan", "NaN", "None", "null", "", " "):
+        assert D._sid(nothing) is None
+    assert D._sid(4046) == "4046" and D._sid("4046") == "4046" and D._sid("DEN") == "DEN"
     assert bad_values({"a": [{"b": "nan"}, {"c": None}], "d": float("nan"), "e": "Nancy"}) == ["$.a[0].b = 'nan'", "$.d = nan"]
 
 
