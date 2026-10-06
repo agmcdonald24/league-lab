@@ -5,6 +5,10 @@
   // the slate's header, Undervalued / Overpriced against the slate's salary line, the full value table (sortable; each
   // row can be put in every lineup or left out of all), and lineups (cash or tournament, 1-20) with the site's upload
   // CSV. Works with no league and no team (the API takes none); a league in the URL stays in every link.
+  // ---- IN-4 (Wave I-N): no upload to start — the board carries the context the projection does not hold (chips, with
+  // "Worth a look" per position); when the site's salary file for the week is published on the server (dfs/slates/),
+  // the screen opens on its values and the upload moves to "Use a different contest's file"; lineups take stacks and a
+  // maximum exposure. The context is shown beside the numbers and never changes them.
   import { ApiError, Unauthorized } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
@@ -18,8 +22,12 @@
   import FileBox from "../components/dfs/FileBox.svelte";
   import HowTo from "../components/dfs/HowTo.svelte";
   import LineupCard from "../components/dfs/LineupCard.svelte";
+  import Context from "../components/dfs/Context.svelte";
   import {
     loadProjections,
+    loadPublished,
+    loadPublishedList,
+    type StackRules,
     MAX_BYTES,
     MAX_PLAYERS,
     money,
@@ -30,6 +38,7 @@
     SITES,
     type Lineups,
     type Projections,
+    type ProjRow,
     type Site,
     type Slate,
     type SlatePlayer,
@@ -60,7 +69,25 @@
 
   // ---- the slate (one per site, this tab only)
   let slates = $state<Record<Site, Slate | null>>({ dk: savedSlate("dk"), fd: savedSlate("fd") });
-  const slate = $derived(slates[site]);
+  // ---- IN-4: the published slate of the site (the server's file for the week), when there is one
+  let published = $state<Record<Site, Slate | null>>({ dk: null, fd: null });
+  let pubChecked = $state<Record<Site, boolean>>({ dk: false, fd: false });
+  $effect(() => {
+    const s = site;
+    if (pubChecked[s]) return;
+    loadPublishedList(s)
+      .then(async (list) => {
+        const first = list.slates.find((x) => x.site === s);
+        const sl = first ? await loadPublished(first.id) : null;
+        published = { ...published, [s]: sl };
+      })
+      .catch(() => {
+        /* none published, or not reachable: the board and the upload, as before */
+      })
+      .finally(() => (pubChecked = { ...pubChecked, [s]: true }));
+  });
+  const slate = $derived(slates[site] ?? published[site]);
+  const isPublished = $derived(!slates[site] && !!published[site]);
   let busy = $state(false);
   let fileError = $state<string | null>(null);
 
@@ -80,6 +107,7 @@
       if (s.site !== site) setParams({ site: s.site });
       slates = { ...slates, [s.site]: s };
       saveSlate(s.site, s);
+      otherFile = false;
     } catch (e) {
       if (e instanceof Unauthorized) onauth();
       else if (e instanceof ApiError && e.status === 413) fileError = TOO_BIG;
@@ -89,6 +117,7 @@
     }
   }
   function removeFile() {
+    otherFile = false;
     slates = { ...slates, [site]: null };
     saveSlate(site, null);
     lineups = null;
@@ -140,12 +169,22 @@
     { key: "ceil_per_k", label: "High/$1k", align: "right", sortable: true, phone: false, help: "High-end outcome per $1,000 of salary (tournaments)" },
     { key: "value_gap", label: "Gap", align: "right", sortable: true, width: "4.5rem", help: "Projected points above (+) or below (−) what his salary buys at his position on this slate" },
     { key: "opponent", label: "Matchup", sortable: true, phone: false, width: "16%" },
+    { key: "context", label: "Context", phone: false, width: "14%", help: "Signals beside the projection; a dashed chip is not in the projection" },
     { key: "pick", label: "Lineups", align: "right", width: "6rem" },
   ];
 
   // ---- lineups
   let picks = $state<Record<string, "in" | "out">>({});
   let mode = $state<"cash" | "tournament">("cash");
+  // ---- IN-4: stacks and exposure (the objective is unchanged: the rules only say which lineups count)
+  let withQb = $state<"0" | "1" | "2">("0");
+  let bringBack = $state(false);
+  let noDefVsQb = $state(false);
+  let exposure = $state(100);
+  const stackRules = $derived<StackRules | null>(withQb === "0" && !bringBack && !noDefVsQb ? null : { with_qb: Number(withQb) as 0 | 1 | 2, bring_back: bringBack, no_def_vs_qb: noDefVsQb });
+  const exposureShare = $derived(exposure >= 100 ? null : Math.max(10, Math.min(100, Math.round(exposure))) / 100);
+  const flat = $derived(slate?.contest !== "dk_showdown");
+  let otherFile = $state(false);
   let n = $state(3);
   let lineups = $state<Lineups | null>(null);
   let building = $state(false);
@@ -169,14 +208,20 @@
       const pool = slate.players.filter((p) => (p.proj !== null && !p.out) || picks[p.key] === "in");
       const kept = pool.length <= MAX_PLAYERS ? pool : [...pool.filter((p) => picks[p.key] === "in"), ...pool.filter((p) => picks[p.key] !== "in").sort((a, b) => (b.proj ?? 0) - (a.proj ?? 0))].slice(0, MAX_PLAYERS);
       const keys = new Set(kept.map((p) => p.key));
-      lineups = await postLineups({
-        contest: slate.contest,
-        players: kept,
-        locks: locks.filter((k) => keys.has(k)),
-        excludes: excludes.filter((k) => keys.has(k)),
-        mode,
-        n: Math.max(1, Math.min(20, Math.round(n) || 1)),
-      });
+      const nn = Math.max(1, Math.min(20, Math.round(n) || 1));
+      const rules = { stack: flat ? stackRules : null, max_exposure: nn > 1 ? exposureShare : null };
+      // ---- IN-4: a published slate is named, not sent (the server has its players)
+      lineups = isPublished && slate.slate_id
+        ? await postLineups({ slate_id: slate.slate_id, locks: locks.filter((k) => keys.has(k)), excludes: excludes.filter((k) => keys.has(k)), mode, n: nn, ...rules })
+        : await postLineups({
+            contest: slate.contest,
+            players: kept,
+            locks: locks.filter((k) => keys.has(k)),
+            excludes: excludes.filter((k) => keys.has(k)),
+            mode,
+            n: nn,
+            ...rules,
+          });
     } catch (e) {
       if (e instanceof Unauthorized) onauth();
       else buildError = e instanceof ApiError ? e.message : "Cannot reach isuckatfantasy right now. Try again in a minute.";
@@ -197,6 +242,12 @@
   // ---- before a file: the projections by position
   let projPos = $state("ALL");
   const projRows = $derived((proj?.players ?? []).filter((p) => projPos === "ALL" || p.position === projPos).slice(0, 40));
+  // ---- IN-4: "Worth a look" — by projection on the board, by value per $1,000 on a slate
+  const projByKey = $derived(new Map((proj?.players ?? []).map((p) => [p.key, p])));
+  const worthBoard = $derived(Object.entries(proj?.worth_a_look ?? {}).flatMap(([, ks]) => ks.map((k) => projByKey.get(k)!).filter(Boolean)).filter((p) => projPos === "ALL" || p.position === projPos));
+  const worthSlate = $derived(Object.entries(slate?.worth_a_look ?? {}).flatMap(([, ks]) => ks.map((k) => byKey.get(k)!).filter(Boolean)).filter(inPos));
+  const meta = $derived(slate?.context_meta ?? proj?.context_meta ?? null);
+  let openRow = $state<string | null>(null);
 
   const name = (p: { player_name?: string | null; name?: string }) => p.player_name ?? p.name ?? "";
   const poss = (site: string) => (site.endsWith("s") ? `${site}'` : `${site}'s`); // DraftKings' · FanDuel's
@@ -229,7 +280,54 @@
       vs the slate's line ({fmt.pts(p.line_points)}) · {fmt.pts(p.pts_per_k, 2)} pts per $1,000
     </p>
     {#if p.reason}<p class="pl-9 text-sm text-ink-3" data-testid="dfs-reason">{p.reason}</p>{/if}
+    {#if p.context?.length}<div class="mt-1 pl-9"><Context signals={p.context} /></div>{/if}
   </li>
+{/snippet}
+
+{#snippet worthRow(p: ProjRow | SlatePlayer, perK: boolean)}
+  <li class="py-2" data-testid="dfs-worth-row">
+    <div class="flex items-center gap-2">
+      <div class="min-w-0 flex-1">{@render who(p)}</div>
+      <span class="tabnum w-12 text-right font-bold">{fmt.pts(p.proj)}</span>
+    </div>
+    {#if perK && "salary" in p}<p class="tabnum pl-9 text-sm text-ink-2">{money(p.salary)} · {fmt.pts(p.pts_per_k, 2)} pts per $1,000</p>{/if}
+    <ul class="mt-0.5 list-disc space-y-0.5 pl-12 text-sm text-ink-2" data-testid="dfs-worth-reasons">
+      {#each p.worth_reasons ?? [] as r, i (i)}<li>{r}</li>{/each}
+    </ul>
+  </li>
+{/snippet}
+
+{#snippet worthCard(rows: (ProjRow | SlatePlayer)[], perK: boolean)}
+  <section class="min-w-0 rounded-lg border border-line bg-surface p-4" data-testid="dfs-worth">
+    <h2 class="text-lg font-bold">Worth a look</h2>
+    <p class="text-sm text-ink-3">
+      Players with at least two signals in their favour, one of them something the projection does not hold. Context, not a graded forecast: there is no record behind this list
+      yet. {perK ? "Ordered by points per $1,000." : "Ordered by projection."}
+    </p>
+    {#if rows.length}
+      <ul class="mt-1 grid grid-cols-1 divide-y divide-line sm:grid-cols-2 sm:gap-x-6 sm:divide-y-0 xl:grid-cols-3">{#each rows as p (p.key)}{@render worthRow(p, perK)}{/each}</ul>
+    {:else}
+      <p class="mt-2 text-sm text-ink-2" data-testid="dfs-worth-empty">
+        {meta && !meta.matchup ? "Nobody this week: the cornerback call is the signal the projection does not hold, and it is not available here." : "Nobody here this week."}
+      </p>
+    {/if}
+  </section>
+{/snippet}
+
+{#snippet contextHonest()}
+  {#if meta}
+    <Expander title="What the projection already holds" testid="dfs-holds">
+      <p class="mb-2 text-sm text-ink-2" data-testid="dfs-context-honest">{meta.words} A chip with a solid border is in the projection; a dashed border is not.</p>
+      <ul class="space-y-1 text-sm text-ink-2">
+        <li><span class="font-semibold text-ink">Defense against his position</span> (its rank and the points it gives up): {meta.projection.defense?.WR ? meta.in_words : meta.out_words}.</li>
+        <li><span class="font-semibold text-ink">The cornerback</span> (receivers): {meta.projection.corner?.WR ? meta.in_words : meta.out_words}.{meta.matchup_words ? ` ${meta.matchup_words}` : ""}</li>
+        <li><span class="font-semibold text-ink">Role trend</span> (his share of the targets, carries and snaps, his last two games against the ones before): {meta.projection.role?.WR ? meta.in_words : meta.out_words} (it reads his last 3 games and the season). Routes run per dropback: {meta.projection.routes?.WR ? meta.in_words : meta.out_words}, and not available during the season.</li>
+        <li><span class="font-semibold text-ink">The betting line</span> (over/under, spread, the team's expected points): {meta.lines ? (meta.projection.game?.WR ? meta.in_words : meta.out_words) + "." : "no line for this week yet."}</li>
+        <li><span class="font-semibold text-ink">Weather</span>: {meta.projection.weather?.WR ? meta.in_words : meta.out_words}; the forecast is not shown here yet.</li>
+      </ul>
+      <p class="mt-2 text-sm text-ink-3">{meta.worth_rule}</p>
+    </Expander>
+  {/if}
 {/snippet}
 
 <main class="space-y-5 pb-6" data-testid="dfs">
@@ -237,7 +335,7 @@
     {#snippet answer()}
       {#if slate}
         <span data-testid="dfs-answer"
-          >{slate.counts.matched} of {slate.counts.on_file} players on your {slate.site_name} file valued; {nUnder} project above what their salary buys on this
+          >{slate.counts.matched} of {slate.counts.on_file} players on {isPublished ? "the published" : "your"} {slate.site_name} file valued; {nUnder} project above what their salary buys on this
           slate.</span
         >
       {:else}
@@ -254,18 +352,24 @@
   </div>
 
   {#if !slate}
-    <section class="grid grid-cols-1 gap-4 wide:grid-cols-[1fr_1.2fr]">
-      <div class="min-w-0 space-y-3">
+    {@render worthCard(worthBoard, false)}
+    <section class="grid grid-cols-1 gap-4 wide:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+      <!-- the board first on a phone (it is what the screen opens for); on a desktop the file sits on the left -->
+      <div class="order-2 min-w-0 space-y-3 wide:order-1">
         <FileBox {site} {busy} onfile={addFile} />
         {#if fileError}<p class="rounded-md bg-bad-soft p-3 text-sm" role="alert" data-testid="dfs-file-error">{fileError}</p>{/if}
         <div class="rounded-lg border border-line bg-surface p-4">
           <h2 class="mb-2 text-lg font-bold">Where the file is</h2>
           <HowTo {site} />
         </div>
+        {@render contextHonest()}
       </div>
-      <section class="min-w-0 space-y-2" data-testid="dfs-projections">
+      <section class="order-1 min-w-0 space-y-2 wide:order-2" data-testid="dfs-projections">
         <h2 class="text-lg leading-tight font-bold">This week's projections{proj ? `, week ${proj.week}` : ""}</h2>
-        <p class="text-sm text-ink-3">In {siteName} scoring. The range is the low-end to high-end outcome (8 weeks in 10 land between).</p>
+        <p class="text-sm text-ink-3">
+          In {siteName} scoring. The range is the low-end to high-end outcome (8 weeks in 10 land between). The chips are context beside the projection; tap a player for the
+          reasons.
+        </p>
         <Chips label="Position" testid="dfs-proj-pos" current={projPos} items={[{ key: "ALL", label: "All" }, ...["QB", "RB", "WR", "TE", ...(site === "dk" ? ["K"] : []), "DEF"].map((p) => ({ key: p, label: p === "DEF" ? dst : p }))]} onpick={(p) => (projPos = p)} />
         {#if projError}
           <p class="text-sm text-bad" role="alert">{projError}</p>
@@ -274,14 +378,26 @@
         {:else}
           <ol class="divide-y divide-line rounded-lg border border-line bg-surface px-3">
             {#each projRows as p, i (p.key)}
-              <li class="flex items-center gap-2 py-2" data-testid="dfs-proj-row">
-                <span class="w-6 shrink-0 text-right text-xs text-ink-3">{i + 1}</span>
-                <div class="min-w-0 flex-1">
-                  {@render who(p)}
-                  {#if p.matchup}<p class="truncate pl-9 text-xs text-ink-3">{p.matchup}</p>{/if}
+              <li class="py-2" data-testid="dfs-proj-row">
+                <div class="flex items-center gap-2">
+                  <span class="w-6 shrink-0 text-right text-xs text-ink-3">{i + 1}</span>
+                  <div class="min-w-0 flex-1">
+                    {@render who(p)}
+                    {#if p.matchup}<p class="truncate pl-9 text-xs text-ink-3">{p.matchup}</p>{/if}
+                  </div>
+                  <span class="tabnum hidden text-sm text-ink-3 sm:inline">{fmt.pts(p.p10)}–{fmt.pts(p.p90)}</span>
+                  <span class="tabnum w-12 text-right font-bold">{fmt.pts(p.proj)}</span>
+                  <button
+                    type="button"
+                    class="grid h-8 w-8 shrink-0 place-items-center rounded-md text-ink-3 hover:text-ink"
+                    aria-expanded={openRow === p.key}
+                    aria-label={`Context for ${name(p)}`}
+                    onclick={() => (openRow = openRow === p.key ? null : p.key)}
+                    data-testid="dfs-proj-open">{openRow === p.key ? "▴" : "▾"}</button
+                  >
                 </div>
-                <span class="tabnum hidden text-sm text-ink-3 sm:inline">{fmt.pts(p.p10)}–{fmt.pts(p.p90)}</span>
-                <span class="tabnum w-12 text-right font-bold">{fmt.pts(p.proj)}</span>
+                {#if p.context?.length}<div class="mt-1 pl-14"><Context signals={p.context} /></div>{/if}
+                {#if openRow === p.key}<div class="mt-1.5 pl-14" data-testid="dfs-proj-detail"><Context full signals={p.context ?? []} /></div>{/if}
               </li>
             {/each}
           </ol>
@@ -291,11 +407,30 @@
   {:else}
     <section class="space-y-2 rounded-lg border border-line bg-surface p-4" data-testid="dfs-slate-head">
       <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 class="text-lg font-bold">{contestWords(slate)}</h2>
-        <button type="button" class="min-h-9 rounded-md border border-line-strong px-3 text-sm font-semibold text-ink-2 hover:text-ink" onclick={removeFile} data-testid="dfs-remove"
-          >Remove file</button
-        >
+        <h2 class="text-lg font-bold">{contestWords(slate)}{isPublished && slate.label && slate.label !== "main" ? ` · ${slate.label}` : ""}</h2>
+        {#if isPublished}
+          <button type="button" class="min-h-9 rounded-md px-1 text-sm font-semibold text-ink-3 underline hover:text-ink" aria-expanded={otherFile} onclick={() => (otherFile = !otherFile)} data-testid="dfs-other-file"
+            >Use a different contest's file</button
+          >
+        {:else}
+          <button type="button" class="min-h-9 rounded-md border border-line-strong px-3 text-sm font-semibold text-ink-2 hover:text-ink" onclick={removeFile} data-testid="dfs-remove"
+            >{published[site] ? "Back to the published slate" : "Remove file"}</button
+          >
+        {/if}
       </div>
+      {#if isPublished}
+        <p class="text-sm text-ink-2" data-testid="dfs-published">
+          {poss(slate.site_name)} salary file for week {slate.week}, published here so you do not have to add one: the salaries are the site's own, for its main contest. Another contest
+          (a different slate or game) has its own salaries.
+        </p>
+        {#if otherFile}
+          <div class="grid grid-cols-1 gap-3 wide:grid-cols-2" data-testid="dfs-other-box">
+            <FileBox {site} {busy} onfile={addFile} />
+            <div class="min-w-0"><HowTo {site} /></div>
+          </div>
+          {#if fileError}<p class="rounded-md bg-bad-soft p-3 text-sm" role="alert" data-testid="dfs-file-error">{fileError}</p>{/if}
+        {/if}
+      {/if}
       <p class="text-sm text-ink-2">
         <span class="tabnum font-semibold">{slate.counts.matched}</span> players matched to ours,
         <span class="tabnum font-semibold">{slate.counts.unmatched}</span> not matched (not valued){slate.counts.skipped ? `, ${slate.counts.skipped} rows unreadable` : ""}. Salary cap
@@ -314,6 +449,7 @@
     </section>
 
     <Chips label="Position" testid="dfs-pos" current={pos} items={posItems} onpick={(p) => (pos = p)} />
+    {@render worthCard(worthSlate, true)}
 
     <section class="grid grid-cols-1 gap-4 wide:grid-cols-2">
       <div class="min-w-0 rounded-lg border border-line bg-surface p-4" data-testid="dfs-undervalued">
@@ -329,6 +465,7 @@
         {:else}<p class="mt-2 text-sm text-ink-2">Nobody here sits a typical miss below the slate's line.</p>{/if}
       </div>
     </section>
+    {@render contextHonest()}
     {#if Object.values(slate.fit).some((f) => f)}
       <Expander title="How the slate's line is drawn" testid="dfs-fit">
         <ul class="space-y-1 text-sm text-ink-2">
@@ -348,6 +485,7 @@
           {:else if key === "pts_per_k" || key === "ceil_per_k"}{fmt.pts(p[key], 2)}
           {:else if key === "value_gap"}<span class={p.value_call === "undervalued" ? "text-good" : p.value_call === "overpriced" ? "text-bad" : ""}>{gapWords(p.value_gap)}</span>
           {:else if key === "opponent"}<span class="text-sm text-ink-2">{p.matchup ?? (p.opponent ? `vs ${p.opponent}` : "—")}</span>
+          {:else if key === "context"}<Context signals={p.context ?? []} />
           {:else if key === "pick"}
             <select
               class="min-h-8 w-full rounded-sm border border-line bg-sunken px-1 text-xs"
@@ -382,6 +520,30 @@
           >{building ? "Building…" : "Build lineups"}</button
         >
       </div>
+      {#if flat}
+        <div class="space-y-2 rounded-md border border-line p-3" data-testid="dfs-stacks">
+          <Chips
+            label="Stack"
+            testid="dfs-stack"
+            current={withQb}
+            items={[
+              { key: "0", label: "No stack" },
+              { key: "1", label: "QB + 1 pass catcher" },
+              { key: "2", label: "QB + 2 pass catchers" },
+            ]}
+            onpick={(k) => (withQb = k as "0" | "1" | "2")}
+          />
+          <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <label class="inline-flex min-h-9 items-center gap-2"><input type="checkbox" bind:checked={bringBack} data-testid="dfs-bring-back" /> Bring-back: one from his opponent</label>
+            <label class="inline-flex min-h-9 items-center gap-2"><input type="checkbox" bind:checked={noDefVsQb} data-testid="dfs-no-def" /> No defense against my quarterback</label>
+            <label class="inline-flex items-center gap-2">
+              Most lineups per player
+              <input class="min-h-9 w-20 rounded-md border border-line bg-sunken px-2 tabnum" type="number" min="10" max="100" step="5" bind:value={exposure} data-testid="dfs-exposure" />%
+            </label>
+          </div>
+          <p class="text-xs text-ink-3">A stack is a quarterback with his own receivers or tight end (and a bring-back, one player from the other side of his game). The rules only choose which lineups count; the projections are unchanged.</p>
+        </div>
+      {/if}
       <p class="text-sm text-ink-3">
         The best lineups under the {money(slate.cap)} cap and {poss(slate.site_name)} roster rules, each different by at least one player.
         {locks.length ? `${locks.length} always in. ` : ""}{excludes.length ? `${excludes.length} left out. ` : ""}Players who cannot play are left out unless you put them in.
@@ -400,7 +562,7 @@
             <span class="text-sm text-ink-3">The CSV {poss(slate.site_name)} lineup upload takes, with the file's own player ids.</span>
           </div>
           <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 wide:grid-cols-3" data-testid="dfs-lineups">
-            {#each lineups.lineups as lu, i (i)}<LineupCard lineup={lu} index={i} cap={lineups.cap} {league} {team} {site} />{/each}
+            {#each lineups.lineups as lu, i (i)}<LineupCard lineup={lu} index={i} cap={lineups.cap} {league} {team} {site} contextOf={(k) => byKey.get(k)?.context ?? []} />{/each}
           </div>
         {/if}
       {/if}

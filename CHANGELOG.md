@@ -33,6 +33,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   escaped first). Link previews per path in the HTML shell (`og:*`, `twitter:card`, canonical; `web/public/og.png`),
   robots points at the sitemap. The launch post "How to read this site's numbers"; `blog/README.md` for writing one.
   `docs/BLOG.md`, `docs/handbacks/IN-1.md`.
+- **IN-4 — DFS without the homework.** `/dfs` opens on the week's board with the context the projection does not hold
+  (the matchup from IN-3's `matchup_context`, the role trend, the betting line; each labelled "In the projection" / "Not
+  in the projection" from the model's own input list) and "Worth a look" per position (context, no backtest, said so);
+  published slates (`dfs/slates/`, `GET /api/dfs/slates`, `GET /api/dfs/slate/{id}`) open on their values with no
+  upload; lineups take stacks (QB + 1 or 2 pass catchers, a bring-back, no defense against the QB) and a maximum
+  exposure, and accept a published `slate_id`. No real salary file ships. `tests/test_in4_dfs.py`, `api/tests/test_in4.py`,
+  `web/e2e/in4`.
 
 ## 2026-10-06 — hotfix: the Team screen with two open lineup spots
 

@@ -2,10 +2,19 @@
   // ---- IM-5: one built lineup — its players by slot, the salary left, the projected total and its range, Copy.
   import { fmt } from "../../lib/theme";
   import { withContext } from "../../lib/md";
-  import { money, type Lineup } from "./dfs";
+  import { money, type Lineup, type Signal } from "./dfs";
+  import Context from "./Context.svelte";
 
-  let { lineup, index, cap, league, team, site }: { lineup: Lineup; index: number; cap: number; league: string | null; team: number | null; site: string } =
-    $props();
+  // ---- IN-4: `contextOf` — each player's context chips beside him (shown, never part of the objective)
+  let {
+    lineup,
+    index,
+    cap,
+    league,
+    team,
+    site,
+    contextOf = () => [],
+  }: { lineup: Lineup; index: number; cap: number; league: string | null; team: number | null; site: string; contextOf?: (key: string) => Signal[] } = $props();
   let copied = $state(false);
 
   const slotWord = (s: string, pos: string) => (s === "DST" || s === "DEF" ? (site === "dk" ? "DST" : "DEF") : s === "FLEX" && pos ? `FLEX` : s);
@@ -34,7 +43,7 @@
   </header>
   <ul class="mt-2 divide-y divide-line">
     {#each lineup.slots as s, i (i)}
-      <li class="flex items-center gap-2 py-1.5 text-sm">
+      <li class="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5 text-sm">
         <span class="w-10 shrink-0 text-xs font-bold text-ink-3">{slotWord(s.slot, s.position)}</span>
         <span class="min-w-0 flex-1 truncate">
           {#if s.gsis_id && league}
@@ -46,6 +55,9 @@
         </span>
         <span class="tabnum w-16 shrink-0 text-right text-ink-2">{money(s.salary)}</span>
         <span class="tabnum w-10 shrink-0 text-right font-semibold">{fmt.pts(s.proj)}</span>
+        {#if contextOf(s.key).some((c) => c.tone === "favorable" || c.tone === "difficult")}
+          <span class="basis-full pl-12" data-testid="dfs-lineup-context"><Context signals={contextOf(s.key)} /></span>
+        {/if}
       </li>
     {/each}
   </ul>

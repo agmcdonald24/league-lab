@@ -21,11 +21,17 @@ The pieces, all pure (no database; the API passes the week's ``anyleague.Board``
   (projection) or tournament (high-end outcome), locks / excludes, the site's team rules, the next N distinct lineups.
 * **Upload CSV** (``upload_csv``): the site's lineup-upload shape with the file's own ids; a cell that could be read
   as a formula (``= + - @``, tab, CR) is neutralised.
+
+Wave I-N (IN-4) adds: **context beyond the projection** (``role_trend``, ``game_environment``, ``weather_flag``,
+``signals``, ``worth_a_look``) — each signal says whether it is an input of the projection, read from
+``projections.FEATURES_BY_POSITION`` (``SIGNAL_INPUTS``); **stacks and exposure** in ``solve_lineups``; the
+**published-slate names** (``slate_name``).
 """
 
 from __future__ import annotations
 
 import csv
+import functools
 import io
 import math
 import re
@@ -726,9 +732,76 @@ def _range_total(ps: Iterable[Mapping], mult: Iterable[float]) -> tuple[float | 
     return round(max(0.0, tot - 1.2816 * s), 1), round(tot + 1.2816 * s, 1)
 
 
+@dataclass(frozen=True)
+class Stack:
+    """IN-4: how people build a roster. ``with_qb``: at least this many of the quarterback's own pass catchers (WR / TE
+    of his team; 0 = no stack); ``bring_back``: at least one RB / WR / TE from his opponent; ``no_def_vs_qb``: no team
+    defense that plays against the lineup's quarterback. Classic and full-roster contests (one QB slot) only."""
+    with_qb: int = 0
+    bring_back: bool = False
+    no_def_vs_qb: bool = False
+
+    @property
+    def any(self) -> bool:
+        return bool(self.with_qb or self.bring_back or self.no_def_vs_qb)
+
+    def rules(self) -> list[tuple[str, str]]:
+        """(rule id, the rule in words) for each rule set."""
+        out = []
+        if self.with_qb:
+            out.append(("with_qb", f"the quarterback with at least {'one' if self.with_qb == 1 else self.with_qb} of "
+                                   "his own pass catchers (WR or TE)"))
+        if self.bring_back:
+            out.append(("bring_back", "a bring-back: at least one RB, WR or TE from the quarterback's opponent"))
+        if self.no_def_vs_qb:
+            out.append(("no_def_vs_qb", "no defense playing against the quarterback"))
+        return out
+
+
+PASS_CATCHERS = frozenset({"WR", "TE"})
+BRING_BACK = frozenset({"RB", "WR", "TE"})
+
+
+def _stack_rows(pool: list[Mapping], var: list[tuple[int, int]], stack: Stack, only: str | None = None
+                ) -> list[tuple[list[int], list[float], float, float]]:
+    """The stack rules as rows (cols, vals, lb, ub) over the flat model's variables (one per player), ONE row per team
+    (``Q_t`` = the sum of the team's quarterbacks, at most 1 since the lineup has one QB): with Q_t in, k of the team's
+    pass catchers are in (``sum - k Q_t >= 0``), one of its opponent's RB / WR / TE (``sum - Q_t >= 0``), and no defense
+    that plays against it (``x_d + Q_t <= 1``). A team-level row is the sum of the per-quarterback rows, so it is the
+    tighter one (a backup QB adds a column, not a row). ``only``: one rule's rows (to name the rule a slate cannot meet)."""
+    col = {i: j for j, (i, _g) in enumerate(var)}
+    rows: list[tuple[list[int], list[float], float, float]] = []
+    qbs_by_team: dict[str, list[int]] = {}
+    opp_of: dict[str, str | None] = {}
+    for i in col:
+        if pool[i]["position"] == "QB" and pool[i].get("team"):
+            t = str(pool[i]["team"])
+            qbs_by_team.setdefault(t, []).append(col[i])
+            opp_of[t] = opp_of.get(t) or pool[i].get("opponent")
+    for team, qcols in sorted(qbs_by_team.items()):
+        opp = opp_of.get(team)
+        if stack.with_qb and only in (None, "with_qb"):
+            mates = [col[i] for i in col if pool[i]["position"] in PASS_CATCHERS and pool[i].get("team") == team]
+            rows.append(([*mates, *qcols], [1.0] * len(mates) + [-float(stack.with_qb)] * len(qcols), 0.0, np.inf))
+        if stack.bring_back and only in (None, "bring_back"):
+            back = [col[i] for i in col if pool[i]["position"] in BRING_BACK and opp and pool[i].get("team") == opp]
+            rows.append(([*back, *qcols], [1.0] * len(back) + [-1.0] * len(qcols), 0.0, np.inf))
+        if stack.no_def_vs_qb and only in (None, "no_def_vs_qb"):
+            for i in col:
+                if pool[i]["position"] == "DEF" and pool[i].get("opponent") == team:
+                    rows.append(([*qcols, col[i]], [1.0] * (len(qcols) + 1), 0.0, 1.0))
+    return rows
+
+
 def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash", n: int = 1,
-                  locks: Iterable[str] = (), excludes: Iterable[str] = (), time_limit: float = SOLVE_SECONDS) -> LineupResult:
+                  locks: Iterable[str] = (), excludes: Iterable[str] = (), time_limit: float = SOLVE_SECONDS,
+                  stack: Stack | None = None, max_exposure: float | None = None) -> LineupResult:
     """The best lineup (and the next ``n`` - 1, each different by at least one player) for the site's slots and cap.
+
+    IN-4: ``stack`` (``Stack``: the QB with his pass catchers, a bring-back, no defense against the QB) adds linear
+    rules — the objective is unchanged; a rule the slate cannot meet is named in the notes. ``max_exposure`` (0-1]: across
+    the ``n`` lineups a player appears in at most ``max(1, floor(max_exposure * n))`` of them (a player set to always in
+    is exempt — he is in every lineup by request).
 
     ``players``: dicts with ``key``, ``position`` (ours), ``salary``, ``team``, ``game`` (any id of his game),
     ``proj``, ``p90``, ``p10``, ``out`` (cannot play: left out unless locked) and, in showdown, ``cpt_salary`` (no
@@ -855,6 +928,21 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
     if c.max_per_team:
         for _t, js in teams.items():
             add(js, 1.0, 0.0, float(c.max_per_team))
+    # ---- IN-4: stacks (flat contests: one QB slot). Rows only — the objective is never changed by a rule
+    stack = stack if stack is not None and stack.any else None
+    if stack is not None and not flat:
+        notes.append("Stacks apply to classic and full-roster contests (one quarterback slot): not to showdown.")
+        stack = None
+    stack_span = (len(lo), len(lo))
+    if stack is not None:
+        for cols, vals, lb_, ub_ in _stack_rows(pool, var, stack):
+            add(cols, vals, lb_, ub_)
+        stack_span = (stack_span[0], len(lo))
+    cap_each = None
+    if max_exposure is not None and n > 1:
+        cap_each = max(1, math.floor(float(max_exposure) * n + 1e-9))
+    used: dict[int, int] = {}
+    # ---- end IN-4
     # "players from at least N games" (DraftKings classic) / "… N teams" (showdown): one binary y per game (team) after
     # the x's, y_k <= the sum of game k's x's, sum y >= N
     at = nv
@@ -867,7 +955,7 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
     base = sparse.csr_matrix((vv, (rr, cc)), shape=(len(lo), width))
     pts = np.concatenate([np.array([float(pool[i][obj_key]) * mult(gi) for i, gi in var]), np.zeros(extra)])
     integrality = np.ones(width)
-    bounds = Bounds(lb_var, np.ones(width))
+    ub_var = np.ones(width)
     cut_rows: list[list[int]] = []
     lineups: list[dict] = []
     times: list[float] = []
@@ -888,15 +976,22 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
         lo_ = lo + [-np.inf] * len(cut_rows)
         hi_ = hi + [float(c.size - 1)] * len(cut_rows)
         t0 = time.perf_counter()
-        res = milp(-pts, constraints=LinearConstraint(a_, lo_, hi_), integrality=integrality, bounds=bounds,
+        res = milp(-pts, constraints=LinearConstraint(a_, lo_, hi_), integrality=integrality,
+                   bounds=Bounds(lb_var, np.maximum(ub_var, lb_var)),
                    options={"time_limit": max(0.05, left), "mip_rel_gap": MIP_GAP, "disp": False})
         times.append(round((time.perf_counter() - t0) * 1000, 1))
         if res.x is None:
             if res.status == 1:
                 notes.append(f"The {time_limit:g}-second budget ran out before lineup {len(lineups) + 1} was found: "
                              "stopped there.")
+            elif not lineups and stack is not None:
+                notes.append(_stack_infeasible(pool, var, stack, (rr, cc, vv, lo, hi), stack_span, width, lb_var,
+                                               deadline))
             elif not lineups:
                 notes.append("No lineup fits the cap and the rules with these players set to always in and left out.")
+            elif cap_each is not None:
+                notes.append(f"Only {len(lineups)} different lineup{'s' if len(lineups) != 1 else ''} fit the cap, the "
+                             f"rules and the exposure limit (each player in at most {cap_each} of {n}).")
             else:
                 notes.append(f"Only {len(lineups)} different lineup{'s' if len(lineups) != 1 else ''} fit the cap and the rules.")
             break
@@ -906,7 +1001,56 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
             chosen = _assign(c, pool, [i for i, _g in chosen])
         lineups.append(_lineup(c, pool, chosen, proven=res.status == 0, mode=mode))
         cut_rows.append(sorted(j for i in {i for i, _gi in chosen} for j in by_player[i]))
+        if cap_each is not None:                         # ---- IN-4: a player at his exposure cap sits out the rest
+            for i in {i for i, _gi in chosen}:
+                used[i] = used.get(i, 0) + 1
+                if used[i] >= cap_each and str(pool[i]["key"]) not in locks:
+                    ub_var[by_player[i]] = 0.0
+    if stack is not None and lineups:
+        notes.append("Stacks: every lineup has " + "; ".join(t for _r, t in stack.rules()) + ".")
+    if cap_each is not None and lineups:
+        notes.append(f"Exposure: each player in at most {cap_each} of the {n} lineups"
+                     f"{' (players set to always in are in every one)' if locks else ''}.")
     return LineupResult(lineups, notes, times)
+
+
+def _stack_infeasible(pool: list[Mapping], var: list[tuple[int, int]], stack: Stack, model: tuple, span: tuple[int, int],
+                      width: int, lb_var: np.ndarray, deadline: float) -> str:
+    """No lineup with the stack rules: which rule. The model's rows without the stack rows (``span``), then each rule
+    alone on top of them (bounded by what is left of the time budget); the first rule that alone has no lineup is
+    named."""
+    from scipy import sparse
+    from scipy.optimize import Bounds, LinearConstraint, milp
+    rr, cc, vv, lo_all, hi_all = model
+    a, b = span
+    keep_rows = [r for r in range(len(lo_all)) if not a <= r < b]
+    new_id = {r: k for k, r in enumerate(keep_rows)}
+    nz = [k for k, r in enumerate(rr) if r in new_id]
+    base = sparse.csr_matrix(([vv[k] for k in nz], ([new_id[rr[k]] for k in nz], [cc[k] for k in nz])),
+                             shape=(len(keep_rows), width))
+    lo = [lo_all[r] for r in keep_rows]
+    hi = [hi_all[r] for r in keep_rows]
+    keep = len(keep_rows)
+    words = dict(stack.rules())
+    for rule, text in stack.rules():
+        if deadline - time.perf_counter() < 0.05:
+            break
+        extra = _stack_rows(pool, var, stack, only=rule)
+        if not extra:
+            continue                                     # no row: the rule cannot be what is in the way
+        m = sparse.csr_matrix(([v for _c, vs, _l, _u in extra for v in vs],
+                               ([k for k, (cs, _v, _l, _u) in enumerate(extra) for _ in cs],
+                                [j for cs, _v, _l, _u in extra for j in cs])), shape=(len(extra), width))
+        a_ = sparse.vstack([base, m], format="csr")
+        res = milp(np.zeros(width), constraints=LinearConstraint(a_, lo[:keep] + [e[2] for e in extra],
+                                                                    hi[:keep] + [e[3] for e in extra]),
+                   integrality=np.ones(width), bounds=Bounds(lb_var, np.ones(width)),
+                   options={"time_limit": max(0.05, deadline - time.perf_counter()), "disp": False})
+        if res.x is None and res.status != 1:
+            return (f"No lineup can meet {text} on this slate with these players set to always in and left out. "
+                    "Turn that rule off or change who is in.")
+    return ("No lineup meets all the stack rules together (" + "; ".join(words.values()) + ") with these players set "
+            "to always in and left out. Turn one off.")
 
 
 def _assign(c: Contest, pool: list[Mapping], ids: list[int]) -> list[tuple[int, int]]:
@@ -989,3 +1133,269 @@ def detect_week(games: Iterable[str], schedule: pd.DataFrame) -> int | None:
         return None
     best = max(hits.values())
     return min(w for w, k in hits.items() if k == best)
+
+
+# ------------------------------------------------------------------------------------------------ published slates (IN-4)
+# One salary file per site per week, published by the site's owner in the repo (``dfs/slates/``), so a visitor does not
+# upload one: ``<season>-w<ww>-<dk|fd>[-<label>].csv`` (label: lower-case letters and digits, default ``main``). The id
+# the API serves is the name without ``.csv`` and with the label always written (``2026-w05-dk-main``) — matched against
+# a strict pattern, never used as a path.
+SLATE_FILE_RE = re.compile(r"^(?P<season>20\d\d)-w(?P<week>\d\d)-(?P<site>dk|fd)(?:-(?P<label>[a-z0-9]{1,20}))?\.csv$")
+SLATE_ID_RE = re.compile(r"^(?P<season>20\d\d)-w(?P<week>\d\d)-(?P<site>dk|fd)-(?P<label>[a-z0-9]{1,20})$")
+MAX_PUBLISHED = 16                     # files read from the folder at most (two sites x four contests x two weeks)
+
+
+def slate_name(filename: str) -> dict | None:
+    """``2026-w05-dk.csv`` -> ``{id: 2026-w05-dk-main, season: 2026, week: 5, site: dk, label: main}``; None for any
+    other name (it is listed as unreadable, never served)."""
+    m = SLATE_FILE_RE.match(filename or "")
+    if not m:
+        return None
+    week = int(m["week"])
+    if not 1 <= week <= 22:
+        return None
+    label = m["label"] or "main"
+    return {"id": f"{m['season']}-w{m['week']}-{m['site']}-{label}", "season": int(m["season"]), "week": week,
+            "site": m["site"], "label": label}
+
+
+def slate_id_ok(slate_id: str | None) -> bool:
+    """A published slate's id as the API takes it: the strict pattern, nothing else (never a path)."""
+    return bool(SLATE_ID_RE.match(str(slate_id or ""))) and len(str(slate_id)) <= 40
+
+
+# ------------------------------------------------------------------------------------------------ context (IN-4)
+# Andrew (2026-10-06): "a way to find value … looking at things that might even be beyond what the model can provide for.
+# Like cornerback matchups don't necessarily play into the projections." Each signal is shown as context beside the
+# projection, never folded into it, and says whether the projection already holds it. That label is not a claim
+# written by hand: it is read from the model's own input list (``projections.FEATURES_BY_POSITION``) through
+# ``SIGNAL_INPUTS`` — the columns each signal is made of. tests/test_in4_dfs.py asserts every label against the list.
+SIGNAL_INPUTS: dict[str, tuple[str, ...]] = {
+    # the defense against his position: the marts' standard rank and points allowed (what the projection reads as-of
+    # the week: opp_rank_std, opp_allowed_*)
+    "defense": ("opp_rank_std", "opp_allowed_std", "opp_allowed_l4", "f_opp_allowed_diff"),
+    # the cornerback call (mart_cb_matchups): the likely corner, his rank, shutdown — no projection input is made of it
+    "corner": ("cb_corner_rank", "cb_shutdown", "cb_certainty"),
+    # his share of the team's targets / carries / snaps: the projection reads the last 3 games and the season
+    "role": ("target_share_l3", "target_share_std", "carry_share_l3", "carry_share_std", "snap_pct_l3", "snap_pct_std"),
+    # routes run per dropback: not an input (the participation file arrives after the season; projections.py says why)
+    "routes": ("route_participation_l3",),
+    # the betting line: implied team total, spread, over/under
+    "game": ("implied_team_total", "spread_line", "total_line"),
+    # game-day weather (plan D3: tested by the harness, not kept in the model)
+    "weather": ("wx_wind_mph", "wx_gust_mph", "wx_precip_in", "wx_temp_f", "wx_dome", "wx_snow", "wx_windy", "wx_cold"),
+}
+SIGNAL_LABEL = {"defense": "Defense vs his position", "corner": "Cornerback", "role": "Role trend",
+                "routes": "Role trend (routes)", "game": "Game environment", "weather": "Weather"}
+IN_WORDS, OUT_WORDS = "In the projection", "Not in the projection"
+TONES = ("favorable", "neutral", "difficult")
+SKILL = ("QB", "RB", "WR", "TE")
+
+
+@functools.lru_cache(maxsize=8)
+def model_inputs(position: str) -> frozenset[str]:
+    """The projection's inputs at the position (``projections.FEATURES_BY_POSITION``: the model that prices the board;
+    the positions are a closed set, so the cache is too)."""
+    from .projections import FEATURES_BY_POSITION
+    return frozenset(FEATURES_BY_POSITION.get(position, ()))
+
+
+def in_projection(signal: str, position: str) -> bool:
+    """True when any column the signal is made of is an input of the projection at that position."""
+    return bool(set(SIGNAL_INPUTS[signal]) & model_inputs(position))
+
+
+def projection_table() -> dict[str, dict[str, bool]]:
+    """{signal: {position: in the projection}} — the screen's "what the projection holds" line, from the model."""
+    return {s: {p: in_projection(s, p) for p in SKILL} for s in SIGNAL_INPUTS}
+
+
+# ---- role trend: his last two games against his season before them (summed numerator over summed denominator)
+ROLE_RECENT = 2                 # the recent window: his last 2 games played
+ROLE_MIN_BEFORE = 2             # … against at least 2 games before them (else: too small a sample, nothing said)
+ROLE_MEASURES: dict[str, dict] = {
+    # measure: numerator, denominator, the change that counts (share points), positions, the signal it belongs to, words
+    "target_share": {"num": "targets", "den": "team_targets", "move": 0.05, "pos": {"RB", "WR", "TE"},
+                     "signal": "role", "words": "of the targets"},
+    "carry_share": {"num": "carries", "den": "team_carries", "move": 0.10, "pos": {"RB"}, "signal": "role",
+                    "words": "of the carries"},
+    "snap_share": {"num": "offense_snaps", "den": "team_snaps", "move": 0.10, "pos": {"RB", "WR", "TE"},
+                   "signal": "role", "words": "of the snaps"},
+    "route_rate": {"num": "routes", "den": "team_dropbacks_with_participation", "move": 0.10, "pos": {"RB", "WR", "TE"},
+                   "signal": "routes", "words": "routes run per dropback"},
+}
+ROLE_MIN_DEN = {"team_targets": 20.0, "team_carries": 20.0, "team_snaps": 60.0, "team_dropbacks_with_participation": 30.0}
+
+
+def _ratio(g: pd.DataFrame, num: str, den: str) -> float | None:
+    if num not in g or den not in g:
+        return None
+    ok = g[num].notna() & g[den].notna() & (pd.to_numeric(g[den], errors="coerce") > 0)
+    if not ok.any() or ok.sum() < len(g):            # a game without the measure: unknown, not zero
+        return None
+    d = float(pd.to_numeric(g.loc[ok, den]).sum())
+    if d < ROLE_MIN_DEN.get(den, 1.0) * len(g) / ROLE_RECENT:
+        return None
+    return float(pd.to_numeric(g.loc[ok, num]).sum()) / d
+
+
+def role_trend(games: pd.DataFrame, position: str) -> dict | None:
+    """``games``: one player's games this season BEFORE this week, played only (``week``, ``targets``, ``team_targets``,
+    ``carries``, ``team_carries``, ``offense_snaps``, ``team_snaps``, ``routes``, ``team_dropbacks_with_participation``).
+    His last ``ROLE_RECENT`` games against the ones before them (at least ``ROLE_MIN_BEFORE``): each measure as the
+    summed numerator over the summed denominator; a measure moved when it changed by its ``move`` or more. "role up"
+    when at least one moved up and none down, "role down" the other way, else None (nothing said; mixed or too small)."""
+    if position not in ("RB", "WR", "TE") or games is None or games.empty:
+        return None
+    g = games.sort_values("week")
+    recent, before = g.tail(ROLE_RECENT), g.iloc[: max(0, len(g) - ROLE_RECENT)]
+    if len(recent) < ROLE_RECENT or len(before) < ROLE_MIN_BEFORE:
+        return None
+    moved = []
+    for name, m in ROLE_MEASURES.items():
+        if position not in m["pos"]:
+            continue
+        a, b = _ratio(recent, m["num"], m["den"]), _ratio(before, m["num"], m["den"])
+        if a is None or b is None:
+            continue
+        if abs(a - b) >= m["move"] - 1e-9:
+            moved.append({"measure": name, "recent": round(a, 3), "before": round(b, 3), "change": round(a - b, 3),
+                          "signal": m["signal"], "words": m["words"]})
+    ups, downs = [x for x in moved if x["change"] > 0], [x for x in moved if x["change"] < 0]
+    if not moved or (ups and downs):
+        return None
+    up = bool(ups)
+    parts = [f"{x['recent']:.0%} {x['words']} ({x['before']:.0%})" for x in moved]
+    signals = {x["signal"] for x in moved}
+    return {"trend": "up" if up else "down", "tone": "favorable" if up else "difficult",
+            "words": (f"Role {'up' if up else 'down'} in his last two games (the {len(before)} before in brackets): "
+                      + ", ".join(parts) + "."), "measures": moved,
+            "signal": "role" if "role" in signals else "routes", "games": [len(recent), len(before)]}
+
+
+# ---- game environment: the betting line (nflverse: spread_line > 0 = the home team favoured by that many)
+GAME_HIGH, GAME_LOW = 26.0, 18.0       # the cards' own marks (cards.reason_pieces): a team expected to score 26+ / 18-
+
+
+def implied_total(total: float | None, spread: float | None, home: bool | None) -> float | None:
+    """The team's implied points: (over/under ± spread) / 2 — int_player_week_universe's formula."""
+    if total is None or spread is None or home is None or not (math.isfinite(total) and math.isfinite(spread)):
+        return None
+    return (total + spread) / 2.0 if home else (total - spread) / 2.0
+
+
+def game_environment(team: str | None, total: float | None, spread: float | None, home: bool | None) -> dict | None:
+    """The game's over/under, the spread from his team's side and the team's implied total, with a tone for a skill
+    player: favourable at ``GAME_HIGH``+ points expected, difficult at ``GAME_LOW`` or fewer; None without a line."""
+    imp = implied_total(total, spread, home)
+    if imp is None or not team:
+        return None
+    mine = spread if home else -spread           # > 0: his team favoured
+    side = (f"{team} favoured by {abs(mine):g}" if mine > 0 else f"{team} underdogs by {abs(mine):g}" if mine < 0
+            else "a pick'em")
+    tone = "favorable" if imp >= GAME_HIGH else "difficult" if imp <= GAME_LOW else "neutral"
+    return {"total": float(total), "spread": float(mine), "implied": round(imp, 1), "tone": tone,
+            "words": f"Over/under {total:g}, {side}: Vegas expects {team} to score {imp:.1f}."}
+
+
+# ---- weather: only an outdoor game with a forecast loaded, and only a flag that matters (wind, snow, rain, cold)
+WIND_MPH = 15.0                        # int_game_weather's wx_windy mark
+RAIN_IN = 0.1                          # forecast precipitation over the game's first hours
+COLD_F = 32.0
+
+
+def weather_flag(source: str | None, dome: int | None, wind: float | None, precip: float | None, temp: float | None,
+                 snow: int | None, position: str) -> dict | None:
+    """``int_game_weather`` for his game -> a flag or None. Dome / no forecast (``source`` other than ``forecast``) /
+    nothing unusual: None. Wind, snow or rain is difficult for a passer or a receiver and said, without a tone, for a
+    back; cold alone is said without a tone."""
+    if source != "forecast" or (dome is not None and int(dome) == 1):
+        return None
+    bits, bad = [], False
+    if wind is not None and math.isfinite(float(wind)) and float(wind) >= WIND_MPH:
+        bits.append(f"wind {float(wind):.0f} mph")
+        bad = True
+    if snow is not None and int(snow) == 1:
+        bits.append("snow")
+        bad = True
+    elif precip is not None and math.isfinite(float(precip)) and float(precip) >= RAIN_IN:
+        bits.append(f"rain ({float(precip):.2f} in)")
+        bad = True
+    if temp is not None and math.isfinite(float(temp)) and float(temp) < COLD_F:
+        bits.append(f"{float(temp):.0f}°F")
+    if not bits:
+        return None
+    tone = "difficult" if bad and position in ("QB", "WR", "TE") else None
+    return {"tone": tone, "words": "Forecast at kickoff (outdoors): " + ", ".join(bits) + "."}
+
+
+# ---- the signals together, and "Worth a look"
+# The brief's rule was "at least two favourable signals that are not in the projection". Read from the model, only the
+# corner call is both outside the projection and able to be favourable (role shares, the defense rank and the betting
+# line are inputs; weather only ever warns; routes per dropback is outside but unknown this season) — so that rule could
+# never fire. "Worth a look" is therefore: at least WORTH_MIN_FAVOURABLE favourable signals, at least WORTH_MIN_OUTSIDE
+# of them outside the projection, and no difficult signal outside it. docs/DFS.md § Context says so.
+WORTH_MIN_FAVOURABLE = 2
+WORTH_MIN_OUTSIDE = 1
+
+
+def signals(position: str, matchup: Mapping | None, role: Mapping | None, game: Mapping | None,
+            weather: Mapping | None) -> list[dict]:
+    """The player's context signals, each ``{signal, label, tone, words, in_projection, projection_words}``. ``matchup``
+    is ``matchup_board.matchup_context``'s entry for him (``defense``, ``cb``); a corner call that is not "likely" is
+    said but carries no tone (IN-3's rule: an unclear call never moves anything)."""
+    out: list[dict] = []
+
+    def put(sig: str, tone: str | None, words: str | None, **extra) -> None:
+        if not words:
+            return
+        inp = in_projection(sig, position) if position in SKILL else False
+        out.append({"signal": sig, "label": SIGNAL_LABEL[sig], "tone": tone if tone in TONES else None, "words": words,
+                    "in_projection": inp, "projection_words": IN_WORDS if inp else OUT_WORDS, **extra})
+
+    if matchup:
+        d = matchup.get("defense") or {}
+        put("defense", d.get("tone"), d.get("words"), rank=d.get("tough_rank"), n_ranked=d.get("n_ranked"))
+        cb = matchup.get("cb") if position == "WR" else None
+        if cb:
+            sure = cb.get("certainty") == "likely"
+            put("corner", cb.get("tone") if sure else None, cb.get("words"), shutdown=bool(cb.get("shutdown")) and sure,
+                certainty=cb.get("certainty"), corner=cb.get("corner"), corner_rank=cb.get("corner_rank"))
+    if role:
+        put(role.get("signal", "role"), role.get("tone"), role.get("words"), trend=role.get("trend"))
+    if game:
+        put("game", game.get("tone"), game.get("words"), total=game.get("total"), spread=game.get("spread"),
+            implied=game.get("implied"))
+    if weather:
+        put("weather", weather.get("tone"), weather.get("words"))
+    return out
+
+
+def worth(sigs: Sequence[Mapping]) -> tuple[bool, list[str]]:
+    """(worth a look, the reasons in words): the rule above; the reasons are the favourable signals, outside ones first."""
+    fav = [s for s in sigs if s.get("tone") == "favorable"]
+    out_fav = [s for s in fav if not s.get("in_projection")]
+    out_bad = [s for s in sigs if s.get("tone") == "difficult" and not s.get("in_projection")]
+    ok = len(fav) >= WORTH_MIN_FAVOURABLE and len(out_fav) >= WORTH_MIN_OUTSIDE and not out_bad
+    ordered = sorted(fav, key=lambda s: bool(s.get("in_projection")))
+    return ok, [f"{s['words']} ({s['projection_words'].lower()})" for s in ordered] if ok else []
+
+
+def worth_a_look(rows: Sequence[Mapping], by: str = "proj", per_position: int = 8) -> dict[str, list[str]]:
+    """{position: [keys]} of the players worth a look (``row["worth"]``), who can play, ordered by ``by`` (projection;
+    points per $1,000 when salaries are present), then key."""
+    out: dict[str, list[str]] = {}
+    for r in rows:
+        if not r.get("worth") or r.get("out"):
+            continue
+        out.setdefault(str(r.get("position")), []).append(r)
+    return {p: [str(r["key"]) for r in sorted(v, key=lambda r: (-(r.get(by) if _finite(r.get(by)) else -1e9),
+                                                                   str(r["key"])))[:per_position]]
+            for p, v in out.items()}
+
+
+def _finite(v) -> bool:
+    try:
+        return v is not None and math.isfinite(float(v))
+    except (TypeError, ValueError):
+        return False

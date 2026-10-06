@@ -130,6 +130,10 @@ def bucket_for(method: str, path: str, query: str = "") -> str | None:
         return "read"
     if not path.startswith("/api/") or path in UNLIMITED:
         return None
+    # ---- IN-4: the published DFS slates (GET; priced once and kept) are research, not the upload's heavy prefix
+    if path == "/api/dfs/slates" or path.startswith("/api/dfs/slate/"):
+        return "research"
+    # ---- end IN-4
     if path in HEAVY_EXACT or path.startswith(HEAVY_PREFIX):
         return "heavy"
     if path.startswith("/api/leagues/") and path.endswith("/rosters"):
