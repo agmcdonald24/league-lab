@@ -51,6 +51,7 @@ SORTS = ("projection", "tone", "corner")
 MAX_LIMIT, DEFAULT_LIMIT = 100, 25
 Q_MIN, Q_MAX = 2, 40
 GAME_ID = re.compile(r"^\d{4}_\d{2}_[A-Z]{2,3}_[A-Z]{2,3}$")
+NAME_CHARS = re.compile(r"^(?:[^\W\d_]|[ .'\-])+$")     # what a player's name is made of: anything else (%, _, digits) matches nobody
 TONE_ORDER = {"favorable": 0, "neutral": 1, "difficult": 2}
 CONTEXT_TTL_S = 600.0
 # ---- the memory budget (docs/DEPLOY.md § Memory): one region. Keys: ("ctx", season, week) — the week's context, ~600
@@ -379,8 +380,8 @@ def board(league: str, *, position: str | None = None, q: str | None = None, gam
     counts = {t: int((df["tone"] == t).sum()) for t in TONES} | {"none": int(df["tone"].isna().sum())}
     if g is not None:
         df = df[df["game_id"] == g]
-    if qq is not None:
-        key = R._norm(qq)
+    if qq is not None:              # text, never a pattern: `%` or `_` is a character no name has (pandas, no SQL)
+        key = R._norm(qq) if NAME_CHARS.match(qq.lower()) else ""
         df = df[df["name_key"].str.contains(key, regex=False)] if key else df.iloc[0:0]
     if tn is not None:
         df = df[df["tone"].isna()] if tn == "none" else df[df["tone"] == tn]
