@@ -2640,6 +2640,31 @@ inputs and seed: the largest change in a playoff chance 1.5 points (League of Sc
 wins 0.06, P10 / P90 none — Monte Carlo error. The first week against `/api/league/week-odds` (week 5): worst 0.62
 points (Scrubs) and 0.82 (the dynasty).
 
+<!-- ---- IO-2 -->
+### Movement, the kept outlook and title odds (Wave I-O, IO-2, 2026-10-06; `outlook_store.py`, `scripts/hosted_outlook.sql`)
+
+* **Kept**: every whole build offers `outlook.snapshots` one row per league-week (`week` = the first week the outlook
+  has not seen played): per team the rank, the per-week number and the name; per team the mean wins, playoff, top seed
+  and title chances; the version and when it was built. A later build replaces it only until that week's first
+  kickoff (`analytics.dim_game`); after it nothing is written. Only Sleeper and MyFantasyLeague leagues.
+* **Movement** (`power.rows[].moved`): last week's stored rank minus this week's (+ = up); `outlook.rows[].
+  playoff_change`: this week's playoff chance minus last week's stored one, in points of percentage (rounded; the screen
+  hides changes under 1). Drawn only from a stored row — a team missing from it gets none. Not a forecast: it
+  describes how the ranking moved, and the ranking's own definition is above.
+* **Title odds** (`outlook.rows[].title`, Sleeper leagues whose settings describe the bracket): the playoff weeks
+  (`playoff_week_start`, ⌈log₂ spots⌉ rounds, `playoff_round_type` 0 / 1 / 2 = one week a round / a two-week final /
+  two weeks a round) are drawn in the same simulated seasons after the regular season's weeks (the same spread and the
+  drift carrying on); the seeds are the regular season's order (wins, then points for), the top seeds take the byes,
+  a round is decided by the points over its weeks, a tie goes to the higher seed; `playoff_seed_type` 1 re-seeds
+  before every round (the best seed left plays the worst) — the house dynasty's 2021, 2022 and 2024 winners brackets
+  pair exactly so where a fixed bracket would not (2023 and 2025 fit both) — and 0 keeps a fixed bracket (assumed: League of Scrubs' 4-team
+  brackets cannot tell the two apart). Not replayed on past seasons: context only, said under the table. Adding the
+  playoff weeks to the draws changed the regular-season numbers by Monte Carlo error only: League of Scrubs' largest
+  playoff-chance change 1.5 points, mean wins 0.04. Peak memory unchanged (tracemalloc, the simulation alone: 4.2–4.3
+  MB with or without the bracket at 12 × 10, 32 × 11 and 32 × 17); +0.01–0.04 s. The work budget counts the playoff
+  weeks (the dynasty: 9,500 seasons, was 10,000).
+<!-- ---- end IO-2 -->
+
 ## Rest of season (ros1.0, plan E2, Wave E, 2026-10-01; `mart_player_ros_projection`, `app/lib/ros.py`)
 
 One row per league × player (current season): the projection added up over the weeks left in **the league's**

@@ -62,6 +62,23 @@ _ready = {"ok": False, "next": 0.0}
 # lookups of the stored row (a hit or a miss) so a crawler's repeated hit never repeats the query
 _cards = memo.region("outlook_card", ttl=14 * 86400.0, max_entries=512)
 _card_reads = memo.region("outlook_card_db", ttl=600.0, max_entries=1024)
+# the page shell is not rate limited (a link opens for anyone): its reads of the store share one budget, a token
+# bucket of CARD_READS_PER_MIN — past it a League link gets the default card until the bucket refills
+CARD_READS_PER_MIN = 120
+_card_bucket = {"tokens": float(CARD_READS_PER_MIN), "at": 0.0}
+_card_lock = threading.Lock()
+
+
+def _card_read_allowed() -> bool:
+    with _card_lock:
+        now = time.monotonic()
+        b = _card_bucket
+        b["tokens"] = min(float(CARD_READS_PER_MIN), b["tokens"] + (now - b["at"]) * CARD_READS_PER_MIN / 60.0)
+        b["at"] = now
+        if b["tokens"] < 1.0:
+            return False
+        b["tokens"] -= 1.0
+        return True
 
 READY_SQL = ("select coalesce(has_table_privilege(to_regclass('outlook.snapshots'), 'insert'), false) "
              "and coalesce(has_table_privilege(to_regclass('outlook.snapshots'), 'update'), false) "
@@ -114,6 +131,7 @@ def reset() -> None:
     _ready.update(ok=False, next=0.0)
     _cards.clear()
     _card_reads.clear()
+    _card_bucket.update(tokens=float(CARD_READS_PER_MIN), at=time.monotonic())
 
 
 def shareable(league_key: str | None) -> bool:
@@ -281,6 +299,8 @@ def card(league_key: str | None) -> dict | None:
     got = _card_reads.get(key, "miss")
     if got != "miss":
         return got
+    if not _card_read_allowed():                    # many unknown links at once: the default card, nothing read
+        return None
     res = None
     try:
         df = db.fresh(LATEST_SQL, (key,))

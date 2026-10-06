@@ -11,7 +11,9 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   only; **Share** on League (Sleeper and MyFantasyLeague) → `/league?league=<key>`, opened with no team as a guest with
   "Is this your league? Pick your team"; the link's preview card from what is cached or stored (never a provider call or
   a simulation); the power rankings first (`part=power`) and a market-free board for leagues not kept every night: MFL
-  70587's League screen cold 12.3 s → power rankings 2.6 s, rest of season 3.3 s (docs/handbacks/IO-2.md).
+  70587's League screen cold 12.3 s → power rankings 2.6 s, rest of season 3.3 s; **title odds** for Sleeper leagues
+  whose settings describe the bracket (played out in the same simulated seasons, re-seeded when `playoff_seed_type` is
+  1, as the dynasty's past brackets pair; context, not replayed) (docs/handbacks/IO-2.md).
 
 ## 2026-10-06 — Wave I-N
 

@@ -349,6 +349,11 @@ def test_the_card_from_the_stored_row_alone_is_escaped(api, dist):
         assert _meta(t, "og:description").startswith("1. &quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt; 121.2 (84% playoffs)")
         # the stored row is read once, then kept (a crawler's repeated hit does not repeat the query)
         assert S._card_reads.get(key, "miss") != "miss"
+        # the shell's reads share one budget: spent, an unknown link gets the default card without a read
+        S._card_reads.clear()
+        S._card_bucket.update(tokens=0.0)
+        assert _meta(api.get("/league", params={"league": key}).text, "og:title") == "isuckatfantasy"
+        assert S._card_reads.get(key, "miss") == "miss"
     finally:
         _clean(key)
 
@@ -370,7 +375,7 @@ def test_the_bracket_order_and_rounds():
 
 def test_the_bracket_is_reseeded_or_fixed_as_the_settings_say():
     """Six teams (index = seed − 1 by wins). Round 1: 6 beats 3, 4 beats 5. Re-seeded: 1 meets 6 and 2 meets 4 (as the
-    house dynasty's 2022, 2024 and 2025 brackets paired); fixed: 1 meets the 4–5 winner, 2 the 3–6 winner."""
+    house dynasty's 2021, 2022 and 2024 brackets paired); fixed: 1 meets the 4–5 winner, 2 the 3–6 winner."""
     wins = np.array([[10.0, 9, 8, 7, 6, 5]])
     pf = np.zeros((1, 6))
     pts = np.zeros((1, 6, 3))

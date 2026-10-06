@@ -55,7 +55,7 @@ shell's link preview for ``/league?league=<key>`` from what is cached or stored 
 whose bracket is readable from the settings): the playoff weeks are drawn in the same simulated seasons, after the
 regular season's (the drift carries on), and the bracket is played out per season (``play_bracket``: seeds by wins then
 points for, the top seeds' byes, a round's points over its weeks, ``playoff_seed_type`` 1 = re-seeded before every
-round — the house dynasty's 2022–2025 brackets pair exactly so — else a fixed bracket; a tie to the higher seed).
+round — the house dynasty's 2021, 2022 and 2024 brackets pair exactly so — else a fixed bracket; a tie to the higher seed).
 """
 
 from __future__ import annotations
@@ -93,7 +93,8 @@ SEED = 20261006
 DRIFT = 0.03                   # the per-week random walk of a team's level, as a share of its weekly points (assumed)
 PATH = "/api/league/outlook"
 TTL_S = {"house": 600.0, "sleeper": 120.0}
-_cache = memo.region("outlook", ttl=TTL_S["house"], max_entries=48)   # one small answer per league (~10 KB)
+# one small answer per league (~10 KB); IO-2: 96 (was 48) — a league holds its power part (~7 KB) and its whole answer
+_cache = memo.region("outlook", ttl=TTL_S["house"], max_entries=96)
 # future pairings do not change: a league's remaining schedule is kept for hours ({week: [(a, b)]}, ~2 KB a league)
 SCHEDULE_TTL_S = 6 * 3600.0
 _schedules = memo.region("outlook_schedule", ttl=SCHEDULE_TTL_S, max_entries=256)
@@ -481,7 +482,7 @@ def play_bracket(wins: np.ndarray, pf: np.ndarray, ptot: np.ndarray, bracket: Ma
     playoff odds count it); round 1 by ``bracket_order`` (the top seeds' byes); a round's score = the team's points over
     the round's weeks (``ptot``: c × T × playoff weeks, in ``bracket["rounds"]`` order); a tie goes to the higher seed.
     ``reseed``: before every later round the teams left are paired highest seed against lowest (Sleeper's
-    ``playoff_seed_type`` 1 — the house dynasty's 2022–2025 brackets pair exactly so); otherwise the bracket is fixed."""
+    ``playoff_seed_type`` 1 — the house dynasty's 2021, 2022 and 2024 brackets pair exactly so); otherwise the bracket is fixed."""
     c, T = wins.shape
     order = np.argsort(-(wins * 1e6 + pf), axis=1, kind="stable")[:, :spots]     # c × spots: team index by seed
     size = 2 ** math.ceil(math.log2(spots))
