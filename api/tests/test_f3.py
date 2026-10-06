@@ -91,7 +91,9 @@ def test_ttls_per_kind_of_call():
     c.league("1")
     assert calls[-1] == "/league/1" and len(calls) == 8
     st = c.stats()
-    assert st["calls"] == 8 and set(st["cache"]) == {"rosters", "matchups", "league", "user"}
+    # Wave I-M (IM-3's fix round, the public site): an answer expired for more than an hour is dropped at the next insert
+    # (it used to stay until a restart) — a day later only the fresh league answer is held
+    assert st["calls"] == 8 and set(st["cache"]) == {"league"}
     assert st["cache"]["league"]["ttl_s"] == 86400 and st["bucket"]["per_minute"] == 300
 
 
