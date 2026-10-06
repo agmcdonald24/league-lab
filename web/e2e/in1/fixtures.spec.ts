@@ -328,4 +328,17 @@ test("markdown documents: escaped first, only our tags", async () => {
   expect(html).toContain("&lt;b onclick=&quot;x&quot;&gt;hi&lt;/b&gt;");
   expect(html).toContain('<pre class="ll-md-code"><code>&lt;script&gt;</code></pre>');
   expect(mdDoc("[P](/player/00-0039075)", { league: "ref:half" })).toContain('href="/player/00-0039075?league=ref%3Ahalf"');
+  // ---- IN-1 fix round (review nit): a link's target is a plain, checked address — a picture, code, bold or italic
+  // written inside it never lands in the href
+  const { md } = await import("../../src/lib/md");
+  const inside = mdDoc("[x](/p![a](/blog/img/a.png)) [y](/q`c`) [z](/r**b**) [w](/s *i* t) and **[bold link](/players)** *[it](/trends)*", { league: "ref:half" });
+  const hrefs = [...inside.matchAll(/href="([^"]*)"/g)].map((m) => m[1]);
+  for (const h of hrefs) expect(h, h).not.toMatch(/[<>]/);
+  expect(inside).not.toMatch(/href="[^"]*(<img|<code|<strong|<em)/);
+  expect(inside).toContain('<strong><a href="/players?league=ref%3Ahalf" class="ll-link">bold link</a></strong>');
+  expect(inside).toContain('<em><a href="/trends?league=ref%3Ahalf" class="ll-link">it</a></em>');
+  expect(inside).not.toContain('href="/p'); // a picture inside the target: the words, not a link
+  expect(md("[z](/r**b**)", { league: "1" })).not.toMatch(/href="[^"]*<strong/);
+  expect(md("**[Puka](/player/00-0039075)**", { league: "1" })).toBe('<strong><a href="/player/00-0039075?league=1" class="ll-link">Puka</a></strong>');
+  expect(md("a \uE0010\uE001 b [x](/y)", {})).not.toContain("\uE001");
 });

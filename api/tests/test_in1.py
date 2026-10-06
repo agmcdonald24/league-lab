@@ -260,3 +260,26 @@ def test_the_repository_blog(monkeypatch):
     for p in posts:                                         # every post's links stay on our own paths or https
         for href in re.findall(r"\]\(([^)\s]+)\)", p["markdown"]):
             assert href.startswith("/") or href.startswith("https://"), (p["slug"], href)
+
+
+# ====================================================================================== fix round (review L5)
+def test_a_trailing_newline_is_not_a_slug_nor_a_picture(folder, api, monkeypatch):
+    """`re.match` with a `$`-anchored pattern accepts "a.png\\n": every pattern is a full match. Each assertion below
+    failed with `.match`."""
+    (folder / "2026-10-01-post-1.md").write_text(post())
+    (folder / "img" / "chart.png").write_bytes(PNG)
+    (folder / "img" / "chart.png\n").write_bytes(PNG)                          # a picture whose name ends in a newline
+    # a file name ending in a newline is not a post (FILE_NAME)
+    assert blog.parse_post("2026-10-02-newline.md\n", post("Newline")) is None
+    # a picture name ending in a newline is not served, even when such a file exists (IMG_NAME)
+    for path in ("/blog/img/chart.png%0a", "/blog/img/chart.png%0A"):
+        assert api.get(path).status_code == 404, path
+    assert api.get("/blog/img/chart.png").status_code == 200
+    # a slug ending in a newline is refused before the lookup (SLUG), whatever the index holds
+    with monkeypatch.context() as m:
+        m.setattr(blog, "index", lambda: [{"slug": "post-1\n", "title": "x"}])
+        assert blog.find("post-1\n") is None
+    for path in ("/api/blog/post-1%0a", "/api/blog/post-1%0A"):
+        assert api.get(path).status_code == 404, path
+    assert api.get("/api/blog/post-1").status_code == 200
+    assert blog.preview("/blog/post-1\n")["status"] == 404

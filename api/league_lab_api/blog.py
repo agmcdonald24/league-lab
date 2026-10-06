@@ -118,7 +118,7 @@ def minutes(body: str) -> int:
 def parse_post(name: str, text: str) -> dict[str, Any] | None:
     """One file → the post's record, or None (a name off the pattern, no title). The file name gives the slug; the
     front matter's ``date`` wins over the name's when it is a real date."""
-    m = FILE_NAME.match(name)
+    m = FILE_NAME.fullmatch(name)                     # fullmatch: `$` alone lets a trailing newline through
     if not m or len(m.group(2)) > MAX_SLUG:
         return None
     meta, body = front_matter(text)
@@ -137,7 +137,7 @@ def parse_post(name: str, text: str) -> dict[str, Any] | None:
     image = _scalar(meta.get("image", "")) or None
     if image and image.startswith("/blog/img/"):
         image = image[len("/blog/img/"):]
-    if image and not IMG_NAME.match(image):
+    if image and not IMG_NAME.fullmatch(image):
         image = None                                   # only a picture from blog/img/ can be a post's picture
     return {"slug": m.group(2), "title": title, "date": d.isoformat(), "summary": _scalar(meta.get("summary", ""))[:MAX_SUMMARY],
             "author": _scalar(meta.get("author", ""))[:60] or SITE_AUTHOR, "tags": _tags(meta.get("tags")),
@@ -205,7 +205,7 @@ def meta(post: dict[str, Any]) -> dict[str, Any]:
 
 def find(slug: str) -> dict[str, Any] | None:
     """The post with this slug, or None — the slug is checked against the pattern and then looked up, never opened."""
-    if not isinstance(slug, str) or len(slug) > MAX_SLUG or not SLUG.match(slug):
+    if not isinstance(slug, str) or len(slug) > MAX_SLUG or not SLUG.fullmatch(slug):
         return None
     return next((p for p in index() if p["slug"] == slug), None)
 
@@ -264,7 +264,7 @@ def _looks_like(kind: str, head: bytes) -> bool:
 
 @pages.get("/blog/img/{name}", include_in_schema=False)
 def blog_image(name: str) -> Response:
-    m = IMG_NAME.match(name or "")
+    m = IMG_NAME.fullmatch(name or "")
     if not m:
         raise HTTPException(status_code=404, detail="no such image")
     kind = m.group(1)
