@@ -10129,7 +10129,7 @@ compare against it)
   dependency), `hosted_accounts.sql`, `dbt seed --select metric_registry`, `dbt build --select
   int_player_game_efficiency mart_player_game_advanced mart_player_ngs_week` (29 pass, 1 warn: the id-map relationship,
   as before).
-* **The deploy order (found by the PO at 01:35 ET, after the bundle was first placed)**: the merged API on a database in
+* **The deploy order (found by the PO at 01:30 ET, after the bundle was first placed)**: the merged API on a database in
   the state the hosted copy will be in if the push lands after this morning's nightly — Wave I-L's
   `mart_player_ngs_week` (no `avg_time_to_los`), no `mart_player_game_advanced` — answered **500 on
   `/api/players`** (`column "avg_time_to_los" does not exist`): Players · Stats, the screen "Browse the lab" opens,
