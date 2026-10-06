@@ -762,6 +762,13 @@ app.include_router(watchlist_mod.router, dependencies=[Depends(require_auth)])
 # ---- end IL-5
 
 
+# ---- IM-5 (Wave I-M): DFS — GET /api/dfs/projections, POST /api/dfs/slate, POST /api/dfs/lineups (league_lab_api/dfs.py)
+from . import dfs as dfs_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(dfs_mod.router, dependencies=[Depends(require_auth)])
+# ---- end IM-5
+
+
 # ---------------------------------------------------------------- the web app
 ASSET_CACHE = "public, max-age=31536000, immutable"     # vite's hashed file names
 SHELL_CACHE = "no-cache"                                # index.html, sw.js, manifest: revalidate every load

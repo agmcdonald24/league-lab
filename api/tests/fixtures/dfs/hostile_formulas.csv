@@ -1,0 +1,5 @@
+# SYNTHETIC hostile file (IM-5): formulas in cells
+Position,Name + ID,Name,ID,Roster Position,Salary,Game Info,TeamAbbrev,AvgPointsPerGame
+WR,=cmd|' /C calc'!A0 (43000001),=cmd|' /C calc'!A0,43000001,WR/FLEX,3000,BUF@MIA 10/11/2026 01:00PM ET,BUF,0
+WR,@SUM(1+1) (43000002),@SUM(1+1),=1+1,WR/FLEX,3000,BUF@MIA 10/11/2026 01:00PM ET,BUF,0
+QB,+Josh Allen (43000003),+Josh Allen,43000003,QB,-7900,BUF@MIA 10/11/2026 01:00PM ET,BUF,0

@@ -581,7 +581,7 @@ def price_site(board, site: str) -> pd.DataFrame:
         sk[c] = stats[c].round(2).to_numpy()
     sk["reference"] = ref
     frames = [sk]
-    for pos in ("K", "DEF"):
+    for pos in ("K", "DEF") if site == "dk" else ("DEF",):      # a kicker plays in DraftKings showdown only
         src, kd = A.kd_values(scoring, pos, board)
         if kd.empty:
             continue
@@ -593,8 +593,22 @@ def price_site(board, site: str) -> pd.DataFrame:
         kd["position"] = pos
         kd = kd.rename(columns={"proj_points": "proj"})
         kd["reference"] = src
+        # the line's few numbers a reason reads ("2.4 sacks, 1.1 takeaways, 19.5 points allowed")
+        raw = board.kd[board.kd["position"] == pos].drop_duplicates("unit_id").set_index("unit_id")
+
+        def num(c: str, _raw=raw, _kd=kd) -> np.ndarray:
+            return pd.to_numeric(_raw[c], errors="coerce").reindex(_kd["unit_id"]).to_numpy(dtype=float) \
+                if c in _raw else np.full(len(_kd), np.nan)
+        if pos == "DEF":
+            kd["sacks"] = num("proj_sacks")
+            kd["takeaways"] = num("proj_interceptions") + num("proj_fumble_recoveries")
+            kd["points_allowed"] = num("proj_points_allowed")
+        else:
+            kd["field_goals"] = sum(num(c) for c in raw.columns if c.startswith("proj_fg_made_"))
+            kd["extra_points"] = num("proj_pat_made")
         frames.append(kd[["key", "gsis_id", "position", "proj", "p10", "p90", "team", "player_name", "report_status",
-                          "implied_team_total", "reference"]])
+                          "implied_team_total", "reference",
+                          *(["sacks", "takeaways", "points_allowed"] if pos == "DEF" else ["field_goals", "extra_points"])]])
     out = pd.concat([f for f in frames if not f.empty], ignore_index=True)
     out = out[out["team"].notna() & out["proj"].notna()]
     return out.drop_duplicates("key").reset_index(drop=True)
