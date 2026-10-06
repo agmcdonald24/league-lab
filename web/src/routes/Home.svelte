@@ -135,15 +135,18 @@
               <span class="hidden shrink-0 sm:block"><Headshot url={p.headshot_url} name={p.player_name} team={p.team} size={36} /></span>
               <div class="min-w-0 flex-1">
                 <a href={link(`/player/${p.gsis_id}`)} class="block truncate font-semibold hover:underline" data-testid="home-top-name">{p.player_name}</a>
-                <div class="flex items-center gap-1.5 text-xs text-ink-3"><PosBadge pos={p.position} /><TeamBadge team={p.team} /></div>
+                <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-ink-3">
+                  <PosBadge pos={p.position} /><TeamBadge team={p.team} />
+                  {#if p.low !== null && p.high !== null}
+                    <span class="tabnum w-full whitespace-nowrap sm:w-auto" data-testid="home-top-range">range {fmt.pts(p.low)}–{fmt.pts(p.high)}</span>
+                  {:else if p.ros !== null}
+                    <span class="tabnum w-full whitespace-nowrap sm:w-auto" data-testid="home-top-range">season {fmt.whole(p.ros)} ({fmt.whole(p.rosLow)}–{fmt.whole(p.rosHigh)})</span>
+                  {/if}
+                </div>
               </div>
               <div class="shrink-0 text-right">
                 <div class="tabnum text-xl leading-none font-bold">{fmt.pts(p.week)}</div>
-                {#if p.low !== null && p.high !== null}
-                  <div class="tabnum mt-0.5 text-xs text-ink-3" data-testid="home-top-range">{fmt.pts(p.low)}–{fmt.pts(p.high)} this week</div>
-                {:else if p.ros !== null}
-                  <div class="tabnum mt-0.5 text-xs text-ink-3" data-testid="home-top-range">season {fmt.whole(p.ros)} ({fmt.whole(p.rosLow)}–{fmt.whole(p.rosHigh)})</div>
-                {/if}
+                <div class="mt-0.5 text-xs text-ink-3">this week</div>
               </div>
             </li>
           {/each}
@@ -257,7 +260,7 @@
 
   <!-- the tools -->
   <section class="space-y-3" data-testid="home-tools">
-    <h2 class="text-lg leading-tight font-bold">The tools, no league needed</h2>
+    <h2 class="text-lg leading-tight font-bold">The tools, open to everyone</h2>
     <ul class="grid grid-cols-2 gap-3 wide:grid-cols-4">
       {#each TOOLS as t (t.key)}
         <li>

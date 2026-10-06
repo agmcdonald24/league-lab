@@ -3,12 +3,25 @@
   // below: a readable measure, headings, lists, quotes, code, pictures, and tables that scroll inside themselves on a
   // phone (the page never scrolls sideways). Player links carry the frame's league, so a tap opens the drawer.
   import { mdDoc } from "../../lib/md";
+  import PlayersBlock from "./PlayersBlock.svelte";
 
   let { markdown, league }: { markdown: string; league: string } = $props();
-  const html = $derived(mdDoc(markdown, { league }));
+  // the first ```players block becomes the live table; the text before and after it is markdown (escaped first)
+  const FENCE = /^ {0,3}```players[ \t]*\n([\s\S]*?)^ {0,3}```[ \t]*$/m;
+  const parts = $derived.by(() => {
+    const m = FENCE.exec(markdown);
+    if (!m) return { before: mdDoc(markdown, { league }), block: null as string | null, after: "" };
+    return { before: mdDoc(markdown.slice(0, m.index), { league }), block: m[1], after: mdDoc(markdown.slice(m.index + m[0].length), { league }) };
+  });
 </script>
 
-<div class="ll-prose mt-5" data-testid="post-body">{@html html}</div>
+<div class="mt-5" data-testid="post-body">
+  <div class="ll-prose">{@html parts.before}</div>
+  {#if parts.block !== null}
+    <PlayersBlock body={parts.block} /><!-- the Stats table keeps its own styles: outside the reading styles -->
+    <div class="ll-prose">{@html parts.after}</div>
+  {/if}
+</div>
 
 <style>
   .ll-prose {

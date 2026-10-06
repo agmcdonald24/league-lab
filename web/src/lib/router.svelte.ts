@@ -31,7 +31,7 @@ export type RouteName =
   | "watchlist"
   // ---- IM-5: DFS (no league needed)
   | "dfs"
-  // ---- IN-1: the home page ("/home"; "/" when no league is remembered), the blog ("/blog") and a post ("/blog/<slug>")
+  // ---- IN-1: the home page ("/home", and "/" when no league is remembered), the blog ("/blog"), a post ("/blog/<slug>")
   | "home"
   | "blog"
   | "post";

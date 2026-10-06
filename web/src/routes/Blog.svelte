@@ -20,6 +20,7 @@
       .catch(() => (listState = "failed"));
   });
 
+  let copied = $state<"idle" | "copied" | "manual">("idle");
   let post = $state<BlogPost | null>(null);
   let postState = $state<"loading" | "ok" | "missing" | "failed">("loading");
   $effect(() => {
@@ -27,6 +28,7 @@
     if (!s) return;
     post = null;
     postState = "loading";
+    copied = "idle";
     get<BlogPost>(blogPaths.post(s))
       .then((p) => {
         if (slug !== s) return;
@@ -45,7 +47,6 @@
     return () => (document.title = before);
   });
 
-  let copied = $state<"idle" | "copied" | "manual">("idle");
   const shareUrl = $derived(slug ? `${location.origin}/blog/${slug}` : "");
   async function copyLink() {
     try {
@@ -60,7 +61,7 @@
 </script>
 
 {#snippet postMeta(p: BlogMeta)}
-  <span>{longDate(p.date)}</span><span aria-hidden="true">{" · "}</span><span>{p.minutes} min read</span>{#if p.draft}<span
+  <span>{longDate(p.date)} · {p.minutes} min read</span>{#if p.draft}<span
       class="ml-2 rounded-sm bg-warn-soft px-1.5 text-xs font-semibold text-ink">Draft</span
     >{/if}
 {/snippet}

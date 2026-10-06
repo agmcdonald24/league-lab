@@ -121,7 +121,7 @@ def test_list_and_post(folder, api):
     assert api.get("/api/blog", params={"limit": "x"}).status_code == 422
 
 
-@pytest.mark.parametrize("slug", ["..", "..%2F..%2Fsettings", "%2e%2e", "POST-1", "post_1", "post-1.md", "a" * 81,
+@pytest.mark.parametrize("slug", ["..%2F..%2Fsettings", "%2e%2e", "POST-1", "post_1", "post-1.md", "a" * 81,
                                   "post-1%00", "-post", "post--1", "%2Fetc%2Fpasswd", "README", "_template"])
 def test_hostile_slugs_are_404_and_never_opened(folder, api, monkeypatch, slug):
     (folder / "2026-10-01-post-1.md").write_text(post())

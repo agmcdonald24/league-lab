@@ -125,6 +125,7 @@
   // IN-1: a post's page view carries its own path (/blog/<slug>): one page_view per post
   $effect(() => {
     gaPause(phase === "login");
+    void r.slug; // ---- IN-1: a post to another post is a new page (the same screen name)
     if (phase === "ready") screenView(screenName, league, team);
   });
 
