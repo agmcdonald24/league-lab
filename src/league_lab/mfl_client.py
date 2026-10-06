@@ -44,6 +44,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
+from . import provider_share  # ---- IO-4: each client's own share of the budget
 from .sleeper_client import (
     LeagueNotFound,
     SleeperBusy,
@@ -270,7 +271,7 @@ class MFL:
             hit = self._cache.get(key)
         if hit is not None and hit[0] > now:
             return hit[3]
-        if now < self._backoff_until or not self.bucket.take():
+        if now < self._backoff_until or not provider_share.take("mfl") or not self.bucket.take():   # ---- IO-4: share
             if hit is not None:
                 self.stale_served += 1
                 return hit[3]

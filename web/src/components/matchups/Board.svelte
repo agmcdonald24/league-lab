@@ -5,7 +5,7 @@
   // his position, for a wide receiver the cornerback call, and the one tone of the two together. Search by name, filter
   // by game and tone, sort, paged; a row opens the evidence that exists (MatchupEvidence). The state lives in the URL
   // (`bpos`, `q`, `game`, `tone`, `bsort`, `boff`) so a board can be shared.
-  import { boardPath, type BoardRow, type MatchupBoard } from "../../lib/api";
+  import { boardPath, boardShowPath, type BoardRow, type MatchupBoard } from "../../lib/api";
   import { withContext } from "../../lib/md";
   import { givesUpShort, type Tone } from "../../lib/research";
   import { Remote } from "../../lib/remote.svelte";
@@ -33,6 +33,10 @@
   const tone = $derived(params.get("tone") ?? "");
   const sort = $derived(params.get("bsort") ?? "projection");
   const offset = $derived(Math.max(0, Number(params.get("boff") ?? 0) || 0));
+  // ---- IO-4 (Wave I-O): a game that has kicked off moves below the games to come, marked Started / Final; once one has,
+  // "Still to play" is the default (the server decides; `bshow=all` in the URL shows every game)
+  const show = $derived(params.get("bshow") ?? "");
+  const STATE_WORD: Record<string, string> = { started: "Started", final: "Final" };
 
   let q = $derived(qParam); // a Back, a shared link: the box shows the URL's search; typing writes it until the URL follows
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -47,7 +51,9 @@
   $effect(() => () => clearTimeout(timer));
 
   const b = new Remote<MatchupBoard>();
-  const path = $derived(boardPath(league, { position: pos, q: qParam, game, tone, sort: pos === "WR" || sort !== "corner" ? sort : "projection", offset, limit: LIMIT }));
+  const path = $derived(
+    boardShowPath(boardPath(league, { position: pos, q: qParam, game, tone, sort: pos === "WR" || sort !== "corner" ? sort : "projection", offset, limit: LIMIT }), show),
+  );
   $effect(() => b.load(path, onauth, true));
 
   let open = $state<string | null>(null);
@@ -61,7 +67,8 @@
     const d = new Date(iso);
     return `${d.toLocaleString("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" })} ET`;
   };
-  const gameWords = (g: { home: string; away: string; kickoff_at: string | null }) => `${teamLabel(g.away)} at ${teamLabel(g.home)} · ${kickoff(g.kickoff_at)}`;
+  const gameWords = (g: { home: string; away: string; kickoff_at: string | null; state?: string | null }) =>
+    `${teamLabel(g.away)} at ${teamLabel(g.home)} · ${kickoff(g.kickoff_at)}${gameState(g)}`;
   const defenseShort = (r: BoardRow) => {
     const d = r.context.defense;
     if (d.tough_rank == null || !d.n_ranked) return "no games to rank yet";
@@ -88,6 +95,11 @@
     { key: "difficult", label: `▼ Difficult${b.data?.counts?.difficult != null ? ` (${b.data.counts.difficult})` : ""}` },
   ]);
   const shown = $derived(b.data ? { from: b.data.total ? b.data.offset + 1 : 0, to: b.data.offset + b.data.rows.length } : null);
+  const showItems = $derived([
+    { key: "to_play", label: "Still to play" },
+    { key: "all", label: "All games" },
+  ]);
+  const gameState = (g: { state?: string | null }) => (g.state ? ` · ${STATE_WORD[g.state] ?? ""}` : "");
   const ctx = $derived({ league, team });
   const GRID = "wide:grid wide:grid-cols-[minmax(13rem,1.7fr)_minmax(7.5rem,0.9fr)_minmax(6rem,0.7fr)_minmax(10rem,1.3fr)_minmax(9rem,1.1fr)_minmax(6.5rem,0.7fr)] wide:items-center wide:gap-3";
 </script>
@@ -111,6 +123,9 @@
       </label>
     </div>
     <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+      {#if (b.data?.started_games ?? 0) > 0}
+        <Chips items={showItems} current={b.data?.show ?? "to_play"} label="Games" testid="board-show" onpick={(k) => setParams({ bshow: k, boff: null })} />
+      {/if}
       <Chips items={toneItems} current={tone} label="Matchup" testid="board-tone" onpick={(k) => setParams({ tone: k || null, boff: null })} />
       <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
         <select
@@ -169,7 +184,7 @@
       <ul class="divide-y divide-line" data-testid="board-rows">
         {#each b.data.rows as r (r.gsis_id)}
           {@const isOpen = open === r.gsis_id}
-          <li data-testid="board-row" data-gsis={r.gsis_id} data-tone={r.context.tone ?? "none"}>
+          <li data-testid="board-row" data-gsis={r.gsis_id} data-tone={r.context.tone ?? "none"} data-state={r.game_state ?? "to-play"} class={r.game_state ? "bg-raised/30" : ""}>
             <button
               type="button"
               class="block w-full px-3 py-2.5 text-left hover:bg-raised {GRID} {isOpen ? 'bg-raised' : ''}"
@@ -183,14 +198,14 @@
                   <span class="block truncate font-semibold text-ink" data-testid="board-name">{r.player_name}</span>
                   <span class="block truncate text-xs text-ink-3">
                     {r.position} · {teamLabel(r.team) ?? "—"}{#if status(r)} · <span class="font-semibold text-warn">{status(r)}</span>{/if}{#if owners}<span class="wide:hidden"> · {owner(r)}</span>{/if}
-                    <span class="wide:hidden"> · {r.is_home === false ? "at" : "vs"} {teamLabel(r.opponent)}</span>
+                    <span class="wide:hidden"> · {r.is_home === false ? "at" : "vs"} {teamLabel(r.opponent)}</span>{#if r.game_state}<span class="wide:hidden">&nbsp;·&nbsp;</span><span class="rounded bg-raised px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-ink-2 uppercase wide:hidden" data-testid="board-state">{STATE_WORD[r.game_state]}</span>{/if}
                   </span>
                 </span>
                 <span class="wide:hidden"><ToneChip tone={r.context.tone as Tone | null} testid="board-tone-chip" /></span>
               </span>
               <span class="hidden min-w-0 wide:block">
                 <span class="block font-semibold">{r.is_home === false ? "at" : "vs"} {teamLabel(r.opponent)}</span>
-                <span class="block text-xs text-ink-3">{kickoff(r.kickoff_at)}</span>
+                <span class="block text-xs text-ink-3">{#if r.game_state}<span class="rounded bg-raised px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-ink-2 uppercase" data-testid="board-state-wide">{STATE_WORD[r.game_state]}</span>{:else}{kickoff(r.kickoff_at)}{/if}</span>
               </span>
               <span class="mt-1.5 block wide:mt-0">
                 <span class="text-xs text-ink-3 wide:hidden">Projects&nbsp;</span><span class="tabnum font-bold" data-testid="board-proj">{fmt.pts(r.proj_points)}</span>
@@ -239,7 +254,7 @@
       </ul>
     </div>
     <div class="flex flex-wrap items-center justify-between gap-2 text-sm text-ink-2" data-testid="board-pager">
-      <span data-testid="board-count">Showing {shown?.from}–{shown?.to} of {b.data.total} {PLURAL[pos] ?? "players"}</span>
+      <span data-testid="board-count">Showing {shown?.from}–{shown?.to} of {b.data.total} {PLURAL[pos] ?? "players"}{b.data.show === "to_play" && (b.data.started_games ?? 0) > 0 ? " still to play" : ""}</span>
       <span class="flex gap-2">
         <button
           type="button"

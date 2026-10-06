@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 from league_lab import memo
 from league_lab import research as LR  # IM-1: the rushing share is priced like the league's points
+from league_lab import role_trend as RT  # ---- IO-4: the role change, DFS's measure (one implementation)
 
 from .db import missing_relations, query
 
@@ -46,7 +47,8 @@ FCT_COLS = ["gsis_id", "game_id", "season", "season_type", "week", "team", "posi
             "scrambles", "dropbacks",
             # ---- IM-1 (Wave I-M): EPA, first downs, deep / inside-10 looks, the rushing line's priced pieces
             "receiving_epa", "rushing_epa", "receiving_first_downs", "rushing_first_downs", "deep_targets",
-            "inside_10_targets", "inside_10_carries", "rushing_2pt_conversions", "rush_tds_40p", "rush_tds_50p"]
+            "inside_10_targets", "inside_10_carries", "rushing_2pt_conversions", "rush_tds_40p", "rush_tds_50p",
+            "offense_snaps"]                                    # ---- IO-4: the role change's snap share (DFS's)
 # skill players + anyone with a carry (the team's inside-5 carries count every rusher; defenders' rows are not read)
 FCT_SQL = f"""select {", ".join(FCT_COLS)} from analytics.fct_player_game
               where season = %s and season_type = %s and week between %s and %s
@@ -138,6 +140,10 @@ GAMES_AGG = "summed over his game rows in the window"
 SHARE_AGG = "summed numerator / summed denominator over the games he played in the window (never a mean of weekly %)"
 RATE_AGG = "summed numerator / summed denominator over the window"
 PG_AGG = "the window's total / games he played in the window"
+ROLE_AGG = ("summed numerator / summed denominator over his last 2 games played in the window, minus the same over his "
+            "games before them in the window; points of share, signed")                           # ---- IO-4
+ROLE_REASON = ("Needs his last 2 games played in the window and at least 2 before them, each with the numbers, and "
+               "enough team volume (20 team targets or carries, 60 team snaps per 2 games): pick a longer window.")  # IO-4
 ROUTES_REASON = ("Routes: nflverse publishes participation after the season (2025 is the last season with it), so this "
                  "season is blank until then; no licensed routes feed is connected.")
 CHART_REASON = "FTN charting starts in 2022 and covers only the games charted so far this season."
@@ -576,12 +582,41 @@ CATALOGUE: list[dict] = [
        source=PFR + ": season file only", status="unavailable", positions=("QB",),
        reason="Pro Football Reference publishes on-target throws per season only, so a window cannot use it."),
     # ---- end IM-1
+    # ---- IO-4 (Wave I-O): the role change — DFS's role trend (league_lab.role_trend, one implementation): his last 2
+    # games played in the window against his games before them in the window, each part a summed numerator over a
+    # summed denominator; the difference in points of share, signed
+    _c("target_share_change", "Target share change", "Tgt % chg", "share", "pct",
+       "His target share in his last 2 games played in the window minus his target share in his games before them "
+       "(at least 2), each part his targets / his team's targets summed over its games: +5.0 points = he went from, say, "
+       "18 % to 23 % of the targets. The measure DFS's role trend reads (a change of 5 points or more counts there).",
+       "targets / team targets in his last 2 games, minus the same in his games before them",
+       "his games played in the window: the last 2, and 2 or more before them", ROLE_AGG,
+       source=NFLV + " (team totals: fct_team_game); league_lab.role_trend", status="derived", positions=RECV,
+       reason=ROLE_REASON),
+    _c("carry_share_change", "Carry share change", "Car % chg", "share", "pct",
+       "His carry share in his last 2 games played in the window minus his carry share in his games before them (at "
+       "least 2), each part his carries / his team's carries summed over its games. Running backs only, as on DFS "
+       "(a change of 10 points or more counts there).",
+       "carries / team carries in his last 2 games, minus the same in his games before them",
+       "his games played in the window: the last 2, and 2 or more before them", ROLE_AGG,
+       source=NFLV + " (team totals: fct_team_game); league_lab.role_trend", status="derived", positions=("RB",),
+       reason="Running backs only. " + ROLE_REASON),
+    _c("snap_share_change", "Snap share change", "Snap % chg", "share", "pct",
+       "His snap share in his last 2 games played in the window minus his snap share in his games before them (at "
+       "least 2), each part his offensive snaps / his team's offensive snaps summed over its games (the team's snaps "
+       "worked out from his snaps and his published snap share, rounded). Unlike the Snap share column (a mean of "
+       "per-game shares), this is summed snaps over summed snaps, as DFS's role trend reads it (10 points or more "
+       "counts there).",
+       "offensive snaps / team offensive snaps in his last 2 games, minus the same in his games before them",
+       "his games played in the window: the last 2, and 2 or more before them", ROLE_AGG,
+       source="nflverse snap counts; league_lab.role_trend", status="derived", positions=RECV, reason=ROLE_REASON),
+    # ---- end IO-4
 ]
 
 # ---- IM-1 (Wave I-M): every column's group; the catalogue's order is the display order inside a group (IM-2's screen
 # draws a group header over each run of columns, so the catalogue is kept in these groups' order)
 GROUPS = ["Games and points", "Receiving", "Rushing", "Passing", "Air yards", "Red zone", "Efficiency", "Expected points",
-          "Next Gen Stats", "Charting", "Snaps and routes", "Advanced (PFR)"]
+          "Next Gen Stats", "Charting", "Snaps and routes", "Role change", "Advanced (PFR)"]    # IO-4: Role change
 GROUP_ORDER: dict[str, list[str]] = {
     "Games and points": ["games", "points"],
     "Receiving": ["targets", "receptions", "receiving_yards", "receiving_tds", "target_share", "catch_rate",
@@ -604,6 +639,7 @@ GROUP_ORDER: dict[str, list[str]] = {
                        "aggressiveness", "ngs_pass_intended_air_yards"],
     "Charting": ["first_read_target_share", "catchable_rate", "charted_targets", "pressure_splits"],
     "Snaps and routes": ["snap_share", "route_participation", "tprr_proxy", "yprr_proxy", "routes"],
+    "Role change": ["target_share_change", "carry_share_change", "snap_share_change"],                  # ---- IO-4
     "Advanced (PFR)": ["drops", "drop_rate", "broken_tackles", "broken_tackle_rate", "yards_before_contact_per_carry",
                        "yards_after_contact_per_carry", "rec_yards_after_contact", "bad_throw_rate", "times_pressured",
                        "pressure_rate", "on_target_rate"],
@@ -623,7 +659,7 @@ PRESETS = [
                  "air_yards_share", "wopr", "epa_per_target", "snap_share", "separation", "yac_over_expected"],
      "extra": ["route_participation", "tprr_proxy", "yprr_proxy", "routes", "first_read_target_share",
                "red_zone_targets", "catchable_rate", "deep_targets", "racr", "receiving_success_rate", "drop_rate",
-               "expected_points_per_game", "points_over_expected"],
+               "expected_points_per_game", "points_over_expected", "target_share_change", "snap_share_change"],  # IO-4
      "sort": "target_share"},
     {"key": "rb", "label": "RB", "positions": ["RB"],
      "columns": ["games", "points", "carries", "carry_share", "rushing_yards", "yards_per_carry", "rushing_tds",
@@ -631,7 +667,8 @@ PRESETS = [
                  "ryoe_per_attempt"],
      "extra": ["rb_carry_share", "inside_5_carries", "inside_5_carry_share", "red_zone_opportunities", "route_participation",
                "tprr_proxy", "rushing_success_rate", "yards_after_contact_per_carry", "broken_tackle_rate",
-               "yards_per_touch", "expected_points_per_game", "points_over_expected"],
+               "yards_per_touch", "expected_points_per_game", "points_over_expected", "carry_share_change",
+               "target_share_change", "snap_share_change"],                                          # ---- IO-4
      "sort": "carry_share"},
     {"key": "qb", "label": "QB", "positions": ["QB"],
      "columns": ["games", "points", "attempts", "completion_rate", "passing_yards", "passing_tds", "passing_interceptions",
@@ -1044,7 +1081,33 @@ def aggregate(g: pd.DataFrame) -> pd.DataFrame:
     out = out.drop(columns=[c for c in out.columns if c.startswith("_") and c.endswith(("_w", "_n"))])
     # ---- end IL-1
     out = out.drop(columns=["_cpoe_w", "_cpoe_n"], errors="ignore")
+    out = out.join(role_columns(g, out["position"]))                    # ---- IO-4: the role change
     return out.copy().reset_index()                                     # IM-1: one block per dtype again
+
+
+# ---- IO-4 (Wave I-O): the role-change columns from the window's game rows — DFS's arithmetic (``league_lab.role_trend``):
+# his games played at RB / WR / TE (DFS reads the same), the team's snaps worked out as DFS does (his snaps / his share)
+ROLE_COLS = ["target_share_change", "carry_share_change", "snap_share_change", "target_share_recent",
+             "target_share_before", "carry_share_recent", "carry_share_before", "snap_share_recent", "snap_share_before",
+             "role_games_recent", "role_games_before"]
+
+
+def role_columns(g: pd.DataFrame, positions: pd.Series) -> pd.DataFrame:
+    """gsis_id -> the role-change columns (``ROLE_COLS``); unknown is NaN (the catalogue's reason)."""
+    empty = pd.DataFrame(index=positions.index, columns=ROLE_COLS, dtype=float)
+    if g.empty or "played" not in g:
+        return empty
+    p = g[g["played"].fillna(False).astype(bool) & g["position"].isin(RECV)]
+    if p.empty:
+        return empty
+    snaps = pd.to_numeric(p["offense_snaps"], errors="coerce") if "offense_snaps" in p else pd.Series(np.nan, index=p.index)
+    pct = pd.to_numeric(p["offense_snap_pct"], errors="coerce") if "offense_snap_pct" in p else pd.Series(np.nan, index=p.index)
+    games = pd.DataFrame({"gsis_id": p["gsis_id"], "week": p["week"], "targets": p["targets"],
+                          "team_targets": p["team_targets"], "carries": p["carries"], "team_carries": p["team_carries"],
+                          "offense_snaps": snaps, "team_snaps": (snaps / pct).where(pct > 0).round()})
+    out = RT.change_columns(games, positions)
+    return out.reindex(positions.index)[ROLE_COLS].astype(float)
+# ---- end IO-4
 
 
 def points(league_rows: pd.DataFrame, g: pd.DataFrame, scoring: dict | None = None) -> pd.DataFrame:
@@ -1140,7 +1203,11 @@ SAMPLE = {"target_share": ["team_targets"], "carry_share": ["team_carries"], "rb
           "broken_tackles": ["touches_pfr"], "broken_tackle_rate": ["touches_pfr"],
           "yards_before_contact_per_carry": ["pfr_carries"], "yards_after_contact_per_carry": ["pfr_carries"],
           "bad_throw_rate": ["attempts_pfr", "pfr_pass_games"], "times_pressured": ["dropbacks_pfr", "pfr_pass_games"],
-          "pressure_rate": ["dropbacks_pfr", "pfr_pass_games"]}
+          "pressure_rate": ["dropbacks_pfr", "pfr_pass_games"],
+          # ---- IO-4: the two parts behind a role change, and the games in each
+          "target_share_change": ["target_share_recent", "target_share_before", "role_games_recent", "role_games_before"],
+          "carry_share_change": ["carry_share_recent", "carry_share_before", "role_games_recent", "role_games_before"],
+          "snap_share_change": ["snap_share_recent", "snap_share_before", "role_games_recent", "role_games_before"]}
 
 
 def fields(positions: list[str]) -> list[str]:

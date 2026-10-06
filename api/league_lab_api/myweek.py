@@ -634,6 +634,68 @@ def more_words(more: list[dict]) -> str:
 # ---- end IN-5
 
 
+# ---- IO-4 (Wave I-O): two players, one last name. My Week names a player by his last name; when another player on
+# the roster shares it (Andrew's Malik and Parker Washington) the sentence says "M. Washington" — the collision is
+# ``cards.display_name``'s (the one roster-aware rule), the form is the first initial; a first initial both share
+# keeps the full name. Every name in an action comes from the roster's rows, so a collision "in that sentence" is a
+# collision on the roster. And a submitted lineup can hold a player who has left the roster: never "Take player no
+# longer on your roster out of your lineup" — one roster alert per such spot, in words a manager can act on.
+TEAM_UNITS = ("DEF", "TMQB", "TMPK", "TMDEF")
+GONE_NAME = "a player no longer on your roster"
+GONE_WORDS = "A player in your {pname} lineup is no longer on your roster — set that spot again."
+
+
+def short_name(full: str | None, position: str | None, roster) -> str:
+    """'Washington' alone on the roster; 'M. Washington' when Parker Washington is on it too (``cards.display_name``
+    decides); 'Malik Washington' if a second Washington shares the initial; a defense or team unit keeps its name."""
+    if not isinstance(full, str) or not full.strip():
+        return ""
+    full = full.strip()
+    if position in TEAM_UNITS:
+        return full
+    short = cards.last_name(full, position)
+    if short == full or cards.display_name(full, roster, position) == short:
+        return short
+    first = full.split()[0]
+    twins = [o.strip() for o in (list(roster) if roster is not None else []) if isinstance(o, str) and o.strip()
+             and o.strip() != full and cards.last_name(o.strip()).lower() == short.lower()]
+    if any(o.split()[0][:1].lower() == first[:1].lower() for o in twins):
+        return full
+    return f"{first[0]}. {short}"
+
+
+def gone_actions(gone: list[str], pairs: list[tuple[str | None, str | None]], current: dict[str, str] | None,
+                 info: dict[str, dict], pname: str, *, name, plain, locked) -> tuple[list[dict], list]:
+    """One roster alert per submitted spot whose player has left the roster (a key of the submitted lineup with no
+    roster row). An incoming player of the best lineup left without a spot (paired with nobody) and allowed in that
+    slot is named as the one to put there; he is taken out of ``pairs``. Returns (actions, pairs)."""
+    pairs = list(pairs)
+    out = []
+    for o in gone:
+        slot = _str((current or {}).get(o)) or ""
+        ok = _slot_elig(slot) if slot else None
+        fill = next((p for p in pairs if p[1] is None and p[0] is not None
+                     and (ok is None or _str((info.get(p[0]) or {}).get("position")) in ok)), None)
+        if fill is not None:
+            pairs.remove(fill)
+        i = fill[0] if fill else None
+        kick = (info.get(i) or {}).get("kickoff_at") if i else None
+        kick = None if kick is None or (not isinstance(kick, str) and pd.isna(kick)) or (i and locked(i)) else kick
+        label = re.sub(r"\s*\d+$", "", cards.slot_label(slot)) if slot else ""
+        reason = (f"Our lineup starts {name(i)} there{f' (your {label} spot)' if label else ''}." if i else
+                  f"Start someone from your bench there{f' (your {label} spot)' if label else ''}, or add a player.")
+        out.append({"kind": "change", "urgency": 1, "action": GONE_WORDS.format(pname=pname), "reason": reason,
+                    "start": [{"key": i, "name": plain(i), "link": name(i)}] if i else [], "sit": [],
+                    "submitted": False, "submitted_words": f"Not in your {pname} lineup yet: set that spot in {pname}.",
+                    "lock": None if kick is None else {"kickoff": pd.Timestamp(kick).isoformat(), "words": lock_words(kick)},
+                    "cards": [], "gain": None, "href": None, "gone": True,
+                    "slots": [slot] if slot else [], "slot_label": cards.slot_label(slot) if slot else "",
+                    "_lock_players": [plain(i)] if i else [],
+                    "_order": (1, pd.Timestamp(kick) if kick is not None else pd.Timestamp.max.tz_localize("UTC"), -1e8)})
+    return out, pairs
+# ---- end IO-4
+
+
 def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, str] | None, league_id: str) -> dict:
     """{actions, set_line, next_lock, platform_name} from the lineup rows, the cards (`cards_from_rows`, with their
     IE-1 `key` / `alt_key` / `tiebreak`) and the submitted lineup ({key: slot}; None = unknown). Marks each card's
@@ -664,17 +726,22 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
         s = _str(r.get("chip")) or cards._flag(r.get("report_status"))
         return s or None
 
+    roster = [n for n in rows["player_name"] if isinstance(n, str)] if "player_name" in rows else []   # ---- IO-4
+
     def name(k, short=True) -> str:
-        r = info.get(k) or {}
-        full = _str(r.get("player_name")) or "a player no longer on your roster"
-        n = cards.last_name(full, r.get("position")) if short and r.get("position") not in ("DEF", "TMQB", "TMPK", "TMDEF") else full
+        r = info.get(k)
+        if r is None:                                                   # ---- IO-4: never "player no longer on …"
+            return GONE_NAME
+        full = _str(r.get("player_name")) or "a player"
+        n = short_name(full, r.get("position"), roster) if short else full          # ---- IO-4: "M. Washington"
         g = _str(r.get("gsis_id"))
         return f"[{n}](/player/{g})" if g else n
 
     def plain(k) -> str:
-        r = info.get(k) or {}
-        full = _str(r.get("player_name")) or "a player no longer on your roster"
-        return cards.last_name(full, r.get("position")) if r.get("position") not in ("DEF", "TMQB", "TMPK", "TMDEF") else full
+        r = info.get(k)
+        if r is None:                                                   # ---- IO-4
+            return GONE_NAME
+        return short_name(_str(r.get("player_name")) or "a player", r.get("position"), roster)   # ---- IO-4
 
     def cant_words(k) -> str:
         r = info.get(k) or {}
@@ -732,9 +799,12 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
         res["next_lock"] = None if lock is None else {**lock, "players": []}
         return res
     pairs: list[tuple[str | None, str | None]] = []
+    gone: list[str] = []                                                # ---- IO-4
     if known:
         ins = sorted((k for k in suggested if k not in sub and not locked(k)), key=lambda k: (-val(k), k))
         outs = sorted((k for k in sub if k not in suggested and not locked(k)), key=lambda k: (plays(k), val(k), k))
+        gone = [k for k in outs if k not in info]                       # ---- IO-4: left the roster, still in the lineup
+        outs = [k for k in outs if k in info]                           # ---- IO-4
         # ---- IN-5 (Wave I-N): an incoming player replaces only an outgoing one he can legally replace — at once (the
         # out's own slot admits him) or through the slot chain the solver uses (the submitted lineup with the swap made
         # still fits its slots: an RB slides from FLEX to RB, the WR takes FLEX). Never a receiver "in place of" a
@@ -747,6 +817,10 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
                        name=name, plain=plain, cant_words=cant_words, val=val, plays=plays)
     taken = {k for a in opens for k in a["open_slot"]["players"]}
     pairs = [p for p in pairs if not (p[0] is None and p[1] in taken)]
+    if known and gone:                                                  # ---- IO-4: once per spot
+        gone_acts, pairs = gone_actions(gone, pairs, current, info, pname, name=name, plain=plain, locked=locked)
+        opens = opens + gone_acts
+        taken |= {p["key"] for a in gone_acts for p in a["start"]}
     # ---- end IN-5
     for i, o in pairs:
         union(i, o)
@@ -1108,7 +1182,8 @@ def decision_parts(line: dict, meta: dict | None, rows: pd.DataFrame | None, cur
     if not name and g and rows is not None and not rows.empty:
         nm = rows.loc[rows["gsis_id"] == g, "player_name"]
         name = nm.iloc[0] if not nm.empty and isinstance(nm.iloc[0], str) else None
-    who = cards.last_name(name) if name else None
+    who = (short_name(name, None, rows["player_name"] if rows is not None and "player_name" in rows else [])   # IO-4
+           if name else None)
     if dec == "changed":
         nxt = {"kind": "compare", "label": "Compare your options for the slot", "gsis_id": g}
     elif g:
@@ -1282,7 +1357,7 @@ def questionable_lines(meta: dict | None, rows: pd.DataFrame | None, current: di
         if not note and ev is not None:
             m = _NOTE.search(str(ev.get("headline") or ""))
             note = m.group(1) if m else None
-        last = cards.last_name(name, _str(r.get("position"))) or name
+        last = short_name(name, _str(r.get("position")), rows["player_name"]) or name     # ---- IO-4
         line = {"kind": "status", "flag": "questionable", "gsis_id": g, "player_name": name,
                 "text": f"Questionable: {last}" + (f" ({note})" if note else "") + f" — {QUESTIONABLE_TAIL}",
                 "source": f"Injury report ({a.get('source') or 'ESPN'})", "at": checked_at, "url": None}

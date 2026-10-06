@@ -2480,3 +2480,23 @@ export interface LeagueOutlook {
 export const outlookPath = (league: string, team: number | null) =>
   `/api/league/outlook?league=${encodeURIComponent(league)}${team != null ? `&team=${team}` : ""}`;
 // ---- end IN-6
+
+// ---- IO-4 (Wave I-O): the matchup board's started games (`game_state` per row, `state` per game, `show` = "Still to
+// play" / "All games") and where its defense rank comes from (the league's own scoring in a real league). Interfaces
+// merge with IN-3's above.
+export type GameState = "started" | "final" | null;
+export type BoardShow = "to_play" | "all";
+export interface BoardRow {
+  game_state?: GameState;
+}
+export interface BoardGame {
+  state?: GameState;
+}
+export interface MatchupBoard {
+  show?: BoardShow;
+  started_games?: number;
+  started_players?: number;
+  defense_source?: "league" | "reference";
+}
+export const boardShowPath = (path: string, show: string) => (show === "all" || show === "to_play" ? `${path}&show=${show}` : path);
+// ---- end IO-4

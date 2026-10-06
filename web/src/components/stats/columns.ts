@@ -24,6 +24,7 @@ export const GROUP_NAMES = [
   "Next Gen Stats",
   "Charting",
   "Snaps and routes",
+  "Role change", // ---- IO-4
   "Advanced (PFR)",
 ] as const;
 
@@ -80,7 +81,15 @@ export const GROUPS: Record<string, string> = {
   scrambles: "Passing",
   cpoe: "Passing",
   pressure_splits: "Passing",
+  // ---- IO-4 (Wave I-O): the role change (DFS's role trend: his last 2 games against his games before them)
+  target_share_change: "Role change",
+  carry_share_change: "Role change",
+  snap_share_change: "Role change",
 };
+
+// ---- IO-4: a share's change reads in signed points of share ("+5.2 pts"), never as a percent of a percent
+export const SHARE_CHANGE = new Set(["target_share_change", "carry_share_change", "snap_share_change"]);
+export const sharePts = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v * 100).toFixed(1)} pts`;
 
 // a column neither the answer nor the map names: a group by its id (IM-1's new ids), else "Other" (last)
 const BY_ID: [RegExp, string][] = [
@@ -106,9 +115,9 @@ export function groupOf(c: StatsColumn): string {
 
 /** The order the groups read in for a position (the position's own stats first). */
 const ORDER: Record<PosGroup, string[]> = {
-  wrte: ["Games and points", "Receiving", "Air yards", "Red zone", "Efficiency", "Expected points", "Next Gen Stats", "Charting", "Snaps and routes", "Advanced (PFR)", "Rushing", "Passing"],
-  rb: ["Games and points", "Rushing", "Receiving", "Red zone", "Efficiency", "Expected points", "Next Gen Stats", "Snaps and routes", "Advanced (PFR)", "Air yards", "Charting", "Passing"],
-  qb: ["Games and points", "Passing", "Rushing", "Efficiency", "Expected points", "Next Gen Stats", "Advanced (PFR)", "Red zone", "Receiving", "Air yards", "Charting", "Snaps and routes"],
+  wrte: ["Games and points", "Receiving", "Air yards", "Red zone", "Efficiency", "Expected points", "Next Gen Stats", "Charting", "Snaps and routes", "Role change", "Advanced (PFR)", "Rushing", "Passing"],
+  rb: ["Games and points", "Rushing", "Receiving", "Red zone", "Efficiency", "Expected points", "Next Gen Stats", "Snaps and routes", "Role change", "Advanced (PFR)", "Air yards", "Charting", "Passing"],
+  qb: ["Games and points", "Passing", "Rushing", "Efficiency", "Expected points", "Next Gen Stats", "Advanced (PFR)", "Red zone", "Receiving", "Air yards", "Charting", "Snaps and routes", "Role change"],
   all: [...GROUP_NAMES],
 };
 
@@ -163,6 +172,7 @@ export const title = (c: StatsColumn, mode: Mode) => (c.per_game && mode === "ga
 export function show(c: StatsColumn, p: StatsRow, mode: Mode): string {
   const v = num(p[field(c, mode)]);
   if (v === null) return "—";
+  if (SHARE_CHANGE.has(c.id)) return sharePts(v); // ---- IO-4
   if (c.format === "pct") return fmt.pct(v, 1);
   if (c.format === "pts" || c.format === "dec1") return fmt.pts(v, 1);
   if (c.format === "dec2") return fmt.pts(v, 2);
@@ -215,6 +225,16 @@ export function why(c: StatsColumn, p: StatsRow, mode: Mode): string {
       return `${n("routes_proxy")} of ${n("team_dropbacks_with_participation")} dropbacks on the field (an estimate)`;
     case "snap_share":
       return `mean of ${n("snap_games")} games with snap counts`;
+    // ---- IO-4: the two parts of a role change ("27.1% in his last 2 games against 12.0% in his 2 before")
+    case "target_share_change":
+    case "carry_share_change":
+    case "snap_share_change": {
+      const base = c.id.replace(/_change$/, "");
+      const a = n(`${base}_recent`);
+      const b = n(`${base}_before`);
+      if (a === null || b === null) return c.reason ?? "not available";
+      return `${fmt.pct(a, 1)} in his last ${n("role_games_recent")} games against ${fmt.pct(b, 1)} in his ${n("role_games_before")} before them`;
+    }
     // ---- IL-1: Next Gen Stats — the weeks NGS published of his games, and NGS's own denominator (the weight)
     case "time_to_throw":
     case "ngs_cpoe":
@@ -244,7 +264,8 @@ function cell(s: string): string {
 }
 
 export function csv(rows: StatsRow[], cols: StatsColumn[], mode: Mode, owner?: (p: StatsRow) => string): string {
-  const headers = ["Player", "Position", "NFL team", ...cols.map((c) => title(c, mode) + (c.format === "pct" ? " (%)" : "")), ...(owner ? ["Team in league"] : [])];
+  const unit = (c: StatsColumn) => (SHARE_CHANGE.has(c.id) ? " (points of share)" : c.format === "pct" ? " (%)" : ""); // IO-4
+  const headers = ["Player", "Position", "NFL team", ...cols.map((c) => title(c, mode) + unit(c)), ...(owner ? ["Team in league"] : [])];
   const lines = [headers.map(cell).join(",")];
   for (const p of rows) {
     const vals = cols.map((c) => {

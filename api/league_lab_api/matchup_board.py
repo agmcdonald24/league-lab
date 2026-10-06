@@ -36,7 +36,7 @@ import re
 import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Response
-from league_lab import memo
+from league_lab import clock, memo  # ---- IO-4: clock (the board's "Started" / "Final")
 
 from . import refleague
 from . import research as R
@@ -105,8 +105,8 @@ WEEK_SQL = """select distinct on (p.gsis_id) p.gsis_id, p.position, p.team, p.pl
               from analytics.mart_player_week_projections p
               where p.season = %s and p.week = %s and p.gsis_id is not null and p.position = any(%s)
               order by p.gsis_id, p.is_reference_league desc, p.league_id"""
-GAMES_SQL = """select game_id, home_team, away_team, kickoff_at from analytics.dim_game
-               where season = %s and week = %s and season_type = 'REG' order by kickoff_at, game_id"""
+GAMES_SQL = """select game_id, home_team, away_team, kickoff_at, is_final from analytics.dim_game
+               where season = %s and week = %s and season_type = 'REG' order by kickoff_at, game_id"""   # IO-4: is_final
 DEFENSE_SQL = """select defense, position, games, through_week, points_allowed_per_game_std, rank_std
                  from analytics.mart_defense_vs_position_current where season = %s and position = any(%s)"""
 CB_SQL = "select * from analytics.mart_cb_matchups where season = %s and week = %s and position = 'WR'"
@@ -115,11 +115,14 @@ CB_SQL = "select * from analytics.mart_cb_matchups where season = %s and week = 
 def _games(season: int, week: int) -> pd.DataFrame:
     """One row per team with a game: team, opponent, is_home, kickoff_at, game_id."""
     g = query(GAMES_SQL, (int(season), int(week)))
+    cols = ["team", "opponent", "is_home", "kickoff_at", "game_id", "is_final"]           # ---- IO-4: is_final
     if g.empty:
-        return pd.DataFrame(columns=["team", "opponent", "is_home", "kickoff_at", "game_id"])
+        return pd.DataFrame(columns=cols)
+    if "is_final" not in g:
+        g = g.assign(is_final=False)
     home = g.rename(columns={"home_team": "team", "away_team": "opponent"}).assign(is_home=True)
     away = g.rename(columns={"away_team": "team", "home_team": "opponent"}).assign(is_home=False)
-    return pd.concat([home, away], ignore_index=True)[["team", "opponent", "is_home", "kickoff_at", "game_id"]]
+    return pd.concat([home, away], ignore_index=True)[cols]
 
 
 def _defense(season: int) -> dict[tuple[str, str], dict]:
@@ -329,10 +332,74 @@ def _param_choice(v: str | None, allowed: tuple[str, ...], what: str, default: s
     return s
 
 
-def _week_rows(ctx: R.Ctx, season: int, week: int, wk: dict) -> pd.DataFrame:
+# ---- IO-4 (Wave I-O): one screen, one rank per defense. In a real league the heatmap under the board ranks the
+# defenses in the league's scoring (``research.league_dvp``); the board's defense read comes from the same frame there,
+# so a house league never shows "7th-most" on a row and #9 in the cell under it. Browsing (a reference key) keeps the
+# reference mart (``matchup_context``'s read: scoring-free, what the home and DFS read). The corner call is the same.
+def league_defense(ctx: R.Ctx, season: int) -> dict[tuple[str, str], dict] | None:
+    """(defense, position) -> the defense read in ``_defense``'s shape, from the league's own points allowed; None when
+    the league's frame cannot be read (the board falls back on the reference read, said by ``defense_source``)."""
+    try:
+        d = R.league_dvp(ctx, int(season))
+    except Exception:  # noqa: BLE001 - the reference read stands
+        return None
+    if d is None or d.empty or not {"defense", "position", "rank_std"} <= set(d.columns):
+        return None
+    d = d[d["position"].isin(POSITIONS)]
+    if "rank_l4" not in d:
+        d = d.assign(rank_l4=np.nan)
+    d = R.defense_meaning(d)
+    out = {}
+    for r in d.to_dict("records"):
+        out[(r["defense"], r["position"])] = {
+            "tone": r.get("tone") if r.get("tone") in TONES else None, "tough_rank": R._rank(r.get("tough_rank")),
+            "n_ranked": R._rank(r.get("n_ranked")) or None,
+            "words": f"{R._place(r['defense'])} {r['rank_words']}" if isinstance(r.get("rank_words"), str) else None}
+    return out
+
+
+GAME_LENGTH = pd.Timedelta(hours=4)        # a game kicked off this long ago is over even before the data says final
+
+
+def game_state(kickoff, is_final, now: pd.Timestamp) -> str | None:
+    """None (still to play) · "started" (kicked off, not over) · "final" — from the one clock; the database's final
+    flag counts only for a game that has kicked off by that clock (a pinned clock never sees a future game final)."""
+    if kickoff is None or (not isinstance(kickoff, str) and pd.isna(kickoff)):
+        return None
+    k = pd.Timestamp(kickoff)
+    k = k.tz_localize("UTC") if k.tzinfo is None else k.tz_convert("UTC")
+    if k > now:
+        return None
+    return "final" if bool(is_final) is True or now >= k + GAME_LENGTH else "started"
+
+
+def _record_words() -> str | None:
+    """IO-1's context record (``context_record.summary()``, the interface fixed in the wave's brief): its sentence on
+    how the corner calls have done, when graded; None without the module or the record (today's sentence stays)."""
+    try:
+        from . import context_record  # type: ignore[attr-defined]
+        c = (context_record.summary() or {}).get("corner") or {}
+        w = c.get("words")
+        return w.strip() if c.get("graded") is True and isinstance(w, str) and w.strip() else None
+    except Exception:  # noqa: BLE001 - absent, broken or slow to build: never load-bearing
+        return None
+
+
+def projection_words() -> str:
+    """PROJECTION_WORDS, its last sentence ("…has not been graded yet.") replaced by the record's when there is one."""
+    rec = _record_words()
+    if not rec:
+        return PROJECTION_WORDS
+    head = PROJECTION_WORDS.rsplit(" Whether a tough corner", 1)[0]
+    return f"{head} {rec if rec.endswith('.') else rec + '.'}"
+# ---- end IO-4
+
+
+def _week_rows(ctx: R.Ctx, season: int, week: int, wk: dict, league_def: dict | None = None) -> pd.DataFrame:
     """Every player with a game this week and a projection in this league's scoring: name, team, game, projection and
-    range, and the context's sort keys (cached per league scoring and week)."""
-    key = ("board", R._ctx_key(ctx), int(season), int(week))
+    range, and the context's sort keys (cached per league scoring and week). ``league_def`` (IO-4): the league's own
+    defense read — the row's tone is formed from it (``def_*`` columns carry it for the page)."""
+    key = ("board", R._ctx_key(ctx), int(season), int(week), league_def is not None)
     hit = _cache.get(key)
     if hit is not None:
         return hit
@@ -347,7 +414,17 @@ def _week_rows(ctx: R.Ctx, season: int, week: int, wk: dict) -> pd.DataFrame:
     df["player_name"] = df["dim_player_name"].where(df["dim_player_name"].notna(), df["player_name"])
     df = df.drop(columns=["dim_player_name"])
     rows = wk["rows"]
-    df["tone"] = [rows[g]["tone"] for g in df["gsis_id"]]
+    if league_def is not None:                                                          # ---- IO-4
+        reads = [league_def.get((o, p)) or {"tone": None, "tough_rank": None, "n_ranked": None, "words": None}
+                 for o, p in zip(df["opponent"], df["position"], strict=True)]
+        df["def_tone"] = [d["tone"] for d in reads]
+        df["def_rank"] = [d["tough_rank"] for d in reads]
+        df["def_n"] = [d["n_ranked"] for d in reads]
+        df["def_words"] = [d["words"] for d in reads]
+        df["tone"] = [combine_tone(d["tone"], (rows[g]["cb"] or {}).get("tone"), (rows[g]["cb"] or {}).get("certainty"))
+                      for g, d in zip(df["gsis_id"], reads, strict=True)]
+    else:
+        df["tone"] = [rows[g]["tone"] for g in df["gsis_id"]]
     df["tone_order"] = [TONE_ORDER.get(t, 3) for t in df["tone"]]
     df["corner_rank"] = [(rows[g]["cb"] or {}).get("corner_rank") if rows[g]["cb"] else None for g in df["gsis_id"]]
     df["corner_known"] = df["corner_rank"].notna()
@@ -371,15 +448,18 @@ def _personnel(season: int, week: int, defenses: list[str]) -> dict:
     return {d: copy.deepcopy(hit["p"][d]) for d in defenses if d in hit["p"]}
 
 
-def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int) -> dict[str, dict | None]:
+def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int, own: bool = False) -> dict[str, dict | None]:
     """The matchup evidence each row opens (research.matchup_evidence, as the player card has it: the defense's history
-    on the reference mart — the board's own rank — the corners now for a receiver, the forecast's treatment)."""
+    on the reference mart — the board's own rank — the corners now for a receiver, the forecast's treatment). ``own``
+    (IO-4: a real league whose board reads the league's own defense rank): the history in the league's scoring too, so
+    the opened row never shows a second rank; kept per league scoring in the board's region."""
     if not rows:
         return {}
     # the evidence does not depend on the league (its ranks are the reference mart's): kept per week for every league,
     # each player computed once (the answer is rebuilt by the JSON cleaner, so the cached objects are never changed)
-    key = ("ev", int(season), int(week))
-    have: dict = _week.get(key) or {}
+    key = ("ev", int(season), int(week)) if not own else ("ev", R._ctx_key(ctx), int(season), int(week))   # IO-4
+    region = _cache if own else _week                                                                   # IO-4
+    have: dict = region.get(key) or {}
     want = [r for r in rows if r["gsis_id"] not in have]
     if not want:
         return {r["gsis_id"]: have[r["gsis_id"]] for r in rows}
@@ -390,6 +470,8 @@ def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int) -> dict[str,
                 (int(season), pos))
     pers = _personnel(season, week, sorted({r["opponent"] for r in rows if r["position"] == "WR"}))
     scoring = f"{refleague.label(refleague.DEFAULT)} scoring"
+    if own:                                    # ---- IO-4: the league's own ranks (matchup_evidence's default), its name
+        dvp, scoring = None, None
     shared: dict = {}
     out = {}
     for r in rows:
@@ -401,14 +483,20 @@ def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int) -> dict[str,
         except Exception:  # noqa: BLE001 - the evidence is context: a row without it still stands
             out[r["gsis_id"]] = None
     have = {**have, **out}
-    _week.put(key, have)
+    region.put(key, have)                                                                               # IO-4
     return {r["gsis_id"]: have.get(r["gsis_id"]) for r in rows_all}
+
+
+SHOWS = ("to_play", "all")             # ---- IO-4: "Still to play" (the default once a game has started) · "All games"
 
 
 def board(league: str, *, position: str | None = None, q: str | None = None, game: str | None = None,
           tone: str | None = None, sort: str | None = None, limit: int | None = None, offset: int | None = None,
-          source: str | None = None) -> dict:
+          source: str | None = None, show: str | None = None) -> dict:
     pos = _param_position(position)
+    sh = (show or "").strip().lower() or None                                           # ---- IO-4
+    if sh is not None and sh not in SHOWS:
+        raise Bad("show is to_play or all.")
     qq = _param_q(q)
     tn = _param_choice(tone, (*TONES, "none"), "tone", None)
     so = _param_choice(sort, SORTS, "sort", "projection") or "projection"
@@ -429,20 +517,36 @@ def board(league: str, *, position: str | None = None, q: str | None = None, gam
     season, week = ctx.season, ctx.week
     ref = refleague.is_reference(league)
     meta = {**ctx.meta(), "position": pos, "q": qq, "game": g, "tone": tn, "sort": so, "limit": n, "offset": off,
-            "scoring": refleague.label(league) if ref else ctx.league_name, "projection_words": PROJECTION_WORDS,
-            "tone_words": TONE_WORDS, "position_note": POSITION_NOTE.get(pos), "rank_note": R.RANK_NOTE}
+            "scoring": refleague.label(league) if ref else ctx.league_name, "projection_words": projection_words(),
+            "tone_words": TONE_WORDS, "position_note": POSITION_NOTE.get(pos), "rank_note": R.RANK_NOTE,
+            "show": sh or "all", "started_games": 0, "started_players": 0, "defense_source": "reference"}   # IO-4
     empty = {**meta, "rows": [], "total": 0, "games": [], "counts": {}}
     if week is None:
         return {**empty, "notice": "The regular season is over."}
     wk = _week_frame(season, week)
     if wk is None:
         return {**empty, "notice": "This week's matchups arrive with the next data refresh."}
-    games = [{"game_id": r["game_id"], "home": r["team"], "away": r["opponent"], "kickoff_at": r["kickoff_at"]}
-             for r in wk["games"][wk["games"]["is_home"]].sort_values(["kickoff_at", "game_id"]).to_dict("records")]
+    now = pd.Timestamp(clock.now())                                                     # ---- IO-4
+    now = now.tz_localize("UTC") if now.tzinfo is None else now.tz_convert("UTC")
+    gw = wk["games"]
+    games = [{"game_id": r["game_id"], "home": r["team"], "away": r["opponent"], "kickoff_at": r["kickoff_at"],
+              "state": game_state(r["kickoff_at"], r.get("is_final"), now)}                  # ---- IO-4
+             for r in gw[gw["is_home"]].sort_values(["kickoff_at", "game_id"]).to_dict("records")]
     if g is not None and g not in {x["game_id"] for x in games}:
         raise Bad("That game is not on this week's schedule.")
-    df = _week_rows(ctx, season, week, wk)
+    league_def = None if ref else league_defense(ctx, season)                           # ---- IO-4
+    df = _week_rows(ctx, season, week, wk, league_def)
     df = df[df["position"] == pos]
+    # ---- IO-4: a game that has kicked off moves below the games still to come; "Still to play" by default once one has
+    state_of = {x["game_id"]: x["state"] for x in games}
+    df = df.assign(game_state=[state_of.get(x) for x in df["game_id"]])
+    started = int(df["game_state"].notna().sum())
+    sh = sh or ("all" if g is not None or not any(x["state"] for x in games) else "to_play")   # a game picked: all of it
+    meta.update(show=sh, started_games=sum(1 for x in games if x["state"]), started_players=started,
+                defense_source="league" if league_def is not None else "reference")
+    if sh == "to_play":
+        df = df[df["game_state"].isna()]
+    # ---- end IO-4
     counts = {t: int((df["tone"] == t).sum()) for t in TONES} | {"none": int(df["tone"].isna().sum())}
     if g is not None:
         df = df[df["game_id"] == g]
@@ -455,6 +559,7 @@ def board(league: str, *, position: str | None = None, q: str | None = None, gam
         df = df.sort_values(["tone_order", "proj_points", "gsis_id"], ascending=[True, False, True])
     elif so == "corner":           # the easiest corner to throw on first (the highest rank); no ranked corner last
         df = df.sort_values(["corner_known", "corner_sort", "proj_points", "gsis_id"], ascending=[False, False, False, True])
+    df = pd.concat([df[df["game_state"].isna()], df[df["game_state"].notna()]])         # ---- IO-4: kicked off last
     total = int(len(df))
     page = df.iloc[off:off + n]
     page_rows = R._records(page.drop(columns=["tone_order", "corner_known", "corner_sort", "name_key"]))
@@ -464,14 +569,19 @@ def board(league: str, *, position: str | None = None, q: str | None = None, gam
             o = ro.loc[r["gsis_id"]] if r["gsis_id"] in ro.index else None
             r["rostered_by_roster_id"] = None if o is None or pd.isna(o["rostered_by_roster_id"]) else int(o["rostered_by_roster_id"])
             r["rostered_by_team"] = None if o is None else o["rostered_by_team"]
-    ev = _evidence(ctx, page_rows, season, week)
+    ev = _evidence(ctx, page_rows, season, week, own=league_def is not None)                      # ---- IO-4
     out_rows = []
     for r in page_rows:
         c = copy.deepcopy(wk["rows"][r["gsis_id"]])
+        if league_def is not None:                       # ---- IO-4: the league's own defense read (the heatmap's rank)
+            c["defense"] = {"tone": r.get("def_tone"), "tough_rank": R._rank(r.get("def_rank")),
+                            "n_ranked": R._rank(r.get("def_n")) or None, "words": r.get("def_words")}
+            c["tone"] = r.get("tone")
+            c["words"] = _sentence(c["defense"], c["cb"], c["tone"])
         out_rows.append({
             **{k: r.get(k) for k in ("gsis_id", "player_name", "position", "team", "headshot_url", "report_status",
                                      "opponent", "is_home", "kickoff_at", "game_id", "proj_points", "p10", "p25", "p75",
-                                     "p90")},
+                                     "p90", "game_state")},                              # ---- IO-4: game_state
             **({k: r.get(k) for k in ("rostered_by_roster_id", "rostered_by_team")} if not ref else {}),
             "context": c, "cb_detail": wk["detail"].get(r["gsis_id"]), "matchup_evidence": ev.get(r["gsis_id"])})
     return {**meta, "season": season, "week": week, "rows": out_rows, "total": total, "games": games, "counts": counts}
@@ -480,7 +590,7 @@ def board(league: str, *, position: str | None = None, q: str | None = None, gam
 @router.get("/api/matchups/board")
 def board_route(league: str, response: Response, position: str = "WR", q: str | None = None, game: str | None = None,
                 tone: str | None = None, sort: str | None = None, limit: int = DEFAULT_LIMIT, offset: int = 0,
-                source: str | None = None):
+                source: str | None = None, show: str | None = None):
     from .main import _research
     return _research(board(league, position=position, q=q, game=game, tone=tone, sort=sort, limit=limit, offset=offset,
-                           source=source), league, response)
+                           source=source, show=show), league, response)

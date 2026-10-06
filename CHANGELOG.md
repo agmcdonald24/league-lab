@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-06 — Wave I-O
+
+- **IO-4 — the fix list and two things left twice.** My Week names "M. Washington" / "P. Washington" when two players
+  on a roster share a last name (`cards.display_name` decides; nobody else changes); a submitted lineup holding a
+  player who has left the roster is one roster alert per spot ("A player in your Sleeper lineup is no longer on your
+  roster — set that spot again."). The matchup board moves games that have kicked off below the games to come, marked
+  Started / Final, with **Still to play** the default once one has; in a real league its defense rank is the league's
+  own (the heatmap's), browsing keeps the reference; the honesty line reads IO-1's context record when it is there.
+  **Stats: a Role change group** — target, carry and snap share change (his last 2 games against his games before
+  them, DFS's role trend, now `league_lab.role_trend` — one implementation). **Each visitor has his own share of
+  Sleeper's and MFL's budget** (150 Sleeper calls at once then 60 a minute; MFL 50 then 12), set by the limiter's
+  middleware, never applied to the nightly or the tests (SECURITY_PUBLIC § 13).
+
 ## 2026-10-06 — Wave I-N
 
 - **PO — the wave merged, reviewed and hardened.** Six branches (IN-1 … IN-6) on `integ/IN`, the full suites run by

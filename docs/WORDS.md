@@ -569,3 +569,20 @@ Andrew, 2026-10-06: "you could probably just say, like, roster alert instead of 
 | the news block's heading (My Week; `lib/feed.ts` `NEWS_FEED`) | **News feed** (its empty line stays "Nothing has changed since the morning build.") | "What changed" (the matchup evidence keeps "What changed" for its own corners line: another thing) |
 | a screen that hit a render error (`ErrorCard crashed`, App.svelte's boundaries) | **This screen hit a problem** — "Something on this screen did not load. Reload the page; the other screens still work." + **Reload** | a blank screen; loading blocks forever |
 <!-- ---- end IN-5 -->
+
+<!-- ---- IO-4 -->
+## The fix list (Wave I-O, IO-4)
+
+Andrew, 2026-10-06 (the live check): "Start Washington ahead of Jefferson…" with Malik and Parker Washington on one
+roster; a finished week's "Take player no longer on your roster out of your lineup."; games that already kicked off
+still on the matchup board.
+
+| Where | The words we use | Never |
+|---|---|---|
+| a player named by his last name in My Week (actions, reasons, the review lines, the news feed's "Inspect …"; `myweek.short_name`) | "Washington" when he is the only Washington on the roster; **"P. Washington"** / **"M. Washington"** when another player on the roster shares the last name (`cards.display_name` decides the collision); the full name when the two share the first initial too ("Josh Allen" beside Jaylen Allen); a defense keeps its name | "Washington" for one of two Washingtons; a first initial for a player whose last name nobody else has |
+| a submitted lineup spot whose player has left the roster (`myweek.gone_actions`; a roster alert, one per spot) | "A player in your Sleeper lineup is no longer on your roster — set that spot again." (the platform's name: Sleeper, MyFantasyLeague …) · the reason: "Our lineup starts Washington there (your FLEX spot)." or "Start someone from your bench there (your RB spot), or add a player." · "Not in your Sleeper lineup yet: set that spot in Sleeper." | "Take player no longer on your roster out of your lineup." |
+| the matchup board's games filter, once a game has kicked off (`Board.svelte`, `show=`) | **Still to play** (the default once a game has started) · **All games** · the count: "Showing 1–25 of 206 wide receivers still to play" | the board listing a played game's receivers as if they were still to come |
+| a row whose game has kicked off (the badge; the game list's option) | **Started** · **Final** ("PIT at CLE · Thu 8:15 PM ET · Final") | — |
+| the board's honesty line with IO-1's record (`matchup_board.projection_words`) | today's sentence, its last part ("Whether a tough corner lowers a receiver's points has not been graded yet.") replaced by the record's own sentence when the record has graded the corner calls | a grade that is not there |
+| Stats, the Role change group (`stats.py` CATALOGUE; `columns.ts` `sharePts`) | **Target share change** (Tgt % chg) · **Carry share change** (Car % chg, running backs) · **Snap share change** (Snap % chg); a cell: "+5.2 pts" / "−3.1 pts" (points of share, signed); its hover: "27.1% in his last 2 games against 12.0% in his 2 before them"; a dash: "Needs his last 2 games played in the window and at least 2 before them, each with the numbers, and enough team volume (20 team targets or carries, 60 team snaps per 2 games): pick a longer window." · the CSV header: "Target share change (points of share)" | "+5.2%" for a change of share (a percent of a percent); 0 for a short sample |
+<!-- ---- end IO-4 -->
