@@ -569,3 +569,19 @@ Andrew, 2026-10-06: "you could probably just say, like, roster alert instead of 
 | the news block's heading (My Week; `lib/feed.ts` `NEWS_FEED`) | **News feed** (its empty line stays "Nothing has changed since the morning build.") | "What changed" (the matchup evidence keeps "What changed" for its own corners line: another thing) |
 | a screen that hit a render error (`ErrorCard crashed`, App.svelte's boundaries) | **This screen hit a problem** — "Something on this screen did not load. Reload the page; the other screens still work." + **Reload** | a blank screen; loading blocks forever |
 <!-- ---- end IN-5 -->
+
+<!-- ---- IO-2 -->
+## The League link and movement (Wave I-O, IO-2)
+
+Andrew, 2026-10-06: "make the League page shareable" — the link a league-mate opens from the group chat.
+
+| Where | The words we use | Never |
+|---|---|---|
+| League, under the screen's answer (Sleeper and MyFantasyLeague leagues only) | **Share** (↗; "Link copied" for 2.5 s; no clipboard: "Copy this link:" and the address) · "The power rankings and the rest of the season, for anyone in the league." | a share button on an ESPN or Yahoo league (read with someone's own connection) |
+| the link opened with no team (`guest-strip`) | **Is this your league?** + a picker whose first line is **Pick your team** (then it is the normal app) | "No league", "Sign in" |
+| the link's preview card (the page shell; `outlook.preview`) | title "League of Scrubs: power rankings, week 5"; description "1. Run Bijan Run 119.5 (72% playoffs); 2. … 3. …. Points per week each team's best lineup should score over the rest of the season, and playoff odds from simulated seasons." (without playoff odds: the sentence ends at "season.") | a number not from the league's last build or stored row; a card for a private league |
+| the arrows (Power rankings, before the per-week number) | **▲ 2** / **▼ 1** / **–** (the same place); tooltip and screen reader: "Up 2 places since last week's ranking" · "Down 1 place since last week's ranking" · "The same place as last week's ranking" | an arrow from anything but last week's kept ranking |
+| the playoff odds' change (under the Playoffs number) | "+6 since last week" / "−4 since last week" (points of percentage; hidden under 1) | "+6%" (a relative change) |
+| the line under Power rankings | with arrows: "▲ ▼: places moved since the ranking kept before week 4." · this week's kept, last week's not: "Movement shows from next week: this week's ranking is kept." · the store on, neither kept: "No movement arrows yet: each week's ranking is kept before its first game, and the arrows compare with last week's." · the store off (a server without the table): IN-6's "No movement arrows: last week's rest-of-season projections are not kept, so last week's ranking cannot be rebuilt." | — |
+| the season block while it is simulated (the power rankings already on screen) | "Playing out the rest of the season…" (a skeleton under it); failed: "No outlook for the rest of the season right now: <the reason>" | a spinner with no words; the whole block replaced by an error |
+<!-- ---- end IO-2 -->

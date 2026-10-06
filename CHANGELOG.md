@@ -2,6 +2,17 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-06 — Wave I-O
+
+- **IO-2 — the League page: movement, and a link worth sharing.** Each week's outlook is kept (`outlook.snapshots`,
+  `scripts/hosted_outlook.sql`: one row per league-week, replaced only until the week's first kickoff, written off the
+  request path, house and saved leagues always, at most 20 new other leagues a day and 200 held, 20 weeks kept; off and
+  quiet without the table); the power rankings show ▲ ▼ places and the playoff odds' change from last week's kept row
+  only; **Share** on League (Sleeper and MyFantasyLeague) → `/league?league=<key>`, opened with no team as a guest with
+  "Is this your league? Pick your team"; the link's preview card from what is cached or stored (never a provider call or
+  a simulation); the power rankings first (`part=power`) and a market-free board for leagues not kept every night: MFL
+  70587's League screen cold 12.3 s → power rankings 2.6 s, rest of season 3.3 s (docs/handbacks/IO-2.md).
+
 ## 2026-10-06 — Wave I-N
 
 - **PO — the wave merged, reviewed and hardened.** Six branches (IN-1 … IN-6) on `integ/IN`, the full suites run by
