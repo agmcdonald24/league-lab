@@ -41,6 +41,9 @@ needs_db = pytest.mark.skipif(not DB_OK, reason="database not reachable with the
 # the `real_clock` fixture. The stale rule (league_lab.freshness) and availability's fetch stamps keep the real time.
 PINNED_NOW = "2026-10-03T16:00:00Z"
 os.environ.setdefault("LEAGUE_LAB_NOW", PINNED_NOW)
+# ---- IM-3 (Wave I-M): the rate limiter stays out of the suite (thousands of requests from one TestClient address);
+# tests/test_im3.py turns it on with its own numbers and clock (ratelimit.reset)
+os.environ.setdefault("LEAGUE_LAB_RATE_LIMIT", "off")
 
 
 @pytest.fixture(autouse=True)

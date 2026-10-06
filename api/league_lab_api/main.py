@@ -31,6 +31,12 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/events?league=&team=&hours=     ---- IG-2: this roster's stored events (status moves, news, briefs; the PO's QA)
     /api/account/*                       ---- IK-4: accounts (sign-in by an emailed link, saved leagues, preferences)
     /api/account/watchlist?league=&team= ---- IL-5: the saved players in one league (the watchlist screen)
+    /api/ratelimit                       ---- IM-3: how this request was keyed by the rate limiter (never the address)
+---- IM-3 (Wave I-M): the gate is a switch (LEAGUE_LAB_GATE = open | password; auth.py), every /api/ route but the
+health check is rate-limited (ratelimit.py), cross-site writes, oversized bodies and the response headers are the
+Guard's (security.py), and `ref:ppr` / `ref:half` / `ref:std` are leagues for browsing without one (refleague.py):
+the research routes answer them without ownership, the decision routes with 404 {"code": "needs_league"}.
+docs/SECURITY_PUBLIC.md.
 Errors are {"error": "<plain words>"} (plus the older "detail"): 404 unknown league / team / player / user,
 502 Sleeper did not answer, 503 the numbers are not ready yet / busy (our Sleeper budget).
 Everything else is the web app (web/dist): a real file, else index.html (the app routes itself).
@@ -83,6 +89,10 @@ async def _give_memory_back(request: Request, call_next):
     return response
 
 JSON_CACHE = "private, max-age=120"
+
+from . import ratelimit, refleague, security  # noqa: E402 - ---- IM-3 (Wave I-M): its own block, below
+
+refleague.install()          # ---- IM-3: `ref:` keys answer through the platforms Router (refleague.py)
 
 
 # errors: {"error": "<plain words>"} (the contract), "detail" kept for the D7 spike's web client
@@ -159,6 +169,26 @@ async def _provider_context(request: Request, call_next):
     finally:
         ondemand.YAHOO_TOKEN.reset(reset)
 # ---- end IK-3
+
+
+# ---- IM-3 (Wave I-M): a reference key (`ref:half`) on a decision route — My Week, Waivers, Trades, Team, League and the
+# rest that need a roster — is not an error: 404 {"code": "needs_league", "error": "Open your league to see this."},
+# which the web turns into an invitation card. A research route answers it without ownership (`_research`).
+@app.exception_handler(refleague.NeedsLeague)
+async def _needs_league(_req: Request, _exc: refleague.NeedsLeague):
+    return refleague.needs_league()
+
+
+def needs_league(request: Request) -> None:
+    league = request.query_params.get("league") or request.path_params.get("league_id")
+    if refleague.is_reference(league):
+        raise refleague.NeedsLeague()
+
+
+def _research(data, league: str | None, response: Response):
+    """A research route's answer: as before, or — for a reference key — without any ownership field."""
+    return _json(refleague.public(data) if refleague.is_reference(league) else data, response)
+# ---- end IM-3
 
 
 def clean(v):
@@ -351,7 +381,7 @@ def providers(response: Response):
 # ---- end II-5
 
 
-@app.get("/api/leagues/{league_id}/rosters", dependencies=[Depends(require_auth)])
+@app.get("/api/leagues/{league_id}/rosters", dependencies=[Depends(require_auth), Depends(needs_league)])
 def rosters(league_id: str, response: Response, source: str | None = None):
     if source == "sleeper" or not myweek.known_league(league_id):
         return _json(ondemand.rosters_for_league(league_id), response)
@@ -383,7 +413,7 @@ def why_market_rows(out: dict, league: str, *, house: bool) -> dict:
 # ---- end IA-3
 
 
-@app.get("/api/my-week", dependencies=[Depends(require_auth)])
+@app.get("/api/my-week", dependencies=[Depends(require_auth), Depends(needs_league)])
 def my_week(league: str, team: int, response: Response, source: str | None = None):
     if source == "sleeper" or not myweek.known_league(league):
         return _json(why_market_rows(ondemand.my_week(league, team), league, house=False), response)   # ---- IA-3
@@ -397,13 +427,15 @@ def player_card(gsis: str, league: str, response: Response, team: int | None = N
     else:
         out = player.player_card(league, gsis)
     out["viewer_roster_id"] = team
-    return _json(out, response)
+    return _research(out, league, response)                                                       # ---- IM-3
 
 
 @app.get("/api/ros", dependencies=[Depends(require_auth)])
 def ros(league: str, response: Response, position: str = "ALL", limit: int = 50,
         view: str = "points", team: int | None = None, who: str = "all"):          # ---- IB-3: view=lineup&team=
-    return _json(ondemand.ros(league, position, limit, view=view, team=team, who=who), response)
+    if view == "lineup" and refleague.is_reference(league):                                   # ---- IM-3
+        raise refleague.NeedsLeague()
+    return _research(ondemand.ros(league, position, limit, view=view, team=team, who=who), league, response)
 
 
 @app.exception_handler(ondemand.BadView)                                              # ---- IB-3
@@ -413,13 +445,15 @@ async def _bad_view(_req: Request, exc: ondemand.BadView):
 
 @app.get("/api/record", dependencies=[Depends(require_auth)])
 def record(league: str, response: Response, team: int | None = None):   # ---- V-2: `team` -> decisions.team
+    if refleague.is_reference(league):                         # ---- IM-3: the model's record, no lineup record
+        return _research(refleague.record(league), league, response)
     return _json(ondemand.record(league, team=team), response)
 
 
 @app.get("/api/search", dependencies=[Depends(require_auth)])
 def search(league: str, q: str, response: Response, source: str | None = None):
     if source == "sleeper" or not myweek.known_league(league):     # H1: any league - Sleeper's directory (research.py)
-        return _json(research.search_on_demand(league, q), response)
+        return _research(research.search_on_demand(league, q), league, response)                 # ---- IM-3
     return _json(player.search(league, q), response)
 
 
@@ -454,6 +488,8 @@ def status(response: Response):
         out["board_source_in_use"] = f"unknown ({exc.__class__.__name__})"
     out["memory"] = memory_status()          # ---- INF-2: the server's RSS and the caches' budget, region by region
     out["odds_grades"] = _status_odds_grades()   # ---- IL-3: the latest grade of the week's odds and the ranges
+    out["ratelimit"] = ratelimit.limiter().info()   # ---- IM-3: the buckets, clients held, refusals, how clients were keyed
+    out["gate"] = auth.gate()                       # ---- IM-3: open | password
     return _json(out, response)
 
 
@@ -506,18 +542,19 @@ async def _bad_request(_req: Request, exc: research.BadRequest):
 def trends(league: str, response: Response, position: str = "ALL", limit: int = 50, view: str = "all",
            season: int | None = None, who: str = "all", team: int | None = None, min_games: int = 1,
            sort: str | None = None, dir: str | None = None, metrics: str = "moved", source: str | None = None):
-    return _json(research.trends(league, position=position, limit=limit, view=view, season=season, who=who, team=team,
-                                 min_games=min_games, sort=sort, dir=dir, metrics=metrics, source=source), response)
+    return _research(research.trends(league, position=position, limit=limit, view=view, season=season, who=who, team=team,
+                                     min_games=min_games, sort=sort, dir=dir, metrics=metrics, source=source),
+                     league, response)                                                            # ---- IM-3
 
 
 @app.get("/api/matchups/defense", dependencies=[Depends(require_auth)])
 def matchups_defense(league: str, response: Response, position: str = "ALL", source: str | None = None, team: int | None = None):
-    return _json(research.matchups_defense(league, position=position, source=source, team=team), response)
+    return _research(research.matchups_defense(league, position=position, source=source, team=team), league, response)
 
 
 @app.get("/api/matchups/cb", dependencies=[Depends(require_auth)])
 def matchups_cb(league: str, response: Response, team: int | None = None, limit: int = 50, source: str | None = None):
-    return _json(research.matchups_cb(league, team=team, limit=limit, source=source), response)
+    return _research(research.matchups_cb(league, team=team, limit=limit, source=source), league, response)
 
 
 @app.get("/api/players", dependencies=[Depends(require_auth)])
@@ -525,27 +562,29 @@ def players(league: str, response: Response, season: int | None = None, position
             dir: str | None = None, limit: int = 50, offset: int = 0, q: str | None = None, season_type: str = "REG",
             min_games: int = 1, source: str | None = None, window: str | None = None, basis: str | None = None,
             weeks: str | None = None, who: str | None = None, team: int | None = None, nfl: str | None = None):  # ---- II-3
-    return _json(research.players(league, season=season, position=position, sort=sort, dir=dir, limit=limit, offset=offset,
-                                  q=q, season_type=season_type, min_games=min_games, source=source, window=window,
-                                  basis=basis, weeks=weeks, who=who, team=team, nfl=nfl), response)
+    return _research(research.players(league, season=season, position=position, sort=sort, dir=dir, limit=limit,
+                                      offset=offset, q=q, season_type=season_type, min_games=min_games, source=source,
+                                      window=window, basis=basis, weeks=weeks, who=who, team=team, nfl=nfl),
+                     league, response)                                                            # ---- IM-3
 
 
 @app.get("/api/receivers", dependencies=[Depends(require_auth)])
 def receivers(league: str, response: Response, season: int | None = None, limit: int = 50, season_type: str = "REG",
               weeks: str | None = None, players: str | None = None, context: str = "half", source: str | None = None):
-    return _json(research.receivers(league, season=season, limit=limit, season_type=season_type, weeks=weeks,
-                                    players=players, context_type=context, source=source), response)
+    return _research(research.receivers(league, season=season, limit=limit, season_type=season_type, weeks=weeks,
+                                        players=players, context_type=context, source=source), league, response)
 
 
 @app.get("/api/compare", dependencies=[Depends(require_auth)])
 def compare(league: str, a: str, b: str, response: Response, source: str | None = None):
-    return _json(research.compare(league, a, b, source=source), response)
+    return _research(research.compare(league, a, b, source=source), league, response)
 
 
 @app.get("/api/player/{gsis}/games", dependencies=[Depends(require_auth)])
 def player_games(gsis: str, league: str, response: Response, season: int | None = None, season_type: str = "ALL",
                  source: str | None = None):
-    return _json(research.player_games(league, gsis, season=season, season_type=season_type, source=source), response)
+    return _research(research.player_games(league, gsis, season=season, season_type=season_type, source=source),
+                     league, response)
 # ---- end G1 research
 
 # ---- G2 decisions (Wave G): waivers, trades, the Team Hub, the league - a house league from the marts, any other on demand
@@ -572,7 +611,7 @@ async def _bad_request(_req: Request, exc: decisions.BadRequest):
     return JSONResponse({"error": str(exc), "detail": str(exc), **extra}, status_code=400, headers={"Cache-Control": "no-store"})
 
 
-@app.get("/api/waivers", dependencies=[Depends(require_auth)])
+@app.get("/api/waivers", dependencies=[Depends(require_auth), Depends(needs_league)])
 def waivers(league: str, response: Response, team: int | None = None, position: str | None = None, limit: int = 50,
             offset: int = 0, source: str | None = None):
     return _json(decisions.waivers(league, team, position, limit, offset, source=source), response)
@@ -580,13 +619,15 @@ def waivers(league: str, response: Response, team: int | None = None, position: 
 
 @app.post("/api/trades/evaluate", dependencies=[Depends(require_auth)])
 def trades_evaluate(body: TradeBody, response: Response, source: str | None = None):
+    if refleague.is_reference(body.league):                                                      # ---- IM-3
+        raise refleague.NeedsLeague()
     provider_gate(body.league)                                                                   # ---- IK-3
     out = decisions.evaluate(body.league, body.team, body.partner, body.give, body.get, source=source, window=body.window)
     response.headers["Cache-Control"] = "no-store"
     return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
 
 
-@app.get("/api/trades/partners", dependencies=[Depends(require_auth)])
+@app.get("/api/trades/partners", dependencies=[Depends(require_auth), Depends(needs_league)])
 def trades_partners(league: str, team: int, response: Response, want: str | None = None, source: str | None = None,
                     window: str | None = None):
     return _json(decisions.partners(league, team, want, source=source, window=window), response)
@@ -594,18 +635,18 @@ def trades_partners(league: str, team: int, response: Response, want: str | None
 
 # ---- IA-2 (Wave I-A): buy low / sell high moved from /api/waivers to the Trades screen
 #   /api/trades/lists?league=&team=&position=               buy low (other rosters), sell high (yours), the best per position
-@app.get("/api/trades/lists", dependencies=[Depends(require_auth)])
+@app.get("/api/trades/lists", dependencies=[Depends(require_auth), Depends(needs_league)])
 def trades_lists(league: str, team: int, response: Response, position: str | None = None, source: str | None = None):
     return _json(decisions.trade_lists(league, team, position, source=source), response)
 # ---- end IA-2
 
 
-@app.get("/api/team", dependencies=[Depends(require_auth)])
+@app.get("/api/team", dependencies=[Depends(require_auth), Depends(needs_league)])
 def team_hub(league: str, team: int, response: Response, source: str | None = None):
     return _json(decisions.team(league, team, source=source), response)
 
 
-@app.get("/api/league", dependencies=[Depends(require_auth)])
+@app.get("/api/league", dependencies=[Depends(require_auth), Depends(needs_league)])
 def league_page(league: str, response: Response, team: int | None = None, limit: int = 50, offset: int = 0,
                 source: str | None = None):
     return _json(decisions.league(league, team, limit, offset, source=source), response)
@@ -618,7 +659,7 @@ from . import about as about_mod  # noqa: E402 - the block stays self-contained 
 
 @app.get("/api/about", dependencies=[Depends(require_auth)])
 def about(league: str, response: Response, source: str | None = None):
-    return _json(about_mod.about(league, source=source), response)
+    return _research(about_mod.about(league, source=source), league, response)                    # ---- IM-3
 # ---- end H1
 
 # ---- IC-1 (Wave I-C): the scoring check — our points against the league's own for a scored week
@@ -627,7 +668,7 @@ SCORING_CHECK_TTL_S = 24 * 3600.0        # a scored week does not change; the st
 _scoring_checks = memo.region("scoring_checks", ttl=SCORING_CHECK_TTL_S)   # INF-2: in the memory budget (was 200 entries)
 
 
-@app.get("/api/league/scoring-check", dependencies=[Depends(require_auth)])
+@app.get("/api/league/scoring-check", dependencies=[Depends(require_auth), Depends(needs_league)])
 def scoring_check(league: str, response: Response, week: int | None = None):
     from league_lab import scoring_audit
     key = (str(league), week)
@@ -688,7 +729,7 @@ def usage_summary(response: Response, days: int = 7):
 from . import events as events_mod  # noqa: E402 - the block stays self-contained
 
 
-@app.get("/api/events", dependencies=[Depends(require_auth)])
+@app.get("/api/events", dependencies=[Depends(require_auth), Depends(needs_league)])
 def events_list(league: str, team: int, response: Response, hours: int = 72):
     hours = max(1, min(int(hours), 720))
     out: dict = {"league": league, "team": int(team), "hours": hours, "enabled": events_mod.enabled(), "players": 0,
@@ -711,7 +752,7 @@ def events_list(league: str, team: int, response: Response, hours: int = 72):
 #   /api/league/week-odds?league=      asked by the screen after it shows (on demand: one solve per roster, 1-3 s cold)
 
 
-@app.get("/api/league/week-odds", dependencies=[Depends(require_auth)])
+@app.get("/api/league/week-odds", dependencies=[Depends(require_auth), Depends(needs_league)])
 def league_week_odds(league: str, response: Response, source: str | None = None):
     return _json(myweek.week_odds(league, house=False if source == "sleeper" else None), response)
 # ---- end IH-3
@@ -760,6 +801,19 @@ from . import watchlist as watchlist_mod  # noqa: E402 - the block stays self-co
 
 app.include_router(watchlist_mod.router, dependencies=[Depends(require_auth)])
 # ---- end IL-5
+
+
+# ---- IM-3 (Wave I-M): the public site's doors. The rate limiter (ratelimit.py) inside the Guard (security.py: cross-site
+# writes, body sizes, the response headers on every answer, a 429 included); both outermost, ahead of the routes.
+#   GET /api/ratelimit   how this request was keyed ({keyed_by, test_address_used, bucket_tag}; never the address)
+@app.get("/api/ratelimit", include_in_schema=False)
+def ratelimit_probe(request: Request) -> JSONResponse:
+    return JSONResponse(ratelimit.probe(request.scope), headers={"Cache-Control": "no-store"})
+
+
+app.add_middleware(ratelimit.RateLimit)
+app.add_middleware(security.Guard)
+# ---- end IM-3
 
 
 # ---------------------------------------------------------------- the web app

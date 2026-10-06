@@ -90,13 +90,27 @@ ESPN_PREFIX = "espn:"
 YAHOO_PREFIX = "yahoo:"
 _ESPN_KEY = re.compile(r"^(?:(\d{4}):)?(\d{1,12})$")
 _YAHOO_KEY = re.compile(r"^(\d{1,4}|nfl)\.l\.(\d{1,10})$")    # "nfl": this season's game (IK-2 resolves it)
-SHORT = {"sleeper": "Sleeper", "mfl": "MFL", "espn": "ESPN", "yahoo": "Yahoo"}
-LONG = {"sleeper": "Sleeper", "mfl": "MyFantasyLeague", "espn": "ESPN", "yahoo": "Yahoo"}
+SHORT = {"sleeper": "Sleeper", "mfl": "MFL", "espn": "ESPN", "yahoo": "Yahoo", "reference": "No league"}   # IM-3
+LONG = {"sleeper": "Sleeper", "mfl": "MyFantasyLeague", "espn": "ESPN", "yahoo": "Yahoo", "reference": "No league"}
+# ---- IM-3 (Wave I-M): reference league keys `ref:ppr` / `ref:half` / `ref:std` — no platform, no rosters: the NFL-wide
+# research priced in a reference scoring. The API installs the object that answers them (REFERENCE:
+# api/league_lab_api/refleague.py); until it does, a `ref:` key is LeagueNotFound like any unknown key.
+REF_PREFIX = "ref:"
+REF_KEYS = ("ref:ppr", "ref:half", "ref:std")
+REFERENCE: Any = None
+
+
+def is_reference(key: Any) -> bool:
+    return str(key or "").strip().lower().startswith(REF_PREFIX)
+# ---- end IM-3
 
 
 def provider_of(key: Any) -> str:
-    """sleeper | mfl | espn | yahoo, by the key's prefix (case-insensitive); a bare key is Sleeper's."""
+    """sleeper | mfl | espn | yahoo, by the key's prefix (case-insensitive); a bare key is Sleeper's. IM-3: ``reference``
+    for a ``ref:`` key."""
     s = str(key or "").strip().lower()
+    if s.startswith(REF_PREFIX):                      # ---- IM-3
+        return "reference"
     if s.startswith(PREFIX):
         return "mfl"
     if s.startswith(ESPN_PREFIX):
@@ -160,6 +174,10 @@ def check_key(key: Any) -> str:
     """A league key: Sleeper digits, ``mfl:<digits>``, ``espn:<digits>``, ``yahoo:<game>.l.<id>`` (lower-cased
     prefix). Anything else is LeagueNotFound."""
     s = str(key or "").strip()
+    if is_reference(s):              # ---- IM-3
+        if s.lower() not in REF_KEYS:
+            raise LeagueNotFound(f"not a reference league: {key!r}")
+        return s.lower()
     if is_mfl(s):
         return PREFIX + M.check_league(s[len(PREFIX):])
     if is_espn(s):                   # ---- IK-3
@@ -631,6 +649,10 @@ class Router:
         p = provider_of(key)
         if p == "sleeper":
             return self.sleeper
+        if p == "reference":                                          # ---- IM-3
+            if REFERENCE is None:
+                raise LeagueNotFound(f"not a league: {key!r}")
+            return REFERENCE
         if p == "mfl":
             return self.mfl
         ad = self.espn if p == "espn" else self.yahoo
