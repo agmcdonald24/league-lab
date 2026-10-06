@@ -36,6 +36,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from . import provider_share  # ---- IO-4: each client's own share of the budget
+
 SLEEPER_API = "https://api.sleeper.app/v1"
 FIXTURES_ENV = "LEAGUE_LAB_SLEEPER_FIXTURES"
 API_ENV = "LEAGUE_LAB_SLEEPER_API"            # override the host (a proxy, a mock)
@@ -302,7 +304,8 @@ class Sleeper:
             disk = self._players_from_disk()
             if disk is not None:
                 return disk
-        if not self.bucket.take():
+        # ---- IO-4: the request's client's own share first (none for the nightly / tests), then everyone's bucket
+        if not provider_share.take("sleeper") or not self.bucket.take():
             if hit is not None:                # busy: the last good answer beats an error
                 self.stale_served += 1
                 return hit[3]

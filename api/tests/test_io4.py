@@ -218,6 +218,7 @@ def test_the_record_sentence_replaces_not_graded_only_when_graded(monkeypatch):
 
 # ------------------------------------------------------------------ 4. the role-change columns on Stats
 from league_lab import role_trend as RT  # noqa: E402
+
 from league_lab_api import stats as ST  # noqa: E402
 
 
@@ -252,7 +253,6 @@ def test_the_moved_role_trend_is_the_old_one_on_random_players():
     """The function as it was in src/league_lab/dfs.py (main cf8e743), kept here verbatim as the reference: the moved
     implementation gives the same answer on 1,500 random players (measures missing, zero denominators, short samples)."""
     import numpy as np
-
     from league_lab import dfs as D
 
     def old_ratio(g, num, den):
@@ -326,12 +326,12 @@ def test_stats_role_columns_match_the_dfs_board_and_say_why_when_unknown(client)
     from league_lab_api import dfs as AD
     ST.clear()
     t = time.perf_counter()
-    r = client.get(f"/api/players?league=ref:half&season=2026&window=season&position=WR,TE,RB&min_games=0&limit=1000")
+    r = client.get("/api/players?league=ref:half&season=2026&window=season&position=WR,TE,RB&min_games=0&limit=1000")
     cold = time.perf_counter() - t
     assert r.status_code == 200, r.text[:300]
     d = r.json()
     t = time.perf_counter()
-    client.get(f"/api/players?league=ref:half&season=2026&window=season&position=WR,TE,RB&min_games=0&limit=1000")
+    client.get("/api/players?league=ref:half&season=2026&window=season&position=WR,TE,RB&min_games=0&limit=1000")
     warm = time.perf_counter() - t
     cat = {c["id"]: c for c in d["catalogue"]}
     for cid in ("target_share_change", "carry_share_change", "snap_share_change"):
@@ -371,3 +371,210 @@ def test_the_inventory_has_the_role_change_rows():
     text = (ROOT / "docs" / "DATA_INVENTORY.md").read_text()
     for cid in ("target_share_change", "carry_share_change", "snap_share_change"):
         assert any(ln.startswith(f"| `{cid}` ") and "derived" in ln for ln in text.splitlines()), cid
+
+
+# ------------------------------------------------------------------ 5. each client's own share of the providers' budget
+from league_lab import anyleague as A  # noqa: E402
+from league_lab import provider_share as PS  # noqa: E402
+
+from league_lab_api import ratelimit  # noqa: E402
+
+ON_DEMAND = "9000000000000000001"             # the fixtures' Sleeper league that is not in the database (on demand)
+SCREENS = ("/api/my-week?league={l}&team=1", "/api/team?league={l}&team=1", "/api/league?league={l}&team=1",
+           "/api/league/outlook?league={l}&team=1")
+
+
+class _Clock:
+    def __init__(self) -> None:
+        self.t = 1000.0
+
+    def __call__(self) -> float:
+        return self.t
+
+
+def _cold() -> None:
+    """A league this process has never answered: the Sleeper client's caches and every answer cache emptied."""
+    from league_lab import memo
+
+    from league_lab_api import availability, db
+    A._default = None
+    A.clear_priced()
+    db.clear_cache()
+    availability.clear_context()
+    memo.BUDGET.clear()                                 # every answer cache (the outlook's schedule included)
+    ratelimit.SEEN = ratelimit.Seen()
+
+
+def _open_league(client, league: str, peer: str | None = None) -> list[int]:
+    kw = {"headers": {}} if peer is None else {}
+    return [client.get(p.format(l=league), **kw).status_code for p in SCREENS]
+
+
+def test_the_share_counts_per_client_and_never_without_one():
+    clk = _Clock()
+    sh = PS.Shares({"sleeper": (60.0, 5.0)}, clock=clk)
+    assert all(sh.take("sleeper", "1.2.3.4") for _ in range(5)) and not sh.take("sleeper", "1.2.3.4")
+    assert sh.take("sleeper", "5.6.7.8")                       # another client: its own share
+    assert sh.take("sleeper", None) and sh.take("espn", "1.2.3.4")   # no client / no share for that provider: no limit
+    clk.t += 1.0                                               # one a second comes back
+    assert sh.take("sleeper", "1.2.3.4") and not sh.take("sleeper", "1.2.3.4")
+    assert sh.info()["sleeper"]["refused"] == 2
+    off = PS.Shares({"sleeper": (1.0, 1.0)}, enabled=False)
+    assert all(off.take("sleeper", "x") for _ in range(10))
+    # memory: 20,000 clients in debt -> bounded
+    big = PS.Shares({"sleeper": (60.0, 150.0)}, clock=clk, max_clients=5000)
+    for i in range(20000):
+        big.take("sleeper", f"10.0.{i // 250}.{i % 250}")
+    assert len(big.shares["sleeper"].full_at) <= 5000
+
+
+def test_env_numbers_and_switch(monkeypatch):
+    monkeypatch.setenv("LEAGUE_LAB_PROVIDER_SHARE", "30,90")
+    monkeypatch.setenv("LEAGUE_LAB_PROVIDER_SHARE_MFL", "6,20")
+    s = PS.from_env()
+    assert s.enabled and (s.shares["sleeper"].per_minute, s.shares["sleeper"].burst) == (30.0, 90.0)
+    assert (s.shares["mfl"].per_minute, s.shares["mfl"].burst) == (6.0, 20.0)
+    monkeypatch.setenv("LEAGUE_LAB_PROVIDER_SHARE", "off")
+    assert not PS.from_env().enabled
+    monkeypatch.setenv("LEAGUE_LAB_PROVIDER_SHARE", "nonsense")
+    monkeypatch.delenv("LEAGUE_LAB_PROVIDER_SHARE_MFL")
+    s = PS.from_env()
+    assert s.enabled and (s.shares["sleeper"].per_minute, s.shares["sleeper"].burst) == PS.DEFAULTS["sleeper"]
+
+
+def test_a_provider_client_refuses_busy_but_serves_what_it_has():
+    from league_lab.sleeper_client import Sleeper, SleeperBusy, TokenBucket
+    clk = _Clock()
+    PS.reset(PS.Shares({"sleeper": (60.0, 2.0)}, clock=clk))
+    try:
+        fetched = []
+        sl = Sleeper(fetch=lambda path: fetched.append(path) or {"league_id": "1", "name": path},
+                     bucket=TokenBucket(1000), clock=clk)
+        with PS.acting_for("1.2.3.4"):
+            sl.league("1111111111")
+            sl.league("2222222222")
+            with pytest.raises(SleeperBusy):
+                sl.league("3333333333")
+            assert sl.league("1111111111")["name"]                 # cached: no call, no refusal
+        sl.league("3333333333")                                    # the nightly / a test: no client, no share
+        assert len(fetched) == 3
+    finally:
+        PS.reset()
+
+
+@pytest.fixture
+def limited(monkeypatch):
+    """The limiter on (as on the site) with numbers that never refuse these requests themselves, the provider share
+    on a fake clock; both put back after."""
+    clk = _Clock()
+    big = {n: (100000.0, 100000.0) for n in ratelimit.DEFAULTS}
+    ratelimit.reset(ratelimit.Limiter(big, coarse={}, global_={}, clock=clk))
+    PS.reset(PS.Shares(clock=clk))
+    monkeypatch.setenv("LEAGUE_LAB_CPU_SLOTS", "0")
+    yield clk
+    monkeypatch.setenv("LEAGUE_LAB_RATE_LIMIT", "off")
+    ratelimit.reset()
+    PS.reset()
+
+
+def test_one_league_opened_cold_costs_this_many_calls(client):
+    _cold()
+    sl = A.sleeper()
+    before = sl.calls
+    codes = _open_league(client, ON_DEMAND)
+    assert codes == [200, 200, 200, 200], codes
+    n = sl.calls - before
+    _cold()
+    sl = A.sleeper()
+    lg = client.get("/api/leagues?username=andycatmac")
+    print(f"one unknown Sleeper league opened cold (My Week, Team, League, outlook): {n} Sleeper calls; "
+          f"/api/leagues?username= -> {lg.status_code}, {A.sleeper().calls} calls")
+    assert 5 <= n <= PS.DEFAULTS["sleeper"][1] / 3      # three of them fit in the share's first minute
+
+
+def test_a_person_opening_three_leagues_in_a_minute_is_never_refused(client, limited):
+    refused = []
+    for _ in range(3):                                   # three unknown leagues (the same fixture, cold each time)
+        _cold()
+        limited.t += 15.0                                # 15 seconds apart: all three inside one minute
+        refused += [c for c in _open_league(client, ON_DEMAND) if c != 200]
+    info = PS.shares().info()["sleeper"]
+    print(f"three leagues in 45 s: {info['calls']} Sleeper calls on this client's share, refused {info['refused']}")
+    assert refused == [] and info["refused"] == 0
+
+
+def test_a_script_opening_fifty_leagues_is_refused_busy_and_others_are_not(client, limited):
+    codes = []
+    for _ in range(50):                                  # fifty unknown leagues, 1.2 s apart (one minute in all)
+        _cold()
+        limited.t += 1.2
+        codes += _open_league(client, ON_DEMAND)
+    busy = [c for c in codes if c == 503]
+    assert set(codes) <= {200, 503} and busy, codes    # refused in the app's busy words, never a 500
+    first = codes.index(503) // len(SCREENS)
+    print(f"fifty leagues in a minute: refused from league {first + 1}; {len(busy)} of {len(codes)} answers busy; "
+          f"share: {PS.shares().info()['sleeper']}")
+    r = client.get(SCREENS[0].format(l=ON_DEMAND))
+    if r.status_code == 503:
+        assert r.json()["error"] == "busy, try again in a minute"
+    # another visitor is not refused: its own share
+    _cold()
+    with PS.acting_for("198.51.100.7"):
+        assert A.sleeper().league(ON_DEMAND)["league_id"] == ON_DEMAND
+
+
+def test_mfl_three_leagues_in_a_minute_are_never_refused(client, limited):
+    calls = []
+    for _ in range(3):
+        _cold()
+        limited.t += 15.0
+        before = PS.shares().info()["mfl"]["calls"]
+        codes = [client.get(p.format(l="mfl:70587")).status_code for p in SCREENS]
+        calls.append(PS.shares().info()["mfl"]["calls"] - before)
+        assert all(c == 200 for c in codes), codes
+    info = PS.shares().info()["mfl"]
+    print(f"mfl:70587 opened cold three times in 45 s: MFL calls per opening {calls}, refused {info['refused']}")
+    assert info["refused"] == 0
+    # all three at once (three tabs): 42 calls, under the 50 at once
+    assert sum(calls) <= PS.DEFAULTS["mfl"][1]
+
+
+@pytest.mark.parametrize("per_league", [25, 35])
+def test_the_numbers_hold_for_a_live_league_cost(per_league):
+    """Live, an unknown Sleeper league's first build also reads the outlook's remaining weeks (12-20 calls, the PO's
+    measurement on 2026-10-06; the fixtures stop at their missing week 3): ~25-35 calls a league. Three in a minute
+    pass; fifty are refused from the sixth or so, then about two a minute."""
+    clk = _Clock()
+    sh = PS.Shares(clock=clk)
+    ok3 = True
+    for _ in range(3):
+        clk.t += 15.0
+        ok3 &= all(sh.take("sleeper", "203.0.113.20") for _ in range(per_league))
+    assert ok3
+    sh = PS.Shares(clock=clk)
+    done = 0
+    for _ in range(50):
+        clk.t += 1.2
+        if all(sh.take("sleeper", "203.0.113.21") for _ in range(per_league)):
+            done += 1
+    print(f"{per_league} calls a league: fifty in a minute -> {done} built in full")
+    assert done <= 8
+
+
+def test_league_setup_threads_spend_the_same_clients_share():
+    """``anyleague.user_leagues`` reads each league's rosters and users in a thread pool: the request's client reaches
+    those threads (a script cannot dodge its share through league setup)."""
+    clk = _Clock()
+    _cold()
+    PS.reset(PS.Shares({"sleeper": (60.0, 1000.0)}, clock=clk))
+    try:
+        with PS.acting_for("203.0.113.30"):
+            got = A.user_leagues("test_manager", 2026)
+        n = PS.shares().info()["sleeper"]["calls"]
+        assert got["leagues"] and n >= 2 + 2 * len(got["leagues"]), n
+        _cold()
+        PS.reset(PS.Shares({"sleeper": (60.0, 3.0)}, clock=clk))
+        with PS.acting_for("203.0.113.31"), pytest.raises(A.SleeperBusy):
+            A.user_leagues("test_manager", 2026)
+    finally:
+        PS.reset()

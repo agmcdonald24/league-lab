@@ -36,9 +36,7 @@ import re
 import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Response
-from league_lab import memo
-
-from league_lab import clock  # ---- IO-4: the board's "Started" / "Final" read the one clock
+from league_lab import clock, memo  # ---- IO-4: clock (the board's "Started" / "Final")
 
 from . import refleague
 from . import research as R

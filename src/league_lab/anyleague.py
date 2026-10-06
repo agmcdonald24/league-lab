@@ -1907,6 +1907,7 @@ def user_leagues(username: str, season: int, *, client: Sleeper | None = None,
     """``/api/leagues?username=``: the user, then each of their NFL leagues of ``season`` with their own roster
     (``owner_id`` or a ``co_owners`` entry; None in a league they only run), their team name, the scoring label.
     Calls: 2 + 2 per league (rosters 10 min, users a day; cached), the per-league pairs in parallel."""
+    import contextvars  # ---- IO-4
     from concurrent.futures import ThreadPoolExecutor
 
     sl = client or sleeper()
@@ -1926,8 +1927,9 @@ def user_leagues(username: str, season: int, *, client: Sleeper | None = None,
                 "team_name": names.get(rid, {}).get("team_name") if rid is not None else None,
                 "status": lg.get("status"), "in_database": bool(in_database(lid))}
 
+    ctx = contextvars.copy_context()           # ---- IO-4: the request's client (provider_share) reaches each thread
     with ThreadPoolExecutor(max_workers=min(8, max(1, len(leagues)))) as ex:
-        rows = list(ex.map(one, leagues))
+        rows = list(ex.map(lambda lg: ctx.copy().run(one, lg), leagues))
     rows.sort(key=lambda r: ((r["name"] or "").lower(), r["league_id"]))
     return {"user": {"user_id": uid, "username": u.get("username"), "display_name": u.get("display_name"),
                      "avatar": u.get("avatar")},

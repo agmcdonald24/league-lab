@@ -51,6 +51,8 @@ import time
 from collections.abc import Callable
 from urllib.parse import parse_qs
 
+from league_lab import provider_share  # ---- IO-4: each client's own share of the providers' budget
+
 log = logging.getLogger(__name__)
 
 SWITCH_ENV = "LEAGUE_LAB_RATE_LIMIT"
@@ -512,6 +514,11 @@ def client_group(scope, lim: Limiter | None = None) -> str:
     limits) — the limiter's own source, mode and hops, an IPv4 address as it is and an IPv6 address as its /64 (one
     subscriber's block: rotating inside it buys nothing). A text, to be HMAC'd by the caller; never stored as it is."""
     _source, address = scope_client(scope, lim)
+    return _group(address)
+
+
+def _group(address: object) -> str:
+    """``client_group`` of an address already resolved (IO-4: the middleware keys the provider share with it)."""
     if isinstance(address, ipaddress.IPv6Address):
         return str(ipaddress.IPv6Network((int(address) >> 64 << 64, 64)))
     return str(address)
@@ -596,6 +603,7 @@ class RateLimit:
         league = league_of(query) if name == "research" else None
         if league is not None and not SEEN.fresh(league):
             name = "heavy"                                 # IM-3 fix: an on-demand league's first answer fans out
+        share = None                                                                     # ---- IO-4
         if lim.enabled:
             source, address = scope_client(scope, lim)
             lim.sources[source] = lim.sources.get(source, 0) + 1
@@ -605,6 +613,15 @@ class RateLimit:
             wait = lim.check_global(name)
             if wait > 0:
                 return await _send(send, *busy(wait))
+            # ---- IO-4 (Wave I-O): the provider calls this request makes spend its client's own share (provider_share)
+            share = provider_share.CLIENT.set(_group(address))
+        try:                                                                             # ---- IO-4: share reset
+            await self._admitted(scope, receive, send, name, league)
+        finally:
+            if share is not None:
+                provider_share.CLIENT.reset(share)
+
+    async def _admitted(self, scope, receive, send, name: str, league: str | None) -> None:
         gate = slots() if name in ("research", "heavy") else None
         if gate is not None and not await gate.acquire():
             return await _send(send, *busy(30.0))
