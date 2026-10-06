@@ -700,6 +700,29 @@ def experiment_cmd(
     console.print(f"total {time.monotonic() - t0:.0f} s; results in ops.feature_experiments (publish: league-lab dbt build --select mart_feature_experiments)")
 
 
+# ---- IO-1 (Wave I-O): the context record — the cornerback calls and "Worth a look" frozen before each week's first
+# kickoff, the played weeks rebuilt once from as-of inputs, graded after the games (src/league_lab/context_record.py)
+@app.command("context-record")
+def context_record_cmd(
+    season: int | None = typer.Option(None, help="The newest season to keep (default: the season of the latest kickoff)"),
+):
+    """Write ops.context_record (the next week's context before its first kickoff; played weeks with nothing stored are
+    rebuilt once from as-of inputs, labelled reconstructed; final games graded) and replace ops.context_grade.
+    Idempotent: safe every night; a frozen week is never rewritten."""
+    import time
+
+    from .context_record import run as run_context_record
+
+    t0 = time.monotonic()
+    runs, n_grade = run_context_record(season)
+    for r in runs:
+        console.print(f"context record {r.season}: written {r.written or 'none'}, reconstructed "
+                      f"{r.reconstructed or 'none'}, kept {sorted(w for w, a in r.plan.items() if a == 'keep') or 'none'}; "
+                      f"{r.rows} rows, {r.graded} graded")
+    console.print(f"ops.context_grade: {n_grade} rows ({time.monotonic() - t0:.0f} s)")
+# ---- end IO-1
+
+
 @app.command("version")
 def version_cmd():
     from .manifest import code_version

@@ -1337,6 +1337,16 @@ def weather_flag(source: str | None, dome: int | None, wind: float | None, preci
 # of them outside the projection, and no difficult signal outside it. docs/DFS.md § Context says so.
 WORTH_MIN_FAVOURABLE = 2
 WORTH_MIN_OUTSIDE = 1
+# ---- IO-1 (Wave I-O): the grade (league_lab.context_record; docs/METRICS.md § "The context record"). Rebuilt from as-of
+# inputs, 2025 and 2026 weeks 1-4, Half PPR: receivers with a likely shutdown corner finished 0.39 points below the other
+# called receivers against their projection (-1.39 to +0.72, n 99), with a likely easy corner 0.02 below (-1.11 to +1.22,
+# n 79): no measurable effect either way. So the cornerback call no longer counts toward "Worth a look" (neither as the
+# favourable signal outside the projection nor as the difficult one that rules a player out); it stays on the receiver
+# as context with its grade. With the signals the screen has today nothing else outside the projection can be
+# favourable, so the list is empty until a signal earns its place in the record (``context_record`` keeps grading the
+# corner's list as ``worth_corner``).
+WORTH_IGNORES = frozenset({"corner"})
+# ---- end IO-1
 
 
 def signals(position: str, matchup: Mapping | None, role: Mapping | None, game: Mapping | None,
@@ -1371,8 +1381,12 @@ def signals(position: str, matchup: Mapping | None, role: Mapping | None, game: 
     return out
 
 
-def worth(sigs: Sequence[Mapping]) -> tuple[bool, list[str]]:
-    """(worth a look, the reasons in words): the rule above; the reasons are the favourable signals, outside ones first."""
+def worth(sigs: Sequence[Mapping], ignore: Iterable[str] = WORTH_IGNORES) -> tuple[bool, list[str]]:
+    """(worth a look, the reasons in words): the rule above; the reasons are the favourable signals, outside ones first.
+    ``ignore``: signals that do not count (IO-1: the cornerback call, graded with no measurable effect; ``ignore=()``
+    is Wave I-N's rule, which the context record keeps grading)."""
+    skip = frozenset(ignore)
+    sigs = [s for s in sigs if s.get("signal") not in skip]
     fav = [s for s in sigs if s.get("tone") == "favorable"]
     out_fav = [s for s in fav if not s.get("in_projection")]
     out_bad = [s for s in sigs if s.get("tone") == "difficult" and not s.get("in_projection")]

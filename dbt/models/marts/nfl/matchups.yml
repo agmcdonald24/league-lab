@@ -129,3 +129,20 @@ models:
         tests:
           - accepted_values:
               arguments: {values: ['volume and big plays', 'volume', 'big plays', 'little of either', 'about average']}
+
+  # ---- IO-1 (Wave I-O): the weather DFS shows (docs/DFS.md § Weather; docs/METRICS.md § Weather)
+  - name: mart_game_weather
+    description: "IO-1: one row per game (regular season and playoffs) of the current season and the one before: the venue's roof (wx_dome 1 = the weather does not reach the field, an undecided retractable roof counted closed), the weather int_game_weather gives it (a played game: the archive, else the stadium's report, else its last forecast; an upcoming game: its newest forecast; a dome: 0s), wx_source, when it was known (forecast_at for a forecast) and the forecast kept beside it. Not an input of the projection."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id]
+      - expression_is_true:
+          name: game_weather_forecast_before_kickoff
+          arguments:
+            expression: "forecast_at < kickoff_at"
+            condition: "wx_source = 'forecast'"
+    columns:
+      - name: game_id
+        tests:
+          - not_null
