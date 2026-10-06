@@ -846,6 +846,12 @@ from . import dfs as dfs_mod  # noqa: E402 - the block stays self-contained
 app.include_router(dfs_mod.router, dependencies=[Depends(require_auth)])
 # ---- end IM-5
 
+# ---- IN-6 (Wave I-N): the League screen's power rankings and the rest of the season (league_lab_api/outlook.py)
+from . import outlook as outlook_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(outlook_mod.router, dependencies=[Depends(require_auth), Depends(needs_league)])
+# ---- end IN-6
+
 
 # ---- IM-3 (Wave I-M): the public site's doors. The rate limiter (ratelimit.py) inside the Guard (security.py: cross-site
 # writes, body sizes, the response headers on every answer, a 429 included); both outermost, ahead of the routes.

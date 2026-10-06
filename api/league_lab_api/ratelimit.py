@@ -97,6 +97,9 @@ RESEARCH_EXACT = frozenset({
 RESEARCH_PREFIX = ("/api/player/",)
 HEAVY_PREFIX = ("/api/dfs/slate", "/api/dfs/lineups")   # IM-5 (dfs.RATE_BUCKETS): the salary file and the lineups solve; /api/dfs/projections is a read
 LEAGUE_SETUP = frozenset({"username", "mfl", "mfl_search", "sleeper", "espn", "yahoo", "yahoo_me"})
+# ---- IN-6 (Wave I-N): the season outlook simulates 5,000 seasons (and on demand solves every roster's rest of season)
+HEAVY_EXACT = HEAVY_EXACT | {"/api/league/outlook"}
+# ---- end IN-6
 UNLIMITED = frozenset({"/api/health"})
 WRITES = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
