@@ -2045,6 +2045,7 @@ export interface StatsColumn {
   reason: string | null; // why a cell is —
   coverage?: string | null;
   positions: string[];
+  group?: string; // ---- IM-2 (IM-1's shape): "Receiving", "Air yards", … — absent on older answers (the screen derives it)
 }
 export interface StatsPreset {
   key: "wrte" | "rb" | "qb";
@@ -2053,6 +2054,7 @@ export interface StatsPreset {
   columns: string[];
   extra: string[];
   sort: string;
+  full?: string[]; // ---- IM-2 (IM-1's shape): every column for the position, available, in catalogue order — absent on older answers
 }
 export interface StatsWindow {
   key: "season" | "last3" | "last5" | "weeks";
@@ -2088,6 +2090,23 @@ export const statsPath = (league: string, o: { position: string; window: string;
   if (o.weeks) qs.set("weeks", o.weeks);
   if (o.season) qs.set("season", String(o.season));
   return `/api/players?${qs.toString()}`;
+};
+// ---- IM-2: the same request as a file (GET /api/players.csv, IM-1): the Stats frame's parameters + the screen's
+// filters, sort and columns (catalogue ids; `mode` says per game or totals). A 404 → the screen builds the file itself.
+export const statsCsvPath = (
+  league: string,
+  o: { position: string; window: string; basis?: string; weeks?: string; season?: number | null; sort: string; dir: string; cols: string[]; mode: string; who?: string; team?: number | null; nfl?: string; q?: string; min?: number },
+) => {
+  const qs = new URLSearchParams({ league, limit: "1000", position: o.position, window: o.window, sort: o.sort, dir: o.dir, cols: o.cols.join(","), mode: o.mode });
+  if (o.basis) qs.set("basis", o.basis);
+  if (o.weeks) qs.set("weeks", o.weeks);
+  if (o.season) qs.set("season", String(o.season));
+  if (o.who && o.who !== "all") qs.set("who", o.who);
+  if (o.team !== null && o.team !== undefined) qs.set("team", String(o.team));
+  if (o.nfl) qs.set("nfl", o.nfl);
+  if (o.q) qs.set("q", o.q);
+  if (o.min && o.min > 1) qs.set("min_games", String(o.min));
+  return `/api/players.csv?${qs.toString()}`;
 };
 // ---- end II-3
 

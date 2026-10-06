@@ -261,7 +261,9 @@ candidate, a trade list row, a search hit, a research list. His full page stays 
 3. **Dense, not cramped**: small uppercase labels over big numbers; hairlines, not boxes in boxes; 56 px rows.
 4. **Dark first**: designed on the dark surfaces; the light mode is the same tokens' light values (the system decides).
 5. **Team color is an accent, never a fill behind text** (except the team badge, with `onColor`).
-6. **No horizontal tables on a phone**: `Table` hides `phone: false` columns under 640 px; otherwise rows or cards.
+6. **No horizontal tables on a phone**: `Table` hides `phone: false` columns under 640 px; otherwise rows or cards. The
+   one exception is the Stats table (§ "The Stats table"): a data table a manager reads across, it scrolls sideways
+   inside its own box with the name column and the header rows held still — the page itself never does.
 7. **No decoration that slows the first screen**: no web fonts, no background images, headshots lazy below the fold.
 8. **Same numbers everywhere**: format with `fmt` (`pts`, `signed`, `pct`, `whole`), "—" for unknown.
 
@@ -304,3 +306,36 @@ its search, filters, sort, page, selected rows and scroll. The player's page sta
 - **Loading**: the card is cached by player + league + team + data version (`/api/status` `updated_at`, five minutes at
   most: injuries and news move during the day); a slower, older answer never replaces a newer pick (a request token);
   his name shows while the card loads.
+
+## The Stats table (Wave I-M, IM-2)
+
+Players · Stats is a full table (Andrew: "a full table of that shown instead of … you have to click into them"):
+`components/stats/StatsTable.svelte` + `components/stats/columns.ts`, not the shared `Table` (which never scrolls
+sideways). Use it for any screen whose job is reading many numbers across many players.
+
+- **Two views one tap apart** (`Tabs size="sm"` above the table): **Key stats** (the preset's columns) and **Full
+  table** (every column the position has and the app has: the answer's `full` list, or derived — every catalogue column
+  whose positions include the position and whose `available` is true). `?view=key|full` (a tap writes it); without it,
+  the view last picked on this device (`accountPrefs.statsTable()`), else Full table from 900 px and Key stats on a
+  phone. Saved views keep `view`, `hide` (groups off) and `off` (columns unticked in the Full table).
+- **Groups**: each column's group (the answer's `group`, else `GROUPS` in `columns.ts`, else by its id, else "Other")
+  orders the Full table (a position's own stats first: `ORDER` per preset; the catalogue's order inside a group). A
+  second header row spans each group (`<colgroup>` + `<th scope="colgroup">`); a group's name never widens its columns
+  (clipped, sticky inside its cell, a short form for a one- or two-column group). Group chips above the table hide /
+  show a group (✓ / +, `aria-pressed`).
+- **Built for width**: a real `<table>`; the name column is a row header (`<th scope="row">`: checkbox, headshot from
+  640 px, the name — "J. Jefferson" on a phone by CSS, the link's text and name stay whole —, position and team
+  badges), sticky left at **120 px on a phone** and 224 px from 640 px; the header rows sticky on top (the column row
+  under the group row); the box scrolls both ways (75 vh), `scroll-padding` keeps a focused cell clear of the sticky
+  column and header; numbers right-aligned, tabular figures; the sorted column washed in accent at 7 % with ▲ / ▼ in
+  accent and `aria-sort`; group boundaries a strong hairline; rows: hover = raised, a tap highlights the row (series-1
+  wash and a 3 px left rule), yours = the accent wash (opaque: a sticky cell must hide what slides under it).
+- **Unknown and small**: a dash and a small-sample number (`SMALL`) read greyed (ink-3) with the reason / the sample in
+  the cell's title and in a note on a tap (`stats-tip`).
+- **Many rows**: up to 100 rows render as they are; past that ("Show all") only the rows near the box's visible part are
+  in the page (8 rows of overscan each side), spacer rows keep the height, the column widths are measured once and fixed
+  (`table-layout: fixed`: no column jumps while scrolling), and the table states its size (`aria-rowcount`,
+  `aria-rowindex`). Why: every sticky name cell is a layer the browser re-places on each scroll frame — 450 of them took
+  a frame from 17 ms to 80 ms on the test box (`docs/handbacks/IM-2.md` § Timings).
+- **A phone**: "Swipe for more →" over the table's right edge until the first sideways scroll.
+
