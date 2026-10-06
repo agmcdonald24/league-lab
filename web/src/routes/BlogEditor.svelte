@@ -423,6 +423,35 @@
     }
   }
 
+  // ---- Earlier versions: the server keeps the last 20 (blog.revisions); one tap puts one back as the text being edited
+  let versions = $state<NonNullable<EditorPost["revisions"]> | null>(null);
+  let versionWords = $state<string | null>(null);
+  async function openVersions() {
+    if (!post) return;
+    if (versions) {
+      versions = null;
+      return;
+    }
+    try {
+      versions = (await editorApi.post(post.id)).revisions ?? [];
+    } catch (e) {
+      problem = e instanceof Error ? e.message : "The earlier versions did not load.";
+    }
+  }
+  const at = (t: string | null) => (t ? new Date(t).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "");
+  async function loadVersion(rid: number) {
+    if (!post) return;
+    try {
+      const v = await editorApi.revision(post.id, rid);
+      title = v.title;
+      body = v.body;
+      versions = null;
+      versionWords = `The version saved ${at(v.saved_at)} is back in the editor. It saves as a new version: nothing is lost.`;
+    } catch (e) {
+      problem = e instanceof Error ? e.message : "That version did not load.";
+    }
+  }
+
   const savedWords = $derived.by(() => {
     if (deleted) return "Deleted";
     if (saveState === "saving") return "Saving…";
@@ -731,8 +760,25 @@
           {/if}
         {/if}
       {/if}
-      <a class="ll-link ml-auto text-sm" href={EXPORT_PATH} download data-testid="editor-export">Download every post</a>
+      {#if post && !deleted}<button type="button" class="ll-link ml-auto text-sm" onclick={openVersions} data-testid="editor-versions">Earlier versions</button>{/if}
+      <a class="ll-link text-sm {post && !deleted ? '' : 'ml-auto'}" href={EXPORT_PATH} download data-testid="editor-export">Download every post</a>
     </div>
+    {#if versionWords}<p class="rounded-lg bg-accent-soft p-3 text-sm" role="status" data-testid="editor-version-words">{versionWords}</p>{/if}
+    {#if versions}
+      <section class="space-y-2 rounded-lg border border-line bg-surface p-3 text-sm" data-testid="editor-version-list">
+        <h2 class="ll-label">Earlier versions <span class="font-normal text-ink-3">(the last {editor.mine?.limits.revisions ?? 20} kept)</span></h2>
+        {#if !versions.length}<p class="text-ink-3">No earlier versions yet.</p>{/if}
+        <ul class="divide-y divide-line">
+          {#each versions as v (v.id)}
+            <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+              <span>{at(v.saved_at)}</span>
+              <span class="text-ink-3">{(v.bytes / 1024).toFixed(1)} KB</span>
+              <button type="button" class="ll-link ml-auto font-semibold" onclick={() => loadVersion(v.id)} data-testid="editor-version-load">Put this one back</button>
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
 
     {#if published && post}
       <div class="space-y-1 rounded-lg border border-line bg-surface p-3 text-sm" data-testid="editor-live">

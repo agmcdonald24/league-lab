@@ -312,6 +312,13 @@ test("two tabs: the stale save is a conflict in words, never an overwrite; the n
   await expect(b.getByTestId("editor-body")).toHaveValue("First words. Tab A.");
   await b.getByTestId("editor-body").fill("First words. Tab A. Then B.");
   await expect(b.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  // an earlier version comes back with one tap (and saves as a new one)
+  await b.getByTestId("editor-versions").click();
+  await expect(b.getByTestId("editor-version-list")).toBeVisible();
+  await b.getByTestId("editor-version-load").last().click();
+  await expect(b.getByTestId("editor-body")).toHaveValue("First words.");
+  await expect(b.getByTestId("editor-version-words")).toContainText("nothing is lost");
+  await expect(b.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
   await b.close();
 });
 
