@@ -45,8 +45,10 @@ secrets (the private key never leaves the device), and are not logged either.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
+import importlib.util
 import json
 import logging
 import os
@@ -68,21 +70,28 @@ from .settings import APP_NAME
 
 log = logging.getLogger("league_lab_api.passkeys")
 
-try:                       # the image always has it (api/uv.lock); without it the status says passkeys are not ready
-    import webauthn
-    from webauthn.helpers import base64url_to_bytes
-    from webauthn.helpers import exceptions as WX
-    from webauthn.helpers.structs import (
-        AttestationConveyancePreference,
-        AuthenticatorSelectionCriteria,
-        AuthenticatorTransport,
-        PublicKeyCredentialDescriptor,
-        ResidentKeyRequirement,
-        UserVerificationRequirement,
-    )
-    LIBRARY = True
-except ImportError:  # pragma: no cover - a development venv without `uv sync`
-    LIBRARY = False
+# py_webauthn pulls in `cryptography` and pyOpenSSL: ~16 MB of memory once imported (measured next to the app's own
+# libraries; docs/handbacks/IM-4.md). On a 512 MB server it is imported at the first ceremony, not at start-up.
+# The image always has it (api/uv.lock); without it the status says passkeys are not ready.
+LIBRARY = importlib.util.find_spec("webauthn") is not None
+_W: dict[str, Any] = {}
+
+
+def _lib() -> dict[str, Any]:
+    """{webauthn, WX (its exceptions), S (its structs)} — imported once, on first use."""
+    if not _W:
+        import webauthn
+        from webauthn.helpers import exceptions as WX
+        from webauthn.helpers import structs as S
+        _W.update(webauthn=webauthn, WX=WX, S=S)
+    return _W
+
+
+def base64url_to_bytes(value: Any) -> bytes:
+    """The library's helper without importing the library (TypeError / ValueError on garbage)."""
+    if not isinstance(value, str):
+        raise TypeError("not base64url text")
+    return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
 
 ORIGINS_ENV = "LEAGUE_LAB_PASSKEY_ORIGINS"
 DEFAULT_ORIGIN = "https://isuckatfantasy.io"
@@ -358,8 +367,8 @@ def _refusal(exc: Exception, what: str) -> A.AccountError:
     return _refused()
 
 
-_LIBRARY_ERRORS: tuple[type[Exception], ...] = (
-    (WX.WebAuthnException, ValueError, KeyError, TypeError, AttributeError) if LIBRARY else ())
+def _library_errors() -> tuple[type[Exception], ...]:
+    return (_lib()["WX"].WebAuthnException, ValueError, KeyError, TypeError, AttributeError)
 
 
 def _transports(answer: dict) -> list[str]:
@@ -399,7 +408,7 @@ def register_options_route(request: Request) -> JSONResponse:
     who = A.current_user(request)
     challenge, nonce = secrets.token_bytes(32), secrets.token_urlsafe(32)
     if who is None:
-        purpose, user_id, handle, exclude = "create", None, secrets.token_bytes(32), []
+        purpose, user_id, handle, have = "create", None, secrets.token_bytes(32), []
         name = f"{APP_NAME} · {_today()}"
         db.run_rw(lambda c: _store_challenge(c, challenge, nonce, purpose, None, handle, site, ip_hash))
     else:
@@ -417,17 +426,17 @@ def register_options_route(request: Request) -> JSONResponse:
             return bytes(h), have
 
         handle, have = db.run_rw(tx)
-        exclude = [PublicKeyCredentialDescriptor(id=bytes(cid), transports=[AuthenticatorTransport(t) for t in tr or []
-                                                                             if t in TRANSPORTS])
-                   for cid, tr in have]
-    opts = webauthn.generate_registration_options(
+    w, S = _lib()["webauthn"], _lib()["S"]
+    exclude = [S.PublicKeyCredentialDescriptor(id=bytes(cid), transports=[S.AuthenticatorTransport(t) for t in tr or []
+                                                                           if t in TRANSPORTS])
+               for cid, tr in have]
+    opts = w.generate_registration_options(
         rp_id=site[1], rp_name=APP_NAME, user_name=name, user_id=handle, user_display_name=name, challenge=challenge,
-        timeout=TIMEOUT_MS, attestation=AttestationConveyancePreference.NONE,
-        authenticator_selection=AuthenticatorSelectionCriteria(resident_key=ResidentKeyRequirement.REQUIRED,
-                                                               user_verification=UserVerificationRequirement.PREFERRED),
+        timeout=TIMEOUT_MS, attestation=S.AttestationConveyancePreference.NONE,
+        authenticator_selection=S.AuthenticatorSelectionCriteria(
+            resident_key=S.ResidentKeyRequirement.REQUIRED, user_verification=S.UserVerificationRequirement.PREFERRED),
         exclude_credentials=exclude)
-    resp = JSONResponse({"options": json.loads(webauthn.options_to_json(opts)), "purpose": purpose},
-                        headers=A.NO_STORE)
+    resp = JSONResponse({"options": json.loads(w.options_to_json(opts)), "purpose": purpose}, headers=A.NO_STORE)
     _set_ceremony(resp, request, nonce)
     return resp
 
@@ -440,10 +449,10 @@ def register_verify_route(body: AnswerIn, request: Request) -> JSONResponse:
     answer = _answer(body.credential)
     ch = _spend(answer, ("create", "add"), request)
     try:
-        v = webauthn.verify_registration_response(
+        v = _lib()["webauthn"].verify_registration_response(
             credential=answer, expected_challenge=ch["challenge"], expected_rp_id=ch["rp_id"],
             expected_origin=ch["origin"], require_user_verification=False)
-    except _LIBRARY_ERRORS as exc:
+    except _library_errors() as exc:
         raise _refusal(exc, "registration") from None
     cred_id, key, count = bytes(v.credential_id), bytes(v.credential_public_key), int(v.sign_count)
     label, transports = label_for(request.headers.get("user-agent")), _transports(answer)
@@ -496,10 +505,10 @@ def login_options_route(request: Request) -> JSONResponse:
     ip_hash = _limit(request, "pk-login", LOGIN_PER_HOUR, 3600.0, "Too many passkey sign-ins from here. Try again in an hour.")
     challenge, nonce = secrets.token_bytes(32), secrets.token_urlsafe(32)
     db.run_rw(lambda c: _store_challenge(c, challenge, nonce, "login", None, None, site, ip_hash))
-    opts = webauthn.generate_authentication_options(rp_id=site[1], challenge=challenge, timeout=TIMEOUT_MS,
-                                                    allow_credentials=[],
-                                                    user_verification=UserVerificationRequirement.PREFERRED)
-    resp = JSONResponse({"options": json.loads(webauthn.options_to_json(opts))}, headers=A.NO_STORE)
+    w, S = _lib()["webauthn"], _lib()["S"]
+    opts = w.generate_authentication_options(rp_id=site[1], challenge=challenge, timeout=TIMEOUT_MS, allow_credentials=[],
+                                             user_verification=S.UserVerificationRequirement.PREFERRED)
+    resp = JSONResponse({"options": json.loads(w.options_to_json(opts))}, headers=A.NO_STORE)
     _set_ceremony(resp, request, nonce)
     return resp
 
@@ -527,11 +536,11 @@ def login_verify_route(body: AnswerIn, request: Request) -> JSONResponse:
     if handle is None or want_handle is None or not hmac.compare_digest(handle, bytes(want_handle)):
         raise _unknown()
     try:
-        v = webauthn.verify_authentication_response(
+        v = _lib()["webauthn"].verify_authentication_response(
             credential=answer, expected_challenge=ch["challenge"], expected_rp_id=ch["rp_id"],
             expected_origin=ch["origin"], credential_public_key=bytes(key), credential_current_sign_count=int(count),
             require_user_verification=False)
-    except _LIBRARY_ERRORS as exc:
+    except _library_errors() as exc:
         err = _refusal(exc, "sign-in")
         if err.code == "passkey_cloned":
             log.warning("passkeys: passkey %s answered with a counter that did not go up (refused)", pid)
