@@ -913,7 +913,7 @@ def api_404(rest: str):
 
 
 @app.get("/{path:path}", include_in_schema=False)
-def web(path: str):
+def web(path: str, request: Request):  # ---- IO-2: the request (a League link's ?league=)
     dist = web_dist().resolve()
     index = dist / "index.html"
     if not index.exists():
@@ -927,6 +927,13 @@ def web(path: str):
             raise HTTPException(status_code=404)
         if path.startswith("blog/img/"):            # ---- IN-1: a picture the blog's route did not serve is missing
             raise HTTPException(status_code=404)
+    # ---- IO-2 (Wave I-O): a League link (/league?league=<key>) previews the league's power rankings — from what is
+    # cached or stored only (outlook.shell; a private league, nothing kept → the default card below)
+    if path.strip("/") == "league" and request.query_params.get("league"):
+        shaped_league = outlook_mod.shell(index, request.query_params.get("league"))
+        if shaped_league is not None:
+            return HTMLResponse(shaped_league, headers={"Cache-Control": SHELL_CACHE})
+    # ---- end IO-2
     # ---- IN-1 (Wave I-N): the link preview for this path (title, description, canonical, Open Graph, Twitter) in the
     # shell's head — a shared post or tool unfurls in iMessage / X / Reddit / Discord; an unknown post answers 404
     shaped = blog_mod.shell(index, path)

@@ -42,6 +42,16 @@ guesses 2^rounds): the projected record shows, the playoff columns are absent wi
 divisions: division winners' places are not simulated, so the playoff columns are absent and say so. ESPN reads
 through the same seam (``playoffTeamCount`` and the schedule from its matchups) and is unverified live; Yahoo's data
 access is pending.
+
+**Wave I-O (IO-2)** — marked ``IO-2`` below: every full build offers its power ranking and rows to the snapshot store
+(``outlook_store``: one row per league-week, replaced only until the week's first kickoff, off quietly without the
+table); last week's stored row gives the **movement** (``power.rows[].moved``: places up (+) or down (−);
+``outlook.rows[].playoff_change``: the change in playoff odds) — never anything but a stored row. ``part=power`` answers
+the power rankings without the season simulation (the League screen asks it first, then the whole answer: the first
+paint of a league not kept every night). A league not kept every night is read with a market-free context (the
+outlook needs the lineups, not the trade market: the free agents and the later weeks' prices are what made MFL 70587's
+first build ~10 s); the trade screens' own context is used when it is already built. ``preview`` / ``shell``: the page
+shell's link preview for ``/league?league=<key>`` from what is cached or stored only.
 """
 
 from __future__ import annotations
@@ -56,12 +66,13 @@ import pandas as pd
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from league_lab import anyleague as A
+from league_lab import clock, memo  # ---- IO-2: clock
 from league_lab import decisions as WP  # the week's win probability: one model in the product
-from league_lab import memo
 
 from . import availability
 from . import decisions as D
 from . import myweek as MW
+from . import outlook_store as S  # ---- IO-2
 from .applib import cards
 from .db import query
 from .myweek import NotFound
@@ -655,19 +666,25 @@ def _stamp() -> tuple:
     return (iso(availability.build_time()), iso(availability.checked_at()))
 
 
-def outlook(league_id: str, team: int | None = None, *, source: str | None = None, seasons: int = SEASONS) -> dict:
+def outlook(league_id: str, team: int | None = None, *, source: str | None = None, seasons: int = SEASONS,
+            part: str | None = None) -> dict:
     """``GET /api/league/outlook``: the power rankings and the rest of the season (module docstring). The key is made
     canonical first (``platforms.check_key``: " 1389…104", "1389…104\t" and "MFL:70587" are the leagues they name), so
-    the house check and the cache key never see a padded spelling; a key that names no league is 404."""
+    the house check and the cache key never see a padded spelling; a key that names no league is 404.
+    ``part="power"`` (IO-2): the power rankings alone, no simulation (``outlook.pending`` true)."""
     try:
         league_id = A.check_id(league_id)
     except A.LeagueNotFound as exc:
         raise NotFound(str(exc)) from exc
     is_house = D.house(league_id, source)
-    key = (str(league_id), is_house, int(seasons), _stamp())
-    hit = _cache.get(key)
+    key = (str(league_id), is_house, int(seasons), _stamp(), part)          # ---- IO-2: the part
+    hit = None
+    if part == "power":                                                     # ---- IO-2: the whole answer has it
+        hit = _cache.get((str(league_id), is_house, int(seasons), _stamp(), None))
     if hit is None:
-        hit = _cache.put(key, _build(str(league_id), is_house, source, int(seasons)),
+        hit = _cache.get(key)
+    if hit is None:
+        hit = _cache.put(key, _build(str(league_id), is_house, source, int(seasons), part=part),
                          ttl=TTL_S["house" if is_house else "sleeper"])
     if team is not None and int(team) not in {r["roster_id"] for r in hit["power"]["rows"]}:
         raise NotFound(f"no team {team} in this league")
@@ -711,7 +728,7 @@ def _season_outlook(ol: dict, out_rows: list, left_games: dict, timings: dict, *
     games, missing = schedule(A.sleeper(), lid, remaining)
     if missing is not None:
         return f"the schedule for week {missing} is not available from the league"
-    for w in remaining:                                       # the schedule left (power rankings' column)
+    for w in remaining if not any(left_games.values()) else ():   # the schedule left (IO-2: unless _build read it)
         for a, b in games.get(w, ()):
             left_games.setdefault(a, []).append(b)
             left_games.setdefault(b, []).append(a)
@@ -771,14 +788,93 @@ def _season_outlook(ol: dict, out_rows: list, left_games: dict, timings: dict, *
     return None
 
 
-def _build(league_id: str, is_house: bool, source: str | None, seasons: int) -> dict:
+# ---- IO-2 (Wave I-O): the board without the trade market, the schedule left before the simulation, the movement
+def _context(league_id: str, source: str | None, is_house: bool):
+    """The lineups' board: a house league's (or any league's already built) trade context; otherwise a market-free
+    one kept as long (``market=False``: no free agents, no later weeks priced for season value — the outlook reads the
+    board's lineups and the rest-of-season board only). MFL 70587 cold: 3.7 s → 1.2 s for the context."""
+    if is_house:
+        return D.trade_context(league_id, source)
+    full = D._memo_cache.get(("trade_context", str(league_id), False))
+    if full is not None:
+        return full
+    return D._memo(("outlook_context", str(league_id)), False, lambda: D.TradeContext(league_id, source, market=False))
+
+
+def _schedule_left(lid: str, played: int, settings: Mapping, n_teams: int) -> dict[int, list[int]]:
+    """{roster: [opponents left]} from the remaining regular-season pairings; {} when they are not all readable or
+    the league is beyond the outlook's limits (the season block says why)."""
+    pws = int(settings.get("playoff_week_start") or 0)
+    remaining = list(range(played + 1, pws)) if pws else []
+    if not remaining or n_teams > MAX_TEAMS or len(remaining) > MAX_WEEKS:
+        return {}
+    games, missing = schedule(A.sleeper(), lid, remaining)
+    if missing is not None:
+        return {}
+    left: dict[int, list[int]] = {}
+    for w in remaining:
+        for a, b in games.get(w, ()):
+            left.setdefault(a, []).append(b)
+            left.setdefault(b, []).append(a)
+    return left
+
+
+MOVED_NOTE = "▲ ▼: places moved since the ranking kept before week {week}."
+FIRST_NOTE = "Movement shows from next week: this week's ranking is kept."
+WAIT_NOTE = ("No movement arrows yet: each week's ranking is kept before its first game, and the arrows compare with "
+             "last week's.")
+
+
+def _movement(ans: dict, *, snap_week: int, offered: str | None) -> None:
+    """Last week's stored ranking → ``moved`` per power row (places up +, down −; None: not in last week's) and
+    ``playoff_change`` per outlook row (points of percentage); the note says which. Only ever a stored row."""
+    lid = str(ans["league_id"])
+    on = S.ready() and S.shareable(lid)
+    st = S.stored(lid, int(ans["season"]), snap_week) if on else {"prev": None, "current": False}
+    prev = st["prev"]
+    pw = ans["power"]
+    for r in pw["rows"]:
+        r["moved"] = None
+    for o in ans["outlook"].get("rows") or []:
+        o["playoff_change"] = None
+    if prev is None:
+        pw["movement"] = None
+        pw["movement_note"] = (FIRST_NOTE if st["current"] or offered == "queued" else WAIT_NOTE) if on else NO_ARROWS
+        return
+    ranks = {int(p["roster_id"]): p.get("rank") for p in prev["power"]}
+    for r in pw["rows"]:
+        was = ranks.get(int(r["roster_id"]))
+        r["moved"] = None if was is None else int(was) - int(r["rank"])
+    odds = {int(p["roster_id"]): p.get("playoff") for p in prev["rows"]}
+    for o in ans["outlook"].get("rows") or []:
+        was = odds.get(int(o["roster_id"]))
+        o["playoff_change"] = (None if was is None or o.get("playoff") is None
+                               else round((float(o["playoff"]) - float(was)) * 100))
+    built = prev["built_at"]
+    pw["movement"] = {"week": prev["week"], "built_at": built.isoformat() if hasattr(built, "isoformat") else built}
+    pw["movement_note"] = MOVED_NOTE.format(week=prev["week"])
+
+
+def _league_name(lg: Mapping, lid: str, is_house: bool) -> str | None:
+    name = lg.get("name")
+    if not name and is_house:
+        try:
+            df = query("select league_name from analytics.dim_league_season where league_id = %s", (lid,))
+            name = None if df.empty else df["league_name"].iloc[0]
+        except Exception:  # noqa: BLE001 - no name: "This league"
+            name = None
+    return str(name)[:120] if isinstance(name, str) and name.strip() else None
+# ---- end IO-2
+
+
+def _build(league_id: str, is_house: bool, source: str | None, seasons: int, *, part: str | None = None) -> dict:
     t0 = time.perf_counter()
     timings: dict[str, float] = {}
     inp = _league_inputs(league_id, is_house)
     lg, lid, names, played, season = inp["lg"], inp["lid"], inp["names"], inp["played"], inp["season"]
     timings["league_ms"] = round((time.perf_counter() - t0) * 1000, 1)
     t1 = time.perf_counter()
-    ctx = D.trade_context(league_id, source)
+    ctx = _context(league_id, source, is_house)                    # ---- IO-2: market-free on demand
     note = None
     try:
         board, weeks, span = D.window_board(ctx, "ros")
@@ -810,9 +906,19 @@ def _build(league_id: str, is_house: bool, source: str | None, seasons: int) -> 
                 "playoff_week_start": pws or None, "byes": None, "tiebreak": "points for", "playoff_reason": None,
                 "assumptions": list(ASSUMES), "drift": DRIFT, "shrink": WP.WEEK_SHRINK, "first_week": [], "rows": []}
     left_games: dict[int, list[int]] = {r: [] for r in rids}
-    ol["reason"] = _season_outlook(ol, out_rows, left_games, timings, lid=lid, is_house=is_house, season=season,
-                                   settings=settings, platform=platform, played=played, weeks=weeks, rids=rids,
-                                   lineup=lineup, level=level, rec=rec, pf=pf, seasons=seasons)
+    # ---- IO-2: the schedule left is read for the rankings themselves (the power part has no simulation)
+    t5 = time.perf_counter()
+    for r, opp in _schedule_left(lid, played, settings, len(rids)).items():
+        if r in left_games:
+            left_games[r] = opp
+    timings["schedule_ms"] = round((time.perf_counter() - t5) * 1000, 1)
+    if part == "power":
+        ol.update({"pending": True, "reason": None})
+    else:
+        ol["reason"] = _season_outlook(ol, out_rows, left_games, timings, lid=lid, is_house=is_house, season=season,
+                                       settings=settings, platform=platform, played=played, weeks=weeks, rids=rids,
+                                       lineup=lineup, level=level, rec=rec, pf=pf, seasons=seasons)
+    # ---- end IO-2
 
     sched_left = {}
     for r in rids:
@@ -834,20 +940,103 @@ def _build(league_id: str, is_house: bool, source: str | None, seasons: int) -> 
                      "schedule_left_rank": sl_rank.get(r), "schedule_left_games": len(left_games.get(r) or [])})
     ol["rows"] = sorted(out_rows, key=lambda x: (-(x["playoff"] if x["playoff"] is not None else -1), -x["wins_mean"],
                                                  -x["points_for_mean"]))
+    ans = {"league_id": league_id, "season": season, "version": VERSION, "played_weeks": played,
+           "power": {"rows": rows, "weeks": list(int(w) for w in weeks), "span": span,
+                     "words": POWER_WORDS.format(span=span), "note": note, "movement": None, "movement_note": NO_ARROWS},
+           "outlook": ol, "definitions": DEFINITIONS, "timings_ms": timings}
+    # ---- IO-2: keep the week (a full build only), the movement from last week's stored row, the preview card
+    snap_week = int(played) + 1
+    name = _league_name(lg, lid, is_house)
+    ans["league_name"] = name
+    ans["week"] = snap_week
+    ans["shareable"] = S.shareable(lid)
+    offered = None
+    if part is None and rows:
+        try:
+            offered = S.offer(S.snapshot(ans, league_name=name, week=snap_week, built_at=clock.now()), house=is_house)
+        except Exception:  # noqa: BLE001 - the store is never load-bearing
+            offered = "failed"
+    ans["power"]["kept"] = offered
+    _movement(ans, snap_week=snap_week, offered=offered)
+    top = [{"team": r["team_name"], "per_week": r["per_week"]} for r in rows[:5]]
+    odds = {o["roster_id"]: o.get("playoff") for o in ol.get("rows") or []}
+    for t, r in zip(top, rows[:5], strict=False):
+        t["playoff"] = odds.get(r["roster_id"])
+    S.remember_card(lid, {"name": name, "week": snap_week, "top": top})
+    # ---- end IO-2
     timings["total_ms"] = round((time.perf_counter() - t0) * 1000, 1)
-    return {"league_id": league_id, "season": season, "version": VERSION, "played_weeks": played,
-            "power": {"rows": rows, "weeks": list(int(w) for w in weeks), "span": span,
-                      "words": POWER_WORDS.format(span=span), "note": note, "movement": None, "movement_note": NO_ARROWS},
-            "outlook": ol, "definitions": DEFINITIONS, "timings_ms": timings}
+    return ans
 
 
 @router.get(PATH)
-def league_outlook(league: str, response: Response, team: int | None = None, source: str | None = None):
+def league_outlook(league: str, response: Response, team: int | None = None, source: str | None = None,
+                   part: str | None = None):
     from .main import _json
     if source not in (None, "sleeper"):
         raise D.BadRequest("source is sleeper or nothing")
+    if part not in (None, "power"):                                        # ---- IO-2
+        raise D.BadRequest("part is power or nothing")
     try:
-        return _json(outlook(league, team, source=source), response)
+        return _json(outlook(league, team, source=source, part=part), response)
     except Busy:
         return JSONResponse({"error": BUSY_WORDS, "detail": BUSY_WORDS, "code": "busy", "retry_after_s": 3},
                             status_code=429, headers={"Cache-Control": "no-store", "Retry-After": "3"})
+
+
+# ---- IO-2 (Wave I-O): the page shell's link preview for a League link (`/league?league=<key>`, no team): "League of
+# Scrubs: power rankings, week 5" and the top three with their numbers — from the last build this process kept or the
+# newest stored row only (outlook_store.card): a crawler's hit never calls a provider and never runs a simulation.
+# Nothing kept, a private (ESPN / Yahoo) key, a reference key, a malformed key → None: the default card.
+CARD_TOP = 3
+
+
+def preview(league: str | None) -> dict | None:
+    from urllib.parse import quote
+
+    from . import blog as B
+    c = S.card(league)
+    if not c or not c.get("top"):
+        return None
+    key = A.check_id(str(league))
+    name = c.get("name") or "This league"
+    title = f"{name}: power rankings, week {int(c['week'])}"
+    parts = []
+    top = c["top"][:CARD_TOP]
+    for i, t in enumerate(top, start=1):
+        pw, po = t.get("per_week"), t.get("playoff")
+        num = f"{float(pw):.1f}" if pw is not None else "—"
+        parts.append(f"{i}. {t.get('team') or 'Team'} {num}" + (f" ({round(float(po) * 100)}% playoffs)" if po is not None else ""))
+    odds = any(t.get("playoff") is not None for t in top)
+    desc = ("; ".join(parts) + ". Points per week each team's best lineup should score over the rest of the season"
+            + (", and playoff odds from simulated seasons." if odds else "."))
+    return {"title": title, "description": desc, "url": f"{B.ORIGIN}/league?league={quote(key, safe=':')}",
+            "image": B.DEFAULT_IMAGE, "type": "website", "status": 200}
+
+
+_shell_text: dict[str, tuple[float, str]] = {}
+
+
+def shell(index_html, league: str | None) -> str | None:
+    """index.html with the League link's preview between the shell's ``ll:seo`` markers (blog.SEO_START / SEO_END,
+    every value escaped by ``blog.seo_tags``), or None — the shell as it is."""
+    from . import blog as B
+    try:
+        pv = preview(league)
+    except Exception:  # noqa: BLE001 - a preview never fails the page
+        pv = None
+    if pv is None:
+        return None
+    try:
+        mtime = index_html.stat().st_mtime
+        hit = _shell_text.get(str(index_html))
+        if hit is None or hit[0] != mtime:
+            hit = (mtime, index_html.read_text(encoding="utf-8"))
+            _shell_text[str(index_html)] = hit
+    except OSError:
+        return None
+    text = hit[1]
+    i, j = text.find(B.SEO_START), text.find(B.SEO_END)
+    if i < 0 or j < i:
+        return None
+    return text[: i + len(B.SEO_START)] + "\n    " + B.seo_tags(pv) + "\n    " + text[j:]
+# ---- end IO-2

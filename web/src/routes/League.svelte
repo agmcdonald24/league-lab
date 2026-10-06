@@ -19,12 +19,57 @@
   import ScreenHead from "../components/ScreenHead.svelte";
   import { gapLine } from "../lib/providers"; // ---- II-5: "Transactions: not available for MFL leagues yet"
   import Outlook from "../components/league/Outlook.svelte"; // ---- IN-6: power rankings + the rest of the season
+  // ---- IO-2 (Wave I-O): a link a league-mate can open — Share (Sleeper and MyFantasyLeague leagues only: anyone can
+  // read them; never an ESPN or Yahoo league read with someone's own connection) and, opened with no team, the guest
+  // strip "Is this your league? Pick your team"
+  import type { LeagueOutlookMoved } from "../lib/api";
+  import { platformOf } from "../lib/providers";
+  import { isRef } from "../lib/refleague";
+  import { setParams } from "../lib/router.svelte";
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
   let data = $state<LeagueView | null>(null);
   let error = $state<string | null>(null);
   const ctx = $derived({ league, team });
+  // ---- IO-2: the share link and the guest strip (the imports above)
+  let info = $state<LeagueOutlookMoved | null>(null);
+  $effect(() => {
+    void league;
+    info = null;
+  });
+  const shareable = $derived(!isRef(league) && (platformOf(league) === "sleeper" || platformOf(league) === "mfl") && info?.shareable !== false);
+  const shareUrl = $derived(`${location.origin}/league?league=${/^[A-Za-z0-9:]+$/.test(league) ? league : encodeURIComponent(league)}`);
+  let shared = $state<"idle" | "copied" | "manual">("idle");
+  async function share() {
+    const url = shareUrl;
+    // the phone's share sheet where there is one (a touch screen), else the clipboard, else the address to copy by hand
+    if (typeof navigator.share === "function" && matchMedia("(pointer: coarse)").matches) {
+      try {
+        await navigator.share({ title: `${leagueName}: power rankings`, url });
+        return;
+      } catch (e) {
+        if ((e as DOMException)?.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      shared = "copied";
+      setTimeout(() => (shared = "idle"), 2500);
+    } catch {
+      shared = "manual";
+    }
+  }
+  const guest = $derived(team === null && !isRef(league));
+  const guestTeams = $derived(
+    data?.standings.map((s) => ({ roster_id: s.roster_id, team_name: s.team_name })) ??
+      info?.power.rows.map((p) => ({ roster_id: p.roster_id, team_name: p.team_name })) ??
+      [],
+  );
+  function pickTeam(v: string) {
+    if (/^\d+$/.test(v)) setParams({ league, team: v });
+  }
+  // ---- end IO-2
   // ---- II-5 (Wave I-I): a platform whose moves League Lab does not read says so (never "No completed moves")
   let movesGap = $state<string | null>(null);
   $effect(() => {
@@ -105,7 +150,7 @@
   // the league's name from the picker (the API does not send it; a shared link to a league never opened here: "The league")
   const leagueName = $derived.by(() => {
     const n = options.find((o) => o.league_id === league)?.name;
-    return n && n !== "This league" ? n : "The league";
+    return n && n !== "This league" ? n : (info?.league_name ?? "The league"); // ---- IO-2: a shared link's league
   });
   const bench = $derived([...(data?.profiles ?? [])].sort((a, b) => (b.total_bench_points_left ?? 0) - (a.total_bench_points_left ?? 0)));
   const benchMax = $derived(Math.max(1, ...bench.map((r) => r.total_bench_points_left ?? 0)));
@@ -160,12 +205,27 @@
 </script>
 
 <main class="space-y-4" data-testid="league">
+  <!-- ---- IO-2: opened from a shared link with no team: one strip, then the normal app once a team is picked -->
+  {#if guest && guestTeams.length}
+    <section class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-accent bg-accent-soft px-4 py-3" data-testid="guest-strip">
+      <p class="text-base font-semibold">Is this your league?</p>
+      <label class="sr-only" for="ll-guest-team">Pick your team</label>
+      <select
+        id="ll-guest-team"
+        class="ll-input min-h-11 max-w-full min-w-0 flex-1 py-1.5 text-base sm:max-w-xs"
+        onchange={(e) => pickTeam(e.currentTarget.value)}
+        data-testid="guest-team"
+      >
+        <option value="">Pick your team</option>
+        {#each guestTeams as t, i (`${t.roster_id}-${i}`)}<option value={String(t.roster_id)}>{t.team_name}</option>{/each}
+      </select>
+    </section>
+  {/if}
   {#if error}
     <p class="ll-error" data-testid="error">{error}</p>
   {:else if !data}
     <div class="space-y-3" aria-label="Loading" data-testid="loading">
       <div class="ll-skel h-24"></div>
-      <div class="ll-skel h-64"></div>
     </div>
   {:else}
     <ScreenHead eyebrow={`League · ${data.season} · ${data.weeks_scored} week${data.weeks_scored === 1 ? "" : "s"} played`} title={leagueName}>
@@ -173,10 +233,30 @@
         <p data-testid="league-answer"><Md text={luckLine(data!, team)} {ctx} /></p>
         <p class="mt-1 text-sm text-ink-3">Luck = wins minus the wins your points deserve (your record if you had played every team every week).</p>
       {/snippet}
+      {#if shareable}
+        <!-- ---- IO-2: the League link (no team) for the group chat -->
+        <div class="flex flex-wrap items-center gap-2 pt-1">
+          <button type="button" class="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-line bg-surface px-4 text-sm font-semibold" onclick={share} data-testid="league-share"
+            ><span aria-hidden="true">↗</span>{shared === "copied" ? "Link copied" : "Share"}</button
+          >
+          <span class="text-xs text-ink-3">The power rankings and the rest of the season, for anyone in the league.</span>
+          {#if shared === "manual"}
+            <label class="block w-full text-xs text-ink-3"
+              >Copy this link:
+              <input class="ll-input mt-1 w-full py-1.5 text-sm" readonly value={shareUrl} onfocus={(e) => e.currentTarget.select()} data-testid="league-share-url" /></label
+            >
+          {/if}
+          <span class="sr-only" aria-live="polite">{shared === "copied" ? "Link copied" : ""}</span>
+        </div>
+      {/if}
     </ScreenHead>
+  {/if}
 
-    <!-- ---- IN-6 (Wave I-N): the first two blocks — power rankings and the rest of the season (asked after the screen shows) -->
-    <Outlook {league} {team} {onauth} />
+  <!-- ---- IN-6 (Wave I-N): the first two blocks — power rankings and the rest of the season. IO-2: asked at once, beside
+       the screen's own answer (not after it), the power rankings first -->
+  {#if !error}<Outlook {league} {team} {onauth} onload={(d) => (info = d)} />{/if}
+
+  {#if data}
 
     <div class="grid grid-cols-1 gap-4 wide:grid-cols-2 wide:items-start">
       <div class="min-w-0 space-y-4">
@@ -407,5 +487,5 @@
         )}
       </div>
     </Expander>
-  {/if}
+  {/if}<!-- IO-2: the rest of the screen once its answer is in -->
 </main>

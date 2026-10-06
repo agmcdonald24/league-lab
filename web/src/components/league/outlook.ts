@@ -53,3 +53,22 @@ export function gapTag(p: PowerRow): string | null {
   if (!p.gap_words) return null;
   return p.gap_words.includes("soft") ? "Soft schedule so far" : "Hard schedule so far";
 }
+
+// ---- IO-2 (Wave I-O): movement since last week's kept ranking (never from anything else: the API sends `moved` only
+// from a stored snapshot)
+/** "▲ 2" / "▼ 1" / "–" (the same place) */
+export function movedWords(m: number): string {
+  return m > 0 ? `▲ ${m}` : m < 0 ? `▼ ${-m}` : "–";
+}
+/** "Up 2 places since last week's ranking" (the tooltip and the screen reader's words) */
+export function movedLabel(m: number): string {
+  const n = Math.abs(m);
+  if (!m) return "The same place as last week's ranking";
+  return `${m > 0 ? "Up" : "Down"} ${n} place${n === 1 ? "" : "s"} since last week's ranking`;
+}
+/** "+6 since last week" / "−4 since last week"; null when it moved less than a point or is unknown */
+export function oddsChange(c: number | null | undefined): string | null {
+  if (c === null || c === undefined || Number.isNaN(c) || Math.abs(c) < 1) return null;
+  return `${c > 0 ? "+" : "−"}${Math.abs(Math.round(c))} since last week`;
+}
+// ---- end IO-2
