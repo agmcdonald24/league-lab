@@ -262,12 +262,48 @@ never joined to a path); the crash card (a fixed sentence; analytics gets the ro
 New environment variables: `LEAGUE_LAB_BLOG_DIR`, `LEAGUE_LAB_BLOG_DRAFTS`, `LEAGUE_LAB_DFS_SLATES` — none is set on
 Render.
 
+## 13. Each client's own share of the providers' budget (Wave I-O, IO-4; was "left", Medium, twice)
+
+**The finding**: Sleeper's and MyFantasyLeague's token buckets are one per process (`sleeper_client.TokenBucket`:
+300 Sleeper calls a minute, 60 MFL calls), spent by every visitor together; one client opening many unknown leagues
+emptied them and league setup said "busy" for everyone. The League outlook's first build reads a league's remaining
+weeks (12–20 calls), so fewer requests reached the same effect.
+
+**Fixed by** `src/league_lab/provider_share.py`: under the global bucket, each client has its own ceiling per provider.
+
+* **Who the client is**: the limiter's `client_group` (an IPv4 address, an IPv6 /64), which the limiter's middleware
+  sets in a context variable (`provider_share.CLIENT`) once a request is admitted and resets after it; the provider
+  clients read it where they take their bucket (`Sleeper._get`, `MFL._get`) — no parameter threaded through any call.
+  Starlette carries the variable into a sync route's worker thread; the one thread pool that fans out provider calls
+  on a request (`anyleague.user_leagues`, league setup) now hands it on (`contextvars.copy_context`), so league setup
+  cannot dodge it (tested: a 3-call share refuses `user_leagues` for the fixture user, a 1,000-call share counts every call of it).
+* **No client, no limit**: the nightly and the CLI (no middleware), the tests (the limiter is off there:
+  `LEAGUE_LAB_RATE_LIMIT=off` in `api/tests/conftest.py`) and anything run outside a request see `CLIENT = None` and
+  are limited by the global bucket only, exactly as before. With the limiter switched off on Render, the share is off
+  too.
+* **The numbers** (`provider_share.DEFAULTS`; a token bucket in its virtual-scheduling form, one number per client in
+  debt, HMAC-keyed with a random per-process key, ≤ 5,000 clients per provider, full ones dropped first):
+
+| Provider | At once | Then, a minute | Why |
+|---|---|---|---|
+| Sleeper | 150 | 60 | one unknown league opened cold — My Week, Team, League with its outlook — costs **11 calls** on the fixtures (whose schedule stops at a missing week 3) and **~25–35 live** (+ the outlook's 12–20 remaining weeks: the PO's measurement, Wave I-N § "Verified live"); three leagues ≈ 105 at most < 150. Measured: three cold openings 15 s apart → 33 calls on the share, **0 refused**; fifty in a minute (1.2 s apart) → refused from the **16th** league on the fixtures, 140 of 200 answers "busy"; at 25 / 35 calls a league, fifty → 6 / 4 built in full, then about two a minute. One client can hold at most half of Sleeper's per-minute budget at once and a fifth of it after that |
+| MFL | 50 | 12 | `mfl:70587` opened cold costs **14 calls** (fixtures); three = 42 < 50 (measured: three openings 15 s apart, 0 refused). MFL's own budget is 60 a minute: one client can take 50 at once, then 12 a minute leaves 48 for everyone else |
+
+* **A refusal** is the provider client's own: a cached answer, even an expired one, is served first; otherwise
+  `SleeperBusy` / `MFLBusy`, which the API answers **503** `{"error": "busy, try again in a minute", "code": "busy"}`
+  (main.py's handler) and the web says "Busy right now. Try again in a minute." — never a 500 (tested: fifty leagues,
+  every answer 200 or 503). Another visitor is not refused (tested).
+* **Memory**: 20,000 clients in debt → at most 5,000 held per provider (a few hundred KB; tested).
+* **Switches**: `LEAGUE_LAB_PROVIDER_SHARE` = `off`, or `"<per minute>,<at once>"` for Sleeper;
+  `LEAGUE_LAB_PROVIDER_SHARE_MFL` the same for MFL. ESPN and Yahoo are read with the visitor's own connection (their
+  budgets are per user at the provider) and keep their own limits.
+
 ## What is left, by severity
 
 | Severity | Item | Where |
 |---|---|---|
 | Medium | Verify the limiter's keying live (§ 2, two curl lines) before trusting the numbers | the PO, after the deploy |
-| Medium | Provider budgets are global: many addresses opening unknown leagues spend Sleeper's / MFL's budget for everyone ("busy"). Wave I-N's League outlook reads a league's remaining weeks (~12–20 calls on its first build; cached 6 h after) — the same budget, reached with fewer requests | `sleeper_client` / `mfl_client` buckets |
+| Low | Provider budgets: each client now has its own share (§ 13), but **many addresses** together (a botnet, an IPv6 range wider than a /64 per client) still spend Sleeper's / MFL's global budget; one address cannot | `provider_share` (§ 13); a per-/48 share like the limiter's `heavy` /48 key if it is ever seen |
 | Low | `--forwarded-allow-ips='*'` makes `request.client` client-written on Render; nothing in the app trusts it now, but a future reader would | `api/Dockerfile` (the PO): keep, and say so in the Dockerfile's comment, or set Render's proxy range if Render publishes one |
 | Low | Other clients follow redirects anywhere (only their fixed hosts could send one) | `sleeper_client`, `espn_client`, `yahoo_client`, `news_feed`, `injury_feed` |
 | Low | `/api/status` and `/api/usage/summary` are public: operational numbers (memory, cache ages, counts) — no secret, no league id | consider a token for them later |
