@@ -1,26 +1,89 @@
-# DFS: values, undervalued players and lineups from the site's own salary file (Wave I-M, IM-5)
+# DFS: the week's board with its context, published slates, values and stacked lineups (IM-5, rewritten for IN-4)
 
-Andrew (2026-10-05): "dfs recomendations/undervalues". The screen is **DFS** (`/dfs`, its own tab); it works with no
-league and no team. Code: `src/league_lab/dfs.py` (pure: sites, scoring, parsers, matching, value, optimiser, upload
-CSV), `api/league_lab_api/dfs.py` (three routes), `web/src/routes/Dfs.svelte` + `web/src/components/dfs/`. Tests:
-`tests/test_im5_dfs.py` (142), `api/tests/test_im5.py` (15), `web/e2e/im5/fixtures.spec.ts` (6, phone 375 and desktop
-1300, light and dark).
+Andrew (2026-10-05): "dfs recomendations/undervalues"; (2026-10-06): "I don't think making somebody upload the DFS
+salaries is a very solid user experience … a way to find value, people who might be undervalued … things that might
+even be beyond what the model can provide for. Like cornerback matchups don't necessarily play into the projections."
+The screen is **DFS** (`/dfs`, its own tab); it works with no league and no team. Code: `src/league_lab/dfs.py` (pure:
+sites, scoring, parsers, matching, value, the context signals, the optimiser with stacks, upload CSV, published-slate
+names), `api/league_lab_api/dfs.py` (five routes), `web/src/routes/Dfs.svelte` + `web/src/components/dfs/`. Tests:
+`tests/test_im5_dfs.py` (148), `tests/test_in4_dfs.py` (72), `api/tests/test_im5.py` (19), `api/tests/test_in4.py` (24),
+`web/e2e/im5/fixtures.spec.ts` (6) and `web/e2e/in4/fixtures.spec.ts` (6), phone 375 and desktop 1300.
 
-## What it does
+## What it does (the flow since IN-4)
 
-1. **Before a file**: this week's players ranked by projected points **in the site's scoring** (DraftKings or
-   FanDuel), by position, with the low-end to high-end outcome, the opponent and the matchup words — and "Add the salary
-   file to see value" with the three steps to find the file on each site.
-2. **The file**: the user adds the contest's salary file (a file, a drop or a paste). It is parsed in one request,
-   matched to our players, valued, and the answer is kept **in that browser tab only** (memory and `sessionStorage`,
-   one slate per site; "Remove file" drops it). The server stores nothing and logs nothing of it.
-3. **Value**: for every matched player — projection, range, points per $1,000, high-end outcome per $1,000, the slate's
+1. **It opens useful, with no file.** `/dfs` shows the week's board at once: every player priced in the chosen site's
+   scoring (DraftKings or FanDuel) with his low-end to high-end outcome, the opponent, and **the context the projection
+   does not hold** as chips beside him (§ Context): the matchup (the defense against his position and, for a receiver,
+   the cornerback), his **role trend**, the **betting line**. Tap a player for the sentences, each saying "In the
+   projection" or "Not in the projection". **Worth a look** per position lists the players with the signals in their
+   favour (§ Context), ordered by projection — labelled as context, not a graded forecast.
+2. **Published slates: nobody has to upload.** When the site's salary file for the week is in the repo
+   (`dfs/slates/<season>-w<ww>-<dk|fd>[-<label>].csv`, § Published slates), `/dfs` opens on its values: points per
+   $1,000, undervalued / overpriced against the slate's salary line, Worth a look ordered by points per $1,000, the
+   context beside every number. **"Use a different contest's file"** keeps the upload as the second path (another
+   contest has other salaries), in a quieter place; with nothing published the upload box sits beside the board.
+3. **An uploaded file** (a file, a drop or a paste) is parsed in one request, matched to our players, valued, and kept
+   **in that browser tab only** (memory and `sessionStorage`, one slate per site; "Remove file" drops it and goes back
+   to the published slate when there is one). The server stores nothing and logs nothing of it.
+4. **Value**: for every matched player — projection, range, points per $1,000, high-end outcome per $1,000, the slate's
    salary line at his position, his gap to it (points, and rank), and the call **undervalued** / **overpriced** with one
-   plain reason. Lists of the top 8 each (by position chip) and the full sortable table.
-4. **Lineups**: an exact optimiser for the site's slots and cap on projected points (cash) or the high-end outcome
-   (tournament), with players set to "Always in" / "Leave out", the site's team rules, 1–20 lineups each different by at
-   least one player; each card with its players, the salary left, the projected total and its range; **Copy**, and
-   **Download for upload** in the site's lineup-upload CSV with the file's own player ids.
+   plain reason. Lists of the top 8 each (by position chip) and the full sortable table, with a Context column.
+5. **Lineups**: an exact optimiser for the site's slots and cap on projected points (cash) or the high-end outcome
+   (tournament), with players set to "Always in" / "Leave out", the site's team rules, **stacks** (the quarterback with
+   one or two of his pass catchers, a bring-back from his opponent, no defense against him) and a **maximum exposure**
+   per player across the lineups, 1–20 lineups each different by at least one player; each card with its players and
+   their context chips, the salary left, the projected total and its range; **Copy**, and **Download for upload** in
+   the site's lineup-upload CSV with the file's own player ids.
+
+## Context beyond the projection (IN-4)
+
+Each signal is **shown beside the projection, never folded into it**, and says whether the projection already holds it.
+That label is not written by hand: `dfs.SIGNAL_INPUTS` lists the columns each signal is made of and `dfs.in_projection`
+checks them against the model's own input list, `projections.FEATURES_BY_POSITION` (v3.3);
+`tests/test_in4_dfs.py::test_each_label_is_read_from_the_models_input_list` asserts every (signal, position).
+
+| Signal | What it reads | Tone | In the projection? (how we know) |
+|---|---|---|---|
+| **Defense vs his position** | `matchup_board.matchup_context(...)["defense"]` (IN-3: the marts' standard rank, `defense_tone`) | IN-3's | **In the projection**: `opp_rank_std`, `opp_allowed_std`, `opp_allowed_l4`, `f_opp_allowed_diff` are inputs at every position |
+| **Cornerback** (WR only) | `matchup_context(...)["cb"]` (`mart_cb_matchups`: the likely corner, his rank, shutdown, the certainty) | IN-3's; **only a "likely" call carries a tone** (an unclear call is said, never counted) | **Not in the projection**: no model input is made of the corner call |
+| **Role trend** (RB, WR, TE) | `analytics.fct_player_game`, his **last 2 games played against his games before them** (at least 2): target share, carry share (RB), snap share — each the summed numerator over the summed denominator; team snaps = his snaps ÷ his snap share; a measure moved at ±5 points (targets) or ±10 (carries, snaps); "role up" when one moved up and none down, "role down" the other way, else nothing; a game without the measure makes it unknown, not 0 | favourable / difficult | **In the projection**: the model reads his share over the last 3 games and the season (`target_share_l3`, `_std`, `carry_share_*`, `snap_pct_*`). Routes run per dropback would not be (`route_participation_l3` is not an input), but routes are not available during the season (the participation file arrives after it), so it never shows |
+| **Game environment** | `analytics.dim_game` `spread_line` (> 0: the home team favoured), `total_line`; the team's implied total = (total ± spread) ÷ 2, `int_player_week_universe`'s formula | favourable at 26+ expected points, difficult at 18 or fewer (the cards' marks) | **In the projection**: `implied_team_total`, `spread_line`, `total_line` are inputs. 2026 week 5: lines for **15 of 15** games |
+| **Weather** | — | — | **Not shown.** The forecast is in the database (`intermediate.int_game_weather`, Open-Meteo; week 5: 9 outdoor games with a forecast, 6 domes) but the site's database role reads `analytics` and `ops` only and no analytics relation carries it; this wave ships no new relation. `dfs.weather_flag` (wind 15+ mph, snow, rain 0.1 in+, below freezing; difficult for a passer or receiver) is built and tested for the day a mart publishes it. It is **not in the projection** (plan D3 tested it; not kept) |
+
+**Worth a look.** The brief's rule was "at least two favourable signals that are not in the projection". Read from the
+model, only the corner call is both outside the projection and able to be favourable — so that rule could never fire.
+The rule used: **at least 2 favourable signals, at least 1 of them not in the projection, and no difficult signal
+outside it** (`dfs.WORTH_MIN_FAVOURABLE`, `WORTH_MIN_OUTSIDE`: one line to change). In practice: receivers likely
+facing a soft corner with another signal for them. Without IN-3's module the list is empty and the screen says why.
+Ordered by projection on the board, by points per $1,000 on a slate; who cannot play is left off. **There is no
+backtest behind it** and the screen says so.
+
+Week 5 (2026, the clone): of the 402 backs, receivers and tight ends with a game this season, **65 read "role up" and
+45 "role down"** (on the DraftKings board: WR 30 / 24, RB 16 / 13, TE 13 / 6); the rest have nothing said (flat, mixed,
+or fewer than 4 games). Betting lines for all 30 teams playing.
+
+## Published slates (IN-4)
+
+* **The folder**: `dfs/slates/` in the repo (`LEAGUE_LAB_DFS_SLATES` overrides; `/srv/dfs/slates` in the image — the
+  Dockerfile copies it). How to publish: `dfs/slates/README.md`. **No real salary file ships with the code** (we have
+  none); the tests publish the synthetic fixtures into a temporary folder.
+* **The name**: `<season>-w<ww>-<dk|fd>[-<label>].csv` (`dfs.SLATE_FILE_RE`; label: lower-case letters and digits, up
+  to 20; default `main`). The id is the name without `.csv`, label always written: `2026-w05-dk-main`.
+* **Read once** per process (the folder ships with the image: a new file is a new deploy), at most 32 files, each
+  parsed by the same parser with the same limits as an upload (1 MB, 2,000 rows, 200 columns, 300-character cells); a
+  link is refused. **Unreadable** — a name off the pattern, a second file for one id, a parse refusal, a DraftKings file
+  named FanDuel — is listed with its reason (`GET /api/dfs/slates` → `unreadable`) and **never served**.
+* **Offered**: this week's and next week's files only (the app's week rule); any other week is listed under
+  `not_offered` with the reason — a past week's slate is never offered as this week's.
+* **The id is never a path**: `GET /api/dfs/slate/{id}` matches `dfs.SLATE_ID_RE`, then looks the id up in what was
+  read; anything else is 404 "No published slate by that name for this week." (tested with `../`, an encoded slash,
+  `.csv`, capitals, 300 characters).
+* **The answer** is exactly `POST /api/dfs/slate`'s for that file (tested field by field) plus `slate_id`, `published`,
+  `label`; built once and kept in the `dfs_published` region (4 entries, ~1.4 MB each, 10 minutes).
+* **Lineups by id**: `POST /api/dfs/lineups` with `slate_id` in place of `players`: the server takes the slate's own
+  players (who can play, or are set always in; the highest projected first past 800).
+* **Terms**: a person downloads the file by hand from the contest page (no automated collection); whether republishing
+  a site's salaries on a public page is within each site's terms is **Andrew's call** before the first file is pushed.
 
 ## Why salaries are not fetched (and what fetching would need)
 
@@ -197,6 +260,23 @@ points per $1,000, 4.55 high-end per $1,000. Reason: "Olave's share of the targe
   proven), +31 MB; the review's 2,000-player request: refused in 7 ms before any solve (it took 42 s and 437 MB before).
   A maximal legitimate upload (2,000 rows, 0.2 MB): 0.49 s of CPU cold, 0.27 s warm, +28 MB (matching is dictionary
   lookups, the fit a least-squares line per position: both linear).
+* **Stacks (IN-4)** (`dfs.Stack`; classic and full roster — one QB slot; showdown says it does not apply): rows only,
+  the objective never changes. Per team t, `Q_t` = the sum of its quarterbacks (≤ 1): **the QB with k of his pass
+  catchers** (k = 1 or 2; WR and TE of his team): Σ pass catchers − k·Q_t ≥ 0; **a bring-back**: Σ RB / WR / TE of his
+  opponent − Q_t ≥ 0; **no defense against my QB**: x_DEF + Q_t ≤ 1 for each defense whose opponent is t. (One row per
+  team, not per quarterback: it is the sum of the per-QB rows, so the tighter one; measured 4 → 7 stacked lineups in the
+  budget on a loaded box.) A rule the slate cannot meet is named: with no lineup, each rule is tried alone on the base
+  rows and the first one with no lineup is said ("No lineup can meet the quarterback with at least 2 of his own pass
+  catchers (WR or TE) on this slate with these players set to always in and left out. Turn that rule off or change who
+  is in."); else "No lineup meets all the stack rules together (…)". `test_an_impossible_stack_names_its_rule`.
+* **Maximum exposure (IN-4)**: a share in [10%, 100%] of the N lineups; each player in at most max(1, ⌊share × N⌋) —
+  after each lineup a player at his cap gets an upper bound of 0. A player set to always in is exempt (in every lineup
+  by request). Notes: "Exposure: each player in at most 6 of the 20 lineups."; when the cap leaves fewer distinct
+  lineups the note says how many fit ("Only N different lineups fit the cap, the rules and the exposure limit …").
+* **Measured (IN-4, this sandbox with six developers on two cores)**: the published DraftKings slate (597 players), 20
+  lineups — no stack 4.83 s (20 of 20, all proven); QB + 2, bring-back, no DEF vs QB 5.04 s (the budget: 7 lineups, 6
+  proven); QB + 1 with 30% exposure 5.03 s (18, 17 proven); FanDuel (598) QB + 2 + bring-back 5.20 s (12, 11 proven).
+  The 5-second budget and its notes are unchanged: a stacked build of 20 often stops early and says so.
 * **The lineup's range**: the low-end / high-end outcome of the total if the players' weeks were independent (each
   player's spread from his own P10–P90 as a normal, the variances added). Teammates and opponents are not independent
   (a shootout lifts both): the real range is wider, and the card says so.
@@ -212,21 +292,36 @@ browser (`isuckatfantasy-<contest>-<n>-lineups.csv`).
 
 | Route | In | Out | Limiter (IM-3's terms; `dfs.RATE_BUCKETS`) |
 |---|---|---|---|
-| `GET /api/dfs/projections?site=dk\|fd&week=&position=&limit=` (week: this week or the next only, else 400 `bad_week`) | — | `{site, site_name, season, week, players: [{key, gsis_id, player_name, position, team, opponent, proj, p10, p25, p75, p90, status, out, matchup}], reference, scoring, bonus_at_odds}` (a team on a bye left out; default week: the app's week rule) | `read` |
-| `POST /api/dfs/slate?week=` | the file's text (`text/csv`, or JSON `{"text": …}`) | `{site, contest, contest_label, cap, season, week, games, players: [...], unmatched, skipped, matched_by, counts, fit: {position: {slope_per_1000, intercept, n, rmse, words} \| null}, undervalued: [keys], overpriced: [keys], notes, scoring, bonus_at_odds}`; the week = `?week=`, else the one whose games the file lists (`dfs.detect_week`), else this week — this week or the next only (else 400 "That file's games are week 11's: DFS shows this week (week 4) and next week (week 5) only.") | `heavy` |
-| `POST /api/dfs/lineups` | `{contest, players (as returned), locks, excludes, mode: cash \| tournament, n: 1–20}` | `{lineups: [{slots: [{slot, key, multiplier, salary, proj, upload_id, name, position, team, gsis_id}], salary, salary_left, proj, ceiling_sum, low, high, proven, mode}], notes, solve_ms, left_out, upload_csv, filename}` | `heavy` |
+| `GET /api/dfs/projections?site=dk\|fd&week=&position=&limit=` (week: this week or the next only, else 400 `bad_week`) | — | `{site, site_name, season, week, players: [{key, gsis_id, player_name, position, team, opponent, proj, p10, p25, p75, p90, status, out, matchup, context: [signal], worth, worth_reasons}], reference, scoring, bonus_at_odds, worth_a_look: {position: [keys]}, context_meta}` (a team on a bye left out; default week: the app's week rule). A signal: `{signal, label, tone, words, in_projection, projection_words, …}`; `context_meta`: `{matchup, matchup_words, lines, forecast, projection: {signal: {position: bool}}, in_words, out_words, words, worth_rule}` | `research` (ratelimit's table; IM-5's `RATE_BUCKETS` said read) |
+| `GET /api/dfs/slates?site=` (IN-4) | — | `{season, week, slates: [{id, site, site_name, label, season, week, contest, contest_label, on_file, matched, unmatched}], not_offered: [{id, reason}], unreadable: [{file, reason}]}` | `research` |
+| `GET /api/dfs/slate/{id}` (IN-4; `id` from `dfs.SLATE_ID_RE`, 404 otherwise) | — | the `POST /api/dfs/slate` answer for that file + `slate_id`, `published: true`, `label` | `research` |
+| `POST /api/dfs/slate?week=` | the file's text (`text/csv`, or JSON `{"text": …}`) | `{site, contest, contest_label, cap, season, week, games, players: [... + context, worth, worth_reasons], unmatched, skipped, matched_by, counts, fit: {position: {slope_per_1000, intercept, n, rmse, words} \| null}, undervalued: [keys], overpriced: [keys], notes, scoring, bonus_at_odds, worth_a_look, context_meta, published: false, slate_id: null}`; the week = `?week=`, else the one whose games the file lists (`dfs.detect_week`), else this week — this week or the next only (else 400 "That file's games are week 11's: DFS shows this week (week 4) and next week (week 5) only.") | `heavy` |
+| `POST /api/dfs/lineups` | `{contest, players (as returned)` **or** `slate_id` (IN-4), `locks, excludes, mode: cash \| tournament, n: 1–20, stack: {with_qb: 0\|1\|2, bring_back, no_def_vs_qb} (IN-4, a closed set; else 400 bad_stack), max_exposure: 0.1–1 (IN-4; else 400 bad_exposure)}` | `{lineups: [{slots: [{slot, key, multiplier, salary, proj, upload_id, name, position, team, gsis_id, opponent}], salary, salary_left, proj, ceiling_sum, low, high, proven, mode}], notes, solve_ms, left_out, upload_csv, filename, slate_id, stack, max_exposure}` | `heavy` |
 
 No league and no team on any route; `require_auth` like every data route (the gate keeps working either way).
 `Cache-Control: no-store` on both POSTs. **Never stored or logged**: no logging call in the module, the text is dropped
 after parsing (`test_the_file_is_never_logged`). One memory region, `dfs` (the week's board priced per site, kept 10
-minutes, at most 8 entries): **0.35 MB** per site-week (DraftKings 628 rows, FanDuel 598). No new table, nothing published to Neon.
+minutes, at most 8 entries): **0.35 MB** per site-week (DraftKings 628 rows, FanDuel 598). IN-4 adds two: `dfs_context`
+(the week's role trends and lines, 4 entries, **0.13 MB** each) and `dfs_published` (a built published slate, 4 entries,
+**1.4 MB** each). No new table, nothing new published to Neon (the context reads `analytics.fct_player_game` and
+`analytics.dim_game`, already there).
+
+**Measured (IN-4, the clone, loaded box)**: the board with its context — the context's reads cold 1.41 s (once per week
+and 10 minutes), the projections answer warm 0.06–0.15 s (348 KB before gzip, 520 KB with the matchup signal); `GET
+/api/dfs/slates` cold 0.69 s (reads the folder, builds two slates), warm 0.01 s; `GET /api/dfs/slate/{id}` cold 0.60 s,
+warm 0.05–0.13 s (583 KB before gzip).
 
 ## Limitations (said plainly)
 
 * **No ownership projections**: nobody's guess of how many entrants pick a player; a tournament lineup here is the
   highest high-end outcome, not a contrarian one.
-* **No correlation or stacking model**: a quarterback and his receivers are scored as if independent; the lineup's
-  range says the real one is wider. No "stack" rules (QB + 2 receivers, bring-backs).
+* **No correlation model**: stacks are rules (IN-4), not a model of how teammates' weeks move together — a stacked
+  lineup's range is still figured as if the players were independent, and the card says the real one is wider.
+* **Context is not graded**: the role trend, the corner call and "Worth a look" have no backtest; the screen says so.
+  The weather is not shown (§ Context).
+* **The salary files are unverified against a real export** (§ The files): the parsers were built from the sites'
+  documentation and memory; the first published file is the first real test (`GET /api/dfs/slates` lists it as
+  unreadable, with the reason, if a header differs).
 * **Kick-off times and late swap are not handled**: the FLEX is not chosen to be the latest game; a player locked by
   his game's start is not known to us; the projections are the morning build's (injury statuses from the overlay).
 * **Contests**: DraftKings classic and showdown, FanDuel full roster only (no FanDuel single game, DraftKings Tiers,

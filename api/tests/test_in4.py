@@ -213,4 +213,4 @@ def test_rate_buckets_and_memory_regions():
     assert bucket_for("POST", "/api/dfs/slate") == "heavy" and bucket_for("POST", "/api/dfs/lineups") == "heavy"
     assert api_dfs.RATE_BUCKETS_IN4 == {"/api/dfs/slates": "research", "/api/dfs/slate/{slate_id}": "research"}
     regions = memo.BUDGET.regions
-    assert regions["dfs_context"].max_entries == 4 and regions["dfs_published"].max_entries == 8
+    assert regions["dfs_context"].max_entries == 4 and regions["dfs_published"].max_entries == 4

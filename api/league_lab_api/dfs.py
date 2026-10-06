@@ -764,7 +764,7 @@ def _with_context(players: list[dict], season: int, week: int, by: str) -> tuple
 # strict pattern (``dfs.SLATE_ID_RE``) and is looked up in what was read — never joined to a path.
 _published_lock = threading.Lock()
 _published: dict | None = None
-_built = memo.region("dfs_published", ttl=600.0, max_entries=8)
+_built = memo.region("dfs_published", ttl=600.0, max_entries=4)      # ~1.4 MB a built slate (measured): 4 = ~6 MB
 NOT_PUBLISHED = "No published slate by that name for this week."
 
 

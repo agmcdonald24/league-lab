@@ -31,6 +31,7 @@ Wave I-N (IN-4) adds: **context beyond the projection** (``role_trend``, ``game_
 from __future__ import annotations
 
 import csv
+import functools
 import io
 import math
 import re
@@ -748,8 +749,8 @@ class Stack:
         """(rule id, the rule in words) for each rule set."""
         out = []
         if self.with_qb:
-            out.append(("with_qb", f"the quarterback with at least {self.with_qb} of his own pass catcher"
-                                   f"{'s' if self.with_qb != 1 else ''} (WR or TE)"))
+            out.append(("with_qb", f"the quarterback with at least {'one' if self.with_qb == 1 else self.with_qb} of "
+                                   "his own pass catchers (WR or TE)"))
         if self.bring_back:
             out.append(("bring_back", "a bring-back: at least one RB, WR or TE from the quarterback's opponent"))
         if self.no_def_vs_qb:
@@ -763,25 +764,32 @@ BRING_BACK = frozenset({"RB", "WR", "TE"})
 
 def _stack_rows(pool: list[Mapping], var: list[tuple[int, int]], stack: Stack, only: str | None = None
                 ) -> list[tuple[list[int], list[float], float, float]]:
-    """The stack rules as rows (cols, vals, lb, ub) over the flat model's variables (one per player). ``only``: one
-    rule's rows (to name the rule a slate cannot meet)."""
+    """The stack rules as rows (cols, vals, lb, ub) over the flat model's variables (one per player), ONE row per team
+    (``Q_t`` = the sum of the team's quarterbacks, at most 1 since the lineup has one QB): with Q_t in, k of the team's
+    pass catchers are in (``sum - k Q_t >= 0``), one of its opponent's RB / WR / TE (``sum - Q_t >= 0``), and no defense
+    that plays against it (``x_d + Q_t <= 1``). A team-level row is the sum of the per-quarterback rows, so it is the
+    tighter one (a backup QB adds a column, not a row). ``only``: one rule's rows (to name the rule a slate cannot meet)."""
     col = {i: j for j, (i, _g) in enumerate(var)}
     rows: list[tuple[list[int], list[float], float, float]] = []
-    qbs = [i for i in col if pool[i]["position"] == "QB"]
-    for q in qbs:
-        team, opp = pool[q].get("team"), pool[q].get("opponent")
-        jq = col[q]
+    qbs_by_team: dict[str, list[int]] = {}
+    opp_of: dict[str, str | None] = {}
+    for i in col:
+        if pool[i]["position"] == "QB" and pool[i].get("team"):
+            t = str(pool[i]["team"])
+            qbs_by_team.setdefault(t, []).append(col[i])
+            opp_of[t] = opp_of.get(t) or pool[i].get("opponent")
+    for team, qcols in sorted(qbs_by_team.items()):
+        opp = opp_of.get(team)
         if stack.with_qb and only in (None, "with_qb"):
-            mates = [col[i] for i in col if i != q and pool[i]["position"] in PASS_CATCHERS and pool[i].get("team") == team]
-            # sum(mates) - k * x_q >= 0: with this QB in, k of his pass catchers are in too
-            rows.append(([*mates, jq], [1.0] * len(mates) + [-float(stack.with_qb)], 0.0, np.inf))
+            mates = [col[i] for i in col if pool[i]["position"] in PASS_CATCHERS and pool[i].get("team") == team]
+            rows.append(([*mates, *qcols], [1.0] * len(mates) + [-float(stack.with_qb)] * len(qcols), 0.0, np.inf))
         if stack.bring_back and only in (None, "bring_back"):
             back = [col[i] for i in col if pool[i]["position"] in BRING_BACK and opp and pool[i].get("team") == opp]
-            rows.append(([*back, jq], [1.0] * len(back) + [-1.0], 0.0, np.inf))
+            rows.append(([*back, *qcols], [1.0] * len(back) + [-1.0] * len(qcols), 0.0, np.inf))
         if stack.no_def_vs_qb and only in (None, "no_def_vs_qb"):
             for i in col:
-                if pool[i]["position"] == "DEF" and team and pool[i].get("opponent") == team:
-                    rows.append(([jq, col[i]], [1.0, 1.0], 0.0, 1.0))
+                if pool[i]["position"] == "DEF" and pool[i].get("opponent") == team:
+                    rows.append(([*qcols, col[i]], [1.0] * (len(qcols) + 1), 0.0, 1.0))
     return rows
 
 
@@ -1184,8 +1192,10 @@ TONES = ("favorable", "neutral", "difficult")
 SKILL = ("QB", "RB", "WR", "TE")
 
 
+@functools.lru_cache(maxsize=8)
 def model_inputs(position: str) -> frozenset[str]:
-    """The projection's inputs at the position (``projections.FEATURES_BY_POSITION``: the model that prices the board)."""
+    """The projection's inputs at the position (``projections.FEATURES_BY_POSITION``: the model that prices the board;
+    the positions are a closed set, so the cache is too)."""
     from .projections import FEATURES_BY_POSITION
     return frozenset(FEATURES_BY_POSITION.get(position, ()))
 
