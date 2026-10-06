@@ -2185,3 +2185,66 @@ export interface WaiverDeadline {
   waiver_order?: number | null; // MFL waiver order: the team's place
 }
 // ---- end IL-2
+
+// ---- IN-6 (Wave I-N): the League screen's power rankings and the rest of the season (GET /api/league/outlook;
+// api/league_lab_api/outlook.py, docs/METRICS.md § "Power rankings and the season outlook")
+export interface PowerRow {
+  roster_id: number;
+  team_name: string;
+  manager_name: string | null;
+  rank: number; // by per_week, 1 = the most
+  per_week: number; // the best lineup's expected points per week over the rest of the season
+  wins: number;
+  losses: number;
+  ties: number;
+  standing: number; // by wins, then points for
+  points_for: number | null;
+  points_for_rank: number | null;
+  points_against: number | null;
+  points_against_rank: number | null;
+  gap_words: string | null; // "3–1 on the 8th-most points: a soft schedule so far"
+  schedule_left: number | null; // the opponents left: their per_week, averaged
+  schedule_left_rank: number | null; // 1 = the hardest
+  schedule_left_games: number;
+  mine: boolean;
+}
+export interface OutlookRow {
+  roster_id: number;
+  wins_mean: number; // the final regular-season wins, averaged over the simulated seasons
+  wins_p10: number;
+  wins_p90: number;
+  games_left: number;
+  wins_left_mean: number;
+  points_for_mean: number;
+  playoff: number | null; // null: the league's playoff rules are not known (playoff_reason)
+  top_seed: number;
+  bye: number | null; // null: no byes (or no playoff rules)
+  rank_mean: number;
+  status: "clinched" | "eliminated" | null; // proven on wins alone
+  mine: boolean;
+}
+export interface LeagueOutlook {
+  league_id: string;
+  season: number;
+  version: string;
+  played_weeks: number;
+  roster_id: number | null;
+  power: { rows: PowerRow[]; weeks: number[]; span: string; words: string; note: string | null; movement: null; movement_note: string };
+  outlook: {
+    available: boolean;
+    reason: string | null;
+    weeks: number[];
+    seasons: number;
+    playoff_teams: number | null;
+    playoff_week_start: number | null;
+    byes: number | null;
+    tiebreak: string;
+    playoff_reason: string | null;
+    assumptions: string[];
+    rows: OutlookRow[];
+  };
+  definitions: Record<string, string>;
+}
+export const outlookPath = (league: string, team: number | null) =>
+  `/api/league/outlook?league=${encodeURIComponent(league)}${team != null ? `&team=${team}` : ""}`;
+// ---- end IN-6
