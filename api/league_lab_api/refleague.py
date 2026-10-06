@@ -150,10 +150,15 @@ def install() -> None:
     platforms.REFERENCE = References()
 
 
+FREE_AGENT_LABEL = " · free agent"     # IN-2: a search hit's label ("Puka Nacua · WR · LAR · free agent")
+
+
 def public(out: Any) -> Any:
-    """The answer with every ownership field taken out, at any depth (a reference key has no rosters)."""
+    """The answer with every ownership field taken out, at any depth (a reference key has no rosters). IN-2: a label's
+    " · free agent" too (an ownership word, absent while browsing)."""
     if isinstance(out, dict):
-        return {k: public(v) for k, v in out.items() if k not in OWNERSHIP}
+        return {k: (v.removesuffix(FREE_AGENT_LABEL) if k == "label" and isinstance(v, str) else public(v))
+                for k, v in out.items() if k not in OWNERSHIP}
     if isinstance(out, list):
         return [public(v) for v in out]
     return out
@@ -472,8 +477,40 @@ def _words(text: Any, words: str, full: str | None = None) -> Any:
         return text
     if full and full != words:
         text = text.replace(f"{full} scoring", f"{words} scoring")
-    return (text.replace("this league's scoring", f"{words} scoring").replace("in this league", f"in {words}")
-            .replace("this league's final", "a typical league's final"))
+    for house, plain in HOUSE_SCORING.items():   # the house league the research is kept in, by its scoring's name
+        text = text.replace(f"{house} scoring", f"{plain} scoring")
+    return (text.replace("this league's scoring", f"{words} scoring").replace("this league's season", "the season")
+            .replace("in this league", f"in {words}").replace("this league's final", "a typical league's final"))
+
+
+HOUSE_SCORING = {"League of Scrubs": "Half PPR"}      # the reference house league (Half PPR, 4-pt pass TD)
+HOWTO_BROWSING = {
+    "- **Availability**": "- **Availability** says his injury status, his bye and whether his game has started.",
+    "- **Value**": ("- **Value** is his projected points from this week to the end of the regular season above the best "
+                    "player at his position that a typical league of this shape leaves free (the size and superflex "
+                    "you picked, a bench of six); points per game is what he has scored, priced in this scoring."),
+}
+
+
+def _howto(text: Any, words: str, full: str) -> Any:
+    """The card's "How to read this" while browsing: no owner in Availability, the value without a league."""
+    if not isinstance(text, str):
+        return text
+    lines = []
+    for ln in text.split("\n"):
+        hit = next((v for k, v in HOWTO_BROWSING.items() if ln.startswith(k)), None)
+        lines.append(hit if hit is not None else ln)
+    return _words("\n".join(lines), words, full)
+
+
+def _deep_words(v: Any, words: str, full: str) -> Any:
+    if isinstance(v, str):
+        return _words(v, words, full)
+    if isinstance(v, dict):
+        return {k: _deep_words(x, words, full) for k, x in v.items()}
+    if isinstance(v, list):
+        return [_deep_words(x, words, full) for x in v]
+    return v
 
 
 def _strip(sec: dict, words: str, full: str | None = None) -> dict:
@@ -548,7 +585,9 @@ def card(out: dict, key: str) -> dict:
         secs["value"] = {**v, "title": f"**Value** — {sh.assumes.removeprefix('Value ')}",
                          "blocks": first + list(v.get("blocks") or [])}
     out["sections"] = secs
-    out["howto"] = _words(out.get("howto"), words, full)
+    out["howto"] = _howto(out.get("howto"), words, full)
+    if out.get("matchup_evidence") is not None:
+        out["matchup_evidence"] = _deep_words(out["matchup_evidence"], words, full)
     out["ref_value"] = vb
     out["foot"] = FOOT
     out["scoring"] = {"key": sh.key, "label": words, "pricing": pricing(sh, (vb or {}).get("pricing", {}).get(
