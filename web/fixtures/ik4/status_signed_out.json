@@ -4,5 +4,14 @@
  "signed_in": false,
  "email": null,
  "mailer": "stub",
- "session_days": 90
+ "session_days": 90,
+ "methods": [
+  "email"
+ ],
+ "why": {
+  "passkey": "not_ready",
+  "email": null
+ },
+ "passkey_home": "https://isuckatfantasy.io",
+ "passkey_here": false
 }
