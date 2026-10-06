@@ -95,6 +95,9 @@ RESEARCH_EXACT = frozenset({
     "/api/receivers", "/api/about", "/api/record", "/api/ros", "/api/dfs/projections",
 })
 RESEARCH_PREFIX = ("/api/player/",)
+# ---- IN-2 (Wave I-N): the trade calculator without a league prices two sides on request
+RESEARCH_EXACT = RESEARCH_EXACT | {"/api/trade-calc/free"}
+# ---- end IN-2
 HEAVY_PREFIX = ("/api/dfs/slate", "/api/dfs/lineups")   # IM-5 (dfs.RATE_BUCKETS): the salary file and the lineups solve; /api/dfs/projections is a read
 LEAGUE_SETUP = frozenset({"username", "mfl", "mfl_search", "sleeper", "espn", "yahoo", "yahoo_me"})
 UNLIMITED = frozenset({"/api/health"})

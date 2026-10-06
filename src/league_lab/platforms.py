@@ -90,19 +90,56 @@ ESPN_PREFIX = "espn:"
 YAHOO_PREFIX = "yahoo:"
 _ESPN_KEY = re.compile(r"^(?:(\d{4}):)?(\d{1,12})$")
 _YAHOO_KEY = re.compile(r"^(\d{1,4}|nfl)\.l\.(\d{1,10})$")    # "nfl": this season's game (IK-2 resolves it)
-SHORT = {"sleeper": "Sleeper", "mfl": "MFL", "espn": "ESPN", "yahoo": "Yahoo", "reference": "No league"}   # IM-3
-LONG = {"sleeper": "Sleeper", "mfl": "MyFantasyLeague", "espn": "ESPN", "yahoo": "Yahoo", "reference": "No league"}
+SHORT = {"sleeper": "Sleeper", "mfl": "MFL", "espn": "ESPN", "yahoo": "Yahoo", "reference": "Any league"}   # IM-3; IN-2
+LONG = {"sleeper": "Sleeper", "mfl": "MyFantasyLeague", "espn": "ESPN", "yahoo": "Yahoo", "reference": "Any league"}
 # ---- IM-3 (Wave I-M): reference league keys `ref:ppr` / `ref:half` / `ref:std` — no platform, no rosters: the NFL-wide
 # research priced in a reference scoring. The API installs the object that answers them (REFERENCE:
 # api/league_lab_api/refleague.py); until it does, a `ref:` key is LeagueNotFound like any unknown key.
 REF_PREFIX = "ref:"
-REF_KEYS = ("ref:ppr", "ref:half", "ref:std")
 REFERENCE: Any = None
 
 
 def is_reference(key: Any) -> bool:
     return str(key or "").strip().lower().startswith(REF_PREFIX)
 # ---- end IM-3
+
+
+# ---- IN-2 (Wave I-N): the reference key grows from three scorings to a small closed family, canonical and strictly
+# parsed: ``ref:<scoring>[.sf][.tep][.p6][.t8|.t10|.t14]`` — the scoring (ppr, half, std, espn = ESPN's default, yahoo
+# = Yahoo's default), then the options in this order: superflex, TE premium (+0.5 a tight-end catch), 6-point passing
+# touchdowns, the league size (12 teams unless it says 8, 10 or 14). Lower case; any other spelling (another order,
+# ``.t12``, a repeat, an unknown part) is not a key. 5 x 2 x 2 x 2 x 4 = 160 keys (``REF_KEYS``); ``ref:half`` stays
+# the default and ``ref:ppr`` / ``ref:half`` / ``ref:std`` mean what they meant.
+REF_BASES = ("ppr", "half", "std", "espn", "yahoo")
+REF_TEAMS = (8, 10, 12, 14)
+REF_TEAMS_DEFAULT = 12
+_REF_KEY = re.compile(r"^ref:(ppr|half|std|espn|yahoo)(\.sf)?(\.tep)?(\.p6)?(?:\.t(8|10|14))?$")
+
+
+def ref_key(base: str, sf: bool = False, tep: bool = False, p6: bool = False, teams: int = REF_TEAMS_DEFAULT) -> str:
+    """The canonical key of a reference shape (ValueError for a scoring or size outside the family)."""
+    if base not in REF_BASES or int(teams) not in REF_TEAMS:
+        raise ValueError(f"no reference shape {base!r} / {teams!r}")
+    return (REF_PREFIX + base + (".sf" if sf else "") + (".tep" if tep else "") + (".p6" if p6 else "")
+            + ("" if int(teams) == REF_TEAMS_DEFAULT else f".t{int(teams)}"))
+
+
+REF_KEYS = tuple(ref_key(b, sf, tep, p6, t) for b in REF_BASES for sf in (False, True) for tep in (False, True)
+                 for p6 in (False, True) for t in REF_TEAMS)
+_REF_SET = frozenset(REF_KEYS)
+
+
+def parse_reference(key: Any) -> tuple[str, bool, bool, bool, int] | None:
+    """(scoring, superflex, TE premium, 6-pt pass TD, teams) of a canonical reference key, else None. Strict: only the
+    160 spellings ``REF_KEYS`` holds (case aside), so a key built from user input is always one of a countable set."""
+    s = str(key or "").strip().lower()
+    if len(s) > 32 or s not in _REF_SET:
+        return None
+    m = _REF_KEY.match(s)
+    if m is None:                                   # never: REF_KEYS is built by ref_key, which the pattern matches
+        return None
+    return m.group(1), bool(m.group(2)), bool(m.group(3)), bool(m.group(4)), int(m.group(5) or REF_TEAMS_DEFAULT)
+# ---- end IN-2
 
 
 def provider_of(key: Any) -> str:
@@ -175,7 +212,7 @@ def check_key(key: Any) -> str:
     prefix). Anything else is LeagueNotFound."""
     s = str(key or "").strip()
     if is_reference(s):              # ---- IM-3
-        if s.lower() not in REF_KEYS:
+        if parse_reference(s) is None:                        # ---- IN-2: the closed family (REF_KEYS)
             raise LeagueNotFound(f"not a reference league: {key!r}")
         return s.lower()
     if is_mfl(s):

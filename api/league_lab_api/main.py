@@ -436,6 +436,8 @@ def player_card(gsis: str, league: str, response: Response, team: int | None = N
     else:
         out = player.player_card(league, gsis)
     out["viewer_roster_id"] = team
+    if refleague.is_reference(league):                         # ---- IN-2: the scoring in the head, the value, no owner
+        out = refleague.card(out, league)                      # ---- end IN-2
     return _research(out, league, response)                                                       # ---- IM-3
 
 
@@ -845,6 +847,13 @@ from . import dfs as dfs_mod  # noqa: E402 - the block stays self-contained
 
 app.include_router(dfs_mod.router, dependencies=[Depends(require_auth)])
 # ---- end IM-5
+
+
+# ---- IN-2 (Wave I-N): the trade calculator without a league — GET /api/trade-calc/free (league_lab_api/freetrade.py)
+from . import freetrade as freetrade_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(freetrade_mod.router, dependencies=[Depends(require_auth)])
+# ---- end IN-2
 
 
 # ---- IM-3 (Wave I-M): the public site's doors. The rate limiter (ratelimit.py) inside the Guard (security.py: cross-site
