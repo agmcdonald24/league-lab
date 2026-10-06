@@ -12,7 +12,9 @@ import { APP_NAME } from "./brand";
 //   notready — our 503 "the numbers are not ready yet" (the nightly is restoring the copy); busy — our 503 "busy"
 //   notfound — a 404 (the screen's own words); other — anything else (the API's own sentence)
 // A 401 is never a failure: it goes back to the password screen (App.svelte, "Signed out — sign in again").
-export type FailureKind = "down" | "slow" | "server" | "upstream" | "notready" | "busy" | "notfound" | "other";
+// ---- IM-3: limited — our 429 (the rate limiter: "Too many requests from this connection. Try again in N seconds.");
+//            needsleague — a decision screen asked without a league (`ref:` keys): "Open your league to see this."
+export type FailureKind = "down" | "slow" | "server" | "upstream" | "notready" | "busy" | "notfound" | "other" | "limited" | "needsleague";
 export interface Failure {
   kind: FailureKind;
   words: string;
@@ -26,6 +28,10 @@ const OURS_503 = /not ready|busy/i; // main.py's handlers: "the numbers are not 
 export function failureOf(e: unknown): Failure {
   if (e instanceof ApiError) {
     const s = e.status;
+    const code = (e.body as { code?: string } | null)?.code; // ---- IM-3
+    if (s === 429 || code === "rate_limited")
+      return { kind: "limited", status: s, words: /^Too many requests/.test(e.message) ? e.message : "Too many requests from this connection. Try again in a minute." };
+    if (code === "needs_league") return { kind: "needsleague", status: s, words: e.message || "Open your league to see this." };
     if (s === 404)
       return { kind: "notfound", status: s, words: /league/i.test(e.message) ? `${APP_NAME} cannot find this league on Sleeper. Pick another above.` : e.message };
     if (s === 502 && OURS_502.test(e.message))

@@ -23,7 +23,11 @@
   data-testid="error-card"
   data-kind={failure.kind}
 >
-  {#if title}
+  {#if failure.kind === "needsleague"}
+    <!-- ---- IM-3: a screen that needs a league, asked without one (`ref:` keys): the invitation, not a warning -->
+    <p class="text-base font-bold" data-testid="error-words">{failure.words}</p>
+    <a href="/leagues" class="inline-flex min-h-11 items-center rounded-md bg-accent px-4 font-semibold text-on-accent" data-testid="invite-open">Open your league</a>
+  {:else if title}
     <p class="flex items-center gap-2 text-base font-bold" data-testid="error-title">
       <span class={failure.kind === "slow" ? "text-ink-3" : "text-warn"} aria-hidden="true">{failure.kind === "slow" ? "…" : "⚠︎"}</span>{title}
     </p>
@@ -38,7 +42,7 @@
       The status page: <a class="ll-link" href={STATUS_PATH} target="_blank" rel="noopener" data-testid="error-status-link">{STATUS_PATH}</a>
     </p>
   {/if}
-  {#if onretry}
+  {#if onretry && failure.kind !== "needsleague"}
     <button
       type="button"
       class="min-h-11 rounded-md bg-accent px-4 py-2 font-semibold text-on-accent"

@@ -61,6 +61,7 @@
   import { navigate, route, setParams } from "../lib/router.svelte";
   import Picker, { OTHER } from "./Picker.svelte";
   import { account, loadStatus as loadAccount } from "../lib/account.svelte"; // ---- IK-4: the ⋯ menu's Account item
+  import { isRef, REF_KEYS, REF_LABEL } from "../lib/refleague"; // ---- IM-3: the reference picker
 
   let {
     options,
@@ -72,6 +73,10 @@
 
   $effect(() => {
     const l = league;
+    if (isRef(l)) {
+      rosters = []; // ---- IM-3: a reference key has no teams (the API answers needs_league)
+      return;
+    }
     rosters = peek<Roster[]>(paths.rosters(l)) ?? [];
     get<Roster[]>(paths.rosters(l))
       .then((r) => {
@@ -276,7 +281,29 @@
     </div>
 
     <div class="order-3 min-w-0 flex-1 wide:ml-auto wide:w-[22rem] wide:flex-none xl:order-4 xl:ml-0 xl:w-[20rem]">
-      <Picker leagues={options} {league} {rosters} {team} onleague={pickLeague} onteam={pickTeam} />
+      {#if isRef(league)}
+        <!-- ---- IM-3: browsing without a league — "No league · Half PPR ▾" (PPR / Half PPR / Standard) and the way in -->
+        <div class="flex min-w-0 items-center gap-2" data-testid="ref-picker">
+          <label class="flex shrink-0 items-center gap-1 text-sm" for="ll-ref">
+            <span class="hidden shrink-0 text-ink-2 sm:inline">No league ·</span>
+            <span class="sr-only sm:hidden">No league, scoring</span>
+            <select
+              id="ll-ref"
+              class="ll-input w-[7.5rem] shrink-0 py-1.5 text-sm font-semibold"
+              value={league}
+              onchange={(e) => setParams({ league: e.currentTarget.value, team: null })}
+              data-testid="ref-select"
+            >
+              {#each REF_KEYS as k (k)}<option value={k}>{REF_LABEL[k]}</option>{/each}
+            </select>
+          </label>
+          <a href="/leagues" class="inline-flex min-h-10 shrink-0 items-center rounded-md bg-accent px-3 text-sm font-semibold whitespace-nowrap text-on-accent" data-testid="ref-open"
+            >Open your league</a
+          >
+        </div>
+      {:else}
+        <Picker leagues={options} {league} {rosters} {team} onleague={pickLeague} onteam={pickTeam} />
+      {/if}
     </div>
 
     <!-- the overflow menu: About the numbers (and the record), other leagues -->

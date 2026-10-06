@@ -44,8 +44,9 @@ let release = "unknown";
 let ready: Promise<Gtag | null> | null = null;
 
 // ---- IK-3: espn / yahoo by the key's prefix too
+// ---- IM-3: a reference key (`ref:half`, browsing without a league) is platform "none"
 const platformOf = (league: string | null): string | null =>
-  league ? (/^(mfl|espn|yahoo):/i.test(league) ? league.split(":", 1)[0].toLowerCase() : "sleeper") : null;
+  league ? (/^ref:/i.test(league) ? "none" : /^(mfl|espn|yahoo):/i.test(league) ? league.split(":", 1)[0].toLowerCase() : "sleeper") : null;
 
 /** The page's address without anything but the league and the team (a search, a filter, a username never leave). */
 function location_(): string {

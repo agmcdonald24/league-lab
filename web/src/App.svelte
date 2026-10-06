@@ -25,6 +25,7 @@
   import { decisionPage, isDecision } from "./lib/decisionPages";
   import { countView } from "./lib/usage"; // ---- U-1: usage tracking (one count per screen view)
   import { pause as gaPause, screenView, trackLogin } from "./lib/analytics"; // ---- INF-1: Google Analytics
+  import { INVITE_WORDS, isRef, NEEDS_LEAGUE, refLabel } from "./lib/refleague"; // ---- IM-3: no league
   // the research screens and About load on first use (their own chunks): My Week's first screen stays small
   const LAZY = {
     trends: () => import("./routes/Trends.svelte"),
@@ -82,7 +83,7 @@
   // team: the URL's (it belongs to the URL's league), else the one picked in this league on this phone, else the
   // user's own team in that league (pre-selected from the username's league list).
   const team = $derived.by(() => {
-    if (!league) return null;
+    if (!league || isRef(league)) return null; // ---- IM-3: a reference key has no teams
     const t = r.params.get("team");
     const urlLeague = r.params.get("league");
     if (t && /^\d+$/.test(t) && (!urlLeague || urlLeague === league)) return Number(t);
@@ -92,8 +93,11 @@
   // remember the pick and keep the URL shareable (replace: no extra Back step)
   $effect(() => {
     if (phase !== "ready" || !league || r.name === "leagues" || r.name === "player" || r.name === "account") return; // ---- IK-4: account
-    prefs.setLeague(league);
-    if (team !== null) prefs.setTeam(league, team);
+    if (!isRef(league)) {
+      // ---- IM-3: a reference key (`ref:half`) is never a remembered league: it lives in the URL only
+      prefs.setLeague(league);
+      if (team !== null) prefs.setTeam(league, team);
+    }
     const want = { league, team: team === null ? null : String(team) };
     if (r.params.get("league") !== want.league || r.params.get("team") !== want.team) setParams(want);
   });
@@ -204,7 +208,22 @@
   <TopBar {options} {league} {team} onauth={needLogin} />
   <div class="wide:flex wide:items-start">
     <div class="ll-under-bar mx-auto w-full max-w-6xl min-w-0 px-4 pt-4 wide:flex-1" data-section={sectionOf(r.name)}>
-      {#if r.name === "player" && r.gsis}
+      {#if isRef(league) && NEEDS_LEAGUE.has(r.name)}
+        <!-- ---- IM-3: a screen that needs a league and a team, opened without one: the invitation, never an error -->
+        <section class="mx-auto max-w-xl space-y-3 rounded-lg border border-line bg-surface p-5" style="box-shadow:var(--ll-shadow)" data-testid="invite-card">
+          <h2 class="text-xl font-bold">{INVITE_WORDS}</h2>
+          <p class="leading-snug text-ink-2">
+            You are browsing without a league, in {refLabel(league)} scoring. Open your league on Sleeper, MyFantasyLeague, ESPN or Yahoo and this
+            screen shows your own team.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <a href="/leagues" class="inline-flex min-h-11 items-center rounded-md bg-accent px-4 font-semibold text-on-accent" data-testid="invite-open">Open your league</a>
+            <a href={withContext("/players", { league, team: null })} class="inline-flex min-h-11 items-center rounded-md border border-line px-4 font-semibold" data-testid="invite-browse"
+              >Keep browsing players</a
+            >
+          </div>
+        </section>
+      {:else if r.name === "player" && r.gsis}
         <PlayerPage gsis={r.gsis} {league} {team} onauth={needLogin} />
       {:else if r.name === "ros"}
         <RosPage {options} {league} {team} onauth={needLogin} />
@@ -224,7 +243,7 @@
       {:else}
         <MyWeekPage {options} {league} {team} {mine} {status} onauth={needLogin} />
       {/if}
-      {#if sectionOf(r.name) === "myteam"}
+      {#if sectionOf(r.name) === "myteam" && !isRef(league)}
         <!-- IB-1: About the numbers left the tab bar: the overflow menu (⋯) and here, at the foot of My Team -->
         <footer class="mt-6 border-t border-line pt-3 text-sm" data-testid="myteam-foot">
           <a class="ll-link" href={withContext("/about", { league, team })} data-testid="foot-about">About the numbers and our record</a>

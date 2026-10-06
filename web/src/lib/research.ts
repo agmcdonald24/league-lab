@@ -21,6 +21,7 @@ export function workLine(ppg: number | null, xppg: number | null): string {
 
 /** Who owns him, from the viewer's side: "yours" / the team / "free agent". */
 export function ownerWord(p: { rostered_by_roster_id: number | null; rostered_by_team: string | null }, team: number | null): string {
+  if (!("rostered_by_team" in p)) return "—"; // ---- IM-3: no league open (`ref:` keys): the API sends no owner at all
   if (team !== null && p.rostered_by_roster_id === team) return "yours";
   return p.rostered_by_team ?? "free agent";
 }

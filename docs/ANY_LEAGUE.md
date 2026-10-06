@@ -719,3 +719,15 @@ name step is the adapters' reported fallback, not a join. Today: 6 `espn_id`s ar
 safeties, a punter, and RB / TE depth players of 2015–2016), 0 `yahoo_id`, 0 `mfl_id` (`--list-quarantine` lists them).
 `player_ids.read` applies it to `yahoo_id` (IK-2) but not yet to `espn_id` (the last row wins) or `mfl_id` — a few lines
 for whoever next owns the loader; with no current skill player affected it moves no answer.
+
+## Reference league keys — browsing without a league (Wave I-M, IM-3, 2026-10-06)
+
+`ref:ppr`, `ref:half` and `ref:std` are leagues that exist nowhere: `api/league_lab_api/refleague.py` resolves them (the
+one place) to a Sleeper-shaped league with the reference scoring's `scoring_settings` (`ppr`, `scrubs` — half PPR, 4-pt
+pass TD —, `standard` in `analytics_seeds.reference_scorings`), standard slots (QB, 2 RB, 2 WR, TE, FLEX, K, DEF), the
+current season, no rosters, no users, no matchups; `platforms.REFERENCE` answers the Router's calls for a `ref:` key
+(`provider_of` → `reference`), so every research route that serves an unknown league on request serves it unchanged,
+priced in that scoring. The API takes ownership out of the answer (`refleague.public`: absent, not empty) and answers the
+decision routes with 404 `{"code": "needs_league"}`. `/api/record` for a reference key is the reference house league's
+model record (Half PPR) without its lineup record, and says so for PPR / Standard. A reference key is never remembered
+on the device (`lib/refleague.ts`); GA's `platform` is `none`.
