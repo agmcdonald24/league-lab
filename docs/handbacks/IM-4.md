@@ -94,8 +94,8 @@ uv run ruff check src app tests api ; uv run python scripts/copy_standard.py --c
   15 MB). All are binary wheels: `python:3.13-slim` needs no compiler; **no Dockerfile change** (`uv sync --frozen`).
 * `test_im4.py` 19 passed; with `test_ik4.py`, `test_il5.py`, `test_auth.py`: **65 passed, 1 failed** — the failure
   is `test_il5.py::test_watchlist_rows_in_a_league`, on the known-failure list (the clone's week state).
-* `/home/claude/waveIM/check_api.sh /home/claude/wt-im4` (on `4aba615`, 20 min): `92 failed, 718 passed, 13 skipped,
-  41 deselected`; NEW failures: `test_ia2.py::test_partners_route_applies_both_rules`,
+* `/home/claude/waveIM/check_api.sh /home/claude/wt-im4` (twice: on `4aba615`, 20 min, and on the final code `1d59a7c`,
+  8 min — the same answer both times): `92 failed, 718 passed, 13 skipped, 41 deselected`; NEW failures: `test_ia2.py::test_partners_route_applies_both_rules`,
   `test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-off]` / `[dynasty-overlay-on]`,
   `test_ii1.py::test_folk_package_is_not_promoted`, `test_ii1.py::test_folk_package_on_the_clone_rosters` — **all five
   fail identically at `main` `ab50682` on this clone** (main's tree extracted to a scratch folder, run against
@@ -123,6 +123,18 @@ uv run ruff check src app tests api ; uv run python scripts/copy_standard.py --c
   the device; the screen says so).
 * The client address for the limits is `accounts.client_ip` (the first `X-Forwarded-For` hop), as phase 1; IM-3 is
   deciding the trustworthy header — one place to change.
+
+## Seen, not mine
+
+* The five devs share one scratchpad folder (`/tmp/claude-0/-home-claude/<session>/scratchpad`): another dev's
+  Playwright run wrote into my `e2e_full.out` mid-run (its log listed `wt-im5` paths). My final logs use `im4-` names;
+  the numbers above are from those.
+* `Watchlist.svelte`'s signed-out line and the ⋯ menu (TopBar) still say "sign in with your email" (see Limitations).
+* `api/Dockerfile` runs uvicorn with `--forwarded-allow-ips='*'`, so `request.client.host` is the first
+  `X-Forwarded-For` hop, which a client can set (IM-3's rate-limit question; phase 1's `accounts.client_ip` reads the
+  same hop).
+* Request bodies are parsed before any size check of mine (the passkey answer is capped at 32 KB after parsing): a
+  server-wide body limit is IM-3's security pass.
 
 ## Next task
 
