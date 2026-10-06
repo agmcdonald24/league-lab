@@ -577,9 +577,13 @@ def card(out: dict, key: str) -> dict:
                  "help": f"Projected points from this week to the end of the regular season, {sh.scoring_words}"},
                 {"label": "Rank", "value": f"{pos}{vb['value_rank_pos']}", "delta": None, "trend": None,
                  "help": f"By value among every {pos}"}]})
-            repl = (f" ({vb['replacement_name']}, {_fmt_pts(vb['replacement'])} points)" if vb.get("replacement_name")
-                    else f" ({_fmt_pts(vb['replacement'])} points)")
-            first.append({"kind": "caption", "text": f"{vb['assumes']}: his points above the best free {pos}{repl}."})
+            who = f" ({vb['replacement_name']})" if vb.get("replacement_name") else ""
+            # the pane keeps a section's tiles behind its expander (lib/card.ts paneSplit): the number leads in words too
+            first.append({"kind": "markdown", "text": (
+                f"**Value {_fmt_pts(vb['value'])}** — {pos}{vb['value_rank_pos']} by value: "
+                f"{_fmt_pts(vb['ros_points'])} projected points over weeks {vb['from_week']}–{vb['last_week']}, against "
+                f"{_fmt_pts(vb['replacement'])} for the best free {pos}{who}.")})
+            first.append({"kind": "caption", "text": f"{vb['assumes']}: a typical league of that shape, not a real one."})
         else:
             first.append({"kind": "unavailable", "text": "unavailable: no rest-of-season projection for him"})
         secs["value"] = {**v, "title": f"**Value** — {sh.assumes.removeprefix('Value ')}",

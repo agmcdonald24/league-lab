@@ -116,8 +116,10 @@ test("the picker: scoring, options and size in the URL and remembered; the tabs 
   await expect(page.getByTestId("ref-rules")).toContainText("1 point per catch");
   await page.getByTestId("ref-opt-sf").locator("input").check();
   await expect(page).toHaveURL(/league=ref(%3A|:)ppr\.sf(&|$)/);
+  const stats = page.waitForResponse((r) => r.url().includes("/api/players?") && /league=ref(%3A|:)ppr\.sf\.t10/.test(r.url()));
   await page.getByTestId("ref-teams-10").click();
   await expect(page).toHaveURL(/league=ref(%3A|:)ppr\.sf\.t10(&|$)/);
+  expect((await stats).status()).toBe(200);
   await noSidewaysScroll(page);
   await shot(page, `in2-picker-${info.project.name}`);
   await page.getByTestId("ref-done").click();
@@ -131,6 +133,8 @@ test("the picker: scoring, options and size in the URL and remembered; the tabs 
   await expect(page.getByTestId("who")).toHaveCount(0);
   await page.getByTestId("sort-ros_value").click();
   await expect(page).toHaveURL(/sort=ros_value/);
+  // the PPR · superflex · 10-team values: a quarterback leads (in Half PPR, one quarterback, Bijan Robinson at 202 does)
+  await expect(page.getByTestId("players")).toContainText("Patrick Mahomes, 205");
   await shot(page, `in2-stats-${info.project.name}`);
   // Compare: each side's value in the picked shape
   await page.goto(`/compare?league=ref:ppr.sf.t10&a=${PUKA}&b=${ARSB}`);
@@ -150,6 +154,9 @@ test("a player's pane while browsing: the scoring in the head, his value, no own
   await expect(page.getByTestId("pane-foot")).toHaveText("Open your league to see who has him and what he is worth to your team.");
   await noSidewaysScroll(page);
   await shot(page, `in2-pane-${info.project.name}`);
+  await page.getByTestId("pane-foot").scrollIntoViewIfNeeded();
+  await value.scrollIntoViewIfNeeded();
+  await shot(page, `in2-pane-value-${info.project.name}`);
   // the full page says the same
   await page.goto(`/player/${PUKA}?league=ref:ppr.sf.t10`);
   await expect(page.getByTestId("player-foot")).toContainText("Priced in PPR · superflex · 10 teams.");
