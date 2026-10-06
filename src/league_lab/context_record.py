@@ -702,9 +702,9 @@ def tier_sentence(r: Mapping | None) -> str | None:
 
 
 def worth_sentence(r: Mapping | None, span: str | None, corner: bool = True) -> str | None:
-    """How "Worth a look" has done, one sentence: "Listed players have beaten their projection in 15 of 38 games
-    (39%; everyone else at the position 35%), 0.7 points better than everyone else on average (−1.1 to +2.6) — not
-    distinguishable from chance."."""
+    """How "Worth a look" has done, one sentence: "Since 2026 week 5, listed players scored above their projection in
+    15 of 38 games (39%; everyone else at the position 35%) and finished 0.7 points better than everyone else against it
+    (−1.1 to +2.6) — not distinguishable from chance."."""
     if not r or not r.get("n") or r.get("vs_rest") is None:
         return None
     v = r["vs_rest"]
@@ -712,7 +712,7 @@ def worth_sentence(r: Mapping | None, span: str | None, corner: bool = True) -> 
     base = f"; everyone else at the position {r['rest_beat_share']:.0%}" if r.get("rest_beat_share") is not None else ""
     lead = (f"Rebuilt for {span} with the cornerback counting (the rule until this week), listed players"
             if corner else f"Since {span}, listed players")
-    return (f"{lead} beat their projection in {r['beat']} of {r['n']} games ({r['beat_share']:.0%}{base}) and finished "
+    return (f"{lead} scored above their projection in {r['beat']} of {r['n']} games ({r['beat_share']:.0%}{base}) and finished "
             f"{_pts(v)} {'better' if v >= 0 else 'worse'} than everyone else against it{ci} — "
             f"{verdict(r.get('vs_rest_lo'), r.get('vs_rest_hi'))}.")
 

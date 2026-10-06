@@ -87,7 +87,8 @@ def summary() -> dict:
         hit = _cache.get("grade")
         if hit is None:
             hit = _build()
-            _cache.put("grade", hit)
+            # no grade yet (the table appears with the nightly): look again in 10 minutes, not an hour
+            _cache.put("grade", hit, ttl=TTL_S if hit["corner"]["graded"] or hit["worth"]["graded"] else 600.0)
         return copy.deepcopy(hit)
     except Exception:  # noqa: BLE001 - the interface: never raises (a missing table, a closed pool, anything)
         return copy.deepcopy(EMPTY)

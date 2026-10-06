@@ -48,7 +48,7 @@ checks them against the model's own input list, `projections.FEATURES_BY_POSITIO
 | **Cornerback** (WR only) | `matchup_context(...)["cb"]` (`mart_cb_matchups`: the likely corner, his rank, shutdown, the certainty) | IN-3's; **only a "likely" call carries a tone** (an unclear call is said, never counted) | **Not in the projection**: no model input is made of the corner call |
 | **Role trend** (RB, WR, TE) | `analytics.fct_player_game`, his **last 2 games played against his games before them** (at least 2): target share, carry share (RB), snap share — each the summed numerator over the summed denominator; team snaps = his snaps ÷ his snap share; a measure moved at ±5 points (targets) or ±10 (carries, snaps); "role up" when one moved up and none down, "role down" the other way, else nothing; a game without the measure makes it unknown, not 0 | favourable / difficult | **In the projection**: the model reads his share over the last 3 games and the season (`target_share_l3`, `_std`, `carry_share_*`, `snap_pct_*`). Routes run per dropback would not be (`route_participation_l3` is not an input), but routes are not available during the season (the participation file arrives after it), so it never shows |
 | **Game environment** | `analytics.dim_game` `spread_line` (> 0: the home team favoured), `total_line`; the team's implied total = (total ± spread) ÷ 2, `int_player_week_universe`'s formula | favourable at 26+ expected points, difficult at 18 or fewer (the cards' marks) | **In the projection**: `implied_team_total`, `spread_line`, `total_line` are inputs. 2026 week 5: lines for **15 of 15** games |
-| **Weather** | — | — | **Not shown.** The forecast is in the database (`intermediate.int_game_weather`, Open-Meteo; week 5: 9 outdoor games with a forecast, 6 domes) but the site's database role reads `analytics` and `ops` only and no analytics relation carries it; this wave ships no new relation. `dfs.weather_flag` (wind 15+ mph, snow, rain 0.1 in+, below freezing; difficult for a passer or receiver) is built and tested for the day a mart publishes it. It is **not in the projection** (plan D3 tested it; not kept) |
+| **Weather** | `analytics.mart_game_weather` (IO-1, Wave I-O: one row per game; read only when the relation exists — until the first nightly after the deploy, no weather, as before) through `dfs.weather_flag`: an outdoor game's **forecast** at wind 15 mph or more, rain 0.1 in or more, snow, below freezing; the chip shows the numbers ("Wind 20 mph"). What the marks rest on: METRICS § "Weather on DFS" (2016–2025: 7.1 yards per attempt under 10 mph, 6.8 at 15–20, 6.2 at 20+) | difficult for a passer or receiver (wind, rain, snow); said without a tone for a back, and for cold alone | **Not in the projection**: v3 reads no `wx_` column (plan D3 tested the group and did not keep it; `tests/test_io1_context_record.py` asserts it). 2026 week 5: 9 outdoor games with a forecast, 6 domes; Green Bay 20 mph |
 
 **Worth a look.** The brief's rule was "at least two favourable signals that are not in the projection". Read from the
 model, only the corner call is both outside the projection and able to be favourable — so that rule could never fire.
@@ -56,8 +56,21 @@ The rule used: **at least 2 favourable signals, at least 1 of them not in the pr
 outside it** (`dfs.WORTH_MIN_FAVOURABLE`, `WORTH_MIN_OUTSIDE`: one line to change). In practice: receivers likely
 facing a soft corner with another signal for them — with IN-3's real context for 2026 week 5, **4 receivers** (7 likely
 soft-corner calls on the board; no RB, TE or QB, by construction: only receivers get a corner call). Without IN-3's module the list is empty and the screen says why.
-Ordered by projection on the board, by points per $1,000 on a slate; who cannot play is left off. **There is no
-backtest behind it** and the screen says so.
+Ordered by projection on the board, by points per $1,000 on a slate; who cannot play is left off.
+
+**Graded, and changed (IO-1, Wave I-O; docs/METRICS.md § "The context record", cx1.0).** Rebuilt for 2025 and 2026
+weeks 1–4 from as-of inputs, the list (38 receiver-games) finished 0.66 points better than everyone else at the position
+against the projection (−1.11 to +2.62) and scored above its projection in 15 of 38 games (39%; everyone else 35%) —
+**not distinguishable from chance**. The corner call it leaned on showed **no measurable effect**: a likely shutdown
+corner −0.39 against the other called receivers (−1.39 to +0.72, 99 games), a likely easy one −0.02 (−1.11 to +1.22, 79).
+So **the cornerback call no longer counts** toward the list (`dfs.WORTH_IGNORES`; `dfs.worth(…, ignore=())` is Wave
+I-N's rule): with nothing else outside the projection able to be favourable, the list is empty and the screen says why
+("Nobody this week. The one signal outside the projection that could put a player here, the cornerback call, made no
+measurable difference when graded, so it no longer counts; …"). The card prints the record's sentence
+(`context_record.summary()["worth"]`) instead of "no record behind this list yet"; the corner chip carries its
+quarter's graded words and loses its colour when the interval holds 0; "What the projection already holds" adds the
+corner's graded sentence. Without `ops.context_grade` (the live site until the nightly applies it) the screen keeps
+the Wave I-N words. `ops.context_record` keeps grading both rules every week (`league-lab context-record`).
 
 Week 5 (2026, the clone): of the 402 backs, receivers and tight ends with a game this season, **65 read "role up" and
 45 "role down"** (on the DraftKings board: WR 30 / 24, RB 16 / 13, TE 13 / 6); the rest have nothing said (flat, mixed,

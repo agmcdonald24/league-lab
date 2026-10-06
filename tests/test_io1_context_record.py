@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 import numpy as np
 import pandas as pd
 import pytest
+
 from league_lab import context_record as C
 from league_lab import dfs as D
 
@@ -59,7 +60,7 @@ def test_sentences_say_what_the_grade_says():
     row = {"n": 58, "beat": 31, "beat_share": 31 / 58, "vs_rest": 0.42, "vs_rest_lo": -0.9, "vs_rest_hi": 1.7,
            "rest_beat_share": 0.35}
     s = C.worth_sentence(row, "2026 weeks 5–8", corner=False)
-    assert s == ("Since 2026 weeks 5–8, listed players beat their projection in 31 of 58 games (53%; everyone else at "
+    assert s == ("Since 2026 weeks 5–8, listed players scored above their projection in 31 of 58 games (53%; everyone else at "
                  "the position 35%) and finished 0.4 points better than everyone else against it (−0.9 to +1.7) — not "
                  "distinguishable from chance.")
     assert C.verdict(0.1, 2.0) == "more than chance would give" and C.verdict(-2, -0.1) == "less than chance would give"
@@ -175,6 +176,7 @@ class _NoCommit:
 def _db():
     try:
         import psycopg
+
         from league_lab.config import get_settings
         return psycopg.connect(get_settings().pipeline_dsn(), autocommit=False, connect_timeout=3)
     except Exception:  # noqa: BLE001
