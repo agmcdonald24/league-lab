@@ -42,8 +42,9 @@ injury and news feeds; the outlook with a failed MFL export (503, nothing kept, 
 
 ## 2. MFL's League screen — the same numbers, less CPU; under 2 s cold only when the box is not saturated
 
-Profiled (the fixtures, `LEAGUE_LAB_AVAILABILITY` off and on via the ESPN fixtures: the overlay adds ~0 to the power
-part — it reads the overlay only in the season block). The power part = the lineups' board (`_context`: the rosters
+Profiled on the fixtures, `LEAGUE_LAB_AVAILABILITY` off and on (on = the ESPN fixtures): power part 1.95 s off / 2.03 s
+on, the whole answer after it 0.70 / 0.82 s (load avg 2.7; on `main` the whole answer with the overlay on was the 500
+below). The power part = the lineups' board (`_context`: the rosters
 solved for the horizon, MFL's EV pricing of every line) + the rest-of-season board (`ros_table`: every week to the
 final). Fixed, numbers unchanged:
 
@@ -63,11 +64,11 @@ Where the rest goes (thread CPU, warm): rest-of-season board 0.70 s (skill lines
 0.18), lineups' board 0.55 s (four weeks priced 0.35: MFL's per-threshold yardage odds), league inputs 0.07 s. Next
 (not done): weeks 4–7 are priced twice (the horizon board and the window) — one price cache for both.
 
-**Equality** (`<scratchpad>/ip5/capture.py`, before = this branch at item 1, after = the final code, the same proof
-run on each step): 18 answers — the outlook's power part and whole answer, `/api/league`, `/api/ros` (points,
+**Equality** (`<scratchpad>/ip5/capture.py`; run on `main` `e4b5eec`'s code, on this branch after item 1, after each
+item-2 step and on the final code): 18 answers — the outlook's power part and whole answer, `/api/league`, `/api/ros` (points,
 `source=sleeper` / Team for MFL, the lineup view) for `mfl:70587` (team 1), League of Scrubs (team 2) and Forever
 Unclean Dynasty (team 12) — **150,736 numbers, byte-identical JSON** (7.57 MB) apart from MFL's `roster_updated_at`
-(the fetch time). Item 1 does not move a number either (it changes what is kept, not what is computed).
+(the fetch time) — `main` against the final branch included.
 
 ## 3. The "best corners" split — removed
 
@@ -109,7 +110,7 @@ lists the 200 highest projections. `?league=` anywhere → `X-Robots-Tag: noinde
 ## Files
 
 Mine: `src/league_lab/provider_trouble.py` (new), `api/league_lab_api/player_share.py` (new), `api/tests/test_ip5.py`
-(new, 29 tests), `src/league_lab/anyleague.py`, `src/league_lab/mfl_client.py`, `api/league_lab_api/availability.py`,
+(new, 30 tests), `src/league_lab/anyleague.py`, `src/league_lab/mfl_client.py`, `api/league_lab_api/availability.py`,
 `decisions.py` (`_memo` only), `research.py` (the split only), `outlook.py` (`_refusals` only), `blog.py` (the
 sitemap only), SECURITY_PUBLIC § 15, this file. **Edits outside my files** (marked IP-5, smallest possible):
 `src/league_lab/sleeper_client.py` (`_get`'s refusal / failure paths + `_held_or_raise`, `_players_from_disk(any_age)`),
@@ -123,7 +124,7 @@ before). Sizes: 0 binary files; +1,076 / −69 lines (61.9 KB of added text).
 
 ## Checks
 
-`test_ip5.py` 29 passed. The test files of what I edited (availability, decisions, outlook, the MFL / Sleeper paths,
+`test_ip5.py` 30 passed. The test files of what I edited (availability, decisions, outlook, the MFL / Sleeper paths,
 research, feeds: test_i0a, ib0, ib2, decisions, io2, in6, io4, i0b, ic2, ic4, il2, f3, research, n1, n2, ig2, if2,
 h1, i0c, ia2, ie1, ie2, ig1, ig3, ii0, ii1, ii5, ik3, il4, in5): every failure on the known list **except three in
 `test_ig2.py`** (`test_what_changed_lists_a_brief_with_its_source`, `…without_the_store_is_if4s`,

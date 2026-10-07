@@ -399,6 +399,10 @@ an outer cache still keeps its answer.
 now answers busy where it showed 0-0 records or last week's starters; a held copy (10 minutes, then up to an hour
 past it) answers as before.
 
+**A 500 fixed on the way** (on `main` too): with the availability overlay on (the site's default), a roster frame with
+no status at all (`report_status` all NaN: float64) could not take "Questionable" — MFL 70587's whole outlook was a 500
+on the fixtures. `availability.apply_to_rows` makes the column objects first (the same values; tested).
+
 **Player pages that share** (`api/league_lab_api/player_share.py`; `main.web` and `blog.sitemap`, marked IP-5):
 `/player/<gsis>` previews as "Josh Allen (QB, BUF): 23.8 projected this week, 14–35 · isuckatfantasy" with the
 opponent, kickoff and rank at the position — **from the matchup board's week frame for the default scoring that this
