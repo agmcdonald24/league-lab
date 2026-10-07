@@ -116,6 +116,9 @@ PAGES_READ_PREFIX = ("/blog/img/",)
 # `write` (POST / PUT / DELETE) and `read` (GET /api/blog/mine, /api/blog/posts/{id}) by the rules below
 RESEARCH_EXACT = RESEARCH_EXACT | {"/api/blog/export"}
 # ---- end IO-3
+# ---- IP-4 (Wave I-P): the player card's /api/player/{gsis}/ratings and /api/player/{gsis}/projections are `research`
+# through RESEARCH_PREFIX above (api/tests/test_ip4.py asserts it); nothing to add
+# ---- end IP-4
 
 
 def norm(value: str | None) -> str:
