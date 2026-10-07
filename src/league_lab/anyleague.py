@@ -860,23 +860,28 @@ def unit_window(win: Window, weeks: list[int], scoring: Mapping[str, float], sk:
         priced_all = (price_lines(pd.concat([ul for *_, ul in per_week], keys=[w for w, *_ in per_week]), scoring)
                       if per_week else None)
         for w, status, skw, ul in per_week:
-            pts = priced_all.loc[w]
+            pts = priced_all.loc[w].to_dict()
+            # rows as plain dicts, not pandas row lookups (the same values; ~480 rows on MFL 70587's window)
+            sk_rows = skw[[c for c in ("proj_points", "p10", "p90") if c in skw]].to_dict("index")
+            names = status["player_name"].to_dict() if "player_name" in status else None
             # ---- end IP-5
-            for t, r in ul.iterrows():
+            for t, r in ul.to_dict("index").items():
                 g = r["starter_gsis"]
                 p = float(pts[t])
-                pg = skw["proj_points"].get(g, np.nan)
-                rng = {q: (round(max(0.0, p + float(skw.at[g, q]) - float(pg)), 2)
-                           if g in skw.index and pd.notna(skw.at[g, q]) and pd.notna(pg) else np.nan) for q in ("p10", "p90")}
+                sr = sk_rows.get(g)
+                pg = sr["proj_points"] if sr is not None else np.nan
+                rng = {q: (round(max(0.0, p + float(sr[q]) - float(pg)), 2)
+                           if sr is not None and pd.notna(sr[q]) and pd.notna(pg) else np.nan) for q in ("p10", "p90")}
                 rows.append({"player_key": f"TMQB-{t}", "gsis_id": None, "position": "TMQB", "proj_points": round(p, 2),
                              **rng, "team": t, "roster_status": "ACT", "player_name": None, "implied_team_total": None,
                              "week": int(w), **{c: float(r[c]) for c in STAT_LINE},
-                             "starter_gsis": g, "starter_name": status["player_name"].get(g) if "player_name" in status else None})
+                             "starter_gsis": g, "starter_name": names.get(g) if names is not None else None})
     if "TMPK" in units and kfr is not None and not kfr.empty:
         k = kfr.assign(_p=pd.to_numeric(kfr["proj_points"], errors="coerce")).dropna(subset=["_p"])
         k = k[k["team"].map(lambda x: isinstance(x, str) and bool(x))]
-        for (w, t), g in k.sort_values("_p", ascending=False).groupby(["week", "team"], sort=False):
-            r = g.iloc[0]
+        # ---- IP-5: each (week, team)'s first row of the sorted frame, as ``groupby(sort=False)`` + ``iloc[0]`` took it
+        for r in k.sort_values("_p", ascending=False).drop_duplicates(["week", "team"], keep="first").to_dict("records"):
+            w, t = r["week"], r["team"]
             rows.append({"player_key": f"TMPK-{t}", "gsis_id": None, "position": "TMPK", "proj_points": round(float(r["_p"]), 2),
                          "p10": pd.to_numeric(r.get("p10"), errors="coerce"), "p90": pd.to_numeric(r.get("p90"), errors="coerce"),
                          "team": t, "roster_status": "ACT", "player_name": None, "implied_team_total": None, "week": int(w),
