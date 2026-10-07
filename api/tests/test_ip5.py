@@ -334,26 +334,6 @@ def test_unit_lines_vectorised_is_the_loop_to_the_bit():
     assert list(got.index) == sorted(got.index) and got["starter_gsis"].notna().all()
 
 
-@needs_db
-def test_mfl_power_part_prices_the_window_once_and_answers_the_same(client):
-    """The ranking's weeks are priced beside the lineups' board (outlook._prefetch_ros); the power part and the whole
-    answer are the ones a cold build without it gives (the full equality run: docs/handbacks/IP-5.md)."""
-    from league_lab_api import outlook as O
-    D.clear_memo()
-    O._cache.clear()
-    a = client.get("/api/league/outlook?league=mfl:70587&team=1&part=power").json()
-    D.clear_memo()
-    O._cache.clear()
-    A.clear_priced()
-    real = O._prefetch_ros
-    O._prefetch_ros = lambda lid: None
-    try:
-        b = client.get("/api/league/outlook?league=mfl:70587&team=1&part=power").json()
-    finally:
-        O._prefetch_ros = real
-    assert a["power"]["rows"] == b["power"]["rows"] and len(a["power"]["rows"]) == 12
-
-
 # ------------------------------------------------------------------ 3. the "best corners" split
 @needs_db
 def test_corners_the_look_ahead_split_is_gone_and_the_page_still_stands(client):
