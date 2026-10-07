@@ -292,3 +292,63 @@ def test_the_news_feed_keeps_its_held_items_over_an_empty_body():
     held = {"fetched_at": 0.0, "as_of": None, "items": [{"headline": "Nacua returns to practice"}]}
     fd._mem["4426515"] = held
     assert fd.copy("4426515") is held and fd.failures == 1
+
+
+# ------------------------------------------------------------------ 2. MFL's League screen: the same numbers, faster
+def _unit_lines_loop(b, proj):
+    """``unit_lines``' starter rule as main had it (one team at a time): the reference for the vectorised pass."""
+    from league_lab.anyleague import STAT_LINE, UNIT_SKIP_STATUS
+    qb = b.line[b.line["position"] == "QB"]
+    st = b.status.reindex(qb.index)
+    out_ = st["report_status"].isin(UNIT_SKIP_STATUS) | st["roster_status"].eq("RES")
+    rank = proj.reindex(qb.index).astype(float).fillna(-1e9)
+    num = qb[list(STAT_LINE)].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    rows = {}
+    for t, idx in qb.groupby(st["team"]).groups.items():
+        if not isinstance(t, str) or not t:
+            continue
+        keep = [g for g in idx if not out_.get(g, False)] or list(idx)
+        starter = rank.loc[keep].idxmax()
+        rows[t] = {"position": "TMQB", **num.loc[[starter]].sum().to_dict(), "starter_gsis": starter, "n_players": 1}
+    return pd.DataFrame.from_dict(rows, orient="index", columns=["position", *STAT_LINE, "starter_gsis", "n_players"])
+
+
+def test_unit_lines_vectorised_is_the_loop_to_the_bit():
+    from types import SimpleNamespace
+
+    import numpy as np
+    from league_lab.anyleague import STAT_LINE, unit_lines
+    rng = np.random.default_rng(5)
+    ids = [f"00-00{i:05d}" for i in range(60)]
+    teams = ["KC", "BUF", "DET", None, "", "SF"] * 10
+    line = pd.DataFrame({c: rng.uniform(0, 300, 60).round(3) for c in STAT_LINE}, index=ids)
+    line["position"] = ["QB"] * 50 + ["RB"] * 10
+    line.iloc[3, 0] = np.nan                                           # a missing stat: 0
+    status = pd.DataFrame({"team": teams, "report_status": rng.choice([None, "Out", "Questionable", "Doubtful"], 60),
+                           "roster_status": rng.choice(["ACT", "RES"], 60), "player_name": ids}, index=ids)
+    status.loc[[i for i, t in zip(ids, teams, strict=True) if t == "SF"], "report_status"] = "Out"   # all out: all kept
+    proj = pd.Series(rng.choice([10.0, 12.5, 12.5, np.nan], 60), index=ids)                          # ties and NaN
+    b = SimpleNamespace(line=line, status=status)
+    got, want = unit_lines(b, proj), _unit_lines_loop(b, proj)
+    pd.testing.assert_frame_equal(got, want, check_dtype=False)
+    assert list(got.index) == sorted(got.index) and got["starter_gsis"].notna().all()
+
+
+@needs_db
+def test_mfl_power_part_prices_the_window_once_and_answers_the_same(client):
+    """The ranking's weeks are priced beside the lineups' board (outlook._prefetch_ros); the power part and the whole
+    answer are the ones a cold build without it gives (the full equality run: docs/handbacks/IP-5.md)."""
+    from league_lab_api import outlook as O
+    D.clear_memo()
+    O._cache.clear()
+    a = client.get("/api/league/outlook?league=mfl:70587&team=1&part=power").json()
+    D.clear_memo()
+    O._cache.clear()
+    A.clear_priced()
+    real = O._prefetch_ros
+    O._prefetch_ros = lambda lid: None
+    try:
+        b = client.get("/api/league/outlook?league=mfl:70587&team=1&part=power").json()
+    finally:
+        O._prefetch_ros = real
+    assert a["power"]["rows"] == b["power"]["rows"] and len(a["power"]["rows"]) == 12

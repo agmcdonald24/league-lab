@@ -983,6 +983,34 @@ def _context(league_id: str, source: str | None, is_house: bool):
     return D._memo(("outlook_context", str(league_id)), False, lambda: D.TradeContext(league_id, source, market=False))
 
 
+# ---- IP-5 (Wave I-P): MFL's League screen cold. A league the nightly does not keep needs two independent builds for
+# its power rankings: the lineups' board (``_context``: the rosters solved for the horizon) and the rest-of-season
+# board (``decisions._ros_frame``: every week to the final priced in this league's scoring). They ran one after the
+# other; the second now runs in a thread beside the first (each kept in its own cache, exactly as before: the same
+# numbers — docs/handbacks/IP-5.md has the equality run). The thread carries the request's context (the client's
+# provider share, provider_trouble's watches); anything it raises is dropped and ``window_board`` builds it again on
+# the request's own thread (its own errors, its own words).
+def _prefetch_ros(league_id: str):
+    import contextvars
+    from concurrent.futures import ThreadPoolExecutor
+    lid = str(league_id)
+    if D._memo_cache.get(("ros", lid)) is not None:
+        return None
+    ctx = contextvars.copy_context()
+
+    def run() -> None:
+        try:
+            D._ros_frame(lid, False)
+        except Exception:  # noqa: BLE001 - the request's own call raises it again, in its words
+            pass
+    ex = ThreadPoolExecutor(max_workers=1, thread_name_prefix="outlook-ros")
+    try:
+        return ex.submit(ctx.run, run)
+    finally:
+        ex.shutdown(wait=False)
+# ---- end IP-5
+
+
 def _schedule_left(lid: str, played: int, settings: Mapping, n_teams: int) -> dict[int, list[int]]:
     """{roster: [opponents left]} from the remaining regular-season pairings; {} when they are not all readable or
     the league is beyond the outlook's limits (the season block says why)."""
@@ -1056,7 +1084,10 @@ def _build(league_id: str, is_house: bool, source: str | None, seasons: int, *, 
     lg, lid, names, played, season = inp["lg"], inp["lid"], inp["names"], inp["played"], inp["season"]
     timings["league_ms"] = round((time.perf_counter() - t0) * 1000, 1)
     t1 = time.perf_counter()
+    pre = None if is_house else _prefetch_ros(league_id)           # ---- IP-5: the ranking's weeks beside the board
     ctx = _context(league_id, source, is_house)                    # ---- IO-2: market-free on demand
+    if pre is not None:                                            # ---- IP-5
+        pre.result()
     note = None
     try:
         board, weeks, span = D.window_board(ctx, "ros")

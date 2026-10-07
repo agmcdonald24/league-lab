@@ -746,6 +746,20 @@ def unit_lines(b: Board, proj: pd.Series | None = None, rule: str | None = None)
     # screen's first load spent ~1 s here: 32 teams × 15 weeks of a column-wise apply)
     num = qb[list(STAT_LINE)].apply(pd.to_numeric, errors="coerce").fillna(0.0)
     # ---- end IO-2
+    # ---- IP-5 (Wave I-P): the starter rule picked in one pass (the same starter: the best rank among the team's
+    # quarterbacks who can play — all of them when none can — the first in the board's order on a tie; his line as the
+    # loop's one-row sum gave it). MFL's League screen spent ~1 s here cold: 32 teams × 15 weeks of ``.loc``.
+    if rule != "sum" and qb.index.is_unique:
+        ok_team = team.map(lambda x: isinstance(x, str) and bool(x)).astype(bool)
+        f = pd.DataFrame({"team": team, "out": out_.astype(bool), "rank": rank, "pos": np.arange(len(qb))})[ok_team]
+        has_ok = (~f["out"]).groupby(f["team"]).transform("any")
+        f = f[~f["out"] | ~has_ok].sort_values(["rank", "pos"], ascending=[False, True], kind="mergesort")
+        starters = f.drop_duplicates("team").sort_values("team", kind="mergesort")
+        vals = num.loc[starters.index].to_numpy(dtype=float)
+        for (g, t), v in zip(starters["team"].items(), vals, strict=True):
+            rows[t] = {"position": "TMQB", **dict(zip(STAT_LINE, v.tolist(), strict=True)), "starter_gsis": g, "n_players": 1}
+        return pd.DataFrame.from_dict(rows, orient="index", columns=cols)
+    # ---- end IP-5
     for t, idx in qb.groupby(team).groups.items():
         if not isinstance(t, str) or not t:
             continue
@@ -833,14 +847,21 @@ def unit_window(win: Window, weeks: list[int], scoring: Mapping[str, float], sk:
     if "TMQB" in units and not win.lines.empty and not sk.empty:
         qb = win.lines[win.lines["week"].isin(weeks) & (win.lines["position"] == "QB")]
         st = win.status if not win.status.empty else pd.DataFrame(columns=["week", "gsis_id"])
+        per_week = []
         for w, lw in qb.groupby("week"):
             line = lw.drop_duplicates("gsis_id").set_index("gsis_id")
             status = st[st["week"] == w].drop_duplicates("gsis_id").set_index("gsis_id")
             skw = sk[sk["week"] == w].drop_duplicates("gsis_id").set_index("gsis_id")
             ul = unit_lines(SimpleNamespace(line=line, status=status), skw["proj_points"])
-            if ul.empty:
-                continue
-            pts = price_lines(ul, scoring)
+            if not ul.empty:
+                per_week.append((w, status, skw, ul))
+        # ---- IP-5 (Wave I-P): every week's unit lines priced in one ``price_lines`` call (it prices row by row: the
+        # same points; was one call a week — 15 on MFL 70587's window)
+        priced_all = (price_lines(pd.concat([ul for *_, ul in per_week], keys=[w for w, *_ in per_week]), scoring)
+                      if per_week else None)
+        for w, status, skw, ul in per_week:
+            pts = priced_all.loc[w]
+            # ---- end IP-5
             for t, r in ul.iterrows():
                 g = r["starter_gsis"]
                 p = float(pts[t])
