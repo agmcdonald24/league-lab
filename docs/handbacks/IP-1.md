@@ -79,7 +79,7 @@ QB range covered 78.6%).
 
 Mine: `src/league_lab/calibration.py` (`# ---- IP-1` block at the end), `src/league_lab/projections.py` (`MODEL_VERSION`,
 the hook), `scripts/analysis/ip1_qb_diagnosis.py`, `scripts/analysis/ip1_qb_candidates.py`, `tests/test_ip1_qb.py` (9),
-`tests/test_ip1_pass_td.py` (9), `dbt/models/intermediate/features/int_pn_team_game.sql`,
+`tests/test_ip1_pass_td.py` (10), `dbt/models/intermediate/features/int_pn_team_game.sql`,
 `dbt/models/intermediate/features/int_player_week_personnel.yml`, `dbt/tests/assert_starter_from_play.sql` (new),
 `docs/METRICS.md`, `dbt/seeds/metric_registry.csv` (+3: pt1.0 available, rt1.0 / st1.0 experimental), this file.
 Outside my list: `dbt/models/marts/nfl/mart_projection_drift.sql` + its `schema.yml` description (`# ---- IP-1` blocks),
@@ -107,12 +107,12 @@ Outside my list: `dbt/models/marts/nfl/mart_projection_drift.sql` + its `schema.
   projection-marts selection again PASS 147, WARN 0.
 * pt1.0's ranges (reported, 2023–2025, the production path): 80% interval score −0.0027 (reference) / +0.0016
   (dynasty), 50% −0.010 / −0.016, coverage 80% 0.757 → 0.757 / 0.756 → 0.762.
-* Tests: `tests/test_ip1_qb.py` 9 + `tests/test_ip1_pass_td.py` 9 passed; the edited modules' root files (calibration,
+* Tests: `tests/test_ip1_qb.py` 9 + `tests/test_ip1_pass_td.py` 10 passed; the edited modules' root files (calibration,
   M5, M6, IL-3, personnel, NFL-wide, freeze, EV, drift, v2, importance, experiments, registry): 163 passed, 1 failed
   (`test_projections_ev::test_scrubs_pins_and_dynasty_moves`, known: reads this database's week-4 lines); API files that
   read the edited modules (`test_h1`, `test_il3`, `test_if3`, `test_in6`): 51 passed, 4 failed, all four in
   `known_api_failures.txt`; `uv run ruff check src app tests api scripts/analysis` clean; `copy_standard.py --check`
-  clean; `/home/claude/waveIP/check_root.sh /home/claude/wt-ip1`: 4 failed, 1570 passed, 3 skipped — **no new failure** (the four are `known_root_failures.txt`).
+  clean; `/home/claude/waveIP/check_root.sh /home/claude/wt-ip1` (after the last src change): 4 failed, 1571 passed, 3 skipped — **no new failure** (the four are `known_root_failures.txt`).
 
 #### Limitations
 
