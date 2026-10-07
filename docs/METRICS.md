@@ -4750,3 +4750,60 @@ the tone's source, season, week, view, position, the flagged quarterbacks) — ~
 page; one more entry holds the floor's sentence. The start answer is not cached (two to
 four ids are not a countable set): ~25 ms warm.
 <!-- ---- end IP-2 -->
+
+<!-- ---- IQ-2 -->
+## Who starts (IQ-2, Wave I-Q, 2026-10-07; seed `starter_overrides`, `int_starter_override`, `int_pn_team_game`, `mart_starter_check`, `api/league_lab_api/starters.py`, `scripts/analysis/iq2_starter_source.py`)
+
+### The keep rule for a starter source — written at 19:36 ET on 2026-10-07, before any candidate's number was read
+
+**What is judged.** Which quarterback the projection treats as a team's starter for a game not played yet (the
+`int_pn_team_game.starting_qb_id` of an unplayed game, which feeds every `pn_qb_*` input of the QB and of his
+receivers). A data rule, judged on **identification** (st1.1's kind), then checked for harm on the board.
+
+**Truth.** The quarterback with the most dropbacks for the team in the game itself (`fct_player_game.dropbacks`:
+pass attempts, sacks, scrambles; ties by id). Team-games: every played regular-season team-game 2021–2025 and 2026
+weeks 1–4 with a dropback leader. A **stale listing**: the listed QB took no dropback in the game. A listing whose QB
+dropped back but lost the lead is an **in-game change** (no rule before kickoff can see it; counted in "all", reported
+apart).
+
+**The as-of** (each input as it stood before the game's kickoff):
+* the listing: the schedule's `home_qb_id` / `away_qb_id` for the game. For a played game this is nflverse's value
+  today, which is usually updated to the real starter after the game — so the base is *better* in history than it is
+  live (only one schedule snapshot is stored). The bias favours the listing: a candidate is judged against a base
+  that has partly seen the answer.
+* the depth chart: the team's newest snapshot (`stg_nflverse__depth_charts.snapshot_at`, nflverse's daily capture
+  time `dt`) taken **before** the game's `kickoff_at`; its quarterbacks by `pos_rank`. Stored for **2025 and 2026 only**
+  (221 and 217 daily snapshots); nflverse's older weekly depth charts are not in the database and cannot be fetched
+  here, so every depth-chart candidate is judged on **2025 – 2026 week 4** only.
+* the injury report: week W's `report_status` (Out / Doubtful rule a player out). 2021–2024: the entry's
+  `date_modified` is before kickoff for ≥ 99.9% of Out / Doubtful rows (checked); 2025–2026 carry no stamp — the game
+  status is by definition issued before the game.
+* the reserve lists: week W's weekly-roster `roster_status` outside ACT / INA / DEV (RES, PUP, SUS, EXE, NON, E01, E14,
+  CUT, RET, TRD …) rules a player out; INA (game-day inactive, announced 90 minutes before kickoff) is **not** read.
+* the team's newest played game this season before W: its dropback leader (as `starters.unclear` reads it).
+
+**Candidates** (defined here, before the run):
+* **S0 listing** (the base).
+* **S1 depth QB1**: the snapshot's first quarterback.
+* **S2 depth, first available**: the snapshot's first quarterback not ruled out (report or reserve list); none → the
+  listing.
+* **S3 listing unless ruled out**: the listing, unless the report or a reserve list rules him out; then S2's pick where
+  a depth chart exists, else (2021–2024) the available quarterback who led the team's newest played game's dropbacks,
+  else the listing. Judged on 2025 – 2026 week 4 like the others, and also reported on 2021 – 2026 week 4.
+* **S4 two sources agree (own)**: the listing, unless (i) he is ruled out — then S2's pick — or (ii) S2's pick and the
+  newest played game's dropback leader are the same quarterback and he is not the listing — then him.
+
+**To ship, a candidate must on its window**: (a) be at least as accurate as the listing on all team-games; (b) fix ≥ 60%
+of the stale listings; (c) break at most one right listing for every six it fixes (newly broken ≤ fixed / 6); then
+(d) the QB board through `experiments.decide`: the test rows' features rebuilt with the candidate's starter for the
+games it changes (training rows untouched: the source only sets unplayed games), QB, RB, WR and TE not "hurts". (d)
+is run only for a candidate that passes (a)–(c). Of several passing, the most accurate ships; ties → the fewest
+broken. If none passes: the table, and the override list plus `mart_starter_check` is the answer. The override list
+(below) ships regardless and wins over any source. Names (Darnold, Bagent …) are evidence, never the criterion.
+
+**`starters.unclear`'s trigger** (the flag a screen shows). U0 = su1.0 (the listed QB took no dropback in the team's
+newest played game while another led it); U1 = the listing differs from S2's pick; U2 = U0 or U1; U3 = U0 and U1.
+Counted on 2025 – 2026 week 4 (the window where all exist): team-weeks flagged and stale listings caught. A variant
+replaces U0 only if it catches **more** stale listings than U0 **and** flags no more team-weeks; of several, the most
+catches (ties: fewer flags). Otherwise U0 stays and the disagreement is shown in `mart_starter_check` only.
+<!-- ---- end IQ-2 -->
