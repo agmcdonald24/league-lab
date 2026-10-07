@@ -40,7 +40,7 @@ value with the outer cache clean); the decisions memo; the roster contexts (not 
 a troubled rebuild under a new stamp); `league_weeks` and `ros_table`; My Week refused → 503 busy → the lineup; the
 injury and news feeds; the outlook with a failed MFL export (503, nothing kept, then the 12-team answer kept).
 
-## 2. MFL's League screen — the same numbers, less CPU; under 2 s cold only when the box is not saturated
+## 2. MFL's League screen — the same numbers, ~20 % less CPU; about 2 s cold (not reliably under)
 
 Profiled on the fixtures, `LEAGUE_LAB_AVAILABILITY` off and on (on = the ESPN fixtures): power part 1.95 s off / 2.03 s
 on, the whole answer after it 0.70 / 0.82 s (load avg 2.7; on `main` the whole answer with the overlay on was the 500
@@ -58,6 +58,10 @@ every line) + the rest-of-season board (`ros_table`: every week to the final). F
 | cold process (load avg 3.3–4.2): wall | 2.56 s, 3.11 s | 1.96 s, 1.96 s, 1.99 s (one 4.85 s at load 3.9) |
 | cold process: CPU of the process | 2.10–2.31 s | 1.68–1.86 s |
 | a warm process, the league cold (another league opened first): CPU | 1.86 s | 1.44–1.55 s (wall 1.58 s at load 2.7) |
+| **the live-like path**: a fresh `uvicorn` on the fixtures (port 8965), `curl` the power part first (load 1.6) | 2.56 s | 1.99 s, 2.21 s |
+| … then `/api/league`, then the whole outlook | 0.12 s, 0.80 s | 0.09–0.11 s, 0.75–0.80 s |
+
+So: about 2 s cold (−0.4 to −0.6 s), **not reliably under 2 s** on this box; the CPU is ~20 % lower everywhere.
 
 Where the rest goes (thread CPU, warm): rest-of-season board 0.70 s (skill lines 0.25, units 0.19, the window's read
 0.18), lineups' board 0.55 s (four weeks priced 0.35: MFL's per-threshold yardage odds), league inputs 0.07 s. Next
