@@ -11,7 +11,8 @@ reads that small table (≈20 rows):
       {"corner": {"graded": bool, "n": int, "words": str | None},
        "worth":  {"graded": bool, "n": int, "words": str | None}}
 
-  plus ``corner["tiers"]`` (certainty/tier -> the chip's graded words and whether the interval holds 0). Never raises:
+  plus ``worth["line"]`` (fix round: the DFS screen's one line now that the list is off — every number from the
+  grade) and ``corner["tiers"]`` (certainty/tier -> the chip's graded words and whether the interval holds 0). Never raises:
   without the table (the live site until the nightly applies it — rule 10), or on any failure, graded False and words
   None, and every reader keeps today's sentence.
 * ``GET /api/context/record`` — the same, for the screens (``read`` bucket: a cached read of a ≈20-row table).
@@ -38,7 +39,7 @@ GRADE_SQL = """select kind, grp, corner_certainty, corner_tier, n, games, mean_m
                       vs_rest_lo, vs_rest_hi, rest_n, rest_beat_share, span, scoring, words
                from ops.context_grade"""
 EMPTY = {"corner": {"graded": False, "n": 0, "words": None, "tiers": {}},
-         "worth": {"graded": False, "n": 0, "words": None}}
+         "worth": {"graded": False, "n": 0, "words": None, "line": None}}
 
 
 def clear() -> None:
@@ -76,7 +77,9 @@ def _build() -> dict:
     if c and c.get("words"):
         out["corner"] = {"graded": True, "n": int(c.get("n") or 0), "words": str(c["words"]), "tiers": tiers}
     if w and w.get("words"):
-        out["worth"] = {"graded": True, "n": int(w.get("n") or 0), "words": str(w["words"])}
+        line = (summ.get("worth_off") or {}).get("words")
+        out["worth"] = {"graded": True, "n": int(w.get("n") or 0), "words": str(w["words"]),
+                        "line": str(line) if isinstance(line, str) and line else None}
     return out
 
 

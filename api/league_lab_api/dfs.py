@@ -657,19 +657,16 @@ WX_SQL = """select game_id, wx_source, wx_dome, wx_wind_mph, wx_precip_in, wx_te
             from analytics.mart_game_weather where season = %s and week = %s"""
 # ---- end IO-1
 _context = memo.region("dfs_context", ttl=600.0, max_entries=4)
-CONTEXT_WORDS = ("Context, not a forecast: these signals sit beside the projection and do not change it. "
-                 "\"Worth a look\" has no record behind it yet (no backtest).")
+# IO-1 fix round: "Worth a look" is off the screen (graded: not distinguishable from chance), so the words no longer
+# mention it; the screen's one line about it comes from the record (``meta["worth_line"]``), absent without it
+CONTEXT_WORDS = "Context, not a forecast: these signals sit beside the projection and do not change it."
 MATCHUP_MISSING = "Matchup: not available here."
 # ---- IO-1 (Wave I-O): the record's words (league_lab_api/context_record.py) replace "no record behind it yet" when the
 # grade exists; the rule's words say the cornerback no longer counts (league_lab.dfs.WORTH_IGNORES: graded, no effect)
-RECORD_CONTEXT_WORDS = "Context, not a forecast: these signals sit beside the projection and do not change it."
 WORTH_RULE_WORDS = (f"Worth a look: at least {D.WORTH_MIN_FAVOURABLE} favourable signals, at least "
                     f"{D.WORTH_MIN_OUTSIDE} of them not in the projection, and no difficult signal outside it. The "
                     "cornerback call no longer counts: graded on 2025 and 2026 weeks 1–4 it made no measurable "
                     "difference to how receivers scored against their projection.")
-WORTH_EMPTY_WORDS = ("Nobody this week. The one signal outside the projection that could put a player here, the "
-                     "cornerback call, made no measurable difference when graded, so it no longer counts; nothing "
-                     "else outside the projection is available during the season.")
 
 
 def _record() -> dict:
@@ -679,22 +676,42 @@ def _record() -> dict:
         return context_record.summary()
     except Exception:  # noqa: BLE001 - the record is never load-bearing for the board
         return {"corner": {"graded": False, "n": 0, "words": None, "tiers": {}},
-                "worth": {"graded": False, "n": 0, "words": None}}
+                "worth": {"graded": False, "n": 0, "words": None, "line": None}}
 
 
 CORNER_TIER = {"difficult": "shutdown", "favorable": "target", "neutral": "solid"}
 
 
-def _graded_corner(sig: dict, tiers: dict) -> None:
-    """The corner chip carries its tier's graded effect: the certainty x tier row of the record's grade. A likely call
-    only: its tone is exactly its corner's quarter (an unclear call's tone merges two corners, so its row is not
-    knowable from the chip, and an unclear call never colours a chip anyway)."""
-    cert = sig.get("certainty")
-    if cert != "likely":
-        return
-    tone = sig.get("cb_tone")
-    tier = CORNER_TIER.get(str(tone)) if tone else ("unranked" if sig.get("corner_rank") is None and sig.get("corner") else None)
-    g = tiers.get(f"{cert}/{tier}") if cert and tier else None
+CORNER_WORDS_TIER = (("a shutdown corner", "shutdown"), ("easy to throw on", "target"), ("an average corner", "solid"),
+                     ("(unranked)", "unranked"))
+
+
+def corner_quarter(cb: dict | None) -> str | None:
+    """A likely call's corner quarter (shutdown / target / solid / unranked) for the chip's words and the grade's row —
+    never for colour, sorting or a filter (IO-1 fix round: the corner is information). Read from the call's shutdown
+    flag, else its own tone (the quarter's), else its words; an unclear call or no call: None."""
+    if not cb or cb.get("certainty") != "likely" or not cb.get("corner"):
+        return None
+    if cb.get("shutdown"):
+        return "shutdown"
+    t = CORNER_TIER.get(str(cb.get("tone"))) if cb.get("tone") else None
+    if t:
+        return t
+    words = str(cb.get("words") or "")
+    for w, q in CORNER_WORDS_TIER:
+        if w in words:
+            return q
+    return "unranked" if cb.get("corner_rank") is None else None
+
+
+def _corner_as_information(sig: dict, cb: dict | None, tiers: dict) -> None:
+    """The DFS corner signal as shown: no tone (no green / red; nothing sorts or filters on it), its quarter for the
+    chip's words, and the quarter's graded words from the record (likely calls; an unclear call names two corners, so
+    its row is not knowable from the chip)."""
+    q = corner_quarter(cb)
+    sig["tone"] = None
+    sig["quarter"] = q
+    g = tiers.get(f"likely/{q}") if q else None
     if g and g.get("words"):
         sig["graded"] = g["words"]
         sig["graded_effect"] = g.get("effect")
@@ -793,27 +810,19 @@ def context_for(season: int, week: int, rows: list[dict], by: str = "proj") -> t
                                                    w.get("wx_snow"), p)
         m = mc.get(str(r.get("gsis_id")))
         sig = D.signals(p, m, parts["role"].get(str(r.get("gsis_id"))), parts["game"].get(r.get("team")), wf)
-        # ---- IO-1: the corner chip carries its tier's graded effect (the record's grade, when it exists)
-        if tiers:
-            cb = (m or {}).get("cb") or {}
-            for s_ in sig:
-                if s_["signal"] == "corner":
-                    probe = {**s_, "cb_tone": cb.get("tone")}
-                    _graded_corner(probe, tiers)
-                    if probe.get("graded"):
-                        s_["graded"], s_["graded_effect"] = probe["graded"], probe.get("graded_effect")
+        ok, why = D.worth(sig)              # the rule ignores the corner (dfs.WORTH_IGNORES); the screen shows no list
+        # ---- IO-1: the corner as information — no tone, its quarter's words and its grade (the record, when it exists)
+        for s_ in sig:
+            if s_["signal"] == "corner":
+                _corner_as_information(s_, (m or {}).get("cb"), tiers)
         # ---- end IO-1
-        ok, why = D.worth(sig)
         out[r["key"]] = {"context": sig, "worth": ok, "worth_reasons": why}
-    # ---- IO-1: the record's sentence replaces "no record behind it yet"; the rule says the corner no longer counts
-    worth_words = rec["worth"]["words"] if rec["worth"].get("graded") else None
+    # ---- IO-1 fix round: "Worth a look" is off the screen; one line from the record says why (absent without it)
     meta = {"matchup": fn is not None and bool(mc), "matchup_words": None if fn is not None and mc else MATCHUP_MISSING,
             "lines": parts["lines"], "forecast": parts["forecast"], "projection": D.projection_table(),
-            "in_words": D.IN_WORDS, "out_words": D.OUT_WORDS,
-            "words": RECORD_CONTEXT_WORDS if worth_words else CONTEXT_WORDS,
-            "worth_rule": WORTH_RULE_WORDS, "worth_record": worth_words,
-            "corner_record": rec["corner"]["words"] if rec["corner"].get("graded") else None,
-            "worth_empty": WORTH_EMPTY_WORDS}
+            "in_words": D.IN_WORDS, "out_words": D.OUT_WORDS, "words": CONTEXT_WORDS, "worth_rule": WORTH_RULE_WORDS,
+            "worth_line": rec["worth"].get("line") if rec["worth"].get("graded") else None,
+            "corner_record": rec["corner"]["words"] if rec["corner"].get("graded") else None}
     # ---- end IO-1
     return out, meta
 

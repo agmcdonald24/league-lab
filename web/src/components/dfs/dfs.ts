@@ -20,8 +20,10 @@ export interface Signal {
   shutdown?: boolean;
   certainty?: string | null;
   implied?: number | null;
-  // ---- IO-1 (Wave I-O): the corner's graded effect (the context record), when the grade exists
+  // ---- IO-1 (Wave I-O): the corner's graded effect (the context record), when the grade exists; its quarter (fix round:
+  // the corner is information — no tone, never coloured, sorted or filtered on)
   graded?: string | null;
+  quarter?: "shutdown" | "solid" | "target" | "unranked" | null;
   graded_effect?: "none" | "measured" | null;
 }
 export interface ContextMeta {
@@ -34,10 +36,9 @@ export interface ContextMeta {
   out_words: string;
   words: string;
   worth_rule: string;
-  // ---- IO-1 (Wave I-O): the record's sentences (null without the record) and the empty list's words
-  worth_record?: string | null;
+  // ---- IO-1 (Wave I-O): the record's sentences (null without the record); fix round: "Worth a look" off, one line
+  worth_line?: string | null;
   corner_record?: string | null;
-  worth_empty?: string | null;
 }
 export interface WithContext {
   context?: Signal[];
@@ -254,7 +255,8 @@ export const loadPublished = (id: string) => get<Slate>(`/api/dfs/slate/${encode
 /** The chip's short words for a signal (the sentence is in its title and the row's detail). */
 export function chipWords(s: Signal): string {
   if (s.signal === "role" || s.signal === "routes") return s.trend === "down" ? "Role down" : "Role up";
-  if (s.signal === "corner") return s.shutdown ? "Shutdown corner" : s.tone === "favorable" ? "Soft corner" : s.tone === "difficult" ? "Tough corner" : "Corner unclear";
+  // ---- IO-1 fix round: the corner's words from its quarter, never from a tone
+  if (s.signal === "corner") return s.quarter === "shutdown" || s.shutdown ? "Shutdown corner" : s.quarter === "target" ? "Soft corner" : s.quarter === "solid" ? "Average corner" : s.quarter === "unranked" ? "Corner unranked" : "Corner unclear";
   if (s.signal === "defense") return s.tone === "favorable" ? "Soft defense" : s.tone === "difficult" ? "Tough defense" : "Defense average";
   if (s.signal === "game") return `Team total ${s.implied?.toFixed(1) ?? "—"}`;
   // ---- IO-1: the forecast's own numbers ("Wind 20 mph", "Rain (0.13 in)") rather than one word

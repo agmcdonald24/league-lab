@@ -24,6 +24,8 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `league-lab context-record` keeps `ops.context_record` (frozen before each first kickoff; played weeks rebuilt once,
   labelled) and `ops.context_grade`; `GET /api/context/record`; `analytics.mart_game_weather` puts the forecast
   on DFS's chips (not in the projection). docs/METRICS.md § "The context record" (cx1.0), docs/handbacks/IO-1.md.
+  Fix round: "Worth a look" is off the screen — one line from the record says why (none without it) — the corner chip
+  is never coloured, and the record grades the two-favourable-signals candidate out of sample from week 5.
 - **IO-2 — the League page: movement, and a link worth sharing.** Each week's outlook is kept (`outlook.snapshots`,
   `scripts/hosted_outlook.sql`: one row per league-week, replaced only until the week's first kickoff, written off the
   request path, house and saved leagues always, at most 20 new other leagues a day and 200 held, 20 weeks kept; off and

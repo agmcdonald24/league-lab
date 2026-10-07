@@ -6,7 +6,7 @@
   // row can be put in every lineup or left out of all), and lineups (cash or tournament, 1-20) with the site's upload
   // CSV. Works with no league and no team (the API takes none); a league in the URL stays in every link.
   // ---- IN-4 (Wave I-N): no upload to start — the board carries the context the projection does not hold (chips, with
-  // "Worth a look" per position); when the site's salary file for the week is published on the server (dfs/slates/),
+  // "Worth a look" per position — off since Wave I-O's grade: one line says why); when the site's salary file for the week is published on the server (dfs/slates/),
   // the screen opens on its values and the upload moves to "Use a different contest's file"; lineups take stacks and a
   // maximum exposure. The context is shown beside the numbers and never changes them.
   import { ApiError, Unauthorized } from "../lib/api";
@@ -38,7 +38,6 @@
     SITES,
     type Lineups,
     type Projections,
-    type ProjRow,
     type Site,
     type Slate,
     type SlatePlayer,
@@ -242,10 +241,8 @@
   // ---- before a file: the projections by position
   let projPos = $state("ALL");
   const projRows = $derived((proj?.players ?? []).filter((p) => projPos === "ALL" || p.position === projPos).slice(0, 40));
-  // ---- IN-4: "Worth a look" — by projection on the board, by value per $1,000 on a slate
-  const projByKey = $derived(new Map((proj?.players ?? []).map((p) => [p.key, p])));
-  const worthBoard = $derived(Object.entries(proj?.worth_a_look ?? {}).flatMap(([, ks]) => ks.map((k) => projByKey.get(k)!).filter(Boolean)).filter((p) => projPos === "ALL" || p.position === projPos));
-  const worthSlate = $derived(Object.entries(slate?.worth_a_look ?? {}).flatMap(([, ks]) => ks.map((k) => byKey.get(k)!).filter(Boolean)).filter(inPos));
+  // ---- IO-1 fix round: "Worth a look" is off the screen (graded: not distinguishable from chance); one quiet line from
+  // the record says so under the board's intro and the slate's (meta.worth_line; absent without the record)
   const meta = $derived(slate?.context_meta ?? proj?.context_meta ?? null);
   let openRow = $state<string | null>(null);
 
@@ -284,41 +281,8 @@
   </li>
 {/snippet}
 
-{#snippet worthRow(p: ProjRow | SlatePlayer, perK: boolean)}
-  <li class="py-2" data-testid="dfs-worth-row">
-    <div class="flex items-center gap-2">
-      <div class="min-w-0 flex-1">{@render who(p)}</div>
-      <span class="tabnum w-12 text-right font-bold">{fmt.pts(p.proj)}</span>
-    </div>
-    {#if perK && "salary" in p}<p class="tabnum pl-9 text-sm text-ink-2">{money(p.salary)} · {fmt.pts(p.pts_per_k, 2)} pts per $1,000</p>{/if}
-    <ul class="mt-0.5 list-disc space-y-0.5 pl-12 text-sm text-ink-2" data-testid="dfs-worth-reasons">
-      {#each p.worth_reasons ?? [] as r, i (i)}<li>{r}</li>{/each}
-    </ul>
-  </li>
-{/snippet}
-
-{#snippet worthCard(rows: (ProjRow | SlatePlayer)[], perK: boolean)}
-  <section class="min-w-0 rounded-lg border border-line bg-surface p-4" data-testid="dfs-worth">
-    <h2 class="text-lg font-bold">Worth a look</h2>
-    <!-- ---- IO-1 (Wave I-O): the record's sentence replaces "no record behind this list yet" when the grade exists -->
-    {#if meta?.worth_record}
-      <p class="text-sm text-ink-3">Players with at least two signals in their favour, one of them something the projection does not hold. {perK ? "Ordered by points per $1,000." : "Ordered by projection."}</p>
-      <p class="mt-1 text-sm text-ink-2" data-testid="dfs-worth-record">{meta.worth_record}</p>
-    {:else}
-      <p class="text-sm text-ink-3">
-        Players with at least two signals in their favour, one of them something the projection does not hold. Context, not a graded forecast: there is no record behind this list
-        yet. {perK ? "Ordered by points per $1,000." : "Ordered by projection."}
-      </p>
-    {/if}
-    <!-- ---- end IO-1 -->
-    {#if rows.length}
-      <ul class="mt-1 grid grid-cols-1 divide-y divide-line sm:grid-cols-2 sm:gap-x-6 sm:divide-y-0 xl:grid-cols-3">{#each rows as p (p.key)}{@render worthRow(p, perK)}{/each}</ul>
-    {:else}
-      <p class="mt-2 text-sm text-ink-2" data-testid="dfs-worth-empty">
-        {meta?.worth_empty ? meta.worth_empty : meta && !meta.matchup ? "Nobody this week: the cornerback call is the signal the projection does not hold, and it is not available here." : "Nobody here this week."}
-      </p>
-    {/if}
-  </section>
+{#snippet worthLine()}
+  {#if meta?.worth_line}<p class="text-sm text-ink-3" data-testid="dfs-worth-line">{meta.worth_line}</p>{/if}
 {/snippet}
 
 {#snippet contextHonest()}
@@ -332,7 +296,6 @@
         <li><span class="font-semibold text-ink">The betting line</span> (over/under, spread, the team's expected points): {meta.lines ? (meta.projection.game?.WR ? meta.in_words : meta.out_words) + "." : "no line for this week yet."}</li>
         <li data-testid="dfs-weather-honest"><span class="font-semibold text-ink">Weather</span>: {meta.projection.weather?.WR ? meta.in_words : meta.out_words}; {meta.forecast ? "outdoor games carry the forecast at kickoff when it is unusual: wind 15 mph or more, rain 0.1 in or more, snow, below freezing. Since 2016, passers averaged 7.1 yards per attempt under 10 mph of wind, 6.8 at 15–20 mph and 6.2 at 20+ (observed weather, 2,639 games); the forecast can miss." : "no forecast for this week's games yet."}</li>
       </ul>
-      <p class="mt-2 text-sm text-ink-3">{meta.worth_rule}</p>
     </Expander>
   {/if}
 {/snippet}
@@ -359,7 +322,6 @@
   </div>
 
   {#if !slate}
-    {@render worthCard(worthBoard, false)}
     <section class="grid grid-cols-1 gap-4 wide:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
       <!-- the board first on a phone (it is what the screen opens for); on a desktop the file sits on the left -->
       <div class="order-2 min-w-0 space-y-3 wide:order-1">
@@ -377,6 +339,7 @@
           In {siteName} scoring. The range is the low-end to high-end outcome (8 weeks in 10 land between). The chips are context beside the projection; tap a player for the
           reasons.
         </p>
+        {@render worthLine()}
         <Chips label="Position" testid="dfs-proj-pos" current={projPos} items={[{ key: "ALL", label: "All" }, ...["QB", "RB", "WR", "TE", ...(site === "dk" ? ["K"] : []), "DEF"].map((p) => ({ key: p, label: p === "DEF" ? dst : p }))]} onpick={(p) => (projPos = p)} />
         {#if projError}
           <p class="text-sm text-bad" role="alert">{projError}</p>
@@ -444,6 +407,7 @@
         {money(slate.cap)}.
       </p>
       {#each slate.notes as note, i (i)}<p class="text-sm text-ink-3">{note}</p>{/each}
+      {@render worthLine()}
       {#if slate.unmatched.length || slate.skipped.length}
         <Expander title={`See unmatched (${slate.unmatched.length + slate.skipped.length})`} testid="dfs-unmatched">
           <p class="mb-2 text-sm text-ink-3">We never guess a player: these are not valued and not in lineups.</p>
@@ -456,7 +420,6 @@
     </section>
 
     <Chips label="Position" testid="dfs-pos" current={pos} items={posItems} onpick={(p) => (pos = p)} />
-    {@render worthCard(worthSlate, true)}
 
     <section class="grid grid-cols-1 gap-4 wide:grid-cols-2">
       <div class="min-w-0 rounded-lg border border-line bg-surface p-4" data-testid="dfs-undervalued">

@@ -18,6 +18,8 @@ GRADE_ROWS = [
      "vs_rest": -0.39, "vs_rest_lo": -1.39, "vs_rest_hi": 0.72, "words": "Graded: no measurable effect (−0.4 points …)."},
     {"kind": "corner", "grp": "likely/target", "corner_certainty": "likely", "corner_tier": "target", "n": 79,
      "vs_rest": 1.5, "vs_rest_lo": 0.2, "vs_rest_hi": 2.9, "words": "Graded: measurably above (+1.5 points …)."},
+    {"kind": "summary", "grp": "worth_off", "n": 37,
+     "words": "We tried a \"Worth a look\" list and graded it on 2025: it listed a receiver 37 times (in 29 games), and they finished 0.7 points better than everyone else against their projection (−1.1 to +2.7) — not distinguishable from chance. It is off until a rule earns its place in the record; the context chips stay beside each player."},
     {"kind": "worth", "grp": "listed", "n": 0, "words": None},
 ]
 
@@ -47,7 +49,7 @@ def test_summary_without_the_table_is_quiet(rec):
     rec["exists"] = False
     s = CR.summary()
     assert s["corner"]["graded"] is False and s["corner"]["words"] is None and s["corner"]["n"] == 0
-    assert s["worth"] == {"graded": False, "n": 0, "words": None}
+    assert s["worth"] == {"graded": False, "n": 0, "words": None, "line": None}
     CR.clear()
     rec["boom"] = True                                     # any failure: the same quiet answer, never an exception
     assert CR.summary()["worth"]["graded"] is False
@@ -61,6 +63,7 @@ def test_summary_with_the_record(rec):
     s = CR.summary()
     assert s["corner"]["graded"] is True and s["corner"]["n"] == 2190 and s["corner"]["words"].startswith("Graded on 2025")
     assert s["worth"]["graded"] is True and s["worth"]["n"] == 38
+    assert s["worth"]["line"].startswith("We tried a \"Worth a look\" list") and "37 times (in 29 games)" in s["worth"]["line"]
     t = s["corner"]["tiers"]
     assert t["likely/shutdown"]["effect"] == "none" and t["likely/target"]["effect"] == "measured"
     assert CR.corner_grade("likely", "shutdown")["n"] == 99 and CR.corner_grade(None, "shutdown") is None
@@ -111,13 +114,15 @@ def test_dfs_words_and_the_corner_chip_with_the_record(client, rec, monkeypatch)
     _fresh()
     b = client.get("/api/dfs/projections", params={"site": "dk", "week": 5, "limit": 1000}).json()
     m = b["context_meta"]
-    assert m["worth_record"].startswith("Rebuilt for 2025") and "no record behind" not in m["words"]
+    # the fix round: "Worth a look" is off the screen; the record's one line says why, every number from the grade
+    assert m["worth_line"].startswith("We tried a \"Worth a look\" list") and "worth_record" not in m
     assert m["words"] == "Context, not a forecast: these signals sit beside the projection and do not change it."
-    assert m["corner_record"].startswith("Graded on 2025")
-    assert m["worth_empty"].startswith("Nobody this week.") and b["worth_a_look"] == {}
+    assert m["corner_record"].startswith("Graded on 2025") and b["worth_a_look"] == {}
     corner = [s for p in b["players"] for s in p["context"] if s["signal"] == "corner"]
-    assert corner and all(s["graded_effect"] == "none" and s["graded"].startswith("Graded: no measurable effect")
-                          for s in corner)                  # a likely shutdown corner: its row of the grade
+    # a likely shutdown corner: information only (no tone, so no colour and nothing sorts or filters on it), its quarter
+    # for the words, its row of the grade
+    assert corner and all(s["tone"] is None and s["quarter"] == "shutdown" and s["graded_effect"] == "none"
+                          and s["graded"].startswith("Graded: no measurable effect") for s in corner)
 
 
 @needs_db
@@ -127,10 +132,22 @@ def test_dfs_without_the_record_keeps_todays_words(client, rec, monkeypatch):
     _fresh()
     b = client.get("/api/dfs/projections", params={"site": "dk", "week": 5, "limit": 1000}).json()
     m = b["context_meta"]
-    assert m["worth_record"] is None and m["corner_record"] is None
-    assert m["words"].endswith("\"Worth a look\" has no record behind it yet (no backtest).")
+    assert m["worth_line"] is None and m["corner_record"] is None          # no line at all without the record
+    assert m["words"] == "Context, not a forecast: these signals sit beside the projection and do not change it."
     corner = [s for p in b["players"] for s in p["context"] if s["signal"] == "corner"]
-    assert corner and not any("graded" in s for s in corner)
+    assert corner and not any("graded" in s for s in corner) and all(s["tone"] is None for s in corner)
+
+
+def test_corner_quarter_never_needs_a_tone():
+    from league_lab_api import dfs as api_dfs
+    q = api_dfs.corner_quarter
+    assert q({"certainty": "likely", "corner": "A", "shutdown": True, "tone": None}) == "shutdown"
+    assert q({"certainty": "likely", "corner": "A", "tone": "favorable"}) == "target"
+    # the matchup board's own tone may stop carrying the corner: the call's words still name the quarter
+    assert q({"certainty": "likely", "corner": "A", "tone": None, "corner_rank": 60,
+              "words": "A (easy to throw on, #60 of 64) is likely across from him"}) == "target"
+    assert q({"certainty": "likely", "corner": "A", "tone": None, "corner_rank": None, "words": "A (unranked) is …"}) == "unranked"
+    assert q({"certainty": "unclear", "corner": "A", "tone": "favorable"}) is None and q(None) is None
 
 
 WX_ROWS = [{"game_id": "2026_05_CHI_GB", "wx_source": "forecast", "wx_dome": 0, "wx_wind_mph": 20.27, "wx_precip_in": 0.0,
