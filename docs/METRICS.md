@@ -3585,7 +3585,9 @@ not run: v3.0's numbers) — averaged over the complete weeks like the season's 
 week, the newest backtested version at or before the board's. The reference league now reads QB 6.52 against **5.86**,
 TE 3.51 against 3.01, RB 4.18 / 4.28, WR 4.15 / 4.07 (the dynasty QB 9.22 / 8.16). Without it, the first complete
 v3.3 or v3.4 week would also have emptied the backtest columns on a database whose `ops.projection_backtest` has no rows
-of that version (this one has v2.0 and v3.0 only).
+of that version (this one has v2.0 and v3.0 only). Versions compare by their numbers (`version_key`, IP-1 fix round 2; the review's L4): as text 'v3.10'
+sorts before 'v3.9', so the drift's "newest version at or before" and `mart_projection_backtest.is_current` would have
+read the wrong model at v3.10; `dbt/tests/assert_model_versions_compare_by_number.sql` pins v3.9 < v3.10.
 
 **What the home says** (IP-1 fix round, `web/src/components/home/home.ts` `gradeRows` / `gradeLead`, a marked block; About's
 grade row already carries the weeks behind each miss, `season.weeks_scored`, and the same model's seasons, `by_season`):
@@ -3655,6 +3657,33 @@ label and a missing tier line, never a changed number. Data: the listing
 (`int_pn_team_game.listed_qb_id`, or the schedule) and the newest played game's dropback leader (`fct_play`), both
 already in the database; the API would add one boolean per QB row (`starter_unclear`) to the rankings / board frames.
 2026 week 5 here: Chicago, Seattle, Washington.
+
+#### Starter unclear — the flag, built (su1.0, IP-1 fix round 2; `api/league_lab_api/starters.py` `unclear(season, week)`)
+
+**The trigger** (the alternative above, unchanged): both quarterbacks of a team are flagged for week W when the
+schedule's listed starter for W took no dropback in the team's newest played game of the season before W while another
+quarterback led that game's dropbacks. As of the week: only games with `week < W`; W's own game never counts (2026 week 4
+flags Seattle from week 3 and not Chicago, whose own week-4 game had Keenum take no dropback). **A label, never a
+number**: the projection's "is he the starter?" input reads the schedule's listing, so the listed quarterback is
+projected as the starter and the other as his backup, and the sentence says so.
+
+**What it is worth** (the same trigger on the same data as the module reads it, played team-weeks 2022 – 2026 week 4,
+re-measured through `unclear()` itself): 169 flags over 76 weeks, **about 2 team-weeks a week** (46 / 33 / 48 / 37 / 5 by
+season); it marks **32 of the 49 listings that turned out stale** (the listed QB did not drop back in the game itself);
+**137 of its 169 flags were not stale** — the listed quarterback did play in the game itself. So
+the words say "unclear", never "wrong".
+
+**What it reads** — only `analytics` relations the API's read-only role reads on the hosted copy, no new relation:
+`dim_game` (the listed starters `home_qb_id` / `away_qb_id`; the season-week's games), `fct_player_game` (`dropbacks` per
+player-game — pass attempts, sacks and scrambles — and `played`, which marks a team's game as played), `dim_player`
+(names). A missing relation, a week outside 1–22 or any failed read gives `{}` (never an error: a label must not cost a
+screen); a week whose starters nflverse has not listed yet gives `{}`. Cached per (season, week) in the memo region
+`starters` (≤ 32 entries of a few KB, 10 minutes). `api/tests/test_ip1_starters.py`.
+
+**2026 week 5** (this database): Chicago (listed Case Keenum; Tyson Bagent led week 4's dropbacks), Seattle (Drew Lock;
+Sam Darnold), Washington (Jayden Daniels; Athan Kaliakmanis). Seattle's sentence: "Starter unclear: Seattle lists Drew
+Lock as the starter, but he did not drop back once in week 4; Sam Darnold took most of the dropbacks. Our projections
+assume the listing: Lock as the starter, Darnold as his backup."
 
 
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)

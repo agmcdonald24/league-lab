@@ -140,3 +140,18 @@ def test_the_component_table_carries_the_line():
     assert line["bias (pts)"] == "+1.50" and line["MAE (pts)"] == "3.50"
     tds = t[t["component"] == "Passing TDs"].iloc[0]
     assert tds["bias (pts)"] == "+2.00" and tds["line's MAE if it were exact"].startswith("1.50")
+
+
+def test_model_versions_compare_by_number_in_the_marts():
+    """The review's L4: the drift and the backtest's ``is_current`` order model versions by their numbers ('v3.10' after
+    'v3.9'), never as text; dbt's assert_model_versions_compare_by_number checks the macro on the database."""
+    root = Path(__file__).resolve().parents[1]
+    macro = (root / "dbt" / "macros" / "version_key.sql").read_text()
+    assert "macro version_key" in macro and "::int[]" in macro
+    for name in ("mart_projection_drift.sql", "mart_projection_backtest.sql"):
+        sql = (root / "dbt" / "models" / "marts" / "nfl" / name).read_text()
+        code = "\n".join(line.split("--")[0] for line in sql.splitlines())      # comments may say what text did
+        assert "version_key(" in code, name
+        assert "max(model_version)" not in code and "max(backtest_model_version)" not in code, name
+        assert "model_version <=" not in code and "order by b.model_version desc" not in code, name
+    assert "v3.10" < "v3.9"                                                       # why: as text, v3.10 sorts first

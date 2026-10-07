@@ -33,7 +33,9 @@ select
     model_version,
     -- v3: every model version keeps its rows (v2.0's are its record); the pages and the drift strip read the
     -- current one: the newest QB-TE version, and kd1.0 for K / DEF
-    model_version = (select max(model_version) from {{ source('ops', 'projection_backtest') }} where model_version like 'v%')
+    -- ---- IP-1 fix round 2: the newest version by its numbers ('v3.10' after 'v3.9'), not as text
+    model_version = (select model_version from {{ source('ops', 'projection_backtest') }} where model_version like 'v%'
+                     order by {{ version_key('model_version') }} desc nulls last limit 1)
       or model_version not like 'v%'                     as is_current,
     max(run_at)                                          as run_at
 from {{ source('ops', 'projection_backtest') }}

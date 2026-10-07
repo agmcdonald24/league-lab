@@ -214,7 +214,7 @@ says `{loaded, rows, fields, mb, kept}`.
 
 **Seeing it.** `/api/status` → `memory`: `rss_mb` (what Render meters), `cache_mb` of `budget_mb`, `regions` (MB per
 cache: `sql`, `boards`, `priced`, `ros`, `league_weeks`, `contexts`, `decisions`, `research_priced`, `research_memo`,
-`about`, `stats`, `stats_agg` (IM-1: the Stats window aggregate, ≤ 8 windows), `scoring_checks`, `rankings` (IP-2: one ranked position per scoring, week and view, ≤ 64 entries of ~0.1 MB, 10 minutes)), `entries`, `evictions`, `trims`, `outside_mb` (the Sleeper / MFL clients' own
+`about`, `stats`, `stats_agg` (IM-1: the Stats window aggregate, ≤ 8 windows), `scoring_checks`, `rankings` (IP-2: one ranked position per scoring, week and view, ≤ 64 entries of ~0.1 MB, 10 minutes), `starters` (IP-1: the "starter unclear" flags per season-week, ≤ 32 entries of a few KB, 10 minutes)), `entries`, `evictions`, `trims`, `outside_mb` (the Sleeper / MFL clients' own
 caches), `malloc_arena_max`. The console's **Data Status** page says it in one line when `LEAGUE_LAB_API_URL` (and,
 with the password gate on, `LEAGUE_LAB_API_TOKEN` from `/api/login`) are set.
 
