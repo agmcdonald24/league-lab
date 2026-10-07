@@ -18,7 +18,6 @@ from lib.matchups import (
     cb_line,
     comparison_rows,
     comparison_verdict,
-    cover_split,
     dvp_heat_frame,
     dvp_selection,
     lean_text,
@@ -281,29 +280,9 @@ elif roster_id is not None:
                     st.caption("Past seasons: plays with him on the field (not necessarily covering). This season: games he played.")
                     show(hist, ["season", "defense", "targets", "receptions", "receiving_yards", "receiving_tds", "games"],
                          phone_cols=["season", "defense", "targets", "receptions", "receiving_yards"])
-    with st.expander("His points against the best corners"):
-        wr_ids = list(rec.loc[rec["position"] == "WR", "gsis_id"])
-        split_games = query(
-            """select m.gsis_id, m.player_name, m.season, m.week, m.opponent, m.likely_cover_name, m.cover_rank, m.cover_label,
-                      l.points
-               from analytics.mart_cb_matchups m
-               join analytics.fct_player_game_league l
-                 on l.league_id = %s and l.gsis_id = m.gsis_id and l.game_id = m.game_id and l.played
-               where m.gsis_id = any(%s) and m.call_status = 'called' and m.season >= %s and (m.season < %s or m.week < %s)
-               order by m.gsis_id, m.season, m.week""",
-            (league_id, wr_ids, int(season) - 1, int(season), int(next_week)),
-        ) if wr_ids else pd.DataFrame()
-        split = cover_split(split_games)
-        if split.empty:
-            st.caption("No games with a named corner since last season.")
-        else:
-            st.markdown("His points per game (this league's scoring) since the start of last season, in games where the "
-                        "corner we named across from him was a **shutdown** corner (top quarter) vs every other game. "
-                        "Evidence, not a projection change: the samples are small.")
-            show(split, ["player_name", "ppg_vs_shutdown", "games_vs_shutdown", "ppg_vs_rest", "games_vs_rest"])
-            with st.popover("Every game behind it"):
-                show(split_games, ["player_name", "season", "week", "opponent", "likely_cover_name", "cover_rank", "cover_label", "points"],
-                     phone_cols=["player_name", "week", "likely_cover_name", "cover_label", "points"])
+    # PO (Wave I-P, IP-5): "His points against the best corners" is gone — its corner ranks for past weeks were the
+    # season's to date (look-ahead), an as-of version leaves a median of 3 games a receiver, and the corner call was
+    # graded with no measurable effect (docs/METRICS.md § "The context record").
     with st.expander("Every starting corner, ranked"):
         wins = {"Since last season": "two_seasons", "This season": "season", "Last 4 games": "last_4"}
         wl = st.radio("Window", list(wins), horizontal=True, key=f"cb_win_{league_id}")
