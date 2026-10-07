@@ -70,7 +70,7 @@ from .waivers import waivers_after_project
 
 log = logging.getLogger(__name__)
 
-MODEL_VERSION = "v3.4"   # ---- IL-3: v3.3 = v3.0 + cs1.1 (cold starts, M6) + nt1.0 (the WR new-team scale); IP-1: v3.4 = + pt1.0 (QB passing TDs)
+MODEL_VERSION = "v3.5"   # ---- IL-3: v3.3 = v3.0 + cs1.1 (cold starts, M6) + nt1.0 (the WR new-team scale); IP-1: v3.4 = + pt1.0 (QB passing TDs); IQ-1: v3.5 = + fi1.0 (later weeks' line and personnel)
 POSITIONS = ("QB", "RB", "WR", "TE")
 QUANTILES = (0.1, 0.5, 0.9)
 # Plan D6 (Wave D): the 50% range ("most weeks"), fitted and calibrated with the same machinery as the
@@ -933,6 +933,11 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     frame = load_frame(conn, [*train_seasons, season])
     train = frame[frame["season"] < season]
     target = frame[frame["season"] == season]
+    # ---- IQ-1 (hotfix): v3.5 -- the weeks after the market week get a line from the team's own season and the market
+    # week's personnel (calibration.future_inputs, LEAGUE_LAB_FUTURE_INPUTS, on); played weeks and the market week as built
+    from . import calibration as _cal_iq1
+    target = _cal_iq1.future_inputs(target)
+    # ---- end IQ-1
     fitted_at, trained = datetime.now(UTC), f"{min(train_seasons)}-{max(train_seasons)}"
     preds, models = [], {}
     for pos in POSITIONS:

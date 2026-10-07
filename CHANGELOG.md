@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-07 — hotfix: rest-of-season quarterbacks
+
+- **IQ-1 — v3.5: the weeks after the market week read a line and a starter.** A week more than one ahead had no
+  betting line (the models never saw one missing, so every QB's team lost its level) and took its personnel from the
+  newest played game: the rest-of-season QB list was re-ordered (top 24 by week 5 against the later weeks: 0.15). Now
+  such a week reads the team's own season-so-far line (shrunk by 3 games) and the market week's personnel
+  (`calibration.future_inputs`, `LEAGUE_LAB_FUTURE_INPUTS`, on). Judged by a new horizon study (2021–2025, horizons 2–8,
+  rule written first): QB MAE −0.183 in 5 of 5 seasons, Spearman +0.038, RB / WR / TE not worse; three other
+  candidates dropped. 2026: QB 0.15 → 0.60, Lamar #20 → #8, Burrow #19 → #10, Willis #4 → #13; Murray stays #4; frozen
+  and market weeks unchanged. A warn-level guard (`assert_rest_of_season_follows_the_market_week`). METRICS § "v3.5";
+  `scripts/analysis/iq1_horizon.py`; docs/handbacks/IQ-1.md.
+
 ## 2026-10-07 — hotfix: the player card's picture; headshots at the size they are drawn
 
 - **The player card shows the player.** `GET /api/player/{gsis}` now carries `headshot_url` (`dim_player`; `None` = the

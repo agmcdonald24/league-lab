@@ -1322,6 +1322,9 @@ def pass_td_lines(season: int, every: pd.DataFrame, models: dict, target: pd.Dat
         line = every[(every["league_id"] == first) & (every["position"] == pos)]
         tgt = target[target["position"] == pos].drop_duplicates(keys)
         line = line.merge(tgt[[*keys, "implied_team_total"]], on=keys, how="left")
+        if "implied_imputed" in tgt:     # ---- IQ-1: pt1.0 was measured on real lines only: an imputed one is no line
+            imputed = line[keys].merge(tgt[[*keys, "implied_imputed"]], on=keys, how="left")["implied_imputed"]
+            line.loc[imputed.fillna(False).astype(bool).to_numpy(), "implied_team_total"] = np.nan
         tds = apply_pass_td(line, a, b)
         moved = np.abs(tds - line["proj_passing_tds"].to_numpy(dtype=float)) > 1e-12
         if not moved.any():
@@ -1346,3 +1349,91 @@ def pass_td_lines(season: int, every: pd.DataFrame, models: dict, target: pd.Dat
              season - WINDOW, season - 1, LAST_PASS_TD["moved"])
     return out
 # ---- end IP-1
+
+
+# ---- IQ-1 (hotfix, 2026-10-07): v3.5 -- the weeks after the market week (docs/METRICS.md § "v3.5: rest-of-season
+# quarterbacks (IQ-1)"). A week more than one ahead had no betting line (NaN: the component models never saw one in
+# training, so every split sent it down the same branch and a QB's team lost its level -- the main cause of the
+# re-ordered rest-of-season list, 2026 as of week 5: rank correlation with the market week 0.44 -> 0.78 with the line
+# alone) and read its personnel from the team's newest played game instead of the schedule's listing for the market
+# week (Daniels projected as a backup all season). Kept by the horizon rule (written before the run): candidate "ad",
+# QB pooled horizons 2-8 MAE -0.183 lower in 5 of 5 seasons 2021-2025, Spearman +0.038, RB / WR / TE not worse.
+#   a. a later week's implied total and game total = the team's own mean over its games so far this season, shrunk
+#      toward the league's mean by FUTURE_LINE_SHRINK games; the spread (the home team's view) follows from them;
+#   d. a later week's personnel inputs (``projections.QB_INPUTS``) = the player's own market-week row's.
+# Played weeks are never touched; the market week only gets (a) while the books have posted no line for it (as on the
+# night after a Monday game). ``implied_imputed`` marks the rows (a), so pt1.0 -- measured on
+# real lines only -- skips them. Switch: LEAGUE_LAB_FUTURE_INPUTS (unset = on; 0 = v3.4's later weeks).
+FUTURE_INPUTS_FLAG = "LEAGUE_LAB_FUTURE_INPUTS"
+FUTURE_INPUTS_DEFAULT = True
+FUTURE_INPUTS_VERSION = "fi1.0"
+FUTURE_LINE_SHRINK = 3.0
+LAST_FUTURE_INPUTS: dict[str, object] = {}
+
+
+def future_inputs_enabled() -> bool:
+    v = os.environ.get(FUTURE_INPUTS_FLAG)
+    if v is None or not v.strip():
+        return FUTURE_INPUTS_DEFAULT
+    return _flag(FUTURE_INPUTS_FLAG)
+
+
+def market_week(target: pd.DataFrame) -> int | None:
+    """The first week after the newest week with a played row (the first week of the season when none is played)."""
+    if target.empty:
+        return None
+    played = target.loc[target["played"].fillna(False).astype(bool), "week"]
+    return int(played.max()) + 1 if len(played) else int(target["week"].min())
+
+
+def team_lines(target: pd.DataFrame, through_week: int) -> pd.DataFrame:
+    """Per team: mean implied total and game total over its games of weeks <= ``through_week`` with a line, and how many."""
+    s = target[(target["week"] <= through_week) & target["implied_team_total"].notna()].drop_duplicates(["team", "week"])
+    g = s.groupby("team")
+    return pd.DataFrame({"imp": g["implied_team_total"].mean(), "tot": g["total_line"].mean(), "n": g.size()})
+
+
+def future_inputs(target: pd.DataFrame, k: float = FUTURE_LINE_SHRINK) -> pd.DataFrame:
+    """``target`` (one season's feature rows) with the weeks after the market week given (a) a line from the team's own
+    season so far where they have none and (d) the market week's personnel inputs; ``implied_imputed`` marks (a)'s
+    rows. Switch off, no market week or nothing after it: ``target`` with ``implied_imputed`` False."""
+    out = target.copy()
+    out["implied_imputed"] = False
+    LAST_FUTURE_INPUTS.clear()
+    mw = market_week(out)
+    if not future_inputs_enabled() or mw is None:
+        return out
+    fut = (out["week"] > mw).to_numpy()
+    if not fut.any():
+        return out
+    # a. the line
+    lines = team_lines(out, mw - 1)
+    # every unplayed week from the market week on without a line (the market week has one once the books post it)
+    no_line = (out["week"] >= mw).to_numpy() & out["implied_team_total"].isna().to_numpy()
+    if len(lines) and no_line.any():
+        lg_imp, lg_tot = float(lines["imp"].mean()), float(lines["tot"].mean())
+        t = lines.reindex(out["team"])
+        n = t["n"].fillna(0).to_numpy(dtype=float)
+        imp = (n * t["imp"].fillna(lg_imp).to_numpy(dtype=float) + k * lg_imp) / (n + k)
+        tot = (n * t["tot"].fillna(lg_tot).to_numpy(dtype=float) + k * lg_tot) / (n + k)
+        home = out["f_home"].fillna(0).to_numpy(dtype=float) > 0
+        out.loc[no_line, "implied_team_total"] = imp[no_line]
+        out.loc[no_line, "total_line"] = tot[no_line]
+        out.loc[no_line, "spread_line"] = np.where(home, 2 * imp - tot, tot - 2 * imp)[no_line]
+        out.loc[no_line, "implied_imputed"] = True
+    # d. the personnel of the market week
+    cols = [c for c in P.QB_INPUTS if c in out]
+    mkt = out[out["week"] == mw].drop_duplicates("gsis_id").set_index("gsis_id")
+    moved_pn = 0
+    if cols and len(mkt):
+        has = fut & out["gsis_id"].isin(mkt.index).to_numpy()
+        src = mkt[cols].reindex(out.loc[has, "gsis_id"]).to_numpy(dtype=float)
+        before = out.loc[has, cols].to_numpy(dtype=float)
+        moved_pn = int((~((before == src) | (np.isnan(before) & np.isnan(src)))).any(axis=1).sum())
+        out.loc[has, cols] = src
+    LAST_FUTURE_INPUTS.update({"market_week": mw, "lines_imputed": int(no_line.sum()), "personnel_moved": moved_pn,
+                               "teams_with_lines": len(lines)})
+    log.info("%s: market week %s; later weeks' lines from the teams' own season (%s rows, shrink %s games), personnel "
+             "of the market week (%s rows moved)", FUTURE_INPUTS_VERSION, mw, int(no_line.sum()), k, moved_pn)
+    return out
+# ---- end IQ-1

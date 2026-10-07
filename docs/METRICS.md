@@ -3704,6 +3704,105 @@ minus the same row without the line) added to the player's later weeks; **d** th
 (the schedule's listed starter for it) carried into the later weeks instead of the newest played game's; and the
 combinations **ad** and **abd**. If several pass, the one with the largest QB pooled MAE gain ships.
 
+**What was wrong.** The live rest-of-season QB list (Half PPR, weeks 5–18) had Kyler Murray 2nd and Malik Willis 3rd,
+Lamar Jackson 18th, Joe Burrow 17th; among the top 24 by the market-week (week-5) projection the correlation with the
+mean of weeks 6–18 was QB 0.15 against RB 0.90 / WR 0.94 / TE 0.86. Nothing had ever graded a projection made more than
+one week ahead.
+
+**Diagnosis** (`iq1_horizon.py diagnose`: 2026 as of week 5, the production QB component models; each group of a later
+week's inputs replaced by the player's own week-5 values; top 24 by the stored week-5 projection, rank correlation with
+the later weeks' mean):
+
+| Later weeks as | rank corr. with week 5 (stored) | with week 5 (model, before pt1.0) | mean later − week 5 | sd |
+|---|---|---|---|---|
+| the mart's rows (v3.4) | 0.44 | 0.42 | −1.52 | 2.69 |
+| … with week 5's betting line | **0.78** | **0.85** | −0.84 | 2.10 |
+| … with week 5's opponent | 0.51 | 0.53 | −1.54 | 2.65 |
+| … with week 5's personnel (`pn_qb_*`) | 0.53 | 0.50 | −1.14 | 1.91 |
+| … with week 5's injury report | 0.44 | 0.42 | −1.52 | 2.69 |
+| … with week 5's week number | 0.48 | 0.45 | −1.11 | 2.71 |
+| … with week 5's line and opponent | 0.79 | 0.87 | −0.80 | 2.11 |
+| … with every week-5 input (control) | 0.94 | 1.00 | 0 | 0 |
+
+* **The betting line re-orders the list.** A later week has none (`implied_team_total`, `spread_line`, `total_line`
+  NULL; the `f_implied_total` 22.0 the PO saw is the OLS baseline's input, not v3's). The component models never saw a
+  NULL line in training (every row has one), so at every split it takes the same branch: a QB's team loses its level
+  (Allen 20.7 → 16.8–17.4, Willis 15.8 → 17–19). Alone it lifts the rank correlation from 0.42 to 0.85.
+* **The personnel compresses one QB at a time**: a later week reads the newest played game's starter (`last_start`), not
+  the schedule's listing for the market week — Jayden Daniels (listed for week 5 after missing week 4) was projected as a
+  backup for weeks 6–18 (7.2 a game).
+* **The opponent** (an unshrunk 4-game points-allowed: Murray at DET +10.8) and the week number move it a little; the
+  injury report not at all. **The market-week-only steps**: pt1.0 changes the week-5 order a little (stored vs model
+  0.94); the cold-start and new-team scales do not touch QBs.
+* A trap found on the way (`iq1_horizon.predict`): `projections._matrix` turns a column that is NULL in the whole batch
+  into 0; the nightly's batch is the whole season (the market week has a line), so it never fired there, but a batch of
+  later weeks alone would read "no line" as an implied total of 0.
+
+**The horizon evaluation** (`iq1_horizon.py horizon`; the rule above; 1,280 season × week × position × league cells; QB
+10,526 player-weeks a scoring; the market week = horizon 1). Base = the nightly's later weeks before v3.5:
+
+| Horizon | QB MAE | QB Spearman | RB MAE / Spearman | WR | TE |
+|---|---|---|---|---|---|
+| 1 (the market week) | 6.44 | 0.587 | 4.52 / 0.686 | 4.44 / 0.618 | 3.25 / 0.599 |
+| 2 | 7.52 | 0.495 | 4.76 / 0.650 | 4.45 / 0.601 | 3.42 / 0.555 |
+| 4 | 7.61 | 0.429 | 4.62 / 0.653 | 4.53 / 0.569 | 3.40 / 0.547 |
+| 6 | 8.04 | 0.403 | 4.63 / 0.641 | 4.68 / 0.552 | 3.55 / 0.517 |
+| 8 | 8.26 | 0.392 | 4.76 / 0.612 | 4.77 / 0.543 | 3.52 / 0.514 |
+| pooled 2–8 | **7.74** | **0.436** | 4.71 / 0.633 | 4.61 / 0.568 | 3.42 / 0.540 |
+
+A QB projection one week out misses by 6.4; two to eight weeks out by 7.7, and its order holds 0.44 against the
+market week's 0.59. At RB / WR / TE the loss is small (MAE +0.2, Spearman −0.05). K was not run (its model, kd1.0, is
+separate; its top-24 correlation is 0.48 and unchanged here).
+
+**Candidates** (pooled horizons 2–8 against base; seasons 2021 / 22 / 23 / 24 / 25):
+
+| Candidate | QB Δ MAE by season | QB Δ MAE (seasons lower) | QB Δ Spearman | RB / WR / TE Δ MAE | decision |
+|---|---|---|---|---|---|
+| a. line from the team's season | +0.011 / −0.133 / −0.076 / −0.018 / +0.005 | −0.042 (3) | +0.026 | −0.008 / −0.012 / −0.007 | drop (3 of 5) |
+| b. opponent shrunk by 4 games | +0.003 / +0.022 / +0.022 / −0.007 / +0.016 | +0.011 (1) | −0.003 | −0.005 / +0.001 / −0.013 | drop |
+| c. the market week's line effect carried | −0.032 / −0.113 / −0.068 / +0.068 / +0.160 | +0.003 (3) | +0.026 | −0.003 / −0.026 / −0.015 | drop |
+| d. the market week's personnel carried | −0.143 / −0.001 / −0.110 / −0.197 / −0.264 | −0.143 (5) | +0.014 | 0 / 0 / 0 | passes |
+| **ad** | **−0.139 / −0.123 / −0.198 / −0.199 / −0.259** | **−0.183 (5)** | **+0.038** | −0.008 / −0.012 / −0.007 | **passes, ships** (largest gain) |
+| abd | −0.150 / −0.122 / −0.184 / −0.201 / −0.246 | −0.181 (5) | +0.039 | −0.013 / −0.012 / −0.020 | passes |
+
+With ad the QB pooled 2–8 is MAE 7.56 (from 7.74) and Spearman 0.473 (from 0.436); by horizon 2 / 4 / 6 / 8: MAE 7.21 /
+7.44 / 7.89 / 8.07, Spearman 0.536 / 0.478 / 0.442 / 0.440. **It closes part of the gap, not all of it**: of the 1.30
+points a QB loses between one week out and two-to-eight weeks out it recovers 0.18, of the Spearman 0.15 it recovers
+0.04. The rest is what a model without that week's line and injury news can know. The stability the guard reads (top 24
+by the market week, rank correlation with the later weeks' mean, 20 season × week cells, `iq1_horizon.py stability`):
+QB 0.67 (lowest 0.44) → **0.79 (lowest 0.59)**, RB 0.83 → 0.88, WR 0.87 → 0.89, TE 0.85 → 0.88. A caveat: in history
+the market week's listed starter is mostly the real one (nflverse corrects a played game's listing), so d is measured
+with a listing a little better than the live one.
+
+**In production** (`calibration.future_inputs`, called by `projections.project` on the season's rows before anything
+is predicted; `LEAGUE_LAB_FUTURE_INPUTS`, unset = on, `0` = v3.4's later weeks; `MODEL_VERSION` **v3.5**, fi1.0):
+every unplayed week without a line gets the team's own mean implied total and game total over its games so far,
+shrunk toward the league's by 3 games (the spread follows, the home team's view, as the frame keeps it); every week
+after the market week gets the player's market-week personnel inputs. Played weeks are never touched; the market week
+only while the books have posted no line for it. `implied_imputed` marks the imputed rows and pt1.0 skips them (it
+was measured on real lines). The scenarios (`signals`) refit on the same target rows (base = stored to 0.00e+00 on 130
+rows).
+
+**The 2026 board** (`league_lab_im1`, a full `project`, v3.4 → v3.5): weeks 1–4 frozen, **0 of 4,856 house rows' cells
+changed**; week 5 (the market week, lines posted) **0 cells changed**; weeks 5–18 now carry v3.5. 7,349 later-week
+rows got a line, 240 a different personnel input. Top 24 by week 5, correlation (Pearson / rank) with the weeks 6–18
+mean, reference league: QB **0.15 / 0.44 → 0.60 / 0.60**, RB 0.90 / 0.92 → 0.93 / 0.94, WR 0.94 / 0.93 → 0.97 / 0.95, TE
+0.86 / 0.77 → 0.92 / 0.85; K 0.48 and DEF 0.41 unchanged (kd1.0, not touched). Rest of season, Half PPR: Allen #5 → #3
+(225.6 → 241.6), Lamar Jackson #20 → #8, Joe Burrow #19 → #10, Malik Willis #4 → #13, Jayden Daniels #33 → #21 (104 →
+202); **Kyler Murray stays #4** (238.7 → 238.3): his week-5 projection is already a starter's 17.4 and his later weeks
+run 17–20 — the model's own view of him, not the missing line, and nothing here changes it. The nightly's
+projection-marts selection with the guard: PASS 148.
+
+**The guard** (`dbt/tests/assert_rest_of_season_follows_the_market_week.sql`, severity warn): among the top 24 at each
+position by the market-week projection (reference league), the rank correlation with the later weeks' mean must be at
+least 0.55 at QB and 0.65 at RB / WR / TE (below every v3.5 cell of the study). The v3.4 board read 0.44 at QB: it
+would have warned; the v3.5 board reads 0.60.
+
+**What the first nightly does once because of v3.5**: `backtests` runs `backtest-v2` (no rows for v3.5; it measures the
+model on the market week, which v3.5 does not change: v3.0's numbers again), `calibration-oof` rebuilds
+`ops.calibration_oof` for v3.5 (about 2–3 CPU-minutes), `project` recomputes the importance once (as for v3.4). No new
+table, no new step, no `scripts/nightly.sh` line.
+
 
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
