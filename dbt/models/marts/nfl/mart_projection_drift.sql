@@ -36,7 +36,8 @@ season as (
                / nullif(sum(n_players) filter (where is_complete_week), 0))::numeric, 3)  as frozen_share,
         string_agg(week::text, ', ' order by week)
             filter (where is_complete_week and coalesce(frozen_share, 0) < 1)             as refit_weeks,
-        max(model_version)                                                                as model_version,
+        -- ---- IP-1 fix round 2: the newest version by its numbers (as text 'v3.10' < 'v3.9')
+        (array_agg(model_version order by {{ version_key('model_version') }} desc nulls last))[1] as model_version,
         max(run_at)                                                                       as run_at
     from d
     group by 1, 2, 3
@@ -69,8 +70,9 @@ week_backtest as (
     from d
     left join lateral (
         select b.* from backtest as b
-        where b.league_id = d.league_id and b.position = d.position and b.model_version <= d.model_version
-        order by b.model_version desc
+        where b.league_id = d.league_id and b.position = d.position
+          and {{ version_key('b.model_version') }} <= {{ version_key('d.model_version') }}
+        order by {{ version_key('b.model_version') }} desc
         limit 1
     ) as bt on true
     where d.is_complete_week
@@ -83,7 +85,8 @@ season_backtest as (
            round(avg(backtest_mae)::numeric, 2)                                              as backtest_mae,
            round(avg(backtest_coverage_80)::numeric, 3)                                      as backtest_coverage_80,
            round(avg(backtest_interval_width)::numeric, 1)                                   as backtest_interval_width,
-           max(backtest_model_version)                                                       as backtest_model_version
+           (array_agg(backtest_model_version order by {{ version_key('backtest_model_version') }} desc nulls last))[1]
+                                                                                             as backtest_model_version
     from week_backtest
     group by 1, 2, 3
 )
@@ -122,7 +125,7 @@ left join season_backtest as sb on sb.league_id = s.league_id and sb.season = s.
 left join lateral (                -- no complete week yet: the newest backtested version at or before the board's
     select x.* from backtest as x
     where x.league_id = s.league_id and x.position = s.position
-      and x.model_version <= coalesce(sb.backtest_model_version, s.model_version)
-    order by x.model_version desc
+      and {{ version_key('x.model_version') }} <= {{ version_key('coalesce(sb.backtest_model_version, s.model_version)') }}
+    order by {{ version_key('x.model_version') }} desc
     limit 1
 ) as b on true

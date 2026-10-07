@@ -159,3 +159,19 @@ Outside my list: `dbt/models/marts/nfl/mart_projection_drift.sql` + its `schema.
   (new, 3), `web/src/components/home/home.ts`, `web/e2e/in1/fixtures.spec.ts`, `docs/METRICS.md`, `docs/WORDS.md`,
   `dbt/seeds/metric_registry.csv` (+1, st1.1 experimental), `CHANGELOG.md`.
 * **The nightly**: nothing (the var is off; the home is the web build). No `scripts/nightly.sh` line; no new env.
+
+### IP-1 fix round 2 2026-10-07 — "starter unclear", the flag; versions compare by number (branch `fix2/IP1` from `integ/IP` `3d1b76b`)
+
+* `api/league_lab_api/starters.py` `unclear(season, week) -> {gsis_id: {team, listed, played, role, words, last_week}}`
+  (the interface IP-2 reads; `last_week` is an extra key). Reads `analytics.dim_game` (the listing, the games),
+  `analytics.fct_player_game` (`dropbacks`, `played`), `analytics.dim_player` (names) — all on the hosted copy, no new
+  relation. As of the week (`week < W` only). `{}` on a missing relation, a week outside 1–22, an unlisted week or any
+  failure. Memo region `starters` (≤ 32 entries, 10 min; DEPLOY § Memory).
+* Re-measured through `unclear()`: 169 flags in 76 weeks of 2022 – 2026 wk 4 (46 / 33 / 48 / 37 / 5), 32 of 49 stale
+  listings marked, 137 flags not stale — the same as the round-1 measurement. 2026 week 5: CHI (Keenum / Bagent), SEA
+  (Lock / Darnold), WAS (Daniels / Kaliakmanis); week 4: SEA only (CHI's own week-4 game does not count); weeks 1 and 6:
+  none.
+* The review's L4: `dbt/macros/version_key.sql` (an integer array of a version's numbers) in `mart_projection_drift`
+  (the newest version, "at or before") and `mart_projection_backtest.is_current`; `assert_model_versions_compare_by_number`
+  (v3.9 < v3.10 …); the drift on this database identical before and after (24 columns, 8 rows).
+* Tests: `api/tests/test_ip1_starters.py` (5), `tests/test_ip1_qb.py` + the L4 text test (10); dbt PASS 9.

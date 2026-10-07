@@ -39,7 +39,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   watched one other QB lead two games), judged on identification accuracy: fixed 11 of 49 stale listings (needed 60%),
   broke 3 (allowed 1.8) — **not shipped** (dbt var `pn_starter_stale_rule`, off); the "starter unclear" label is described
   for the screen. The home's grades call a difference only from six weeks on and outside every past season: "… — too
-  few weeks to call that a difference", never "weak spot".
+  few weeks to call that a difference", never "weak spot". Round 2: the label's data half, `api/league_lab_api/starters.py`
+  `unclear(season, week)` (analytics `dim_game` + `fct_player_game` + `dim_player`, as of the week, `{}` on any
+  failure; 2026 week 5: CHI, SEA, WAS); model versions compare by their numbers in the drift and the backtest's
+  `is_current` (`version_key`; the review's L4).
 - **IP-2 — rankings for everyone, and "Who should I start?"** `/rankings` (a tab while browsing, a Players sub-tab with
   a league): this week's or the rest of the season's rankings at QB / RB / WR / TE / Flex (K and DEF where the scoring
   starts them) in the bar's scoring or the league's own, the range as a bar, the defense's matchup chip (never the

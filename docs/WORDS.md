@@ -574,6 +574,7 @@ season of the same model. "Weak spot" is never said.
 | the lead, otherwise | "Through week 9, the projections miss by about as much as in past seasons at every position, or less." | — |
 | the tile | **Average miss** "6.5 (before 5.9)"; in the bad color only when the lead calls a difference (`data-verdict` worse); "unclear" under six weeks is plain | red on three weeks |
 | "before" | the backtest of the model that made the weeks shown (`mart_projection_drift`, IP-1) | the newest model's backtest beside an older model's weeks |
+| starter unclear (`starters.unclear`, both quarterbacks of the team, printed as it is) | "Starter unclear: Seattle lists Drew Lock as the starter, but he did not drop back once in week 4; Sam Darnold took most of the dropbacks. Our projections assume the listing: Lock as the starter, Darnold as his backup." (teams by place, "the Rams / the Chargers / the Giants / the Jets list …") | "wrong starter", "the listing is wrong", "benched" (a flag is right only about one time in five) |
 <!-- ---- end IP-1 -->
 
 ## Adding to it
