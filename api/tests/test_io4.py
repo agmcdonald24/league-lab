@@ -224,9 +224,12 @@ def test_the_honesty_line_with_and_without_the_record(monkeypatch):
             {"corner_certainty": "likely", "corner_tier": "target", "n": 79, "vs_rest": -0.02, "vs_rest_lo": -1.11,
              "vs_rest_hi": 1.22}]
     assert LC.corner_sentence(rows, "2025 and 2026 weeks 1–4") == RECORD_WORDS
-    # this database has no ops.context_grade: the real module answers "not graded", the line is the inputs alone
-    CR.clear()
+    # ---- IP-3 fix round: the precondition stated, not assumed from the database (production has the record after the
+    # nightly): no record -> the line is the inputs alone
+    import copy
+    monkeypatch.setattr(CR, "summary", lambda: copy.deepcopy(CR.EMPTY))
     assert MB.projection_words() == MB.PROJECTION_WORDS == MB.PROJECTION_HEAD
+    # ---- end IP-3
     for w in (MB.PROJECTION_WORDS, MB.TONE_WORDS):
         assert "not been graded" not in w and "not graded" not in w
     assert "Who plays cornerback is not in it" in MB.PROJECTION_WORDS and "shown for context" in MB.PROJECTION_WORDS
@@ -255,7 +258,13 @@ def test_the_corner_moves_nothing():
 
 
 @needs_db
-def test_the_week_context_carries_the_corner_as_information(client):
+def test_the_week_context_carries_the_corner_as_information(client, monkeypatch):
+    # ---- IP-3 fix round: the board's honesty line is checked without the record (stated, not assumed from the database)
+    import copy
+
+    from league_lab_api import context_record as CR
+    monkeypatch.setattr(CR, "summary", lambda: copy.deepcopy(CR.EMPTY))
+    # ---- end IP-3
     MB.clear()
     ctx = MB.matchup_context(2026, 4)
     wr = [c for c in ctx.values() if c["cb"] is not None]
@@ -271,6 +280,13 @@ def test_the_week_context_carries_the_corner_as_information(client):
     j = client.get("/api/matchups/board?league=ref:half&position=WR&show=all&limit=100").json()
     assert all(r["context"]["tone"] == r["context"]["defense"]["tone"] for r in j["rows"])
     assert j["projection_words"] == MB.PROJECTION_WORDS and j["tone_words"] == MB.TONE_WORDS
+    # ---- IP-3 fix round: with the record (a graded answer), the line is the inputs and IO-1's sentence
+    monkeypatch.setattr(CR, "summary", lambda: {**copy.deepcopy(CR.EMPTY),
+                                                "corner": {"graded": True, "n": 2190, "words": RECORD_WORDS, "tiers": {}}})
+    MB.clear()
+    j = client.get("/api/matchups/board?league=ref:half&position=WR&show=all&limit=100").json()
+    assert j["projection_words"] == f"{MB.PROJECTION_HEAD} {RECORD_WORDS}"
+    # ---- end IP-3
 
 
 # ------------------------------------------------------------------ 4. the role-change columns on Stats

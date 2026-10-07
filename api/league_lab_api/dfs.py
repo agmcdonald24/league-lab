@@ -676,7 +676,8 @@ def _record() -> dict:
         return context_record.summary()
     except Exception:  # noqa: BLE001 - the record is never load-bearing for the board
         return {"corner": {"graded": False, "n": 0, "words": None, "tiers": {}},
-                "worth": {"graded": False, "n": 0, "words": None, "line": None}}
+                "worth": {"graded": False, "n": 0, "words": None, "line": None},
+                "role": {"graded": False, "n": 0, "words": None, "trends": {}}}     # ---- IP-3 fix round
 
 
 CORNER_TIER = {"difficult": "shutdown", "favorable": "target", "neutral": "solid"}
@@ -790,6 +791,8 @@ def context_for(season: int, week: int, rows: list[dict], by: str = "proj") -> t
     parts = _context_parts(season, week)
     rec = _record()                                                  # ---- IO-1
     tiers = rec["corner"].get("tiers") or {}                         # ---- IO-1
+    role_rec = rec.get("role") or {}                                 # ---- IP-3 fix round: the role trend's grade
+    role_words = role_rec.get("words") if role_rec.get("graded") else None
     fn = _matchup_fn()
     mc: dict[str, dict] = {}
     if fn is not None:
@@ -815,6 +818,12 @@ def context_for(season: int, week: int, rows: list[dict], by: str = "proj") -> t
         for s_ in sig:
             if s_["signal"] == "corner":
                 _corner_as_information(s_, (m or {}).get("cb"), tiers)
+            # ---- IP-3 fix round (Wave I-P): the role chip carries the record's grade, as the corner's chip does
+            elif s_["signal"] in ("role", "routes") and role_words:
+                s_["graded"] = role_words
+                cell = ((rec.get("role") or {}).get("trends") or {}).get(str(s_.get("trend") or ""))
+                s_["graded_effect"] = (cell or {}).get("effect")
+            # ---- end IP-3
         # ---- end IO-1
         out[r["key"]] = {"context": sig, "worth": ok, "worth_reasons": why}
     # ---- IO-1 fix round: "Worth a look" is off the screen; one line from the record says why (absent without it)
@@ -822,7 +831,8 @@ def context_for(season: int, week: int, rows: list[dict], by: str = "proj") -> t
             "lines": parts["lines"], "forecast": parts["forecast"], "projection": D.projection_table(),
             "in_words": D.IN_WORDS, "out_words": D.OUT_WORDS, "words": CONTEXT_WORDS, "worth_rule": WORTH_RULE_WORDS,
             "worth_line": rec["worth"].get("line") if rec["worth"].get("graded") else None,
-            "corner_record": rec["corner"]["words"] if rec["corner"].get("graded") else None}
+            "corner_record": rec["corner"]["words"] if rec["corner"].get("graded") else None,
+            "role_record": role_words}                               # ---- IP-3 fix round (None without the record)
     # ---- end IO-1
     return out, meta
 

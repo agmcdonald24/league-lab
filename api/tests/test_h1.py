@@ -4,6 +4,7 @@ projection leans on most, its grades), the rest of season in one round of querie
 from __future__ import annotations
 
 import json
+import re
 import time
 
 import numpy as np
@@ -176,7 +177,11 @@ def test_waivers_buy_low_sell_high_is_the_trade_finders(client, sql, league):
         assert r["fit_horizon"] == pytest.approx(b["fit_horizon"], abs=0.01) and r["diff_per_game"] < 0
         assert r["roster_id"] != team
     assert all(r["diff_per_game"] > 0 for r in d["sell_high"])
-    assert d["buy_line"].startswith("**Buy low") and d["sell_line"].startswith("**Sell high") and d["howto"]
+    # ---- IP-3 fix round (Wave I-P): the lists are named for what they are; no buy / sell on the strength of the gap
+    assert d["buy_line"].startswith("**") and d["sell_line"].startswith("**") and d["howto"]
+    assert not re.search(r"\b(buy low|sell high|buy|sell|due|bargain|regression)\b", d["buy_line"] + d["sell_line"], re.I)
+    assert d["titles"] == {"below": "Scoring below his work", "above": "Scoring above his work"} and d["gap_line"]
+    # ---- end IP-3
 
 
 @needs_db

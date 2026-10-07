@@ -143,7 +143,9 @@ HOWTO = (
     "and the schedule.\n"
     "- **Availability** says whose team he is on (or that he is a free agent), his injury status, and whether his "
     "game has started.\n"
-    "- **Value** compares what he scores with what his work is usually worth (above = running hot, below = due), and "
+    # ---- IP-3 fix round (Wave I-P): graded — the gap is what happened and the projection already counts it
+    "- **Value** compares what he scores with what his work is usually worth (above or below it is what happened: his "
+    "projection already counts it, and graded on past weeks it was no reason to buy or sell on its own), and "
     "says where he sits in his team's best lineup this week and how much that lineup would lose without him."
 )
 

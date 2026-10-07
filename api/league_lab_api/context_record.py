@@ -104,6 +104,38 @@ def _build() -> dict:
     return out
 
 
+# ---- IP-3 fix round (Wave I-P): the one line the Trades screen's "scoring below / above his work" lists carry
+def _sg(x) -> str:
+    """+0.5 / −0.9 (a true minus sign) / 0.0, as the record's sentences write an interval."""
+    v = round(float(x or 0), 1)
+    return "0.0" if v == 0 else f"{'+' if v > 0 else '−'}{abs(v):.1f}"
+
+
+def gap_line(trend: dict | None = None) -> str | None:
+    """"Their projections already expect the gap to close part-way: no edge in buying or selling on it — graded on 4,282
+    games (2025 and 2026 weeks 1–4, Half PPR)." from ``summary()["trend"]`` (a measured side says its number instead);
+    None without the record."""
+    t = trend if trend is not None else summary()["trend"]
+    if not t or not t.get("graded"):
+        return None
+    tags = t.get("tags") or {}
+    b, a = tags.get("below") or {}, tags.get("above") or {}
+    span = b.get("span") or a.get("span")
+    where = f" ({span}, Half PPR)" if span else " (Half PPR)"
+    n = int(t.get("n") or 0)
+    if b.get("effect") != "measured" and a.get("effect") != "measured":
+        return (f"Their projections already expect the gap to close part-way: no edge in buying or selling on it — "
+                f"graded on {n:,} games{where}.")
+    parts = []
+    for word, c in (("below", b), ("above", a)):
+        v = c.get("vs_rest")
+        if c.get("effect") == "measured" and v is not None:
+            parts.append(f"players {word} their work finished {abs(v):.1f} points {'above' if v > 0 else 'below'} the rest "
+                         f"against their projection ({_sg(c.get('lo'))} to {_sg(c.get('hi'))})")
+    return (f"Their projections already expect the gap to close part-way; graded on {n:,} games{where}, "
+            + " and ".join(parts) + ". The lists are ordered by lineup fit, not by the gap.")
+
+
 # ---- IP-3 (Wave I-P)
 def _cell(rows: list[dict], kind: str, grp: str, raw: bool = False) -> dict | None:
     """One graded group as the screens read it: n, the miss against the projection vs the rest with its interval,

@@ -6,6 +6,8 @@ League is on demand (Sleeper fixtures); the house leagues read their marts. Slee
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from league_lab import anyleague as A
 from league_lab import trades as T
@@ -219,7 +221,11 @@ def test_buy_low_sell_high_left_waivers_for_trades(client, league, team):
     w = client.get("/api/waivers", params={"league": league, "team": team}).json()
     assert "trade_lists" not in w and "upside" in w
     tl = client.get("/api/trades/lists", params={"league": league, "team": team}).json()
-    assert tl["buy_low"] and tl["buy_line"].startswith("**Buy low") and tl["sell_line"].startswith("**Sell high")
+    # ---- IP-3 fix round (Wave I-P): renamed — no buy / sell on the strength of the gap; the record's line (or the plain one)
+    assert tl["buy_low"] and tl["buy_line"].startswith("**") and tl["sell_line"].startswith("**")
+    assert not re.search(r"\b(buy low|sell high|buy|sell|due|bargain|regression)\b", tl["buy_line"] + tl["sell_line"], re.I)
+    assert tl["titles"]["below"] == "Scoring below his work" and tl["gap_line"]
+    # ---- end IP-3
     assert all(r["diff_per_game"] < 0 and r["roster_id"] != team for r in tl["buy_low"])
     assert all(r["diff_per_game"] > 0 for r in tl["sell_high"]) and len(tl["buy_low"]) <= 25
     wr = client.get("/api/trades/lists", params={"league": league, "team": team, "position": "WR"}).json()

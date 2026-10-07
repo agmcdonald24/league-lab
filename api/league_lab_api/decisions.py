@@ -3515,9 +3515,13 @@ SCENARIO_SQL = """select s.league_id, s.week, s.gsis_id, s.position, s.base_poin
 TRADE_POSITIONS = ("QB", "RB", "WR", "TE")
 # quoted from app/pages/6_Trade_Finder.py ("How to read the buy-low and sell-high lists")
 TRADE_HOWTO = (
-    "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG − xPPG**, points minus expected points "
-    "per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your "
-    "players scoring *more* than their work supports.",
+    # ---- IP-3 fix round (Wave I-P): graded (docs/METRICS.md cx1.1) — the gap is what happened and the projection already
+    # counts it, so the lists are named for what they are and ordered by lineup fit; nothing says buy / sell on the gap
+    "**Scoring below his work**: players on other teams scoring *less* than their work is usually worth (**PPG − xPPG**, "
+    "points minus expected points per game, below zero). **Scoring above his work**: your players scoring *more*. That is "
+    "what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect "
+    "it, so it is no reason to trade on its own. Both lists are ordered by **Fit**, from the projections.",
+    # ---- end IP-3
     "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your "
     "bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for "
     "this week and the next four, in your league's scoring.",
@@ -3734,27 +3738,55 @@ def _trade_lists(league_id: str, team: int, is_house: bool, od_info: dict) -> di
     top_buy = max(best.values(), key=lambda r: (r["fit_horizon"], r["gain_horizon"]), default=None)
     top_sell = next((r for r in sell_rows if (r["fit_horizon"] or 0) > 0), None)
     wk = weeks[0] if weeks else None
-    # quoted from app/pages/6_Trade_Finder.py (the buy-low / sell-high cards)
-    if top_buy is None:
-        buy_line = f"**Buy low:** nobody scoring below his usage would add more to your lineup than he is worth to his own over {span}."
-    else:
-        t = top_buy
-        buy_line = (f"**Buy low: ask {t['team_name']} about {t['player']['player_name']} ({t['player']['position']}).** "
-                    f"He scores {abs(t['diff_per_game']):.1f} per game below what his usage is worth, adds **{t['gain_week']:+.1f}** "
-                    f"to your week-{wk} lineup and costs them **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** over {span}).")
-    if top_sell is None:
-        sell_line = (f"**Sell high:** none of your players scoring above his usage is worth more to another lineup than to "
-                     f"yours over {span}.")
-    else:
-        t = top_sell
-        sell_line = (f"**Sell high: shop {t['player']['player_name']} ({t['player']['position']}) to {t['team_name']}.** "
-                     f"He scores {t['diff_per_game']:.1f} per game above what his usage is worth. Their week-{wk} lineup "
-                     f"gains **{t['gain_week']:+.1f}**, yours loses **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** "
-                     f"over {span}).")
+    # ---- IP-3 fix round (Wave I-P): the cards' sentences say what the gap is and lead with the fit (not "buy low")
+    buy_line, sell_line = below_line(top_buy, span, wk), above_line(top_sell, span, wk)
+    # ---- end IP-3
     return {"buy_low": buy_rows, "sell_high": sell_rows, "best_buy_by_position": best, "buy_line": buy_line,
             "sell_line": sell_line, "weeks": span, "howto": TRADE_HOWTO,
             "source": "app/pages/6_Trade_Finder.py (roster_value.trade_candidates; the card sentences quoted)",
             "points_source": "mart_player_availability" if is_house else "priced on request (research.league_season)"}
+
+
+# ---- IP-3 fix round (Wave I-P): the two lists' words (graded: the gap is already in the projection — docs/METRICS.md
+# cx1.1). The lists keep their keys (buy_low / sell_high) and their order (the lineup fit over the horizon, from the
+# projections; the gap only decides who is in a list and breaks exact ties): what changes is what they are called.
+LIST_TITLES = {"below": "Scoring below his work", "above": "Scoring above his work"}
+GAP_LINE_NO_RECORD = ("What happened, not a forecast: his projection already counts his work and his points. Ordered by "
+                      "lineup fit, from the projections.")
+
+
+def below_line(t: dict | None, span: str, wk) -> str:
+    """The "scoring below his work" card's sentence: the best fit first, the gap said as what it is."""
+    if t is None:
+        return (f"**Scoring below his work:** nobody on another team who scores below his work would add more to your "
+                f"lineup than he is worth to his own over {span}.")
+    return (f"**{t['player']['player_name']} ({t['player']['position']}, {t['team_name']}) scores "
+            f"{abs(t['diff_per_game']):.1f} per game below his work.** He would add **{t['gain_week']:+.1f}** to your "
+            f"week-{wk} lineup and cost them **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** over {span}): the "
+            "fit, from the projections, is the reason to ask about him — not the gap.")
+
+
+def above_line(t: dict | None, span: str, wk) -> str:
+    """The "scoring above his work" card's sentence."""
+    if t is None:
+        return (f"**Scoring above his work:** none of your players who scores above his work is worth more to another "
+                f"lineup than to yours over {span}.")
+    return (f"**{t['player']['player_name']} ({t['player']['position']}) scores {t['diff_per_game']:.1f} per game above "
+            f"his work.** {t['team_name']}'s week-{wk} lineup would gain **{t['gain_week']:+.1f}**, yours lose "
+            f"**{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** over {span}): the fit is the reason to offer him "
+            "— not the gap.")
+
+
+def gap_words() -> dict:
+    """The lists' titles and the one line under them: the record's grade (``context_record.gap_line``) or, without the
+    record, the plain line (no grade claimed)."""
+    try:
+        from . import context_record as CRX
+        line = CRX.gap_line()
+    except Exception:  # noqa: BLE001 - the record is never load-bearing for the lists
+        line = None
+    return {"titles": dict(LIST_TITLES), "gap_line": line or GAP_LINE_NO_RECORD, "gap_graded": line is not None}
+# ---- end IP-3
 
 
 def waiver_extras(league_id: str, team: int | None, week: int, is_house: bool, od_info: dict, position: str) -> dict:
@@ -3792,6 +3824,7 @@ def trade_lists(league_id: str, team: int, position: str | None = None, *, sourc
         out[k] = rows[:25]
     out.update({"league_id": str(league_id), "source": "database" if is_house else "sleeper", "roster_id": int(team),
                 "position": position, "timings_ms": {"total": round((time.perf_counter() - t0) * 1000, 1)}})
+    out.update(gap_words())                  # ---- IP-3 fix round: titles + the record's line (outside the memo)
     return out
 # ---- end IA-2
 
