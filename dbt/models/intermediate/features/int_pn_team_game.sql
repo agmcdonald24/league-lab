@@ -10,6 +10,8 @@
 --   team_targets / team_carries   fct_team_game (the denominators of the teammates' shares, never a sum of
 --                    player rows)
 --   game_no          the team's n-th regular-season game of the season (byes skipped)
+--   starter_source   'override' when the hand-kept list (seed starter_overrides, IQ-2) set an unplayed game's
+--                    starting_qb_id, else 'schedule' (the pick below)
 -- ---- IP-1 (Wave I-P): the starter from what happened (st1.0; docs/METRICS.md § "The quarterback weak spot").
 -- nflverse's schedule sometimes keeps the PRE-GAME projected starter after the game: the listed QB threw no pass
 -- (2022: 4 team-games, 2024: 33, 2025: 7, 2026 weeks 1-4: 5; none 2016-2021), e.g. WAS 2024 weeks 9-13 "Mariota"
@@ -143,8 +145,10 @@ st11 as (
                         where a.gsis_id = h.listed_qb_id and a.team = h.team and a.season = h.season and a.week = h.g2_week)
            )                                                                    as listing_stale
     from st11_hist as h
-)
+),
 
+-- ---- IQ-2 (Wave I-Q): the pick above is wrapped so the override list can set an unplayed game's starter
+picked as (
 select
     season, week, game_id, team, opponent, kickoff_at,
     {%- if var('pn_starter_from_play', false) %}
@@ -159,4 +163,30 @@ select
     listed_qb_id,
     is_played, team_snaps, team_targets, team_carries, game_no
 from {% if var('pn_starter_stale_rule', false) and not var('pn_starter_from_play', false) %}st11{% else %}guarded{% endif %}   -- off: st1.1's CTEs are never read
+),
 -- ---- end IP-1
+
+-- ---- IQ-2 (Wave I-Q): who starts, set by hand (seed starter_overrides -> int_starter_override; docs/METRICS.md
+-- § "Who starts"). A row in force sets starting_qb_id of the team's UNPLAYED games of weeks from_week ..
+-- through_week -- never a played game, so never a training row, a history input (`starts`, `last_starter`) or the
+-- record. Two rows on one game: the newest added_on wins. starter_source says where the pick came from.
+override_pick as (
+    select distinct on (p.game_id, p.team) p.game_id, p.team, o.gsis_id as override_qb_id
+    from picked as p
+    join {{ ref('int_starter_override') }} as o
+      on o.season = p.season and o.team = p.team and p.week >= o.from_week
+     and (o.through_week is null or p.week <= o.through_week)
+    where not p.is_played and o.in_force
+      and {{ var('starter_overrides', true) }}   -- the kill switch: --vars '{starter_overrides: false}' = the schedule as before
+    order by p.game_id, p.team, o.added_on desc, o.from_week desc, o.gsis_id
+)
+
+select
+    p.season, p.week, p.game_id, p.team, p.opponent, p.kickoff_at,
+    coalesce(op.override_qb_id, p.starting_qb_id)                            as starting_qb_id,
+    p.listed_qb_id,
+    p.is_played, p.team_snaps, p.team_targets, p.team_carries, p.game_no,
+    case when op.override_qb_id is not null then 'override' else 'schedule' end as starter_source
+from picked as p
+left join override_pick as op on op.game_id = p.game_id and op.team = p.team
+-- ---- end IQ-2

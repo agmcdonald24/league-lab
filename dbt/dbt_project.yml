@@ -125,6 +125,18 @@ seeds:
         no_peek_warnings: text
         label: text
         note: text
+    # ---- IQ-2 (Wave I-Q): who starts, set by hand (docs/METRICS.md § "Who starts"); one row per correction
+    starter_overrides:
+      +column_types:
+        season: integer
+        team: text
+        from_week: integer
+        through_week: integer
+        gsis_id: text
+        reason: text
+        source: text
+        added_on: date
+    # ---- end IQ-2
 
 tests:
   league_lab:
