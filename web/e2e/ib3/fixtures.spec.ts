@@ -51,11 +51,13 @@ test("Matchups: the tone is the signal, the rank small and one way, a corner cal
   await expect(page.getByTestId("heat-legend")).toHaveText(/Favorable\s*.*Neutral\s*.*Difficult/);
   const tones = await page.getByTestId("heatmap").locator("td[data-tone]").evaluateAll((els) => els.map((e) => e.getAttribute("data-tone")));
   expect(new Set(tones)).toEqual(new Set(["favorable", "neutral", "difficult"]));
-  // cornerbacks: the tone and the certainty label beside it, the rank in words, no shutdown badge
+  // cornerbacks: the corner named (his quarter, neutral: IO-4 fix round — no tone from the corner) and the certainty
+  // label beside it, the rank in words, no shutdown badge
   const cbs = page.locator('[data-testid="cb-section"] > [data-testid="cb-card"]');
   await expect(cbs.first()).toBeVisible();
   for (const c of await cbs.all()) {
-    await expect(c.getByTestId("tone-chip").getByTestId("rank-small")).toHaveText(/^(likely|unclear|no call)$/);
+    await expect(c.getByTestId("tone-chip")).toHaveCount(0);
+    await expect(c.getByTestId("cb-info").getByTestId("rank-small")).toHaveText(/^(likely|unclear|no call)$/);
     await expect(c.getByTestId("cb-certainty")).toHaveText(/^(likely|unclear|no call)/i);
   }
   await expect(page.getByTestId("cb-section")).not.toContainText(/shutdown/i);

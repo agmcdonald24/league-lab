@@ -1526,7 +1526,7 @@ the citation is ESPN's (or Sleeper's) record of it, dated with the report's time
 unreachable; a depth-chart change): `event` and `url` are null and the overlay's status, source and date stay. The
 words and the numbers do not change.
 
-## Matchups for everyone: the board and the one tone (mb1.0, IN-3, Wave I-N, 2026-10-06; `matchup_board.matchup_context`, `GET /api/matchups/board`)
+## Matchups for everyone: the board and the one tone (mb1.0, IN-3, Wave I-N, 2026-10-06; mb1.1 the Wave I-O fix round: the defense's tone alone; `matchup_board.matchup_context`, `GET /api/matchups/board`)
 
 **The context** (`matchup_board.matchup_context(season, week, gsis_ids=None)`; DFS and the home read it). One entry per
 QB / RB / WR / TE with a game in the week: the week's projection rows (`mart_player_week_projections`, one row per
@@ -1539,28 +1539,35 @@ absent). **Scoring-free**: one scale for every league.
   `certainty` likely (his located targets lean 15+ points to one side) / unclear (either outside corner) / no call;
   `corner` = the corner named first and `corner_rank` his two-season rank (1 = hardest to throw on, of `cb_n_ranked`);
   `shutdown` = every named corner is a shutdown corner (the top quarter): on a likely call the one, on an unclear call
-  both; the corner's `tone` = its quarter (shutdown → difficult, solid → neutral, target → favorable; IB-3's rule for an
-  unclear call). A receiver with no row for the game: "no call". **A corner the call names who is not expected to
+  both; `tier` = the first named corner's quarter (shutdown = the top quarter, solid = the middle half, target = the
+  bottom quarter; None when unranked) — **information**: `cb.tone` is always None (mb1.1, the Wave I-O fix round). A
+  receiver with no row for the game: "no call". **A corner the call names who is not expected to
   play** (listed on the depth chart, but the availability overlay says he cannot play: `cards.corner_personnel`, the
   matchup evidence's own read) → "no call" ("no corner call: Trent McDuffie, named on his side, is not expected to
-  play"): the context never says "a shutdown corner" about a corner who is out; the row's evidence names who is
-  expected instead.
-* **`tone` — the one read of the two** (`combine_tone`). The defense's tone is the base; the corner moves it only on a
-  **likely** call: a likely difficult (shutdown) or favorable (target) corner moves a neutral defense to its side,
-  confirms the same side, and cancels the opposite side to neutral. A solid corner, an unranked one, an unclear call or
-  no call never moves it; no defense read → no tone (unknown is not neutral).
+  play"): the context never names as across from him a corner who is out; the row's evidence names who is expected
+  instead.
+* **`tone` = the defense's alone** (`combine_tone`, mb1.1; **changed 2026-10-06, the Wave I-O fix round**, the PO's
+  decision on IO-1's grade below — § "The context record": on 2,190 called receiver-games, 2025 and 2026 weeks 1–4,
+  as-of ranks, a likely shutdown corner −0.39 points against the other called receivers (−1.39 to +0.72, 99 games), a
+  likely easy corner −0.02 (−1.11 to +1.22, 79 games): no measurable effect). The corner, its certainty and its quarter
+  never move it; no defense read → no tone (unknown is not neutral).
 
-  | defense \ likely corner | favorable | neutral | difficult | unclear / no call / unranked |
-  |---|---|---|---|---|
-  | favorable | favorable | favorable | neutral | favorable |
-  | neutral | favorable | neutral | difficult | neutral |
-  | difficult | neutral | difficult | difficult | difficult |
-  | none | none | none | none | none |
-* `words` = the defense's sentence and the corner's, short enough for a home row or a DFS chip (the merge's fix):
-  "…; Trent McDuffie (a shutdown corner, #3 of 74) is likely across from him" · "…; either Woolen (shutdown, #8 of 69)
-  or Mitchell (shutdown, #9 of 69) could be across from him" · "…; no corner call: too few targets to tell his side";
-  ", but" when the two point opposite ways. The corner's kind (shutdown / easy to throw on / average) carries the
-  direction of the rank (#1 = the hardest to throw on). 86 characters on average, 151 at most (week 4).
+  | defense \ corner | any corner, any certainty, or no call |
+  |---|---|
+  | favorable | favorable |
+  | neutral | neutral |
+  | difficult | difficult |
+  | none | none |
+
+  Until mb1.1 (Wave I-N, mb1.0) a likely corner moved the tone: a shutdown / easy corner moved a neutral defense to its
+  side and cancelled the opposite side to neutral.
+* `words` = the defense's sentence only (mb1.1): "Atlanta gives up the 7th-most points to receivers." The corner's
+  sentence is `cb.words`, short enough for a DFS chip, in plain words for the quarter: "Trent McDuffie (a top-quarter
+  corner, #3 of 74) is likely across from him" · "either Woolen (top quarter, #8 of 69) or Mitchell (top quarter, #9 of
+  69) could be across from him" · "no corner call: too few targets to tell his side" (mb1.0 said "a shutdown corner",
+  "easy to throw on", "an average corner" and joined the two sentences). The board and the "My players" view show the
+  corner in neutral ink (no tone colour, no "Shutdown corner" badge); the home's "Matchups to target" prints the
+  defense's sentence only.
 * Cached per (season, week) in the memory budget's `matchup_week` region (≤ 8 entries: the context, the corners now,
   the evidence; 10 minutes; ~800 players); each league scoring's board frame in `matchup_board` (≤ 24, least recently
   used first), so cycling the 20 reference scorings never evicts the week (the review's L2, fixed at the merge).
@@ -1575,8 +1582,8 @@ corners in words, the certainty in words, his history against the likely corner)
 (`research.matchup_evidence` on the reference mart, as the player card has it). A real league adds who has him; a
 reference key never does. `q` = 2–40 characters, matched as text on the name (letters only after normalising; a
 character no name has — `%`, `_`, a digit — matches nobody); `game` = one of the week's `dim_game` ids; `tone` =
-favorable / neutral / difficult / none; `sort` = projection (default) / tone (best matchup first) / corner (the
-easiest corner to throw on first, no ranked corner last); `limit` 1–100 (25), `offset` 0–5,000. The evidence does not
+favorable / neutral / difficult / none (the defense's tone, mb1.1); `sort` = projection (default) / tone (best matchup
+first: the defense's) / corner (the easiest corner to throw on first, no ranked corner last — a sort, not a claim); `limit` 1–100 (25), `offset` 0–5,000. The evidence does not
 depend on the league (its ranks are the reference mart's): it is kept per week for every league. Timings on the
 sandbox (the fixture API over HTTP, WR, `ref:half`, six workers sharing two cores): **cold 0.59–0.64 s** (a fresh
 process: the pool, the week's board, the prices), **warm 15–19 ms** (a house league 22 ms; `limit=100` 25 ms warm,

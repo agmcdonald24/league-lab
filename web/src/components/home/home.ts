@@ -64,16 +64,14 @@ export function toneOf(r: BoardRow): { tone: MatchupTone | null; words: string |
 const sentence = (w: string) => (/[.!?]$/.test(w) ? w : `${w}.`).replace(/^./, (c) => c.toUpperCase());
 
 /** The home's one line for a matchup (IN-1 fix round, read with the real board): the defense's sentence — what the
- *  tone stands on — plus the corner's only when the call is likely (an unclear call never moves the tone, and two
- *  corners' ranks in a row made five rows a page long). The board's full sentence is one tap away (Matchups). */
+ *  tone stands on (IO-4 fix round: the corner's sentence no more; the board shows the corner, one tap away). */
 export function homeWords(r: BoardRow): string | null {
   const c = r.context;
   if (!c) return null;
+  // ---- IO-4 fix round (Wave I-O): the defense's sentence only, never the corner's (graded: no measurable effect)
   const d = c.defense?.words ?? null;
-  const cb = c.cb && c.cb.certainty === "likely" ? c.cb.words : null;
-  if (d && cb) return `${sentence(d)} ${sentence(cb)}`;
-  if (d) return sentence(d);
-  return c.words ?? null;
+  return d ? sentence(d) : null;
+  // ---- end IO-4
 }
 
 export const TONE_WORDS = { favorable: "Favorable", neutral: "Neutral", difficult: "Difficult" } as const;

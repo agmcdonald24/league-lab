@@ -752,6 +752,10 @@ def matchups_defense(league_id: str, *, position: str | None = None, source: str
             **({"team": team, "starters": defense_starters(ctx, int(team), pos)} if team is not None else {})}
 
 
+COVER_SPLIT_NOTE = ("Shutdown here = the corner's rank over the season to date, not what was known in the week of the "
+                    "game.")                                    # ---- IO-4 fix round (the best-corners split's ranks)
+
+
 # ---- IB-3 (Wave I-B): matchup meaning first. Every defense-vs-position cell and every cornerback call carries a tone
 # (favorable / neutral / difficult: the main signal on the screen), the rank runs ONE way on both routes (1 = the
 # toughest for the offense: the defense that gives up the fewest points to the position, the corner hardest to throw
@@ -973,7 +977,10 @@ def matchups_cb(league_id: str, *, team: int | None = None, limit: int | None = 
             pts = pts[pts["played"].fillna(False).astype(bool)][["gsis_id", "game_id", "points"]]
             sg = called.merge(pts, on=["gsis_id", "game_id"], how="inner")
             split = {r["gsis_id"]: {k: r[k] for k in ("ppg_vs_shutdown", "games_vs_shutdown", "ppg_vs_rest", "games_vs_rest")}
-                     | {"text": M.cover_split_text(r)} for r in _records(M.cover_split(sg))}
+                     | {"text": M.cover_split_text(r), "note": COVER_SPLIT_NOTE}           # ---- IO-4 fix: the note
+                     for r in _records(M.cover_split(sg))}
+            # ---- IO-4 fix round: the mart's cover_rank / cover_label for a past week are the season's ranks to date
+            # (look-ahead, IO-1 found), not what was known that week; said beside the split, not rebuilt tonight
     page = decorate(cbm, ctx)
     out = []
     # ---- IF-3: the corners now, for every defense on the page at once; this league's ranks (as on Compare)

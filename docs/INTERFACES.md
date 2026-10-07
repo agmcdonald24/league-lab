@@ -21,11 +21,13 @@ except Exception:
 gsis_id -> {"opponent": "KC", "home": bool | None,
             "defense": {"tone": "favorable" | "neutral" | "difficult" | None, "tough_rank": int | None,
                         "n_ranked": int | None, "words": str | None},          # defense vs his position
-            "cb": {"tone": same | None, "certainty": "likely" | "unclear" | "no call",
+            "cb": {"tone": None,                     # always None since the Wave I-O fix round: the corner moves nothing
+                   "certainty": "likely" | "unclear" | "no call",
                    "corner": str | None, "corner_rank": int | None, "shutdown": bool,
-                   "words": str | None} | None,                               # wide receivers only
-            "tone": same | None,          # the one read of the two together
-            "words": str | None}          # one sentence a screen can print as it is
+                   "tier": "shutdown" | "solid" | "target" | None,   # his quarter: top / middle half / bottom
+                   "words": str | None} | None,               # wide receivers only: the corner's sentence
+            "tone": same | None,          # the defense's tone alone
+            "words": str | None}          # the defense's sentence, a screen prints it as it is
 ```
 
 * **Who is in it**: every QB / RB / WR / TE with a game in `week` (the week's projection rows, plus every receiver the
@@ -37,18 +39,22 @@ gsis_id -> {"opponent": "KC", "home": bool | None,
   "corner": None, "corner_rank": None, "shutdown": False, "words": "no corner call: …"}` — also when a corner the call
   names is not expected to play (the availability overlay): "no corner call: X, named on his side, is not expected to
   play".
-* **`tone`**: the defense's tone, moved by the corner only on a likely call (a likely shutdown corner turns neutral
-  into difficult, a likely easy one turns it favorable, a corner against the defense's read cancels it to neutral); an
-  unclear call, no call, a solid or unranked corner never moves it; no defense read, no tone. The table: METRICS §
-  "Matchups for everyone".
+* **`tone`** (changed in the Wave I-O fix round, mb1.1): **the defense's tone alone**. IO-1 graded the corner calls
+  (2,190 called receiver-games, as-of ranks): a likely shutdown corner −0.39 points against the rest (−1.39 to +0.72),
+  a likely easy corner −0.02 (−1.11 to +1.22) — no measurable effect — so the corner is information (`cb.corner`,
+  `corner_rank`, `tier`, `certainty`, `shutdown`, `cb.words`) and colours, filters and words nothing; `cb.tone` is
+  always None and `words` is the defense's sentence. No defense read, no tone. DFS's graded corner chip can read the
+  quarter from `cb.tier` (it read `cb.tone`). METRICS § "Matchups for everyone".
 * **In the projection?** The defense against the position is (the projection's opponent features); the corner is not.
-  A screen that shows the corner says "not in the projection" (`matchup_board.PROJECTION_WORDS` has the sentence).
+  A screen that shows the corner says "not in the projection" (`matchup_board.projection_words()`: the inputs, then
+  IO-1's graded sentence from `context_record.summary()` when the record exists).
 * **Cost**: a few cached queries per (season, week), kept 10 minutes in the `matchup_week` memory region (apart from the per-scoring boards' `matchup_board`); ~170 ms
   cold, ~6 ms warm. Each call returns its own copy. Never raises.
 
 ### `GET /api/matchups/board`
 
-`?league=&position=WR|TE|RB|QB&q=&game=&tone=&sort=&limit=&offset=` (the `research` bucket; a reference key answers
+`?league=&position=WR|TE|RB|QB&q=&game=&tone=&sort=&limit=&offset=&show=to_play|all` (IO-4: `show`, `game_state`, a
+real league's own defense rank) (the `research` bucket; a reference key answers
 without ownership, a house or on-demand league adds `rostered_by_roster_id` / `rostered_by_team`).
 
 ```text

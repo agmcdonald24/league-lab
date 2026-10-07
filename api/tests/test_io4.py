@@ -11,8 +11,6 @@
 from __future__ import annotations
 
 import re
-import sys
-import types
 
 import pandas as pd
 import pytest
@@ -211,26 +209,68 @@ def test_a_real_league_reads_the_defense_rank_the_heatmap_shows(client):
         assert r["context"]["defense"] == ref["defense"] and r["context"]["tone"] == ref["tone"]
 
 
-def test_the_record_sentence_replaces_not_graded_only_when_graded(monkeypatch):
-    assert MB.projection_words() == MB.PROJECTION_WORDS                 # IO-1's module absent in this branch
-    fake = types.ModuleType("league_lab_api.context_record")
-    words = ("Receivers facing a likely shutdown corner scored 0.3 points under their projection on average over 212 "
-             "games (−0.9 to +0.4) — no measurable effect")
-    fake.summary = lambda: {"corner": {"graded": True, "n": 212, "words": words},
-                            "worth": {"graded": False, "n": 0, "words": None}}
-    monkeypatch.setitem(sys.modules, "league_lab_api.context_record", fake)
-    import league_lab_api
-    monkeypatch.setattr(league_lab_api, "context_record", fake, raising=False)
+# IO-1's corner sentence as its grade writes it (``context_record.corner_sentence`` on the fix round's numbers)
+RECORD_WORDS = ("Graded on 2025 and 2026 weeks 1–4 (Half PPR): receivers with a likely shutdown corner finished 0.4 points "
+                "below the other receivers against their projection (−1.4 to +0.7; 99 games), those with a likely easy one "
+                "level with them (−1.1 to +1.2; 79 games) — no measurable effect either way.")
+
+
+def test_the_honesty_line_with_and_without_the_record(monkeypatch):
+    from league_lab import context_record as LC
+
+    from league_lab_api import context_record as CR
+    rows = [{"corner_certainty": "likely", "corner_tier": "shutdown", "n": 99, "vs_rest": -0.39, "vs_rest_lo": -1.39,
+             "vs_rest_hi": 0.72},
+            {"corner_certainty": "likely", "corner_tier": "target", "n": 79, "vs_rest": -0.02, "vs_rest_lo": -1.11,
+             "vs_rest_hi": 1.22}]
+    assert LC.corner_sentence(rows, "2025 and 2026 weeks 1–4") == RECORD_WORDS
+    # this database has no ops.context_grade: the real module answers "not graded", the line is the inputs alone
+    CR.clear()
+    assert MB.projection_words() == MB.PROJECTION_WORDS == MB.PROJECTION_HEAD
+    for w in (MB.PROJECTION_WORDS, MB.TONE_WORDS):
+        assert "not been graded" not in w and "not graded" not in w
+    assert "Who plays cornerback is not in it" in MB.PROJECTION_WORDS and "shown for context" in MB.PROJECTION_WORDS
+    # with the record: the inputs, then IO-1's sentence
+    monkeypatch.setattr(CR, "summary", lambda: {"corner": {"graded": True, "n": 2190, "words": RECORD_WORDS, "tiers": {}},
+                                                "worth": {"graded": False, "n": 0, "words": None}})
     got = MB.projection_words()
-    assert got.endswith(words + ".") and "has not been graded yet" not in got
-    assert got.startswith("What the projection counts:")
-    fake.summary = lambda: {"corner": {"graded": False, "n": 0, "words": None}, "worth": {"graded": False, "n": 0,
-                                                                                           "words": None}}
+    assert got == f"{MB.PROJECTION_HEAD} {RECORD_WORDS}"
+    monkeypatch.setattr(CR, "summary", lambda: {"corner": {"graded": False, "n": 0, "words": None}, "worth": {}})
     assert MB.projection_words() == MB.PROJECTION_WORDS
+
     def boom():
         raise RuntimeError("no table")
-    fake.summary = boom
+    monkeypatch.setattr(CR, "summary", boom)
     assert MB.projection_words() == MB.PROJECTION_WORDS
+
+
+def test_the_corner_moves_nothing():
+    """The PO's decision on IO-1's grade (no measurable effect): every combination gives the defense's tone."""
+    import itertools
+    for d, c, cert in itertools.product((*MB.TONES, None), (*MB.TONES, None), ("likely", "unclear", "no call", None)):
+        assert MB.combine_tone(d, c, cert) == d
+    assert MB._sentence({"words": "Kansas City gives up the 9th-fewest points to receivers"},
+                        {"words": "McDuffie (a top-quarter corner, #2 of 74) is likely across from him", "tone": None,
+                         "certainty": "likely"}, "difficult") == "Kansas City gives up the 9th-fewest points to receivers."
+
+
+@needs_db
+def test_the_week_context_carries_the_corner_as_information(client):
+    MB.clear()
+    ctx = MB.matchup_context(2026, 4)
+    wr = [c for c in ctx.values() if c["cb"] is not None]
+    likely = [c for c in wr if c["cb"]["certainty"] == "likely"]
+    assert wr and likely
+    for c in wr:
+        assert c["cb"]["tone"] is None and c["tone"] == c["defense"]["tone"]
+        assert c["words"] == (f"{c['defense']['words']}." if c["defense"]["words"] else None)
+        assert not any(w in (c["cb"]["words"] or "") for w in ("shutdown corner", "easy to throw on"))
+    tiers = {c["cb"]["tier"] for c in likely}
+    print("likely calls:", len(likely), "tiers:", sorted(t or "-" for t in tiers))
+    assert tiers <= {"shutdown", "solid", "target", None} and tiers - {None}
+    j = client.get("/api/matchups/board?league=ref:half&position=WR&show=all&limit=100").json()
+    assert all(r["context"]["tone"] == r["context"]["defense"]["tone"] for r in j["rows"])
+    assert j["projection_words"] == MB.PROJECTION_WORDS and j["tone_words"] == MB.TONE_WORDS
 
 
 # ------------------------------------------------------------------ 4. the role-change columns on Stats
@@ -595,3 +635,75 @@ def test_league_setup_threads_spend_the_same_clients_share():
             A.user_leagues("test_manager", 2026)
     finally:
         PS.reset()
+
+
+# ------------------------------------------------------------------ fix round, review L3: no pool drops the client
+# Every thread pool or thread the code starts: it carries the request's client (``contextvars.copy_context``), or it
+# is listed here with why it does not need to. A new pool on a request path that is neither fails the test.
+NEEDS_NO_CLIENT = {
+    ("api/league_lab_api/events.py", "_start"): "the event store's writer thread: database writes, no provider call",
+    ("api/league_lab_api/usage.py", "submit"): "the usage counts' writer thread: database writes, no provider call",
+    ("api/league_lab_api/outlook_store.py", "offer"): "the outlook snapshots' writer thread: database writes only",
+    ("api/league_lab_api/news.py", "recent"): "ESPN's player news: its own bucket (NF.feed), not Sleeper / MFL",
+    ("src/league_lab/injury_feed.py", "snapshot"): "the injury feed's background refresh: one copy for everyone, ESPN",
+}
+
+
+def _pools() -> list[tuple[str, str, bool]]:
+    import ast
+
+    from league_lab_api.settings import ROOT
+    out = []
+    for rel in ("api/league_lab_api", "src/league_lab"):
+        for f in sorted((ROOT / rel).glob("*.py")):
+            text = f.read_text()
+            for fn in ast.walk(ast.parse(text)):
+                if isinstance(fn, ast.FunctionDef | ast.AsyncFunctionDef):
+                    seg = ast.get_source_segment(text, fn) or ""
+                    if "ThreadPoolExecutor(" in seg or "threading.Thread(" in seg:
+                        out.append((f"{rel}/{f.name}", fn.name, "copy_context" in seg))
+    return out
+
+
+def test_every_pool_carries_the_client_or_says_why_not():
+    pools = _pools()
+    for path, fn, carries in pools:
+        print(f"{path}:{fn}: {'carries the client' if carries else NEEDS_NO_CLIENT.get((path, fn), 'DROPS IT')}")
+    assert {(p, f) for p, f, c in pools if c} >= {("api/league_lab_api/availability.py", "contexts"),
+                                                  ("src/league_lab/anyleague.py", "user_leagues")}
+    dropped = [(p, f) for p, f, c in pools if not c and (p, f) not in NEEDS_NO_CLIENT]
+    assert dropped == [], f"a thread pool that drops the request's client: {dropped}"
+
+
+def test_the_roster_contexts_pool_carries_the_client(monkeypatch):
+    """Review L3: ``availability.contexts`` (reached from decisions through ``A.lineup_rows``) read rosters in a pool
+    whose threads saw no client — their Sleeper calls were charged to the global bucket only."""
+    import threading
+
+    from league_lab_api import availability as AV
+    seen = []
+
+    def fake(league_id, rid, week=None, house=None):
+        seen.append((PS.CLIENT.get(), threading.get_ident()))
+        return None
+    monkeypatch.setattr(AV, "roster_context", fake)
+    with PS.acting_for("203.0.113.40"):
+        AV.contexts("9000000000000000001", [1, 2, 3, 4, 5, 6], workers=4)
+    assert len(seen) == 6 and {c for c, _ in seen} == {"203.0.113.40"}
+    assert len({t for _, t in seen}) >= 1
+    seen.clear()
+    AV.contexts("9000000000000000001", [1, 2, 3])                   # no client (the nightly, a test): none in the threads
+    assert {c for c, _ in seen} == {None}
+
+
+def test_starlettes_threadpool_carries_the_client():
+    """A sync route and ``run_in_threadpool`` (DFS, the blog editor) run in Starlette's threadpool: anyio copies the
+    context, so the client set by the limiter's middleware is there."""
+    import asyncio
+
+    from starlette.concurrency import run_in_threadpool
+
+    async def go():
+        with PS.acting_for("203.0.113.41"):
+            return await run_in_threadpool(PS.CLIENT.get)
+    assert asyncio.run(go()) == "203.0.113.41"
