@@ -7,7 +7,7 @@
   // playoffs; ?window=), with one line saying why; suggestions the sanity bound set aside are counted under the list.
   // IB-2 (Wave I-B): each suggestion's card is the package, the dial's label, your gain and ONE reason (when the gain
   // comes, or who cannot play); "Try it" opens the calculator. A name opens the research pane ("Add to trade").
-  import { get, peek, Unauthorized, tradePaths, type Partners, type PartnerRow, type TradeLists, type TradePlayer, type TradeWindow } from "../lib/api";
+  import { get, peek, Unauthorized, tradePaths, type Partners, type PartnerRow, type TradeListsGraded as TradeLists, type TradePlayer, type TradeWindow } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { md, withContext } from "../lib/md";
   import { errorWords, f1, partnerLine, s1, windowOf } from "../lib/decisions";
@@ -41,7 +41,7 @@
 
   let best = $state<Partners | null>(null); // want = ALL: the answer card
   let finder = $state<Partners | null>(null); // the partner finder's list (want)
-  let lists = $state<TradeLists | null>(null); // buy low / sell high
+  let lists = $state<TradeLists | null>(null); // scoring below / above his work (IP-3: was "buy low / sell high")
   let error = $state<string | null>(null);
 
   function fail(e: unknown) {
@@ -283,10 +283,13 @@
     {#if lists && (lists.buy_line || lists.buy_low.length)}
       {@const tl = lists}
       <section class="space-y-3" data-testid="buy-sell">
-        <h2 class="text-xl font-bold">Buy low, sell high</h2>
-        <p class="text-sm text-ink-3">Players scoring below (or above) what their work is worth, in {scoring}: trades to ask about.</p>
+        <!-- ---- IP-3 fix round (Wave I-P): named for what they are (graded: the gap is already in the projection) -->
+        <h2 class="text-xl font-bold">Scoring below or above their work</h2>
+        <p class="text-sm text-ink-3">Players scoring below (or above) what their work is usually worth, in {scoring}, ordered by how much they fit a lineup.</p>
+        {#if tl.gap_line}<p class="text-sm text-ink-2" data-testid="gap-line">{tl.gap_line}</p>{/if}
+        <!-- ---- end IP-3 -->
         <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
-          <Card title="Buy low" testid="buy-low">
+          <Card title={tl.titles?.below ?? "Scoring below his work"} testid="buy-low">
             {#if tl.buy_line}<p class="text-base leading-snug" data-testid="buy-line"><Md text={tl.buy_line} {ctx} /></p>{/if}
             {#if tl.best_buy_by_position && Object.keys(tl.best_buy_by_position).length}
               <h3 class="ll-label mt-3">Best by position</h3>
@@ -306,7 +309,7 @@
               </ul>
             {/if}
           </Card>
-          <Card title="Sell high" testid="sell-high">
+          <Card title={tl.titles?.above ?? "Scoring above his work"} testid="sell-high">
             {#if tl.sell_line}<p class="text-base leading-snug" data-testid="sell-line"><Md text={tl.sell_line} {ctx} /></p>{/if}
             {#if tl.sell_high.length}
               <ul class="-mx-4 mt-2 divide-y divide-line">
@@ -327,7 +330,7 @@
           </Card>
         </div>
         {#if tl.buy_low.length}
-          <Expander title={`Buy low · ${tl.buy_low.length} players scoring below their usage`} testid="buy-list">
+          <Expander title={`${tl.titles?.below ?? "Scoring below his work"} · ${tl.buy_low.length} players on other teams`} testid="buy-list">
             <ul class="-mx-3 divide-y divide-line">
               {#each tl.buy_low as r, i (`${r.player.sleeper_id}|${i}`)}
                 <li>
@@ -358,7 +361,8 @@
             "- **Try it** opens the trade calculator with the trade filled in: tick players both ways and the dial shows the **effect on their starters** — what the other team's best lineup gains or loses over the weeks you picked, by our numbers (about even under 2 points, improves 2 to 6, a lot over 6). It is lineup fit, not a guess at whether they would accept.\n" +
             "- **Fit** is what the starting lineups gain. **Market** is what the players are worth on the market: their projected points for the rest of the season above the best free agent at their position. They are never added together: a player can be worth a lot and still sit on your bench. The verdict reads both. It knows nothing of draft picks, next season or what the other manager believes.\n" +
             "- **Roster size**: if a team gets more players than it gives, it has to cut someone: the player it would miss least, and that loss is in the numbers.\n" +
-            "- **Buy low**: players on other teams scoring *less* than their work is worth (points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports. **Fit** is what the new team gains minus what the old team loses over the next four weeks.",
+            // ---- IP-3 fix round (Wave I-P): graded — what the gap is, never a reason to buy or sell on its own
+            "- **Scoring below his work**: players on other teams scoring *less* than their work is usually worth (points minus expected points per game, below zero); **Scoring above his work**: your players scoring *more*. That is what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect it, so it is no reason to trade on its own. Both lists are ordered by **Fit**: what the new team's lineup gains minus what the old team's loses over the next four weeks, from the projections.",
         )}
       </div>
     </Expander>

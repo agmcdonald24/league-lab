@@ -143,3 +143,96 @@ def test_the_records_reason_is_the_screens(case):
 def test_trends_carries_the_record(client):
     d = client.get(f"/api/trends?league={DYNASTY}&view=all&limit=5&metrics=none").json()
     assert "record" in d and set(d["record"]) >= {"graded", "n", "words", "head", "tags"}
+
+
+# ------------------------------------------------------------------------------ fix round: the grade where it is implied
+GRADED_ROLE = "Graded on 2025 weeks 5–18 (Half PPR), in their next game: after \"role up\" players finished 0.2 points …"
+
+
+def _summary(role: bool = True, trend: bool = True, measured: bool = False) -> dict:
+    import copy
+
+    from league_lab_api import context_record as CR
+    s = copy.deepcopy(CR.EMPTY)
+    if role:
+        s["role"] = {"graded": True, "n": 1837, "words": GRADED_ROLE,
+                     "trends": {"up": {"n": 1022, "vs_rest": 0.22, "lo": -0.21, "hi": 0.64, "effect": "none"}, "down": None}}
+    if trend:
+        below = {"n": 2467, "vs_rest": -0.6 if measured else 0.17, "lo": -0.9 if measured else -0.15,
+                 "hi": -0.3 if measured else 0.49, "effect": "measured" if measured else "none",
+                 "span": "2025 and 2026 weeks 1–4", "raw": 1.54}
+        s["trend"] = {"graded": True, "n": 4282, "words": TREND_WORDS, "head": HEAD,
+                      "tags": {"below": below, "above": {"n": 1815, "vs_rest": -0.15, "lo": -0.45, "hi": 0.15,
+                                                         "effect": "none", "span": "2025 and 2026 weeks 1–4", "raw": -1.91}}}
+    return s
+
+
+def test_the_trade_lists_line_comes_from_the_record(monkeypatch):
+    from league_lab_api import context_record as CR
+    from league_lab_api import decisions as DC
+    assert CR.gap_line(_summary()["trend"]) == ("Their projections already expect the gap to close part-way: no edge in "
+                                                "buying or selling on it — graded on 4,282 games (2025 and 2026 weeks 1–4, "
+                                                "Half PPR).")
+    m = CR.gap_line(_summary(measured=True)["trend"])
+    assert "players below their work finished 0.6 points below the rest against their projection (−0.9 to −0.3)" in m
+    assert CR.gap_line(_summary(trend=False)["trend"]) is None
+    monkeypatch.setattr(CR, "summary", lambda: _summary(trend=False))
+    w = DC.gap_words()
+    assert w["gap_graded"] is False and w["gap_line"] == DC.GAP_LINE_NO_RECORD and "graded" not in w["gap_line"].lower()
+    monkeypatch.setattr(CR, "summary", lambda: _summary())
+    w = DC.gap_words()
+    assert w["gap_graded"] is True and w["gap_line"].startswith("Their projections already expect the gap")
+    assert w["titles"] == {"below": "Scoring below his work", "above": "Scoring above his work"}
+
+
+def test_the_trade_cards_never_say_buy_or_sell_on_the_gap():
+    import re
+
+    from league_lab_api import decisions as DC
+    t = {"player": {"player_name": "Kenneth Walker III", "position": "RB"}, "team_name": "Run Bijan Run",
+         "diff_per_game": -1.5, "gain_week": 8.0, "loss_week": 7.9, "fit_horizon": 9.9}
+    b = DC.below_line(t, "weeks 4–7", 4)
+    assert b == ("**Kenneth Walker III (RB, Run Bijan Run) scores 1.5 per game below his work.** He would add **+8.0** to "
+                 "your week-4 lineup and cost them **7.9** (fit **+9.9** over weeks 4–7): the fit, from the projections, "
+                 "is the reason to ask about him — not the gap.")
+    a = DC.above_line({**t, "player": {"player_name": "Patrick Mahomes", "position": "QB"}, "team_name": "GoodGameBuddy",
+                       "diff_per_game": 5.0}, "weeks 4–7", 4)
+    never = re.compile(r"\b(buy|sell|due|bargain|regression|turn around|running hot)\b", re.I)
+    for line in (b, a, DC.below_line(None, "weeks 4–7", 4), DC.above_line(None, "weeks 4–7", 4), *DC.TRADE_HOWTO[:1]):
+        assert not never.search(line.replace("buying or selling", "")), line
+
+
+def test_the_player_cards_help_no_longer_says_due():
+    from league_lab_api import player as PL
+    assert "running hot" not in PL.HOWTO and "below = due" not in PL.HOWTO
+    assert "his projection already counts it" in PL.HOWTO
+
+
+def test_dfs_role_chip_and_panel_carry_the_record(monkeypatch):
+    from league_lab_api import context_record as CR
+    from league_lab_api import dfs as DF
+    role_sig = {"signal": "role", "label": "Role trend", "tone": "favorable", "words": "Role up …", "trend": "up",
+                "in_projection": True, "projection_words": "In the projection"}
+    monkeypatch.setattr(DF, "_context_parts", lambda s, w: {"role": {}, "game": {}, "wx": {}, "lines": False, "forecast": False})
+    monkeypatch.setattr(DF, "_matchup_fn", lambda: None)
+    monkeypatch.setattr(DF.D, "signals", lambda *a, **k: [dict(role_sig)])
+    rows = [{"key": "k", "gsis_id": "g", "position": "WR", "team": "SEA", "out": False}]
+    monkeypatch.setattr(CR, "summary", lambda: _summary())
+    out, meta = DF.context_for(2026, 5, rows)
+    sig = out["k"]["context"][0]
+    assert sig["graded"] == GRADED_ROLE and sig["graded_effect"] == "none" and meta["role_record"] == GRADED_ROLE
+    monkeypatch.setattr(CR, "summary", lambda: _summary(role=False))       # without the record: today's words
+    out, meta = DF.context_for(2026, 5, rows)
+    assert "graded" not in out["k"]["context"][0] and meta["role_record"] is None
+
+
+def test_stats_role_columns_carry_the_record(monkeypatch):
+    from league_lab_api import context_record as CR
+    from league_lab_api import stats as ST
+    monkeypatch.setattr(CR, "summary", lambda: _summary())
+    cat = {c["id"]: c for c in ST.catalogue(2026)}
+    for cid in ("target_share_change", "carry_share_change", "snap_share_change"):
+        assert cat[cid]["graded"] == GRADED_ROLE
+    assert "graded" not in cat["target_share"]
+    monkeypatch.setattr(CR, "summary", lambda: _summary(role=False))
+    assert all("graded" not in c for c in ST.catalogue(2026))

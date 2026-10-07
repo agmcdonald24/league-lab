@@ -700,6 +700,7 @@ for _p in PRESETS:
 def catalogue(season: int, frame: pd.DataFrame | None = None, through: int | None = None) -> list[dict]:
     """The catalogue with ``available`` for this season (routes estimates need participation; charting needs FTN)."""
     has_part = bool(frame is not None and not frame.empty and frame["routes_proxy"].notna().any())
+    role_words = _role_record()                                      # ---- IP-3 fix round
     has_chart = bool(frame is not None and not frame.empty and (pd.to_numeric(frame["team_charted_targets"],
                                                                                 errors="coerce") > 0).any())
     out = []
@@ -749,8 +750,25 @@ def catalogue(season: int, frame: pd.DataFrame | None = None, through: int | Non
                 c["coverage"] = f"charted weeks {weeks[0]}–{weeks[-1]}" if weeks else None
         else:
             c["available"] = True
+        # ---- IP-3 fix round (Wave I-P): the Role change columns carry what "role up / down" has meant (the record's
+        # grade, docs/METRICS.md cx1.1) — absent without the record: today's definition, nothing about a grade
+        if c.get("group") == "Role change" and role_words:
+            c["graded"] = role_words
+        # ---- end IP-3
         out.append(c)
     return out
+
+
+# ---- IP-3 fix round (Wave I-P)
+def _role_record() -> str | None:
+    """``context_record.summary()["role"]["words"]`` when graded, else None (never raises)."""
+    try:
+        from . import context_record
+        r = context_record.summary().get("role") or {}
+        return r.get("words") if r.get("graded") else None
+    except Exception:  # noqa: BLE001 - the record is never load-bearing for the Stats screen
+        return None
+# ---- end IP-3
 
 
 # ---------------------------------------------------------------------------------------------- arithmetic

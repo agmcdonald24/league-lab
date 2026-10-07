@@ -2539,6 +2539,12 @@ export interface TrendRecord {
 }
 export type TrendsGraded = Trends & { record?: TrendRecord | null };
 // ---- end IP-3
+// ---- IP-3 fix round (Wave I-P): the Stats "Role change" columns' grade; the Trades lists' titles and the record's line
+export interface StatsColumn {
+  graded?: string | null; // the record's sentence on what "role up / down" has meant (Role change columns; absent without it)
+}
+export type TradeListsGraded = TradeLists & { titles?: { below: string; above: string }; gap_line?: string | null; gap_graded?: boolean };
+// ---- end IP-3 fix round
 // ---- IP-2 (Wave I-P): rankings for everyone — GET /api/rankings?league=&position=&view=week|season&limit=&offset=&q= and
 // "Who should I start?" — GET /api/rankings/start?league=&ids=a,b[,c,d] (api/league_lab_api/rankings_api.py)
 export type RankPosition = "QB" | "RB" | "WR" | "TE" | "FLEX" | "K" | "DEF";

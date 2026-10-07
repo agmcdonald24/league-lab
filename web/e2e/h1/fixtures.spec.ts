@@ -53,7 +53,7 @@ test("waivers: the upside stash and buy low / sell high, with the screen's own w
     await noSidewaysScroll(page);
   }
   await page.getByTestId("howto").locator("summary, button").first().click();
-  await expect(page.getByTestId("howto")).toContainText("Buy low"); // the Trades screen's (IA-2)
+  await expect(page.getByTestId("howto")).toContainText("Scoring below his work"); // the Trades screen's (IA-2; IP-3 fix round: renamed)
   await page.goto(`/waivers?league=${DYNASTY}&team=12`);
   await page.getByTestId("howto").locator("summary, button").first().click();
   await expect(page.getByTestId("howto")).toContainText("Upside stash");

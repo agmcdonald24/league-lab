@@ -39,6 +39,7 @@ export interface ContextMeta {
   // ---- IO-1 (Wave I-O): the record's sentences (null without the record); fix round: "Worth a look" off, one line
   worth_line?: string | null;
   corner_record?: string | null;
+  role_record?: string | null; // ---- IP-3 fix round (Wave I-P): what "role up / down" has meant (null without the record)
 }
 export interface WithContext {
   context?: Signal[];
