@@ -134,3 +134,28 @@ Outside my list: `dbt/models/marts/nfl/mart_projection_drift.sql` + its `schema.
    honest words are in WORDS § "How the projections have done, honestly".
 4. **Decide**: whether to correct the starter listing (st1.0 dropped by the rule; a data fix for played games without
    the guard was not measured on its own).
+
+### IP-1 fix round 2026-10-07 — st1.1 (who starts) judged on identification accuracy; the home's grades (branch `fix/IP1` from `integ/IP` `0551b7d`)
+
+* **st1.1** (dbt var `pn_starter_stale_rule`, `int_pn_team_game`; rule written before the build, METRICS § "st1.1"):
+  week W keeps the listing L unless, in the team's two newest played games of the season, L was listed for the newer
+  one too, took no dropback in either, was available in both (weekly roster ACT, not Out / Doubtful), and one other QB
+  led both games' dropbacks — then that QB. As-of only (nothing from W's game, report or roster).
+* **Confusion table** 2022 – 2026 wk 4: fixed 11, still wrong 38, newly broken 3 (in-game changes kept: 66; stale
+  listings 49). (a) 22% < 60% **fail**; (b) 3 > 11 / 6 **fail**; (c) QB board −0.020 pooled, pass. **Not shipped**:
+  the var defaults off; off, `int_pn_team_game` reads none of its CTEs and every QB input equals the frame before (0 of
+  109,539 rows differ). With it on, week 5 here changes one starter: SEA Lock → Darnold.
+* **The alternative, described** (not built): "starter unclear" — a team whose listed QB took no dropback in its newest
+  played game while another led: both QBs marked, both out of the tiers, numbers unchanged. As of each week it would
+  have flagged ~2 team-weeks a week (169 in 2022 – 2026 wk 4), 32 of the 49 stale listings; week 5 here: CHI, SEA, WAS.
+* **The home** (`web/src/components/home/home.ts`, marked `// ---- IP-1`): `MIN_WEEKS = 6`; under it a position more
+  than 10% above its past is "unclear" (plain tile) and the lead ends "— too few weeks to call that a difference";
+  from six weeks a difference needs a miss above every past season of the same model and > 10% over the backtest. No
+  API field added (`season.weeks_scored` and `by_season` were there). `web/e2e/in1/fixtures.spec.ts` updated on purpose
+  (the recorded answer now reads "unclear" and the new lead; "worse" / "weak spot" were the old expectations) plus a
+  pure-code test of the three cases.
+* **Files**: `dbt/models/intermediate/features/int_pn_team_game.sql`, `dbt/tests/assert_starter_from_play.sql`,
+  `dbt/tests/assert_personnel_is_asof.sql`, `scripts/analysis/ip1_starter_rule.py` (new), `tests/test_ip1_starter.py`
+  (new, 3), `web/src/components/home/home.ts`, `web/e2e/in1/fixtures.spec.ts`, `docs/METRICS.md`, `docs/WORDS.md`,
+  `dbt/seeds/metric_registry.csv` (+1, st1.1 experimental), `CHANGELOG.md`.
+* **The nightly**: nothing (the var is off; the home is the web build). No `scripts/nightly.sh` line; no new env.

@@ -3587,14 +3587,14 @@ TE 3.51 against 3.01, RB 4.18 / 4.28, WR 4.15 / 4.07 (the dynasty QB 9.22 / 8.16
 v3.3 or v3.4 week would also have emptied the backtest columns on a database whose `ops.projection_backtest` has no rows
 of that version (this one has v2.0 and v3.0 only).
 
-**What the home should say** (the sentence is built in `web/src/components/home/home.ts` from About's grades; not
-IP-1's file). With the drift fix it reads "quarterbacks are our weak spot: 6.5 points off on average, against 5.9 in past
-seasons" (its 10% rule: 6.52 > 1.1 × 5.86). True on the means, and still not a finding: three weeks cannot separate 6.5
-from the past. Honest, in the copy standard's words: *"Through week 3, quarterbacks are where our projections miss most:
-6.5 points per game. The model that made those weeks missed by 5.6 to 6.4 in the first three weeks of past seasons, so
-three weeks cannot tell this from a normal start."* And tight ends: *"Tight ends: 3.5 points per game, against 2.6 to 3.4
-in past seasons' first three weeks — they caught more touchdowns than projected."* Once week 4 is complete the season
-mean at QB is about 6.0 against 5.75 (the weeks' own models) and the 10% rule reads "about the same".
+**What the home says** (IP-1 fix round, `web/src/components/home/home.ts` `gradeRows` / `gradeLead`, a marked block; About's
+grade row already carries the weeks behind each miss, `season.weeks_scored`, and the same model's seasons, `by_season`):
+under six complete weeks a position more than 10% above its past is "unclear" and the lead reads *"Through week 3,
+quarterbacks are where our projections miss most against past seasons: 6.5 points per game, against 5.9 for the same
+model in past seasons — too few weeks to call that a difference."* From six weeks on a difference is called only above
+every past season of the same model and more than 10% over its backtest ("… more than in any of them (5.2 to 5.7)").
+"Weak spot" is never said. Words: docs/WORDS.md § "How the projections have done, honestly". Once week 4 is complete the
+season mean at QB is about 6.0 against 5.75 (the weeks' own models): within 10%, "about as much as in past seasons".
 
 **The starter listing, live** (not a model change; the PO's call): this database's week-5 board projects Drew Lock as
 Seattle's starter (13.72, reference scoring) and Sam Darnold at 4.38, because the schedule still lists Lock; Darnold
@@ -3602,6 +3602,59 @@ threw 45 and 22 passes in weeks 3–4 and Lock none. st1.0's guard would read Da
 (listed Keenum, who threw no pass in week 4) — it is measured and dropped on 2021–2025 because it also misfires on a
 returning starter, so it is not switched on here.
 
+
+#### st1.1: the listed starter unless the evidence says it is stale (IP-1 fix round; dbt var `pn_starter_stale_rule`, **off**: it failed its rule)
+
+**What kind of rule.** st1.1 is not a model candidate: it decides which quarterback the projection treats as the
+starter — a fact the listing gets right or wrong — so it is judged on identification accuracy, and the harness only
+checks that it does no harm to the board (ΔMAE ≤ +0.01), not that it clears the −0.05 keep bar a model change must. A
+model candidate changes how a known input becomes points and must make the points better; a data rule must get the
+input right and cost nothing.
+
+**The rule** (written down before it was built, 23:49 ET; `int_pn_team_game`, `scripts/analysis/ip1_starter_rule.py`).
+Week W's pick is Q instead of the listing L only when, in the team's two newest played games of the season before W
+(g1 newer, g2): the schedule listed L for g1 too; L took no dropback in either (`fct_play`: a dropback, not a no-play;
+passer, else the scrambler); the same QB Q led the team's dropbacks in both; and L was available in both — on the team's
+weekly roster as ACT (not inactive, reserve, cut or practice squad) and not Out or Doubtful on that week's injury
+report, so a hurt starter coming back keeps his listing. As-of inputs: W's listing; for g1 and g2 only their listings,
+dropbacks, weekly rosters and injury reports. Nothing from W's game, report or roster. Truth: the dropback leader of W.
+A stale listing is one whose QB took no dropback in W; one whose QB took some and lost the lead is an in-game change
+(no rule before kickoff can see it; reported apart). To ship: (a) it fixes ≥ 60% of the stale listings, (b) it breaks
+at most one right listing for every six it fixes, (c) the QB board's pooled MAE (2021–2025 walk-forward, the features
+rebuilt under the rule for training and test, both house scorings) changes by ≤ +0.01.
+
+**The confusion table** (played team-weeks 2022 – 2026 week 4 where the listing missed the dropback leader or the pick
+moved):
+
+| Season | fixed | still wrong | newly broken | in-game change (kept) | stale listings |
+|---|---|---|---|---|---|
+| 2022 | 0 | 4 | 0 | 12 | 4 |
+| 2023 | 0 | 0 | 0 | 17 | 0 |
+| 2024 | 11 | 22 | 2 | 16 | 33 |
+| 2025 | 0 | 7 | 1 | 17 | 7 |
+| 2026 (wk 1–4) | 0 | 5 | 0 | 4 | 5 |
+| **all** | **11** | **38** | **3** | 66 | 49 |
+
+(a) 11 of 49 = **22%** (needs 60%): **fail**. (b) 3 broken against 11 fixed (allowed 1.8): **fail**. (c) the QB board
+−0.020 pooled over 3,330 QB player-weeks a scoring (by season 0 / 0 / 0 / −0.122 / +0.011): passes. **It does not
+ship**; the var stays off (default false; off, `int_pn_team_game` reads none of st1.1's work and every QB input is the
+same as before, checked cell for cell). Why it fails: most stale listings are single games or the first one or two
+weeks of a run (2022's four, 2025's seven, SEA's weeks 3–4 of 2026), which a rule needing a repeated listing and two
+games of evidence cannot reach; it fixed the long runs (WAS 2024 weeks 10–13, TEN 12–14, CAR 12–14, IND 13). The three
+it broke were benchings the listing had caught up with (IND 2024 weeks 9 and 17 Flacco, NYJ 2025 week 12 Taylor). On
+this database it would change one week-5 starter: Seattle, Drew Lock → Sam Darnold (week 4: Darnold 26 dropbacks, Lock 0
+and active; week 3: Darnold 46, Lock 0 and active).
+
+**The smallest honest alternative for the screen** (described, not built): **"starter unclear"**. When a team's listed
+QB took no dropback in its newest played game while another QB led it, both quarterbacks are marked "Starter unclear"
+on Rankings, the card and the pane, both are left out of the tiers, and their numbers stay as projected, with one line:
+"Seattle lists Drew Lock; Sam Darnold took every dropback last week. Until the listing changes, both are left out of
+the tiers." Measured as it would have fired (as of each week, 2022 – 2026 week 4): 46 / 33 / 48 / 37 / 5 team-weeks
+(about two a week); it marks 32 of the 49 stale listings (65%) and 137 team-weeks whose listing was not stale — a
+label and a missing tier line, never a changed number. Data: the listing
+(`int_pn_team_game.listed_qb_id`, or the schedule) and the newest played game's dropback leader (`fct_play`), both
+already in the database; the API would add one boolean per QB row (`starter_unclear`) to the rankings / board frames.
+2026 week 5 here: Chicago, Seattle, Washington.
 
 
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
