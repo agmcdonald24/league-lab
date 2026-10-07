@@ -115,6 +115,7 @@
   const groupNames = $derived([...new Set(fullAll.map((c) => groupOf(c)))]);
   const fullCols = $derived(fullAll.filter((c) => !hidden.includes(groupOf(c)) && !off.includes(c.id)));
   const cols = $derived<StatsColumn[]>(view === "full" ? fullCols : keyCols);
+  const roleGraded = $derived(cols.find((c) => c.graded)?.graded ?? null); // ---- IP-3 fix round: the Role change grade
   function toggleGroup(g: string) {
     const next = hidden.includes(g) ? hidden.filter((x) => x !== g) : [...hidden, g];
     setParams({ hide: next.length ? next.join(",") : null });
@@ -555,6 +556,9 @@
             <div><dt class="inline font-semibold">{title(c)}</dt> <dd class="inline text-ink-2">— {c.definition}{c.denominator ? ` Denominator: ${c.denominator}.` : ""} Source: {c.source}.</dd></div>
           {/each}
         </dl>
+        <!-- ---- IP-3 fix round (Wave I-P): the Role change group's grade, once (the record's sentence; absent without it) -->
+        {#if roleGraded}<p class="text-sm text-ink-2" data-testid="stats-role-record"><span class="font-semibold text-ink">Role change, graded:</span> {roleGraded}</p>{/if}
+        <!-- ---- end IP-3 -->
       </div>
     </Expander>
   {/if}

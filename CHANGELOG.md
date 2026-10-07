@@ -24,6 +24,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   keeps 42–70% of its move over two games and is mostly priced (+0.29 the next game, +0.07 to +0.49, not steady by
   season); a role down, no measurable effect. `ops.context_record` keeps the tag every week; `summary()` gains `trend`
   and `role` (docs/METRICS.md cx1.1).
+- **IP-3 fix round — the grade wherever the app implied otherwise.** Trades' "Buy low" / "Sell high" are now
+  **Scoring below his work** / **Scoring above his work** with the record's line under the heading ("Their projections
+  already expect the gap to close part-way: no edge in buying or selling on it — graded on 4,282 games"); the cards lead
+  with the lineup fit ("the fit, from the projections, is the reason to ask about him — not the gap"); the lists were
+  already ordered by fit, not re-ranked. The player card's help drops "running hot / due". The role trend's grade shows on
+  DFS (the chip's detail, "What the projection already holds") and on Stats (Role change), from the record only.
 - **IP-1 — the quarterback weak spot, diagnosed; v3.4.** The home's "6.5 points off, against 5.4" set v2.0's weeks
   1–3 against v3.0's backtest; against v2.0's own first three weeks of 2021–2025 it is +0.54 (95% −0.45 to +1.62, 112
   QB-games): not a signal. QB misses are variance (no kind of quarterback has a bias; 36% of a starter's squared miss is

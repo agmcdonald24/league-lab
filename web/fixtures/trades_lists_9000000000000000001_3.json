@@ -761,11 +761,11 @@
    "fit_horizon": 10.59
   }
  },
- "buy_line": "**Buy low: ask Goal Line Stand about Matthew Golden (WR).** He scores 1.3 a game below what his usage is worth, adds **+2.7** to your week-4 lineup and costs them **0.0** (fit **+10.6** over weeks 4–7).",
- "sell_line": "**Sell high: shop Jared Goff (QB) to Practice Squad.** He scores 0.7 a game above what his usage is worth. Their week-4 lineup gains **+0.8**, yours loses **0.0** (fit **+13.5** over weeks 4–7).",
+ "buy_line": "**Matthew Golden (WR, Goal Line Stand) scores 1.3 per game below his work.** He would add **+2.7** to your week-4 lineup and cost them **0.0** (fit **+10.6** over weeks 4–7): the fit, from the projections, is the reason to ask about him — not the gap.",
+ "sell_line": "**Jared Goff (QB) scores 0.7 per game above his work.** Practice Squad's week-4 lineup would gain **+0.8**, yours lose **0.0** (fit **+13.5** over weeks 4–7): the fit is the reason to offer him — not the gap.",
  "weeks": "weeks 4–7",
  "howto": [
-  "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG − xPPG**, points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports.",
+  "**Scoring below his work**: players on other teams scoring *less* than their work is usually worth (**PPG − xPPG**, points minus expected points per game, below zero). **Scoring above his work**: your players scoring *more*. That is what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect it, so it is no reason to trade on its own. Both lists are ordered by **Fit**, from the projections.",
   "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week and the next four, in your league's scoring.",
   "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
   "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade Finder."
@@ -774,5 +774,11 @@
  "points_source": "priced on request (research.league_season)",
  "league_id": "9000000000000000001",
  "roster_id": 3,
- "position": "ALL"
+ "position": "ALL",
+ "titles": {
+  "below": "Scoring below his work",
+  "above": "Scoring above his work"
+ },
+ "gap_line": "Their projections already expect the gap to close part-way: no edge in buying or selling on it — graded on 4,282 games (2025 and 2026 weeks 1–4, Half PPR).",
+ "gap_graded": true
 }

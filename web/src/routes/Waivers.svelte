@@ -149,7 +149,7 @@
     "- **The moves first** are the claims that add the most to your lineup over the next 4 weeks, one per position (two defenses compete for one spot). **Help now** lists the claims that raise this week's lineup; **Bye coverage** the next week a bye leaves a starting spot empty that your bench cannot fill; **Stashes** the upside stash; **All available** every free agent.\n" +
     "- **Before you drop a starter**: when the drop starts for you this week or next, the card says so and shows the best claim that keeps him (its drop sits), or says none does.\n" +
     "- **Upside stash**: a free agent whose role grew in his last one to three games (more snaps, targets or carries: a teammate out, a new starter) before his points caught up. **If it holds** is his projection with the bigger role: a what-if, not a forecast. **Lineup gain if it holds** adds up this week and the next three; most stashes add nothing yet, which is why they are stashes, not starters. A stash says **claim** only when, if the role holds, he is worth the roster spot after what the cheapest drop costs; otherwise **watch**.\n" +
-    "- **Buy low / sell high** (players scoring below or above what their work is worth) are on the Trades screen now, next to the trades to ask about.";
+    "- **Players scoring below or above their work** are on the Trades screen, next to the trades to ask about."; // ---- IP-3 fix round
 
   function faContext(f: FreeAgent): string {
     const bits = [rangeWords(f.p25, f.p75, f.p10, f.p90), f.ros_points != null ? `rest of season ${fmt.whole(f.ros_points)}` : null];
@@ -389,7 +389,7 @@
 
     <!-- IA-2: buy low / sell high moved to Trades (they are trades to ask about, not claims) -->
     <p class="text-sm text-ink-3" data-testid="buy-sell-moved">
-      Buy low and sell high are on <a class="ll-name font-semibold" href={withContext("/trades", ctx)}>Trades ›</a>
+      Players scoring below or above their work are on <a class="ll-name font-semibold" href={withContext("/trades", ctx)}>Trades ›</a><!-- ---- IP-3 fix round -->
     </p>
 
     <Expander title="How to read this" testid="howto">
