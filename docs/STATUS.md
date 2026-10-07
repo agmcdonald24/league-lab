@@ -14259,3 +14259,16 @@ the horizon weeks the window prices again (MFL's power part ~0.3 s); the nightly
   whole set **563 passed**, 17 skipped, 0 failed; `test_ip0` + `test_ip4` + `test_parity` 42 passed; ruff, the copy
   standard, `npm run lint` (205 files, 0 warnings) and the build clean. The live check of real pictures at both
   widths follows the push.
+* **Nightly #17 green** (started by the PO 08:38 ET on `4bc0377`; **30 m 39 s**, 0 failed steps: `restore-state` 28 s,
+  dbt build 8 m 57 s PASS 709 / WARN 5, `backtests` 9 m 41 s — `backtest-v2` once under v3.4 —, `calibration-oof`
+  1 m 15 s, `project` 5 m 27 s, `context-record` 21 s, `sync-hosted` 26 s; 92 relations verified on the hosted copy,
+  **239 MB** on Neon). One warning, expected: `ops.context_record` was empty on the hosted copy (last night never
+  published it), so tonight started it. **Checked live at 09:20 ET**: `/api/health` `as_of` today 09:02 ET;
+  **accounts are on** (`enabled: true`, `methods: ["passkey"]`; email off: no mailer); `/api/context/record` graded
+  on all four keys (corner, worth, trend, role) with their sentences; Trades' line reads "Their projections already
+  expect the gap to close part-way: no edge in buying or selling on it — graded on 4,300 games (2025 and 2026 weeks
+  1–4, Half PPR)."; Trends' record line shows; DFS carries `worth_line`, `corner_record`, `role_record`; week 5's
+  quarterbacks are v3.4 (Allen 22.4, Prescott 20.7, Brissett 20.7, Goff 20.2, Stafford 20.0); Starter unclear on
+  Washington (Daniels 18.3, Kaliakmanis 5.0) and Seattle (Lock 14.1, Darnold 4.4). Chicago is not flagged on live
+  (the sandbox copy's week-4 state differed). **Still Andrew's**: his passkey account → the account id into Render
+  as `LEAGUE_LAB_EDITORS`; this hotfix's push.
