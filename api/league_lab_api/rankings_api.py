@@ -54,7 +54,7 @@ from . import refleague
 from . import research as R
 from .applib import cards
 from .applib import ros as ROS
-from .db import query
+from .db import missing_relations, query
 
 router = APIRouter()
 
@@ -359,10 +359,12 @@ def _week_frame(ctx: R.Ctx, season: int, week: int, pos: str) -> pd.DataFrame | 
 ROS_HOUSE_SQL = "select {cols} from analytics.mart_player_ros_projection where league_id = %s and position = any(%s)"
 
 
-def _season_frame(ctx: R.Ctx, season: int, week: int, pos: str) -> tuple[pd.DataFrame, dict]:
+def _season_frame(ctx: R.Ctx, season: int, week: int, pos: str) -> tuple[pd.DataFrame | None, dict]:
     """One position's rest-of-season rows (the table /api/ros's projections view reads) + the window."""
     want = list(FLEX) if pos == "FLEX" else [pos]
     if ctx.house:
+        if missing_relations(("mart_player_ros_projection",)):      # a fresh copy: the notice, never a 500
+            return None, {}
         df = query(ROS_HOUSE_SQL.format(cols=ROS.ROS_COLUMNS), (ctx.league_id, want))
     else:
         from .ondemand import ros_on_demand
@@ -411,6 +413,8 @@ def ranked(ctx: R.Ctx, view: str, pos: str) -> tuple[pd.DataFrame | None, dict]:
             return None, {}
     else:
         d, extra = _season_frame(ctx, season, int(week), pos)
+        if d is None:
+            return None, {}
     d = d[d["proj_points"].notna()].copy()
     d = d.sort_values(["proj_points", "key"], ascending=[False, True]).reset_index(drop=True)
     d["rank"] = np.arange(1, len(d) + 1)
@@ -460,7 +464,7 @@ def rankings(league: str, *, position: str | None = None, view: str | None = Non
         return {**meta, "notice": "The regular season is over."}
     df, extra = ranked(ctx, vw, pos)
     if df is None:
-        return {**meta, "notice": "This week's rankings arrive with the next data refresh."}
+        return {**meta, "notice": "These rankings arrive with the next data refresh."}
     if vw == "week":
         meta["assumes"] = WEEK_ASSUMES.format(scoring=scoring)
     else:

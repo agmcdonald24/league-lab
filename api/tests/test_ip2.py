@@ -316,3 +316,20 @@ def test_rankings_in_the_shell_and_the_sitemap(client):
     if page.status_code == 200 and "ll:seo" in page.text:          # a build with the markers (web/dist)
         assert "Tight end rankings for the rest of the season" in page.text
         assert "<script>alert" not in client.get("/rankings", params={"position": "<script>alert(1)</script>"}).text
+
+
+@needs_db
+def test_missing_marts_give_the_notice_never_a_500(client, monkeypatch):
+    """A fresh copy without the week's marts (or the rest-of-season mart): the screen's notice, a 200."""
+    RK.clear()
+    RK.MB.clear()
+    monkeypatch.setattr(RK.MB, "missing_relations", lambda names: list(names))
+    r = client.get(ROUTE, params={"league": "ref:half", "position": "WR"})
+    assert r.status_code == 200 and r.json()["rows"] == [] and r.json()["notice"]
+    s = client.get(START, params={"league": "ref:half", "ids": "00-0037239,00-0039075"})
+    assert s.status_code == 200 and s.json()["answer"] is None and s.json()["notice"]
+    monkeypatch.setattr(RK, "missing_relations", lambda names: list(names))
+    h = client.get(ROUTE, params={"league": SCRUBS, "position": "WR", "view": "season"})
+    assert h.status_code == 200 and h.json()["notice"]
+    RK.clear()
+    RK.MB.clear()
