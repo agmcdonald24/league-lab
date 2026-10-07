@@ -165,6 +165,10 @@ def bucket_for(method: str, path: str, query: str = "") -> str | None:
     if path == "/api/context/record":
         return "read"
     # ---- end IO-1
+    # ---- IP-2 (Wave I-P): the rankings price a week (or the season) and rank it; the start answer draws 40,000 weeks
+    if path in ("/api/rankings", "/api/rankings/start"):
+        return "research"
+    # ---- end IP-2
     return "read"
 
 
