@@ -47,7 +47,8 @@
           if (!same()) return;
           if (e instanceof Unauthorized) return onauth();
           // one season simulation at a time on the server: a 429 `busy` is asked again a few seconds later (3 times)
-          const busy = e instanceof ApiError && e.status === 429 && (e.body as { code?: string } | null)?.code === "busy";
+          // ---- IO-2 fix round: and a 503 `busy` (a provider read refused while the season was built: never cached)
+          const busy = e instanceof ApiError && (e.status === 429 || e.status === 503) && (e.body as { code?: string } | null)?.code === "busy";
           if (busy && tries++ < 3) {
             setTimeout(() => {
               if (same()) void ask();

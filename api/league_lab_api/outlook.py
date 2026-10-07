@@ -70,7 +70,7 @@ import pandas as pd
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from league_lab import anyleague as A
-from league_lab import clock, memo  # ---- IO-2: clock
+from league_lab import clock, memo, provider_share  # ---- IO-2: clock; fix round: provider_share
 from league_lab import decisions as WP  # the week's win probability: one model in the product
 
 from . import availability
@@ -656,17 +656,18 @@ def _league_inputs(league_id: str, is_house: bool) -> dict:
         st = query(D.STANDINGS_SQL, (league_id,))
         apw = query(D.ALL_PLAY_WEEK_SQL, (league_id,))
         played = int(apw["week"].max()) if not apw.empty else 0
+        degraded = False
         try:
             lg = client.league(A.check_id(league_id)) or {}
-        except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
-            lg = {}
+        except (A.SleeperUnavailable, A.LeagueNotFound):        # ---- IO-2 fix round: busy is not caught (503)
+            lg, degraded = {}, True                              # the nightly's copy; this answer is not cached
         if not (lg.get("settings") or {}).get("playoff_week_start"):     # Sleeper not answering: the nightly's copy
             ls = query(DIM_SQL, (league_id,))
             if not ls.empty and pd.notna(ls["playoff_week_start"].iloc[0]):
                 got = {k: int(ls[k].iloc[0]) for k in ("playoff_week_start", "playoff_teams") if pd.notna(ls[k].iloc[0])}
                 lg = {**lg, "settings": {**(lg.get("settings") or {}), **got}}
         return {"lg": lg, "lid": str(league_id), "names": names, "standings": _standings_frame(st, names),
-                "played": played, "season": int(cards.league_season(league_id))}
+                "played": played, "season": int(cards.league_season(league_id)), "degraded": degraded}
     lg, rosters, users = D._sleeper_league(league_id)
     names = A.team_names(rosters, users)
     last = int((lg.get("settings") or {}).get("last_scored_leg") or 0)
@@ -691,7 +692,13 @@ def schedule(client, lid: str, weeks: Sequence[int]) -> tuple[dict[int, list[tup
             continue
         try:
             ms = client.matchups(lid, int(w))
-        except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+        except (A.SleeperBusy, A.SleeperUnavailable):
+            # ---- IO-2 fix round (the review's M2): our budget refused, or the provider failed — not "no schedule".
+            # The weeks read so far are kept; the build stops (503 busy / 502), nothing is cached or stored.
+            if kept:
+                _schedules.put(str(lid), kept)
+            raise
+        except A.LeagueNotFound:
             missing = int(w)
             break
         by: dict = {}
@@ -760,11 +767,82 @@ def outlook(league_id: str, team: int | None = None, *, source: str | None = Non
     if hit is None:
         hit = _cache.get(key)
     if hit is None:
-        hit = _cache.put(key, _build(str(league_id), is_house, source, int(seasons), part=part),
-                         ttl=TTL_S["house" if is_house else "sleeper"])
+        # ---- IO-2 fix round (the review's M2): a build during which a provider call was refused (this client's share
+        # spent, or everyone's budget) or failed over to the nightly's copy is NOT cached, NOT stored and leaves no card:
+        # another client must never get it; incomplete, the requester gets 503 busy (the screen asks again)
+        r0 = _refusals()
+        try:
+            built = _build(str(league_id), is_house, source, int(seasons), part=part)
+        except (A.SleeperBusy, A.SleeperUnavailable) as exc:          # refused (503) / the provider failed (502)
+            _forget_context(str(league_id), is_house)
+            if isinstance(exc, A.SleeperBusy):
+                raise
+            from .ondemand import SleeperDown
+            raise SleeperDown(str(exc)) from exc
+        degraded = bool(built.pop("degraded", False)) or _refusals() != r0
+        if degraded:
+            _forget_context(str(league_id), is_house)
+            if built["power"].get("note") or (part is None and not built["outlook"].get("available")
+                                               and built["outlook"].get("reason")):
+                raise A.SleeperBusy("busy, try again in a minute")
+            built["power"]["kept"] = "not_kept"
+            hit = built
+        else:
+            _keep(built, is_house, part)
+            hit = _cache.put(key, built, ttl=TTL_S["house" if is_house else "sleeper"])
     if team is not None and int(team) not in {r["roster_id"] for r in hit["power"]["rows"]}:
         raise NotFound(f"no team {team} in this league")
     return _mine(hit, team)
+
+
+# ---- IO-2 fix round: refusals, the context a refused build may have left, the snapshot and the card after the verdict
+def _refusals() -> int:
+    """Provider calls refused so far in this process: every client's share (IO-4's ``provider_share``) and the global
+    buckets (Sleeper's, MFL's). A build compares it before and after (another client's refusal during the build only
+    costs a cache miss)."""
+    n = 0
+    try:
+        info = provider_share.shares().info()
+        n += sum(int(v.get("refused", 0) or 0) for v in info.values() if isinstance(v, dict))
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        r = A.sleeper()
+        n += int(getattr(getattr(r.sleeper, "bucket", None), "refused", 0) or 0)
+        n += int(getattr(getattr(getattr(r, "_mfl_client", None), "bucket", None), "refused", 0) or 0)
+    except Exception:  # noqa: BLE001
+        pass
+    return n
+
+
+def _forget_context(lid: str, is_house: bool) -> None:
+    """The board contexts a refused build may have left half-read (``window_board``'s rest-of-season frame is kept on
+    the context): dropped, so the next build reads them again."""
+    for k in (("outlook_context", lid), ("trade_context", lid, is_house)):
+        try:
+            D._memo_cache.pop(k)
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def _keep(ans: dict, is_house: bool, part: str | None) -> None:
+    """A clean build: its row offered to the store (a whole build only) and its preview card kept."""
+    lid, rows = str(ans["league_id"]), ans["power"]["rows"]
+    if part is None and rows:
+        try:
+            offered = S.offer(S.snapshot(ans, league_name=ans.get("league_name"), week=int(ans["week"]),
+                                         built_at=clock.now()), house=is_house)
+        except Exception:  # noqa: BLE001 - the store is never load-bearing
+            offered = "failed"
+        ans["power"]["kept"] = offered
+        if offered == "queued" and ans["power"]["movement"] is None and ans["power"]["movement_note"] == WAIT_NOTE:
+            ans["power"]["movement_note"] = FIRST_NOTE
+    top = [{"team": r["team_name"], "per_week": r["per_week"]} for r in rows[:5]]
+    odds = {o["roster_id"]: o.get("playoff") for o in ans["outlook"].get("rows") or []}
+    for t, r in zip(top, rows[:5], strict=False):
+        t["playoff"] = odds.get(r["roster_id"])
+    S.remember_card(lid, {"name": ans.get("league_name"), "week": ans.get("week"), "top": top})
+# ---- end IO-2 fix round
 
 
 def _mine(ans: dict, team: int | None) -> dict:
@@ -881,6 +959,8 @@ def title_bracket(settings: Mapping, platform: str, board_weeks: set) -> tuple[d
     spots = int(settings.get("playoff_teams") or 0)
     if platform != "sleeper":
         return None, "the playoff bracket is read only from Sleeper's settings"
+    if "playoff_seed_type" not in settings:                     # ---- IO-2 fix round: Sleeper's own settings only
+        return None, "the playoff bracket's rules are not readable right now"
     if int(settings.get("divisions") or 0) > 1 or spots < 2:
         return None, "the playoff bracket is not simulated for this league"
     rounds = bracket_rounds(settings, spots)
@@ -1053,19 +1133,9 @@ def _build(league_id: str, is_house: bool, source: str | None, seasons: int, *, 
     ans["league_name"] = name
     ans["week"] = snap_week
     ans["shareable"] = S.shareable(lid)
-    offered = None
-    if part is None and rows:
-        try:
-            offered = S.offer(S.snapshot(ans, league_name=name, week=snap_week, built_at=clock.now()), house=is_house)
-        except Exception:  # noqa: BLE001 - the store is never load-bearing
-            offered = "failed"
-    ans["power"]["kept"] = offered
-    _movement(ans, snap_week=snap_week, offered=offered)
-    top = [{"team": r["team_name"], "per_week": r["per_week"]} for r in rows[:5]]
-    odds = {o["roster_id"]: o.get("playoff") for o in ol.get("rows") or []}
-    for t, r in zip(top, rows[:5], strict=False):
-        t["playoff"] = odds.get(r["roster_id"])
-    S.remember_card(lid, {"name": name, "week": snap_week, "top": top})
+    ans["power"]["kept"] = None
+    _movement(ans, snap_week=snap_week, offered=None)
+    ans["degraded"] = bool(inp.get("degraded"))        # fix round: the offer and the card wait for outlook()'s verdict
     # ---- end IO-2
     timings["total_ms"] = round((time.perf_counter() - t0) * 1000, 1)
     return ans

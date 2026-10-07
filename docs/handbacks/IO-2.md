@@ -199,3 +199,28 @@ power part, title odds and the preview card (from this process's builds) all wor
 * `accounts.client_ip` (IM-4) still takes the first `X-Forwarded-For` hop (SECURITY_PUBLIC § 2, Low) — unchanged.
 * The writer connection for the store is one more long-lived Neon connection (`application_name=league-lab-outlook`),
   as accounts' and usage's are.
+
+## Fix round (branch `fix/IO2` from `integ/IO` 72d959b; the independent review's M1, M2, L4)
+
+* **M1 — no exemption for saved leagues.** The write never reads the accounts tables; every league that is not a house
+  league is `visitor` under the same caps (rows an older build stored as `saved` count too): **20 new a day, 200 held**.
+  A **size guard**: `pg_total_relation_size('outlook.snapshots')`, read at most once a minute; past **40 MB** no new row
+  is written (a stored week may still be replaced). A league-week is replaced at most **once an hour** (dead-row churn
+  from popular leagues). Worst case: (200 + 2 house) × 20 weeks × ≤ 8.5 KB a row on disk ≈ **34.3 MB** + indexes, under
+  the 40 MB guard (a 32-team row with random 40-letter names measured 3.2 KB on disk; 8.5 KB is the incompressible bound
+  of the 8 KB JSON CHECK). Tests: the account path (a recording connection: no `accounts.` query; an old `saved` row
+  counted), the size guard (nothing new, a replacement still allowed, one size read a minute), the hourly replacement.
+* **M2 — a refused read is never cached.** `schedule()` re-raises `SleeperBusy` / `SleeperUnavailable` (the weeks read so
+  far kept); a house league's settings: busy raises, a failure falls back on the nightly's copy and marks the build
+  degraded (and title odds need Sleeper's own `playoff_seed_type`). `outlook()` compares the process's provider
+  refusals (IO-4's shares + the Sleeper / MFL buckets) before and after the build: any refusal or a degraded build →
+  **not cached, not stored, no card**, the board contexts dropped (`outlook_context`, `trade_context`), and an
+  incomplete answer becomes **503 busy** (a failed provider: 502). The web retries a 503 `busy` like the 429 (3 × 3 s).
+  Measured on the fixtures with a spent share (1 a minute, 2 at once): Scrubs, MFL 70587 and the on-demand test league
+  all answer busy to client X, nothing cached; client Y (the default share) then gets the full answer (tested).
+* **L4 — unknown links read nothing.** The shell looks up only a league this process built or one in the set of stored
+  league keys (`select distinct league_key … limit 2000`, re-read at most once a minute); any other key costs a set lookup.
+  The shared 120-a-minute budget is gone. Tested: 300 unknown keys → one key-set read, no row read; the stored league's
+  card still shows.
+* Checks: `test_io2.py` 19 passed (5 new), with `test_in6.py` 44 passed; ruff, copy standard, `npm run lint` and build
+  clean; e2e `io2` + `in6` 14 passed. `hosted_outlook.sql`: header comment only (re-applied, idempotent).
