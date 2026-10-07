@@ -812,7 +812,12 @@ def _refusals() -> int:
         n += int(getattr(getattr(getattr(r, "_mfl_client", None), "bucket", None), "refused", 0) or 0)
     except Exception:  # noqa: BLE001
         pass
-    return n
+    # ---- IP-5 (Wave I-P): a provider read that FAILED with nothing held (an MFL standings export down: the records
+    # read 0-0) was not counted, only refusals: now every noted refusal or failure (provider_trouble) counts too
+    from league_lab import provider_trouble
+    t = provider_trouble.info()
+    return n + t["busy"] + t["failed"]
+    # ---- end IP-5
 
 
 def _forget_context(lid: str, is_house: bool) -> None:

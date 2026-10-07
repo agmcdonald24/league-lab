@@ -442,3 +442,29 @@ def test_a_league_in_the_query_string_is_noindex_everywhere(client, dist):
         assert r.headers.get("x-robots-tag") == "noindex" and 'name="robots" content="noindex"' in r.text, path
     r = client.get("/players")
     assert "x-robots-tag" not in r.headers and 'content="noindex"' not in r.text
+
+
+@needs_db
+def test_the_outlook_keeps_nothing_built_while_a_provider_failed(client, monkeypatch):
+    """IO-2 counted refusals only: an MFL export that FAILED with nothing held (the standings: records read 0-0) left a
+    kept outlook. Now a noted failure is a degraded build too: not kept, and the next reader gets the whole answer."""
+    from league_lab_api import outlook as O
+    O._cache.clear()
+    D.clear_memo()
+    real = MFL.standings
+
+    def failing(self, league_id):
+        PT.note("failed")
+        raise MFLUnavailable("MyFantasyLeague leagueStandings: down")
+    monkeypatch.setattr(MFL, "standings", failing)
+    A._default = None
+    r = client.get("/api/league/outlook?league=mfl:70587&team=1&part=power")
+    assert r.status_code in (200, 503)
+    assert len(O._cache) == 0                                             # nothing kept for the next reader
+    if r.status_code == 200:
+        assert r.json()["power"]["kept"] == "not_kept"
+    monkeypatch.setattr(MFL, "standings", real)
+    A._default = None
+    ok = client.get("/api/league/outlook?league=mfl:70587&team=1&part=power")
+    assert ok.status_code == 200 and len(O._cache) == 1 and len(ok.json()["power"]["rows"]) == 12
+    print("refused build answered", r.status_code)
