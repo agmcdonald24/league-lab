@@ -1447,9 +1447,10 @@ def ros_table(query: Query, league_id: str, league: Mapping, from_week: int, las
         with provider_trouble.watch() as w:          # ---- IP-5: a unit's name read refused -> not kept (busy)
             hit = _ros_table(query, league_id, scoring, slots, season, from_week, last_week, playoff_week_start,
                              exclude_reference, src)
-        if not w.clean:
+        if w.troubled:
             raise SleeperBusy("busy, try again in a minute")
-        hit = _ros_cache.put(key, hit)
+        if w.clean:                                  # ---- IP-5 fix round: stale only — served, kept for nobody
+            hit = _ros_cache.put(key, hit)
     res = hit.copy()
     res.attrs = dict(hit.attrs)
     return res

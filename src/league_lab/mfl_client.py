@@ -275,8 +275,7 @@ class MFL:
         if hit is not None and hit[0] > now:
             return hit[3]
         if now < self._backoff_until or not provider_share.take("mfl") or not self.bucket.take():   # ---- IO-4: share
-            if hit is not None:
-                self.stale_served += 1
+            if self._held_ok(hit, kind, now):                          # ---- IP-5 fix round: bounded, noted stale
                 return hit[3]
             provider_trouble.note("busy")                                                    # ---- IP-5
             raise MFLBusy("busy, try again in a minute")
@@ -287,14 +286,12 @@ class MFL:
             if not isinstance(data, dict):
                 raise MFLUnavailable(f"MyFantasyLeague {type_}: an empty answer")
         except MFLBusy:                        # an HTTP 429 (``_http``): the held answer, as for an empty bucket
-            if hit is not None:
-                self.stale_served += 1
+            if self._held_ok(hit, kind, now):
                 return hit[3]
             provider_trouble.note("busy")
             raise
         except MFLUnavailable as exc:
-            if hit is not None:
-                self.stale_served += 1
+            if self._held_ok(hit, kind, now):
                 return hit[3]
             if not str(exc).startswith("no fixture"):          # a fixture never recorded is the test's "not there"
                 provider_trouble.note("failed")
@@ -304,8 +301,7 @@ class MFL:
             msg = (_t(data.get("error")) or "").lower()
             if "too many" in msg or "slow down" in msg or "rate" in msg:
                 self._backoff_until = self.clock() + 60
-                if hit is not None:
-                    self.stale_served += 1
+                if self._held_ok(hit, kind, now):                      # ---- IP-5 fix round
                     return hit[3]
                 provider_trouble.note("busy")                                                # ---- IP-5
                 raise MFLBusy("busy, try again in a minute")
@@ -322,6 +318,17 @@ class MFL:
             if _HOST.match(base) and league not in self.hosts:
                 self.hosts[league] = base
         return data
+
+    # ---- IP-5 fix round (review M1): a held answer past its TTL is served only while younger than
+    # ``provider_trouble.max_age`` (rosters 30 min, 15 on a game day; live scoring 15 / 10; standings an hour …) and is
+    # noted ``stale`` (a cache built on it serves this requester and keeps nothing)
+    def _held_ok(self, hit: tuple | None, kind: str, now: float) -> bool:
+        if hit is None or not provider_trouble.held_usable("mfl", kind, now - hit[1], self.wall()):
+            return False
+        self.stale_served += 1
+        provider_trouble.note("stale")
+        return True
+    # ---- end IP-5
 
     # ---- IG-3 (Wave I-G): the export's fetch time (the on-demand cache's age): a stale answer served on an MFL failure
     # keeps the time it was read, so the line never claims a fresher roster than the one shown

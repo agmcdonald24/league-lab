@@ -66,6 +66,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from . import provider_trouble  # ---- IP-5 fix round: refusals noted, held answers bounded
 from .sleeper_client import LeagueNotFound, SleeperBusy, SleeperUnavailable, TokenBucket
 
 AUTH_URL = "https://api.login.yahoo.com/oauth2/request_auth"
@@ -763,22 +764,22 @@ class Yahoo:
         if hit is not None and hit[0] > now:
             return hit[3]
         if now < self._backoff_until or not self.bucket.take():
-            if hit is not None:
-                self.stale_served += 1
+            if provider_trouble.serve_held(self, "yahoo", hit, kind, now):         # ---- IP-5 fix round: bounded
                 return hit[3]
+            provider_trouble.note("busy")                                          # ---- IP-5 fix round
             raise YahooBusy("busy, try again in a minute")
         self.calls += 1
         try:
             data = self._read(path, session, league_key)
         except YahooBusy:                       # ---- IP-5: Yahoo's 429 / 999 — the held answer, as for an empty bucket
-            if hit is not None:
-                self.stale_served += 1
+            if provider_trouble.serve_held(self, "yahoo", hit, kind, now):
                 return hit[3]
+            provider_trouble.note("busy")
             raise
         except YahooUnavailable:
-            if hit is not None:
-                self.stale_served += 1
+            if provider_trouble.serve_held(self, "yahoo", hit, kind, now):         # ---- IP-5 fix round
                 return hit[3]
+            provider_trouble.note("failed")
             raise
         with self._lock:
             self._cache[key] = (now + TTL_S[kind], now, kind, data)

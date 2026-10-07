@@ -79,6 +79,7 @@ from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
+from . import provider_trouble  # ---- IP-5 fix round: refusals noted, held answers bounded
 from .sleeper_client import (
     LeagueNotFound,
     SleeperBusy,
@@ -802,9 +803,9 @@ class ESPN:
         if hit is not None and hit[0] > now:
             return hit[3]
         if now < self._backoff_until or not self.bucket.take():
-            if hit is not None:
-                self.stale_served += 1
+            if provider_trouble.serve_held(self, "espn", hit, kind, now):          # ---- IP-5 fix round: bounded
                 return hit[3]
+            provider_trouble.note("busy")                                          # ---- IP-5 fix round
             raise ESPNBusy("busy, try again in a minute")
         self.calls += 1
         try:
@@ -819,15 +820,16 @@ class ESPN:
                 status, text = self._http(url, headers)
         except ESPNUnavailable as exc:
             self.last_error = f"{VIEW_OF[kind]}: {str(exc).rsplit(': ', 1)[-1]}"
-            if hit is not None:
-                self.stale_served += 1
+            if provider_trouble.serve_held(self, "espn", hit, kind, now):          # ---- IP-5 fix round
                 return hit[3]
+            if not str(exc).startswith("no fixture"):
+                provider_trouble.note("failed")
             raise
         if status == 429:
             self._backoff_until = self.clock() + 60
-            if hit is not None:
-                self.stale_served += 1
+            if provider_trouble.serve_held(self, "espn", hit, kind, now):          # ---- IP-5 fix round
                 return hit[3]
+            provider_trouble.note("busy")
             raise ESPNBusy("busy, try again in a minute")
         if status in (401, 403):
             with self._lock:
@@ -837,9 +839,9 @@ class ESPN:
             raise unknown_league(lid, season)
         if status != 200:
             self.last_error = f"{VIEW_OF[kind]}: HTTP {status}"
-            if hit is not None:
-                self.stale_served += 1
+            if provider_trouble.serve_held(self, "espn", hit, kind, now):          # ---- IP-5 fix round
                 return hit[3]
+            provider_trouble.note("failed")
             raise ESPNUnavailable(f"ESPN {self._redact(url)}: HTTP {status}")
         try:
             data = json.loads(text or "null")
