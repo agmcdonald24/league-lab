@@ -8,7 +8,8 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   it (`league_lab.provider_trouble`), and the caches on a request path (the roster contexts My Week shares, the
   decision memos, a league's solved weeks and rest of season, the outlook) keep nothing built during one — the last
   good value is served with its own stamps, else "busy" (503) and the screen retries; an empty Sleeper directory, a
-  null roster or an empty MFL body is a failure, the directory's disk copy of any age answers a refusal, the injury
+  null roster or an empty MFL body is a failure, the directory's disk copy (up to 2 days old) answers a refusal, a held
+  answer past its TTL (rosters and live scores up to an hour) is served to its requester and kept by nobody, the injury
   and news feeds keep their held copy over an empty answer, MFL's id lookup refused is busy (never "MFL player 1234").
   MFL's League screen cold: the same numbers (150,736 compared, three leagues) with about 20 % less CPU (the TMQB
   starter in one pass, the window's units priced once). The look-ahead "best corners" split is gone. Player pages

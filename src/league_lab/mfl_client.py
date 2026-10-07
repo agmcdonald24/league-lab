@@ -320,7 +320,7 @@ class MFL:
         return data
 
     # ---- IP-5 fix round (review M1): a held answer past its TTL is served only while younger than
-    # ``provider_trouble.max_age`` (rosters 30 min, 15 on a game day; live scoring 15 / 10; standings an hour …) and is
+    # ``provider_trouble.max_age`` (rosters, live scoring and standings an hour; schedules a day …) and is
     # noted ``stale`` (a cache built on it serves this requester and keeps nothing)
     def _held_ok(self, hit: tuple | None, kind: str, now: float) -> bool:
         if hit is None or not provider_trouble.held_usable("mfl", kind, now - hit[1], self.wall()):

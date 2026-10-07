@@ -16,7 +16,7 @@ opponent, no live points, an empty directory, a player "unmapped" — which is r
 * A reader that recovers a refusal by serving a held good value of its own calls ``forgive(exc)``: the note is taken
   back from the watches open now.
 
-Nothing here reads a provider or a database; the clock: ``time.monotonic`` and the wall clock's weekday (``game_day``).
+Nothing here reads a provider, a database or the clock beyond ``time.monotonic``.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from collections.abc import Callable, Hashable, Iterator
 from contextlib import contextmanager
 from typing import Any
 
-HOLD_S = 15 * 60.0           # a cache's last good value for a troubled rebuild (fix round: the game-day roster bound)
+HOLD_S = 3600.0              # a cache's last good value for a troubled rebuild (fix round 2: an hour)
 
 
 class Watch:
@@ -57,39 +57,28 @@ _lock = threading.Lock()
 TOTALS = {"busy": 0, "failed": 0, "stale_served": 0, "forgiven": 0, "not_kept": 0, "kept_served": 0}
 
 # ---- fix round (review M1): how old a held answer may be when it is served past its TTL (seconds since it was read,
-# per provider and kind of read); older, the requester gets busy (refused) or the failure (the provider failed). A game
-# day (Thursday, Sunday, Monday in New York) tightens the live reads: rosters 15 minutes, this week's scores 10.
+# per provider and kind of read); older, the requester gets busy (refused) or the failure (the provider failed).
+# Fix round 2 (the PO): rosters and live scores an hour on any day — an outage must not turn into "busy" while a last
+# good answer with its stamp exists; review M1 is answered by "a build that saw a stale answer is kept by nobody".
 MIN, HOUR, DAY = 60.0, 3600.0, 86400.0
 STALE_MAX_S: dict[str, dict[str, float]] = {
-    "sleeper": {"players": 2 * DAY, "league": 2 * DAY, "users": 2 * DAY, "rosters": 30 * MIN, "matchups": 15 * MIN,
+    "sleeper": {"players": 2 * DAY, "league": 2 * DAY, "users": 2 * DAY, "rosters": HOUR, "matchups": HOUR,
                 "user": DAY, "user_leagues": DAY, "state": DAY, "season_matchups": DAY, "transactions": DAY},
-    "mfl": {"league": 2 * DAY, "rules": 2 * DAY, "players": 2 * DAY, "rosters": 30 * MIN, "live_scoring": 15 * MIN,
+    "mfl": {"league": 2 * DAY, "rules": 2 * DAY, "players": 2 * DAY, "rosters": HOUR, "live_scoring": HOUR,
             "schedule": DAY, "weekly_results": DAY, "standings": HOUR, "injuries": 6 * HOUR, "search": HOUR,
             "transactions": HOUR, "transactions_past": 2 * DAY},
-    "espn": {"settings": 2 * DAY, "status": HOUR, "teams": DAY, "rosters": 30 * MIN, "schedule": 15 * MIN,
+    "espn": {"settings": 2 * DAY, "status": HOUR, "teams": DAY, "rosters": HOUR, "schedule": HOUR,
              "transactions": HOUR, "free_agents": DAY},
     "yahoo": {"game": 2 * DAY, "game_weeks": 2 * DAY, "settings": DAY, "teams": HOUR, "standings": HOUR,
-              "roster": 30 * MIN, "scoreboard": 15 * MIN, "transactions": HOUR, "players": HOUR, "user": HOUR},
+              "roster": HOUR, "scoreboard": HOUR, "transactions": HOUR, "players": HOUR, "user": HOUR},
 }
-GAME_DAY_MAX_S: dict[str, dict[str, float]] = {
-    "sleeper": {"rosters": 15 * MIN, "matchups": 10 * MIN}, "mfl": {"rosters": 15 * MIN, "live_scoring": 10 * MIN},
-    "espn": {"rosters": 15 * MIN, "schedule": 10 * MIN}, "yahoo": {"roster": 15 * MIN, "scoreboard": 10 * MIN},
-}
-DEFAULT_MAX_S = 15 * MIN                     # a kind not listed: a quarter of an hour
-
-
-def game_day(wall: float | None = None) -> bool:
-    """Thursday, Sunday or Monday in New York (the wall clock; no schedule read)."""
-    from datetime import datetime
-    from zoneinfo import ZoneInfo
-    t = datetime.fromtimestamp(time.time() if wall is None else float(wall), ZoneInfo("America/New_York"))
-    return t.weekday() in (0, 3, 6)
+DEFAULT_MAX_S = HOUR                         # a kind not listed: an hour
 
 
 def max_age(provider: str, kind: str, wall: float | None = None) -> float:
-    """How old a held answer of this kind may be served (seconds since read)."""
-    if game_day(wall) and kind in GAME_DAY_MAX_S.get(provider, {}):
-        return GAME_DAY_MAX_S[provider][kind]
+    """How old a held answer of this kind may be served (seconds since read; ``wall`` is accepted and unused: the
+    bound is the same on every day)."""
+    del wall
     return STALE_MAX_S.get(provider, {}).get(kind, DEFAULT_MAX_S)
 
 

@@ -569,8 +569,8 @@ def test_review_m1_a_refused_client_cannot_pin_others_to_its_held_rosters(monkey
         print("good-2:", len(g2), "players (v1 had", len(v1), "); rosters read again:",
               len([x for x in state["reads"] if x.endswith("/rosters")]) - reads_before)
         assert len(g2) == len(v1) - 1 and g2 != v1                         # the changed roster, read from Sleeper
-        # past the bound (31 minutes: rosters 30, 15 on a game day) the refused client gets busy, not the held rosters
-        clk.t += 31 * 60
+        # past the bound (61 minutes: rosters an hour, any day — fix round 2) the refused client gets busy
+        clk.t += 61 * 60
         time.sleep(1.2)
         availability.clear_context()
         while PS.shares().take("sleeper", "attacker"):     # his share refills on the real clock: spent again
