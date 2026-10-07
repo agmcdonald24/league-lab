@@ -39,7 +39,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from league_lab import anyleague as A
-from league_lab import clock  # ---- INF-1: the league's now
+from league_lab import (
+    clock,  # ---- INF-1: the league's now
+    provider_trouble,  # ---- IP-5: a refused read is never kept
+)
 from league_lab import memo as budget  # ---- INF-2: the memory budget
 from league_lab import trades as T
 from league_lab import waivers as W
@@ -194,7 +197,15 @@ def _memo(key: tuple, is_house: bool, fn):
     hit = _memo_cache.get(key, _MISS)
     if hit is not _MISS:
         return hit
-    return _memo_cache.put(key, fn(), ttl=MEMO_TTL_S["house" if is_house else "sleeper"])
+    # ---- IP-5 (Wave I-P): an answer built while a provider read was refused or failed (and swallowed below: no
+    # opponent, an empty directory …) is never kept — another manager would get it — nor served: 503 busy, the screen
+    # asks again (the clients still hold their last good reads, so the next build is whole). SECURITY_PUBLIC § 15.
+    with provider_trouble.watch() as w:
+        value = fn()
+    if not w.clean:
+        raise A.SleeperBusy("busy, try again in a minute")
+    # ---- end IP-5
+    return _memo_cache.put(key, value, ttl=MEMO_TTL_S["house" if is_house else "sleeper"])
 
 
 def clear_memo() -> None:

@@ -300,7 +300,7 @@ class MFLLeagues:
         if rest:
             try:
                 info = {str(p.get("id")): p for p in self.client.players(rest)}
-            except (M.MFLUnavailable, M.MFLBusy, LeagueNotFound):
+            except LeagueNotFound:     # ---- IP-5: refused / failed raises (busy), never "unmapped" (an empty roster spot)
                 info = {}
             idx = self._index() if any(str((info.get(i) or {}).get("position")) not in ("Def", "TMDEF", *UNIT_POSITIONS)
                                        for i in rest) else {}

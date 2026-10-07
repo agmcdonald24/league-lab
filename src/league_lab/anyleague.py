@@ -58,7 +58,7 @@ from typing import ClassVar
 import numpy as np
 import pandas as pd
 
-from . import clock, memo
+from . import clock, memo, provider_trouble  # ---- IP-5: provider_trouble
 from . import lineup as LU
 from .scoring import (  # noqa: F401 - compute_points: the reference the vector form equals
     MAPPED_KEYS,
@@ -892,7 +892,7 @@ def unit_directory(league_id: str) -> dict[tuple[str, str], dict]:
     try:
         r.rosters(league_id)                     # registers the league's units in the directory (cached calls)
         mf = r.mfl
-    except (LeagueNotFound, SleeperUnavailable, SleeperBusy, AttributeError):
+    except (LeagueNotFound, AttributeError):     # ---- IP-5: refused / failed raises (the caller keeps nothing)
         return {}
     mine = {k for k, how in mf.mapping.get(platforms.mfl_id(league_id), {}).values() if how == "unit"}
     out: dict[tuple[str, str], dict] = {}
@@ -1418,8 +1418,12 @@ def ros_table(query: Query, league_id: str, league: Mapping, from_week: int, las
            exclude_reference, src)
     hit = _ros_cache.get(key)
     if hit is None:
-        hit = _ros_cache.put(key, _ros_table(query, league_id, scoring, slots, season, from_week, last_week,
-                                             playoff_week_start, exclude_reference, src))
+        with provider_trouble.watch() as w:          # ---- IP-5: a unit's name read refused -> not kept (busy)
+            hit = _ros_table(query, league_id, scoring, slots, season, from_week, last_week, playoff_week_start,
+                             exclude_reference, src)
+        if not w.clean:
+            raise SleeperBusy("busy, try again in a minute")
+        hit = _ros_cache.put(key, hit)
     res = hit.copy()
     res.attrs = dict(hit.attrs)
     return res
@@ -1735,8 +1739,9 @@ def league_weeks(query: Query, league_id: str, week: int, *, client: Sleeper | N
               for w in sorted(set(weeks) | set(rest_weeks))}
     t2 = time.perf_counter()
     when = as_of or clock.now()  # ---- INF-1
-    inp, gsis_of, dp = league_inputs(query, league_id, season, rosters, players, priced, slots, weeks, extra_sids=extra)
-    rows, totals, _ = LU.build(inp, as_of=when)
+    with provider_trouble.watch() as trouble:        # ---- IP-5: a build that swallowed a refused read is not kept
+        inp, gsis_of, dp = league_inputs(query, league_id, season, rosters, players, priced, slots, weeks, extra_sids=extra)
+        rows, totals, _ = LU.build(inp, as_of=when)
     t3 = time.perf_counter()
     out = LeagueWeeks(league=league, league_id=league_id, season=season, weeks=weeks, rest_weeks=rest_weeks, slots=slots,
                       scoring=scoring, rosters=rosters, users=users, names=team_names(rosters, users), players=players,
@@ -1744,7 +1749,7 @@ def league_weeks(query: Query, league_id: str, week: int, *, client: Sleeper | N
                       timings_ms={"sleeper": round((t1 - t0) * 1000, 1), "price": round((t2 - t1) * 1000, 1),
                                   "solve": round((t3 - t2) * 1000, 1), "total": round((t3 - t0) * 1000, 1)},
                       sleeper_calls=sl.calls - calls0)
-    if cache:
+    if cache and trouble.clean:                      # ---- IP-5
         _league_weeks.put(key, out)
     return out
 

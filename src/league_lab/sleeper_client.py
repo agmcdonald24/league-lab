@@ -36,7 +36,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from . import provider_share  # ---- IO-4: each client's own share of the budget
+from . import (
+    provider_share,  # ---- IO-4: each client's own share of the budget
+    provider_trouble,  # ---- IP-5: a refused / failed read is noted, never kept as data
+)
 
 SLEEPER_API = "https://api.sleeper.app/v1"
 FIXTURES_ENV = "LEAGUE_LAB_SLEEPER_FIXTURES"
@@ -309,17 +312,21 @@ class Sleeper:
             if hit is not None:                # busy: the last good answer beats an error
                 self.stale_served += 1
                 return hit[3]
-            raise SleeperBusy("busy, try again in a minute")
+            return self._held_or_raise(kind, SleeperBusy("busy, try again in a minute"))   # ---- IP-5
         self.calls += 1
         try:
             data = self._read(path, fixture, kind)
             if kind == "players":              # ---- IL-4: trimmed whatever read it (an injected fetch too)
                 data = trim_directory(data)
-        except SleeperUnavailable:
+            # ---- IP-5: an empty body / an empty directory is not "nobody there": a failure, never kept
+            if (kind == "players" and not data) or (kind in ("rosters", "users") and not isinstance(data, list)):
+                raise SleeperUnavailable(f"Sleeper {path}: an empty answer")
+            # ---- end IP-5
+        except SleeperUnavailable as exc:
             if hit is not None:
                 self.stale_served += 1
                 return hit[3]
-            raise
+            return self._held_or_raise(kind, exc)                                          # ---- IP-5
         with self._lock:
             self._cache[path] = (now + TTL_S[kind], now, kind, data)
             self.pruned = getattr(self, "pruned", 0) + prune_cache(self._cache, now)      # ---- IM-3 fix: bounded
@@ -327,16 +334,29 @@ class Sleeper:
             self._players_to_disk(data)
         return data
 
+    # ---- IP-5 (Wave I-P): refused or failed with nothing in memory — the directory's disk copy of any age is the last
+    # good one (served, not an empty directory); else the refusal is noted (provider_trouble) and raised
+    def _held_or_raise(self, kind: str, exc: SleeperUnavailable | SleeperBusy) -> Any:
+        if kind == "players":
+            disk = self._players_from_disk(any_age=True)
+            if disk is not None:
+                self.stale_served += 1
+                return disk
+        if not str(exc).startswith("no fixture"):          # a fixture never recorded is the test's "not there"
+            provider_trouble.note(exc)
+        raise exc
+    # ---- end IP-5
+
     # ------------------------------------------------------------------ the player directory on disk
     def _players_file(self) -> Path | None:
         return None if self.cache_path is None else self.cache_path / PLAYERS_FILE
 
-    def _players_from_disk(self) -> dict | None:
+    def _players_from_disk(self, any_age: bool = False) -> dict | None:       # ---- IP-5: any_age
         f = self._players_file()
         if f is None or not f.exists():
             return None
         age = self.wall() - f.stat().st_mtime
-        if age >= TTL_S["players"]:
+        if age >= TTL_S["players"] and not any_age:
             return None
         try:
             data = loads_directory(f.read_text())      # ---- IL-4: a copy written before the trim is trimmed here
