@@ -233,7 +233,16 @@ class InjuryFeed:
             if d is not None:
                 self.stale_served += 1
             return d
-        self._data = {"fetched_at": now, "source_timestamp": (feed or {}).get("timestamp"), "entries": parse(feed)}
+        entries = parse(feed)
+        # ---- IP-5 (Wave I-P): a copy with nobody on it while the one held lists players is ESPN's error page, not "no
+        # injuries" (the league-wide report is never empty in season): the held copy stays, the read counts as failed
+        if not entries and d is not None and d.get("entries"):
+            self.failures += 1
+            self.last_error = "an empty answer"
+            self.stale_served += 1
+            return d
+        # ---- end IP-5
+        self._data = {"fetched_at": now, "source_timestamp": (feed or {}).get("timestamp"), "entries": entries}
         self.last_error = None
         self._to_disk(self._data)
         return self._data

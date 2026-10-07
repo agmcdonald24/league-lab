@@ -274,3 +274,21 @@ def test_mfl_a_refused_id_lookup_is_busy_then_the_full_roster(client, monkeypatc
     assert r.status_code == 200
     names = [x.get("player_name") or "" for x in r.json()["lineup"]]
     assert names and not any(n.startswith("MFL player") for n in names)
+
+
+def test_the_injury_feed_keeps_its_held_copy_over_an_empty_answer(tmp_path):
+    from league_lab import injury_feed as F
+    answers = [{"timestamp": "2026-10-03T12:00:00Z", "injuries": []}]
+    fd = F.InjuryFeed(fetch=lambda url: answers[0], cache_path=tmp_path / "inj.json", background=False)
+    fd._data = {"fetched_at": 0.0, "source_timestamp": None,
+                "entries": [{"espn_id": "4262921", "name": "Justin Jefferson", "status": "Out"}]}
+    d = fd.snapshot()
+    assert d["entries"] and d["entries"][0]["name"] == "Justin Jefferson" and fd.failures == 1
+
+
+def test_the_news_feed_keeps_its_held_items_over_an_empty_body():
+    from league_lab import news_feed as N
+    fd = N.NewsFeed(fetch=lambda url: {})
+    held = {"fetched_at": 0.0, "as_of": None, "items": [{"headline": "Nacua returns to practice"}]}
+    fd._mem["4426515"] = held
+    assert fd.copy("4426515") is held and fd.failures == 1

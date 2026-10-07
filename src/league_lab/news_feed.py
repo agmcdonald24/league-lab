@@ -247,6 +247,8 @@ class NewsFeed:
             self.calls += 1
         try:                                       # outside the lock: one slow answer does not hold every card
             body = self._read(eid)
+            if not isinstance(body, dict) or not body:      # ---- IP-5: an empty body is a failure, not "no news"
+                raise FeedUnavailable("ESPN news: an empty answer")
         except (FeedUnavailable, ValueError, TypeError) as exc:
             with self._lock:
                 self.failures += 1
