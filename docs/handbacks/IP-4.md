@@ -68,9 +68,17 @@ cards"): a head with one headline number, honest ratings, real charts, and every
 
 - **Phone: the sections stay open** (not "sections that open"): existing e2e (the root fixtures spec, ia3, if4, il1, n1, …) assert `section-*` visible on the
   page. At 375 the head and the start of the ratings fill the first screen; the first chart is ~1.3 screens down.
-- **Kickers and defenses**: no past projections in the chart (their ranges are in `ops.kd_ranges`, not read): the
-  bars alone, titled "Points by week". Any league that is not a house league or a stored reference scoring: the same
-  (its past boards are not kept; pricing `ops.projection_lines` in its scoring on request is the next step).
+- **Past projections where none are kept**: a kicker's come from `ops.kd_ranges` on a reference key (done); in a house
+  league the mart keeps a kicker's current week only, and a defense has no card. Any league that is not a house league
+  or a stored reference scoring (Half PPR, PPR, Standard — not the ESPN / Yahoo variants, TE premium or 6-point passing
+  TDs): the bars alone, titled "Points by week", with the reason (pricing `ops.projection_lines` in its scoring on
+  request is the next step).
+- **The research budget**: a full player page now asks card + games + ratings (`research`) + projections (`read`) —
+  three research calls where it asked two; the drawer's Overview asks card + games + ratings where it asked the card
+  alone. At the default 60 a minute, 40 at once, a person opening 20 players in a minute still fits (60 tokens); the
+  IM-3 comment's "a dozen player cards (two calls each)" now reads three. The PO decides whether ratings should move
+  to `read` (warm it is a 23 ms read of a cached frame; cold it aggregates the season, 0.42 s) — the brief put it in
+  `research`, so it is there.
 - No "schedule ahead" rating: it is not a percentile of a Stats column (the schedule table stays).
 - Pictures: the sandbox reaches no picture host, so every screenshot shows `Headshot`'s silhouette on the team field
   (designed for: the card reads as a card without a photo). A real picture is 104 px round in the same place.
@@ -85,30 +93,34 @@ WeekChart,PointsChart,RoleChart}.svelte`, `card/{panels,lazy}.ts`, `web/e2e/ip4/
 `docs/handbacks/ip4/*.jpg` (7). Changed (mine): `routes/Player.svelte`, `components/PlayerPane.svelte`,
 `LineChart.svelte`, `lib/card.ts`, `lib/chart.ts`, `docs/DESIGN.md` (§ "The player card (Wave I-P, IP-4)").
 **Edits outside my files** (marked blocks): `api/league_lab_api/main.py` (the router, before the SPA catch-all, after
-IO-1), `api/league_lab_api/ratelimit.py` (a comment: the routes are `research` through the `/api/player/` prefix),
+IO-1), `api/league_lab_api/ratelimit.py` (`bucket_for`: `/api/player/{gsis}/projections` → `read`, 3 lines before the
+research rule; the ratings stay `research` through the existing `/api/player/` prefix),
 `web/src/lib/api.ts` (types + `cardPaths`, at the end), `docs/WORDS.md` (§ "The player card"), `CHANGELOG.md` (the
 Wave I-P heading created, one bullet), `web/e2e/app.spec.ts` (one assertion, on purpose: see below).
 
 ## Schema in / out
 
 In: `analytics.fct_player_game`, `mart_player_game_advanced`, `mart_player_ngs_week` (through the Stats frame),
-`dim_player`, `mart_player_week_projections`, `ops.projection_ranges`. Out: nothing. **No new relation.** On a
+`dim_player`, `mart_player_week_projections`, `ops.projection_ranges`, `ops.kd_ranges`. Out: nothing. **No new relation.** On a
 database without anything new: everything works (no new object is read); a copy without `ops.projection_ranges` or
 the projections mart gives the bars alone, never a 500.
 
 ## Evidence
 
-- `GET /api/player/{gsis}/ratings`: **cold 0.40 s** (first read of the season frame in the process: query 0.15 s +
-  aggregate 0.20 s), **warm 0.026 s** (curl, HTTP included). `…/projections`: 8–13 ms (house), 5 ms (reference).
-- Page (fixture API, warm, 4 loads each): **the head visible 316–465 ms** (the card's own request dominates), first
-  contentful paint 76–248 ms, the points chart 398–605 ms, at 375 and at 1300.
-- Bundle: the app chunk **243.40 → 260.90 KB (+17.5 KB; gzip 75.95 → 82.93, +7.0 KB)**; the new lazy `panels`
-  chunk 22.0 KB (8.3 KB gzip), loaded with the player page or the first drawer.
-- Tests: `api/tests/test_ip4.py` **20 passed** (percentiles on hand-built frames, ties, lower-is-better, a population
+- `GET /api/player/{gsis}/ratings`: **cold 0.42 s** (a fresh process's first read of the season frame: query 0.15 s +
+  aggregate 0.20 s; the Stats table's cache, so a visit to Stats warms it too), **warm 0.023 s** (curl, HTTP
+  included). `…/projections`: 8–13 ms (house), 5 ms (reference).
+- Page (fixture API, warm, 4 loads each, Puka on `ref:half` and St. Brown in the dynasty league): **the head visible
+  181–563 ms** (the card's own request dominates), first contentful paint 60–200 ms, the points chart 197–733 ms, at
+  375 and at 1300. (A tight measuring loop hits the `research` limit — see "the research budget" above.)
+- Bundle: the app chunk **243.40 → 256.54 KB (+13.1 KB; gzip 75.95 → 80.92, +5.0 KB)**; the new lazy `panels` chunk
+  22.0 KB (8.2 KB gzip), loaded with the player page or the first drawer; the old `PlayerCard` (now used only by lazy
+  screens) moved into a 4.6 KB shared chunk. All JS: 749.1 → 784.4 KB.
+- Tests: `api/tests/test_ip4.py` **21 passed** (percentiles on hand-built frames, ties, lower-is-better, a population
   of one, the minimum sample, a column's own minimum, a missing value, a player with no games, the overall's 3-rating
-  rule, 6–8 catalogue columns per position, formats, the bucket, bad ids / league / season, the routes on the
-  database). With `test_im3`, `test_im4`, `test_h0`, `test_auth` (modules touched: the router, ratelimit): **117
-  passed**. `ruff check src app tests api` clean; `npm run lint && npm run build` clean; `copy_standard.py --check`
+  rule, 6–8 catalogue columns per position, formats, the buckets, bad ids / league / season, the routes on the
+  database, a kicker's past projections). With `test_im3`, `test_im4`, `test_h0`, `test_auth` (modules touched: the
+  router, ratelimit): **118 passed** (the last run of test_ip4 + test_im3 after the bucket change: 84 passed). `ruff check src app tests api` clean; `npm run lint && npm run build` clean; `copy_standard.py --check`
   clean.
 - e2e `e2e/ip4` (FIXTURES_PORT=8940): **16 passed** (8 × phone at 375, desktop at 1300): WR (Puka Nacua), RB (Breece
   Hall, Out), QB (Lamar Jackson), a rookie with two games (Colbie Young: one reason line, every rating a dash, "no
@@ -125,8 +137,9 @@ the projections mart gives the bars alone, never a 500.
 - Screenshots (`docs/handbacks/ip4/`, JPEG q70, 47–160 KB each, 752 KB in all): `ip4-wr-1300-dark`,
   `ip4-qb-1300-light`, `ip4-k-1300-dark`, `ip4-pane-1300-light` (the drawer alone), `ip4-wr-375-dark`,
   `ip4-rb-375-light`, `ip4-rookie-375-dark`.
-- Branch size: 1,926 lines added (228 KB of text, 121 KB of it the e2e recording); binaries 7 JPEGs 752 KB (+ one
-  earlier version of `ip4-k-1300-dark.jpg`, 66 KB, in history) — under 1 MB generated in all.
+- Branch size: ~2,130 lines added (~246 KB of text, 130 KB of it the e2e recording, plus its first version, 122 KB, in
+  history); binaries 7 JPEGs 752 KB (+ two earlier versions of `ip4-k-1300-dark.jpg`, 66 KB each, in history) — about
+  1.1 MB generated in all, under the 2 MB rule.
 
 ## PO lines
 
