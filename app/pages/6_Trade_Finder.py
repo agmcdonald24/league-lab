@@ -1,10 +1,10 @@
 """Trade Finder (plan T-01 trade evaluator + T-02 simulator, on B1's exact lineup service and B2's roster value).
 
 Phone first, answer first: three cards open the page — the best trade partner (the trade that raises *both* lineups,
-`league_lab.trades.partners`), your best buy-low by position and your best sell-high (B2's lists) — then "Try a
+`league_lab.trades.partners`), the best fit among players scoring below their work, by position, and among yours scoring above it (B2's lists) — then "Try a
 trade" (pick a partner, tick players both ways: both lineups before / after this week and over four weeks, who starts
 and who sits, depth and the closest call, the league rank change, the roster-size consequence, the fit next to the
-market price and a one-sentence verdict), then the buy-low / sell-high lists in expanders, filterable by position and
+market price and a one-sentence verdict), then the two lists (scoring below / above his work) in expanders, filterable by position and
 owner. The package lives in the URL (`?partner=…&give=…&get=…`, Sleeper ids, next to the league / team that
 `perspective()` writes) so a copied link reproduces it. Every table carries `gsis_id`, so names open the Player card.
 """
@@ -158,7 +158,7 @@ def partner_sweep(league: str, roster: int, slot_list: tuple[str, ...], key: tup
 
 @st.cache_data(ttl=600, show_spinner="Solving lineups …")
 def fits(league: str, roster: int, slot_list: tuple[str, ...], key: tuple, _rows: pd.DataFrame, _cands: pd.DataFrame):
-    """Buy-low and sell-high lists for `roster` (league_lab.roster_value.trade_candidates): every number is
+    """The two lists (scoring below / above his work) for `roster` (league_lab.roster_value.trade_candidates): every number is
     a re-solved lineup, gain = best lineup with him - best lineup now, loss = his margin on his roster.
     `key` stands for the two frames in the cache key (they hold lists, which Streamlit cannot hash)."""
     b = RosterBoard(_rows.to_dict("records"), slot_list)
@@ -285,12 +285,12 @@ def best_by_position(df: pd.DataFrame) -> dict[str, pd.Series]:
 with st.container(border=True):
     top = best_by_position(buy)
     if not top:
-        st.markdown(f"**Buy low:** nobody scoring below his usage would add more to your lineup than he is worth to his "
+        st.markdown(f"**Scoring below his work:** nobody on another team who scores below his work would add more to your lineup than he is worth to his "
                     f"own over {span_words}.")
     else:
         t = max(top.values(), key=lambda r: (r["fit_horizon"], r["gain_horizon"]))
-        st.markdown(f"**Buy low: ask {who(t['owner'])} about {player_link(t['gsis_id'], t['player_name'])} ({t['position']}).** "
-                    f"He scores {abs(t['diff_per_game']):.1f} per game below what his usage is worth, adds **{t['gain_week']:+.1f}** "
+        st.markdown(f"**Scoring below his work: ask {who(t['owner'])} about {player_link(t['gsis_id'], t['player_name'])} ({t['position']}).** "
+                    f"He scores {abs(t['diff_per_game']):.1f} per game below what his work is usually worth, adds **{t['gain_week']:+.1f}** "
                     f"to your week-{this_week} lineup and costs them **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** "
                     f"over {span_words}).")
         bits = []
@@ -306,12 +306,12 @@ with st.container(border=True):
 with st.container(border=True):
     stop_ = sell[sell["fit_horizon"] > 0].head(1) if not sell.empty else sell
     if stop_.empty:
-        st.markdown(f"**Sell high:** none of your players scoring above his usage is worth more to another lineup than to "
+        st.markdown(f"**Scoring above his work:** none of your players scoring above his work is worth more to another lineup than to "
                     f"yours over {span_words}.")
     else:
         t = stop_.iloc[0]
-        st.markdown(f"**Sell high: shop {player_link(t['gsis_id'], t['player_name'])} ({t['position']}) to {who(t['partner'])}.** "
-                    f"He scores {t['diff_per_game']:.1f} per game above what his usage is worth. Their week-{this_week} lineup "
+        st.markdown(f"**Scoring above his work: shop {player_link(t['gsis_id'], t['player_name'])} ({t['position']}) to {who(t['partner'])}.** "
+                    f"He scores {t['diff_per_game']:.1f} per game above what his work is usually worth. Their week-{this_week} lineup "
                     f"gains **{t['gain_week']:+.1f}**, yours loses **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** "
                     f"over {span_words}).")
 
@@ -631,8 +631,10 @@ howto(
     title="How to read this",
 )
 
-# ------------------------------------------------------------- buy low / sell high (B2), whole league, by position and owner
-st.subheader("Buy low, sell high")
+# ------------------------------------------------------------- scoring below / above his work (B2), whole league, by position and owner
+st.subheader("Scoring below or above his work")
+st.caption("What happened, not a forecast: his projection already counts his work and his points. Graded on past weeks, "
+           "the gap was no reason to trade on its own. Both lists are ordered by lineup fit, from the projections.")
 f1, f2 = st.columns([3, 2])
 with f1:
     pos_f = st.segmented_control("Position", ["All", *POSITIONS], default="All", key="tf_position") or "All"
@@ -663,7 +665,7 @@ ov = {"player": Col("Player"), "manager": Col("Owner"),
       "loss_horizon": Col(f"They lose · {span}", "num1", f"The same over {span_words}"),
       "fit_week": Col(f"Fit · {wk}", "signed1", "You gain minus they lose, this week"),
       "fit_horizon": Col(f"Fit · {span}", "signed1", f"You gain minus they lose over {span_words}: the lineup points the trade creates")}
-with st.expander(f"Buy low · {len(buy_f)} players scoring below their usage{where}", expanded=False):
+with st.expander(f"Scoring below his work · {len(buy_f)} players{where}", expanded=False):
     if not buy_f.empty:
         b = buy_f.copy()
         b["player"] = b["player_name"] + " (" + b["position"] + ")"
@@ -674,7 +676,7 @@ with st.expander(f"Buy low · {len(buy_f)} players scoring below their usage{whe
              widths=fit({"player": 118, "gain_week": 56, "fit_horizon": 56, "manager": 92})
              or {"player": 150, "gain_week": 72, "fit_horizon": 72, "diff_per_game": 72, "manager": "medium"})
     else:
-        st.caption(f"Nobody on another team is scoring below his usage{where}.")
+        st.caption(f"Nobody on another team is scoring below his work{where}.")
 
 ov_s = {**ov, "manager": Col("Best fit", help=f"The roster whose lineup gains the most from him over {span_words}"),
         "gain_week": Col(f"They gain · {wk}", "signed1", f"What the best-fit roster's week-{this_week} lineup gains with him"),
@@ -683,7 +685,7 @@ ov_s = {**ov, "manager": Col("Best fit", help=f"The roster whose lineup gains th
         "loss_horizon": Col(f"You lose · {span}", "num1", f"The same over {span_words}"),
         "fit_week": Col(f"Fit · {wk}", "signed1", "They gain minus you lose, this week"),
         "fit_horizon": Col(f"Fit · {span}", "signed1", f"They gain minus you lose over {span_words}")}
-with st.expander(f"Sell high · {len(sell_f)} of your players scoring above their usage{where}", expanded=False):
+with st.expander(f"Scoring above his work · {len(sell_f)} of your players{where}", expanded=False):
     if not sell_f.empty:
         s = sell_f.copy()
         s["player"] = s["player_name"] + " (" + s["position"] + ")"
@@ -695,17 +697,19 @@ with st.expander(f"Sell high · {len(sell_f)} of your players scoring above thei
              widths=fit({"player": 118, "loss_week": 56, "fit_horizon": 56, "manager": 92})
              or {"player": 150, "loss_week": 72, "fit_horizon": 72, "manager": "medium", "diff_per_game": 72})
     else:
-        st.caption(f"None of your players is scoring above his usage{where}.")
+        st.caption(f"None of your players is scoring above his work{where}.")
 
 howto(
-    "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG − xPPG**, points minus expected points "
-    "per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your "
-    "players scoring *more* than their work supports. Filter by position and by owner to see the whole league.",
+    "**Scoring below his work**: players on other teams scoring *less* than their work is usually worth (**PPG − xPPG**, "
+    "points minus expected points per game, below zero). **Scoring above his work**: your players scoring *more*. That is "
+    "what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect "
+    "it, so it is no reason to trade on its own. Both lists are ordered by **Fit**, from the projections. Filter by "
+    "position and by owner to see the whole league.",
     f"**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). "
     f"**They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week ({wk}) and "
     f"the next four ({span}), in your league's scoring.",
     "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other "
     "team than to his own: an easier ask when you buy, a better sale when you sell.",
     "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use \"Try a trade\" above.",
-    title="How to read the buy-low and sell-high lists",
+    title="How to read the two lists",
 )

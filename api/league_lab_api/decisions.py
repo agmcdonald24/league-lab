@@ -3521,7 +3521,7 @@ SCENARIO_SQL = """select s.league_id, s.week, s.gsis_id, s.position, s.base_poin
                          s.backtest_n, s.backtest_hit_rate, s.base_line, s.larger_line
                   from ops.player_scenarios as s where s.season = %s and s.week >= %s order by s.week, s.league_id"""
 TRADE_POSITIONS = ("QB", "RB", "WR", "TE")
-# quoted from app/pages/6_Trade_Finder.py ("How to read the buy-low and sell-high lists")
+# quoted from app/pages/6_Trade_Finder.py ("How to read the two lists")
 TRADE_HOWTO = (
     # ---- IP-3 fix round (Wave I-P): graded (docs/METRICS.md cx1.1) — the gap is what happened and the projection already
     # counts it, so the lists are named for what they are and ordered by lineup fit; nothing says buy / sell on the gap

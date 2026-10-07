@@ -4,6 +4,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-07 — Wave I-P
 
+- **PO — the merge, a nightly fix, the console.** `league-lab db migrate` creates `ops.context_record` and
+  `ops.context_grade` (IP-3's block): Wave I-O listed them as state tables the migrate did not create, so the nightly
+  stopped at restore-state on its fresh database. Registry rows `rankings_tier` and `start_call`. The console says
+  what the web says: Matchups loses the look-ahead "best corners" expander; Trade Finder's lists are "Scoring below
+  his work" / "Scoring above his work" with the grade's line; the Player page's help drops "running hot / due". An
+  independent review of the merged tree (two Mediums, four Lows, all fixed in the round): docs/SECURITY_PUBLIC.md
+  § 16. docs/STATUS.md § "Wave I-P" has the grades, the decisions and the evidence.
 - **IP-5 — robustness and reach.** A refused or failed provider read is never kept as data: the provider clients note
   it (`league_lab.provider_trouble`), and the caches on a request path (the roster contexts My Week shares, the
   decision memos, a league's solved weeks and rest of season, the outlook) keep nothing built during one — the last

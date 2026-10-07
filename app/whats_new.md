@@ -3,6 +3,33 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 7 · rankings for everyone, "Who should I start?", the player card, and more honest grades
+
+- **Rankings for everyone.** Every player ranked for this week or the rest of the season in your scoring, in tiers.
+  Pick two to four and see who to start, with how sure that is ("Lean Olave: he outscores Nacua in 57 of 100 such
+  weeks — close; either is fine.").
+- **The player card.** Every player's page leads with a card: his picture on his team's colour, this week's
+  projection and its range, his value in your scoring, ratings that say where he ranks this season among players at
+  his position (0–99, from his own numbers, not a projection), and charts of his points against the projection made
+  before each game and of his role by week. Defenses have a card now too.
+- **We said quarterbacks were our weak spot. That was not a fair comparison.** The home page set this season's first
+  weeks against a newer model's past results. Against the same model's own past, the gap is too small to call on
+  this few weeks, and the home page now says so. We did find one real improvement (a quarterback's passing
+  touchdowns now lean on his team's expected points) and it is in this week's numbers.
+- **Starter unclear.** When a team's listed quarterback did not play its last game and another one did, both show
+  **Starter unclear** on Rankings and get no start / sit call. This week: Chicago, Seattle and Washington. Seattle
+  is the clearest case: the listing says Drew Lock and Sam Darnold has been playing, so Lock's projection is likely
+  too high and Darnold's too low. We tested two rules to correct it and neither was accurate enough to ship, so for
+  now the label says what we do not know.
+- **Trends, graded.** Players scoring below what their work usually earns did score more the next week, and their
+  projections already expected it. So the gap is what happened, not a reason to buy or sell on its own; Trends and
+  Trades say that now, and Trades' lists are named for what they are ("Scoring below his work", "Scoring above his
+  work"). A role change (more targets, carries or snaps over two games) holds about half of its move, and the
+  projection already counts most of it.
+- **Small things.** A shared link to a player shows his card; when a league's site is slow to answer, the app says
+  "busy" and tries again instead of showing an empty lineup; a MyFantasyLeague league's League screen opens a
+  little faster again.
+
 ## Oct 6 (evening) · share your league, see who moved, write on the blog, and an honest grade
 
 - **Share your league.** League has a **Share** button: your league-mates open the link and see the power rankings

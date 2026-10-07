@@ -598,6 +598,25 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 26 — Wave I-P (2026-10-06/07, Tuesday 22:05 – Wednesday morning ET; the overnight build)
+
+Andrew: "ok. good lets keep this moving with an overnight push please." — the content the PO's. Five devs: **IP-1**
+the quarterback number (the home's "weak spot" compared v2.0's weeks with v3.0's backtest: against its own model the
+gap is +0.54, −0.45 to +1.62, not a signal; **v3.4 = v3.3 + pt1.0**, QB passing TDs blended with the implied total,
+better in 5 of 5 seasons; two starter rules measured and dropped; the stale Seattle listing → a "Starter unclear"
+flag, numbers unchanged); **IP-2** `/rankings` for everyone with tiers and "Who should I start?" (`GET
+/api/rankings`, `/api/rankings/start`); **IP-3** Trends and the role chips graded (the projection already expects
+the gap to close: no support for buy low / sell high; a role change is mostly priced) and the record keeps both
+weekly; **IP-4** the player card (a head with one number, percentile ratings, three real charts, a card for a
+defense); **IP-5** a refused, failed or stale provider read is never cached as data, MFL's cold load, player pages
+that share, the "best corners" split removed. The PO's decisions: Trades' lists renamed "Scoring below / above his
+work", no season tiers, the reviewer's stale rule. An independent review (nothing High; two Mediums, four Lows — all
+fixed). **A PO mistake caught here**: Wave I-O's nightly stops on a fresh database (`ops.context_record` was a state
+table `db migrate` did not create); fixed, with a check the PO now runs before delivery. Acceptance and evidence:
+`docs/STATUS.md` § "Wave I-P". **Next**: the live checks after the push and the nightly; a source for who starts;
+the out-of-sample grades at week 8; one rounding on every screen; the nightly's self-healing list (IP-5 § 5);
+Andrew's account id into `LEAGUE_LAB_EDITORS` and a real DraftKings / FanDuel file.
+
 ### Iteration 25 — Wave I-O (2026-10-06, Tuesday 18:25 – 21:30 ET; the evening build)
 
 The PO's proposal after two builds in 24 hours that nobody but Andrew had used: stop adding screens for a round.

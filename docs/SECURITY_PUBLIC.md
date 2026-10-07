@@ -438,6 +438,58 @@ same frame (none when nothing is held). A page whose query string names a league
 `X-Robots-Tag: noindex` and carries `<meta name="robots" content="noindex">` (the League link's card included).
 No new route, no new environment variable, no new relation.
 
+## 16. Wave I-P: the new routes, a fourth independent review, its fix round (2026-10-07)
+
+**What was reviewed**: the merged tree of Wave I-P (`integ/IP` `0551b7d` against `main` `e4b5eec`) by an agent that
+wrote none of it, with the limiter on and a spent provider share to play the refused client. Nothing Critical or
+High; two Mediums and four Lows, all fixed in the round (§ 15's fix-round paragraph has IP-5's detail).
+
+**New routes** (all public with the gate open):
+
+| Method and route | Bucket | Notes |
+|---|---|---|
+| GET `/api/rankings` | research (heavy for an unseen league) | `position` ∈ 7, `view` ∈ 2, `limit` 1–200, `offset` 0–1000, `q` 2–40 letters matched as text; cache: the `rankings` region, ≤ 64 frames, never keyed by `q` |
+| GET `/api/rankings/start` | research | `ids` 2–4 distinct gsis ids; reads `ranked`'s frames, no cache of its own |
+| GET `/api/player/{gsis}/ratings` | read | no `league` parameter (L2); the Stats table's cached season frame |
+| GET `/api/player/{gsis}/projections` | read | a gsis id or one of 33 team codes (a closed set) |
+| GET `/rankings`, `/player/{gsis}` (shells) | not limited | titles from a closed set / from the board the process already holds: no query, no provider call; `?league=` → `X-Robots-Tag: noindex` |
+
+**Found and fixed**
+
+* **M1 — a spent client could pin everyone to expired roster data.** The Sleeper and MFL clients serve a held answer
+  past its TTL to a refused client; that path made no note, so `provider_trouble.kept()` took the build as clean and
+  stored it fresh. Run: good-1 builds a 16-player context, Sleeper's roster changes, 11 minutes pass, the attacker
+  spends his share and asks → good-2 (share intact) is served the attacker's 16 players and Sleeper is never read
+  again. **Fix**: a held answer served past its TTL is noted `stale` (not trouble) by the Sleeper, MFL, ESPN and
+  Yahoo clients; a build that saw one is served to its requester and kept by nobody; an age bound per kind
+  (`STALE_MAX_S`: rosters 30 minutes, 15 on Thursday / Sunday / Monday; live scores 15 / 10; standings and status an
+  hour; schedules and settled weeks a day; settings and the directory two days) past which the answer is busy. The
+  reviewer's script is a test.
+* **M2 — any client's refusals made the outlook uncacheable for everyone.** `outlook._refusals()` compared
+  process-wide counters around a build. **Fix**: the build's own `watch()`; a test refuses client X in its own
+  thread during Y's build and Y's build is kept.
+* **L1 — week odds answered a refused client with an empty 200** ("no games", not "busy"): re-raised for on-demand
+  leagues; the same grep found and fixed `mfl_results`, three context sites in `decisions`, `MFLLeagues.rosters` and
+  `_with_live`, `ESPNLeagues.league`, `YahooLeagues._records` / `_week_of`.
+* **L2 — the ratings route marked any league "seen"**: it took a `league=` it never read, and the limiter bills a
+  seen league `research`, not `heavy`. The route has no `league` parameter and is in `read`; outside `research` the
+  limiter never reads a `league=` (`test_card_reads_never_mark_a_league_seen`).
+* **L3 — Rankings' frames for one scoring were shared between a reference key and a real league** (whichever built
+  first decided the defense words for both; they differ on 123 of 219 receivers in week 4): the key carries the
+  tone's source.
+* **L4 — model versions compared as text** in `mart_projection_drift` ('v3.10' sorts below 'v3.4'): `version_key`
+  compares the numbers; a dbt test pins it.
+
+**Attacked and found sound**: Rankings' parameters (a newline in `position`, `limit` 0 / 201 / `abc`, `q` of `.*`,
+a null byte, 5,000 characters, an empty or ESPN league: 400 / 422 / 404 / 502 as they should) and its cost (cold
+0.07–0.66 s, warm 9 ms; four players on an unseen scoring 0.2 s; 20 scorings × 2 views × 7 positions against a
+64-frame cache, each refill under 0.7 s inside the research bucket); reference keys never carry ownership; the
+shells escape and read only what the process holds; every pool on a request path carries the client; refused MFL
+lookups and busy builds answer 503, never 500; empty provider bodies are failures.
+
+**The nightly**: the review ran the PO's fresh-database check ("every state table exists after db migrate") and
+found no new step that stops the night under v3.4 (`backtest-v2` once, as a hard step, is the one to watch).
+
 ## What is left, by severity
 
 | Severity | Item | Where |

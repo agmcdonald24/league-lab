@@ -386,6 +386,38 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-P (2026-10-06/07, overnight; five Opus devs, an independent review, fix rounds; STATUS § "Wave I-P" PO
+  section first)**: **delivery changed for good** — the PO never runs git on Andrew's Mac (git needs to delete its
+  lock files and deleting is off there: Wave I-O's delivery left the repository locked) and never asks for delete
+  permission (declined, 2026-10-06: the folder is not fully backed up). Write **one bundle file under ~13 MB** into
+  `league-lab/.git-bundles/` and give Andrew one line (`cd ~/PycharmProjects/league-lab && git fetch
+  .git-bundles/<name>.bundle +main:refs/bundles/x && git merge --ff-only refs/bundles/x && git push`); read whether
+  he pushed from `/api/health` and GitHub Actions. **The nightly on a fresh database**: every table in
+  `scripts/nightly.sh` `STATE_TABLES` must be created by `league-lab db migrate` (`src/league_lab/db.py`) —
+  `restore_state` counts each right after the migrate and the Actions database is new every night; Wave I-O missed
+  it for `ops.context_record` / `ops.context_grade`. Before delivery run init + migrate on a scratch database and
+  count every state table (the PO's `fresh_db_check.sh`). **Model**: v3.4 = v3.3 + pt1.0
+  (`calibration.pass_td_lines`, switch `LEAGUE_LAB_QB_PASS_TD`); `mart_projection_drift` sets a week against the
+  backtest of the model that made it and versions compare by number (`version_key`) — never compare a season's
+  weeks with another model's backtest again (the home's "weak spot" was that). **Who starts**: nflverse's schedule
+  keeps stale projected starters (SEA 2026: Lock listed, Darnold playing); two correcting rules failed their
+  accuracy rules and are off (dbt vars `pn_starter_from_play`, `pn_starter_stale_rule`); `api/league_lab_api/starters.py`
+  `unclear(season, week)` flags both quarterbacks and Rankings / "Who should I start?" give them no tier and no
+  call — a label, not a correction. **Rankings**: `/rankings` + `/api/rankings` + `/api/rankings/start`
+  (`rankings_api.py`, the `rankings` memo region, keyed by scoring **and the tone's source**); a tier runs while its
+  first player outscores the next in fewer than 55 in 100 (`decisions.COIN_FLIP`); no tiers on the season view
+  until the season ranges are graded. **The grades** (`context_record.summary()` keys `corner`, `worth`, `trend`,
+  `role`; METRICS cx1.1): Trends' gap is what happened and the projection already counts it, a role change is
+  mostly priced — do not write "buy low", "sell high", "due" or "running hot" anywhere again; a past week's tag in
+  `mart_league_player_season` / `mart_player_trend_tags` is look-ahead (rebuild as-of: `context_record.asof_trend`).
+  **The player card**: `components/card/**`, `GET /api/player/{gsis}/ratings` (percentiles on the Stats frame's
+  cached season aggregate; `read`; no `league` parameter) and `/projections` (`read`), `unitcard.py` (a defense's
+  card), one decimal the API's way on the card (`lib/card.ts` `pts1`). **Provider reads**:
+  `src/league_lab/provider_trouble.py` — a cache on a request path builds inside `watch()` and keeps nothing built
+  during a refused, failed or stale read (`kept()` serves the last good value, else `SleeperBusy` → 503 "busy"); a
+  reader must not swallow a refusal into a default on an on-demand path (SECURITY_PUBLIC § 15 lists every site).
+  **Shells**: `player_share.py` (the player page's card from the board the process already holds; never a query),
+  any page with `?league=` is `noindex`.
 * **Wave I-O (2026-10-06, Tuesday 18:25 – 21:30 ET; four Opus devs, an independent security review, a fix round;
   STATUS § "Wave I-O" PO section first)**: **the context record** — `ops.context_record` / `ops.context_grade`,
   written by `league-lab context-record` in the nightly (frozen before the week's first kickoff, graded after),
