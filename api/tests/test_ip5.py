@@ -426,8 +426,7 @@ def test_player_shell_text_is_escaped(monkeypatch, dist):
     df = pd.DataFrame([{"gsis_id": "00-0000001", "player_name": 'Evil "><script>x</script>', "position": "WR",
                         "team": "LAR", "proj_points": 18.44, "p10": 9.2, "p90": 31.6, "opponent": "SF", "is_home": False,
                         "kickoff_at": pd.Timestamp("2026-10-04T17:00:00Z")}])
-    df.attrs["ip5_week"] = (2026, 5)
-    monkeypatch.setattr(P, "held_frame", lambda: df)
+    monkeypatch.setattr(P, "held", lambda: (df, 2026, 5))
     t = P.shell(dist / "index.html", "player/00-0000001", False)
     assert "<script>x</script>" not in t and "&lt;script&gt;" in t
     c = P.card("00-0000001")

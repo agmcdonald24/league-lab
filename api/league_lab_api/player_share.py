@@ -58,6 +58,12 @@ def _default_key() -> str | None:
 
 def held_frame() -> pd.DataFrame | None:
     """This week's board in the default scoring, if this process holds it (the newest week held); else None."""
+    got = held()
+    return None if got is None else got[0]
+
+
+def held() -> tuple[pd.DataFrame, int, int] | None:
+    """(the held frame, its season, its week) — the frame is the cache's own object: read, never changed."""
     want = _default_key()
     if want is None:
         return None
@@ -72,8 +78,7 @@ def held_frame() -> pd.DataFrame | None:
     df = matchup_board._cache.get(best)                                                     # noqa: SLF001
     if df is None or df.empty or "proj_points" not in df:
         return None
-    df.attrs.setdefault("ip5_week", (int(best[2]), int(best[3])))
-    return df
+    return df, int(best[2]), int(best[3])
 
 
 def _ranks(df: pd.DataFrame) -> tuple[dict[str, int], dict[str, int]]:
@@ -122,9 +127,10 @@ def card(gsis: str) -> dict | None:
     """{title, description, url} for one player from the held frame, or None (not held, not on it, no projection)."""
     if not isinstance(gsis, str) or not GSIS.fullmatch(gsis):
         return None
-    df = held_frame()
-    if df is None:
+    got = held()
+    if got is None:
         return None
+    df, _season, week = got
     m = df[df["gsis_id"] == gsis]
     if m.empty:
         return None
@@ -137,7 +143,6 @@ def card(gsis: str) -> dict | None:
     rng = f", {round(lo)}–{round(hi)}" if lo is not None and hi is not None else ""
     title = f"{name.strip()} ({pos}{', ' + team if isinstance(team, str) and team else ''}): {proj:.1f} projected this week{rng} · {APP_NAME}"
     rank, n = _ranks(df)
-    season, week = df.attrs.get("ip5_week", (None, None))
     bits = []
     opp = r.get("opponent")
     if isinstance(opp, str) and opp:
