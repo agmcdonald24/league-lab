@@ -1,4 +1,4 @@
--- League Lab outlook snapshots (Wave I-O, IO-2; docs/handbacks/IO-2.md, api/league_lab_api/outlook_store.py). Plain SQL,
+-- League Lab outlook snapshots (Wave I-O, IO-2; docs/STATUS.md § "Wave I-O" → IO-2, api/league_lab_api/outlook_store.py). Plain SQL,
 -- idempotent.
 --
 -- One table, outlook.snapshots: one row per league and week — the League screen's power ranking (per team: the points

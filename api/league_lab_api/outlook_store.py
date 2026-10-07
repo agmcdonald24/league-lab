@@ -1,4 +1,4 @@
-"""Each week's League outlook, kept (Wave I-O, IO-2; scripts/hosted_outlook.sql, docs/handbacks/IO-2.md).
+"""Each week's League outlook, kept (Wave I-O, IO-2; scripts/hosted_outlook.sql, docs/STATUS.md § "Wave I-O" → IO-2).
 
 What cannot be backfilled: the rest-of-season board is refit every night, so last week's power ranking can only be
 compared with this week's if it was written down at the time. This module writes it down and reads it back.

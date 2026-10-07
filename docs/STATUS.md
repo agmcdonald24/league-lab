@@ -12182,3 +12182,982 @@ recording and the block shows its 404 line; nothing asserts its absence).
 * Seen on `integ/IN`, not mine: the house boards now start at week 4 (span "weeks 4–16"; was 5–16 on `dev/IN6`), so the
   power numbers moved by up to ±2 per week from the merged tree, not from this round; `tests/test_metric_registry.py`
   fails on `mb1.0` (IN-3's METRICS section has no registry row).
+
+## Wave I-O (Iteration 25)
+
+### PO merge — Wave I-O, 2026-10-06 (Tuesday 18:25 – 21:30 ET; the evening build: keep the record, a League link worth sharing, a blog editor, the fix list)
+
+* **Why**: two big builds had gone out in 24 hours (Wave I-M overnight, Wave I-N by 16:00) and almost none of it had
+  been used by anyone but Andrew and the PO. Andrew, 18:11: "whats up next?" The PO's answer was to stop adding
+  screens for a round: (1) start recording what cannot be backfilled — each week's rankings, and the "Worth a look"
+  picks and corner calls so they can be graded; (2) make the League page shareable; (3) a blog he can use without a
+  code push; (4) the fix list from the day's live check. Andrew, 18:21: "perfect lets try to make a big push 1-4. I
+  will need to pull the file for DFS." The brief is `/home/claude/waveIO/BRIEF.md` in the sandbox (not in the repo).
+* **How it ran**: four Opus devs in one message from `main` `cf8e743` at 18:40 (47 – 70 minutes each; the lighter
+  test rule again — each dev its own tests and the test files of what it edited, the PO the full suites on the merged
+  tree); databases: IO-1 the only writer of a full copy, IO-2 and IO-3 each its own new schema in a second copy, IO-4
+  read-only; merged IO-4, IO-1, IO-2, IO-3 on `integ/IO` (CHANGELOG / WORDS kept both; `lib/api.ts` rebuilt as main +
+  each branch's appended block — `/home/claude/waveIO/rebuild_api_ts.py`); the PO's lines; **an independent security
+  review** of the merged tree (a fifth Opus agent that wrote none of it, with two editor accounts and an ordinary one:
+  nothing Critical or High; two Mediums, five Lows); a fix round by all four on its findings and on the PO's
+  decisions from IO-1's grade; the suites again; QA.
+* **The finding that changed the product: the cornerback call does nothing we can measure.** IO-1 graded it on
+  **2,190 called receiver-games** (2025 and 2026 weeks 1–4, Half PPR, the miss = actual minus the projection made
+  before the game, 95 % intervals from 2,000 bootstraps that resample whole games, the corner's quarter rebuilt
+  **as-of** — the mart's rank for a past week is the season's to date: 497 of 2,557 called 2025 receiver-weeks, 19 %,
+  carried a quarter that was not known before the game):
+
+  | Corner call | n | Mean miss against the rest (95 %) |
+  |---|---|---|
+  | likely shutdown | 99 | −0.39 (−1.39 to +0.72) |
+  | likely solid | 133 | +0.57 (−0.48 to +1.63) |
+  | likely easy | 79 | −0.02 (−1.11 to +1.22) |
+  | likely unranked | 160 | +0.88 (−0.02 to +1.80) |
+  | any easy corner | — | −0.51 (−1.15 to +0.09) |
+
+  And Wave I-N's "Worth a look" list, rebuilt for the same weeks: **37 listed receivers in 29 games, +0.72 against
+  everyone else (−1.10 to +2.72)** — not distinguishable from chance. The PO's decisions, built in the fix round:
+  **the matchup board's one tone is the defense's alone** (`combine_tone`; the corner is shown as information in
+  neutral styling with the grade's sentence, no red "Shutdown corner" tag); **the home's "Matchups to target" says
+  the defense's sentence only**; **"Worth a look" is off the DFS screen** — one line says it was tried, graded and
+  not better than chance (numbers from the record, never hard-coded), and it stays off until a rule earns its place.
+  A candidate rule (two favourable signals without the corner: +0.43, +0.03 to +0.81 on 829 player-weeks) was found
+  on the weeks it would be graded on and was **not** adopted; the record now grades it out of sample from week 5
+  (about 200 player-weeks by week 8: enough to show an edge near a point, not to confirm +0.4).
+* **Delivered** (the four hand-backs below were `docs/handbacks/IO-<N>.md` on the branches and live here now; the
+  screenshots stay in `docs/handbacks/io<N>/`):
+  * **IO-1 — the context record, the grade, weather.** `ops.context_record` (one row per player-week with a signal:
+    the signals as shown, both list rules, the projection at the freeze — frozen before the week's first kickoff by
+    the nightly, past weeks rebuilt once from as-of inputs and labelled `reconstructed`; 8,790 rows, 5.6 MB, +0.35 MB
+    a week) and `ops.context_grade`; `league-lab context-record` (idempotent; 31–44 s the first night, 2–4 s after);
+    `context_record.summary()` and `GET /api/context/record`. `context_record.cb_rank_asof` (games before the week
+    only; equals the mart at season end: 64 / 64 corners in 2025, 69 / 69 in 2026). **Weather**:
+    `analytics.mart_game_weather` (557 rows, 192 kB) and a DFS chip ("Wind 20 mph", dashed: weather is **not** in
+    the projection — v3 reads no `wx_` column, a test checks it; the marks: wind 15 mph+, rain 0.1 in+, snow, below
+    32 °F, resting on passing yards per attempt 2016–2025: 7.13 under 10 mph, 6.79 at 15–20 mph over 120 games, 6.16
+    at 20+ over 24). Not rebuilt as-of: the betting line (nflverse keeps the closing line), 2025 weather (no
+    forecasts kept), the "named corner is out" overlay.
+  * **IO-2 — the League page: movement, a link worth sharing, speed, title odds.** `outlook.snapshots`
+    (`scripts/hosted_outlook.sql`; one row per league-week from each full build through a bounded queue and one
+    writer thread, replaced only until the week's first kickoff and at most once an hour; Sleeper and MFL keys only;
+    **20 new leagues a day and 200 held** for everything that is not a house league, a 40 MB size guard, rows ≤ 8 KB,
+    pruned past 20 weeks — worst case 34 MB on Neon, typical under 7). **Movement**: ▲ / ▼ places and "+N since last
+    week" on the playoff odds, only ever from a stored row. **Share**: a button on Sleeper and MFL leagues
+    (`/league?league=<key>`, no team) and a **guest view** — the League screen with "Is this your league? Pick your
+    team"; an ESPN or Yahoo league never gets the button, a stored row or a card, and its link is 404 for a stranger.
+    **The preview card**: `og:title` "League of Scrubs: power rankings, week N" with the top three and the playoff
+    odds, built only from this process's last build or the stored row (never a provider call or a simulation; no
+    picture: no image library is installed). **MFL's first load**: 12.3 s → **power rankings in 2.6 s, the season in
+    3.3 s** (a market-free board context for leagues not kept nightly 3.7 → 1.2 s; `unit_lines` converts once; the
+    outlook asked beside `/api/league` with `?part=power` first). **Title odds** for Sleeper leagues whose settings
+    describe the bracket, played out in the same simulated seasons (re-seeding when `playoff_seed_type` = 1 matches
+    the dynasty's 2021, 2022 and 2024 brackets; the fixed bracket for type 0 is assumed and the screen says context
+    only).
+  * **IO-3 — the blog editor.** `blog.posts`, `blog.revisions` (the last 20 a post), `blog.images`
+    (`scripts/hosted_blog.sql`; body ≤ 200 KB, ≤ 500 posts, ≤ 30 MB). **Who may write**: an account whose id is in
+    `LEAGUE_LAB_EDITORS` (unset → every editor route is 404 and no link shows; signed out 401; not an editor 403;
+    same-site, the `write` bucket, 60 a minute a session, one save per post per 5 seconds). `/blog/new`,
+    `/blog/edit/<id>`: title, summary, tags, author line, the markdown with a live preview through `mdDoc` (side by
+    side at 1300, Write / Preview at 375), a toolbar with **Player** (search → a link that opens his card) and
+    **Players table**, **Picture** (PNG / JPEG / WebP by first bytes, ≤ 300 KB, ≤ 50), autosave (2.5 s after typing
+    stops; unsent text kept on the device per account and cleared on sign-out), a 409 with both versions when two
+    tabs edit one post, "Earlier versions", publish / unpublish / delete (restorable 30 days), **"Download every
+    post"** (a zip of the same front-matter markdown `blog/*.md` uses: the way out and the backup). **Three
+    starters** fill a draft from the live Half PPR routes with the numbers written in, an "As of" line and "Your
+    take: …" places; nothing publishes itself. The public blog serves file posts and published database posts as one
+    list; a slug a file holds cannot be taken. The Account screen shows "Your account id" with Copy.
+  * **IO-4 — the fix list and two things left twice.** Two players, one last name: "Start **P. Washington** ahead of
+    Croskey-Merritt for now." (`myweek.short_name` on `cards.display_name`; nobody else's name changes). A lineup
+    holding a player who is gone: "A player in your Sleeper lineup is no longer on your roster — set that spot
+    again." The matchup board: started and final games below the games to come, "Still to play" the default once a
+    game has started (`show=`); in a real league the defense rank is the league's own (the heatmap's source); the
+    honesty line reads the record. **Stats: a "Role change" group** — target, carry (RB) and snap share in his last
+    two games against his games before them, in signed points of share (185 / 55 / 184 players with a value), one
+    implementation with DFS (`src/league_lab/role_trend.py`; identical on 1,500 random players). **Each client's
+    share of the providers' budget** (`provider_share.py`; SECURITY_PUBLIC § 13): Sleeper 150 calls at once then 60
+    a minute, MFL 50 then 12, per `client_group`, carried by a context variable; three leagues opened 15 seconds
+    apart: 0 refused; fifty in a minute: refused from the 16th as 503 "busy", another client untouched; no client
+    (the nightly, tests) → no per-client limit.
+* **The PO's lines** (`72d959b`): `scripts/nightly.sh` — `league-lab context-record` after `grade-odds`,
+  `ops.context_record` / `ops.context_grade` in `STATE_TABLES` (the record also in `RECORD_TABLES`), and after the
+  sync one outlook build per house league on the live API (it loops over `LEAGUE_LAB_SLEEPER_LEAGUE_ID`) so each
+  week's row exists even if nobody opens League before Thursday; `scripts/sync_to_hosted.sh` applies
+  `hosted_outlook.sql` and `hosted_blog.sql` (the IK-4 pattern: a failure warns and never fails the publish);
+  registry rows `title_odds` and `role_share_change`; `render.yaml` `LEAGUE_LAB_EDITORS` with `sync: false` (the id
+  is set in Render's dashboard and never lives in git).
+* **The independent review** (docs/SECURITY_PUBLIC.md § 14). The blog editor held under attack: every editor route
+  401 / 403 / 404 as it should (an empty or malformed `LEAGUE_LAB_EDITORS` fails closed), cross-site writes refused,
+  stored XSS inert at every sink (the post, the list, the preview, RSS, the sitemap, the shell's meta tags), a
+  PNG-header-plus-HTML file served as `image/png` with `nosniff`, no zip-slip, knowing an account id grants nothing.
+  Fixed in the round:
+  * **M1** any account could bypass the outlook store's cap (rows for "saved" leagues were exempt and an account can
+    save and remove leagues at will: 50 written after the visitor cap had refused 5): no exemption — one ceiling for
+    every league that is not a house league, plus the size guard.
+  * **M2** one client's refused provider calls were cached as a broken outlook for everyone (client X with its share
+    spent got "the schedule for week 12 is not available" and client Y was served that from the cache for up to 10
+    minutes): a refused read is raised, the build is neither cached nor stored, the requester gets 503 "busy" and
+    the screen retries.
+  * **L1** an editor session could churn the database faster than the cap counts (26 saves of 200 KB in 0.9 s): an
+    unchanged save writes nothing, one save per post per 5 seconds (429 with "Saving again in a moment: your text is
+    kept."), a revision only when the text changed and the last kept one is 30 seconds (2 minutes for an autosave)
+    old. **L2** a slug ending in a dash at the cut made a 500: fixed, and every constraint violation on the editor's
+    routes is a 409 / 422. **L3** the provider share leaked through one thread pool (`availability.contexts`):
+    carries the client; a test lists every pool on a request path and fails on a new one that neither carries the
+    client nor says why not. **L4** anyone could exhaust the preview card's read budget with random league ids: the
+    shell only looks up keys known to be stored. **L5** invisible direction and zero-width characters in single-line
+    fields: stripped. Notes: drafts on the device are per account and cleared on sign-out; a database picture is
+    cached a day with an ETag, not a year.
+* **Verified** (the merged tree; this sandbox's database: 2026 through week 4, the suites pinned to
+  2026-10-03T16:00Z, failures compared **by name** with `main`'s):
+  * API suite: **1,091 passed**, 92 failed — every one on `main`'s list by name, 0 new (+70 tests over Wave I-N's
+    1,021; 21 skipped: the store's tests skip on a database without `outlook.snapshots` and were run on the copy
+    that has it — `test_io2` + `test_io3` 42 passed, IO-1's record tests 15 passed on its copy). Root suite: **1,552
+    passed**, 4 failed — the 4 known, 0 new. ruff, the copy standard, `npm run lint` (193 files, 0 warnings) and
+    the build clean; `bash -n` on the two scripts the PO edited.
+  * e2e on fixtures (the whole set, phone and desktop, on the merged build): **505 passed**, 22 skipped, 7 failed —
+    all seven in `e2e/io3` (the editor's spec runs against a real API and the `blog` schema), and the PO caused them:
+    the schema was dropped from the sandbox database for the no-relations check while the run was going. With the
+    schema back the spec alone: **16 passed**, 8 skipped (one size per project). Lesson: never change the database
+    under a running suite.
+  * **A database without this wave's relations** (what the live site has until Wednesday's nightly: no `blog` or
+    `outlook` schema, no `ops.context_record`, no `analytics.mart_game_weather`): the merged API on `league_lab`,
+    41 routes and pages once each (`/home/claude/waveIO/smoke.sh`) — **no 5xx**; the editor's routes and
+    `/blog/img/db/<id>` 404, `/api/context/record` 200 with `graded: false`, the outlook 200 (0.6 s; MFL 3.4 s),
+    DFS with no weather chip and no "Worth a look" line, the board's fallback honesty sentence.
+  * PO's QA at 375 and 1300 (Playwright on the merged build, 11 screens × 2 sizes on the database without the
+    relations: the home, League with a team / as a guest / for MFL, the board browsing and with a league, DFS, My
+    Week, Stats, the blog, the account): no sideways scroll, no loading block left, no console error but the outside
+    pictures. With the record (IO-1's copy): `/api/context/record` carries the two sentences, DFS's line reads "We
+    tried a "Worth a look" list and graded it on 2025 and 2026 weeks 1–4: it listed a receiver 37 times (in 29
+    games) … not distinguishable from chance.", week 5's board has 87 role chips and 34 weather chips, every corner
+    chip is toneless. The editor was checked through IO-3's e2e (it starts its own API with a throwaway secret and an
+    editor made through the app's own sign-in path) and the reviewer's accounts — the PO has not typed in it.
+* **Not done / next**: the live checks after the push and after Wednesday's nightly (below); **Andrew's account id
+  into `LEAGUE_LAB_EDITORS`** (he makes his passkey account once accounts are on, copies the id from Your account,
+  pastes it in Render) — until then the editor does not exist on the live site; **a real DraftKings / FanDuel file**
+  (Andrew is pulling one; the readers have never seen one); a preview picture for the League link (needs an image
+  library: a dependency decision); the "best corners" split in the matchup evidence still ranks by the season to
+  date (a line says so; rebuild it as-of or drop it); the corner call stays on screen as information — if weeks 5–8
+  still show nothing, take it off the board's row; the two-signal candidate's out-of-sample grade (week 8); the
+  betting line and weather are not as-of in the reconstruction; `availability`'s roster-context cache and the player
+  directory treat a refused provider read as empty (IO-2 saw it; shared with My Week); an editor sees and exports
+  only their own posts; RSS and the sitemap keep a 10-minute cache after a publish; IL-1's `roles.py` is a different
+  "role change" from the one DFS and Stats now share; then Wave I-N's list (a salary source, movement arrows were
+  this wave, one clock for every read path, MFL's playoff count).
+
+
+### IO-1 hand-back — grade the context, keep the record, weather (Wave I-O, 2026-10-06)
+
+**Branch** `dev/IO1` (from `main` `cf8e743`). **Database** `league_lab_im1` (the only writer). Plan: Wave I-O,
+IO-1 (BRIEF § "IO-1"); docs/METRICS.md § "The context record" (cx1.0) has every table below in full.
+
+#### Done (the numbered list)
+
+1. **The corner calls, graded.** First what the call knew: `mart_cb_matchups`' call is clean (depth chart before
+   kickoff, target sides before the week), **the corner's rank and quarter are look-ahead** for a past week (the mart
+   joins `mart_cb_rankings` `two_seasons` *of that season*: the whole season as it stands, the week and later weeks
+   included). 497 of 2,557 called 2025 receiver-weeks (19%) and 63 of 598 in 2026 weeks 1–4 (11%) carry a different
+   quarter than the one known before the game. Built the as-of version (`context_record.cb_rank_asof`: same pool, same
+   z-scores, same opponent adjustment, games before the week only); at season end it equals the mart exactly (2025 64/64
+   ranks and quarters, 2026 69/69). The grade uses only the as-of quarter.
+2. **"Worth a look", graded** — rebuilt per week through the screen's own `dfs.signals` / `dfs.worth` from as-of
+   inputs (defense = the screen's rank from games before the week, equal to the live mart for week 5, 160/160; role trend from games before the week, routes left out;
+   the corner as in 1; weather = the last forecast kept before kickoff). **Not rebuilt as-of**: the betting line (nflverse
+   keeps the closing line), 2025 weather (no forecasts kept: no weather signal in a rebuilt 2025 week), the availability
+   overlay (a named corner out → "no call") and the list's "who cannot play" filter.
+3. **The record.** `ops.context_record` (one row per player-week with a priced projection: the signals as shown,
+   `worth` / `listed` under today's rule and `worth_corner` / `listed_corner` under Wave I-N's, the Half PPR projection
+   at the freeze, `record_source` kickoff / reconstructed, `actual_points` / `miss` after the game) under
+   `ops.lineup_record`'s freeze rule, and `ops.context_grade` (≈20 rows, replaced every run: what the site reads).
+   `league-lab context-record`: idempotent, safe every night, never rewrites a frozen week.
+4. **On the screen.** `api/league_lab_api/context_record.py` `summary()` (the fixed interface, + `corner.tiers`) and
+   `GET /api/context/record` (`read` bucket). DFS: "Worth a look" prints the record's sentence instead of "no record
+   behind this list yet"; the corner chip carries its quarter's graded words and loses its colour when the interval
+   holds 0; **the rule changed** (below).
+5. **Weather.** `analytics.mart_game_weather` (557 rows, 192 kB; key test + not_null + "a forecast is from before
+   kickoff"); DFS reads it only when it exists; the chip shows the numbers ("Wind 20 mph"), dashed (not in the projection).
+6. Tests, METRICS (cx1.0) + 4 registry rows, DFS.md, WORDS, CHANGELOG.
+
+#### The grade (Half PPR = `ref:half`; miss = actual − projected; 95% bootstrap resampling whole games, 2,000 draws)
+
+Projections made before the game: 2025 walk-forward (`ops.calibration_oof`, v3.0 fit on 2016–2024); 2026 weeks 1–3
+the v2.0 refit labelled `refit` (fitted after those weeks kicked off: as-of features, not a kickoff record), week 4 the
+kickoff board. "vs rest" = the group's mean miss minus the other called receivers' (the projection's bias cancels).
+
+| Certainty / quarter (as-of) | n | games | Mean miss (95%) | Scored above | vs other called receivers (95%) |
+|---|---|---|---|---|---|
+| likely shutdown | 99 | 72 | −0.59 (−1.58 to +0.42) | 35% | −0.39 (−1.39 to +0.72) |
+| likely solid | 133 | 100 | +0.32 (−0.61 to +1.33) | 35% | +0.57 (−0.48 to +1.63) |
+| likely easy to throw on | 79 | 61 | −0.23 (−1.32 to +0.95) | 39% | −0.02 (−1.11 to +1.22) |
+| likely unranked | 160 | 109 | +0.60 (−0.32 to +1.56) | 43% | +0.88 (−0.02 to +1.80) |
+| unclear shutdown | 323 | 166 | −0.58 (−1.17 to 0.00) | 33% | −0.43 (−1.05 to +0.21) |
+| unclear solid | 516 | 229 | +0.17 (−0.32 to +0.71) | 43% | +0.50 (−0.05 to +1.12) |
+| unclear easy | 271 | 141 | −0.76 (−1.40 to −0.05) | 33% | −0.63 (−1.35 to +0.08) |
+| unclear unranked | 609 | 238 | −0.37 (−0.82 to +0.07) | 35% | −0.21 (−0.75 to +0.29) |
+| every called WR | 2,190 | 335 | −0.21 (−0.47 to +0.04) | 37% | |
+
+**No measurable effect** for a likely shutdown or a likely easy corner; easy corners (any certainty) did no better
+than the rest (−0.51, −1.15 to +0.09). The only interval clear of 0 is the middle quarter (solid, any certainty,
++0.59, +0.10 to +1.12): no direction, 1 of 12 cells, not acted on. Standard scoring (2025, the same fit re-priced):
+likely shutdown −0.19 (−1.10 to +0.72, 73), likely easy −0.58 (−1.50 to +0.42, 56) — the same answer.
+
+**Worth a look (Wave I-N's rule, rebuilt)**: 37 listed receiver-games in 29 games, mean miss +0.40 (−1.47 to +2.51),
+scored above in 15 (41%) vs everyone else at the position 998 of 2,884 (35%); **+0.72 against the rest (−1.10 to +2.72)**,
++0.63 against the rest projected 6+ (−1.25 to +2.71) — **not distinguishable from chance**. 2025 alone −0.55 (−2.09 to
++0.89, 28); 2026 weeks 1–4 +4.57 (−1.44 to +10.47, 9); Standard scoring (2025) −0.44 (−1.82 to +0.93). All 37 leaned on a
+likely easy corner.
+
+**What changed on the screen because of it**: the cornerback call **no longer counts toward "Worth a look"**
+(`dfs.WORTH_IGNORES = {"corner"}`). It was the only signal both outside the projection and able to be favourable, so the
+list is **empty** and says why ("Nobody this week. The one signal outside the projection that could put a player here,
+the cornerback call, made no measurable difference when graded, so it no longer counts; …"). Chosen from the corner's
+grade alone; no replacement rule was tuned on these weeks (one looked at and **not** adopted: two favourable signals
+without the corner, all in the projection already — 829 player-weeks, +0.43 against the rest, +0.03 to +0.81: found on
+the weeks it is graded on and barely clear of 0; the record stores the signals, so it can be graded out of sample from
+week 5 before anyone adopts it). The record keeps grading the old
+rule (`worth_corner`) on weeks it has not seen. Two existing assertions changed on purpose:
+`tests/test_in4_dfs.py::test_signals_carry_their_projection_label` (today's rule → not listed; `ignore=()` → listed as
+before) and `api/tests/test_in4.py::test_board_with_the_matchup_signal` (the list is empty, `worth_empty` said, Wave
+I-N's rule would list them); `test_board_with_context_and_no_matchup_module`'s forecast check is relation-aware.
+
+#### Weather
+
+Marks unchanged (`dfs.weather_flag`: wind ≥ 15 mph, precipitation ≥ 0.1 in, snow, < 32 °F). Basis (2016–2025, observed
+weather, per game): 7.13 yards per attempt under 10 mph (1,329 games), 6.79 at 15–20 (120), 6.16 at 20+ (24); rain
+0.1 in+ 6.48 (90) vs 7.07. **Not in the projection**: v3 reads no `wx_` column (test). Ungraded (2025 kept no forecasts).
+2026 week 5: 9 outdoor games with a forecast, 6 domes; Green Bay 20 mph, one game 0.13 in of rain.
+
+#### Files
+
+`src/league_lab/context_record.py` (new), `src/league_lab/cli.py` (the `context-record` command, marked),
+`src/league_lab/dfs.py` (`WORTH_IGNORES`, `worth(…, ignore=)`), `api/league_lab_api/context_record.py` (new),
+`api/league_lab_api/dfs.py` (weather from the mart, the record's words, the graded corner), `dbt/models/marts/nfl/
+mart_game_weather.sql` (new) + `matchups.yml`, `dbt/seeds/metric_registry.csv` (4 rows), `web/src/routes/Dfs.svelte`,
+`web/src/components/dfs/{Context.svelte,dfs.ts}`, tests `tests/test_io1_context_record.py`, `api/tests/test_io1.py`,
+`web/e2e/io1/fixtures.spec.ts` (+ `web/fixtures/io1/`), docs METRICS / DFS / WORDS / CHANGELOG, screenshots
+`docs/handbacks/io1/`. **Outside my files** (marked blocks): `api/league_lab_api/main.py` (router), `ratelimit.py`
+(`/api/context/record` → `read`), `CHANGELOG.md`, `docs/WORDS.md`, `api/tests/test_in4.py`, `tests/test_in4_dfs.py`.
+
+#### Schema out
+
+`ops.context_record` (record; 8,790 rows, 5.6 MB on the sandbox: 2025 5,829, 2026 weeks 1–4 2,393, week 5 568 frozen;
+≈ 570 rows / 0.35 MB a week → ≈ 10 MB by season's end), `ops.context_grade` (19 rows, 16 kB), `analytics.mart_game_weather`
+(557 rows, 192 kB). ops is published whole; the mart reaches the hosted copy through `api/league_lab_api/dfs.py`'s name
+(`scripts/hosted_relations.py` lists it). Neon: +≈ 6 MB now.
+
+#### Commands and evidence
+
+`uv run league-lab context-record` — first run 31 s (22 weeks rebuilt), then 2–3 s ("kept [1..18]; written [5]").
+`uv run league-lab dbt build --select mart_game_weather+` PASS 4; `--select metric_registry` PASS 3.
+Tests: `tests/test_io1_context_record.py` 12 passed (incl. a rolled-back DB test of the freeze); `tests/test_in4_dfs.py`
+75 passed; `api/tests/test_io1.py` 7 passed; `test_in4 test_im5 test_im3` 110 passed; `test_ik4 test_im4 test_in1
+test_in2 test_in3 test_in6` 190 passed; `tests/test_metric_registry.py` 3 passed; ruff clean; copy standard clean;
+`npm run lint && npm run build` clean; e2e `e2e/io1` 4 passed (375 and 1300), `e2e/in4` 6 passed (unchanged);
+`check_root.sh` 1,549 passed, 4 failed — **no new failures**.
+
+#### Without my relations (the live site until the nightly)
+
+`summary()` → graded False, words None (cached 10 minutes, then looked at again); `GET /api/context/record` 200 with
+that; DFS keeps Wave I-N's words ("no record behind it yet"), no graded chips, no weather; the rule change (the corner
+not counting) is code and applies at once: the list is empty with its sentence. Tests for each.
+
+#### The PO lines
+
+`scripts/nightly.sh`, after the IL-3 `grade-odds` block (before `save-record`):
+
+```
+### ---- IO-1 (Wave I-O): the context record (ops.context_record: the corner calls and "Worth a look" frozen before each
+### week's first kickoff; played weeks with nothing stored rebuilt once from as-of inputs, labelled reconstructed; final
+### games graded) and the grade the site reads (ops.context_grade). Idempotent; ~3 s a night (31 s the first).
+SOFT_WHY="the record's kept weeks are untouched; a week missed tonight is rebuilt from as-of inputs (labelled reconstructed)" soft context-record uv run league-lab context-record
+### ---- end IO-1
+```
+
+and after the M6 block (state / record tables):
+
+```
+### ---- IO-1 (Wave I-O): the context record cannot be recomputed after kickoff (record); its grade is state
+STATE_TABLES="$STATE_TABLES ops.context_record ops.context_grade"
+RECORD_TABLES="$RECORD_TABLES ops.context_record"
+### ---- end IO-1
+```
+
+`scripts/sync_to_hosted.sh`, `render.yaml`, `api/Dockerfile`: nothing. **New env variables**: none. **New
+dependencies**: none.
+
+#### Limitations
+
+The availability overlay is not in the record. 2026 weeks 1–3 are graded on refit projections. Unclear calls'
+chips carry no graded words (their tone merges two corners). Not graded at all: the weather flag.
+
+#### Seen, not mine
+
+* **IO-4 / the matchup board**: `combine_tone` still moves the board's one tone on a likely corner, and
+  `PROJECTION_WORDS` says "Whether a tough corner lowers a receiver's points has not been graded yet." The grade says
+  no measurable effect: the words should come from `summary()["corner"]["words"]` (the interface), and whether the
+  corner should still move the tone is the PO's call. The home's corner sentence (IN-1) is the same.
+* `mart_cb_matchups.cover_rank` for past weeks is look-ahead (its header says "latest, not as-of"); anything that grades
+  from it needs `cb_rank_asof`.
+
+#### Next
+
+Grade the record's kickoff weeks as they finish (the sentence switches to "Since 2026 week 5, …" once today's rule
+lists anyone); keep the forecasts so the weather flag can be graded; if the record ever shows a quarter with an effect,
+flip `WORTH_IGNORES` back with the numbers.
+
+#### Fix round (branch `fix/IO1` from `integ/IO` 72d959b; PO decisions after the merge)
+
+1. **"Worth a look" is off the screen.** The card (heading, explanation, empty state) is gone from the board and the
+   slate; one quiet line sits under the board's intro and under a published slate's notes, built from the record
+   (`ops.context_grade` summary `worth_off` → `summary()["worth"]["line"]` → `meta.worth_line`; no number written in
+   code). Today it reads: "We tried a "Worth a look" list and graded it on 2025 and 2026 weeks 1–4: it listed a receiver
+   37 times (in 29 games), and they finished 0.7 points better than everyone else against their projection (−1.1 to
+   +2.7) — not distinguishable from chance. It is off until a rule earns its place in the record; the context chips stay
+   beside each player." Without the record: no line at all. `dfs.worth` stays; the record keeps `worth_corner` (Wave
+   I-N's rule) and adds `worth_two` (the two-favourable-signals candidate; older rows derived from their stored signals),
+   graded out of sample from the weeks frozen before kickoff (`worth_live`, `corner_live`).
+2. **The corner is information.** The API sends the corner signal with `tone: null` and its `quarter` (`dfs.corner_quarter`:
+   shutdown flag, else the call's own quarter, else its words — so it keeps working when the board's tone stops carrying
+   the corner); the chip is always neutral, its words come from the quarter, its grade stays in the title and the
+   detail. Nothing in DFS colours, sorts or filters on the corner (the list's rule ignores it; the lineup card's context
+   flag reads tones, which the corner no longer has).
+3. **What weeks 5–8 can answer** (52 candidate rows, 4 corner-rule listings, 6 likely-shutdown and 7 likely-easy calls
+   frozen for week 5): the candidate gets ~200 graded player-weeks by week 8, an interval of about ±0.8 points — it can show
+   an edge near a point, not confirm the in-sample +0.4; the corner's list (~8–16 listings) cannot answer anything alone;
+   the corner quarters add ~20 games each, which narrows the pooled intervals a little and cannot change their answer
+   unless the effect is over a point.
+4. Tests: root `test_io1_context_record.py` 15 passed, `test_in4_dfs.py` 75 passed; API `test_io1.py` + `test_in4.py` 36
+   passed; ruff, copy standard, `npm run lint && npm run build` clean; e2e `io1` 6 passed and `in4` 6 passed (375, 1300).
+   Edited on purpose: `api/tests/test_in4.py::test_board_with_the_matchup_signal` (the corner has no tone, its quarter is
+   given) and `web/e2e/in4/fixtures.spec.ts` (no list; the corner chip never coloured).
+
+### IO-2 hand-back — the League page: movement, and a link worth sharing (Wave I-O, 2026-10-06)
+
+**Task**: BRIEF § IO-2. **Branch** `dev/IO2` from `main` `cf8e743` (worktree `wt-io2`, database `league_lab_im4`,
+schema `outlook` only). Definitions: docs/METRICS.md § "Power rankings and the season outlook" → the IO-2 block;
+words: docs/WORDS.md § "The League link and movement (Wave I-O, IO-2)".
+
+#### Done / not done (the brief's numbered list)
+
+1. **Keep each week's outlook — done.** `outlook.snapshots` (`scripts/hosted_outlook.sql`, idempotent, applied twice
+   to `league_lab_im4` with the pipeline role): per league key, season, week — the power ranking (rank, per-week
+   number, team name cut to 40 letters / 80 bytes), the outlook's rows (mean wins, playoff, top seed, title), league name, model version,
+   built_at, closes_at (the week's first kickoff from `analytics.dim_game`), kind (house / saved / visitor). `week` =
+   the first week the outlook has not seen played (`played_weeks + 1`). Written by `outlook_store.offer` on every
+   **whole** build (not the power part): the first build inserts; a later build replaces only while `closes_at > now`
+   (checked before queueing **and** in the upsert's `WHERE`, so a row queued before the kickoff and written after it
+   cannot replace); after the kickoff nothing is written. Off the critical path: a bounded queue (64) drained by one
+   daemon thread through `db.run_rw(purpose="outlook")`; a failure is counted and logged, never raised.
+   `LEAGUE_LAB_OUTLOOK_STORE` = `auto` (default: on when the table exists and the app role may select / insert /
+   update it; probed once a minute, every ten once it is there) | `off`. **Bounds**: only Sleeper and MyFantasyLeague
+   keys (an ESPN / Yahoo / reference key is never stored); a row ≤ 8 KB of JSON (a table CHECK too; the largest league the outlook simulates, 32 teams with the longest names, measures 7.6 KB); house leagues and
+   leagues an account has saved (`accounts.user_leagues` × `accounts.leagues`, when those tables are there) always;
+   any other league **at most 20 new a day (rolling 24 h) and 200 held** (both checked inside the write's
+   transaction); pruning in the SQL file (the nightly runs it): rows built > 140 days ago, and each league's newest 20
+   weeks. **Size on Neon**: measured rows — a 12-team league 1,859 bytes of JSON → **1.75 KB on disk**; the cap is
+   8 KB of JSON. Worst case (every row at the cap, incompressible): (200 visitor + house + saved leagues) × 20 weeks
+   × ~8.3 KB ≈ **33 MB** + 166 KB per house / saved league; typical (12 teams) at the visitor cap ≈ **7 MB**.
+2. **Movement — done.** With last week's stored row: `power.rows[].moved` (last week's rank − this week's; ▲ / ▼ /
+   – on the screen), `outlook.rows[].playoff_change` (points of percentage; "+6 since last week" under the Playoffs
+   number, hidden under 1). A team missing from last week's row gets none. The line under the table: "▲ ▼: places moved
+   since the ranking kept before week N." / "Movement shows from next week: this week's ranking is kept." (this week's
+   row stored or just queued) / "No movement arrows yet: each week's ranking is kept before its first game, and the
+   arrows compare with last week's." (store on, nothing kept) / IN-6's sentence unchanged when the store is off.
+   Never an arrow from anything but a stored row (the read is `outlook_store.stored`, at build time).
+3. **A link a league-mate can open — done.** **Share** under the League screen's answer (Sleeper and MFL keys only;
+   never ESPN / Yahoo / reference): the phone's share sheet on a touch screen, else the clipboard ("Link copied"), else
+   the address to copy by hand. The link is `/league?league=<key>` (no team). Opened with no team: the League screen
+   (rankings, rest of season, standings…) with nobody marked "(you)" and one strip, "Is this your league?" + a "Pick
+   your team" picker → `team` in the URL → the normal app. Every League-screen call answers with no team (`/api/league`,
+   `/api/league/week-odds`, `/api/league/outlook` with and without `part`: tested). **A private league's link**: an
+   ESPN key is refused to a stranger on `/api/league` and `/api/league/outlook` (404 `espn_league_private`, IK-1's gate,
+   before any cache: tested), never gets a Share button (e2e), is never stored, and its preview is the default card even
+   when this process holds a card for it (tested). Yahoo: no button, never stored, default card (tested on the
+   helpers; its data access is still pending).
+4. **The preview card — done.** `main.py`'s SPA fallback (marked IO-2) asks `outlook.shell(index, league)` for
+   `/league?league=<key>`: `<title>`/`og:title` "League of Scrubs: power rankings, week 4" and the description
+   "1. Run Bijan Run 119.5 (72% playoffs); 2. … 3. …. Points per week each team's best lineup should score over the rest
+   of the season, and playoff odds from simulated seasons." — from the last build this process kept (`memo` region
+   `outlook_card`, ≤ 512 leagues, ~300 B each, 14 days) or the newest stored row (`outlook_card_db`, ≤ 1,024 hits and
+   misses kept 10 min; at most 120 store reads a minute across all links — the shell is not rate limited — past it the
+   default card); escaped by `blog.seo_tags`; nothing kept / private / malformed → the default card. A crawler's hit
+   never calls a provider and never builds (tested: the fixture client's call count and the outlook cache size
+   unchanged across the shell request). **No `/league/card.png`**: no image library is installed in the API
+   (no Pillow, no matplotlib, no cairo) and a new dependency is out of scope.
+5. **The MFL League screen's first load — done (power rankings 2.6 s, rest of season 3.3 s cold).** See Numbers.
+6. **Title odds — done** for Sleeper leagues whose settings describe the bracket (`playoff_teams`,
+   `playoff_week_start`, `playoff_round_type`, `playoff_seed_type`; no divisions): the playoff weeks are drawn in the
+   same simulated seasons after the regular season's (`season_totals` over regular + playoff weeks, the drift carrying
+   on), seeds = the regular season's order (wins, then points for), the top seeds take the byes, a round = the points
+   over its weeks, a tie to the higher seed. **The pairing rule, found in the data**: `playoff_seed_type` 1 = re-seeded
+   before every round (best seed left v. worst): the house dynasty's 2021, 2022 and 2024 winners brackets
+   (`staging.stg_sleeper__brackets` against `mart_league_standings`) pair exactly so where a fixed bracket would not;
+   2023 and 2025 fit both. `playoff_seed_type` 0 = a fixed bracket — **assumed** (League of Scrubs' 4-team brackets
+   cannot tell them apart). MFL / divisions / a playoff week not projected: no title odds and the reason. Context only:
+   not replayed on past seasons (said under the table and in the column's ⓘ).
+7. **Tests — done** (`api/tests/test_io2.py`, 14; e2e `web/e2e/io2`, 10 = 5 × phone 375 + desktop 1300).
+
+**Not done / limits**: no PNG card (above). Snapshots are written only when someone opens a league's League screen
+between the nightly and the week's first kickoff (the outlook is built on request): a week nobody opens before Thursday
+has no row, and the next week shows "No movement arrows yet". The PO can make the house leagues certain (the nightly line
+below). The playoff seeding tie-break is ours (wins, then points for), as IN-6's playoff odds; Sleeper's own tie-break was
+not read. Title odds and movement are not graded.
+
+#### Files
+
+New: `api/league_lab_api/outlook_store.py`, `scripts/hosted_outlook.sql`, `api/tests/test_io2.py`,
+`web/e2e/io2/fixtures.spec.ts`, `web/fixtures/io2/outlook_scrubs_{2,guest}{,_power}.json` (recorded from this worktree's
+fixture API, timings dropped; their movement was computed by the API from a week-3 row **seeded by hand** — a shuffled
+order, every team at 50% — then deleted), `docs/handbacks/io2/*.png` (8: share, guest, movement, power-first × 375 / 1300).
+Edited (mine): `api/league_lab_api/outlook.py` (IO-2 blocks: `part=power`, the market-free context, the schedule left
+read for the rankings, movement, the snapshot offer, the card, `preview` / `shell`, title odds: `bracket_order`,
+`bracket_rounds`, `play_bracket`, `title_bracket`, `simulate(bracket=)`, `_Tally.title`; region `outlook` 48 → 96 answers),
+`web/src/routes/League.svelte` (Share, the guest strip, the outlook asked at once), `web/src/components/league/Outlook.svelte`
+(power part first, arrows, odds change, the season's pending / error lines, the Title column and sentence),
+`web/src/components/league/outlook.ts` (`movedWords`, `movedLabel`, `oddsChange`, `titleWords`).
+
+**Edits outside my files** (marked IO-2): `api/league_lab_api/main.py` — `web(path, request)` takes the request and the
+League link's case sits before IN-1's preview (7 lines); `web/src/lib/api.ts` — types + `outlookPowerPath` at the end;
+`src/league_lab/anyleague.py` — `unit_lines` makes the stat lines numeric once instead of once per team (the MFL timing
+led there; identical numbers: MFL 70587's 12 power numbers equal before / after; root suite: no new failure);
+`docs/WORDS.md` (section at the end), `docs/METRICS.md` (a block at the end of IN-6's outlook section),
+`CHANGELOG.md` (`## 2026-10-06 — Wave I-O`, created at the top, one bullet). `ratelimit.py` untouched: no new route
+(`part` rides on `/api/league/outlook`, already `heavy`; tested). `decisions.py` untouched (the outlook calls
+`TradeContext(market=False)` itself).
+
+#### Schema in / out
+
+In: `outlook.snapshots` (read: `stored`, `card`; write: `write`), `analytics.dim_game` (first kickoff),
+`analytics.dim_league_season` (league name fallback), `accounts.user_leagues` / `accounts.leagues` (saved? — only when
+present and readable). Out: `GET /api/league/outlook` gains `league_name`, `week`, `shareable`, `power.kept`,
+`power.movement {week, built_at} | null`, `power.rows[].moved`, `outlook.pending` (part=power), `outlook.title`,
+`title_reason`, `bracket {rounds, reseed}`, `outlook.rows[].title`, `.playoff_change`, `definitions.title`;
+`?part=power` (else 400).
+
+#### Numbers (this box: 2 cores, four devs; load given with each)
+
+* **MFL 70587 League screen, cold** (a fresh fixture API each time). Before (main's code, load 0.3): `/api/league`
+  1.44 s, then `/api/league/outlook` 10.86 s → everything at **12.3 s** (outlook timings: board 7.9 s = trade context
+  with the market 3.7 s + rest-of-season board 2.0 s + first-request warm-up; schedule + rosters 2.3 s; simulation
+  0.37 s). After (load 1.5, the screen's order — `/api/league` and `part=power` at once, then the whole answer):
+  League answer **0.34 s**, power rankings **2.56 s / 2.57 s**, rest of season **3.30 s / 3.33 s** (two runs). Where it
+  went: the market-free context (no free agents, no later weeks priced for season value) 3.7 → 1.2 s; `unit_lines`
+  (TMQB over 32 teams × 15 weeks: a column-wise apply per team) — the power part 3.4 → 2.8 s in-process; the outlook no
+  longer waits for the League answer; the whole answer after the power part 0.75–0.89 s (the board kept, the first
+  week's roster contexts warm).
+  **In a real browser** (Chromium on the built app served by the fixture API, a fresh server each run, outside
+  requests aborted, load ~1, three runs): the League answer 0.52–0.60 s, the power rankings 2.65–2.75 s, the rest of
+  the season 3.34–3.47 s (rendered by 3.73–3.84 s after navigation), this week's odds 3.41–3.55 s — the odds are now
+  asked after the season outlook (at most 6 s; at once if the outlook fails): both solve every roster's week and the
+  process runs one at a time (with them in parallel the power rankings took ~3.6 s).
+* House leagues (whole answer, warm process): Scrubs 0.9 s. Title odds add +0.01–0.04 s to the simulation; peak memory
+  unchanged (4.2–4.3 MB with or without the bracket at 12 × 10, 32 × 11 and 32 × 17, tracemalloc). Adding the playoff
+  weeks to the draws moved League of Scrubs' playoff chances by ≤ 1.5 points and mean wins by ≤ 0.04 (Monte Carlo);
+  the dynasty runs 9,500 seasons (work budget, was 10,000). Title odds sum to 1 (±0.002, rounding).
+* Store: 12-team row 1.75 KB on disk; the cap 8 KB JSON; daily cap 20 new visitor leagues, 200 held; worst case ≈ 33 MB.
+
+#### Commands and results
+
+`uv run pytest -q api/tests/test_io2.py` **14 passed** (19 s) · last run, everything in: `test_io2.py test_in6.py
+test_in1.py test_im3.py` **130 passed** (36.5 s, load ~2.6) · `/home/claude/waveIO/check_root.sh` (src edited):
+**1537 passed, 4 failed — all 4 known, no new failure** (116 s, load ~2.5) · `uv run ruff check src app tests api` clean ·
+`scripts/copy_standard.py --check` clean · `cd web && npm run lint && npm run build` clean ·
+`FIXTURES_PORT=8820 npx playwright test --config playwright.fixtures.config.ts e2e/io2 e2e/in6 e2e/ic4 e2e/ih3`
+30 passed; `e2e/decisions -g league` 8 passed; last run (title odds in) `e2e/io2 e2e/in6` 14 passed.
+
+#### The public site (for SECURITY_PUBLIC — IO-4's file this wave)
+
+* **A new write path any visitor triggers**: opening a League screen builds the outlook, which offers one row. Bounded:
+  one row per league-week (an upsert), Sleeper / MFL keys only (canonical, `platforms.check_key`, and the table's
+  CHECK on the key's shape), ≤ 8 KB, 20 new non-kept leagues a day, 200 held, 20 weeks; a bounded queue (64, then
+  dropped) and one writer thread; the app role gets SELECT / INSERT / UPDATE on this one table, no DELETE (the owner
+  prunes). The route itself is unchanged: `heavy`, one simulation at a time, `needs_league`.
+* **The page shell** (not rate limited) reads the store for a League link at most 120 times a minute in all, each key's
+  answer (hit or miss) kept 10 minutes in a 1,024-entry region; the value is escaped; a private / malformed key never
+  reads anything. No provider call, no simulation (tested on the fixture client's call count).
+* **Private leagues**: ESPN / Yahoo keys get no button, no row, no card; their League routes stay behind IK-1's gate
+  (tested with the door open).
+
+#### What the site does without the schema (rule 10)
+
+`outlook.snapshots` missing (the deploy before the nightly) or `LEAGUE_LAB_OUTLOOK_STORE=off`: the probe says not
+ready → no write, no read, no error; the power rankings show IN-6's sentence and no arrows; Share, the guest view, the
+power part, title odds and the preview card (from this process's builds) all work. Tested
+(`test_without_the_table_the_store_is_off_and_the_outlook_answers_as_before`).
+
+#### The PO lines I need
+
+* `scripts/sync_to_hosted.sh`, after the IK-4 block (before `echo "verifying ..."`), in the same shape:
+  ```bash
+  # ---- IO-2 (Wave I-O): the League outlook's weekly snapshots — docs/handbacks/IO-2.md. The `outlook` schema is never
+  # dropped above; scripts/hosted_outlook.sql creates outlook.snapshots if missing, grants the app role SELECT / INSERT /
+  # UPDATE on it (its default_transaction_read_only stays on) and prunes rows past 20 weeks. Idempotent, a few ms, its own
+  # transaction, the same owner connection. A failure never fails the publish: the arrows stay off until a sync applies it.
+  if psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction -f scripts/hosted_outlook.sql; then
+    echo "outlook: $(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select count(*) || ' weeks kept (' || count(distinct league_key) || ' leagues), ' || pg_size_pretty(pg_total_relation_size('outlook.snapshots')) from outlook.snapshots" 2>/dev/null || echo '?')"
+  else
+    echo "WARNING: scripts/hosted_outlook.sql failed: no outlook is kept until a sync applies it (the publish itself is fine)" >&2
+  fi
+  # ---- end IO-2
+  ```
+* Optional, `scripts/nightly.sh` at its end (so the house leagues' week is kept even if nobody opens League before
+  Thursday; one outlook build each on the live API, which then writes the row):
+  `for L in 1389709692405551104 1321941740235550720; do curl -fsS -o /dev/null "https://isuckatfantasy.io/api/league/outlook?league=$L" || true; done`
+* `dbt/seeds/metric_registry.csv` (IO-1 owns it this wave — one row to append at merge):
+  `title_odds,ol1.0,"simulated seasons in which the team wins the league's playoff bracket (the playoff weeks drawn in the same seasons after the regular season; seeds by wins then points for; top seeds' byes; a round's points decide it, a tie to the higher seed; re-seeded each round when Sleeper's playoff_seed_type is 1)",simulated seasons,league x roster (as of today),available,"Wave I-O, IO-2: outlook.py play_bracket; GET /api/league/outlook outlook.rows[].title; Sleeper leagues whose settings describe the bracket; context, not replayed"`
+* `app/whats_new.md`: "- **League: share it, see who moved, and title odds.** A Share button sends your league-mates
+  the power rankings and the rest of the season; from next week the rankings show who moved up or down since last
+  week; and each team's chance to win the title, from the same simulated seasons."
+* `render.yaml`: nothing (`LEAGUE_LAB_OUTLOOK_STORE` defaults to `auto`). `api/Dockerfile`: nothing.
+
+#### New env variables / dependencies
+
+`LEAGUE_LAB_OUTLOOK_STORE` (`auto` | `off`; default auto). No new dependency (Python or npm).
+
+#### Owned up
+
+* A real-browser check of the MFL screen (after the e2e passed) found an effect loop in my first version of the
+  week's-odds gate (the effect read and wrote `odds`: "This screen hit a problem" on a league whose odds answer) — fixed
+  (`untrack`) before it was committed; the e2e fixtures never answer the week's odds for that path, the real API does.
+* My first ad-hoc timing browser (a scratch script, not committed) loaded the page without aborting outside requests,
+  so Chromium tried the page's outside resources (player pictures, analytics) through the sandbox proxy; every one was
+  refused (`ERR_TUNNEL_CONNECTION_FAILED`), nothing was reached. The later runs abort every request that is not
+  `localhost:8862`.
+
+#### Seen, not mine
+
+* The sandbox's week state (IN-6's note) still holds: the house leagues' `played_weeks` is 3 with week 4 played, so
+  the snapshot week is 4, whose first kickoff (Thu 2026-10-01) is before the pinned clock — every build here answers
+  `kept: "closed"`. On the live site after Tuesday's nightly it is next week's, open until Thursday night.
+* `accounts.client_ip` (IM-4) still takes the first `X-Forwarded-For` hop (SECURITY_PUBLIC § 2, Low) — unchanged.
+* The writer connection for the store is one more long-lived Neon connection (`application_name=league-lab-outlook`),
+  as accounts' and usage's are.
+
+#### Fix round (branch `fix/IO2` from `integ/IO` 72d959b; the independent review's M1, M2, L4)
+
+* **M1 — no exemption for saved leagues.** The write never reads the accounts tables; every league that is not a house
+  league is `visitor` under the same caps (rows an older build stored as `saved` count too): **20 new a day, 200 held**.
+  A **size guard**: `pg_total_relation_size('outlook.snapshots')`, read at most once a minute; past **40 MB** no new row
+  is written (a stored week may still be replaced). A league-week is replaced at most **once an hour** (dead-row churn
+  from popular leagues). Worst case: (200 + 2 house) × 20 weeks × ≤ 8.5 KB a row on disk ≈ **34.3 MB** + indexes, under
+  the 40 MB guard (a 32-team row with random 40-letter names measured 3.2 KB on disk; 8.5 KB is the incompressible bound
+  of the 8 KB JSON CHECK). Tests: the account path (a recording connection: no `accounts.` query; an old `saved` row
+  counted), the size guard (nothing new, a replacement still allowed, one size read a minute), the hourly replacement.
+* **M2 — a refused read is never cached.** `schedule()` re-raises `SleeperBusy` / `SleeperUnavailable` (the weeks read so
+  far kept); a house league's settings: busy raises, a failure falls back on the nightly's copy and marks the build
+  degraded (and title odds need Sleeper's own `playoff_seed_type`). `outlook()` compares the process's provider
+  refusals (IO-4's shares + the Sleeper / MFL buckets) before and after the build: any refusal or a degraded build →
+  **not cached, not stored, no card**, the board contexts dropped (`outlook_context`, `trade_context`), and an
+  incomplete answer becomes **503 busy** (a failed provider: 502). The web retries a 503 `busy` like the 429 (3 × 3 s).
+  Measured on the fixtures with a spent share (1 a minute, 2 at once): Scrubs, MFL 70587 and the on-demand test league
+  all answer busy to client X, nothing cached; client Y (the default share) then gets the full answer (tested).
+* **L4 — unknown links read nothing.** The shell looks up only a league this process built or one in the set of stored
+  league keys (`select distinct league_key … limit 2000`, re-read at most once a minute); any other key costs a set lookup.
+  The shared 120-a-minute budget is gone. Tested: 300 unknown keys → one key-set read, no row read; the stored league's
+  card still shows.
+* Checks: `test_io2.py` 19 passed (5 new), with `test_in6.py` 44 passed; ruff, copy standard, `npm run lint` and build
+  clean; e2e `io2` + `in6` 14 passed. `hosted_outlook.sql`: header comment only (re-applied, idempotent).
+
+### IO-3 — the blog editor (Wave I-O, Iteration 25)
+
+**Task**: Wave I-O package IO-3 (`/home/claude/waveIO/BRIEF.md` § "IO-3 — the blog editor"). **Branch**: `dev/IO3` from
+`main` `cf8e743`. **Database**: `league_lab_im4`, schema `blog` only (applied with the pipeline role, as the header of
+`scripts/hosted_events.sql` shows); test rows in `accounts` only through the app's own code paths (`@io3.test`
+addresses, deleted after each run). No dbt, no other schema, nothing outside.
+
+#### Done, against the numbered list
+
+1. **Storage** — `scripts/hosted_blog.sql` (idempotent, applied twice in the tests): `blog.posts` (id, slug unique,
+   title, summary, body, body_bytes, minutes, tags, author, status draft / published / deleted, account_id, revision,
+   created / updated / published / deleted at; a check on every length and the status), `blog.revisions` (the last 20
+   bodies per post; autosaves within two minutes fold into one row, an explicit save never does), `blog.images` (item
+   5's upload). Limits: body ≤ 200 KB, ≤ 500 posts, ≤ 30 MB in all (posts + revisions + pictures). The public reads
+   (`GET /api/blog`, `/api/blog/{slug}`, RSS, the sitemap, the shell's meta) serve file posts and published database
+   posts as one list, newest first (`blog.posts()`); a slug a file holds cannot be saved or published. Without the
+   tables the blog is exactly today's (tested: same list, same `public, max-age=300`).
+2. **Who may write** — an account listed in `LEAGUE_LAB_EDITORS` (comma-separated account ids; case and spaces do not
+   matter; a non-id is ignored and logged once). Unset / empty, accounts off, or the tables missing: every editor route
+   is 404 — the switch is the router's **first dependency**, so even a wrong body is 404, not a 422 — and no link shows.
+   Signed out 401, not an editor 403, a forged cookie 401. The Account screen shows **Your account id** with Copy
+   (`components/blog/AccountId.svelte`; `GET /api/account/me` gains `id`). Every write: signed in, an editor, the Guard's
+   cross-site rule + `accounts.same_site`, the `write` bucket + 60 changes a minute per session, validated.
+3. **Routes** — `GET /api/blog/mine`, `POST /api/blog/posts`, `PUT /api/blog/posts/{id}` (carries `revision`: stale →
+   409 with the newer post, never a silent overwrite), `POST …/{id}/publish`, `…/unpublish`, `…/restore`, `DELETE …/{id}`
+   (deleted, restorable 30 days, then pruned with its revisions), `GET /api/blog/export` (one zip of `blog/<date>-<slug>.md`
+   in the files' own front matter; `blog.parse_post` reads each back to the same post — tested), plus
+   `GET /api/blog/posts/{id}`, `…/revisions/{n}`, `POST /api/blog/images`, `DELETE /api/blog/images/{id}`, public
+   `GET /blog/img/db/{id}`. Buckets: export `research`; writes `write`; reads `read`; pictures `read` (the `/blog/img/` prefix).
+4. **The editor** — `/blog/new`, `/blog/edit/<id>` (`routes/BlogEditor.svelte`, its own chunk); **Write** in the ⋯ menu
+   and **Write a post** + **Your posts** on `/blog`, **Edit** on a published post — editors only. Title, summary, tags,
+   author line (defaults to the last one used), address; the body with a live preview through `mdDoc` (the public post's
+   own `PostBody.svelte`: no second renderer, no raw HTML path), side by side from 900 px, Write / Preview below; toolbar
+   Bold, Heading, List, Quote, Link, Table, **Player** (search → `[Name](/player/<gsis>)`), **Players table** (players +
+   Stats columns → the ```` ```players ```` block), **Picture**; autosave 2.5 s after the last change for a draft (a
+   published post: **Save changes**), the unsent text kept on the device (`localStorage`, try / catch) and offered back;
+   the two-tab conflict in words with **Use the newer version** / **Keep mine and save it over**; **Earlier versions**
+   (put one back); Publish / Unpublish / Delete (two taps) / Restore; after publishing "Live at /blog/<slug>" + **Copy
+   link**; **Download every post**; an address made from the title moves on to `-2` by itself when taken. Typing in a
+   20 KB post: 3.9–9.7 ms a key across runs (the preview is debounced
+   150 ms, 400 ms past 20 KB).
+5. **Starters** — **New post from…**: *Matchups to target and avoid* (the board's favorable / difficult WR and TE with
+   the defense's and the corner's sentence and the board's own words on what the tone assumes), *This week's top
+   projections and their ranges* (QB / RB / WR / TE tables, 10th–90th), *Players whose role is changing* (the DFS
+   board's role signal, up / down — DraftKings' list is only the source of the role words; no DFS points written). Half
+   PPR, plain markdown with the numbers written in, "*As of <date>, week N …*", "*Your take: …*"; a draft, never
+   published by itself. Text from the API is neutralised for `mdDoc` (`starters.ts` `mdText`: no link, bold, table cell
+   or block marker can come from a name or a sentence). **Pictures: the upload shipped** — PNG / JPEG / WebP by their
+   first bytes (an SVG or HTML named `.png` refused), ≤ 300 KB, ≤ 50, `blog.images`, served at `/blog/img/db/<id>` with
+   the type the bytes say, `nosniff`, a year's cache; `mdDoc` accepts exactly that address besides `blog/img/` files.
+6. **Tests and docs** — below; `docs/BLOG.md` rewritten (the editor first, files second, adding an editor), WORDS §
+   "The blog editor", CHANGELOG.
+
+#### Not done / limits
+
+* A database post's link-preview picture is `og.png` (a file post's `image:` has no editor field yet).
+* RSS and the sitemap keep their 10-minute cache (a feed reader sees a new post within 10 minutes).
+* A body that is not JSON at all is FastAPI's 422 before the editor's switch is read (it parses first); every other
+  request to an editor route is 404 when there is no editor.
+* `PATCH` (no such route) on an editor path is 405, as for any path with other methods.
+* An editor sees only the posts their account wrote; the export is that editor's posts.
+* The players block in a starter's post is live (it moves with the nightly) and says so; the starter's own numbers are
+  written in.
+
+#### Files
+
+New: `api/league_lab_api/blog_store.py`, `scripts/hosted_blog.sql`, `api/tests/test_io3.py`,
+`web/src/routes/BlogEditor.svelte`, `web/src/components/blog/{editor.svelte.ts, starters.ts, AccountId.svelte}`,
+`web/e2e/io3/fixtures.spec.ts`, `docs/handbacks/io3/*.png`, this file. Mine, edited: `api/league_lab_api/blog.py`,
+`web/src/routes/Blog.svelte`, `web/src/lib/md.ts` (one regex: the uploaded pictures' address), `docs/BLOG.md`, a marked
+line (+ its import) in `web/src/routes/Account.svelte`.
+
+**Edits outside my files** (marked `IO-3`): `api/league_lab_api/ratelimit.py` (`/api/blog/export` → research),
+`api/league_lab_api/accounts.py` (`me_route`: `"id": uid`, one line), `api/league_lab_api/security.py` (`body_limit`:
+320 KB for `/api/blog/images`, two lines), `api/tests/test_ik4.py` + `web/fixtures/ik4/me.json` (the recorded `me`
+answer gains a fixed `id`), `web/src/lib/router.svelte.ts` (route `write`: `/blog/new`, `/blog/edit/<id>` ahead of the
+post pattern), `web/src/App.svelte` (the editor's chunk; `openDoor` + `write`), `web/src/components/TopBar.svelte` (the
+⋯ menu's **Write**, editors only), `docs/WORDS.md`, `CHANGELOG.md`. `main.py`: none (the routes ride on blog.py's
+router; `mine` and `export` are declared ahead of `/api/blog/{slug}`).
+
+#### Schema in / out
+
+In: `accounts.users` / `accounts.sessions` (who is signed in, via `accounts.current_user`); the matchup board, the
+DFS projections and the Stats frame (the starters and the players table, through their public routes). Out: schema
+`blog` — empty 384 kB on this database (tables, indexes, TOAST); a 20 KB post with 20 revisions ≈ 420 KB before TOAST
+compression; hard ceiling ≈ 32 MB (the 30 MB cap + rows and indexes) on Neon's 0.5 GB.
+
+#### The PO lines
+
+`scripts/sync_to_hosted.sh`, after the IK-4 block:
+
+```bash
+### ---- IO-3 (Wave I-O): the blog's editor — docs/BLOG.md § "The editor". The `blog` schema is never dropped above (only
+### analytics, analytics_seeds and ops are); scripts/hosted_blog.sql creates blog.posts, blog.revisions and blog.images if
+### missing, grants the app role SELECT / INSERT / UPDATE / DELETE on posts and revisions and SELECT / INSERT / DELETE on
+### images (its default_transaction_read_only stays on) and prunes posts deleted 30 days ago and revisions past the newest
+### 20. Idempotent, a few ms, its own transaction after IK-4, the same owner connection (no new secret). A failure here
+### never fails the publish: the blog stays the files' and the editor off until a sync applies it.
+if psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction -f scripts/hosted_blog.sql; then
+  echo "blog: $(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select (select count(*) from blog.posts where status = 'published') || ' published, ' || (select count(*) from blog.posts) || ' posts, ' || (select count(*) from blog.images) || ' pictures, ' || pg_size_pretty((select sum(pg_total_relation_size(c.oid)) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'blog' and c.relkind = 'r')::bigint)" 2>/dev/null || echo '?')"
+else
+  echo "WARNING: scripts/hosted_blog.sql failed: the blog stays the files' and the editor off until a sync applies it (the publish itself is fine)" >&2
+fi
+### ---- end IO-3
+```
+
+(Checked on `league_lab_im4`: "blog: 0 published, 0 posts, 0 pictures, 384 kB".)
+
+`render.yaml`, in the service's `envVars` (the value is one or more account ids — a uuid each, any case, joined by
+commas — that the editor copies from **Your account** → **Your account id**; `sync: false` keeps the id out of git):
+
+```yaml
+      # ---- IO-3 (Wave I-O): the blog's writers — comma-separated account ids ("Your account id" on the Account screen);
+      # unset or empty: no editor on the site (docs/BLOG.md § "The editor")
+      - key: LEAGUE_LAB_EDITORS
+        sync: false     # Render asks for it: e.g. 0f1e2d3c-4b5a-4968-8776-5a4b3c2d1e0f[,another id]
+```
+
+`scripts/nightly.sh`, `api/Dockerfile`: nothing.
+
+#### New environment variables, dependencies
+
+`LEAGUE_LAB_EDITORS` (above). No new dependency (zip: the standard library; the picture check: the first bytes, as
+`blog.py` already does).
+
+#### Commands and evidence
+
+* `uv run pytest api/tests/test_io3.py` — **18 passed**; with the files of every module edited: `test_io3 test_in1
+  test_im3 test_static test_ik4 test_im4` — **154 passed** (`test_ik4::test_record_web_fixtures` updated on purpose for
+  the new `id`). `test_il5::test_watchlist_rows_in_a_league` fails on `main` too (the week's state), untouched.
+* `uv run ruff check src app tests api` — clean. `uv run python scripts/copy_standard.py --check` — clean.
+* `cd web && npm run lint && npm run build` — clean (193 files, 0 errors, 0 warnings).
+* `FIXTURES_PORT=8830 npx playwright test --config playwright.fixtures.config.ts e2e/io3` — **12 passed**, 6 skipped
+  (desktop-only checks skip on the phone) at 375 and 1300; the spec starts its own API on :8863 with a throwaway secret
+  and an editor made through `accounts.request_link` → the stub mailer → `accounts.verify`, and deletes it after.
+  `e2e/in1` + `e2e/ik4` — **22 passed** (4 skipped, as on main).
+* Screenshots: `docs/handbacks/io3/` (editor, post, list, account at 375 and 1300; starter, conflict at 1300; picture).
+
+#### What I attacked, and what happened
+
+TestClient (through the Guard and the limiter) and a live run of the fixture API on :8863 with curl:
+
+| Attack | Result |
+|---|---|
+| every editor route with `LEAGUE_LAB_EDITORS` unset / empty / `" , "` (signed in), accounts off, the tables missing | 404 `not_found` on all 12 (a wrong body too) |
+| signed out, a forged `ll_session`, signed in but not listed | 401, 401, 403 `not_editor` on all |
+| cross-site writes: `Origin: https://evil.example`, `Origin: null`, `Sec-Fetch-Site: cross-site`; a text/plain form post | 403 `cross_site` (the Guard); text/plain without Origin: 422 (not JSON), nothing written |
+| another editor's post by id (read, save, publish) | 404 |
+| stored XSS in title, summary, author, tags, slug, body (script, `onerror`, `javascript:` / `data:` / `//host` / `/\host` links, attribute breaking in a link and a picture, an outside picture, `<td onclick>`, `</code><script>`, `</pre><script>` in a fence, entities, the placeholder characters U+E000 / U+E001) | tags refused (400); the rest stored as typed and inert: the JSON is `application/json` + nosniff; RSS parses with only the feed's elements; the sitemap carries the slug only; the shell's head has the title escaped once (`&lt;script&gt;`); the preview and the public post: no script / iframe / svg / style element, no `on*` attribute, links only in-app or https to the allowed hosts, pictures only `/blog/img/` (e2e `inert` at 375 and 1300) |
+| oversized: 200 KB + 1 byte, 240 KB, 300 KB / 400 KB requests | 413 `too_big` in words; the Guard's 413 past 256 KB |
+| 30 MB / 500-post / 50-picture caps (lowered in the test) | 413 `blog_full`, 409 `too_many`, 409 `too_many_images` |
+| control characters (NUL, ESC), pasted U+2028 / form feed / CR | NUL / ESC refused 400; line separators become line ends (an autosave never fails on a paste) |
+| slug collisions: a file's slug, reserved (`new`, `edit`, `mine`, `export` …), shape (`Bad Slug`, `a--b`, 81 chars, `o\nk`, `../etc`), another post's; a file pushed later with a published post's slug | the text saved, the address kept and the reason given; publish 409 `slug_taken`; the file wins in every public read, logged |
+| the revision conflict (two tabs) | 409 `conflict` + the newer body; the UI offers both ways, nothing overwritten (API test + e2e) |
+| pictures: SVG / HTML / GIF named `.png`, 4 bytes, empty, 300 KB + 8, 330 KB; `/blog/img/db/` with `..%2F`, an upper-case id, `x.png`, `%0a` | 400 `bad_image`; 413; 413 (Guard); 404 for every address but a stored lower-case uuid; served with the type its bytes say + nosniff |
+| `/blog/new` and `/blog/edit/<id>` opened directly | 200 with the blog's preview (never the 404 an unknown slug gets) |
+
+Fixed while attacking: a body between 200 and 256 KB answered pydantic's 422 (echoing the body) → now 413 in words; the
+switch ran after body validation (a 422 could reveal the routes) → now the router's first dependency; the phone preview
+overflowed its column (a grid item's min-width) → `minmax(0,1fr)` + a bounding-box check in the e2e; pasted line
+separators refused an autosave → normalised.
+
+#### Without the schema or the variable (the deploy before the nightly)
+
+No `blog` schema (or no right to it, or the database down): `published_meta()` is `[]` and the readiness check says no
+— `/api/blog`, a post, RSS, the sitemap and the shell are exactly the files' (same headers: `public, max-age=300`), the
+editor's routes are 404, `/blog/img/db/*` is 404, no Write link. With the schema: the list and a post answer
+`public, max-age=0, must-revalidate` so a post just published shows on the next load. `LEAGUE_LAB_EDITORS` unset: the
+editor does not exist whatever the tables. Tested: `test_without_the_tables_*`, `test_the_database_down_leaves_the_files`.
+
+#### Wrong and not mine
+
+* `test_il5::test_watchlist_rows_in_a_league` fails on `main` (rostered vs free_agent: the sandbox's week state).
+* Running `e2e/in1` rewrites `docs/handbacks/in1/home-desktop.png` (its screenshot path is fixed); I restored it each time.
+
+#### Next
+
+The editor's link-preview picture for a database post (an `image` field pointing at an uploaded picture); a feed / sitemap
+cache that clears on publish; "Earlier versions" with a diff.
+
+#### Fix round (after the merge and the independent review; branch `fix/IO3` from `integ/IO` 72d959b)
+
+The review found nothing Critical, High or Medium here; three Lows and two notes, all fixed:
+
+* **L1, churn**: a save whose title, summary, tags, author and body are unchanged writes nothing (200, the same
+  revision); a post is saved at most once every 5 seconds (`SAVE_FLOOR_S`; 429 `too_fast` "Saving again in a moment:
+  your text is kept." + `Retry-After` — the editor schedules its autosave past the floor and waits out a 429 by itself;
+  Publish / Save changes wait and retry); **the revision rule**: a new revision only when the title or body differs from
+  the newest kept one by more than whitespace AND the newest kept one is ≥ 30 s old (explicit) / ≥ 2 min (autosave) —
+  otherwise nothing is written to revisions (the post's row holds the text); rows are only added, never rewritten. The
+  review's 10-in-a-row of 200 KB noise now: 1 × 200, 9 × 429, no new revision.
+* **L2, a 500 from a slug**: `_free_slug` strips a trailing dash before `-n`; every `IntegrityError` / `DataError` on the
+  editor's routes is 409 `taken` / 422 `not_saved` in words.
+* **L5, invisible characters**: U+200B–200F, U+202A–202E, U+2066–2069, U+FEFF stripped from title, summary, author,
+  tags and the address (the body keeps them: emoji joiners).
+* **Notes**: drafts on the device are keyed by the account id, never written for a signed-out visitor, and cleared by
+  Sign out / Sign out everywhere / Delete my account (an expired session leaves them, so a timeout loses no text);
+  `/blog/img/db/<id>` is cached a day with an ETag (304 on `If-None-Match`), no longer a year immutable.
+
+Tests: `test_io3` 23 passed (+5: unchanged save, the floor, the revision rule, the 80-character slug and the database's
+refusal, invisible characters; the picture cache asserts the ETag / 304); `test_io3 + test_in1 + test_ik4` 68 passed;
+ruff, copy standard, lint, build clean; e2e `io3` 16 passed / 8 skipped (+3: the floor and Publish right after typing,
+a 429 waited out, sign-out clears the drafts), `in1` 16 passed, `ik4` 6 passed.
+
+### IO-4 — the fix list and two things left twice (Wave I-O, 2026-10-06)
+
+**Task**: Wave I-O package IO-4 (`/home/claude/waveIO/BRIEF.md` § "IO-4"). **Branch** `dev/IO4` from `main` `cf8e743`.
+Worktree `/home/claude/wt-io4`, database `league_lab` (read only — nothing written). Dev IO-4.
+
+#### Done, against the numbered list
+
+1. **Two players, one last name** (`api/league_lab_api/myweek.py`, marked `IO-4`). `short_name(full, position,
+   roster)`: the last name; when another player on the roster shares it (`cards.display_name` decides the collision —
+   the one roster-aware rule), the first initial ("M. Washington"); when the two share the initial too, the full name;
+   a defense or team unit keeps its name. Used by every name My Week says: the actions and reasons (`build_actions`'
+   `name` / `plain`), the review lines, the news feed's "Inspect …" (`decision_parts`) and the questionable line. Every
+   name in an action comes from the roster's rows, so a collision "in that sentence" is a collision on the roster.
+   * Before (Andrew's live roster has Malik and Parker Washington): "Start Washington ahead of Jefferson and
+     Croskey-Merritt for now." / "Start Washington at FLEX in place of Croskey-Merritt." / "Washington or
+     Croskey-Merritt at FLEX: a coin flip …"
+   * After (the IN-5 morning frame + Malik Washington): "Start P. Washington ahead of Croskey-Merritt for now." ·
+     "Start P. Washington at FLEX in place of Croskey-Merritt." · "P. Washington or Croskey-Merritt at FLEX: a coin
+     flip, 0.1 points apart; your lineup has Croskey-Merritt — no clear upgrade." Mahomes, Jefferson, Croskey-Merritt
+     unchanged. The database's League of Scrubs roster 2 (both Washingtons): no bare "Washington" in any action,
+     reason or review line (`test_his_roster_from_the_database_has_both_washingtons`).
+2. **A lineup holding a player who is gone** (`myweek.gone_actions`). A key of the submitted lineup with no roster row
+   is taken out of the pairing; each such spot is one roster alert (kind `change`, urgency 1, `gone: true`, the slot
+   label): "A player in your Sleeper lineup is no longer on your roster — set that spot again." (the platform's name
+   from `platform_name`); the reason names the best lineup's player left without a spot, if one fits the slot
+   ("Our lineup starts Washington there (your FLEX spot).") else "Start someone from your bench there (your RB spot),
+   or add a player."; "Not in your Sleeper lineup yet: set that spot in Sleeper.". Before: "Take player no longer on
+   your roster out of your lineup." (`last_name` of the placeholder "a player no longer on your roster"). After, on
+   the fixtures' finished week 4 (League of Scrubs 2): "A player in your Sleeper lineup is no longer on your roster —
+   set that spot again." + "Start someone from your bench there (your RB spot), or add a player." — once per spot.
+3. **The matchup board** (`api/league_lab_api/matchup_board.py`, `web/src/components/matchups/Board.svelte`).
+   (a) `game_state(kickoff, is_final, now)` from `clock.now()`: None / "started" / "final" (the database's final flag
+   counts only for a game that has kicked off by the clock; 4 hours after kickoff is final anyway). Rows of kicked-off
+   games go below the games still to come under every sort; `show=to_play|all` (400 otherwise); the default is
+   `to_play` once any game of the week has started, `all` when a game is picked (its players, marked) or none has
+   started. The answer carries `show`, `started_games`, `started_players`, each row's `game_state`, each game's
+   `state`. The screen: **Still to play · All games** chips (only once a game has started; `bshow=` in the URL), a
+   **Started** / **Final** badge on the row (phone: on the line under the name; desktop: in place of the kickoff),
+   "· Final" in the game list, "… still to play" in the count. (b) In a real league the defense read comes from
+   `research.league_dvp` (the heatmap's own frame: `league_defense`), the tone recombined with the same corner call
+   (`combine_tone`), the sentence rebuilt, and the opened row's evidence (its defense history) in the league's scoring too (kept per
+   league scoring in the board's region); `defense_source` = `league` / `reference`; browsing keeps the reference
+   mart (and `matchup_context`, read by the home and DFS, is unchanged). (c) `projection_words()` imports IO-1's
+   `context_record` lazily: when `summary()["corner"]["graded"]` is true its `words` replace the last sentence ("Whether
+   a tough corner lowers a receiver's points has not been graded yet."); absent, ungraded or raising → today's
+   sentence (`PROJECTION_WORDS`, unchanged).
+4. **The role-change columns on Stats**. DFS's role trend moved to **`src/league_lab/role_trend.py`** (one
+   implementation): `_ratio` / `_parts` (numpy, one player), `shares(games)` (every player of a frame, each a slice of
+   the arrays), `role_trend(games, position)` (DFS's call — same words, same thresholds), `change_columns(games,
+   positions)` (Stats). Three catalogue columns in a new group **Role change** (after Snaps and routes):
+   `target_share_change`, `carry_share_change` (RB only, as on DFS), `snap_share_change` — recent (his last 2 games
+   played in the window) minus before (his games before them in the window, at least 2), each part a summed numerator
+   over a summed denominator, signed, in points of share on the screen ("+5.2 pts"); definition, numerator,
+   denominator, aggregation, reason-when-null; the samples behind them (`_recent`, `_before`, `role_games_*`) on the
+   row; in the WR / TE and RB presets' picker (`extra`) and the Full table; sortable (nulls last). DATA_INVENTORY rows.
+   `stats.FCT_COLS` reads `offense_snaps` too (DFS's snap share: snaps / (snaps ÷ published share)).
+5. **Each client's own share of the providers' budget** (`src/league_lab/provider_share.py`; SECURITY_PUBLIC § 13):
+   the limiter's middleware sets `provider_share.CLIENT` (its `client_group`) once a request is admitted; `Sleeper._get`
+   and `MFL._get` take the client's share before the global bucket; no client (nightly, CLI, tests — the limiter is
+   off there) → unlimited by it. A refusal is `SleeperBusy` / `MFLBusy` (a cached answer first) → 503 "busy, try again
+   in a minute". `anyleague.user_leagues`' thread pool hands the context on. SECURITY_PUBLIC's "left" row is now § 13.
+
+#### Files
+
+* New: `src/league_lab/role_trend.py`, `src/league_lab/provider_share.py`, `api/tests/test_io4.py`,
+  `web/e2e/io4/fixtures.spec.ts`, `web/fixtures/io4/api_io4.json` (2.4 MB: the Stats frames are most of it),
+  `docs/handbacks/IO-4.md`, `docs/handbacks/io4/*.png`.
+* Mine, edited: `api/league_lab_api/myweek.py`, `api/league_lab_api/matchup_board.py`, `api/league_lab_api/stats.py`,
+  `api/league_lab_api/ratelimit.py`, `src/league_lab/sleeper_client.py`, `src/league_lab/mfl_client.py`,
+  `web/src/components/matchups/Board.svelte`, `web/src/components/stats/columns.ts`, `docs/SECURITY_PUBLIC.md`
+  (§ 13, the "left" row), `docs/DATA_INVENTORY.md` (3 rows).
+* **Edits outside my files**:
+  * `src/league_lab/dfs.py` (IO-1's): **lines 1214–1273 of `cf8e743`** (the role-trend block: `ROLE_RECENT` …
+    `role_trend`'s last line) replaced by **one line, 1214**: `from .role_trend import role_trend  # noqa:
+    E402,F401,I001 IO-4: moved, one implementation with Stats`. The comment line 1213 above it and everything else are
+    untouched. Nothing else in the repository read `dfs.ROLE_*` or `dfs._ratio` (grep). If IO-1 also edited that block,
+    take IO-1's edit into `role_trend.py` and keep the one import line.
+  * `src/league_lab/anyleague.py` (unowned): `user_leagues` — `import contextvars` and `ctx = contextvars.copy_context()`,
+    `ex.map(lambda lg: ctx.copy().run(one, lg), leagues)` (3 lines, marked).
+  * `web/src/lib/api.ts`: a marked block at the end (interfaces merged with IN-3's `BoardRow` / `BoardGame` /
+    `MatchupBoard`: `game_state`, `state`, `show`, `started_*`, `defense_source`; `boardShowPath`).
+  * `api/tests/test_im1.py`: **changed on purpose** — `ST.GROUPS` gains "Role change", the catalogue 101 → 104.
+  * `docs/WORDS.md` (§ "The fix list"), `CHANGELOG.md` (the `## 2026-10-06 — Wave I-O` heading created, one bullet).
+* No `main.py` / `router` / `App.svelte` edit, no new route (the board gains the `show` parameter; its bucket is
+  unchanged).
+
+#### Schema
+
+In: `dim_game.is_final` (exists), `fct_player_game.offense_snaps` (exists, hosted too — DFS reads it). Out: no
+relation, no table, nothing written. On a database without this wave's relations: nothing of mine needs one; the
+context record's absence keeps today's sentence (tested with a fake module and with none).
+
+#### Evidence
+
+* `api/tests/test_io4.py` **23 tests** (My Week 5 incl. the database roster; the board 4 incl. the record; Stats 4 incl.
+  the old-vs-new role trend on 1,500 random players — identical answers, 347 trends said; the share 10).
+* DFS's tests untouched: `tests/test_in4_dfs.py` + `tests/test_im5_dfs.py` **223 passed**; `api/tests/test_in4.py`
+  in the module run below. `role_trend` per call: **0.56 ms** (a first pandas-groupby version took 43 ms a call and was
+  thrown away — ~400 players would have made DFS's context ~17 s).
+* Module test files — the 44 API files that read myweek / the board / stats / ratelimit (`grep -l`), one run: **726
+  passed, 53 failed, 12 skipped** (574 s). 50 failures are on `known_api_failures.txt` by name; the other 3 are
+  `test_ig2.py` (`test_what_changed_lists_a_brief_with_its_source`, `test_what_changed_without_the_store_is_if4s`,
+  `test_the_matchup_evidence_cites_the_event`): the availability overlay's status lines are empty — IN-5's hand-back
+  reports the same three failing on `main`'s code; nothing of mine builds those lines. **Said plainly**: four of those
+  existing files write to the database with the pipeline role through their own fixtures — `test_ig2.py` (applies
+  `hosted_events.sql`, idempotent; inserts and then deletes its rows in `events.events`), `test_ik4.py`
+  (`hosted_accounts.sql`, idempotent; its test rows), `test_ig3.py` / `test_ik3.py` (temporary tables / a rolled-back
+  transaction) — so this run touched `league_lab` through them, as the PO's merge run does. Nothing in my code writes.
+  I noticed after the run and did not run them again.
+* `/home/claude/waveIO/check_root.sh` (I edited `src/`): **1,537 passed, 4 failed — the 4 known, 0 new** (117 s).
+* `test_in3.py` 55, `test_in5.py` + `test_in0.py` 20, `test_im3.py` (limiter) 63, `test_ii3.py` + `test_im1.py` 37 +
+  1 skipped — all pass. `ruff check src app tests api` clean; `copy_standard.py --check` clean; `npm run lint` (189
+  files, 0 errors / warnings) and `npm run build` clean.
+* **e2e** `web/e2e/io4` **4 passed** (375 and 1300), on the recordings and against the live fixture API on :8864:
+  the board opens on "Still to play" (Thursday's game final under the suite's Saturday clock), All games, the
+  Thursday game picked → every row Final; Stats Full table sorted by Target share change (first cell "+17.9 pts",
+  Jakobi Meyers), its hover, the dash on a 3-game window with its reason. Screenshots `docs/handbacks/io4/`.
+* **The board**, week 4 clock Sunday 2:30 PM ET: 10 of 16 games started, 136 of 219 WRs in them; Saturday: 1 game
+  final, 13 WRs, default "Still to play" 206. League of Scrubs WR: every row's defense rank = the heatmap's (100 rows), and its evidence's history rank too;
+  on this database the reference and league ranks agree at WR for Scrubs (0 differences) — the change matters where
+  the scorings differ.
+* **Stats**: 2026 season window, RB / WR / TE, 423 players: target share change for **185**, carry share change for
+  **55** running backs, snap share change for **184**; **157** of DFS's week-5 role-trend measures equal the Stats
+  columns (±0.0006). `/api/players` (ref:half, season, RB+WR+TE, limit 1,000): **3.2 s cold** (a fresh process: the
+  season frame, the league's points), **0.27 s warm**; the role columns inside `stats.aggregate` (once per window, then cached): **24 ms** of 175 ms on
+  2026 (1,414 game rows), **34 ms** of 212 ms on 2025 (6,037 rows) (the aggregate itself was already ~150–180 ms).
+* **The share**: one unknown Sleeper league cold (My Week, Team, League, outlook) = **11 calls** on the fixtures;
+  three in 45 s → 33 calls, **0 refused**; fifty in a minute → refused from the **16th**, 140 of 200 answers 503
+  "busy", never a 500; another visitor not refused. MFL `mfl:70587` cold = **14 calls**; three → 0 refused. At a live
+  league's 25 / 35 calls, fifty → 6 / 4 built in full.
+
+#### Limitations (said straight)
+
+* The fixture league's outlook stops at its missing week 3, so the fixtures under-count a live league's calls; the
+  numbers are sized from the PO's live measurement (12–20 outlook calls), not measured live here.
+* Many addresses together can still spend the global provider budget (now a Low row in SECURITY_PUBLIC).
+* The role-change columns take the window's games: "Last 3 games" cannot hold 2 + 2 and is always a dash (said in the
+  reason). The snap share change is summed snaps (DFS's), not the Snap share column's mean of per-game shares (said
+  in the definition).
+* The board's Started / Final reads `dim_game.kickoff_at` and the nightly's `is_final` (a game is "final" 4 hours
+  after kickoff if the nightly has not run).
+* `margin_comparator` (the card's "over X" words) keeps `display_name`'s full name on a collision (not an action
+  sentence; unchanged).
+
+#### The PO lines I need
+
+* None in `scripts/nightly.sh`, `scripts/sync_to_hosted.sh`, `render.yaml`, `api/Dockerfile`. New env variables
+  (optional, unset on Render): `LEAGUE_LAB_PROVIDER_SHARE` [`60,150`; `off`], `LEAGUE_LAB_PROVIDER_SHARE_MFL` [`12,50`].
+* `dbt/seeds/metric_registry.csv` (IO-1's file this wave) — one row, if the PO wants the columns registered:
+  `role_share_change,rt1.0,"his targets / carries / snaps over the team's in his last 2 games played (summed numerator over summed denominator)","the same over his games before them (2+), minus",player-window,available,"IO-4: league_lab.role_trend (DFS's role trend, one implementation); Stats columns target_share_change / carry_share_change (RB) / snap_share_change; null under 2 + 2 games or 20 team targets / carries, 60 team snaps per 2 games"`
+* `app/whats_new.md` (optional): "My Week tells your two Washingtons apart (M. Washington, P. Washington); the
+  matchup board shows the games still to play first and marks the ones that have started; Stats has a Role change
+  group: each player's target, carry and snap share in his last two games against his games before them."
+
+#### Seen, not mine
+
+* On the fixtures' finished week 4, League of Scrubs 2: "Start Folk at K in place of Jefferson." — a kicker paired
+  with an outgoing receiver; the fixture's Sleeper lineup is older than the database's roster (its slots do not line
+  up), so `pair_moves` reads a K slot for Jefferson. Probably a fixture artefact; worth a look with a live lineup.
+* `myweek.pair_moves` pairs an incoming receiver with an outgoing tight end through the slot chain while the TE spot
+  is reported open ("Start Washington at FLEX in place of Kelce." beside "Your tight end spot is open"), seen on a
+  hand-built frame — IN-5's.
+* `src/league_lab/roles.py` (IL-1's "role change", registry `role_change`) is a third measure of a role change, with
+  per-game counts and a standard-deviation rule: two different "role change" ideas now have screens.
+
+#### Commands
+
+`OMP_NUM_THREADS=1 uv run pytest tests/test_io4.py -q` (api/) · `uv run pytest tests/test_in4_dfs.py
+tests/test_im5_dfs.py -q` · `uv run ruff check src app tests api` · `uv run python scripts/copy_standard.py --check` ·
+`npm run lint && npm run build` (web/) · `FIXTURES_PORT=8840 SHOTS_IO4=../docs/handbacks/io4 npx playwright test
+--config playwright.fixtures.config.ts e2e/io4` · re-record: the fixture API on 8864 serving `web/dist`, then
+`IO4_LIVE=http://localhost:8864 …`.
+
+#### Next
+
+Measure one live unknown league's calls (the share's numbers rest on the PO's 12–20); a per-/48 share if many-address
+spending is ever seen; the role-change columns on the player card.
+
+#### Fix round (branch `fix/IO4` from `integ/IO` `72d959b`)
+
+1. **The corner moves nothing** (the PO's decision on IO-1's grade). `combine_tone` = the defense's tone (signature
+   kept); `cb.tone` always None, `cb.tier` added (the quarter, so DFS's graded chip can still find its tier — IO-1's
+   `dfs.py:801` reads `cb.get("tone")`: it should read `{"shutdown": "difficult", "target": "favorable", "solid":
+   "neutral"}.get(cb.get("tier"))`, else the chip loses its graded words for ranked corners); `context.words` the
+   defense's sentence; the corner's words in plain quarters ("a top-quarter corner, #3 of 74"). Board: "top-quarter
+   corner" in grey (no red badge); My players' corner card: a neutral chip (Top-quarter / Middle-half / Bottom-quarter /
+   Unranked corner, Either corner, No call) + the certainty; How to read this and the caption reworded; the home's line
+   = the defense's sentence (`home.ts`, marked); the best-corners split carries a note (`research.COVER_SPLIT_NOTE`).
+   Honesty line without the record: "What the projection counts: … Who plays cornerback is not in it: the corner call
+   is a lean from where his targets go, shown for context."; with it: the same + IO-1's sentence. METRICS mb1.1,
+   INTERFACES § IN-3, the registry row `matchup_tone` → mb1.1, WORDS.
+2. **Review L3**: `availability.contexts` carries the context; every pool listed in SECURITY_PUBLIC § 13;
+   `test_every_pool_carries_the_client_or_says_why_not`, `test_the_roster_contexts_pool_carries_the_client`,
+   `test_starlettes_threadpool_carries_the_client`.
+3. Changed on purpose: `test_in3.py` (the 42-case tone table: the four a likely corner moved now the defense's; CB_KEYS
+   + tier; the not-expected corner's words in `cb.words`), `web/e2e/in1` (homeWords: the defense's only), `web/e2e/ib3`
+   (the corner card's `cb-info` chip, no `tone-chip`). Re-recorded: `web/fixtures/io4/api_io4.json`,
+   `web/fixtures/in3/api_in3.json` (live from the fixture API on the merged tree), the five board answers in
+   `web/fixtures/in1/api_in1.json`.

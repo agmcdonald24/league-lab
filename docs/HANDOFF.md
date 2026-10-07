@@ -385,3 +385,25 @@ Task ID, plan sections touched, exact files changed, commands run, validation ev
 output, row counts, reconciliation numbers, the headless page check, a browser walk on both
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
+
+* **Wave I-O (2026-10-06, Tuesday 18:25 – 21:30 ET; four Opus devs, an independent security review, a fix round;
+  STATUS § "Wave I-O" PO section first)**: **the context record** — `ops.context_record` / `ops.context_grade`,
+  written by `league-lab context-record` in the nightly (frozen before the week's first kickoff, graded after),
+  read by `api/league_lab_api/context_record.py` `summary()`; **a past week's corner rank in `mart_cb_matchups` is
+  look-ahead** (the season to date): grade only through `context_record.cb_rank_asof`. **The corner call has no
+  measurable effect** (2,190 receiver-games): `matchup_board.combine_tone` returns the defense's tone, `cb["tone"]`
+  is always None, the corner is information in neutral styling — do not colour, sort "best matchup" or build a list
+  on it again without an out-of-sample grade in the record; "Worth a look" is off the DFS screen (`dfs.worth`
+  stays for the record). **League**: `outlook_store.py` + `scripts/hosted_outlook.sql` (`outlook.snapshots`: one
+  ceiling for every non-house league, a size guard, replaced until kickoff), movement only from a stored row, the
+  Share link `/league?league=<key>` with a guest view (Sleeper / MFL only; an ESPN or Yahoo league is never shared,
+  stored or carded), the shell's League card from cache or the store only, `?part=power` first, title odds; **a
+  refused provider read inside a build is raised, never cached**. **The blog editor**: `blog_store.py` +
+  `scripts/hosted_blog.sql`, editors = account ids in `LEAGUE_LAB_EDITORS` (Render's dashboard, `sync: false`;
+  unset → the editor's routes are 404), every write same-site + `write` bucket + the per-post floor; rendering stays
+  escape-first through `lib/md.ts` `mdDoc`; `docs/BLOG.md`. **Per-client provider share**:
+  `src/league_lab/provider_share.py` (a context variable set by the limiter's middleware — **a new thread pool on a
+  request path must carry the context** (`ctx.copy().run`): `test_io4` lists every pool and fails on a new one).
+  **Shared**: `src/league_lab/role_trend.py` (DFS's chips and Stats' "Role change" group). **Hosted SQL**: a new
+  schema the API writes gets its own idempotent `scripts/hosted_<name>.sql` and a block in `sync_to_hosted.sh`; the
+  API must answer without it (the deploy lands before the nightly).

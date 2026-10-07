@@ -4,6 +4,18 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-06 — Wave I-O
 
+- **PO — the wave merged, reviewed and hardened; the corner call stops moving anything.** Four branches (IO-1 … IO-4)
+  on `integ/IO`, the full suites by the PO on the merged tree (no failure `main` does not have, by name), an
+  independent security review with two editor accounts and an ordinary one (nothing Critical or High; two Mediums —
+  any account could bypass the outlook store's cap, one client's refused provider calls were cached as a broken
+  outlook for everyone — and five Lows, all fixed in a second round). **IO-1's grade** (2,190 called receiver-games,
+  as-of ranks, whole-game bootstraps): a likely shutdown corner −0.39 points against the rest (−1.39 to +0.72), a
+  likely easy one −0.02 (−1.11 to +1.22), "Worth a look" +0.72 (−1.10 to +2.72) on 37 picks — no measurable effect.
+  The PO's decisions: the matchup board's one tone is the defense's alone, the home's "Matchups to target" says the
+  defense's sentence only, "Worth a look" is off the DFS screen with one line saying why. The PO's lines:
+  `scripts/nightly.sh` (`league-lab context-record`; the record's tables kept; one outlook build per house league
+  after the sync), `scripts/sync_to_hosted.sh` (`hosted_outlook.sql`, `hosted_blog.sql`), registry rows,
+  `render.yaml` `LEAGUE_LAB_EDITORS` (`sync: false`). docs/STATUS.md § "Wave I-O".
 - **IO-4 — the fix list and two things left twice.** My Week names "M. Washington" / "P. Washington" when two players
   on a roster share a last name (`cards.display_name` decides; nobody else changes); a submitted lineup holding a
   player who has left the roster is one roster alert per spot ("A player in your Sleeper lineup is no longer on your
@@ -23,7 +35,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   look" (the list is empty and says why), its chip carries its grade, and the card prints the record's sentence.
   `league-lab context-record` keeps `ops.context_record` (frozen before each first kickoff; played weeks rebuilt once,
   labelled) and `ops.context_grade`; `GET /api/context/record`; `analytics.mart_game_weather` puts the forecast
-  on DFS's chips (not in the projection). docs/METRICS.md § "The context record" (cx1.0), docs/handbacks/IO-1.md.
+  on DFS's chips (not in the projection). docs/METRICS.md § "The context record" (cx1.0), docs/STATUS.md § "Wave I-O" → IO-1.
   Fix round: "Worth a look" is off the screen — one line from the record says why (none without it) — the corner chip
   is never coloured, and the record grades the two-favourable-signals candidate out of sample from week 5.
 - **IO-2 — the League page: movement, and a link worth sharing.** Each week's outlook is kept (`outlook.snapshots`,
@@ -35,7 +47,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   a simulation); the power rankings first (`part=power`) and a market-free board for leagues not kept every night: MFL
   70587's League screen cold 12.3 s → power rankings 2.6 s, rest of season 3.3 s; **title odds** for Sleeper leagues
   whose settings describe the bracket (played out in the same simulated seasons, re-seeded when `playoff_seed_type` is
-  1, as the dynasty's past brackets pair; context, not replayed) (docs/handbacks/IO-2.md).
+  1, as the dynasty's past brackets pair; context, not replayed) (docs/STATUS.md § "Wave I-O" → IO-2).
 - **IO-3 — the blog editor.** Andrew writes on the site, on his phone if he likes: `/blog/new` and `/blog/edit/<id>`
   (**Write** in the ⋯ menu and on `/blog`, for an account listed in `LEAGUE_LAB_EDITORS` only — no password, no token;
   unset, the editor does not exist). Title, summary, tags, author line, address, the markdown body with a live preview

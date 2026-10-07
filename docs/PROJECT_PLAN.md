@@ -598,6 +598,23 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 25 — Wave I-O (2026-10-06, Tuesday 18:25 – 21:30 ET; the evening build)
+
+The PO's proposal after two builds in 24 hours that nobody but Andrew had used: stop adding screens for a round.
+Andrew: "perfect lets try to make a big push 1-4." Four devs: **IO-1** the context record (`ops.context_record`,
+`league-lab context-record` in the nightly, `GET /api/context/record`), **the grade** — the cornerback call on 2,190
+receiver-games and "Worth a look" on 37 picks: no measurable effect — and weather for DFS
+(`analytics.mart_game_weather`); **IO-2** the League page: weekly snapshots (`outlook.snapshots`) and movement, a
+Share button with a guest view and a preview card, MFL's first load 12.3 s → 2.6 s, title odds; **IO-3** the blog
+editor (`blog.posts` / `revisions` / `images`; editors are the account ids in `LEAGUE_LAB_EDITORS`; live preview,
+player links, pictures, autosave, three starters from the week's data, a full export); **IO-4** two players with one
+last name, the board's started games and league ranks, a "Role change" group on Stats, each client's share of the
+providers' budget. The PO's decisions from the grade: the board's tone is the defense's alone, "Worth a look" is off
+the screen. An independent security review (nothing High; two Mediums, five Lows — all fixed). Acceptance and
+evidence: `docs/STATUS.md` § "Wave I-O". **Next**: the live checks after the push and after the next nightly;
+Andrew's account id into `LEAGUE_LAB_EDITORS`; a real DraftKings / FanDuel file through the readers; the candidate
+list rule's out-of-sample grade at week 8; an as-of "best corners" split or none; a picture for the League link.
+
 ### Iteration 24 — Wave I-N (2026-10-06, Tuesday 09:20 – 13:00 ET; the daytime build)
 
 Andrew, walking the public site with no league the morning Wave I-M went live: a home page and a blog "so I can start

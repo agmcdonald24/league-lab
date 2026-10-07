@@ -305,6 +305,59 @@ weeks (12–20 calls), so fewer requests reached the same effect.
   `LEAGUE_LAB_PROVIDER_SHARE_MFL` the same for MFL. ESPN and Yahoo are read with the visitor's own connection (their
   budgets are per user at the provider) and keep their own limits.
 
+## 14. Wave I-O: the site's first writing surface, a third independent review, its fix round (2026-10-06)
+
+Wave I-O (docs/STATUS.md § "Wave I-O") added the blog editor (accounts listed in `LEAGUE_LAB_EDITORS` write posts and
+pictures into the `blog` schema), the League outlook's store, share link and preview card (the `outlook` schema), the
+per-client provider share (§ 13), the context record's route and weather. A fifth agent that wrote none of it
+reviewed the merged tree (`72d959b`) on fixtures with two editor accounts and one ordinary account it made and
+removed.
+
+**Every new or changed route**:
+
+| Method and route | Who may call it | Bucket |
+|---|---|---|
+| GET `/api/blog/mine`, `/api/blog/posts/{id}`, `…/revisions/{rid}` | an editor (else 404 / 401 / 403) | read |
+| GET `/api/blog/export` | an editor | research |
+| POST `/api/blog/posts`; PUT `/api/blog/posts/{id}`; POST `…/publish`, `…/unpublish`, `…/restore`; DELETE `/api/blog/posts/{id}` | an editor + same-site | write (+ 60 a minute a session, one save per post per 5 s) |
+| POST `/api/blog/images` (≤ 320 KB at the Guard); DELETE `/api/blog/images/{id}` | an editor + same-site | write |
+| GET `/blog/img/db/{id}` | public | read |
+| GET `/api/context/record` | public | read |
+| GET `/api/league/outlook` (`part=power`) | public | heavy |
+| GET `/api/matchups/board` (`show=`) | public | research |
+| GET `/league?league=` (the page shell's card) | public | not limited; a set lookup for an unknown key, never a provider call or a simulation |
+
+There is no write a visitor without an account can reach except the outlook store's capped rows.
+
+**Findings and fixes** (nothing Critical or High):
+
+| # | Finding (severity) | Fixed by |
+|---|---|---|
+| M1 | Any account could bypass the outlook store's cap: rows for leagues "saved by an account" were exempt, and an account can save and remove leagues at will (run: 20 of 25 visitor leagues written, then all 50 of an ordinary account's). A few addresses could have filled Neon's free space in days | no exemption: every league that is not a house league sits under 20 new a day and 200 held; a size guard (`pg_total_relation_size` at most once a minute; above 40 MB nothing new is written); a league-week replaced at most once an hour. Worst case 34 MB |
+| M2 | One client's refused provider calls were cached as a broken outlook for everyone: with client X's share spent, X's build answered "the schedule for week 12 is not available" and client Y got that from the cache for 600 s (house) / 120 s | a refused or failed schedule read is raised; a build during which any provider refusal happened is neither cached nor stored and its board contexts are dropped; the requester gets 503 `busy` (502 for a provider failure) and the screen retries three times. Measured: X refused → Y gets the full answer |
+| L1 | An editor session could churn the database faster than the storage cap counts (26 saves of 200 KB in 0.9 s; dead row versions are not in the cap) | an unchanged save writes nothing; one save per post per 5 s (429 `too_fast`, `Retry-After`; the editor waits and retries); a revision only when the text changed and the newest kept one is 30 s (2 min for an autosave) old |
+| L2 | A slug whose cut ended in a dash made `--` and a 500 (`CheckViolation`) | the suffix strips the dash; every `IntegrityError` / `DataError` on the editor's routes is 409 / 422 with words |
+| L3 | The provider share leaked through `availability.contexts`' thread pool (no `copy_context`) | carries the client; `test_io4` lists every pool or thread on a request path and fails on a new one that neither carries the client nor says why not |
+| L4 | Anyone could spend the preview card's read budget (120 a minute, shared) with `/league?league=<random>` and turn real links' cards off | the shell looks up only keys this process built or the stored-key set (≤ 2,000, re-read at most once a minute); the shared budget is gone |
+| L5 | Invisible direction and zero-width characters were accepted in the title and the author line | U+200B–200F, U+202A–202E, U+2066–2069, U+FEFF stripped from single-line fields (the body keeps them: emoji joiners) |
+
+Notes fixed: unsent drafts on the device are keyed by account, never kept for a signed-out visitor and cleared on
+sign-out; `/blog/img/db/<id>` is cached a day with an ETag (was a year, immutable: a deleted picture lived on).
+
+**Attacked and sound as built**: editor permissions (no cookie or a forged one 401, a non-editor 403, another
+editor's post / revision / picture 404; an empty, whitespace or malformed `LEAGUE_LAB_EDITORS` makes every route 404
+— nothing fails open); cross-site writes (`Origin` of a look-alike host, `null`, `text/plain` bodies: refused or
+nothing written; the session cookie is SameSite=Lax); stored XSS through title, summary, author and body at RSS, the
+sitemap, the shell's meta tags, the preview and the public post (raw only inside JSON served with `nosniff`); the
+picture upload (a PNG-header-plus-HTML file is served as `image/png` with `nosniff` under `default-src 'self'`; SVG
+refused; the server never decodes an image); SQL (every query parameterised; slugs by a regex and a CHECK); the
+export zip's names (no zip-slip); the account id in `/api/account/me` (your own only; writing still needs the signed
+session cookie); the outlook's keys and provider-supplied names in the `og:` tags (escaped; crafted keys get the
+default card); private leagues (never shareable, stored or carded); the store's cap lives in the database (a restart
+does not reset it), its queue is bounded at 64 and off the request thread.
+New environment variables: `LEAGUE_LAB_EDITORS` (set in Render's dashboard), `LEAGUE_LAB_OUTLOOK_STORE`,
+`LEAGUE_LAB_PROVIDER_SHARE`, `LEAGUE_LAB_PROVIDER_SHARE_MFL` (unset on Render: the defaults).
+
 ## What is left, by severity
 
 | Severity | Item | Where |

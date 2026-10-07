@@ -3,6 +3,25 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 6 (evening) · share your league, see who moved, write on the blog, and an honest grade
+
+- **Share your league.** League has a **Share** button: your league-mates open the link and see the power rankings
+  and the rest of the season without setting anything up, then pick their team. (Sleeper and MyFantasyLeague
+  leagues.) From next week the rankings show who moved up or down and how each team's playoff odds changed, and
+  Sleeper leagues get **title odds**.
+- **We graded the cornerback matchup, and it did not hold up.** Over 2,190 receiver-games in 2025 and this season,
+  receivers facing a "shutdown" corner finished about as close to their projection as everyone else, and so did
+  receivers facing an easy one. So the matchup read is now the defense alone; the corner is still shown, for
+  context, with that grade beside it. The DFS "Worth a look" list is off for the same reason: its picks did no
+  better than chance. We keep the record every week now and will say so if that changes.
+- **The blog has an editor.** Posts can be written on the site (on a phone too), with a live preview, a button that
+  links a player's name to his card, tables of players, pictures, drafts that save themselves and three drafts
+  started from the week's numbers.
+- **Small things.** My Week tells two players with one last name apart ("P. Washington"); the matchup board shows
+  the games still to play first; Stats has a **Role change** group (target, carry and snap share in a player's last
+  two games against his games before them); DFS shows wind, rain and cold for outdoor games; a MyFantasyLeague
+  league's League screen opens in about 3 seconds, not 12.
+
 ## Oct 6 (afternoon) · a home page and a blog, trades and values without a league, matchups for everyone, power rankings
 
 - **A home page.** isuckatfantasy.io now opens on this week's top projections, the matchups to target, how our
