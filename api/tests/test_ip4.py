@@ -138,9 +138,11 @@ def test_display(value, fmt, want):
     assert R.fmt_value(value, fmt) == want
 
 
-def test_the_routes_are_research():
-    for p in (f"/api/player/{PUKA}/ratings", f"/api/player/{PUKA}/projections"):
-        assert ratelimit.bucket_for("GET", p, "league=ref:half") == "research"
+def test_the_routes_buckets():
+    assert ratelimit.bucket_for("GET", f"/api/player/{PUKA}/ratings", "league=ref:half") == "research"
+    assert ratelimit.bucket_for("GET", f"/api/player/{PUKA}/projections", "league=ref:half") == "read"   # one indexed read
+    assert ratelimit.bucket_for("GET", f"/api/player/{PUKA}/games", "league=ref:half") == "research"     # unchanged
+    assert ratelimit.bucket_for("GET", f"/api/player/{PUKA}", "league=ref:half") == "research"           # unchanged
 
 
 # ------------------------------------------------------------------------------------------------ the routes
