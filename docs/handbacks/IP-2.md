@@ -143,3 +143,34 @@ first); the Compare tests of `e2e/fixtures.spec.ts`, ia1, if3, inf1 10 passed (a
 
 Grade the season ranges (and so the season tiers); read the coverage line from the record; a Rankings column for
 "value in a typical league" when browsing (`refleague.value_of` is there).
+
+## Fix round (branch `fix/IP2` from `integ/IP` 3d1b76b)
+
+1. **Starter unclear.** `rankings_api._starters_unclear` imports IP-1's `starters.unclear(season, week)` lazily (absent,
+   broken or not a dict → `{}`; only ids matching the gsis pattern and rows with words are kept). Week view, QB: each
+   flagged quarterback's row carries `starter_unclear: {team, listed, played, role, words}`, keeps his rank by
+   projection and has `tier` / `tier_p` null — he neither joins nor opens a tier, so the other rows' tiers are exactly
+   the list's without him (a test checks this). The screen: a neutral **Starter unclear** chip (next to the name at
+   1300, at the start of the sentence line at 375), a dashed left edge, IP-1's sentence + "No tier." under the row,
+   and once in the foot what the dashed edge means; the tier lines skip him (a line is drawn only where a tiered row's
+   tier differs from the previous tiered row). "Who should I start?" with a flagged player: the answer is his sentence
+   then "Starter unclear — no call." (verdict `no call`, no chances, no bars, "Take him out to compare the others").
+   The season view is unaffected. Tests use a fake with exactly IP-1's shape (SEA Lock / Darnold, CHI Keenum / Williams:
+   the fixture database's week 4 shows the same state).
+2. **No tiers on Rest of season**: `tier` null, no lines, `tier_words` = "No tiers for the rest of the season: the
+   season ranges have not been graded yet.", `tier_rule` null; tiers are not even computed there.
+3. **Review L3**: the frame's key is now `("rk", research._ctx_key, tone source "reference" | "league", season, week,
+   view, position, flagged ids)`. Measured: `ref:ppr` and a real league priced in PPR share `_ctx_key`, and their
+   defense words differ on 123 of 219 receivers in week 4; a test builds both in either order and checks each row's
+   words against its own source. `start` has no cache of its own; it reads `ranked`'s frames, so it inherits the fix.
+4. **The floor** reads the record: `mart_projection_drift` for the reference league, pooled over the positions by
+   player-weeks ("through week 3 of 2026 they held 80 in 100" here — About's source), else `/api/status`'s
+   `odds_grades` (absent on this database), else the stamp; kept in the `rankings` region under one key.
+5. Tests: `test_ip2.py` 47 passed (+5: starters absent / broken / faked, the flagged rows and the tiers without them,
+   no call, L3 in both orders, the floor's three sources); with `test_im3 test_in2 test_in3` 204 passed; ruff, lint,
+   build, `copy_standard --check` clean. e2e `ip2` 8/8 in fixture mode (a new test: the flagged quarterback at 375 and
+   1300, the no-call answer; the browsing test now opens Rest of season: no tier line, the sentence), recorded mode 6
+   passed + 2 skipped (the fake lives in `web/fixtures/ip2/api_ip2_unclear.json`, recorded from the API with the fake in
+   place); in2 + im3 17 passed 1 skipped; ib1 + if4 + ii2 + ib3 38 passed; the Compare / tab tests of
+   `e2e/fixtures.spec.ts`, ia1, if3, inf1 and in2 / im3 (filtered) 35 passed. Screenshots: `ip2-picked-*` replaced by
+   `ip2-unclear-*` (still 8 JPEGs, ≤ 97 KB each).
