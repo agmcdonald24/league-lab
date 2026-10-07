@@ -323,7 +323,7 @@ export function headValue(d: Pick<PlayerCard, "ref_value" | "sections" | "positi
   const ppg = ms.find((m) => m.label === "Points / game")?.value ?? null;
   if (!rank && !ppg) return null;
   return {
-    label: `${d.league_name} scoring, this season`,
+    label: `${d.league_name}, this season`,
     big: rank ?? ppg ?? "—",
     small: rank && ppg ? `${ppg} points per game` : "points per game",
     help: "His rank by points per game among every player at his position, and his points per game, in this league's scoring.",

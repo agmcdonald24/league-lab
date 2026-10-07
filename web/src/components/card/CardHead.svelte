@@ -87,7 +87,7 @@
       data-testid="card-headline"
     >
       <div class="flex items-end justify-between gap-3">
-        <div class="min-w-0">
+        <div class="shrink-0">
           <div class="text-xs leading-tight font-semibold text-ink-3">{projLabel(d.week, d.proj_points)}{d.proj_points === null ? "" : " projection"}</div>
           <div
             class="{compact ? 'text-[2.75rem]' : 'text-hero xl:text-[4rem]'} mt-0.5 leading-none font-black tracking-tight text-ink"
@@ -100,7 +100,7 @@
         {#if value}
           <button
             type="button"
-            class="shrink-0 rounded-md bg-raised px-3 py-2 text-right"
+            class="max-w-[13rem] min-w-0 rounded-md bg-raised px-3 py-2 text-right"
             aria-expanded={valueOpen}
             onclick={() => (valueOpen = !valueOpen)}
             data-testid="card-value"
