@@ -86,6 +86,7 @@ def search(league_id: str, q: str) -> list[dict]:
 
 
 PROFILE_SQL = """select dp.gsis_id, coalesce(a.player_name, dp.player_name) as player_name, coalesce(a.position, dp.position) as position,
+              dp.headshot_url,
               coalesce(a.nfl_team, dp.latest_team) as team, a.gsis_id is not null as in_pool, a.roster_status,
               a.rostered_by_roster_id, a.rostered_by_team, a.rostered_by_manager, a.is_free_agent, a.is_current_starter, a.is_on_ir,
               a.injury_status, a.injury, a.practice_status, a.depth_rank, a.depth_pos,
@@ -486,6 +487,9 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
     return {
         **extra,                                                                           # ---- IA-3
         "gsis_id": p["gsis_id"], "player_name": p["player_name"], "position": pos, "team": team if isinstance(team, str) else None,
+        # ---- hotfix 2026-10-07: the card's own picture (dim_player; the contract since Wave G, never sent: the page
+        # and the drawer showed a silhouette for every player). None = a silhouette.
+        "headshot_url": p["headshot_url"] if isinstance(p.get("headshot_url"), str) and p["headshot_url"] else None,
         "header": header, "league_id": league_id, "league_name": league_name, "season": season, "week": week,
         "rostered_by_roster_id": int(p["rostered_by_roster_id"]) if rostered else None,
         "is_free_agent": yes(p["is_free_agent"]), "injury_status": inj, "locked": locked,

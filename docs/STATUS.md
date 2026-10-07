@@ -14219,3 +14219,43 @@ the horizon weeks the window prices again (MFL's power part ~0.3 s); the nightly
   tightening (`GAME_DAY_MAX_S`, `game_day`) removed — nothing else read them; `HOLD_S` and `CONTEXT_HOLD_S` an hour.
 * Why: an outage must not turn into "busy" while a last good answer with its stamp exists (`test_f3`'s rule, unedited);
   the M1 rule (stale noted, served to its requester, kept by nobody) is unchanged. The M1 test's bound step is 61 min.
+
+### PO — Wave I-P live, the first nightly on the fixed code, and a hotfix: the card had no picture (2026-10-07, Wednesday 08:15 – 09:15 ET)
+
+* **The 07:37 ET nightly failed as predicted** (run #16 on `e4b5eec`, 3 m 2 s: `migrate` ok, `restore-state` FAILED —
+  the missing `ops.context_record`; nothing published; the site stayed on Tuesday's numbers, stamped). Andrew pushed
+  Wave I-P at 08:27 (`image` #25 green in 1 m 32 s; `/api/health` `4bc0377`). **The PO then told him twice to paste
+  a line he had already pasted** — it answered from its 08:20 check instead of reading `/api/health` again. Rule: read
+  the live version before telling Andrew what he has or has not done. On "REFRESH IT THEN" the PO started the
+  nightly from GitHub Actions in the browser pane (run #17, 08:38 ET, `4bc0377`): past `restore-state` and into the
+  dbt build within four minutes — the `db migrate` fix holds on a fresh database. Its result is recorded below when
+  it ends.
+* **Wave I-P checked live** (08:45 ET, the browser pane; the numbers are still Tuesday's nightly, v3.3): `/api/rankings`
+  QB week 5 200 in 0.8 s cold — Prescott 22.2, Brissett 21.8, Allen 21.1; **Starter unclear** on Washington (Daniels
+  17.7, Kaliakmanis) and Seattle (Lock 13.9, Darnold 4.2), tier null; WR 0.19 s; rest of season "No tiers …: the
+  season ranges have not been graded yet."; the start answer "A coin flip: Nacua outscores St. Brown in 54 of 100 such
+  weeks — either is fine." (0.2 s); ratings 8, overall 61 (0.6 s cold); the card's projections 81 ms; Denver's card
+  200; Trades' titles "Scoring below his work" / "Scoring above his work" with the plain line (the record arrives
+  with the nightly); the shared player page's title "Puka Nacua (WR, LA): 18.4 projected this week, 9–32" and
+  `noindex` with a league in the address; MFL's power part 4.2 s cold on live (2.0–2.5 s in the sandbox: Render's
+  CPU is slower than this box — still to do); no sideways scroll at the pane's 667 px.
+* **Found live: the card's picture was a silhouette for every player.** `CardHead` reads `headshot_url` from the
+  card's answer; `player.player_card` never sent it (PROFILE_SQL did not select it; the key has been in the web's
+  contract since Wave G, so the old page drew a silhouette too). IP-4's hand-back and its e2e said "the sandbox
+  reaches no picture host, so every screenshot shows the silhouette" — true, and it hid that the field was missing;
+  the PO's own QA saw `errors=0` on the player pages (no picture even asked for) and did not follow it up. **The
+  lesson for briefs and QA: a test that cannot reach an outside host must answer that host itself and assert the
+  picture is drawn; "it is a silhouette here because of the sandbox" is not evidence.**
+* **Found live: every headshot was the NFL's 3400 x 2450 original** (0.47 – 0.91 MB each by the browser's resource
+  timings; 22 loaded on one Rankings screen). The host resizes on request (`w_208` → 208 x 150, checked from the
+  pane), so `Headshot` now asks for the width its circle needs.
+* **The hotfix** (branch `hotfix/ip-pictures`): `api/league_lab_api/player.py` (`dp.headshot_url` in PROFILE_SQL, the
+  key on the card), `web/src/lib/headshot.ts` (`sizedHeadshot`, `headshotWidth`), `web/src/components/Headshot.svelte`
+  (the sized address, the original once on an error, then the silhouette), `api/tests/test_ip0.py` (the card carries
+  the database's picture on two reference scorings and both house leagues; a defense has none),
+  `web/e2e/ip0/fixtures.spec.ts` (the picture host answered by the test: the card draws an `<img>` asked at `w_256` /
+  `w_320` and never the original; a refused resized picture falls back to the original; the helper on its own).
+* **Verified** (the hotfix tree): API suite **1,231 passed**, 89 failed — all known by name, 0 new; e2e on fixtures the
+  whole set **563 passed**, 17 skipped, 0 failed; `test_ip0` + `test_ip4` + `test_parity` 42 passed; ruff, the copy
+  standard, `npm run lint` (205 files, 0 warnings) and the build clean. The live check of real pictures at both
+  widths follows the push.

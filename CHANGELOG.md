@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-07 — hotfix: the player card's picture; headshots at the size they are drawn
+
+- **The player card shows the player.** `GET /api/player/{gsis}` now carries `headshot_url` (`dim_player`; `None` = the
+  silhouette). The web has read that key since Wave G and the API never sent it, so the player page and the drawer
+  drew a silhouette for every player — on the card Wave I-P had just built around the picture. Every test accepted the
+  silhouette because a test reaches no picture host; `web/e2e/ip0` answers the picture host itself and checks the
+  picture is drawn. `api/tests/test_ip0.py`.
+- **Headshots at the size they are drawn** (`web/src/lib/headshot.ts`, `Headshot.svelte`). nflverse's link is the
+  NFL's original: 3400 x 2450 pixels, 0.5 – 0.9 MB each (measured on the live Rankings page: a 50-row list was about
+  30 MB of pictures). The NFL's image host resizes on request (`…/f_auto,q_auto,w_192/…` answered 192 pixels wide):
+  a Headshot asks for 128 / 192 / 256 / 320 pixels by its circle's size; if the resized picture fails it asks for the
+  original once, then draws the silhouette. Any other address is left alone.
+
 ## 2026-10-07 — Wave I-P
 
 - **PO — the merge, a nightly fix, the console.** `league-lab db migrate` creates `ops.context_record` and
