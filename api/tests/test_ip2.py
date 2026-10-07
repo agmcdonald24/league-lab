@@ -333,3 +333,18 @@ def test_missing_marts_give_the_notice_never_a_500(client, monkeypatch):
     assert h.status_code == 200 and h.json()["notice"]
     RK.clear()
     RK.MB.clear()
+
+
+@needs_db
+def test_a_started_game_is_said(client):
+    """The pinned Saturday: week 4's Thursday game is played. A pick from it gets the line that the chances are from
+    before kickoff; two players still to play get none."""
+    rows = client.get(ROUTE, params={"league": "ref:half", "position": "WR", "limit": 200}).json()["rows"]
+    played = [x for x in rows if x["game_state"]]
+    to_play = [x for x in rows if not x["game_state"]]
+    if not played:
+        pytest.skip("no game under way at the pinned moment in this database")
+    d = client.get(START, params={"league": "ref:half", "ids": f"{played[0]['gsis_id']},{to_play[0]['gsis_id']}"}).json()
+    assert "kicked off" in d["started_note"] and "before kickoff" in d["started_note"]
+    d2 = client.get(START, params={"league": "ref:half", "ids": f"{to_play[0]['gsis_id']},{to_play[1]['gsis_id']}"}).json()
+    assert d2["started_note"] is None

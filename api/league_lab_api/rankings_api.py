@@ -507,7 +507,8 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
     want = _ids(ids)
     ctx = R.context(league, source)
     out = {"season": ctx.season, "week": ctx.week, "scoring": _scoring(ctx, league), "ids": want, "players": [],
-           "missing": [], "floor": START_FLOOR, "assumes": START_ASSUMES, "multi_note": None, "answer": None}
+           "missing": [], "floor": START_FLOOR, "assumes": START_ASSUMES, "multi_note": None, "answer": None,
+           "started_note": None}
     if ctx.week is None:
         return {**out, "notice": "The regular season is over."}
     have: dict[str, dict] = {}
@@ -536,6 +537,14 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
     out["answer"] = call(found, res)
     out["draws"] = res["draws"]
     out["multi_note"] = START_MULTI if len(found) > 2 else None
+    # a game already under way: the chances are the ones from before kickoff (the ranges do not read live scores)
+    now = pd.Timestamp(clock.now())
+    now = now.tz_localize("UTC") if now.tzinfo is None else now.tz_convert("UTC")
+    begun = [r for r in found if r.get("kickoff_at") and MB.game_state(r.get("kickoff_at"), r.get("is_final"), now)]
+    out["started_note"] = (None if not begun else
+                           f"{' and '.join(cards.last_name(str(r['player_name'])) or str(r['player_name']) for r in begun)}"
+                           f"{'’s game has' if len(begun) == 1 else '’s games have'} kicked off: these chances are from "
+                           "before kickoff and do not count what has happened since.")
     out["same_game"] = any(WP.relationship(a.get("team"), a.get("opponent"), b.get("team"), b.get("opponent"))
                            for a, b in itertools.combinations(found, 2))
     return out

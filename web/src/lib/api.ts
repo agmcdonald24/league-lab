@@ -2604,6 +2604,7 @@ export interface StartAnswer {
   assumes: string;
   multi_note: string | null;
   same_game?: boolean;
+  started_note?: string | null; // a picked player's game has kicked off: the chances are from before kickoff
   notice?: string;
 }
 export interface RankQuery {

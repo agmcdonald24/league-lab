@@ -29,6 +29,7 @@
       {#each d.missing as m (m.gsis_id)}<p class="text-sm text-ink-3">{nameOf(m.gsis_id)}: {m.why}.</p>{/each}
     {:else}
       <p class="text-base leading-snug font-semibold text-ink wide:text-lg" data-testid={`${testid}-words`} data-verdict={d.answer.verdict}>{d.answer.words}</p>
+      {#if d.started_note}<p class="text-sm leading-snug font-semibold text-warn" data-testid={`${testid}-started`}>{d.started_note}</p>{/if}
       <div class="space-y-3 wide:grid wide:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] wide:gap-6 wide:space-y-0">
       <div class="space-y-2">
       <ul class="space-y-2" data-testid={`${testid}-players`}>
