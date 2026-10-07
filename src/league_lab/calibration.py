@@ -1226,7 +1226,7 @@ PASS_TD_FLAG = "LEAGUE_LAB_QB_PASS_TD"
 PASS_TD_DEFAULT = True                 # the harness kept it (docs/METRICS.md § "The quarterback weak spot (IP-1)")
 PASS_TD_VERSION = "pt1.0"
 PASS_TD_POSITIONS: tuple[str, ...] = ("QB",)
-PASS_TD_ATTEMPTS = 33.0                # about a starter's attempts a game: the team term is the implied total x his share
+PASS_TD_ATTEMPTS = 33.0                # about a starter's attempts per game: the team term is the implied total x his share
 PASS_TD_MIN_ROWS = 300                 # fewer fitting rows: the identity (a = 1, b = 0)
 LAST_PASS_TD: dict[str, float | int] = {}   # the last ``pass_td_lines`` run: a, b, fitting rows, lines moved
 
