@@ -76,7 +76,8 @@ def test_the_route_and_its_bucket(client, rec):
     assert ratelimit.bucket_for("GET", "/api/context/record") == "read"
     r = client.get("/api/context/record")
     assert r.status_code == 200
-    assert set(r.json()) == {"corner", "worth"} and r.json()["worth"]["graded"] is True
+    # IP-3 (Wave I-P) added "trend" and "role" beside the two keys (the interface fixed for that wave): changed on purpose
+    assert set(r.json()) >= {"corner", "worth"} and r.json()["worth"]["graded"] is True
     rec["exists"] = False
     from league_lab_api import context_record as CR
     CR.clear()
