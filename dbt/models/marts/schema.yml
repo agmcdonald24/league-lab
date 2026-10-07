@@ -218,7 +218,7 @@ models:
         tests: [not_null]
 
   - name: mart_projection_drift
-    description: "Drift monitor (M-06): the live v2 board's complete played weeks per league, season and position (mean Spearman, hit rate, MAE, coverage_80, width) next to the backtest's v2_points means."
+    description: "Drift monitor (M-06): the live v2 board's complete played weeks per league, season and position (mean Spearman, hit rate, MAE, coverage_80, width) next to the backtest's v2_points means. IP-1 (Wave I-P): each complete week is set against the backtest of the model that made it (the newest backtested version at or before its model_version), averaged over the complete weeks; before the first complete week, the newest backtested version at or before the board's."
     tests:
       - unique_combination_of_columns:
           arguments:
