@@ -133,3 +133,21 @@ week — about as much as their projection already expected. A gap is what happe
 
 Grade the record's kickoff weeks from 2026 week 5 (the same rows, `record_source = 'kickoff'`); retire or regrade
 Trades' buy-low / sell-high on this result.
+
+## Fix round (branch `fix/IP3` from `integ/IP` 3d1b76b)
+
+* **Role sentence, from the record** (`summary()["role"]["words"]`, never hard-coded; nothing without the record): DFS —
+  the role chip's detail / title (`signal.graded`, `graded_effect`) and "What the projection already holds" (`meta.role_record`,
+  `dfs-role-record`); Stats — the Role change columns carry `graded` (`stats.catalogue`) and How to read this prints
+  "Role change, graded: …" once (`stats-role-record`).
+* **Trades**: "Buy low" / "Sell high" → **Scoring below his work** / **Scoring above his work**; under the section
+  heading the record's line (`context_record.gap_line`; without the record a plain line that claims no grade); the cards
+  lead with the fit ("the fit, from the projections, is the reason to ask about him — not the gap"). **Not re-ranked**:
+  `roster_value.trade_candidates` already orders both lists by the lineup fit over the horizon (projections); the gap
+  only decides who is in a list and breaks exact ties. API keys unchanged (`buy_low`, `sell_high`, `buy_line`,
+  `sell_line`); new `titles`, `gap_line`, `gap_graded`. Waivers' pointer and the player card's help reworded.
+* **test_io4**: both tests monkeypatch `context_record.summary` (no record / graded) instead of assuming the database.
+* Changed on purpose: `api/tests/test_h1.py`, `test_ia2.py` (the lines' words), `test_io4.py`; `web/e2e/h1` (Trades'
+  help word); `web/fixtures/trades_lists_*.json` (lines regenerated with the API's builders, `titles` / `gap_line` added).
+* Console pages (the PO's): `app/pages/6_Trade_Finder.py` lines 4, 7, 161, 288, 292, 309, 313, 634–635, 666, 686,
+  701–702, 710 and `app/pages/0_Player.py` line 419 still say buy low / sell high / "running hot, below = due".
