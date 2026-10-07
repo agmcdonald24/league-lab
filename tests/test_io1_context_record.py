@@ -237,3 +237,39 @@ def test_write_record_is_idempotent_and_keeps_frozen_weeks(monkeypatch):
     finally:
         conn.rollback()
         conn.close()
+
+
+# ------------------------------------------------------------------------------------------------ fix round
+def test_the_two_signal_candidate_leaves_the_corner_out():
+    fav = {"tone": "favorable"}
+    assert C.worth_two([{**fav, "signal": "defense"}, {**fav, "signal": "game"}]) is True
+    assert C.worth_two([{**fav, "signal": "defense"}, {**fav, "signal": "corner"}]) is False
+    assert C.worth_two([{**fav, "signal": "role"}, {"signal": "game", "tone": "neutral"}]) is False
+
+
+def test_the_screens_line_comes_from_the_grade():
+    row = {"n": 37, "games": 29, "vs_rest": 0.72, "vs_rest_lo": -1.10, "vs_rest_hi": 2.72, "positions": ["WR"]}
+    assert C.worth_off_line(row, "2025 and 2026 weeks 1–4") == (
+        "We tried a \"Worth a look\" list and graded it on 2025 and 2026 weeks 1–4: it listed a receiver 37 times (in 29 "
+        "games), and they finished 0.7 points better than everyone else against their projection (−1.1 to +2.7) — not "
+        "distinguishable from chance. It is off until a rule earns its place in the record; the context chips stay "
+        "beside each player.")
+    assert "more than chance would give. It stays off until" in C.worth_off_line({**row, "vs_rest_lo": 0.2}, "x")
+    assert C.worth_off_line({"n": 0}, "x") is None and C.worth_off_line(row, None) is None
+
+
+def test_out_of_sample_grades_read_only_the_frozen_weeks():
+    rng = np.random.default_rng(5)
+    rows = []
+    for src, weeks in (("reconstructed", range(1, 5)), ("kickoff", range(5, 7))):
+        for w in weeks:
+            for i in range(40):
+                rows.append({"season": 2026, "week": w, "game_id": f"g{w}_{i % 8}", "position": "WR", "proj_points": 10.0,
+                             "miss": float(rng.normal()), "corner_certainty": "likely", "corner_tier": "shutdown" if i % 2 else "target",
+                             "defense_tone": None, "role_trend": None, "game_tone": None, "worth": False, "listed": False,
+                             "worth_corner": i < 4, "listed_corner": i < 4, "worth_two": i % 5 == 0, "record_source": src})
+    out = {(r["kind"], r["grp"]): r for r in C.grade_rows(pd.DataFrame(rows))}
+    assert out[("worth", "two")]["n"] == 48 and out[("worth_live", "two")]["n"] == 16       # 8 per week; weeks 5-6 only
+    assert out[("worth_live", "listed_corner")]["n"] == 8 and out[("worth_live", "two")]["span"] == "2026 weeks 5–6"
+    assert out[("corner_live", "likely/shutdown")]["n"] == 40
+    assert out[("summary", "worth_off")]["words"].startswith("We tried a \"Worth a look\" list and graded it on 2026 weeks 1–6")

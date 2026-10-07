@@ -102,14 +102,11 @@ def test_board_with_the_matchup_signal(client, monkeypatch):
     corner = [s for p in wr for s in p["context"] if s["signal"] == "corner"]
     assert corner and all(not s["in_projection"] and s["projection_words"] == "Not in the projection" for s in corner)
     # IO-1 (Wave I-O): the cornerback call no longer counts toward "Worth a look" (graded with no measurable effect:
-    # league_lab.dfs.WORTH_IGNORES), and nothing else outside the projection can be favourable: the list is empty and
-    # the screen says why. Wave I-N's rule (the corner counting) would have listed these receivers:
-    from league_lab import dfs as D
-    assert b["worth_a_look"] == {}
-    assert b["context_meta"]["worth_empty"].startswith("Nobody this week.")
+    # league_lab.dfs.WORTH_IGNORES) and nothing else outside the projection can be favourable, so nobody is listed; the
+    # fix round takes the list off the screen and shows the corner as information: no tone, its quarter for the words
+    assert b["worth_a_look"] == {} and not any(p["worth"] for p in wr)
     assert "no longer counts" in b["context_meta"]["worth_rule"]
-    old_rule = [p for p in wr if D.worth(p["context"], ignore=())[0]]
-    assert old_rule and not any(p["worth"] for p in wr)
+    assert all(s["tone"] is None and s["quarter"] == "target" for s in corner)     # the fake: a likely soft corner
     # an unclear corner never counts: no list
     _fake_matchups(monkeypatch, certainty="unclear")
     b2 = client.get("/api/dfs/projections", params={"site": "dk", "week": 5, "limit": 1000}).json()

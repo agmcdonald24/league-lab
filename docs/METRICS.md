@@ -4041,6 +4041,19 @@ likely easy corner, 16 a favourable defense, 17 a team expected to score 26+, 11
   holds 0; its words say "Graded: no measurable effect (…)").
 * `ops.context_record` keeps **both** verdicts every week (`worth` / `listed`: today's rule; `worth_corner` /
   `listed_corner`: Wave I-N's), so the corner's list keeps being graded on weeks it has not seen.
+* **Fix round (PO, after the merge)**: "Worth a look" is **off the screen** (a card empty by rule every week is
+  clutter); one line under the board's intro (and a published slate's) says so with the record's numbers
+  (`ops.context_grade` kind `summary`, grp `worth_off`; `summary()["worth"]["line"]`; no line without the record). The
+  corner is **information**: DFS sends its signal with no tone (never green / red, nothing sorts or filters on it) and its
+  quarter for the chip's words. The record adds **`worth_two`** — the candidate "two or more favourable signals other than
+  the corner" (in-sample 829 player-weeks, +0.43, +0.03 to +0.81; rows written before the column are derived from their
+  stored signals) — and the grade adds **out-of-sample** rows read only from weeks frozen before kickoff (2026 week 5 on):
+  kind `worth_live` (grp `listed_corner`, `two`) and `corner_live` (per likely / unclear × quarter). What 2026 weeks 5–8
+  can answer: the candidate gets about 50 player-weeks per week (52 frozen for week 5), ~200 by week 8, an interval about
+  ±0.8 points — enough to see an edge near a point, not to confirm the +0.4 seen in-sample; the corner's list gets 2–4 per
+  week (4 in week 5), too few to say anything on its own; likely shutdown / easy corners about 4–7 per week each (6 and 7 in
+  week 5), which narrows the pooled corner intervals a little and cannot change their answer unless the effect is over a
+  point.
 
 ### The record (`ops.context_record`) and the stored grade (`ops.context_grade`)
 

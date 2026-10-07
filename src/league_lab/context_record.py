@@ -72,7 +72,8 @@ RECORD_SOURCES = ("kickoff", "reconstructed")
 COLUMNS = ["run_at", "as_of", "first_kickoff_at", "record_source", "model_version", "scoring", "season", "week",
            "gsis_id", "player_name", "position", "team", "opponent", "game_id", "proj_points", "signals",
            "defense_tone", "corner_certainty", "corner_tier", "corner_rank", "corner_n", "role_trend", "game_tone",
-           "weather_tone", "worth", "listed", "worth_corner", "listed_corner", "actual_points", "miss", "graded_at"]
+           "weather_tone", "worth", "listed", "worth_corner", "listed_corner", "actual_points", "miss", "graded_at",
+           "worth_two"]
 DDL = """create table if not exists ops.context_record (
         run_at timestamptz, as_of timestamptz, first_kickoff_at timestamptz, record_source text, model_version text,
         scoring text, season integer, week integer, gsis_id text, player_name text, position text, team text,
@@ -80,7 +81,22 @@ DDL = """create table if not exists ops.context_record (
         corner_certainty text, corner_tier text, corner_rank integer, corner_n integer, role_trend text, game_tone text,
         weather_tone text, worth boolean, listed boolean, worth_corner boolean, listed_corner boolean,
         actual_points double precision, miss double precision, graded_at timestamptz);
-        create index if not exists context_record_idx on ops.context_record (season, week, gsis_id)"""
+        create index if not exists context_record_idx on ops.context_record (season, week, gsis_id);
+        alter table ops.context_record add column if not exists worth_two boolean"""
+# ---- IO-1 fix round: the candidate the PO wants graded out of sample from 2026 week 5 — at least two favourable signals
+# other than the cornerback (all of them in the projection today). In-sample (2025 and 2026 weeks 1-4): 829 player-weeks,
+# +0.43 against the rest (+0.03 to +0.81) — found on those weeks, so not adopted; the kickoff weeks answer it.
+TWO_MIN_FAVOURABLE = 2
+# the rows written before the column existed: derived from the signals they stored (what was shown is not changed)
+TWO_BACKFILL_SQL = """update ops.context_record c set worth_two = (
+        select count(*) from jsonb_array_elements(coalesce(c.signals, '[]'::jsonb)) as s
+        where s ->> 'tone' = 'favorable' and s ->> 'signal' <> 'corner') >= %s
+    where c.worth_two is null"""
+
+
+def worth_two(sigs: Sequence[Mapping]) -> bool:
+    """The candidate rule: at least ``TWO_MIN_FAVOURABLE`` favourable signals other than the cornerback call."""
+    return sum(1 for x in sigs if x.get("tone") == "favorable" and x.get("signal") != "corner") >= TWO_MIN_FAVOURABLE
 
 
 # ================================================================================================ the as-of corner rank
@@ -573,6 +589,7 @@ def rebuild_week(conn, si: SeasonInputs, week: int, *, live: bool = False) -> pd
             "corner_n": c["n"] if c else None, "corner_tone": c["tone"] if c else None,
             "role_trend": rl.get("trend") if rl else None, "game_tone": tone.get("game"),
             "weather_tone": tone.get("weather"), "worth": bool(ok), "worth_corner": bool(ok_corner),
+            "worth_two": worth_two(sig),
             "actual_points": actual,
         })
     out = pd.DataFrame(rows)
@@ -634,8 +651,10 @@ def grade_worth(h: pd.DataFrame) -> dict:
     projected 6+ points), under Wave I-N's rule (the cornerback counting: ``listed_corner``) and today's (``listed``)."""
     d = h[h["miss"].notna() & h["proj_points"].notna()].copy()
     out: dict = {}
+    if "worth_two" not in d:
+        d["worth_two"] = False
     for label, flag, listed in (("listed_corner", "worth_corner", "listed_corner"), ("flagged_corner", "worth_corner", "worth_corner"),
-                                ("listed", "worth", "listed")):
+                                ("listed", "worth", "listed"), ("two", "worth_two", "worth_two")):
         a = d[d[listed].fillna(False).astype(bool)]
         row = grade(a, label).as_dict()
         if not a.empty:
@@ -739,6 +758,27 @@ def worth_sentence(r: Mapping | None, span: str | None, corner: bool = True) -> 
             f"{verdict(r.get('vs_rest_lo'), r.get('vs_rest_hi'))}.")
 
 
+def worth_off_line(r: Mapping | None, span: str | None) -> str | None:
+    """The DFS screen's one line now that "Worth a look" is off (PO, Wave I-O fix round), every number from the grade:
+    "We tried a "Worth a look" list and graded it on 2025 and 2026 weeks 1–4: it listed a receiver 37 times (in 29
+    games), and they finished 0.7 points better than everyone else against their projection (−1.1 to +2.7) — not
+    distinguishable from chance. It is off until a rule earns its place in the record; the context chips stay beside
+    each player." None without a graded listing."""
+    if not r or not r.get("n") or r.get("vs_rest") is None or not span:
+        return None
+    v = r["vs_rest"]
+    ci = f" ({_signed(r['vs_rest_lo'])} to {_signed(r['vs_rest_hi'])})" if r.get("vs_rest_lo") is not None else ""
+    pos = r.get("positions") or []
+    who = "a receiver" if pos == ["WR"] else "a player"
+    v_words = verdict(r.get("vs_rest_lo"), r.get("vs_rest_hi"))
+    games = f" (in {r['games']} games)" if r.get("games") else ""
+    tail = ("It is off until a rule earns its place in the record" if v_words != "more than chance would give"
+            else "It stays off until the record has more weeks")
+    return (f"We tried a \"Worth a look\" list and graded it on {span}: it listed {who} {r['n']} times{games}, and they "
+            f"finished {_pts(v)} {'better' if v >= 0 else 'worse'} than everyone else against their projection{ci} — "
+            f"{v_words}. {tail}; the context chips stay beside each player.")
+
+
 # ---- the stored grade (ops.context_grade: what the site reads; recomputed from the record every run)
 GRADE_COLUMNS = ["kind", "grp", "corner_certainty", "corner_tier", "n", "games", "mean_miss", "lo", "hi", "beat",
                  "beat_share", "vs_rest", "vs_rest_lo", "vs_rest_hi", "rest_n", "rest_beat_share", "span", "scoring",
@@ -749,7 +789,7 @@ GRADE_DDL = """create table if not exists ops.context_grade (
         vs_rest_lo double precision, vs_rest_hi double precision, rest_n integer, rest_beat_share double precision,
         span text, scoring text, words text, graded_at timestamptz)"""
 RECORD_GRADE_SQL = """select season, week, game_id, position, proj_points, miss, corner_certainty, corner_tier, defense_tone,
-                             role_trend, game_tone, worth, listed, worth_corner, listed_corner
+                             role_trend, game_tone, worth, listed, worth_corner, listed_corner, worth_two, record_source
                       from ops.context_record where miss is not null and proj_points is not null"""
 
 
@@ -773,9 +813,24 @@ def grade_rows(h: pd.DataFrame, graded_at: datetime | None = None) -> list[dict]
     put("summary", "corner", {"n": c["called"]["n"]}, corner_sentence(c["by_tier_certainty"], span))
     for k in ("listed_corner", "flagged_corner", "listed"):
         put("worth", k, w[k])
+    put("worth", "two", w["two"])
     lc, today = w["listed_corner"], w["listed"]
     words = worth_sentence(today, span, corner=False) if today.get("n") else worth_sentence(lc, span, corner=True)
     put("summary", "worth", {"n": today.get("n") or lc.get("n") or 0}, words)
+    put("summary", "worth_off", {"n": lc.get("n") or 0}, worth_off_line(lc, span))
+    # ---- IO-1 fix round: out of sample — only the weeks frozen before kickoff (2026 week 5 on), nothing rebuilt
+    live = h[h["record_source"] == "kickoff"] if "record_source" in h else h.iloc[0:0]
+    if not live.empty:
+        lspan = span_words(live)
+        lw = grade_worth(live)
+        for k in ("listed_corner", "two"):
+            out.append({**{c_: lw[k].get(c_) for c_ in GRADE_COLUMNS if c_ in lw[k]}, "kind": "worth_live", "grp": k,
+                        "span": lspan, "scoring": SCORING_WORDS, "words": None, "graded_at": graded_at})
+        lc_ = grade_corners(live)
+        for r in lc_["by_tier_certainty"]:
+            out.append({**{c_: r.get(c_) for c_ in GRADE_COLUMNS if c_ in r}, "kind": "corner_live",
+                        "grp": f"{r['corner_certainty']}/{r['corner_tier']}", "span": lspan, "scoring": SCORING_WORDS,
+                        "words": tier_sentence(r), "graded_at": graded_at})
     return out
 
 
@@ -874,6 +929,7 @@ def write_record(conn, season: int | None = None, now: datetime | None = None, f
     now = now or clock.now()
     with conn.cursor() as cur:
         cur.execute(DDL)
+        cur.execute(TWO_BACKFILL_SQL, (TWO_MIN_FAVOURABLE,))
         if season is None:
             cur.execute("select max(season) from analytics.dim_game where season_type = 'REG' and kickoff_at <= %s", (now,))
             season = cur.fetchone()[0]

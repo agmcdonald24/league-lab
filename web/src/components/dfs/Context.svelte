@@ -5,9 +5,10 @@
   import { chipWords, type Signal } from "./dfs";
 
   let { signals = [], full = false, testid = "dfs-context" }: { signals?: Signal[]; full?: boolean; testid?: string } = $props();
-  const shown = $derived(full ? signals : signals.filter((s) => s.tone === "favorable" || s.tone === "difficult" || s.signal === "weather"));
-  // ---- IO-1 (Wave I-O): a corner graded with no measurable effect keeps its words but not its colour
-  const quiet = (s: Signal) => s.signal === "corner" && s.graded_effect === "none";
+  // ---- IO-1 fix round: a likely corner call shows as information (its quarter), never by a tone
+  const shown = $derived(full ? signals : signals.filter((s) => s.tone === "favorable" || s.tone === "difficult" || s.signal === "weather" || (s.signal === "corner" && !!s.quarter)));
+  // ---- IO-1 (Wave I-O): the corner keeps its words and its grade but never a colour (fix round: always neutral)
+  const quiet = (s: Signal) => s.signal === "corner";
   const toneClass = (s: Signal) =>
     quiet(s) ? "text-ink-2 border-line-strong" : s.tone === "favorable" ? "text-good border-good" : s.tone === "difficult" ? "text-bad border-bad" : "text-ink-2 border-line-strong";
   const title = (s: Signal) => `${s.words} ${s.projection_words}.${s.graded ? ` ${s.graded}` : ""}`;

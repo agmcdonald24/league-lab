@@ -156,3 +156,29 @@ chips carry no graded words (their tone merges two corners). Not graded at all: 
 Grade the record's kickoff weeks as they finish (the sentence switches to "Since 2026 week 5, …" once today's rule
 lists anyone); keep the forecasts so the weather flag can be graded; if the record ever shows a quarter with an effect,
 flip `WORTH_IGNORES` back with the numbers.
+
+## Fix round (branch `fix/IO1` from `integ/IO` 72d959b; PO decisions after the merge)
+
+1. **"Worth a look" is off the screen.** The card (heading, explanation, empty state) is gone from the board and the
+   slate; one quiet line sits under the board's intro and under a published slate's notes, built from the record
+   (`ops.context_grade` summary `worth_off` → `summary()["worth"]["line"]` → `meta.worth_line`; no number written in
+   code). Today it reads: "We tried a "Worth a look" list and graded it on 2025 and 2026 weeks 1–4: it listed a receiver
+   37 times (in 29 games), and they finished 0.7 points better than everyone else against their projection (−1.1 to
+   +2.7) — not distinguishable from chance. It is off until a rule earns its place in the record; the context chips stay
+   beside each player." Without the record: no line at all. `dfs.worth` stays; the record keeps `worth_corner` (Wave
+   I-N's rule) and adds `worth_two` (the two-favourable-signals candidate; older rows derived from their stored signals),
+   graded out of sample from the weeks frozen before kickoff (`worth_live`, `corner_live`).
+2. **The corner is information.** The API sends the corner signal with `tone: null` and its `quarter` (`dfs.corner_quarter`:
+   shutdown flag, else the call's own quarter, else its words — so it keeps working when the board's tone stops carrying
+   the corner); the chip is always neutral, its words come from the quarter, its grade stays in the title and the
+   detail. Nothing in DFS colours, sorts or filters on the corner (the list's rule ignores it; the lineup card's context
+   flag reads tones, which the corner no longer has).
+3. **What weeks 5–8 can answer** (52 candidate rows, 4 corner-rule listings, 6 likely-shutdown and 7 likely-easy calls
+   frozen for week 5): the candidate gets ~200 graded player-weeks by week 8, an interval of about ±0.8 points — it can show
+   an edge near a point, not confirm the in-sample +0.4; the corner's list (~8–16 listings) cannot answer anything alone;
+   the corner quarters add ~20 games each, which narrows the pooled intervals a little and cannot change their answer
+   unless the effect is over a point.
+4. Tests: root `test_io1_context_record.py` 15 passed, `test_in4_dfs.py` 75 passed; API `test_io1.py` + `test_in4.py` 36
+   passed; ruff, copy standard, `npm run lint && npm run build` clean; e2e `io1` 6 passed and `in4` 6 passed (375, 1300).
+   Edited on purpose: `api/tests/test_in4.py::test_board_with_the_matchup_signal` (the corner has no tone, its quarter is
+   given) and `web/e2e/in4/fixtures.spec.ts` (no list; the corner chip never coloured).

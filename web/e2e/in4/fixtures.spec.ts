@@ -1,5 +1,6 @@
 // Wave I-N (IN-4): DFS without the homework — /dfs with no file opens on the board with its context (chips, the row's
-// reasons, "What the projection already holds"); with the matchup signal "Worth a look" lists receivers; a published
+// reasons, "What the projection already holds"); with the matchup signal the corner shows as information (IO-1 fix round:
+// "Worth a look" is off the screen — graded, not distinguishable from chance — and a corner chip is never coloured); a published
 // slate opens on its values (no upload) and builds a stacked lineup by its id. The answers were recorded from the
 // fixture API (web/fixtures/in4/*.json; the salary file is the SYNTHETIC IM-5 fixture published as 2026-w05-dk.csv).
 // projections_dk_matchup.json and slate_published_dk.json carry IN-3's real matchup context, re-recorded from the merged
@@ -67,29 +68,29 @@ test("DFS with no file: the board with its context", async ({ page, context }, i
   await page.getByTestId("dfs-holds").locator("summary").click();
   await expect(page.getByTestId("dfs-holds")).toContainText("The cornerback (receivers): Not in the projection. Matchup: not available here.");
   await expect(page.getByTestId("dfs-holds")).toContainText("Context, not a forecast");
-  await expect(page.getByTestId("dfs-worth-empty")).toContainText("the cornerback call is the signal the projection does not hold");
+  await expect(page.getByTestId("dfs-worth")).toHaveCount(0);                   // IO-1 fix round: the list is off
+  await expect(page.getByTestId("dfs-worth-line")).toHaveCount(0);              // and without the record no line at all
   await expect(page.getByTestId("dfs-filebox")).toBeVisible();                  // no published slate: the upload stays
   expect((await page.getByTestId("dfs").innerText()).match(NEVER)).toBeNull();
   await noSideways(page);
   await page.screenshot({ path: join(SHOTS, `in4-board-${info.project.name}.png`) });
 });
 
-test("DFS with the matchup signal: Worth a look", async ({ page, context }, info) => {
+test("DFS with the matchup signal: the corner as information", async ({ page, context }, info) => {
   await serveFixtures(context);
   await dfsApi(context, { projections: "projections_dk_matchup.json", published: false });
   await size(page, info.project.name);
   await page.goto("/dfs");
-  const rows = page.getByTestId("dfs-worth").getByTestId("dfs-worth-row");
-  await expect(rows.first()).toBeVisible();
-  expect(await rows.count()).toBeGreaterThan(0);
-  await expect(rows.first().getByTestId("dfs-worth-reasons")).toContainText("(not in the projection)");
-  await expect(page.getByTestId("dfs-worth")).toContainText("Context, not a graded forecast");
-  // a corner chip is drawn dashed: not in the projection
+  await expect(page.getByTestId("dfs-proj-row").first()).toBeVisible();
+  await expect(page.getByTestId("dfs-worth")).toHaveCount(0);                   // IO-1 fix round: the list is off
+  // a corner chip is drawn dashed (not in the projection) and never coloured, even from a recording that carried a tone
   await page.getByTestId("dfs-proj-pos-WR").click();
-  await expect(page.locator('[data-testid=dfs-chip][data-signal=corner][data-outside=yes]').first()).toBeVisible();
+  const corner = page.locator('[data-testid=dfs-chip][data-signal=corner][data-outside=yes]').first();
+  await expect(corner).toBeVisible();
+  await expect(corner).not.toHaveClass(/text-good|text-bad/);
   await expect(page.locator('[data-testid=dfs-chip][data-signal=defense][data-outside=no]').first()).toBeVisible();
   await noSideways(page);
-  await page.screenshot({ path: join(SHOTS, `in4-worth-${info.project.name}.png`) });
+  await page.screenshot({ path: join(SHOTS, `in4-corner-${info.project.name}.png`) });
 });
 
 test("DFS with a published slate: values with no upload, then a stacked lineup", async ({ page, context }, info) => {
@@ -101,8 +102,7 @@ test("DFS with a published slate: values with no upload, then a stacked lineup",
   await expect(page.getByTestId("dfs-published")).toContainText("published here so you do not have to add one");
   await expect(page.getByTestId("dfs-answer")).toContainText("597 of 599 players on the published DraftKings file valued");
   await expect(page.getByTestId("dfs-remove")).toHaveCount(0);
-  await expect(page.getByTestId("dfs-worth").getByTestId("dfs-worth-row")).toHaveCount(4);   // IN-3's real context, week 5: 4 receivers
-  await expect(page.getByTestId("dfs-worth")).toContainText("Ordered by points per $1,000.");
+  await expect(page.getByTestId("dfs-worth")).toHaveCount(0);                   // IO-1 fix round: "Worth a look" is off
   await expect(page.getByTestId("dfs-undervalued").getByTestId("dfs-value-row")).toHaveCount(8);
   expect(calls.filter((c) => c.startsWith("POST /api/dfs/slate")).length).toBe(0);   // nothing uploaded
   await page.screenshot({ path: join(SHOTS, `in4-published-${info.project.name}.png`) });

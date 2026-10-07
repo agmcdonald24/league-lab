@@ -72,6 +72,19 @@ quarter's graded words and loses its colour when the interval holds 0; "What the
 corner's graded sentence. Without `ops.context_grade` (the live site until the nightly applies it) the screen keeps
 the Wave I-N words. `ops.context_record` keeps grading both rules every week (`league-lab context-record`).
 
+**Fix round (PO, after the Wave I-O merge): "Worth a look" is off the screen.** The card (heading, explanation, empty
+state) is gone from the board and from a slate; one quiet line under the board's intro (and under a published slate's
+notes) says what is true, every number from the record (`meta.worth_line` = `context_record.summary()["worth"]["line"]`):
+"We tried a "Worth a look" list and graded it on 2025 and 2026 weeks 1–4: it listed a receiver 37 times (in 29 games),
+and they finished 0.7 points better than everyone else against their projection (−1.1 to +2.7) — not distinguishable from
+chance. It is off until a rule earns its place in the record; the context chips stay beside each player." Without the
+record the line is not shown at all. `dfs.worth` and the API's `worth_a_look` stay (always empty today), and the record
+keeps grading Wave I-N's rule and the two-favourable-signals candidate (`worth_two`) out of sample from 2026 week 5. **The
+corner is information**: the API sends the corner signal with no tone and its `quarter` (shutdown / target / solid /
+unranked, from the call's shutdown flag, else its own quarter, else its words — `dfs.corner_quarter`), so the chip is
+never green or red and nothing sorts or filters on it; its words ("Shutdown corner", "Soft corner", "Average corner",
+"Corner unranked") and its grade stay.
+
 Week 5 (2026, the clone): of the 402 backs, receivers and tight ends with a game this season, **65 read "role up" and
 45 "role down"** (on the DraftKings board: WR 30 / 24, RB 16 / 13, TE 13 / 6); the rest have nothing said (flat, mixed,
 or fewer than 4 games). Betting lines for all 30 teams playing.
