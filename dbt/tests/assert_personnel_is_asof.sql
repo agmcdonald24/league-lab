@@ -13,10 +13,18 @@ with p as (
 ),
 
 sched as (
+    {%- if var('pn_starter_from_play', false) %}
+    -- ---- IP-1: with the starter from what happened, the starter is int_pn_team_game's corrected one (its own rule is
+    -- checked against the play data by assert_starter_from_play)
+    select t.season, t.week, t.team, t.starting_qb_id as qb, t.is_played as played
+    from {{ ref('int_pn_team_game') }} as t
+    -- ---- end IP-1
+    {%- else %}
     select s.season, s.week, {{ kd_team('t.team') }} as team, nullif(t.qb, '') as qb, s.home_score is not null as played
     from {{ source('raw', 'nfl_schedules') }} as s
     cross join lateral (values (s.home_team, s.home_qb_id), (s.away_team, s.away_qb_id)) as t(team, qb)
     where s.game_type = 'REG' and s.season >= {{ var('seasons_start') }}
+    {%- endif %}
 ),
 
 raw_starts as (

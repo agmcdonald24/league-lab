@@ -559,6 +559,20 @@ where it would add something. "No league" is never shown (the API's `league_name
 | the definitions (a tap on a column's ⓘ) | **Power ranking**: "teams in order of the points their best lineup is expected to score per week over the rest of the season (each week's best legal lineup from today's roster, this league's scoring, the weeks to the league's final). Record and points so far are beside it, not in it." · **Record · points for** ("… \"Soft schedule so far\" / \"Hard schedule so far\" when the record's place and the points' place are 3 or more apart.") · **Against** · **Schedule left** ("Rank 1 = the hardest schedule left.") · **Projected record** ("the middle 80% of the win totals (1 season in 10 ends below, 1 in 10 above)") · **Playoff odds** ("100% and out only when it is certain on wins alone.") · **Top seed** · **Bye** | — |
 <!-- ---- end IN-6 -->
 
+<!-- ---- IP-1 (Wave I-P) -->
+## How the projections have done, honestly (Wave I-P, IP-1; METRICS § "v3.4: the quarterback weak spot")
+
+Proposed words for the home's "How the projections have done" lead and About's grades (`web/src/components/home/home.ts`
+`gradeLead` is not IP-1's file: the PO places them). The rule behind them: a gap the sample cannot tell from the past is
+said as that, with the past range beside it; a weak spot is named only when the interval says so.
+
+| Where | The words we use | Never |
+|---|---|---|
+| the lead, a position worse on the means but inside the past range | "Through week 3, quarterbacks are where our projections miss most: 6.5 points per game. The model that made those weeks missed by 5.6 to 6.4 in the first three weeks of past seasons, so three weeks cannot tell this from a normal start." | "our weak spot" for a gap three weeks cannot measure |
+| the lead, a position worse and measurably so | "Tight ends: 3.5 points per game, against 2.6 to 3.4 in past seasons' first three weeks — they caught more touchdowns than projected." | a cause the numbers do not show |
+| "before" in the grades | the backtest of the model that made the weeks shown (`mart_projection_drift`, IP-1): "6.5 (before 5.9)" | the newest model's backtest beside an older model's weeks |
+<!-- ---- end IP-1 -->
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

@@ -24,6 +24,17 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   keeps 42–70% of its move over two games and is mostly priced (+0.29 the next game, +0.07 to +0.49, not steady by
   season); a role down, no measurable effect. `ops.context_record` keeps the tag every week; `summary()` gains `trend`
   and `role` (docs/METRICS.md cx1.1).
+- **IP-1 — the quarterback weak spot, diagnosed; v3.4.** The home's "6.5 points off, against 5.4" set v2.0's weeks
+  1–3 against v3.0's backtest; against v2.0's own first three weeks of 2021–2025 it is +0.54 (95% −0.45 to +1.62, 112
+  QB-games): not a signal. QB misses are variance (no kind of quarterback has a bias; 36% of a starter's squared miss is
+  his team beating or missing its Vegas total); passing TDs carry most of it. Three candidates through
+  `experiments.decide` (2021–2025, both house scorings): **pt1.0 kept** — a QB's passing TDs regressed toward his
+  team's implied total, on the line (MAE −0.076 and Spearman +0.0145, better in 5 of 5 seasons; `LEAGUE_LAB_QB_PASS_TD`,
+  on; `MODEL_VERSION` v3.4; no new table or nightly step); rt1.0 (a rushing-TD scale) and st1.0 (the starter from what
+  happened, dbt var `pn_starter_from_play`, off) dropped. `mart_projection_drift` now sets each week against the
+  backtest of the model that made it (QB: 6.52 against 5.86). Found: nflverse's schedule keeps stale projected starters
+  (33 team-games in 2024; SEA weeks 3–5 of 2026 list Lock while Darnold plays). docs/METRICS.md § "v3.4: the
+  quarterback weak spot"; `scripts/analysis/ip1_qb_diagnosis.py`, `ip1_qb_candidates.py`; docs/handbacks/IP-1.md.
 
 ## 2026-10-06 — Wave I-O
 

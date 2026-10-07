@@ -129,7 +129,7 @@ def test_the_switches(run):
 
 
 def test_the_version():
-    assert P.MODEL_VERSION == "v3.3"
+    assert P.MODEL_VERSION == "v3.4"          # ---- IP-1: v3.4 = v3.3 + pt1.0 (QB passing TDs); nt1.0 unchanged
     assert C.NEW_TEAM_SCALE_POSITIONS == ("WR",) and C.NEW_TEAM_SCALE_BOUNDS == (0.70, 1.10)
     assert C.NEW_TEAM_POSITIONS == ()                                         # M6's cold blend keyed on team games: still dropped
 

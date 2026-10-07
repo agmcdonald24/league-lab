@@ -1078,8 +1078,13 @@ def rescale_to_stored(comp_b: pd.DataFrame, comp_s: pd.DataFrame, keys: list[tup
         if mo[c] == 0:
             continue
         k = st[c] / mo[c]
+        # ---- IP-1 (Wave I-P): component by component (a component the model put at 0 takes the line's k). A cold
+        # start's line is the model's x k in every component, so this is M6's rule exactly; pt1.0 changes a QB's passing
+        # TDs alone, and the larger role's passing TDs follow by the same ratio (the gain stays the role's, not pt1.0's)
+        ratio = np.where(mo != 0, st / np.where(mo != 0, mo, 1.0), k)
+        # ---- end IP-1
         b.iloc[j, at] = st
-        s.iloc[j, s.columns.get_indexer(cols)] = s[cols].iloc[j].to_numpy(dtype=float) * k
+        s.iloc[j, s.columns.get_indexer(cols)] = s[cols].iloc[j].to_numpy(dtype=float) * ratio
     return b, s
 
 
@@ -1208,3 +1213,136 @@ def _new_team_scale_rows(oof: pd.DataFrame, games: pd.DataFrame, draft: pd.DataF
         log.info("%s new team %s: k = %.4f on %s fitting rows (%s scorings pooled), %s player-weeks", NEW_TEAM_SCALE_VERSION,
                  pos, k, n, pool["league_id"].nunique(), int(sel.sum()))
 # ---- end IL-3
+
+
+# ---- IP-1 (Wave I-P): v3.4 -- a quarterback's passing TDs regressed toward his team's implied total (pt1.0; docs/METRICS.md
+# § "The quarterback weak spot (IP-1)"). The diagnosis: passing TDs carry most of a quarterback's miss (about 2 of the 5.4
+# points), and the component model's count, learned from his own history, loses to the team's Vegas total. The candidate,
+# written down before it was run: per season S, least squares WITHOUT intercept over the played QB rows of the WINDOW
+# seasons before S (the walk-forward rows: the production component models fitted on the seasons before each), actual
+# passing TDs = a x the model's passing TDs + b x (implied team total x the model's attempts / PASS_TD_ATTEMPTS); applied
+# to every QB line that has an implied total (the weeks whose line is posted; later weeks keep the model's, as the harness
+# never saw a row without one). The harness (2021-2025, both house scorings, experiments.decide on the QB board): MAE
+# -0.076, lower in 5 of 5 seasons; Spearman +0.0145, higher in 5 of 5 -> keep. It changes the STAT LINE before anything is
+# priced (the frozen-line path ``predict_position(..., lines=)``, like ``blend_lines``), so ops.projection_lines, the house
+# rows, the ranges and every request carry one number. Switch: ``LEAGUE_LAB_QB_PASS_TD`` (unset = on; ``0`` = v3.3's
+# lines). The fit runs inside ``project`` from the training frame (3 QB component fits): no table, no nightly step.
+PASS_TD_FLAG = "LEAGUE_LAB_QB_PASS_TD"
+PASS_TD_DEFAULT = True                 # the harness kept it (docs/METRICS.md § "The quarterback weak spot (IP-1)")
+PASS_TD_VERSION = "pt1.0"
+PASS_TD_POSITIONS: tuple[str, ...] = ("QB",)
+PASS_TD_ATTEMPTS = 33.0                # about a starter's attempts per game: the team term is the implied total x his share
+PASS_TD_MIN_ROWS = 300                 # fewer fitting rows: the identity (a = 1, b = 0)
+LAST_PASS_TD: dict[str, float | int] = {}   # the last ``pass_td_lines`` run: a, b, fitting rows, lines moved
+
+
+def pass_td_enabled() -> bool:
+    """``LEAGUE_LAB_QB_PASS_TD``: unset or empty = ``PASS_TD_DEFAULT`` (on: the harness's verdict); ``1`` / ``0``."""
+    v = os.environ.get(PASS_TD_FLAG)
+    if v is None or not v.strip():
+        return PASS_TD_DEFAULT
+    return _flag(PASS_TD_FLAG)
+
+
+def pass_td_team_term(implied: pd.Series | np.ndarray, attempts: pd.Series | np.ndarray) -> np.ndarray:
+    """The implied team total x the projected attempts / ``PASS_TD_ATTEMPTS`` (NaN where the total is not known)."""
+    return np.asarray(implied, dtype=float) * np.asarray(attempts, dtype=float) / PASS_TD_ATTEMPTS
+
+
+def fit_pass_td(rows: pd.DataFrame) -> tuple[float, float, int]:
+    """(a, b, fitting rows): least squares without intercept of ``out_passing_tds`` on ``proj_passing_tds`` and the team
+    term, over played rows with all three known. Under ``PASS_TD_MIN_ROWS`` rows (or a singular fit): (1.0, 0.0, n), the
+    identity."""
+    d = rows[rows["played"].fillna(False).astype(bool)] if "played" in rows else rows
+    team = pass_td_team_term(d["implied_team_total"], d["proj_attempts"])
+    ok = np.isfinite(team) & d["proj_passing_tds"].notna().to_numpy() & d["out_passing_tds"].notna().to_numpy()
+    n = int(ok.sum())
+    if n < PASS_TD_MIN_ROWS:
+        return 1.0, 0.0, n
+    x = np.column_stack([d["proj_passing_tds"].to_numpy(dtype=float)[ok], team[ok]])
+    coef, _, rank, _ = np.linalg.lstsq(x, d["out_passing_tds"].to_numpy(dtype=float)[ok], rcond=None)
+    if rank < 2 or not np.isfinite(coef).all():
+        return 1.0, 0.0, n
+    return float(coef[0]), float(coef[1]), n
+
+
+def apply_pass_td(lines: pd.DataFrame, a: float, b: float) -> np.ndarray:
+    """The new passing TDs of ``lines`` (``proj_passing_tds``, ``proj_attempts``, ``implied_team_total``): a x the model's
+    + b x the team term, at least 0; the model's own where the implied total is not known."""
+    model = lines["proj_passing_tds"].to_numpy(dtype=float)
+    team = pass_td_team_term(lines["implied_team_total"], lines["proj_attempts"])
+    return np.where(np.isfinite(team), np.clip(a * model + b * team, 0.0, None), model)
+
+
+def pass_td_fit_rows(train: pd.DataFrame, season: int, window: int = WINDOW) -> pd.DataFrame:
+    """The fitting rows for ``season``: for each of the ``window`` seasons s before it, the production QB component
+    models fitted on the frame's seasons before s (``fit_position``'s training filter and inputs) applied to s --
+    passing TDs and attempts -- with the implied total and the outcome (the harness's rows, ``ip1_qb_candidates``)."""
+    first = int(train["season"].min())
+    feats = list(P.FEATURES_BY_POSITION["QB"])
+    out = []
+    for s in range(season - window, season):
+        tr, te = train[(train["season"] >= first) & (train["season"] < s)], train[train["season"] == s]
+        d = tr[(tr["position"] == "QB") & tr["played"] & ~tr["no_history"]]
+        d = d.dropna(subset=[f"out_{c}" for c in P.COMPONENTS["QB"]]).reset_index(drop=True)
+        rows = te[(te["position"] == "QB")].reset_index(drop=True)
+        if len(d) < 100 or rows.empty:
+            continue
+        models = P._fit_components(P._matrix(d, feats), d, "QB")
+        x = P._matrix(rows, feats)
+        out.append(pd.DataFrame({"season": s, "played": rows["played"].to_numpy(),
+                                 "implied_team_total": rows["implied_team_total"].to_numpy(dtype=float),
+                                 "proj_passing_tds": np.clip(models["passing_tds"].predict(x), 0, None),
+                                 "proj_attempts": np.clip(models["attempts"].predict(x), 0, None),
+                                 "out_passing_tds": rows["out_passing_tds"].to_numpy(dtype=float)}))
+    return pd.concat(out, ignore_index=True) if out else pd.DataFrame(
+        columns=["season", "played", "implied_team_total", "proj_passing_tds", "proj_attempts", "out_passing_tds"])
+
+
+def pass_td_lines(season: int, every: pd.DataFrame, models: dict, target: pd.DataFrame, train: pd.DataFrame,
+                  fit: dict[str, tuple[str, dict[str, float]]]) -> pd.DataFrame:
+    """``projections.project``'s hook (before ``blend_lines``): ``every`` with each QB line's passing TDs regressed toward
+    the team's implied total (``fit_pass_td`` on ``pass_td_fit_rows``), those rows priced and ranged again from the new
+    line by the same models (``predict_position(..., lines=)``). Switch off, no kept position, a fit under the minimum or
+    nothing that moves: ``every`` itself."""
+    LAST_PASS_TD.clear()
+    positions = [p for p in PASS_TD_POSITIONS if p in models]
+    if not pass_td_enabled() or every.empty or not positions:
+        return every
+    a, b, n = fit_pass_td(pass_td_fit_rows(train, season))
+    LAST_PASS_TD.update({"a": a, "b": b, "rows": n, "moved": 0})
+    if (a, b) == (1.0, 0.0):
+        log.info("%s: %s fitting rows, no fit: QB lines unchanged", PASS_TD_VERSION, n)
+        return every
+    comps = [f"proj_{c}" for c in P.ALL_COMPONENTS]
+    keys = ["gsis_id", "week"]
+    first = every["league_id"].iloc[0]
+    new = []
+    for pos in positions:
+        line = every[(every["league_id"] == first) & (every["position"] == pos)]
+        tgt = target[target["position"] == pos].drop_duplicates(keys)
+        line = line.merge(tgt[[*keys, "implied_team_total"]], on=keys, how="left")
+        tds = apply_pass_td(line, a, b)
+        moved = np.abs(tds - line["proj_passing_tds"].to_numpy(dtype=float)) > 1e-12
+        if not moved.any():
+            continue
+        ln = line.loc[moved, [*keys, *comps]].reset_index(drop=True)
+        ln["proj_passing_tds"] = tds[moved]
+        rows = ln[keys].merge(tgt, on=keys, how="inner", validate="one_to_one")
+        ln = rows[keys].merge(ln, on=keys, how="left")
+        new.append(P.predict_position(models[pos], rows, fit, lines=ln))
+    if not new:
+        return every
+    moved_rows = pd.concat(new, ignore_index=True)
+    for c in ("model_version", "fitted_at", "train_seasons"):
+        if c in every:
+            moved_rows[c] = every[c].iloc[0]
+    hit = every.set_index(keys).index.isin(moved_rows.set_index(keys).index) & every["position"].isin(positions).to_numpy()
+    out = pd.concat([every[~hit], moved_rows[every.columns]], ignore_index=True)
+    out.attrs = every.attrs
+    LAST_PASS_TD["moved"] = int(moved_rows["league_id"].eq(first).sum())
+    log.info("%s QB passing TDs: a = %.3f x the model + b = %.4f x implied total x attempts / %.0f, on %s fitting rows "
+             "(%s-%s); %s QB lines moved (weeks with an implied total)", PASS_TD_VERSION, a, b, PASS_TD_ATTEMPTS, n,
+             season - WINDOW, season - 1, LAST_PASS_TD["moved"])
+    return out
+# ---- end IP-1

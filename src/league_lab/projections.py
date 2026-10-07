@@ -70,7 +70,7 @@ from .waivers import waivers_after_project
 
 log = logging.getLogger(__name__)
 
-MODEL_VERSION = "v3.3"   # ---- IL-3: v3.3 = v3.0 + cs1.1 (cold starts, M6) + nt1.0 (the WR new-team scale)
+MODEL_VERSION = "v3.4"   # ---- IL-3: v3.3 = v3.0 + cs1.1 (cold starts, M6) + nt1.0 (the WR new-team scale); IP-1: v3.4 = + pt1.0 (QB passing TDs)
 POSITIONS = ("QB", "RB", "WR", "TE")
 QUANTILES = (0.1, 0.5, 0.9)
 # Plan D6 (Wave D): the 50% range ("most weeks"), fitted and calibrated with the same machinery as the
@@ -944,6 +944,10 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     # (LEAGUE_LAB_COLD_START; docs/METRICS.md § "v3.2"): the lines, the house rows, the ranges and every on-demand
     # price of the line are one number. Off (or nothing to scale): ``every`` unchanged.
     from . import calibration as _cal_m6
+    # ---- IP-1 (Wave I-P): v3.4 -- a QB's passing TDs regressed toward his team's implied total (LEAGUE_LAB_QB_PASS_TD,
+    # on; calibration.pass_td_lines), on the line before anything is priced; QB only, so it never meets the blend below
+    every = _cal_m6.pass_td_lines(season, every, models, target, train, fit)
+    # ---- end IP-1
     every = _cal_m6.blend_lines(conn, season, every, models, target, fit, leagues)
     # ---- /M6
     lines = nfl_lines(every)

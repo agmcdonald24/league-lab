@@ -1,0 +1,356 @@
+"""IP-1 (Wave I-P): the quarterback candidates the diagnosis points at, through the harness's rule
+(docs/METRICS.md § "The quarterback weak spot (IP-1)" -> "Candidates"). Read-only on the database.
+
+* rt1.0 -- QB rushing TDs, a mean-unbiased scale (the one bias the diagnosis found in every sample): k_S = sum of actual
+  rushing TDs / sum of projected over the played QB rows of the 3 seasons before S (the walk-forward rows, production
+  inputs), clipped to [0.70, 1.50]; every QB line's rushing TDs x k_S.
+* pt1.0 -- passing TDs regressed toward the team's implied total: per S, least squares without intercept on the played
+  QB rows of the 3 seasons before: actual passing TDs = a x projected + b x (implied total x projected attempts / 33).
+* st1.0 -- "Is he the starter?" from what happened (dbt var ``pn_starter_from_play``, int_pn_team_game): training rows
+  read the corrected history; the test season's rows keep the stored listing except where the as-of guard fires (a
+  listing that repeats one already contradicted by the team's newest played game -> that game's real starter). Needs
+  the corrected int_pn_team_game / mart_player_week_features built with the var on, and the frame before it
+  (``--before``, a parquet of mart_player_week_features' QB inputs taken before the rebuild).
+
+Each is judged by ``experiments.decide`` on the QB board (2021-2025, both house scorings, the season paired; scorer =
+the priced line, the backtest's scope: every played row with its 12 outcomes known, weeks with >= 8 players).
+
+usage: OMP_NUM_THREADS=1 uv run python scripts/analysis/ip1_qb_candidates.py rt|pt --rows rows.parquet [--rows-early r.parquet]
+       OMP_NUM_THREADS=1 uv run python scripts/analysis/ip1_qb_candidates.py st --rows rows.parquet --before before.parquet
+(rows: the walk-forward cache of scripts/analysis/ip1_qb_diagnosis.py; --rows-early: the same for 2018-2020, QB)
+"""
+from __future__ import annotations
+
+import argparse
+import logging
+import os
+import time
+from pathlib import Path
+
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+import psycopg  # noqa: E402
+
+from league_lab import experiments as E  # noqa: E402
+from league_lab import projections as P  # noqa: E402
+from league_lab.config import get_settings  # noqa: E402
+from league_lab.rankings import TOP_N, _hit_rate, _spearman  # noqa: E402
+
+log = logging.getLogger("ip1")
+TESTS = [2021, 2022, 2023, 2024, 2025]
+RT_WINDOW = 3
+RT_BOUNDS = (0.70, 1.50)
+
+
+# ------------------------------------------------------------------------------ scoring, the harness's terms
+def priced(rows: pd.DataFrame, prefix: str, leagues: dict) -> pd.DataFrame:
+    """One row per league x player-week: the line in ``<prefix><component>`` priced, and the actual (the 12 components)."""
+    known = rows[[f"out_{c}" for c in P.ALL_COMPONENTS]].notna().all(axis=1) & rows["played"].fillna(False).astype(bool)
+    d = rows[known].reset_index(drop=True)
+    line = d.assign(**{f"proj_{c}": d[f"{prefix}{c}"] for c in P.ALL_COMPONENTS})
+    out = []
+    for lid, (_, sc) in leagues.items():
+        out.append(pd.DataFrame({"league_id": lid, "gsis_id": d["gsis_id"], "season": d["season"].astype(int),
+                                 "week": d["week"].astype(int), "proj": P.price(line, sc, "proj_").to_numpy(),
+                                 "actual": P.price(d, sc, "out_").to_numpy()}))
+    return pd.concat(out, ignore_index=True)
+
+
+def weekly(p: pd.DataFrame, min_players: int = 8) -> pd.DataFrame:
+    rows = []
+    for (lid, s, w), g in p.groupby(["league_id", "season", "week"]):
+        if len(g) < min_players:
+            continue
+        rows.append({"league_id": lid, "season": s, "week": w, "n": len(g), "mae": float((g["proj"] - g["actual"]).abs().mean()),
+                     "spearman": _spearman(g["proj"], g["actual"]), "hit_rate": _hit_rate(g["proj"], g["actual"], TOP_N["QB"])})
+    return pd.DataFrame(rows)
+
+
+def paired(base: pd.DataFrame, cand: pd.DataFrame) -> pd.DataFrame:
+    """Per season: the league-averaged season means' change (cand - base), as ``decide`` reads them."""
+    wb, wc = weekly(base), weekly(cand)
+    m = wb.merge(wc, on=["league_id", "season", "week"], suffixes=("_b", "_c"))
+    s = m.groupby(["league_id", "season"])[["mae_b", "mae_c", "spearman_b", "spearman_c"]].mean().reset_index()
+    s["delta_mae"], s["delta_spearman"] = s["mae_c"] - s["mae_b"], s["spearman_c"] - s["spearman_b"]
+    per = s.groupby("season")[["delta_mae", "delta_spearman", "mae_b", "mae_c"]].mean().reset_index()
+    per["position"] = "QB"
+    return per
+
+
+def bias(p: pd.DataFrame) -> float:
+    return float((p["actual"] - p["proj"]).mean())
+
+
+def report(name: str, per: pd.DataFrame, base: pd.DataFrame, cand: pd.DataFrame, flagged: pd.Series | None = None) -> None:
+    dec = E.decide(per)
+    print(f"\n### {name}\n")
+    print("| season | MAE before → after | Δ MAE | Δ Spearman |\n|---|---|---|---|")
+    for r in per.itertuples():
+        print(f"| {r.season} | {r.mae_b:.3f} → {r.mae_c:.3f} | {r.delta_mae:+.3f} | {r.delta_spearman:+.4f} |")
+    d = dec.iloc[0]
+    print(f"\ndecide: Δ MAE {d.delta_mae:+.3f} (better in {d.seasons_better_mae} of {d.n_seasons}), Δ Spearman "
+          f"{d.delta_spearman:+.4f} (better in {d.seasons_better_spearman} of {d.n_seasons}); helps {d.helps}, hurts {d.hurts} "
+          f"-> **{d.decision}**")
+    print(f"board bias (actual − projected), both scorings: {bias(base):+.3f} → {bias(cand):+.3f}")
+    if flagged is not None:
+        key = ["gsis_id", "season", "week"]
+        fb = base.merge(flagged, on=key)
+        fc = cand.merge(flagged, on=key)
+        if len(fb):
+            g = []
+            for s in TESTS:
+                b, c = fb[fb["season"] == s], fc[fc["season"] == s]
+                if len(b) == 0:
+                    g.append((s, 0, np.nan, np.nan, np.nan))
+                    continue
+                mb, mc = (b["proj"] - b["actual"]).abs().mean(), (c["proj"] - c["actual"]).abs().mean()
+                g.append((s, len(b) // 2, mb, mc, mc - mb))
+            print("\nflagged rows (both scorings; n = player-weeks a scoring):\n\n| season | n | MAE before → after | Δ |\n|---|---|---|---|")
+            for s, n, mb, mc, dd in g:
+                print(f"| {s} | {n} | " + ("—" if n == 0 else f"{mb:.2f} → {mc:.2f} | {dd:+.2f}") + (" | — |" if n == 0 else " |"))
+            dl = [x[4] for x in g if x[1] > 0]
+            lower = sum(1 for x in dl if x < 0)
+            print(f"\nflagged: mean Δ MAE over the seasons with flagged rows {np.mean(dl):+.3f}, lower in {lower} of {len(TESTS)} "
+                  f"seasons (the rule needs {E.seasons_needed(len(TESTS))}); bias {bias(fb):+.2f} → {bias(fc):+.2f}")
+
+
+# ------------------------------------------------------------------------------ rt1.0
+def rush_td_scale(rows: pd.DataFrame, s: int) -> tuple[float, int]:
+    fit = rows[(rows["season"] >= s - RT_WINDOW) & (rows["season"] < s) & rows["played"].fillna(False).astype(bool)
+               & rows["out_rushing_tds"].notna()]
+    den = float(fit["v3_rushing_tds"].sum())
+    k = float(fit["out_rushing_tds"].sum()) / den if den > 0 else 1.0
+    return float(np.clip(k, *RT_BOUNDS)), len(fit)
+
+
+def run_rt(rows: pd.DataFrame, leagues: dict) -> None:
+    qb = rows[rows["position"] == "QB"].copy()
+    cand = qb.copy()
+    ks = {}
+    for s in [*TESTS, 2026]:
+        k, n = rush_td_scale(qb, s)
+        ks[s] = (k, n)
+        sel = cand["season"] == s
+        cand.loc[sel, "v3_rushing_tds"] = cand.loc[sel, "v3_rushing_tds"] * k
+    print("k by season (fitted on the 3 seasons before):", {s: f"{k:.3f} ({n} rows)" for s, (k, n) in ks.items()})
+    t = qb[qb["season"].isin(TESTS)]
+    c = cand[cand["season"].isin(TESTS)]
+    base, alt = priced(t, "v3_", leagues), priced(c, "v3_", leagues)
+    report("rt1.0: QB rushing TDs × k (mean-unbiased, 3 seasons before)", paired(base, alt), base, alt)
+    rb = (t["out_rushing_tds"] - t["v3_rushing_tds"]).mean() * 6
+    rc = (c["out_rushing_tds"] - c["v3_rushing_tds"]).mean() * 6
+    print(f"rushing-TD bias (points at 6 a TD, played rows): {rb:+.3f} → {rc:+.3f}")
+
+
+# ------------------------------------------------------------------------------ pt1.0
+PT_ATTEMPTS = 33.0     # a starter's attempts a game, about: the team-total term is the implied total x his share of that
+
+
+def pass_td_blend(rows: pd.DataFrame, s: int) -> tuple[float, float, int]:
+    """(a, b, fitting rows): least squares without intercept of the actual passing TDs on the projected passing TDs and
+    the implied team total x projected attempts / ``PT_ATTEMPTS``, over the played QB rows of the 3 seasons before."""
+    fit = rows[(rows["season"] >= s - RT_WINDOW) & (rows["season"] < s) & rows["played"].fillna(False).astype(bool)
+               & rows["out_passing_tds"].notna() & rows["implied_team_total"].notna()]
+    x = np.column_stack([fit["v3_passing_tds"], fit["implied_team_total"] * fit["v3_attempts"] / PT_ATTEMPTS])
+    coef, *_ = np.linalg.lstsq(x, fit["out_passing_tds"].to_numpy(dtype=float), rcond=None)
+    return float(coef[0]), float(coef[1]), len(fit)
+
+
+def run_pt(rows: pd.DataFrame, leagues: dict) -> None:
+    qb = rows[rows["position"] == "QB"].copy()
+    cand = qb.copy()
+    fits = {}
+    for s in [*TESTS, 2026]:
+        a, b, n = pass_td_blend(qb, s)
+        fits[s] = (a, b, n)
+        sel = (cand["season"] == s) & cand["implied_team_total"].notna()
+        team = cand.loc[sel, "implied_team_total"] * cand.loc[sel, "v3_attempts"] / PT_ATTEMPTS
+        cand.loc[sel, "v3_passing_tds"] = np.clip(a * cand.loc[sel, "v3_passing_tds"] + b * team, 0, None)
+    print("fits by season (a on the model, b on implied total x attempts / 33; rows):",
+          {s: f"{a:.3f} / {b:.4f} ({n})" for s, (a, b, n) in fits.items()})
+    t = qb[qb["season"].isin(TESTS)]
+    c = cand[cand["season"].isin(TESTS)]
+    base, alt = priced(t, "v3_", leagues), priced(c, "v3_", leagues)
+    report("pt1.0: passing TDs regressed toward the team's implied total", paired(base, alt), base, alt)
+    pb = (t["out_passing_tds"] - t["v3_passing_tds"])[t["played"].astype(bool)].mean() * 4
+    pc = (c["out_passing_tds"] - c["v3_passing_tds"])[c["played"].astype(bool)].mean() * 4
+    print(f"passing-TD bias (points at 4 a TD, played rows): {pb:+.3f} → {pc:+.3f}")
+    # where it acts (information, not the rule): per league; projected starters (>= 20 attempts) and the rest; 2026
+    for lid in leagues:
+        wb, wc = weekly(base[base["league_id"] == lid]), weekly(alt[alt["league_id"] == lid])
+        print(f"league {lid[-6:]}: season-mean MAE {wb.groupby('season')['mae'].mean().mean():.3f} → "
+              f"{wc.groupby('season')['mae'].mean().mean():.3f}")
+    att = t.set_index(["gsis_id", "season", "week"])["v3_attempts"]
+    for name, sel in (("projected >= 20 attempts", lambda d: d >= 20), ("projected < 20 attempts", lambda d: d < 20)):
+        k = base.set_index(["gsis_id", "season", "week"]).index
+        m = sel(att.reindex(k).to_numpy())
+        eb = (base["proj"] - base["actual"]).abs()[m].mean()
+        ec = (alt["proj"] - alt["actual"]).abs()[m].mean()
+        print(f"{name}: pooled MAE {eb:.3f} → {ec:.3f} ({int(m.sum()) // len(leagues)} player-weeks a scoring)")
+    t26, c26 = qb[qb["season"] == 2026], cand[cand["season"] == 2026]
+    if len(t26):
+        b26, a26 = priced(t26, "v3_", leagues), priced(c26, "v3_", leagues)
+        for w in (3, 4):
+            bw, aw = b26[b26["week"] <= w], a26[a26["week"] <= w]
+            print(f"2026 weeks 1-{w} (v3.0 inputs refit now, information only): pooled MAE "
+                  f"{(bw['proj'] - bw['actual']).abs().mean():.3f} → {(aw['proj'] - aw['actual']).abs().mean():.3f}")
+
+
+def run_pt_ranges(rows: pd.DataFrame, seasons: list[int]) -> None:
+    """pt1.0's ranges, reported (the rule does not read them): per S, the production QB model (``fit_position``, both
+    house scorings) ranges the model's line and pt1.0's line (``predict_position(..., lines=)``, production's path);
+    coverage and interval score of each against the components' actual, paired by season (``experiments.paired_v31``)."""
+    s_ = get_settings()
+    with psycopg.connect(s_.pipeline_dsn()) as conn:
+        conn.read_only = True
+        leagues = P.league_scorings(conn)
+        alls = P.available_seasons(conn)
+        frame = P.load_frame(conn, [x for x in alls if x <= max(seasons)])
+    first = min(alls)
+    qb = rows[rows["position"] == "QB"]
+    base_parts, alt_parts = [], []
+    for s in seasons:
+        t0 = time.monotonic()
+        train = frame[(frame["season"] >= first) & (frame["season"] < s)]
+        test = frame[(frame["season"] == s) & (frame["position"] == "QB")].reset_index(drop=True)
+        m = P.fit_position(train, "QB", leagues)
+        base = P.predict_position(m, test, leagues)
+        a, b, n = pass_td_blend(qb, s)
+        first_l = next(iter(leagues))
+        ln = base[base["league_id"] == first_l].reset_index(drop=True)
+        team = ln.merge(test[["gsis_id", "week", "implied_team_total"]].assign(week=lambda d: d["week"].astype(int)),
+                        on=["gsis_id", "week"], how="left")["implied_team_total"] * ln["proj_attempts"] / PT_ATTEMPTS
+        ln["proj_passing_tds"] = np.where(team.notna(), np.clip(a * ln["proj_passing_tds"] + b * team, 0, None),
+                                          ln["proj_passing_tds"])
+        alt = P.predict_position(m, test, leagues, lines=ln)
+        ok = test[[f"out_{c}" for c in P.ALL_COMPONENTS]].notna().all(axis=1) & test["played"].astype(bool)
+        for frame_, parts in ((base, base_parts), (alt, alt_parts)):
+            acts = []
+            for lid, (_, sc) in leagues.items():
+                acts.append(pd.DataFrame({"gsis_id": test.loc[ok, "gsis_id"].to_numpy(), "week": test.loc[ok, "week"].astype(int).to_numpy(),
+                                          "league_id": lid, "actual": P.price(test[ok], sc, "out_").to_numpy()}))
+            parts.append(frame_.merge(pd.concat(acts), on=["gsis_id", "week", "league_id"], how="inner"))
+        log.info("pt ranges %s: a %.3f b %.4f (%s rows), %.0f s", s, a, b, n, time.monotonic() - t0)
+    sb = E.score_v31(pd.concat(base_parts, ignore_index=True))
+    sa = E.score_v31(pd.concat(alt_parts, ignore_index=True))
+    pr = E.paired_v31(sb, sa)
+    print("\n### pt1.0's ranges (reported; not the rule)\n")
+    print("| league | season | Δ MAE | Δ interval score 80% | Δ interval score 50% | coverage 80% before → after | coverage 50% before → after |")
+    print("|---|---|---|---|---|---|---|")
+    for r in pr.itertuples():
+        print(f"| {r.league_id[-6:]} | {r.season} | {r.delta_mae:+.3f} | {r.delta_interval_score:+.4f} | {r.delta_interval_score_50:+.4f} | "
+              f"{r.baseline_coverage_80:.3f} → {r.coverage_80:.3f} | {r.baseline_coverage_50:.3f} → {r.coverage_50:.3f} |")
+    g = pr.groupby("league_id")[["delta_interval_score", "delta_interval_score_50", "baseline_coverage_80", "coverage_80"]].mean()
+    print("\nmeans by league:\n" + g.round(4).to_string())
+
+
+# ------------------------------------------------------------------------------ st1.0
+TEAM_GAME_SQL = """select season, week, team, listed_qb_id, starting_qb_id, is_played from intermediate.int_pn_team_game
+                   where season >= 2016 order by team, season, week"""
+
+
+def guarded_listing(tg: pd.DataFrame) -> pd.DataFrame:
+    """Per team-week: the stored listing with the as-of guard (``int_pn_team_game``'s unplayed-game rule, applied to
+    every week: what a board made before that week's kickoff would have read)."""
+    out = []
+    for (team, season), g in tg.sort_values(["team", "season", "week"]).groupby(["team", "season"], sort=False):
+        prev_listed = prev_played = None
+        prev_wrong = False
+        for r in g.itertuples():
+            guard = r.listed_qb_id
+            if r.listed_qb_id is not None and r.listed_qb_id == prev_listed and prev_wrong:
+                guard = prev_played
+            out.append((team, season, r.week, guard))
+            if r.is_played:
+                prev_listed, prev_played = r.listed_qb_id, r.starting_qb_id
+                prev_wrong = r.listed_qb_id is not None and r.starting_qb_id != r.listed_qb_id
+    return pd.DataFrame(out, columns=["team", "season", "week", "guard_qb_id"])
+
+
+def run_st(rows: pd.DataFrame, before: pd.DataFrame, leagues: dict) -> None:
+    s = get_settings()
+    with psycopg.connect(s.pipeline_dsn()) as conn:
+        conn.read_only = True
+        seasons = P.available_seasons(conn)
+        frame = P.load_frame(conn, [x for x in seasons if x <= max(TESTS)])
+        tg = pd.DataFrame(conn.execute(TEAM_GAME_SQL).fetchall(), columns=["season", "week", "team", "listed_qb_id", "starting_qb_id", "is_played"])
+    if (tg["listed_qb_id"].fillna("") == tg["starting_qb_id"].fillna("")).all():
+        raise SystemExit("int_pn_team_game is not corrected: build it with --vars '{pn_starter_from_play: true}' first")
+    # the frame's change: only the QB inputs may differ from the frame before
+    key = ["gsis_id", "season", "week"]
+    b = before.set_index(key)
+    a = frame.assign(season=frame["season"].astype(int), week=frame["week"].astype(int)).set_index(key)
+    common = a.index.intersection(b.index)
+    moved = {}
+    for c in [*P.QB_INPUTS, *P.TEAMMATE_INPUTS]:
+        x, y = a.loc[common, c].astype(float), b.loc[common, c].astype(float)
+        moved[c] = int(((x != y) & ~(x.isna() & y.isna())).sum())
+    print("frame rows whose input moved (after vs before):", moved)
+    # test rows: the stored inputs, "is he the starter?" from the guarded listing
+    guard = guarded_listing(tg)
+    first = min(seasons)
+    feats = list(P.FEATURES_BY_POSITION["QB"])
+    preds, flags = [], []
+    for s_ in TESTS:
+        t0 = time.monotonic()
+        train = frame[(frame["season"] >= first) & (frame["season"] < s_)]
+        d = train[(train["position"] == "QB") & train["played"] & ~train["no_history"]]
+        d = d.dropna(subset=[f"out_{c}" for c in P.COMPONENTS["QB"]]).reset_index(drop=True)
+        models = P._fit_components(P._matrix(d, feats), d, "QB")
+        test = frame[(frame["season"] == s_) & (frame["position"] == "QB")].reset_index(drop=True)
+        test = test.assign(season=test["season"].astype(int), week=test["week"].astype(int))
+        old = before[before["season"] == s_].set_index(key)
+        idx = pd.MultiIndex.from_frame(test[key])
+        for c in P.QB_INPUTS:                                   # the stored (pre-correction) inputs of the test season
+            test[c] = old[c].reindex(idx).to_numpy(dtype=float)
+        g = test[["team", "season", "week"]].merge(guard, on=["team", "season", "week"], how="left")
+        new_flag = np.where(g["guard_qb_id"].notna(), (g["guard_qb_id"] == test["gsis_id"]).astype(float), test["pn_qb_starting"])
+        changed = new_flag != test["pn_qb_starting"].to_numpy()
+        flags.append(test.loc[changed, key])
+        test["pn_qb_starting"] = new_flag
+        x = P._matrix(test, feats)
+        out = test[[*key, "played", *[f"out_{c}" for c in P.ALL_COMPONENTS]]].copy()
+        for c in P.ALL_COMPONENTS:
+            out[f"st_{c}"] = np.clip(models[c].predict(x), 0, None) if c in models else 0.0
+        preds.append(out)
+        log.info("st1.0 %s: %s training rows, %s test rows, %s flags moved, %.0f s", s_, len(d), len(test), int(changed.sum()),
+                 time.monotonic() - t0)
+    cand = pd.concat(preds, ignore_index=True)
+    base_rows = rows[(rows["position"] == "QB") & rows["season"].isin(TESTS)]
+    base = priced(base_rows, "v3_", leagues)
+    alt = priced(cand, "st_", leagues)
+    flagged = pd.concat(flags, ignore_index=True).drop_duplicates()
+    report("st1.0: the starter from what happened (training) + the as-of guard (test weeks)", paired(base, alt), base, alt,
+           flagged)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("candidate", choices=["rt", "pt", "pt-ranges", "st"])
+    ap.add_argument("--rows", type=Path, required=True)
+    ap.add_argument("--rows-early", type=Path, default=None)
+    ap.add_argument("--before", type=Path, default=None)
+    args = ap.parse_args()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+    rows = pd.read_parquet(args.rows)
+    if args.rows_early is not None:
+        rows = pd.concat([pd.read_parquet(args.rows_early), rows], ignore_index=True)
+    rows["season"], rows["week"] = rows["season"].astype(int), rows["week"].astype(int)
+    with psycopg.connect(get_settings().pipeline_dsn()) as conn:
+        leagues = P.league_scorings(conn)
+    if args.candidate == "rt":
+        run_rt(rows, leagues)
+    elif args.candidate == "pt":
+        run_pt(rows, leagues)
+    elif args.candidate == "pt-ranges":
+        run_pt_ranges(rows, [2023, 2024, 2025])
+    else:
+        if args.before is None:
+            raise SystemExit("--before is required for st")
+        run_st(rows, pd.read_parquet(args.before), leagues)
+
+
+if __name__ == "__main__":
+    main()

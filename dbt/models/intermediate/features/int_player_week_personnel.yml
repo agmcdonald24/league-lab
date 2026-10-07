@@ -20,6 +20,8 @@ models:
         tests:
           - not_null:
               config: {where: "is_played"}
+      - name: listed_qb_id
+        description: "IP-1: the schedule's own value (raw.nfl_schedules home_qb_id / away_qb_id), kept beside starting_qb_id. Equal to it unless var('pn_starter_from_play') corrected a listing the game contradicts (the listed QB threw no pass for the team)."
       - name: is_played
         description: "The team's box score is in (fct_team_game). Only played games with week < W feed a week-W row."
       - name: team_snaps

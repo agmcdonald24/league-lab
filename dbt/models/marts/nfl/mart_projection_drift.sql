@@ -49,15 +49,45 @@ backtest as (
         model_version,
         min(season)::text || '–' || max(season)::text                                    as backtest_seasons,
         sum(weeks)                                                                        as backtest_weeks,
-        round(avg(spearman), 3)                                                           as backtest_spearman,
-        round(avg(hit_rate), 3)                                                           as backtest_hit_rate,
-        round(avg(mae), 2)                                                                as backtest_mae,
-        round(avg(coverage_80), 3)                                                        as backtest_coverage_80,
-        round(avg(interval_width), 1)                                                     as backtest_interval_width
+        avg(spearman)                                                                     as backtest_spearman,
+        avg(hit_rate)                                                                     as backtest_hit_rate,
+        avg(mae)                                                                          as backtest_mae,
+        avg(coverage_80)                                                                  as backtest_coverage_80,
+        avg(interval_width)                                                               as backtest_interval_width
     from {{ ref('mart_projection_backtest') }}
     where scorer = 'v2_points'                     -- v3: every QB-TE version's backtest, joined on the board's version
     group by 1, 2, 3
+),
+
+-- ---- IP-1 (Wave I-P): each complete week next to the backtest of the model that MADE it (2026 weeks 1-3 were v2.0's;
+-- joining the season's newest version put v2.0's 6.5 at QB beside v3.0's 5.4), the newest backtested version at or
+-- before the week's own when that one has none (v3.3 / v3.4 add line blends that backtest-v2 does not run: v3.0's
+-- model); the season's backtest = the mean over its complete weeks, as the season's own numbers are
+week_backtest as (
+    select d.league_id, d.season, d.position, d.week, bt.model_version as backtest_model_version,
+           bt.backtest_spearman, bt.backtest_hit_rate, bt.backtest_mae, bt.backtest_coverage_80, bt.backtest_interval_width
+    from d
+    left join lateral (
+        select b.* from backtest as b
+        where b.league_id = d.league_id and b.position = d.position and b.model_version <= d.model_version
+        order by b.model_version desc
+        limit 1
+    ) as bt on true
+    where d.is_complete_week
+),
+
+season_backtest as (
+    select league_id, season, position,
+           round(avg(backtest_spearman)::numeric, 3)                                         as backtest_spearman,
+           round(avg(backtest_hit_rate)::numeric, 3)                                         as backtest_hit_rate,
+           round(avg(backtest_mae)::numeric, 2)                                              as backtest_mae,
+           round(avg(backtest_coverage_80)::numeric, 3)                                      as backtest_coverage_80,
+           round(avg(backtest_interval_width)::numeric, 1)                                   as backtest_interval_width,
+           max(backtest_model_version)                                                       as backtest_model_version
+    from week_backtest
+    group by 1, 2, 3
 )
+-- ---- end IP-1
 
 select
     s.league_id,
@@ -69,15 +99,15 @@ select
     s.week_in_progress,
     s.player_weeks,
     s.spearman,
-    b.backtest_spearman,
+    coalesce(sb.backtest_spearman, round(b.backtest_spearman::numeric, 3))               as backtest_spearman,
     s.hit_rate,
-    b.backtest_hit_rate,
+    coalesce(sb.backtest_hit_rate, round(b.backtest_hit_rate::numeric, 3))               as backtest_hit_rate,
     s.mae,
-    b.backtest_mae,
+    coalesce(sb.backtest_mae, round(b.backtest_mae::numeric, 2))                         as backtest_mae,
     s.coverage_80,
-    b.backtest_coverage_80,
+    coalesce(sb.backtest_coverage_80, round(b.backtest_coverage_80::numeric, 3))         as backtest_coverage_80,
     s.interval_width,
-    b.backtest_interval_width,
+    coalesce(sb.backtest_interval_width, round(b.backtest_interval_width::numeric, 1))   as backtest_interval_width,
     b.backtest_seasons,
     b.backtest_weeks,
     s.frozen_share,
@@ -85,6 +115,14 @@ select
     s.model_version,
     s.run_at
 from season as s
--- the backtest of the model that made this season's board (the newest version on it: a season whose early weeks
--- were frozen under v2.0 compares with v3.0's once a v3.0 week is scored)
-left join backtest as b on b.league_id = s.league_id and b.position = s.position and b.model_version = s.model_version
+-- ---- IP-1: was "the backtest of the newest version on the board" (a season whose early weeks were frozen under v2.0
+-- compared with v3.0's once a v3.0 week was scored). The labels (seasons, weeks) from the newest backtested version the season's weeks were scored against;
+-- the numbers from season_backtest (each week's own model)
+left join season_backtest as sb on sb.league_id = s.league_id and sb.season = s.season and sb.position = s.position
+left join lateral (                -- no complete week yet: the newest backtested version at or before the board's
+    select x.* from backtest as x
+    where x.league_id = s.league_id and x.position = s.position
+      and x.model_version <= coalesce(sb.backtest_model_version, s.model_version)
+    order by x.model_version desc
+    limit 1
+) as b on true
