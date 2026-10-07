@@ -1,0 +1,33 @@
+{
+ "trend": {
+  "graded": true,
+  "n": 4282,
+  "words": "Graded on 2025 and 2026 weeks 1–4 (Half PPR), in their next game: players below expectation scored 1.5 points more than their points per game before and finished 0.2 points above the other players against their projection (−0.1 to +0.5; 2,467 games) — no measurable difference; players above expectation scored 1.9 points less than before and finished 0.1 points below the others against their projection (−0.5 to +0.1; 1,815 games) — no measurable difference. The projection already counts a player's work and his points: a gap here is what happened, not a reason to buy or sell on its own.",
+  "head": "Graded on 2025 and 2026 weeks 1–4 (Half PPR): in their next game, players below expectation scored 1.5 points more than their average before and players above it 1.9 less — and their projections already expected that (no measurable difference against them; 4,282 games).",
+  "tags": {
+   "below": {
+    "n": 2467,
+    "vs_rest": 0.17,
+    "lo": -0.15,
+    "hi": 0.49,
+    "effect": "none",
+    "span": "2025 and 2026 weeks 1–4",
+    "raw": 1.54
+   },
+   "above": {
+    "n": 1815,
+    "vs_rest": -0.15,
+    "lo": -0.45,
+    "hi": 0.15,
+    "effect": "none",
+    "span": "2025 and 2026 weeks 1–4",
+    "raw": -1.91
+   }
+  }
+ },
+ "role": {
+  "graded": true,
+  "n": 1837,
+  "words": "Graded on 2025 weeks 5–18 (Half PPR), in their next game: after \"role up\" players finished 0.2 points above the other players against their projection (−0.2 to +0.6; 1,022 games) — no measurable difference; after \"role down\" level with the others against their projection (−0.4 to +0.5; 815 games) — no measurable difference."
+ }
+}

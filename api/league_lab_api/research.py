@@ -380,7 +380,9 @@ TRENDS_HOWTO = (
     "different, deeper role.\n"
     "- Nothing is called a trend before a player's fourth game; until then the page shows an *early read* and says so.\n"
     "- **Over / under**: points per game in this league's scoring against expected points per game (what his targets and "
-    "carries are usually worth). Above = running hot, below = due.")
+    # ---- IP-3 (Wave I-P): graded — the gap closes in part, and the projection already expects it (no "due" / "hot")
+    "carries are usually worth). It is what happened, not a forecast: graded on past weeks, players below expectation "
+    "scored more the next week and players above it less, about as much as their projection already expected.")
 ROLE_HOWTO = (
     "- **Act on a bigger role before the points show up**: a free agent here is a stash (Waiver Wire values him for your "
     "lineup); one of your bench players here may be worth a start. A smaller role is a reason to bench or sell.\n"
@@ -629,7 +631,9 @@ def trends(league_id: str, *, position: str | None = None, limit: int | None = N
     alert_rows = [{**{k: r.get(k) for k in ("gsis_id", "player_name", "position", "team")}, **_alert(r, team)}
                   for r in _records(every)]
     enough = (tags["opportunity_trend"] != "insufficient").any() if not tags.empty else False
+    from . import context_record as CR  # ---- IP-3: what the tag has meant for the next game (the record's grade)
     return {**ctx.meta(), "season": season, "view": view, "positions": pos, "total": total,
+            "record": CR.summary()["trend"],    # ---- IP-3: graded False / words None without the record
             "early_read": not bool(enough), "notice": None if enough else EARLY_READ.format(season=season),
             "players": players, "role_alerts": alert_rows,
             "howto": TRENDS_HOWTO, "howto_sections": [{"title": "How to read role alerts", "text": ROLE_HOWTO}],

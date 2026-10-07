@@ -12,12 +12,18 @@ reads that small table (≈20 rows):
        "worth":  {"graded": bool, "n": int, "words": str | None}}
 
   plus ``worth["line"]`` (fix round: the DFS screen's one line now that the list is off — every number from the
-  grade) and ``corner["tiers"]`` (certainty/tier -> the chip's graded words and whether the interval holds 0). Never raises:
+  grade) and ``corner["tiers"]`` (certainty/tier -> the chip's graded words and whether the interval holds 0).
+  **Wave I-P (IP-3)** adds, same shape: ``"trend"`` (what "below / above expectation" on Trends has meant for the next
+  game: ``words``, ``head`` — Trends' line under its title — and ``tags`` below / above -> the next game's miss against
+  the projection vs the rest and the raw change) and ``"role"`` (what "role up / down" has meant: ``words`` and
+  ``trends`` up / down). A database with Wave I-O's grade only (no ``trend`` / ``role`` rows) answers them graded
+  False and keeps ``corner`` and ``worth`` as they were. Never raises:
   without the table (the live site until the nightly applies it — rule 10), or on any failure, graded False and words
   None, and every reader keeps today's sentence.
 * ``GET /api/context/record`` — the same, for the screens (``read`` bucket: a cached read of a ≈20-row table).
 
-One memo region, ``context_record``: one entry (the grade), an hour (the grade changes once a night), ≈5 KB.
+One memo region, ``context_record``: one entry (the grade), an hour (the grade changes once a night), ≈8 KB (Wave I-P:
+the trend and role cells added ≈3 KB; the table ≈190 rows, 80 kB).
 """
 
 from __future__ import annotations
@@ -39,7 +45,11 @@ GRADE_SQL = """select kind, grp, corner_certainty, corner_tier, n, games, mean_m
                       vs_rest_lo, vs_rest_hi, rest_n, rest_beat_share, span, scoring, words
                from ops.context_grade"""
 EMPTY = {"corner": {"graded": False, "n": 0, "words": None, "tiers": {}},
-         "worth": {"graded": False, "n": 0, "words": None, "line": None}}
+         "worth": {"graded": False, "n": 0, "words": None, "line": None},
+         # ---- IP-3 (Wave I-P): Trends' tag and the role trend, graded (absent rows: graded False)
+         "trend": {"graded": False, "n": 0, "words": None, "head": None, "tags": {}},
+         "role": {"graded": False, "n": 0, "words": None, "trends": {}}}
+         # ---- end IP-3
 
 
 def clear() -> None:
@@ -80,18 +90,47 @@ def _build() -> dict:
         line = (summ.get("worth_off") or {}).get("words")
         out["worth"] = {"graded": True, "n": int(w.get("n") or 0), "words": str(w["words"]),
                         "line": str(line) if isinstance(line, str) and line else None}
+    # ---- IP-3 (Wave I-P): Trends' tag and the role trend
+    t, rl = summ.get("trend"), summ.get("role")
+    if t and t.get("words"):
+        head = (summ.get("trend_head") or {}).get("words")
+        out["trend"] = {"graded": True, "n": int(t.get("n") or 0), "words": str(t["words"]),
+                        "head": str(head) if isinstance(head, str) and head else None,
+                        "tags": {tag: _cell(rows, "trend", f"{tag}/all/all/1", raw=True) for tag in ("below", "above")}}
+    if rl and rl.get("words"):
+        out["role"] = {"graded": True, "n": int(rl.get("n") or 0), "words": str(rl["words"]),
+                       "trends": {tr: _cell(rows, "role", f"{tr}/all/all/1") for tr in ("up", "down")}}
+    # ---- end IP-3
     return out
 
 
+# ---- IP-3 (Wave I-P)
+def _cell(rows: list[dict], kind: str, grp: str, raw: bool = False) -> dict | None:
+    """One graded group as the screens read it: n, the miss against the projection vs the rest with its interval,
+    ``effect`` none / measured, and (``raw``) the change in points per game against before."""
+    r = next((x for x in rows if x.get("kind") == kind and x.get("grp") == grp), None)
+    if not r:
+        return None
+    lo, hi = _num(r.get("vs_rest_lo")), _num(r.get("vs_rest_hi"))
+    out = {"n": int(r.get("n") or 0), "vs_rest": _num(r.get("vs_rest")), "lo": lo, "hi": hi,
+           "effect": None if lo is None or hi is None else ("none" if lo <= 0 <= hi else "measured"),
+           "span": r["span"] if isinstance(r.get("span"), str) else None}
+    if raw:
+        x = next((y for y in rows if y.get("kind") == f"{kind}_raw" and y.get("grp") == grp), None)
+        out["raw"] = _num(x.get("mean_miss")) if x else None
+    return out
+# ---- end IP-3
+
+
 def summary() -> dict:
-    """{"corner": {"graded", "n", "words", "tiers"}, "worth": {"graded", "n", "words"}} — never raises; without the
-    record: graded False, words None."""
+    """{"corner": {"graded", "n", "words", "tiers"}, "worth": {"graded", "n", "words"}, "trend": {…}, "role": {…}} —
+    never raises; without the record: graded False, words None."""
     try:
         hit = _cache.get("grade")
         if hit is None:
             hit = _build()
             # no grade yet (the table appears with the nightly): look again in 10 minutes, not an hour
-            _cache.put("grade", hit, ttl=TTL_S if hit["corner"]["graded"] or hit["worth"]["graded"] else 600.0)
+            _cache.put("grade", hit, ttl=TTL_S if any(hit[k]["graded"] for k in hit) else 600.0)
         return copy.deepcopy(hit)
     except Exception:  # noqa: BLE001 - the interface: never raises (a missing table, a closed pool, anything)
         return copy.deepcopy(EMPTY)
@@ -106,5 +145,5 @@ def corner_grade(certainty: str | None, tier: str | None) -> dict | None:
 
 @router.get("/api/context/record")
 def record_route():
-    """How the context has done: the corner calls and "Worth a look" (``summary()``)."""
+    """How the context has done: the corner calls, "Worth a look", Trends' tag and the role trend (``summary()``)."""
     return summary()
