@@ -3685,6 +3685,25 @@ Sam Darnold), Washington (Jayden Daniels; Athan Kaliakmanis). Seattle's sentence
 Lock as the starter, but he did not drop back once in week 4; Sam Darnold took most of the dropbacks. Our projections
 assume the listing: Lock as the starter, Darnold as his backup."
 
+### v3.5: rest-of-season quarterbacks (IQ-1, hotfix, 2026-10-07; `scripts/analysis/iq1_horizon.py`)
+
+**The keep rule, written at 16:52 ET on 2026-10-07, before any candidate's number was read.** The horizon evaluation
+(`iq1_horizon.py horizon`): seasons 2021–2025, one fit per season and position (2016..S−1, production inputs); as of
+weeks W = 3, 5, 7, 9 the market week W+1 as the mart builds it and the later weeks W+2 … W+8 as the nightly builds a
+future week (the player's history as of W, the future opponent's points allowed as of W, home / away, the week number,
+no betting line, no injury report, the personnel of the team's newest played game — the `last_start` rule); scored
+against what happened, per season × W × week × position with ≥ 8 players who played, both house scorings; "pooled 2–8"
+= the mean over those cells with horizon 2–8. A candidate (or a combination named here) is **kept** when: its QB pooled
+2–8 MAE is lower than the base's in at least 4 of the 5 seasons, **and** its QB pooled 2–8 Spearman (mean over the
+seasons) is not lower, **and** RB, WR and TE pooled 2–8 MAE (mean over the seasons) are each not worse by more than
+0.01. The market week (horizon 1) must not change unless the candidate says it touches it. Candidates, each defined in
+the script before the run: **a** a future week's implied total and game total = the team's own mean over its games so
+far this season, shrunk toward the league's mean by 3 games (the spread follows); **b** the future opponent's points
+allowed shrunk toward the league average by 4 games; **c** the market week's betting-line effect (its projection
+minus the same row without the line) added to the player's later weeks; **d** the personnel inputs of the market week
+(the schedule's listed starter for it) carried into the later weeks instead of the newest played game's; and the
+combinations **ad** and **abd**. If several pass, the one with the largest QB pooled MAE gain ships.
+
 
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
