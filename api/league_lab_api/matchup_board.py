@@ -10,22 +10,24 @@
 * ``board(league, …)`` — ``GET /api/matchups/board``: every player at a position with a game this week, his projection
   and range in the league's scoring, and the context above; search by name, filter by game and tone, sort, paged.
 
-**The one tone** (``combine_tone``; docs/METRICS.md § "Matchups for everyone"). The defense read is the base; the corner
-read can only confirm it, move a neutral one, or cancel an opposite one — and only when the call is *likely* (his
-located targets lean 15+ points to one side). An *unclear* call (either outside corner) or no call never moves it, a
-"solid" corner (the middle half) never moves it, and without a defense read there is no tone (unknown is not neutral):
+**The one tone** (``combine_tone``; docs/METRICS.md § "Matchups for everyone") is **the defense's alone** (the PO's
+decision, Wave I-O fix round, after IO-1 graded the corner calls on 2,190 called receiver-games, 2025 and 2026 weeks
+1-4, as-of ranks: a likely shutdown corner -0.39 points against the rest (-1.39 to +0.72), a likely easy corner -0.02
+(-1.11 to +1.22) — no measurable effect). The corner is shown as information — his name, rank, quarter (``tier``) and
+how sure the call is — and moves nothing: ``cb["tone"]`` is always None, ``context["words"]`` is the defense's sentence
+and the corner's sentence is ``cb["words"]``. Without a defense read there is no tone (unknown is not neutral):
 
-    defense \\ likely corner   favorable    neutral     difficult    unclear / no call / unranked
-    favorable                 favorable    favorable   neutral      favorable
-    neutral                   favorable    neutral     difficult    neutral
-    difficult                 neutral      difficult   difficult    difficult
-    none                      none         none        none         none
+    defense \\ corner        any corner, any certainty, or none
+    favorable                 favorable
+    neutral                   neutral
+    difficult                 difficult
+    none                      none
 
 **What is in the projection** (``IN_PROJECTION``, asserted against ``league_lab.projections.BASE_FEATURES`` by
 api/tests/test_in3.py): the points the defense has allowed to his position (season, last 4 games, its rank, against the
 league's average) and the betting lines are inputs; who plays cornerback is not. The corner calls are a lean from where
-his targets go, checked on 2025 for which corner draws his targets (docs/METRICS.md § Cornerback matchups) — whether a
-tough corner lowers his points has not been graded.
+his targets go, checked on 2025 for which corner draws his targets (docs/METRICS.md § Cornerback matchups); graded as a
+forecast by IO-1 (``context_record``): no measurable effect — so it is context, and it moves no tone.
 """
 
 from __future__ import annotations
@@ -72,17 +74,20 @@ def clear() -> None:
     _cache.clear()
 
 NO_CALL_SHORT = {"too few targets with a direction to tell his side": "too few targets to tell his side"}
-CORNER_KIND = {"shutdown": "a shutdown corner", "target": "easy to throw on", "solid": "an average corner"}
-CORNER_KIND_SHORT = {"shutdown": "shutdown", "target": "easy", "solid": "average"}   # two corners in one sentence
+# ---- IO-4 fix round: the corner's quarter in plain words (information: graded, it made no measurable difference)
+CORNER_KIND = {"shutdown": "a top-quarter corner", "target": "a bottom-quarter corner", "solid": "a middle-half corner"}
+CORNER_KIND_SHORT = {"shutdown": "top quarter", "target": "bottom quarter", "solid": "middle half"}   # two in one sentence
 IN_PROJECTION = ("opp_allowed_std", "opp_allowed_l4", "opp_rank_std", "f_opp_allowed_diff", "league_allowed_avg")
-PROJECTION_WORDS = ("What the projection counts: the points each defense has allowed to the position (this season, the "
-                    "last 4 games and its rank) and the betting lines. Who plays cornerback is not in it: the corner "
-                    "call is context, a lean from where his targets go. Whether a tough corner lowers a receiver's "
-                    "points has not been graded yet.")
+# ---- IO-4 fix round (Wave I-O): the corner moves nothing (the PO's decision on IO-1's grade). The honesty line is the
+# projection's inputs + IO-1's graded sentence (``projection_words``); without the record, the inputs alone (they say the
+# corner is not in the projection and is shown for context — never "not graded yet").
+PROJECTION_HEAD = ("What the projection counts: the points each defense has allowed to the position (this season, the "
+                   "last 4 games and its rank) and the betting lines. Who plays cornerback is not in it: the corner "
+                   "call is a lean from where his targets go, shown for context.")
+PROJECTION_WORDS = PROJECTION_HEAD
 TONE_WORDS = ("Matchup = the defense against his position (favorable: one of the 10 that give up the most; difficult: one "
-              "of the 10 that give up the fewest), moved by the cornerback only when the call is likely: a shutdown "
-              "corner turns neutral into difficult, an easy one turns it favorable, and a corner against the defense's "
-              "read makes it neutral. An unclear call never moves it.")
+              "of the 10 that give up the fewest; the rest neutral). The cornerback is shown beside it and does not "
+              "move it.")
 POSITION_NOTE = {"TE": "Tight ends get the defense against the position only: they mostly draw linebackers and safeties.",
                  "RB": "Running backs get the defense against the position only: no cornerback call.",
                  "QB": "Quarterbacks get the defense against the position only: no cornerback call."}
@@ -90,14 +95,10 @@ POSITION_NOTE = {"TE": "Tight ends get the defense against the position only: th
 
 # ------------------------------------------------------------------------------------------------------- the tone
 def combine_tone(defense: str | None, corner: str | None, certainty: str | None) -> str | None:
-    """The one-word read of the two together (the table in the module's docstring)."""
-    if defense not in TONES:
-        return None
-    if certainty != "likely" or corner not in ("favorable", "difficult"):
-        return defense
-    if defense == "neutral" or defense == corner:
-        return corner
-    return "neutral"                                   # the two reads point opposite ways: they cancel
+    """The one-word read (the table in the module's docstring): the defense's alone — the corner and the certainty are
+    accepted and ignored (IO-4 fix round: graded, the corner call made no measurable difference)."""
+    del corner, certainty
+    return defense if defense in TONES else None
 
 
 # ------------------------------------------------------------------------------------------------------- the reads
@@ -156,8 +157,8 @@ def _corner_read(r: dict) -> dict:
         return (cards.last_name(str(name)) or str(name)) if short else str(name)
 
     def tag(c: dict, short: bool = False) -> str:
-        """'a shutdown corner, #3 of 74' · 'easy to throw on, #66 of 69' · 'an average corner, #30 of 74' · 'unranked'
-        (#1 = the hardest to throw on: the quarter's words carry the direction)."""
+        """'a top-quarter corner, #3 of 74' · 'a bottom-quarter corner, #66 of 69' · 'a middle-half corner, #30 of 74' ·
+        'unranked' (#1 = the hardest to throw on)."""
         if c.get("rank") is None:
             return "unranked"
         kind = (CORNER_KIND_SHORT if short else CORNER_KIND).get(str(c.get("label")), "ranked")
@@ -174,12 +175,15 @@ def _corner_read(r: dict) -> dict:
     else:
         why = str(m["certainty_words"]).split(": ", 1)[-1]
         words = "no corner call: " + NO_CALL_SHORT.get(why, why)
-    ctx = {"tone": m["tone"] if m["tone"] in TONES else None, "certainty": m["certainty"],
+    # ---- IO-4 fix round: information, not a tone — the corner moves nothing (``tone`` always None); ``tier`` = the
+    # quarter of the first corner named (shutdown = the top quarter, target = the bottom, solid = the middle half)
+    tier = first.get("label") if first is not None and first.get("rank") is not None else None
+    ctx = {"tone": None, "certainty": m["certainty"],
            "corner": first.get("name") if first else None, "corner_rank": first.get("rank") if first else None,
-           "shutdown": shutdown, "words": words}
+           "shutdown": shutdown, "tier": tier if tier in ("shutdown", "solid", "target") else None, "words": words}
     detail = {"n_ranked": n, "certainty_words": m["certainty_words"], "history": m["history"],
               "named": [{"name": c.get("name"), "side": c.get("side"), "rank": c.get("rank"), "label": c.get("label"),
-                         "words": c.get("words"), "tone": c.get("tone")} for c in named]}
+                         "words": c.get("words"), "tone": None} for c in named]}        # IO-4 fix: no tone
     return {"ctx": ctx, "detail": detail}
 
 
@@ -203,15 +207,10 @@ def _not_playing(season: int, week: int, defenses: list[str]) -> dict[str, dict[
 
 
 def _sentence(defense: dict, cb: dict | None, tone: str | None) -> str | None:
+    """The context's one sentence: the defense's only (IO-4 fix round); the corner's sentence is ``cb["words"]``."""
+    del cb, tone
     d = defense.get("words")
-    if cb is None:
-        return f"{d}." if d else None
-    c = cb["words"]
-    if not d:
-        return f"{c[0].upper()}{c[1:]}."
-    joint = ", but " if {defense.get("tone"), cb.get("tone")} == {"favorable", "difficult"} and cb["certainty"] == "likely" \
-        else "; "
-    return f"{d}{joint}{c}."
+    return f"{d}." if d else None
 
 
 def _week_frame(season: int, week: int) -> dict | None:
@@ -254,7 +253,7 @@ def _week_frame(season: int, week: int) -> dict | None:
             if r is not None and r.get("opponent") == opp and absent:
                 # a corner the call names is not expected to play: no call (never "faces a shutdown corner" who is out);
                 # the row's evidence says who is expected instead
-                cb = {"tone": None, "certainty": "no call", "corner": None, "corner_rank": None, "shutdown": False,
+                cb = {"tone": None, "certainty": "no call", "corner": None, "corner_rank": None, "shutdown": False, "tier": None,
                       "words": f"no corner call: {' and '.join(absent)}, named on his side, "
                                f"{'is' if len(absent) == 1 else 'are'} not expected to play"}
             elif r is not None and r.get("opponent") == opp:
@@ -262,7 +261,7 @@ def _week_frame(season: int, week: int) -> dict | None:
                 cb, detail[g] = read["ctx"], read["detail"]
             else:
                 cb = {"tone": None, "certainty": "no call", "corner": None, "corner_rank": None, "shutdown": False,
-                      "words": "no corner call: no depth chart for this game yet"}
+                      "tier": None, "words": "no corner call: no depth chart for this game yet"}
         tone = combine_tone(dread["tone"], cb["tone"] if cb else None, cb["certainty"] if cb else None)
         rows[g] = {"opponent": opp, "home": None if pd.isna(p["is_home"]) else bool(p["is_home"]),
                    "defense": dread, "cb": cb, "tone": tone, "words": _sentence(dread, cb, tone)}
@@ -275,19 +274,20 @@ def matchup_context(season: int, week: int, gsis_ids: list[str] | None = None) -
     """gsis_id -> {"opponent": "KC", "home": bool | None,
                    "defense": {"tone": "favorable" | "neutral" | "difficult" | None, "tough_rank": int | None,
                                "n_ranked": int | None, "words": str | None},          # defense vs his position
-                   "cb": {"tone": same | None, "certainty": "likely" | "unclear" | "no call",
+                   "cb": {"tone": None,                      # IO-4 fix round: the corner moves nothing
+                          "certainty": "likely" | "unclear" | "no call",
                           "corner": str | None, "corner_rank": int | None, "shutdown": bool,
-                          "words": str | None} | None,                               # wide receivers only
-                   "tone": same | None,          # the one-word read of the two together (combine_tone)
-                   "words": str | None}          # one sentence a screen can print as it is
+                          "tier": "shutdown" | "solid" | "target" | None,   # his quarter (top / middle half / bottom)
+                          "words": str | None} | None,               # wide receivers only: the corner's sentence
+                   "tone": same | None,          # the defense's tone (combine_tone: the defense's alone)
+                   "words": str | None}          # the defense's sentence, a screen prints it as it is
 
     Every QB / RB / WR / TE with a game in ``week`` (the week's projection rows, plus every receiver the cornerback mart
     lists) — or only ``gsis_ids``. Scoring-free (the marts' standard ranks: ``tough_rank`` 1 = the defense that gives up
-    the fewest points to the position; ``corner_rank`` 1 = the corner hardest to throw on). **The tone**: the defense's,
-    moved by the corner only on a likely call — a likely shutdown corner (difficult) or an easy one (favorable) moves a
-    neutral defense to its side, confirms the same side, and cancels the opposite side to neutral; an unclear call, no
-    call, a solid or unranked corner never moves it; no defense read, no tone. A corner the call names who is not
-    expected to play (the availability overlay, ``cards.corner_personnel``) makes it "no call". A player on a bye is
+    the fewest points to the position; ``corner_rank`` 1 = the corner hardest to throw on). **The tone** is the
+    defense's alone (IO-1's grade: the corner call made no measurable difference); the corner is information — who,
+    his rank and quarter, how sure the call is. A corner the call names who is not expected to play (the availability
+    overlay, ``cards.corner_personnel``) makes it "no call". A player on a bye is
     absent. Never raises: a missing mart or week gives {}."""
     try:
         wk = _week_frame(int(season), int(week))
@@ -386,12 +386,11 @@ def _record_words() -> str | None:
 
 
 def projection_words() -> str:
-    """PROJECTION_WORDS, its last sentence ("…has not been graded yet.") replaced by the record's when there is one."""
+    """The honesty line: PROJECTION_HEAD + IO-1's graded sentence on the corner calls; without it, PROJECTION_HEAD."""
     rec = _record_words()
     if not rec:
         return PROJECTION_WORDS
-    head = PROJECTION_WORDS.rsplit(" Whether a tough corner", 1)[0]
-    return f"{head} {rec if rec.endswith('.') else rec + '.'}"
+    return f"{PROJECTION_HEAD} {rec if rec.endswith('.') else rec + '.'}"
 # ---- end IO-4
 
 

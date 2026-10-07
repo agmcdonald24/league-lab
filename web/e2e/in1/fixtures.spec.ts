@@ -341,7 +341,8 @@ test("markdown documents: escaped first, only our tags", async () => {
   expect(md("a \uE0010\uE001 b [x](/y)", {})).not.toContain("\uE001");
 });
 
-test("home: a matchup's line is the defense's, plus the corner's only when the call is likely", async () => {
+// IO-4 fix round (Wave I-O; changed on purpose): the corner moves nothing (IO-1's grade) — the line is the defense's only
+test("home: a matchup's line is the defense's only, never the corner's", async () => {
   test.skip(test.info().project.name !== "desktop", "pure code: once is enough");
   const { homeWords } = await import("../../src/components/home/home");
   const ctx = (certainty: "likely" | "unclear" | "no call") => ({
@@ -352,7 +353,7 @@ test("home: a matchup's line is the defense's, plus the corner's only when the c
     },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  expect(homeWords(ctx("likely") as any)).toBe("Kansas City is in the middle against receivers. He is likely to face Trent McDuffie, a shutdown corner.");
+  expect(homeWords(ctx("likely") as any)).toBe("Kansas City is in the middle against receivers.");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   expect(homeWords(ctx("unclear") as any)).toBe("Kansas City is in the middle against receivers.");
 });

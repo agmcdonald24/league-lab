@@ -277,6 +277,13 @@ weeks (12–20 calls), so fewer requests reached the same effect.
   Starlette carries the variable into a sync route's worker thread; the one thread pool that fans out provider calls
   on a request (`anyleague.user_leagues`, league setup) now hands it on (`contextvars.copy_context`), so league setup
   cannot dodge it (tested: a 3-call share refuses `user_leagues` for the fixture user, a 1,000-call share counts every call of it).
+  **Fix round (review L3)**: `availability.contexts` (the roster contexts, reached from `decisions` through
+  `A.lineup_rows`) started its pool without the context; it carries it now. Every pool / thread in `api/` and `src/`:
+  carries the client — `availability.contexts`, `anyleague.user_leagues`, Starlette's threadpool (sync routes,
+  `run_in_threadpool` in DFS and the blog editor: anyio copies the context); does not need to — the writer threads of
+  `events`, `usage` and `outlook_store` (database writes, no provider call), `news.recent` (ESPN's player news, its own
+  bucket), `injury_feed.snapshot` (one ESPN copy for everyone). `test_every_pool_carries_the_client_or_says_why_not`
+  fails on a new pool that is neither.
 * **No client, no limit**: the nightly and the CLI (no middleware), the tests (the limiter is off there:
   `LEAGUE_LAB_RATE_LIMIT=off` in `api/tests/conftest.py`) and anything run outside a request see `CLIENT = None` and
   are limited by the global bucket only, exactly as before. With the limiter switched off on Render, the share is off

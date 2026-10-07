@@ -220,7 +220,8 @@
                 <span class="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 wide:mt-0" data-testid="board-corner">
                   <span class="text-xs text-ink-3 wide:hidden">Corner</span>
                   <span class="text-sm">{cornerShort(r)}</span>
-                  {#if r.context.cb?.shutdown}<span class="rounded bg-bad-soft px-1.5 py-0.5 text-[11px] font-semibold text-bad" data-testid="board-shutdown">Shutdown corner</span>{/if}
+                  <!-- ---- IO-4 fix round: the corner is information (graded: no measurable effect) — plain text, no colour -->
+                  {#if r.context.cb?.shutdown}<span class="text-xs text-ink-3" data-testid="board-shutdown">top-quarter corner</span>{/if}
                   <span class="text-[11px] font-semibold tracking-wide text-ink-3 uppercase">{r.context.cb?.certainty ?? "no call"}</span>
                 </span>
               {:else}

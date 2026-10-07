@@ -121,3 +121,44 @@ test("Stats: the role-change columns, sortable, in signed points of share", asyn
   await expect(dash).toHaveText("—");
   await expect(dash).toHaveAttribute("title", /Needs his last 2 games played in the window/);
 });
+
+// ---- IO-4 fix round (Wave I-O): the corner moves nothing (IO-1's grade). The honesty line as the screen shows it —
+// without the record (this database has no ops.context_grade: the projection's inputs alone, never "not graded yet")
+// and with it (IO-1's sentence, as context_record.corner_sentence writes it; the answer's projection_words swapped in)
+const HEAD =
+  "What the projection counts: the points each defense has allowed to the position (this season, the last 4 games and its rank) and the betting lines. Who plays cornerback is not in it: the corner call is a lean from where his targets go, shown for context.";
+const RECORD =
+  "Graded on 2025 and 2026 weeks 1–4 (Half PPR): receivers with a likely shutdown corner finished 0.4 points below the other receivers against their projection (−1.4 to +0.7; 99 games), those with a likely easy one level with them (−1.1 to +1.2; 79 games) — no measurable effect either way.";
+
+test("the board: the corner is information, the honesty line with and without the record", async ({ context, page }, info) => {
+  await api(context);
+  await page.goto("/matchups?league=ref:half");
+  await expect(page.getByTestId("board-row").first()).toBeVisible({ timeout: 30_000 });
+  const honest = page.getByTestId("board-honest");
+  await expect(honest).toContainText(HEAD);
+  await expect(honest).toContainText("The cornerback is shown beside it and does not move it.");
+  await expect(honest).not.toContainText(/not been graded|not graded yet/);
+  // no colour from the corner: no red badge; every row's tone is its defense's
+  await expect(page.getByTestId("board")).not.toContainText("Shutdown corner");
+  for (const row of await page.getByTestId("board-row").all()) {
+    const tone = await row.getAttribute("data-tone");
+    const def = await row.getByTestId("board-defense-chip").getAttribute("data-tone").catch(() => null);
+    if (def !== null) expect(tone).toBe(def);
+  }
+  await honest.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: join(SHOTS, `io4-honest-fallback-${info.project.name}.png`) });
+
+  // with the record: the same answers, projection_words = the inputs + IO-1's sentence
+  await context.route(/\/api\/matchups\/board\?/, async (route) => {
+    const u = new URL(route.request().url());
+    const body = (LIVE ? await (await route.fetch()).json() : recorded[keyOf(u)]?.body) as { projection_words: string } | undefined;
+    if (!body) return route.fulfill({ status: 404, json: { error: `not recorded: ${keyOf(u)}` } });
+    await route.fulfill({ status: 200, json: { ...body, projection_words: `${HEAD} ${RECORD}` } });
+  });
+  await page.reload();
+  await expect(page.getByTestId("board-row").first()).toBeVisible({ timeout: 30_000 });
+  await expect(honest).toContainText(`${HEAD} ${RECORD}`);
+  await honest.scrollIntoViewIfNeeded();
+  await noSideways(page);
+  await page.screenshot({ path: join(SHOTS, `io4-honest-record-${info.project.name}.png`) });
+});

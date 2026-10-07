@@ -92,9 +92,12 @@
   const starterCbs = $derived(cbs.filter((m) => m.is_starter));
   const benchCbs = $derived(cbs.filter((m) => !m.is_starter));
   // ---- IB-3: the call's tone (the API's; for an answer saved before it: the likely corner's quarter on a clear call)
-  const LABEL_TONE: Record<string, Tone> = { shutdown: "difficult", solid: "neutral", target: "favorable" };
-  const cbTone = (m: CbMatchup): Tone | null =>
-    m.tone !== undefined ? m.tone : m.call_status === "called" && m.cover_label ? (m.call_strength === "clear" ? (LABEL_TONE[m.cover_label] ?? null) : "neutral") : null;
+  // ---- IO-4 fix round (Wave I-O): the corner is information, never a tone — graded on 2,190 called receiver-games, a
+  // likely shutdown or easy corner made no measurable difference (IO-1). The chip says who is likely across in plain
+  // words (his quarter) and how sure the call is, in neutral ink.
+  const QUARTER: Record<string, string> = { shutdown: "Top-quarter corner", solid: "Middle-half corner", target: "Bottom-quarter corner" };
+  const cornerInfo = (m: CbMatchup): string =>
+    m.call_status !== "called" ? "No call" : certaintyOf(m) !== "likely" ? "Either corner" : m.cover_label ? (QUARTER[m.cover_label] ?? "Unranked corner") : "Unranked corner";
 </script>
 
 <!-- ---- IB-3: the tone chip (the signal: a word in the state color on its wash), the rank under it, small and grey -->
@@ -135,8 +138,11 @@
       yours={false}
     >
       {#snippet trailing()}
-        <!-- ---- IB-3: the tone of the corner(s) named, and the call's certainty beside it (never a stronger badge) -->
-        {@render toneChip(cbTone(m), certaintyOf(m))}
+        <!-- ---- IO-4 fix round: the corner named (his quarter) and the call's certainty, neutral (was the corner's tone) -->
+        <div class="text-right" data-testid="cb-info">
+          <div class="inline-block rounded-sm bg-raised px-2 py-0.5 text-sm font-semibold whitespace-nowrap text-ink-2">{cornerInfo(m)}</div>
+          <div class="mt-0.5 text-[11px] text-ink-3" data-testid="rank-small">{certaintyOf(m)}</div>
+        </div>
       {/snippet}
     </PlayerRow>
     <div class="space-y-2 border-t border-line px-3 py-3">
@@ -146,7 +152,7 @@
           {#each m.named_corners as k, i (i)}
             <li>
               <span class="text-ink-3">{i === 0 ? (certaintyOf(m) === "likely" ? "Likely across from him:" : "Either") : "or"}</span>
-              <strong>{k.name}</strong> <span class="text-ink-3">({k.side})</span>: {k.words}{#if k.tone}<span class="sr-only"> ({TONE_WORD[k.tone]})</span>{/if}
+              <strong>{k.name}</strong> <span class="text-ink-3">({k.side})</span>: {k.words}
             </li>
           {/each}
         </ul>
@@ -264,8 +270,9 @@
               <p class="text-xs leading-snug text-ink-3" data-testid="cb-caption">
                 Likely across from him = the outside corner on the side more of his targets go: a lean, not an assignment (nobody publishes who
                 covers whom). <strong>Likely</strong>: his targets lean 15 points or more to one side; <strong>unclear</strong>: either outside corner.
-                Difficult = a corner in the top quarter of {cbs.find((m) => m.cb_n_ranked)?.cb_n_ranked ?? "the"} starting corners since the start of last season
-                (#1 = the hardest to throw on, as the defense ranks); favorable = the bottom quarter.
+                Top quarter = among the quarter of {cbs.find((m) => m.cb_n_ranked)?.cb_n_ranked ?? "the"} starting corners hardest to throw on since the start of
+                last season (#1 = the hardest); bottom quarter = the easiest quarter. The corner is shown for context: it is not in the projection and does not move the
+                matchup.
               </p>
               {#if benchCbs.length}
                 <Expander title={`Your bench receivers (${benchCbs.length})`} testid="cb-bench">
@@ -286,7 +293,7 @@
           block
           text={"- **Favorable** means the defense gives up a lot to his position (one of the 10 that give up the most): a matchup you want. **Difficult** is one of the 10 that give up the fewest. The rest are neutral.\n" +
             "- **Ranks run one way on this screen: #1 is the toughest for the offense** — the defense that gives up the fewest points to the position, the corner hardest to throw on.\n" +
-            "- **Start the receiver whose likely corner is easier** when two options are close; don't bench a star for a tough corner: his targets matter more, and the projection already counts the defense. A call marked **unclear** could be either corner.\n" +
+            "- **The cornerback is context, not a reason to start or sit someone**: graded against past games, a likely shutdown or easy corner made no measurable difference to a receiver's points against his projection, so it moves no matchup here. A call marked **unclear** could be either corner.\n" +
             "- The side bar shows where his targets have gone since the start of last season (the offense's left, middle, right); the highlighted side is the one the named corner covers.\n" +
             `- A few weeks is a small sample: a defense's rank moves a lot early. Points here are in ${leagueName} scoring.`}
         />

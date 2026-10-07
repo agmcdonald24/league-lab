@@ -17,16 +17,18 @@ from .conftest import SCRUBS, needs_db
 BOARD = "/api/matchups/board"
 CTX_KEYS = {"opponent", "home", "defense", "cb", "tone", "words"}
 DEF_KEYS = {"tone", "tough_rank", "n_ranked", "words"}
-CB_KEYS = {"tone", "certainty", "corner", "corner_rank", "shutdown", "words"}
+CB_KEYS = {"tone", "certainty", "corner", "corner_rank", "shutdown", "tier", "words"}   # IO-4 fix round: + tier
 
 
 # ------------------------------------------------------------------------------------------- pure: the one tone
+# IO-4 fix round (Wave I-O, the PO's decision on IO-1's grade: no measurable effect): the tone is the defense's alone —
+# the same 42 cases, the four a likely corner used to move now the defense's (changed on purpose)
 @pytest.mark.parametrize(("defense", "corner", "certainty", "want"), [
-    # a likely call: confirms, moves a neutral defense, cancels the opposite read
+    # a likely call: never moves it (was: confirms, moves a neutral defense, cancels the opposite read)
     ("favorable", "favorable", "likely", "favorable"), ("favorable", "neutral", "likely", "favorable"),
-    ("favorable", "difficult", "likely", "neutral"), ("neutral", "favorable", "likely", "favorable"),
-    ("neutral", "neutral", "likely", "neutral"), ("neutral", "difficult", "likely", "difficult"),
-    ("difficult", "favorable", "likely", "neutral"), ("difficult", "neutral", "likely", "difficult"),
+    ("favorable", "difficult", "likely", "favorable"), ("neutral", "favorable", "likely", "neutral"),
+    ("neutral", "neutral", "likely", "neutral"), ("neutral", "difficult", "likely", "neutral"),
+    ("difficult", "favorable", "likely", "difficult"), ("difficult", "neutral", "likely", "difficult"),
     ("difficult", "difficult", "likely", "difficult"),
     # an unclear call (either outside corner), no call, an unranked corner: never moves it
     *[(d, c, "unclear", d) for d in MB.TONES for c in (*MB.TONES, None)],
@@ -103,6 +105,9 @@ def test_matchup_context_shape_and_tone_rule():
             assert set(c["cb"]) == CB_KEYS
             assert c["cb"]["certainty"] in ("likely", "unclear", "no call")
             assert isinstance(c["cb"]["shutdown"], bool)
+            assert c["cb"]["tone"] is None and c["cb"]["tier"] in ("shutdown", "solid", "target", None)   # IO-4 fix
+            assert c["words"] is None or c["cb"]["words"] is None or c["cb"]["words"] not in c["words"]
+        assert c["tone"] == c["defense"]["tone"]                                                       # IO-4 fix
         assert c["tone"] == MB.combine_tone(c["defense"]["tone"], (c["cb"] or {}).get("tone"), (c["cb"] or {}).get("certainty"))
         if c["defense"]["tough_rank"] is not None:
             assert 1 <= c["defense"]["tough_rank"] <= c["defense"]["n_ranked"]
@@ -229,9 +234,10 @@ def test_a_corner_who_is_not_expected_to_play_is_no_call(monkeypatch):
     MB.clear()
     after = MB.matchup_context(2026, 4, [row.gsis_id])[row.gsis_id]
     assert after["cb"] == {"tone": None, "certainty": "no call", "corner": None, "corner_rank": None, "shutdown": False,
+                           "tier": None,
                            "words": f"no corner call: {row.likely_cover_name}, named on his side, is not expected to play"}
     assert after["tone"] == after["defense"]["tone"]
-    assert "not expected to play" in after["words"]
+    assert "not expected to play" in after["cb"]["words"] and "not expected" not in (after["words"] or "")   # IO-4 fix
     MB.clear()
 
 

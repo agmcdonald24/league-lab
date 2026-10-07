@@ -175,3 +175,25 @@ tests/test_im5_dfs.py -q` · `uv run ruff check src app tests api` · `uv run py
 
 Measure one live unknown league's calls (the share's numbers rest on the PO's 12–20); a per-/48 share if many-address
 spending is ever seen; the role-change columns on the player card.
+
+## Fix round (branch `fix/IO4` from `integ/IO` `72d959b`)
+
+1. **The corner moves nothing** (the PO's decision on IO-1's grade). `combine_tone` = the defense's tone (signature
+   kept); `cb.tone` always None, `cb.tier` added (the quarter, so DFS's graded chip can still find its tier — IO-1's
+   `dfs.py:801` reads `cb.get("tone")`: it should read `{"shutdown": "difficult", "target": "favorable", "solid":
+   "neutral"}.get(cb.get("tier"))`, else the chip loses its graded words for ranked corners); `context.words` the
+   defense's sentence; the corner's words in plain quarters ("a top-quarter corner, #3 of 74"). Board: "top-quarter
+   corner" in grey (no red badge); My players' corner card: a neutral chip (Top-quarter / Middle-half / Bottom-quarter /
+   Unranked corner, Either corner, No call) + the certainty; How to read this and the caption reworded; the home's line
+   = the defense's sentence (`home.ts`, marked); the best-corners split carries a note (`research.COVER_SPLIT_NOTE`).
+   Honesty line without the record: "What the projection counts: … Who plays cornerback is not in it: the corner call
+   is a lean from where his targets go, shown for context."; with it: the same + IO-1's sentence. METRICS mb1.1,
+   INTERFACES § IN-3, the registry row `matchup_tone` → mb1.1, WORDS.
+2. **Review L3**: `availability.contexts` carries the context; every pool listed in SECURITY_PUBLIC § 13;
+   `test_every_pool_carries_the_client_or_says_why_not`, `test_the_roster_contexts_pool_carries_the_client`,
+   `test_starlettes_threadpool_carries_the_client`.
+3. Changed on purpose: `test_in3.py` (the 42-case tone table: the four a likely corner moved now the defense's; CB_KEYS
+   + tier; the not-expected corner's words in `cb.words`), `web/e2e/in1` (homeWords: the defense's only), `web/e2e/ib3`
+   (the corner card's `cb-info` chip, no `tone-chip`). Re-recorded: `web/fixtures/io4/api_io4.json`,
+   `web/fixtures/in3/api_in3.json` (live from the fixture API on the merged tree), the five board answers in
+   `web/fixtures/in1/api_in1.json`.

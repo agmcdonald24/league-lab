@@ -914,12 +914,14 @@ def roster_context(league_id: str, roster_id: int, week: int | None = None, *, h
 def contexts(league_id: str, roster_ids: Iterable[int], week: int | None = None, *, house: bool | None = None,
              workers: int = 4) -> dict[int, RosterContext | None]:
     """{roster id: context} for several rosters, read side by side (the house path's rows are one query each)."""
+    import contextvars  # ---- IO-4 fix round (review L3)
     from concurrent.futures import ThreadPoolExecutor
     rids = sorted({int(r) for r in roster_ids})
     if len(rids) <= 1:
         return {r: roster_context(league_id, r, week, house=house) for r in rids}
+    ctx = contextvars.copy_context()        # ---- IO-4 fix round: the request's client (provider_share) reaches each thread
     with ThreadPoolExecutor(max_workers=min(workers, len(rids))) as ex:
-        got = list(ex.map(lambda r: roster_context(league_id, r, week, house=house), rids))
+        got = list(ex.map(lambda r: ctx.copy().run(roster_context, league_id, r, week, house=house), rids))
     return dict(zip(rids, got, strict=True))
 
 
