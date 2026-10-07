@@ -69,7 +69,7 @@
           >
             {data.overall ?? "—"}
           </div>
-          <div class="mt-1 text-[11px] leading-tight text-ink-3">average of {shown}</div>
+          <div class="mt-1 text-[11px] leading-tight text-ink-3">{data.overall === null ? "no average yet" : `average of ${shown}`}</div>
         </div>
       {/if}
     </div>
@@ -79,7 +79,10 @@
     {:else if !data}
       <div class="mt-3 space-y-2" aria-label="Loading">{#each [0, 1, 2, 3, 4, 5] as i (i)}<div class="ll-skel h-5"></div>{/each}</div>
     {:else}
-      {#if data.words}<p class="mt-2 text-sm text-ink-2" data-testid="ratings-words">{data.words}</p>{/if}
+      {#if data.qualified === false}
+        <!-- not in the ranked group at all: one reason for every row (the rows keep their raw numbers) -->
+        <p class="mt-2 rounded-md bg-raised px-3 py-2 text-sm leading-snug text-ink-2" data-testid="ratings-words">{data.ratings[0]?.words ?? data.words}</p>
+      {/if}
       <ul class="mt-3 divide-y divide-line" data-testid="ratings-list">
         {#each data.ratings as r (r.key)}
           <li data-testid="rating" data-key={r.key}>
@@ -98,7 +101,7 @@
               >
               <span class="truncate text-right text-xs text-ink-3 tabular-nums" data-testid="rating-raw">{r.display}</span>
             </button>
-            {#if r.rating === null && open !== r.key}
+            {#if r.rating === null && open !== r.key && data.qualified !== false}
               <p class="-mt-1 pb-1.5 text-xs leading-snug text-ink-3" data-testid="rating-reason">{short(r)}</p>
             {/if}
             {#if open === r.key}

@@ -74,7 +74,7 @@
       </div>
       {#if game}
         <p class="mt-2 text-sm leading-snug text-ink-2" data-testid="card-game">
-          <span class="font-semibold text-ink">Week {game.week} {vs}</span>{#if game.kickoff}<span class="block text-ink-2 sm:inline"><span class="hidden sm:inline">&nbsp;·&nbsp;</span>{game.kickoff}</span>{/if}
+          <span class="font-semibold text-ink">Week {game.week} {vs}</span>{#if game.kickoff}<span class="block text-ink-2 {compact ? '' : 'sm:inline'}"><span class="hidden {compact ? '' : 'sm:inline'}">&nbsp;·&nbsp;</span>{game.kickoff}</span>{/if}
           {#if game.rank}<span class="block text-xs text-ink-3">{teamLabel(game.opponent)}: #{game.rank} of 32 vs {d.position} (1 = gives up the most)</span>{/if}
         </p>
       {/if}

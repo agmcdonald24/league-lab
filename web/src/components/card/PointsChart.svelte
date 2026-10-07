@@ -79,7 +79,7 @@
 </script>
 
 <section class="rounded-xl border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid={testid} aria-labelledby="{testid}-title">
-  <h2 id="{testid}-title" class="text-lg leading-tight font-bold">Points against the projection</h2>
+  <h2 id="{testid}-title" class="text-lg leading-tight font-bold">{proj && proj.weeks.length === 0 ? "Points by week" : "Points against the projection"}</h2>
   {#if failed}
     <p class="mt-2 text-sm text-ink-3">The game log did not load. Open the page again in a minute.</p>
   {:else if !games || !proj}
