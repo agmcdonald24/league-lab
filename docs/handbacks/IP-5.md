@@ -164,3 +164,11 @@ the horizon weeks the window prices again (MFL's power part ~0.3 s); the nightly
   (standings; starters when both reads are refused) and `_with_live`, `ESPNLeagues.league` (week, status),
   `YahooLeagues._records` / `_week_of`; listed with reasons in SECURITY_PUBLIC § 15.
 * The PO's call (listed Low): when everyone's budget is spent, every on-demand build is stale-only → uncached → CPU.
+
+## Fix round 2 (the PO's decision on the age bound; branch `fix2/IP5` from `integ/IP` e5c785b)
+
+* `STALE_MAX_S`: rosters and live scores **an hour on any day** (sleeper `rosters` / `matchups`, mfl `rosters` /
+  `live_scoring`, espn `rosters` / `schedule`, yahoo `roster` / `scoreboard`); `DEFAULT_MAX_S` an hour; the game-day
+  tightening (`GAME_DAY_MAX_S`, `game_day`) removed — nothing else read them; `HOLD_S` and `CONTEXT_HOLD_S` an hour.
+* Why: an outage must not turn into "busy" while a last good answer with its stamp exists (`test_f3`'s rule, unedited);
+  the M1 rule (stale noted, served to its requester, kept by nobody) is unchanged. The M1 test's bound step is 61 min.

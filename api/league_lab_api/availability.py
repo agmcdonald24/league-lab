@@ -751,7 +751,7 @@ CONTEXT_TTL_S = {"house": 600, "sleeper": 120}     # the query cache's 10 minute
 STATUS_OF_REASON = {"Out": "OUT", "Doubtful": "DOUBTFUL", "NFL injured reserve": "IR", "IR slot": "IR"}
 # INF-2 (Wave I-J): the memory budget's ``contexts`` region (was a dict cleared past 512 entries); the TTL per entry
 _ctx_cache = memo.region("contexts", ttl=CONTEXT_TTL_S["house"])
-CONTEXT_HOLD_S = 15 * 60.0       # ---- IP-5: a roster's last good context for a refused rebuild (fix round: 15 min, the game-day bound)
+CONTEXT_HOLD_S = 3600.0          # ---- IP-5: a roster's last good context for a refused rebuild (fix round 2: an hour)
 
 
 def clear_context() -> None:

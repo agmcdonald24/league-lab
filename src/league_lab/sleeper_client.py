@@ -347,7 +347,7 @@ class Sleeper:
 
     def _held_ok(self, hit: tuple | None, kind: str, now: float) -> bool:
         """Fix round (review M1): a held answer past its TTL is served only while younger than
-        ``provider_trouble.max_age`` (rosters 30 min, 15 on a game day; the directory 2 days …) and is noted ``stale``
+        ``provider_trouble.max_age`` (rosters and matchups an hour; the directory 2 days …) and is noted ``stale``
         (a cache built on it serves this requester and keeps nothing)."""
         if hit is None or not provider_trouble.held_usable("sleeper", kind, now - hit[1], self.wall()):
             return False
