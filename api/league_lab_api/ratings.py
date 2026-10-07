@@ -265,7 +265,7 @@ def player_projections(gsis: str, league: str, season: int | None = None, throug
     gsis = check_id(gsis)
     check_league(league)
     season = _season(season)
-    from .applib import cards                             # the card's own week (lazy: cards imports the world)
+    from .applib import cards  # the card's own week (lazy: cards imports the world)
     week = through if through is not None else (cards.decision_week(season) or 18)
     rows = pd.DataFrame()
     why = None
