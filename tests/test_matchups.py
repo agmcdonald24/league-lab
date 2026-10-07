@@ -404,7 +404,7 @@ def test_table_rows_and_numbers_behind_the_verdict():
 def test_page_reads_the_new_marts_and_one_projection():
     src = PAGE.read_text()
     for mart in ("mart_cb_matchups", "mart_cb_rankings", "mart_receiver_vs_cb", "mart_defense_position_profile",
-                 "mart_player_week_projections", "mart_defense_vs_position_current", "fct_player_game_league"):
+                 "mart_player_week_projections", "mart_defense_vs_position_current"):   # PO (Wave I-P): the best-corners split and its fct_player_game_league read are gone
         assert f"analytics.{mart}" in src, mart
     assert "mart_player_week_rankings" not in src          # the old formula stays on Rankings (round-2 convention 3)
     for retired in ("mart_matchup_cb_context", "mart_cb_coverage", "mart_cb_matchup_week", "heat_style"):
