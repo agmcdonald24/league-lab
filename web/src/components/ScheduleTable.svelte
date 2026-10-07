@@ -3,6 +3,7 @@
   // player card's `schedule` (the rest-of-season board's number for each week; "—" = no projection, never 0). The matchup
   // rank in words, one direction everywhere ("5th-fewest WR points allowed": lib/words.ts).
   import type { ScheduleRow } from "../lib/api";
+  import { pts1 } from "../lib/card"; // ---- IP-4 fix round: the API's rounding (the Projection section's "Week by week" line)
   import { teamLabel } from "../lib/theme";
   import { rankWords } from "../lib/words";
 
@@ -29,7 +30,7 @@
             <span class="text-ink-3">Bye</span>
           {/if}
         </td>
-        <td class="py-1.5 text-right font-semibold">{r.proj === null ? "—" : r.proj.toFixed(1)}</td>
+        <td class="py-1.5 text-right font-semibold">{pts1(r.proj)}</td>
       </tr>
     {/each}
   </tbody>

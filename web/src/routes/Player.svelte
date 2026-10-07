@@ -1,10 +1,9 @@
 <script lang="ts">
   import { ApiError, get, paths, peek, Unauthorized, type PlayerCard } from "../lib/api";
-  import { cardHeadLine, cardMissing, cardSections, howtoWords } from "../lib/card"; // IG-1: projLabel (IP-4: now in the head)
+  import { cardHeadLine, cardMissing, cardSections, howtoWords, pts1 } from "../lib/card"; // IG-1: projLabel (IP-4: now in the head)
   import { withContext } from "../lib/md";
   import { learnLeagueName } from "../lib/names.svelte";
   import { back, restoreScroll, route } from "../lib/router.svelte";
-  import { fmt } from "../lib/theme";
   import Expander from "../components/Expander.svelte";
   import GameLog from "../components/GameLog.svelte";
   import Md from "../components/Md.svelte";
@@ -124,7 +123,7 @@
                   <ul class="space-y-0.5 text-sm text-ink-2" data-testid="player-why-pieces">
                     {#each data.why.pieces as w (w.stat)}<li class="tabnum">{w.words}</li>{/each}
                   </ul>
-                  <p class="mt-1 text-sm text-ink-2">His projected stat line, each piece counted in {browsing ? refScoringLabel(league) : data.league_name} scoring: they add up to the {fmt.pts(data.why.points)}.</p>
+                  <p class="mt-1 text-sm text-ink-2">His projected stat line, each piece counted in {browsing ? refScoringLabel(league) : data.league_name} scoring: they add up to the {pts1(data.why.points)}.</p>
                 </Expander>
                 <!-- ---- end IE-2 -->
               {/if}
