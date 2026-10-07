@@ -31,8 +31,16 @@ chance is computed from the two distributions above (independent: a tier is a pr
 on a 400-level grid of each (exact up to the grid; ties split). Stated on the screen (``TIER_WORDS``) and in METRICS.
 
 **The cache** (``league_lab.memo`` region ``rankings``, 10 minutes, ≤ 64 entries; docs/DEPLOY.md § Memory): one entry
-per (the canonical scoring key ``research._ctx_key``, season, week, view, position) — never keyed by ``q``, ``limit``
-or ``offset`` (a filter on the cached frame). An entry is one position's ranked frame (≤ ~500 rows, ~0.1 MB).
+per (the canonical scoring key ``research._ctx_key``, where the tone comes from — "reference" for a reference key,
+"league" for a real league, so the two never share a frame of one scoring (review L3) —, season, week, view, position,
+the quarterbacks flagged "starter unclear") — never keyed by ``q``, ``limit`` or ``offset`` (a filter on the cached
+frame). An entry is one position's ranked frame (≤ ~500 rows, ~0.1 MB); one more holds the honest floor's sentence.
+
+**Fix round (Wave I-P)**: no tiers on the rest of the season (``SEASON_NO_TIERS``: its ranges are not graded); a
+quarterback ``starters.unclear`` flags (IP-1: his team's listed starter took no dropback in its newest game while
+another led them; both are flagged) keeps his place by projection, carries ``starter_unclear`` and is left out of the
+tiers; "Who should I start?" with one says the sentence and gives no call. The floor's coverage is read from the
+record (``floor_words``).
 """
 
 from __future__ import annotations
@@ -87,10 +95,21 @@ SEASON_ASSUMES = ("Projected points over the weeks left (weeks {first}–{last})
                   "him: no roster, no lineup and no cost considered. The range is 8 seasons in 10, the weeks read as "
                   "independent.")
 # the honest floor under every head-to-head answer (D6's grade, docs/METRICS.md § "The decision probability")
-START_FLOOR = ("How sure this is: the ranges are built to hold 8 weeks in 10 (through week 3 of 2026 they held 79 in 100); "
-               "graded on 4,895 start-or-sit pairs from 2024–2025, calls we put at 55–65% came true 58 times in 100. "
-               "Read anything under 65 as a lean, not a verdict.")
 START_MULTI = "The chance of being the highest of three or four is not graded yet; each pair's chance is."
+# ---- fix round (the PO's decisions, Wave I-P): no tiers on the rest of the season (its ranges are not graded); a
+# quarterback whose team's listed starter did not play its newest game is left out of the tiers and gets no call
+SEASON_NO_TIERS = "No tiers for the rest of the season: the season ranges have not been graded yet."
+UNCLEAR_CALL = "Starter unclear — no call."
+UNCLEAR_TIER = ("Starter unclear (the dashed edge): the schedule lists one quarterback and another took the snaps in the "
+                "team's last game, so a projection may be on the wrong man. Those two keep their place by projection and "
+                "are left out of the tiers.")
+# the floor's coverage, read from the record (About's grades: mart_projection_drift for the reference league, pooled over
+# the positions by player-weeks; else /api/status's odds_grades); the stamped sentence only when neither answers
+FLOOR_WITH = ("How sure this is: the ranges are built to hold 8 weeks in 10 ({held}); graded on 4,895 start-or-sit pairs "
+              "from 2024–2025, calls we put at 55–65% came true 58 times in 100. Read anything under 65 as a lean, not a "
+              "verdict.")
+FLOOR_STAMP = "through week 3 of 2026 they held 79 in 100"
+START_FLOOR = FLOOR_WITH.format(held=FLOOR_STAMP)   # the fallback: no record on this database
 START_ASSUMES = ("Each player's range this week, centred on his projection; teammates and players facing each other "
                  "move together, everyone else independently. The ranges are \"if he plays\".")
 CALL_WORDS = {"clear": "a clear call, not a sure one", "a lean": "close; either is fine",
@@ -399,11 +418,34 @@ def _season_frame(ctx: R.Ctx, season: int, week: int, pos: str) -> tuple[pd.Data
     return d[FRAME_COLS], win
 
 
+def _defense_source(ctx: R.Ctx) -> str:
+    """Where the week's tone comes from: "reference" (a reference key: the scoring-free mart, as the board) or "league"
+    (a real league: its own points allowed, ``matchup_board.league_defense``) — part of the cache key, so a reference
+    key and a real league of the same scoring never share a frame (review L3)."""
+    return "reference" if refleague.is_reference(ctx.league_id) else "league"
+
+
+def _starters_unclear(season: int, week: int) -> dict[str, dict]:
+    """IP-1's ``starters.unclear`` (gsis -> {team, listed, played, role, words}); {} without the module or on any failure."""
+    try:
+        from . import starters  # type: ignore[attr-defined]  # IP-1 (Wave I-P fix round)
+        u = starters.unclear(int(season), int(week))
+    except Exception:  # noqa: BLE001 - absent, broken or slow: never load-bearing
+        return {}
+    if not isinstance(u, dict):
+        return {}
+    keep = ("team", "listed", "played", "role", "words")
+    return {str(g): {k: v.get(k) for k in keep} for g, v in u.items()
+            if isinstance(g, str) and GSIS.match(g) and isinstance(v, dict) and isinstance(v.get("words"), str)}
+
+
 def ranked(ctx: R.Ctx, view: str, pos: str) -> tuple[pd.DataFrame | None, dict]:
-    """The ranked frame (rank, tier, tier_p) of one position and view, cached per canonical scoring key, season, week,
-    view and position (never by the search or the page)."""
+    """The ranked frame (rank, tier, tier_p, starter_unclear) of one position and view, cached per canonical scoring
+    key, where the tone comes from, season, week, view, position and the quarterbacks flagged "starter unclear" (a set
+    the database decides, never the request) — never by the search or the page."""
     season, week = int(ctx.season), ctx.week
-    key = ("rk", R._ctx_key(ctx), season, week, view, pos)
+    flagged = _starters_unclear(season, int(week)) if view == "week" and pos == "QB" and week is not None else {}
+    key = ("rk", R._ctx_key(ctx), _defense_source(ctx), season, week, view, pos, tuple(sorted(flagged)))
     hit = _cache.get(key)
     if hit is not None:
         return hit
@@ -418,8 +460,14 @@ def ranked(ctx: R.Ctx, view: str, pos: str) -> tuple[pd.DataFrame | None, dict]:
     d = d[d["proj_points"].notna()].copy()
     d = d.sort_values(["proj_points", "key"], ascending=[False, True]).reset_index(drop=True)
     d["rank"] = np.arange(1, len(d) + 1)
-    gs = [grid(predictive(r)) for r in d.to_dict("records")]
-    t, e = tiers(gs)
+    d["starter_unclear"] = [flagged.get(g) if isinstance(g, str) else None for g in d["gsis_id"]]
+    if view == "week":
+        # a flagged quarterback keeps his place by projection and stays out of the tiers (no distribution: no tier, and
+        # he never opens one) — his projection may belong to the other quarterback
+        gs = [None if r.get("starter_unclear") else grid(predictive(r)) for r in d.to_dict("records")]
+        t, e = tiers(gs)
+    else:                                   # the PO's decision: the season's ranges are not graded -> no tiers
+        t, e = [None] * len(d), [None] * len(d)
     d["tier"], d["tier_p"] = t, e
     out = (d, extra)
     _cache.put(key, out)
@@ -428,6 +476,51 @@ def ranked(ctx: R.Ctx, view: str, pos: str) -> tuple[pd.DataFrame | None, dict]:
 
 def clear() -> None:
     _cache.clear()
+
+
+FLOOR_DRIFT_SQL = """select d.season, max(d.last_week) as last_week,
+                            sum(d.coverage_80 * d.player_weeks) / nullif(sum(d.player_weeks), 0) as coverage_80,
+                            sum(d.player_weeks) as n
+                     from analytics.mart_projection_drift d
+                     join analytics.dim_league_season l on l.league_id = d.league_id
+                     where l.is_reference_league and l.is_current_season and d.weeks_scored > 0
+                       and d.coverage_80 is not null and d.player_weeks > 0
+                       and d.season = (select max(season) from analytics.mart_projection_drift)
+                     group by d.season"""
+
+
+def _held(cov, season, week) -> str | None:
+    c = WP._num(cov)
+    if c is None or not 0 < c <= 1 or WP._num(week) is None:
+        return None
+    return f"through week {int(week)} of {int(season)} they held {round(100 * c)} in 100"
+
+
+def floor_words() -> str:
+    """The honest floor with the 80% range's coverage from the record: About's grades (``mart_projection_drift``, the
+    reference league, pooled over the positions by player-weeks), else ``/api/status``'s ``odds_grades`` (starters,
+    season to date); the stamped sentence when neither answers. Kept in the ``rankings`` region (one key)."""
+    hit = _cache.get(("floor",))
+    if hit is not None:
+        return hit
+    held = None
+    try:
+        if not missing_relations(("mart_projection_drift", "dim_league_season")):
+            d = query(FLOOR_DRIFT_SQL)
+            if not d.empty:
+                held = _held(d["coverage_80"].iloc[0], d["season"].iloc[0], d["last_week"].iloc[0])
+    except Exception:  # noqa: BLE001 - the next source, then the stamp
+        held = None
+    if held is None:
+        try:
+            from league_lab import odds_grade
+            g = odds_grade.status(query) or {}
+            held = _held(g.get("coverage_80"), g.get("season"), g.get("through_week"))
+        except Exception:  # noqa: BLE001
+            held = None
+    words = FLOOR_WITH.format(held=held or FLOOR_STAMP)
+    _cache.put(("floor",), words)
+    return words
 
 
 # ------------------------------------------------------------------------------------------------ the routes
@@ -467,7 +560,9 @@ def rankings(league: str, *, position: str | None = None, view: str | None = Non
         return {**meta, "notice": "These rankings arrive with the next data refresh."}
     if vw == "week":
         meta["assumes"] = WEEK_ASSUMES.format(scoring=scoring)
+        meta["unclear_words"] = UNCLEAR_TIER if df["starter_unclear"].notna().any() else None
     else:
+        meta.update(tier_words=SEASON_NO_TIERS, tier_rule=None, tier_p=None)
         first = extra.get("from_week") or ctx.week
         last = extra.get("last_week") or first
         meta.update(from_week=int(first), last_week=int(last),
@@ -491,6 +586,8 @@ def rankings(league: str, *, position: str | None = None, view: str | None = Non
         row = {k: r.get(k) for k in ROW_KEYS}
         row["game_state"] = MB.game_state(r.get("kickoff_at"), r.get("is_final"), now) if r.get("kickoff_at") else None
         row["matchup"] = _matchup(r)
+        if vw == "week":
+            row["starter_unclear"] = r.get("starter_unclear") or None
         if vw == "season":
             row.update(ros_games=r.get("ros_games"), ros_points_per_game=r.get("ros_points_per_game"),
                        bye_weeks=[int(w) for w in (r.get("bye_weeks") or []) if WP._num(w) is not None])
@@ -507,8 +604,8 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
     want = _ids(ids)
     ctx = R.context(league, source)
     out = {"season": ctx.season, "week": ctx.week, "scoring": _scoring(ctx, league), "ids": want, "players": [],
-           "missing": [], "floor": START_FLOOR, "assumes": START_ASSUMES, "multi_note": None, "answer": None,
-           "started_note": None}
+           "missing": [], "floor": floor_words(), "assumes": START_ASSUMES, "multi_note": None, "answer": None,
+           "started_note": None, "starter_unclear": []}
     if ctx.week is None:
         return {**out, "notice": "The regular season is over."}
     have: dict[str, dict] = {}
@@ -524,9 +621,19 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
                       for g in want if g not in have]
     out["players"] = [{k: r.get(k) for k in ("gsis_id", "player_name", "position", "team", "headshot_url", "opponent",
                                              "is_home", "kickoff_at", "proj_points", "p10", "p25", "p50", "p75", "p90",
-                                             "rank", "tier")} for r in found]
+                                             "rank", "tier", "starter_unclear")} for r in found]
     if len(found) < H2H_MIN:
         return {**out, "notice": "Pick at least two players with a game this week."}
+    unclear = [r for r in found if r.get("starter_unclear")]
+    if unclear:
+        # the sentence first and no call: a flagged quarterback's projection may be the other quarterback's
+        out["starter_unclear"] = [{"gsis_id": r["gsis_id"], **r["starter_unclear"]} for r in unclear]
+        words = " ".join(str(r["starter_unclear"]["words"]).strip() for r in unclear)
+        out["answer"] = {"pick": None, "runner_up": None, "verdict": "no call", "p_vs_runner_up": None,
+                         "words": f"{words} {UNCLEAR_CALL}".strip()}
+        for p in out["players"]:
+            p.update(p_best=None, pct_best=None, vs={})
+        return out
     res = prob_best(found)
     for p in out["players"]:
         g = p["gsis_id"]
