@@ -1,6 +1,7 @@
 // The research screens' words and small sums (Wave G, G3). Words follow docs/WORDS.md: "expected points per game: what
-// his targets and carries are usually worth"; below expectation = due to pick up, above = due to cool off (IA-1: Andrew's
-// "below / above expectation" in place of "due / running hot").
+// his targets and carries are usually worth"; below / above expectation (IA-1: Andrew's words in place of "due / running
+// hot"). IP-3 (Wave I-P) graded the gap: the next week it closes in part, and the projection already expects that — so
+// the words describe what happened and send the reader to the projection, never "due" or "buy".
 import { fmt } from "./theme";
 
 export const NEAR = 0.5; // points per game: closer than this to his work is "about what his work is worth"
@@ -8,8 +9,9 @@ export const NEAR = 0.5; // points per game: closer than this to his work is "ab
 export function gapWords(gap: number | null | undefined): string {
   if (gap === null || gap === undefined) return "no expected points yet";
   // ---- IF-4 (the decision-quality review: no promise of regression): the observed gap, said as one
-  if (gap > NEAR) return `${fmt.pts(gap)} above what his opportunities suggest: an observed gap, not a forecast`;
-  if (gap < -NEAR) return `${fmt.pts(-gap)} below what his opportunities suggest: an observed gap, not a forecast`;
+  // ---- IP-3 (Wave I-P): graded — the projection already counts it (docs/METRICS.md § "Trends and the role trend")
+  if (gap > NEAR) return `${fmt.pts(gap)} above what his opportunities suggest: what happened, and his projection already counts it`;
+  if (gap < -NEAR) return `${fmt.pts(-gap)} below what his opportunities suggest: what happened, and his projection already counts it`;
   return "about what his work is worth";
 }
 
@@ -117,3 +119,11 @@ export function certaintyOf(m: { call_status: string | null; call_strength: stri
   return m.call_strength === "clear" ? "likely" : "unclear";
 }
 // ---- end IB-3
+
+// ---- IP-3 (Wave I-P): Trends' tag, graded (GET /api/trends `record` = /api/context/record's `trend`)
+/** The "How to read this" bullets for below / above expectation, in the words the grade allows: what happened, already
+ * in the projection — never "due", "buy" or "sell". */
+export const TREND_HOWTO_GAP =
+  "- **Below expectation** scores less than his opportunities suggest: his targets and carries usually bring more points. Graded on past weeks, players like him scored more the next week, about as much as their projection already expected: the gap is what happened, not a reason to buy on its own — look at his projection.\n" +
+  "- **Above expectation** scores more than his opportunities suggest (touchdowns, a big play). Players like him scored less the next week, again about as much as their projection expected: not a reason to sell on its own.\n";
+// ---- end IP-3

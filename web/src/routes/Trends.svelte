@@ -5,10 +5,10 @@
   // snaps, expected and actual points) and the reason in a sentence; filters for the view, the position and whose players. From 900 px the
   // picked player's detail sits on the right: his card, the two numbers as bars, his role alert, his last 3 games, his
   // points by week. GET /api/trends (mart_player_trend_tags + actual vs expected + role alerts).
-  import { researchPaths, type Trends, type TrendRow } from "../lib/api";
+  import { researchPaths, type TrendsGraded, type TrendRow } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
-  import { expectLine, gapWords, l3Season, NEAR, ownerWord, whoFilter, type Who } from "../lib/research";
+  import { expectLine, gapWords, l3Season, NEAR, ownerWord, TREND_HOWTO_GAP, whoFilter, type Who } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
   import { toTrends } from "../lib/shapes";
   import { openPane } from "../lib/pane.svelte"; // ---- IB-1: on a phone a row opens the research pane (the sheet)
@@ -29,7 +29,9 @@
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
-  const r = new Remote<Trends>(toTrends);
+  const r = new Remote<TrendsGraded>(toTrends);
+  // ---- IP-3 (Wave I-P): what the tag has meant for the next game (the record's grade; absent without the record)
+  const graded = $derived(r.data?.record?.graded ? r.data.record : null);
   $effect(() => r.load(researchPaths.trends(league), onauth));
 
   const ctx = $derived({ league, team });
@@ -112,6 +114,7 @@
         Nobody here scores far from what his work is worth yet.
       {/if}
     {/snippet}
+    {#if graded?.head}<p class="text-sm leading-snug text-ink-3" data-testid="trends-record">{graded.head}</p>{/if}
   </ScreenHead>
 
   {#if r.error}
@@ -242,8 +245,8 @@
       <div class="text-base leading-snug">
         <Md
           block
-          text={"- **Below expectation** scores less than his opportunities suggest: his targets and carries usually bring more points. That is what happened, not a forecast — the gap may close or not; a buy needs a price, which this screen does not have.\n" +
-            "- **Above expectation** scores more than his opportunities suggest (touchdowns, a big play). It may not last; whether to sell depends on what he would fetch.\n" +
+          text={TREND_HOWTO_GAP +
+            (graded?.words ? `- **Graded**: ${graded.words}\n` : "") +
             "- **Points suggested by his past opportunities** (expected points per game) is what his targets and carries are usually worth, in your league's scoring; the bar is points per game minus that.\n" +
             "- **The sentence under each name** says what his work is worth, what he scores, and one reason the numbers show: touchdowns against red-zone chances, a quarterback change, his share of his team's targets or carries moving. No reason means nothing stands out yet.\n" +
             "- **Tgt/g, Car/g**: targets and carries per game over his last 3 games, the season in brackets. **Snaps**: his share of his team's plays over the last 3. **Exp, Pts**: expected and actual points per game.\n" +

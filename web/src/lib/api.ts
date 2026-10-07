@@ -2519,3 +2519,23 @@ export interface LeagueOutlookMoved extends Omit<LeagueOutlook, "power" | "outlo
 }
 export const outlookPowerPath = (league: string, team: number | null) => `${outlookPath(league, team)}&part=power`;
 // ---- end IO-2
+// ---- IP-3 (Wave I-P): what Trends' "below / above expectation" and the role chips have meant for the next game
+// (api/league_lab_api/context_record.py `summary()`: `trend` and `role`; GET /api/trends carries `record` = `trend`)
+export interface GradedCell {
+  n: number;
+  vs_rest: number | null; // the next game's miss against the projection minus the rest's (points)
+  lo: number | null;
+  hi: number | null;
+  effect: "none" | "measured" | null;
+  span?: string | null;
+  raw?: number | null; // points in the next game minus his points per game before (the gap closing, raw)
+}
+export interface TrendRecord {
+  graded: boolean;
+  n: number;
+  words: string | null;
+  head: string | null; // Trends' line under its title
+  tags: { below?: GradedCell | null; above?: GradedCell | null };
+}
+export type TrendsGraded = Trends & { record?: TrendRecord | null };
+// ---- end IP-3
