@@ -27,6 +27,15 @@
     if (!g0) get<Games>(p).then((d) => gsis === id && (games = d)).catch(() => gsis === id && (games = { games: [] }));
   });
 
+  // ---- the record's sentence on what "role up / down" has meant for the weeks after (IP-3's `summary()["role"]`,
+  // GET /api/context/record): shown only when graded; its absence (an older server, a record not built) shows nothing
+  let record = $state<string | null>(null);
+  $effect(() => {
+    get<Record<string, { graded?: boolean; words?: string | null } | undefined>>("/api/context/record")
+      .then((r) => (record = r?.role?.graded && r.role.words ? r.role.words : null))
+      .catch(() => (record = null));
+  });
+
   const played = $derived((games?.games ?? []).filter((g) => g.played && (g.season_type ?? "REG") === "REG" && g.season === season).sort((a, b) => a.week - b.week));
   const val = (g: Games["games"][number], k: Key) => (g[k] as number | null | undefined) ?? null;
   const has = (k: Key) => played.some((g) => val(g, k) !== null && (k !== "carry_share" || (val(g, k) ?? 0) > 0) && (k !== "target_share" || position !== "QB"));
@@ -69,5 +78,6 @@
       testid="card-role-chart"
     />
     <p class="mt-1 text-xs leading-snug text-ink-3">Shares of his team's targets, carries and offensive plays in each game he played.</p>
+    {#if record}<p class="mt-1.5 border-t border-line pt-1.5 text-xs leading-snug text-ink-2" data-testid="card-role-record">{record}</p>{/if}
   {/if}
 </section>

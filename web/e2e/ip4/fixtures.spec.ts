@@ -267,3 +267,17 @@ test("the pane: the head, the ratings and the first chart, then the sections", a
   }
   void info;
 });
+
+test("the role chart carries the record's sentence when it is graded (IP-3's summary()[\"role\"]), nothing when absent", async ({ context, page }) => {
+  await api(context);
+  await openCard(page, P.wr.id);
+  await expect(page.getByTestId("card-role-chart")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("card-role-record")).toHaveCount(0); // no record on this copy: nothing shown
+  const words = "A hand-built sentence: after a role change, the share held over the next two games (n = 812).";
+  await context.route(/\/api\/context\/record/, (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ corner: { graded: false, n: 0, words: null }, role: { graded: true, n: 812, words } }) }),
+  );
+  await openCard(page, P.qb.id);
+  await expect(page.getByTestId("card-role-record")).toHaveText(words, { timeout: 30_000 });
+});
+
