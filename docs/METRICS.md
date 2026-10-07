@@ -4113,6 +4113,9 @@ game, intervals from bootstraps, every group against the rest and never against 
   (`calibration.oof_rows(..., ranges=False)`, today's `MODEL_VERSION` v3.3, fitted on 2016 up to the season before; not
   stored); 2026 `ops.projections` (weeks 1–3 the `refit` labelled in cx1.0 — fitted after those weeks kicked off — week 4
   the kickoff board). Two model versions are mixed across seasons: read the per-season rows below with that in mind.
+  Sanity: the projections' miss over every graded player-game, by season 2021 … 2026 — mean absolute 4.26, 4.11, 3.99,
+  4.11, 3.97, 4.20; mean −0.10, −0.18, −0.05, +0.02, −0.15, +0.13: the in-memory 2021–2022 fit is in line with the stored
+  seasons.
 * Actual points: Half PPR priced from the stat line exactly as the projection's (no 2-point conversions); so the gap
   here is Trends' gap in Half PPR, not each league's scoring.
 
