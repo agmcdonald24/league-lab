@@ -134,7 +134,7 @@ h1, i0c, ia2, ie1, ie2, ig1, ig3, ii0, ii1, ii5, ik3, il4, in5): every failure o
 `test_ig2.py`** (`test_what_changed_lists_a_brief_with_its_source`, `…without_the_store_is_if4s`,
 `test_the_matchup_evidence_cites_the_event`) — they fail identically on `main`'s code (checked out over the tree;
 their answers carry today's real `checked_at`, so the date likely turned them red after midnight UTC); not mine. Root suite
-(`check_root.sh`): 1,552 passed, 4 failed, 0 new. ruff clean; the copy standard clean; `npm run lint` (193 files, 0)
+(`check_root.sh`, at the end): 1,553 passed, 4 failed, 0 new. ruff clean; the copy standard clean; `npm run lint` (193 files, 0)
 and `npm run build` clean (no web file changed). No e2e: no screen changed.
 
 ## The PO lines I need
