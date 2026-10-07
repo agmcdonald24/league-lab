@@ -198,6 +198,54 @@ def run_pt(rows: pd.DataFrame, leagues: dict) -> None:
                   f"{(bw['proj'] - bw['actual']).abs().mean():.3f} → {(aw['proj'] - aw['actual']).abs().mean():.3f}")
 
 
+def run_pt_ranges(rows: pd.DataFrame, seasons: list[int]) -> None:
+    """pt1.0's ranges, reported (the rule does not read them): per S, the production QB model (``fit_position``, both
+    house scorings) ranges the model's line and pt1.0's line (``predict_position(..., lines=)``, production's path);
+    coverage and interval score of each against the components' actual, paired by season (``experiments.paired_v31``)."""
+    s_ = get_settings()
+    with psycopg.connect(s_.pipeline_dsn()) as conn:
+        conn.read_only = True
+        leagues = P.league_scorings(conn)
+        alls = P.available_seasons(conn)
+        frame = P.load_frame(conn, [x for x in alls if x <= max(seasons)])
+    first = min(alls)
+    qb = rows[rows["position"] == "QB"]
+    base_parts, alt_parts = [], []
+    for s in seasons:
+        t0 = time.monotonic()
+        train = frame[(frame["season"] >= first) & (frame["season"] < s)]
+        test = frame[(frame["season"] == s) & (frame["position"] == "QB")].reset_index(drop=True)
+        m = P.fit_position(train, "QB", leagues)
+        base = P.predict_position(m, test, leagues)
+        a, b, n = pass_td_blend(qb, s)
+        first_l = next(iter(leagues))
+        ln = base[base["league_id"] == first_l].reset_index(drop=True)
+        team = ln.merge(test[["gsis_id", "week", "implied_team_total"]].assign(week=lambda d: d["week"].astype(int)),
+                        on=["gsis_id", "week"], how="left")["implied_team_total"] * ln["proj_attempts"] / PT_ATTEMPTS
+        ln["proj_passing_tds"] = np.where(team.notna(), np.clip(a * ln["proj_passing_tds"] + b * team, 0, None),
+                                          ln["proj_passing_tds"])
+        alt = P.predict_position(m, test, leagues, lines=ln)
+        ok = test[[f"out_{c}" for c in P.ALL_COMPONENTS]].notna().all(axis=1) & test["played"].astype(bool)
+        for frame_, parts in ((base, base_parts), (alt, alt_parts)):
+            acts = []
+            for lid, (_, sc) in leagues.items():
+                acts.append(pd.DataFrame({"gsis_id": test.loc[ok, "gsis_id"].to_numpy(), "week": test.loc[ok, "week"].astype(int).to_numpy(),
+                                          "league_id": lid, "actual": P.price(test[ok], sc, "out_").to_numpy()}))
+            parts.append(frame_.merge(pd.concat(acts), on=["gsis_id", "week", "league_id"], how="inner"))
+        log.info("pt ranges %s: a %.3f b %.4f (%s rows), %.0f s", s, a, b, n, time.monotonic() - t0)
+    sb = E.score_v31(pd.concat(base_parts, ignore_index=True))
+    sa = E.score_v31(pd.concat(alt_parts, ignore_index=True))
+    pr = E.paired_v31(sb, sa)
+    print("\n### pt1.0's ranges (reported; not the rule)\n")
+    print("| league | season | Δ MAE | Δ interval score 80% | Δ interval score 50% | coverage 80% before → after | coverage 50% before → after |")
+    print("|---|---|---|---|---|---|---|")
+    for r in pr.itertuples():
+        print(f"| {r.league_id[-6:]} | {r.season} | {r.delta_mae:+.3f} | {r.delta_interval_score:+.4f} | {r.delta_interval_score_50:+.4f} | "
+              f"{r.baseline_coverage_80:.3f} → {r.coverage_80:.3f} | {r.baseline_coverage_50:.3f} → {r.coverage_50:.3f} |")
+    g = pr.groupby("league_id")[["delta_interval_score", "delta_interval_score_50", "baseline_coverage_80", "coverage_80"]].mean()
+    print("\nmeans by league:\n" + g.round(4).to_string())
+
+
 # ------------------------------------------------------------------------------ st1.0
 TEAM_GAME_SQL = """select season, week, team, listed_qb_id, starting_qb_id, is_played from intermediate.int_pn_team_game
                    where season >= 2016 order by team, season, week"""
@@ -280,7 +328,7 @@ def run_st(rows: pd.DataFrame, before: pd.DataFrame, leagues: dict) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("candidate", choices=["rt", "pt", "st"])
+    ap.add_argument("candidate", choices=["rt", "pt", "pt-ranges", "st"])
     ap.add_argument("--rows", type=Path, required=True)
     ap.add_argument("--rows-early", type=Path, default=None)
     ap.add_argument("--before", type=Path, default=None)
@@ -296,6 +344,8 @@ def main() -> None:
         run_rt(rows, leagues)
     elif args.candidate == "pt":
         run_pt(rows, leagues)
+    elif args.candidate == "pt-ranges":
+        run_pt_ranges(rows, [2023, 2024, 2025])
     else:
         if args.before is None:
             raise SystemExit("--before is required for st")

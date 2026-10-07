@@ -3528,8 +3528,10 @@ MAE here is the two house scorings averaged (the dynasty prices a passing TD at 
 league's 5.4. pt1.0 by league: the reference league 5.407 → 5.350, the dynasty 7.586 → 7.492; by role: projected starters
 (≥ 20 attempts, 2,672 player-weeks a scoring) 7.07 → 6.98, the rest (658) 4.20 → 4.22. On 2026 weeks 1–3 refit with
 v3.0's inputs (information, not judged): 7.46 → 7.43. Spearman per season +0.026 / +0.019 / +0.011 / +0.007 / +0.010.
-The interval score and coverage are not part of the rule (D1) and were not re-measured with refitted quantile models; in
-production the new line is ranged by the same models through the frozen-line path (the line is one of their inputs).
+The ranges are not part of the rule (D1); reported on 2023–2025 the production way (`fit_position` per season, the new
+line ranged by the same quantile models through `predict_position(..., lines=)`; `ip1_qb_candidates.py pt-ranges`):
+the 80% interval score is unchanged (the reference league −0.0027, the dynasty +0.0016), the 50% one sharper (−0.010 /
+−0.016), coverage 80% 0.757 → 0.757 / 0.756 → 0.762, coverage 50% within 0.012 of before in every season.
 
 rt1.0 removes the bias and costs accuracy every season: the board is graded on the absolute miss, which the median
 minimises, and a quarterback's rushing-TD count is a skewed count — raising every mean moves most QBs away from what they
@@ -3564,7 +3566,11 @@ it is on). Seed rows: none (the harness rows live in the scripts' output, not `f
   (B5) and keep their rows, so **week 5 is what moves**. Week 5, the reference league: Josh Allen 20.67 → 21.87 (passing
   TDs 1.15 → 1.45: his history puts his touchdowns on the ground), Dak Prescott 22.17 → 20.95 (2.33 → 2.02), Jared Goff
   21.39 → 20.24, Matthew Stafford 20.88 → 20.07, Drake Maye 20.14 → 18.99; the week's order against the switch off,
-  rank correlation 0.98 (dynasty 0.97). The full `project` run: § STATUS / the hand-back.
+  rank correlation 0.98 (dynasty 0.97). A full `project` on this database (12 min on the shared box; "pt1.0 QB passing
+  TDs: a = 0.035 … b = 0.0637 … on 2021 fitting rows (2023-2025); 465 QB lines moved"): week 5's QB rows carry v3.4 and
+  equal the isolated run to the cent; frozen weeks 1–4 moved 0 cells (4,856 house rows, 2,396 lines); the nightly's
+  projection-marts selection with `assert_house_projections_are_the_nfl_wide_rows`, `assert_projection_ranges_price_the_lines`
+  and the two freeze tests: PASS 147, WARN 0.
 
 #### The drift sets each week against its own model (`mart_projection_drift`)
 
