@@ -405,6 +405,11 @@ def apply_to_rows(rows: pd.DataFrame, *, build_as_of: datetime | None = None, pl
     rows = rows.copy()
     for c in ("chip", "why"):
         rows[c] = None
+    # ---- IP-5: a frame with no status at all reads report_status as float64 (all NaN); writing "Questionable" into it
+    # was a TypeError (a 500 on an MFL league's week odds with the overlay on). The same values, as objects
+    if "report_status" in rows and rows["report_status"].dtype.kind == "f":
+        rows["report_status"] = rows["report_status"].astype(object)
+    # ---- end IP-5
     gs = [g for g in rows["gsis_id"] if isinstance(g, str)]
     sleeper_of = {g: str(s) for g, s in zip(rows["gsis_id"], rows["sleeper_player_id"], strict=False)
                   if isinstance(g, str) and isinstance(s, str)}

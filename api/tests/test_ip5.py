@@ -468,3 +468,19 @@ def test_the_outlook_keeps_nothing_built_while_a_provider_failed(client, monkeyp
     ok = client.get("/api/league/outlook?league=mfl:70587&team=1&part=power")
     assert ok.status_code == 200 and len(O._cache) == 1 and len(ok.json()["power"]["rows"]) == 12
     print("refused build answered", r.status_code)
+
+
+def test_the_overlay_writes_a_status_into_a_frame_that_had_none():
+    """Seen while timing MFL with the overlay on (a 500 on main too): a roster frame whose report_status is all NaN
+    (float64) could not take "Questionable"."""
+    import numpy as np
+
+    from .test_in5 import morning
+    rows = morning()
+    rows["report_status"] = np.nan
+    rows["gsis_id"] = [f"00-00{i:05d}" for i in range(len(rows))]
+    g = rows.loc[(rows["role"] == "starter") & ~rows["is_empty_slot"].astype(bool), "gsis_id"].iloc[0]
+    overlay = {g: {"code": "QUESTIONABLE", "status": "Questionable", "source": "ESPN", "as_of": None, "fetched_at": None,
+                   "note": "ankle", "cannot_play": False, "flagged": True}}
+    out, meta = availability.apply_to_rows(rows, overlay=overlay)
+    assert out.loc[out["gsis_id"] == g, "report_status"].iloc[0] == "Questionable" and meta["applied"] == 1
