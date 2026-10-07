@@ -48,7 +48,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   happened, dbt var `pn_starter_from_play`, off) dropped. `mart_projection_drift` now sets each week against the
   backtest of the model that made it (QB: 6.52 against 5.86). Found: nflverse's schedule keeps stale projected starters
   (33 team-games in 2024; SEA weeks 3–5 of 2026 list Lock while Darnold plays). docs/METRICS.md § "v3.4: the
-  quarterback weak spot"; `scripts/analysis/ip1_qb_diagnosis.py`, `ip1_qb_candidates.py`; docs/handbacks/IP-1.md. Fix
+  quarterback weak spot"; `scripts/analysis/ip1_qb_diagnosis.py`, `ip1_qb_candidates.py`; docs/STATUS.md § "Wave I-P". Fix
   round: **st1.1**, a data rule for who starts (the listing unless a repeated listing's QB, available and dropback-less,
   watched one other QB lead two games), judged on identification accuracy: fixed 11 of 49 stale listings (needed 60%),
   broke 3 (allowed 1.8) — **not shipped** (dbt var `pn_starter_stale_rule`, off); the "starter unclear" label is described

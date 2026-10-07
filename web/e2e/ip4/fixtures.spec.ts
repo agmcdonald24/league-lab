@@ -2,8 +2,8 @@
 // headline number with its range, his value), the ratings (percentiles with a stated minimum sample; a dash and the
 // reason under it; the overall = the plain mean of the ratings shown), the points-against-the-projection chart (tap,
 // keyboard, "Show the numbers"), the role chart (toggles), and every section the card had. A WR, an RB, a QB, a rookie
-// with two games, a kicker (no ratings: the card still stands) and a defense (hand-built from the kicker's card: the
-// API has no defense card — see docs/handbacks/IP-4.md); the pane. Phone at 375, desktop at 1300, dark and light;
+// with two games, a kicker (no ratings: the card still stands) and a defense (found by search: the API's own
+// card since the fix round — docs/STATUS.md § "Wave I-P", IP-4); the pane. Phone at 375, desktop at 1300, dark and light;
 // screenshots (JPEG, rule 12) into docs/handbacks/ip4/ (SHOTS_IP4) when set, else e2e/.out.
 //
 // Two modes, as e2e/in3. Default: the answers come from web/fixtures/ip4/api_ip4.json (recorded from the fixture API,

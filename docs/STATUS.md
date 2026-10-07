@@ -13161,3 +13161,1061 @@ spending is ever seen; the role-change columns on the player card.
    (the corner card's `cb-info` chip, no `tone-chip`). Re-recorded: `web/fixtures/io4/api_io4.json`,
    `web/fixtures/in3/api_in3.json` (live from the fixture API on the merged tree), the five board answers in
    `web/fixtures/in1/api_in1.json`.
+
+## Wave I-P (Iteration 26)
+
+### PO merge — Wave I-P, 2026-10-06/07 (Tuesday 22:05 – Wednesday 02:15 ET, overnight; Andrew asleep: the quarterback number, rankings for everyone, the grades Trends owed, the player card, robustness)
+
+* **Why**: Wave I-O went live at 22:10 (below) and Andrew, 22:05: "ok. good lets keep this moving with an overnight
+  push please." — the content left to the PO. The PO's list: (1) the home page said quarterbacks were "our weak
+  spot" on four weeks — find out whether that is true and fix what the harness lets us keep; (2) the one screen every
+  fantasy site has and this one did not: rankings anyone can open, and "Who should I start?"; (3) Wave I-O graded
+  the corner call and it failed — Trends' "below / above expectation" and the role chips made the same kind of claim
+  ungraded; (4) the player page was a stack of text (Andrew, twice: "player pictures and real charts"); (5) the
+  robustness items the last two reviews left (a refused provider read cached as data, MFL's cold load, the "best
+  corners" look-ahead split) and player pages that share. The brief is `/home/claude/waveIP/BRIEF.md` in the sandbox
+  (not in the repo).
+* **Wave I-O verified live first** (Tuesday 22:10 ET, the browser pane, `/api/health` on `e4b5eec`): My Week says
+  "Start M. Washington ahead of Jefferson and Croskey-Merritt for now."; League of Scrubs shows title odds (his team 49 % for the playoffs, 13 % for the title) and the
+  Share link's page carries `og:title` "League of Scrubs: power rankings, week 5"; `/api/context/record` answers
+  `graded: false` (the record's tables arrive with the nightly); the editor's routes are 404 (`LEAGUE_LAB_EDITORS` is
+  not set); MFL's power part 4.8 s cold; the process at 235 MB of the 2 GB.
+* **How it ran**: five Opus devs in one message from `main` `e4b5eec` (the lighter test rule: each dev its own tests
+  and the test files of what it edited, the PO the full suites on the merged tree; IP-1 and IP-3 each the only
+  writer of a full database copy, IP-2 / IP-4 / IP-5 read-only); merged on `integ/IP` (CHANGELOG / WORDS / METRICS /
+  the registry kept both; `lib/api.ts` rebuilt as main + each branch's appended block; `main.py`'s shell: the player
+  card case, then `/rankings`, both under IP-5's robots rule); **an independent review** of the merged tree (a sixth
+  Opus agent that wrote none of it: nothing Critical or High, two Mediums, four Lows — docs/SECURITY_PUBLIC.md § 16);
+  a fix round by all five on its findings and on the PO's decisions from the grades (IP-1 a second round for the
+  "Starter unclear" flag IP-2's screen reads); the suites again; QA.
+* **What the grades found** (every number is in docs/METRICS.md; nothing here is rounded in our favour):
+  * **Quarterbacks are not a measured weak spot — the home page compared two different models.** "6.5 points off,
+    against 5.4 in past seasons" set weeks 1–3 (made by v2.0) against v3.0's backtest. Against v2.0's own first three
+    weeks of 2021–2025 the gap is **+0.54 (95 % −0.45 to +1.62; 112 QB-games)**: not distinguishable. The drift mart
+    now sets each week against the backtest of the model that made it (QB 6.52 against 5.86) and the home says
+    "… — too few weeks to call that a difference" until six weeks are in and the miss is outside every past season.
+    Tight ends: +0.59 (+0.09 to +1.12), distinguishable, made of touchdowns; no candidate.
+  * **v3.4 = v3.3 + pt1.0**: a quarterback's passing TDs blended with his team's implied total (ΔMAE −0.076, better in
+    5 of 5 seasons, Spearman +0.0145 in 5 of 5; `LEAGUE_LAB_QB_PASS_TD`, on). A rushing-TD scale (rt1.0) and two
+    starter rules (st1.0, st1.1) were measured and **dropped** by the rules written before they ran.
+  * **The live error the diagnosis turned up: Seattle.** nflverse's schedule lists Drew Lock as the starter for weeks
+    3–5 while Sam Darnold has taken every snap, so the site projects Lock 13.9 and Darnold 4.2 for week 5. The stale
+    listing is in the training data too (33 team-games in 2024). The two data rules that would correct it failed
+    their accuracy rules (st1.1 fixed 11 of 49 stale listings and broke 3), so the numbers are **unchanged** and the
+    screen says what it does not know: both quarterbacks of such a team show **Starter unclear** on Rankings (rank
+    kept, no tier) and "Who should I start?" gives no call for them. The flag catches 32 of the 49 stale listings and
+    137 of its 169 flags are not stale (a quarterback back from injury, mostly) — it is a "we do not know" label, not
+    a correction. Week 5 flags Chicago, Seattle and Washington.
+  * **Trends' "below / above expectation" is what happened, not an edge.** Rebuilt as-of for every player-week of
+    2021–2025 and 2026 weeks 1–4 (the mart holds the season as it stands: a past week's tag read from it is
+    look-ahead): players below expectation scored 1.2 more per game the next week than before — and finished **−0.27
+    against the rest relative to their projection** (−0.43 to −0.12; 11,129 player-weeks); players above scored 1.5
+    less and finished +0.36 (+0.17 to +0.53). The projection already expects the gap to close and, pooled, slightly
+    overdoes it; by season the direction flips (2025: +0.22 and −0.17), and on the record's weeks (2025 and 2026
+    weeks 1–4) there is **no measurable difference**. No support for "buy low / sell high" on the gap.
+  * **A role change is mostly priced.** A two-game role up keeps 42 % (targets) to 70 % (snaps) of its move over the
+    next two games; after it players finished +0.29 against the rest relative to their projection the next game
+    (+0.07 to +0.49; 5,133 games) — not in every season (+0.69, −0.01, +0.59, −0.03, +0.21), and on the record's 2025
+    weeks no measurable difference. A role down: none.
+* **The PO's decisions, built in the fix round**: Trades' "Buy low" / "Sell high" lists are renamed **Scoring below
+  his work** / **Scoring above his work** with the record's line under the heading (they were already ordered by
+  lineup fit from the projections; the gap only decides who is listed); Trends' head carries the grade and its rows
+  say "what happened, and his projection already counts it"; the role chips on DFS and Stats carry the role grade
+  from the record; no tiers on Rankings' "Rest of season" (the season ranges are not graded); the "best corners"
+  split is removed rather than rebuilt as-of (median 3 games a receiver: noise beside a call already graded as no
+  effect); the reviewer's rule stands for stale provider answers (a build that saw one is served to its requester
+  and kept for nobody) with its cost under a globally spent budget listed Low; the card's ratings move to the `read`
+  bucket (warm it is a 23 ms read of the Stats frame).
+* **Delivered** (the five hand-backs below were `docs/handbacks/IP-<N>.md` on the branches and live here now; the
+  screenshots stay in `docs/handbacks/ip<N>/`):
+  * **IP-1 — the quarterback number.** The diagnosis (`scripts/analysis/ip1_qb_diagnosis.py`, `ip1_qb_candidates.py`,
+    `ip1_starter_rule.py`), `MODEL_VERSION` v3.4 (`calibration.pass_td_lines` on the stat line before anything is
+    priced, so lines, projections and ranges agree; weeks 1–4 stay frozen: 0 cells changed), `mart_projection_drift`
+    like with like and versions compared by number (`version_key`), dbt vars `pn_starter_from_play` and
+    `pn_starter_stale_rule` (both off; off, every QB input is identical: 0 of 109,539 rows differ), the home's
+    sentence (`home.ts`), `api/league_lab_api/starters.py` `unclear(season, week)`.
+  * **IP-2 — rankings for everyone and "Who should I start?"** `/rankings` (a tab while browsing: Home · Rankings ·
+    Players · Trades · DFS; a Players sub-tab with a league): QB / RB / WR / TE / Flex (K, DEF where the lineup
+    starts them), this week or the rest of the season, any of the 160 reference scorings or the league's own, the
+    range as a bar, the defense's tone chip (never the corner), who has him with a league, tiers this week (a tier
+    runs while its first player outscores the next in fewer than 55 weeks in 100). Pick two to four → Compare opens
+    on the answer in words ("Lean Olave: he outscores Nacua in 57 of 100 such weeks — close; either is fine.": under
+    55 a coin flip, 55–64 a lean, 65+ start), with how often such ranges have held from the record. `GET
+    /api/rankings`, `GET /api/rankings/start` (`research`); no new relation.
+  * **IP-3 — the grades above**, kept weekly: `ops.context_record` gains the trend columns, `ops.context_grade` 21 →
+    192 rows, `summary()` gains `trend` and `role`; **`db migrate` now creates both record tables** (the nightly fix
+    below).
+  * **IP-4 — the player card.** The page and the drawer lead with a card: the picture on the team's colour, this
+    week's projection as the one headline number with its range, his value in the scoring on screen; **ratings**
+    (his percentile 0–99 among his position's players this season with a stated minimum sample, seven or eight per
+    position, a dash and the reason under the sample, "Not a projection"; `GET /api/player/{gsis}/ratings`); **charts**
+    (his points by week against the projection made before each game and its range — `GET
+    /api/player/{gsis}/projections` — his role by week, expected against actual; tap, keyboard and "Show the
+    numbers"); every section the card had stays. **A defense has a card** (`unitcard.py`; it was a 404 from search).
+    The card prints one decimal the API's way (the head said 8.3 above a tile saying 8.2).
+  * **IP-5 — robustness and reach.** `provider_trouble.py`: a refused, failed or stale provider read is never kept as
+    data by any cache on a request path (the table of every cache, before and after: SECURITY_PUBLIC § 15); MFL's
+    League screen cold about 2.0–2.2 s (was 2.6; the same 150,736 numbers, byte-identical); player pages share as the
+    player's card (title "Josh Allen (QB, BUF): 23.8 projected this week, 14–35", from the board the process already
+    holds, never a query), the sitemap lists the 200 highest projections, any page with `?league=` is `noindex`.
+* **The nightly would have stopped, and the first one after Wave I-O will** — the PO's mistake. Wave I-O's
+  `scripts/nightly.sh` lists `ops.context_record` / `ops.context_grade` in `STATE_TABLES`; `restore_state` counts
+  every state table right after `db migrate`; `migrate` did not create them and the Actions database is new each
+  night. IP-3 saw it; the PO reproduced it on `e4b5eec` with a fresh database (`relation "ops.context_record" does
+  not exist`) and wrote `/home/claude/waveIP/fresh_db_check.sh` (init + migrate on a scratch database, then count
+  every `STATE_TABLES` table): on the merged tree "every state table exists after db migrate (20 tables)". **Rule,
+  in HANDOFF: a table added to `STATE_TABLES` must be created by `db migrate`; run the check before delivery.**
+  Wednesday's 07:37 ET run is on `e4b5eec` unless Andrew pushes first: it stops at restore-state, the site keeps
+  Tuesday's numbers (stamped), and the Worker's re-checks at 09:37 and 11:37 ET run whatever is on `main` then.
+* **The Mac's repository, left locked — the PO's mistake, and the new delivery rule.** Delivering Wave I-O the PO ran
+  `git fetch` / `git merge --ff-only` on the Mac through the bridge; deleting is off there, git could not remove its
+  own lock files and left the repository half-merged with five `.lock` files. The PO then asked for delete
+  permission on `~/PycharmProjects`; Andrew declined ("thats a really important folder that isn't fully backed up
+  you can please not") and cleared it himself with one line. **From now on the PO never runs git on the Mac and
+  never asks for delete permission**: it writes one bundle file into `league-lab/.git-bundles/` and gives Andrew one
+  line; whether he pushed is read from `/api/health` and GitHub Actions in the browser pane. Old files the PO left
+  in `.git-bundles/` are his to delete.
+* **The PO's lines**: the registry rows `rankings_tier` and `start_call` (rk1.0); `app/pages/5_Matchups.py` loses the
+  "best corners" expander and the `cover_split` import (`tests/test_matchups.py` no longer expects
+  `fct_player_game_league` on that page); `app/pages/6_Trade_Finder.py` and `app/pages/0_Player.py` say what the web
+  says (the two lists by their new names with the grade's line; no "running hot / due"); nothing in
+  `scripts/nightly.sh`, `render.yaml`, the Dockerfile or the workflows; no new environment variable but
+  `LEAGUE_LAB_QB_PASS_TD` (unset = on), no new dependency, no new relation the API needs.
+* **The independent review** (docs/SECURITY_PUBLIC.md § 16): the new routes' parameters, cost and shells held.
+  Fixed in the round: **M1** a client whose provider share was spent was served an answer past its TTL, the build
+  counted as clean and was cached fresh for everyone (16 players served after the roster had changed, Sleeper never
+  read again): a held answer served past its TTL is noted `stale`, the build is served to its requester and kept by
+  nobody, with an age bound per kind (rosters, live scores and standings an hour; schedules a day) past which the
+  answer is "busy" (IP-5 first set rosters to 30 minutes, 15 on game days: the full suite's `test_f3` "Sleeper down
+  serves the last good answer" failed on it, and the PO put the hour back in a second round — an outage must not
+  become "busy" while a last good answer with its stamp exists). **M2** the outlook judged a build by process-wide counters, so
+  any client's refusals made everyone's outlook uncacheable: its own `watch()`. **L1** week odds answered a refused
+  client with an empty 200: busy for on-demand leagues (and seven more swallow sites found by the grep). **L2** the
+  ratings route let any `league=` string be marked "seen" by the limiter: no `league` parameter, `read` bucket.
+  **L3** Rankings' cache shared one frame between a reference scoring and a real league priced the same (the defense
+  words differed on 123 of 219 receivers): keyed by the tone's source. **L4** model versions compared as text
+  ('v3.10' < 'v3.4'): by number.
+* **Verified** (the merged tree `integ/IP`; this sandbox's database: 2026 through week 4, the suites pinned to
+  2026-10-03T16:00Z, failures compared **by name** with the known lists):
+  * API suite: **1,225 passed**, 89 failed — every one on the known list by name, 0 new (+134 tests over Wave I-O's
+    1,091; 22 skipped). The first run after the fix rounds had 11 new failures: ten `test_parity` cases (the console's
+    Player page still said "running hot / due" while the API's help had changed — the PO's file, reworded) and
+    `test_f3` "Sleeper down serves the last good answer" (IP-5's 30-minute bound; the second fix round above). Root
+    suite: **1,589 passed**, 4 failed — the 4 known, 0 new. ruff, the copy standard, `npm run lint` (204 files, 0
+    warnings) and the build clean; `bash -n` on the nightly's scripts (unchanged this wave).
+  * e2e on fixtures (the whole set, phone and desktop): **558 passed**, 16 skipped, 0 failed (13 minutes; run on
+    `e5c785b`, before IP-5's second round and the PO's console lines, which change no web file).
+  * **The nightly's first night under v3.4**: `fresh_db_check.sh` clean; `league-lab backtest-v2` under v3.4 on IP-1's copy:
+    **15 minutes** (13 CPU-minutes, while two suites shared the box), 2,160 rows written as v3.4, reference-league QB
+    MAE 5.41 (the backtest measures the model without the line blends, so pt1.0's gain does not show there — IP-1's
+    limitation). The first nightly under v3.4 runs it once as a hard step; it fits the 120-minute job.
+  * **A database without this wave's relations** (what the live site has until the nightly succeeds): the
+    merged API on `league_lab` (no `ops.context_record`, no `outlook` schema, no weather mart), 41 routes and pages
+    once each plus 24 calls on the new routes — **no 5xx**; `/api/context/record` answers all four keys `graded:
+    false`, Trades shows the plain line that claims no grade, Trends no head line; `/api/rankings` 0.08–0.48 s, the
+    start answer 0.11 s, ratings 28 ms, the card's projections 7 ms, a defense's card 12 ms; the dynasty's kicker tab
+    is refused in words (400); `/player/<id>?league=…` carries `X-Robots-Tag: noindex`; the sitemap lists 200 players
+    and `/rankings`; MFL's outlook 2.5 s.
+  * PO's QA at 375 and 1300 (Playwright on the merged build, 18 screens × 2 sizes: the home, Rankings browsing /
+    QB / rest of season / in a league, the start answer on Compare, the player page browsing / in a league / a
+    quarterback / a defense, Trends, Trades, DFS, Stats, My Week, League for Sleeper and MFL, the board): no sideways
+    scroll, no loading block left, no console error but the outside pictures. Read on the screens: week 4's QB
+    rankings flag Seattle (Lock 13.5 ranked 30, Darnold 5.0 ranked 38, both "Starter unclear", no tier); "Start
+    Robinson: he outscores Nacua in 72 of 100 such weeks — a clear call, not a sure one."; Nacua's card "14.8", WR1,
+    eight ratings averaging 64, the chart's "Above his projection in 1 of 2 games, inside its range in 2 of 2"; the
+    shared player page's title "Puka Nacua (WR, LA): 14.8 projected this week, 6–25". The sandbox reaches no
+    picture host: every headshot is the silhouette (the live check looks at real pictures).
+* **Not done / next**: the live checks after the push and after the nightly (recorded here when done); **the starter listing itself**
+  (the flag says "unclear"; a correction needs a source that knows who starts — a depth chart feed — not a rule on
+  our own data); the two-signal list candidate and the kickoff weeks of the trend record are graded out of sample
+  from week 5 (enough by about week 8); the season ranges (and so season tiers) are ungraded; one rounding on every
+  screen (the card is done; Rankings, Compare, Team, My Week, Stats, Trends, Receivers, the board, DFS, the free
+  calculator, Outlook, Home and Watchlist still round a tie up beside an API string); past projections on the card
+  for leagues that are not a house league or Half PPR / PPR / Standard; ESPN's and Yahoo's clients note trouble at
+  the client only (their adapters' swallow sites are listed in § 15); the nightly's three ways to leave the site on
+  yesterday's numbers that IP-5 wrote down (a hard `backtests` step, the re-check's UTC "today", a non-atomic
+  publish) — the next robustness package; still Andrew's: his account id into `LEAGUE_LAB_EDITORS`, a real
+  DraftKings / FanDuel file, the league-setup screen on his desktop.
+
+### IP-1 2026-10-07 — the quarterback weak spot: diagnosed; v3.4 = pt1.0 (QB passing TDs toward the implied total) kept; the drift compares like with like (branch `dev/IP1` from `main` `e4b5eec`, database `league_lab_im1`)
+
+* **Task**: Wave I-P brief § IP-1 ("Find out why and fix what the harness will let us keep"). METRICS § "v3.4: the
+  quarterback weak spot (IP-1)" has every table; `scripts/analysis/ip1_qb_diagnosis.py` and `ip1_qb_candidates.py`
+  reproduce them from the database (read only).
+* **Why**: the home and About said "quarterbacks are our weak spot: 6.5 points off on average, against 5.4 in past
+  seasons" (tight ends 3.5 against 3.0).
+
+#### 1. Diagnosis (done; committed before any candidate number was read)
+
+* **The comparison was v2.0 against v3.0.** 2026 weeks 1–3 were projected by v2.0 (the refit of 2026-09-29; v3.0
+  shipped 2026-10-01 and made week 4 on). `mart_projection_drift` joined the backtest of the season's newest version
+  (v3.0: 5.41). v2.0's own backtest at QB is 5.86 (reference league).
+* **Is it a signal?** 112 QB-games, MAE 6.52, 95% interval 5.56–7.51 (whole players resampled). v2.0's weeks 1–3 in
+  2021 / 22 / 23 / 24 / 25: 6.42 / 5.62 / 5.80 / 5.63 / 6.42. 2026 minus them (pooled): **+0.54 (−0.45 to +1.62) — not
+  distinguishable.** Refit with v3.0's inputs, 2026 weeks 1–3 = 6.18 against v3.0's own weeks 1–3 (5.57 / 5.08 / 5.21 /
+  4.97 / 5.53): +0.91 (−0.12 to +1.99). Early weeks are not worse under v3.0 (5.27 vs 5.41 all weeks). Week 4 (v3.0,
+  kickoff board, 15 of 16 games in this database): 4.37 on 32.
+* **Components** (reference scoring points): passing TDs carry most of every miss (exact passing TDs: 2026 MAE 6.52 →
+  3.76; backtest 5.41 → 3.41), then passing yards (−1.72 / −1.33). The one bias in every sample: rushing TDs +0.21 to
+  +0.31 a game (actual 0.15–0.17 a game, projected 0.10–0.15), mostly designed runs (0.12 TDs a start vs scrambles 0.06).
+  2026 QBs threw 1.41 TDs a game in weeks 1–3 against 1.10–1.25 a season before.
+* **Kinds** (2021–2025, 3,330 rows): no kind's bias is distinguishable from 0 and every one flips sign by season —
+  rushing share ≥ 30% −0.31 (−1.02 to +0.38), new starter +0.32 (−0.45 to +1.15), rookie +0.08, new team +0.21, new head
+  coach (the play-caller stand-in; the data has no play-caller) +0.35 (−0.23 to +0.96); bias² / MSE ≈ 0% each:
+  **variance, not bias**.
+* **Game script**: corr(miss, team points − implied total) = 0.60 among starters: 36% of a starter's squared miss is
+  the team scoring more or less than Vegas said (≥ 7 under −5.89, ≥ 7 over +5.93); by the implied total known before
+  the game the bias is −0.19 / +0.03 / +0.05.
+* **The three largest 2026 misses**: Sam Darnold wk 3 (5.02 → 29.66: did not know he was starting — v2.0 had no starter
+  input and read his 2-pass week-1 exit; the schedule lists Drew Lock for SEA weeks 3–5, so v3.0 refit gives him 2.89);
+  Caleb Williams wk 1 (16.88 → 37.26: 65 rushing yards, 2 rushing TDs); Jaxson Dart wk 2 (21.03 → 0.80: left after 5
+  passes).
+* **The starter listing**: nflverse's schedule keeps a pre-game projected starter after the game in some seasons: listed
+  QB threw no pass in 0 team-games a season 2016–2021, 4 in 2022, 0 in 2023, **33 in 2024**, 7 in 2025, 5 in 2026 weeks
+  1–4. v3.0's strongest QB input is trained on it.
+* **Tight ends** (one table): 3.51 (234 games, 3.05–4.02) against v2.0's weeks 1–3 of 2021–2025 (3.44 / 2.93 / 2.61 /
+  2.85 / 2.80): +0.59 (+0.09 to +1.12) — distinguishable, made of touchdowns (+0.36 a game against −0.17 in past first
+  weeks; exact TDs would cut 1.33 of 3.51). v2.0 / v3.0 differ by 0.01 at TE. Week 4: 3.05. No candidate.
+
+#### 2. Candidates (`experiments.decide` on the QB board, 2021–2025, both house scorings, the season paired)
+
+Rules written before running (22:25 ET rt1.0 / st1.0; 22:47 ET pt1.0, after those two were read):
+
+| Candidate | Δ MAE by season 2021 / 22 / 23 / 24 / 25 | Δ MAE (better of 5) | Δ Spearman (better) | bias before → after | decision |
+|---|---|---|---|---|---|
+| **pt1.0** QB passing TDs = a × model + b × implied total × attempts / 33 (least squares, no intercept, 3 seasons before) | −0.126 / −0.059 / −0.081 / −0.065 / −0.046 | **−0.076 (5)** | **+0.0145 (5)** | board +0.22 → +0.14 | **keep** |
+| rt1.0 QB rushing TDs × mean-unbiased k (3 seasons before) | +0.047 / +0.054 / +0.033 / +0.031 / +0.016 | +0.036 (0) | −0.0018 (2) | rushing TDs +0.21 → −0.11 | drop |
+| st1.0 the starter from what happened + an as-of guard (dbt var `pn_starter_from_play`) | +0.000 / +0.004 / +0.036 / −0.151 / −0.017 | −0.026 (2) | +0.0025 (2) | +0.22 → +0.23; flagged rows lower in 1 of 5 (2024: 11.47 → 7.07) | drop |
+
+pt1.0 by league: reference 5.407 → 5.350, dynasty 7.586 → 7.492; projected starters 7.07 → 6.98, the rest 4.20 → 4.22.
+st1.0's guard is right in 17 of 26 played team-games where it fires and wrong in 9 (a listed starter returning from an
+injury: PIT 2022 Pickett, WAS 2025 Daniels …). st1.0's first build mislabelled Taysom Hill (listed TE): fixed (any listed
+position) before the run in the table; the first run read −0.018, drop. Not built (the tables discard them): a QB
+cold-start / new-starter prior (M5 measured it: w = 1), a rushing-archetype prior, a range width by archetype (2026's
+QB range covered 78.6%).
+
+#### 3. What ships
+
+* **v3.4 = v3.3 + pt1.0** (`calibration.pass_td_lines`, called by `projections.project` before M6's `blend_lines`, `#
+  ---- IP-1`): on the stat line before anything is priced (the frozen-line path), so `ops.projection_lines`,
+  `ops.projections`, `ops.projection_ranges` and every request agree. Switch `LEAGUE_LAB_QB_PASS_TD` (unset = on; `0` =
+  v3.3). Fitted inside `project` from its training frame (3 QB component fits). Weeks without an implied total keep the
+  model's count. `MODEL_VERSION` "v3.4". `calibration.rescale_to_stored` (M6's, used by the scenarios) now moves the
+  larger role component by component, so a QB scenario's gain is the role's and not pt1.0's (identical for M6's cold
+  starts: their line is the model's × k in every component).
+* **The drift** (`mart_projection_drift`, a view): each complete week against the backtest of the model that made it
+  (newest backtested version at or before the week's). Reference league QB 6.52 against **5.86** (was 5.41), TE 3.51 /
+  3.01, RB 4.18 / 4.28, WR 4.15 / 4.07. Also keeps the backtest columns filled once a v3.3 / v3.4 week completes on a
+  database without backtest rows of that version.
+* **st1.0's dbt switch, off**: `int_pn_team_game` gains `listed_qb_id` (the schedule's own value) and, under
+  `var('pn_starter_from_play')` (default false), the corrected starter; `assert_personnel_is_asof` reads the corrected one
+  only when the var is on; `assert_starter_from_play` (new) checks the correction against the play data. Off: rebuilt and
+  compared with the frame before — every QB input of `mart_player_week_features` identical (the only cells that moved
+  were 1,705 2026 rows of `pn_absence_beneficiary`, which reads `ops.player_role_alerts`: this copy's mart was older than
+  its alerts table; unrelated to IP-1).
+
+#### Files
+
+Mine: `src/league_lab/calibration.py` (`# ---- IP-1` block at the end), `src/league_lab/projections.py` (`MODEL_VERSION`,
+the hook), `scripts/analysis/ip1_qb_diagnosis.py`, `scripts/analysis/ip1_qb_candidates.py`, `tests/test_ip1_qb.py` (9),
+`tests/test_ip1_pass_td.py` (10), `dbt/models/intermediate/features/int_pn_team_game.sql`,
+`dbt/models/intermediate/features/int_player_week_personnel.yml`, `dbt/tests/assert_starter_from_play.sql` (new),
+`docs/METRICS.md`, `dbt/seeds/metric_registry.csv` (+3: pt1.0 available, rt1.0 / st1.0 experimental), this file.
+Outside my list: `dbt/models/marts/nfl/mart_projection_drift.sql` + its `schema.yml` description (`# ---- IP-1` blocks),
+`dbt/tests/assert_personnel_is_asof.sql` (one marked `{% if %}`), `tests/test_il3_v33.py` and `tests/test_personnel.py`
+(the pinned `MODEL_VERSION` "v3.3" → "v3.4", on purpose), `CHANGELOG.md`, `docs/WORDS.md` (marked blocks).
+
+#### Commands and evidence
+
+* Rows: `OMP_NUM_THREADS=1 uv run python scripts/analysis/ip1_qb_diagnosis.py --rows <cache>.parquet` (the walk-forward
+  rows, QB / TE, v2.0 and v3.0 inputs, 2021–2026: about 3 min alone; season means equal `ops.projection_backtest`'s to
+  ±0.01, single weeks ±0.21 — the stored record is an older run on an older build). Candidates: `ip1_qb_candidates.py
+  rt | pt | pt-ranges | st` (st needs `dbt build --select int_pn_team_game+ --vars '{pn_starter_from_play: true}'` and
+  the frame before it as `--before`).
+* dbt on `league_lab_im1`: `int_pn_team_game+` with the var on PASS 118 (after the as-of test learnt the var and the
+  Taysom Hill fix), with it off PASS 118 (every QB input identical to before); `mart_projection_drift+` PASS 5; after the
+  full `project`, the nightly's projection-marts selection + `assert_house_projections_are_the_nfl_wide_rows`,
+  `assert_projection_ranges_price_the_lines`, `assert_frozen_*`: **PASS 147, WARN 0**.
+* `uv run league-lab project` (v3.4, switches at their defaults; 12 min, load 4–9): "pt1.0 QB passing TDs: a = 0.035 x
+  the model + b = 0.0637 x implied total x attempts / 33, on 2021 fitting rows (2023-2025); 465 QB lines moved"; wrote
+  weeks 5–18, kept 1–4 frozen — **0 cells changed** in weeks 1–4 (4,856 house rows, 2,396 lines); week 5's QB rows are
+  v3.4 and equal the isolated switch-on run to the cent (Josh Allen 21.87, Dak Prescott 20.95 …); importance recomputed
+  once for v3.4 (QB's top input `pn_qb_starting` +1.84). A second `project` after the scenario change (`rescale_to_stored`
+  per component): "scenarios written: 130 rows … base = stored projection to 0.00e+00 on 130 rows"; RB / WR / TE scenario
+  gains moved 0 of 114, QB 6 of 16 (week 5: a "gain" of −1.71 that was pt1.0's shift reads −0.28, the role's own); the
+  projection-marts selection again PASS 147, WARN 0.
+* pt1.0's ranges (reported, 2023–2025, the production path): 80% interval score −0.0027 (reference) / +0.0016
+  (dynasty), 50% −0.010 / −0.016, coverage 80% 0.757 → 0.757 / 0.756 → 0.762.
+* Tests: `tests/test_ip1_qb.py` 9 + `tests/test_ip1_pass_td.py` 10 passed; the edited modules' root files (calibration,
+  M5, M6, IL-3, personnel, NFL-wide, freeze, EV, drift, v2, importance, experiments, registry): 163 passed, 1 failed
+  (`test_projections_ev::test_scrubs_pins_and_dynasty_moves`, known: reads this database's week-4 lines); API files that
+  read the edited modules (`test_h1`, `test_il3`, `test_if3`, `test_in6`): 51 passed, 4 failed, all four in
+  `known_api_failures.txt`; `uv run ruff check src app tests api scripts/analysis` clean; `copy_standard.py --check`
+  clean; `/home/claude/waveIP/check_root.sh /home/claude/wt-ip1` (after the last src change): 4 failed, 1571 passed, 3 skipped — **no new failure** (the four are `known_root_failures.txt`).
+
+#### Limitations
+
+* `backtest-v2` under v3.4 measures the model without the line blends (as under v3.2 / v3.3): About's backtest at QB will
+  not show pt1.0's −0.06; the first nightly under v3.4 runs `backtest-v2` once (the existing `backtests` step: no rows
+  for the new version), as the v3.3 bump did.
+* pt1.0 acts only on weeks with an implied total (in season: the next week); later weeks keep the model's count, so the
+  rest-of-season sums mix the two for QBs.
+* The starter listing stays the schedule's: SEA's week-5 board here reads Lock 13.72 / Darnold 4.38.
+* "New play-caller" is a new head coach (the data has no play-caller).
+
+#### For the PO
+
+1. **Merge**: independent of IP-2…IP-5 (no shared file but CHANGELOG / WORDS, marked).
+2. **The nightly**: nothing new to run — pt1.0 fits inside `project`. The bump makes the existing `calibration-oof`
+   step rebuild `ops.calibration_oof` once (about 2–3 CPU-minutes alone) and `project` recompute the importance once.
+   `scripts/nightly.sh` needs no line. The drift view is rebuilt by the nightly's `dbt build`.
+3. **The home's sentence** (`home.ts` `gradeLead`, not mine): with the drift fix it reads "6.5 … against 5.9"; the
+   honest words are in WORDS § "How the projections have done, honestly".
+4. **Decide**: whether to correct the starter listing (st1.0 dropped by the rule; a data fix for played games without
+   the guard was not measured on its own).
+
+### IP-1 fix round 2026-10-07 — st1.1 (who starts) judged on identification accuracy; the home's grades (branch `fix/IP1` from `integ/IP` `0551b7d`)
+
+* **st1.1** (dbt var `pn_starter_stale_rule`, `int_pn_team_game`; rule written before the build, METRICS § "st1.1"):
+  week W keeps the listing L unless, in the team's two newest played games of the season, L was listed for the newer
+  one too, took no dropback in either, was available in both (weekly roster ACT, not Out / Doubtful), and one other QB
+  led both games' dropbacks — then that QB. As-of only (nothing from W's game, report or roster).
+* **Confusion table** 2022 – 2026 wk 4: fixed 11, still wrong 38, newly broken 3 (in-game changes kept: 66; stale
+  listings 49). (a) 22% < 60% **fail**; (b) 3 > 11 / 6 **fail**; (c) QB board −0.020 pooled, pass. **Not shipped**:
+  the var defaults off; off, `int_pn_team_game` reads none of its CTEs and every QB input equals the frame before (0 of
+  109,539 rows differ). With it on, week 5 here changes one starter: SEA Lock → Darnold.
+* **The alternative, described** (not built): "starter unclear" — a team whose listed QB took no dropback in its newest
+  played game while another led: both QBs marked, both out of the tiers, numbers unchanged. As of each week it would
+  have flagged ~2 team-weeks a week (169 in 2022 – 2026 wk 4), 32 of the 49 stale listings; week 5 here: CHI, SEA, WAS.
+* **The home** (`web/src/components/home/home.ts`, marked `// ---- IP-1`): `MIN_WEEKS = 6`; under it a position more
+  than 10% above its past is "unclear" (plain tile) and the lead ends "— too few weeks to call that a difference";
+  from six weeks a difference needs a miss above every past season of the same model and > 10% over the backtest. No
+  API field added (`season.weeks_scored` and `by_season` were there). `web/e2e/in1/fixtures.spec.ts` updated on purpose
+  (the recorded answer now reads "unclear" and the new lead; "worse" / "weak spot" were the old expectations) plus a
+  pure-code test of the three cases.
+* **Files**: `dbt/models/intermediate/features/int_pn_team_game.sql`, `dbt/tests/assert_starter_from_play.sql`,
+  `dbt/tests/assert_personnel_is_asof.sql`, `scripts/analysis/ip1_starter_rule.py` (new), `tests/test_ip1_starter.py`
+  (new, 3), `web/src/components/home/home.ts`, `web/e2e/in1/fixtures.spec.ts`, `docs/METRICS.md`, `docs/WORDS.md`,
+  `dbt/seeds/metric_registry.csv` (+1, st1.1 experimental), `CHANGELOG.md`.
+* **The nightly**: nothing (the var is off; the home is the web build). No `scripts/nightly.sh` line; no new env.
+
+### IP-1 fix round 2 2026-10-07 — "starter unclear", the flag; versions compare by number (branch `fix2/IP1` from `integ/IP` `3d1b76b`)
+
+* `api/league_lab_api/starters.py` `unclear(season, week) -> {gsis_id: {team, listed, played, role, words, last_week}}`
+  (the interface IP-2 reads; `last_week` is an extra key). Reads `analytics.dim_game` (the listing, the games),
+  `analytics.fct_player_game` (`dropbacks`, `played`), `analytics.dim_player` (names) — all on the hosted copy, no new
+  relation. As of the week (`week < W` only). `{}` on a missing relation, a week outside 1–22, an unlisted week or any
+  failure. Memo region `starters` (≤ 32 entries, 10 min; DEPLOY § Memory).
+* Re-measured through `unclear()`: 169 flags in 76 weeks of 2022 – 2026 wk 4 (46 / 33 / 48 / 37 / 5), 32 of 49 stale
+  listings marked, 137 flags not stale — the same as the round-1 measurement. 2026 week 5: CHI (Keenum / Bagent), SEA
+  (Lock / Darnold), WAS (Daniels / Kaliakmanis); week 4: SEA only (CHI's own week-4 game does not count); weeks 1 and 6:
+  none.
+* The review's L4: `dbt/macros/version_key.sql` (an integer array of a version's numbers) in `mart_projection_drift`
+  (the newest version, "at or before") and `mart_projection_backtest.is_current`; `assert_model_versions_compare_by_number`
+  (v3.9 < v3.10 …); the drift on this database identical before and after (24 columns, 8 rows).
+* Tests: `api/tests/test_ip1_starters.py` (5), `tests/test_ip1_qb.py` + the L4 text test (10); dbt PASS 9.
+
+### IP-2 — rankings for everyone, and "Who should I start?" (Wave I-P, 2026-10-06 night)
+
+Branch `dev/IP2` from `main` `e4b5eec`; worktree `/home/claude/wt-ip2`; database `league_lab` read only (see
+"Writes" below for the one test file that writes its own rows). Screenshots: `docs/handbacks/ip2/` (8 JPEGs, 546 KB).
+
+#### Done (the brief's numbered list)
+
+1. **`/rankings`** — this week's and the rest of the season's rankings for anyone, in the bar's scoring (any of the 160
+   reference keys) or the league's own (house, Sleeper / MFL on demand). Tabs QB · RB · WR · TE · Flex (RB / WR / TE
+   together, its own tiers) · K · DEF (K and DEF only where the slots start them: the dynasty league has neither, the
+   route says so in words). Each row: rank, headshot (a team badge for a defense), name, position · team, status,
+   opponent and kickoff (Started / Final once kicked off), the projection with its range as a bar (week: 0-based, the
+   tick at the projection; season: the spread around the projection — a season's range is narrow against its total),
+   the **defense's** tone chip only (`matchup_board`'s tone, Wave I-O; no corner anywhere — a test asserts no `corner` /
+   `cb` key in the answer and the e2e no "corner" / "shutdown" text in the rows), and with a league "Who has him".
+   **Tiers** drawn as lines with "Tier N", the rule in one sentence under the switches and at the foot. Search by name
+   (server `q=`, rank stays the position's), paged (50), a row opens the player's pane, everything in the URL
+   (`position`, `view`, `q`, `off`, `pick`). Built on the board's week frame and `/api/ros`'s table — no new relation.
+2. **"Who should I start?"** — pick two to four rows → **Who should I start? Compare N ›** → Compare opens on the answer
+   (its first card, above the pickers); Compare can also add a third / fourth player itself ("Add a third player").
+   `GET /api/rankings/start?league=&ids=` — the chance each scores the most and every pair's chance, from the week's
+   odds' own piece (`decisions._week_dist` + `_centred`, D6's `pair_rho` copula), the call in words, the honest floor.
+   Shareable by URL (`/compare?league=…&a=…&b=…&c=…`; the e2e reloads it and gets the same sentence).
+3. **Navigation and reach** — browsing: Home · **Rankings** · Players · Trades · DFS (`REF_ORDER`); with a league:
+   Players → Stats · **Rankings** · Trends · Matchups · Compare. The home's "Every player ›" → `/rankings`. `/rankings`
+   in the shell's previews (title + description per position and view, a closed set: `?position=<script>` gets the
+   default title, never the text) and in `/sitemap.xml`. `/rankings` without a league opens on Half PPR. 375: two lines a
+   row (the range bar under the name), no sideways scroll; 1300: a six-column row using the width, the pane beside it.
+4. **Tests** — `api/tests/test_ip2.py` (42): the distribution is the week odds' piece; `p_beats` symmetric / ties /
+   within 0.006 of D6's Monte Carlo and 0.02 of the normal closed form; the tier rule on hand-built ranges (three tiers,
+   the break measured against the opener not the neighbour, identical players one tier, no projection no tier);
+   head-to-head symmetry (pairs add to 1 exactly), sums to 1, identical players equal (exactly), order-independent, the
+   QB–WR teammate correlation moves the pair; the words at 71 / 65 / 60 / 54.7 (prints 55 → a lean) / 54.4 / 50; three
+   players' sentence verbatim; the route on `ref:half`, `ref:ppr.sf.p6.t10`, League of Scrubs (ownership only there),
+   the dynasty's K refused in words, the season view equal to `/api/ros?view=projections`'s points; `q=` (1 / 41
+   letters, `%%`) and paging bounds (limit 0 / 201, offset −1 / 1001, past the end), the cache never keyed by `q`; the
+   start route's ids (none, one, five, a duplicate, a path, too long, an unknown id → "missing"); the research bucket;
+   the preview's closed set; the shell and the sitemap; a fresh copy without the marts → the notice, a 200; a pick whose
+   game has kicked off gets "… kicked off: these chances are from before kickoff …".
+   e2e `web/e2e/ip2/fixtures.spec.ts` (3 tests × phone 375 / desktop 1300, recorded and fixture modes both green):
+   browsing (the tab, 50 rows, tiers, bar, chip, search, no "No league", the list ≥ 1000 px wide at 1300), pick two →
+   the answer, a league (the sub-tab lit under Players, who has him).
+
+#### The tier rule and the thresholds (one line each)
+
+* **Tier**: a player joins the tier while its first player outscores him in fewer than 55 weeks in 100
+  (`TIER_P = decisions.COIN_FLIP`), from both ranges centred on their projections, independent, on a 400-level grid.
+* **The call** (D6's scale on the whole percent printed, pick vs runner-up): under 55 "A coin flip", 55–64 "Lean …",
+  65+ "Start …"; no shrink (D6 graded pairs: "a lean" predicted 59.6% / observed 57.7%, 4,895 pairs 2024–2025).
+* Examples the screen shows (week 4, Half PPR): "Start Olave: he outscores Adams in 66 of 100 such weeks — a clear
+  call, not a sure one." · "Lean Olave: he outscores Nacua in 57 of 100 such weeks — close; either is fine." · "A coin
+  flip: Collins outscores London in 50 of 100 such weeks — either is fine."
+
+Tier counts, week 4 Half PPR (week / season): QB 14 / 24 · RB 16 / 39 · WR 16 / 42 · TE 12 / 37 · Flex 18 / 56 ·
+K 4 / 8 · DEF 6 / 6.
+
+#### Files
+
+New: `api/league_lab_api/rankings_api.py`, `api/tests/test_ip2.py`, `web/src/routes/Rankings.svelte`,
+`web/src/components/rankings/{rank.ts,StartAnswer.svelte}`, `web/e2e/ip2/fixtures.spec.ts`,
+`web/fixtures/ip2/api_ip2.json` (57 KB, rows trimmed to the fields the screen reads), `docs/handbacks/ip2/*.jpg`, this file.
+Mine per the brief: `web/src/components/TopBar.svelte` (the tab, the sub-tab, `sectionOf(name, browsing)`, an icon),
+`web/src/routes/Compare.svelte` (the answer first; c / d; the head says the scoring while browsing — it said "this
+league" without one).
+**Edits outside my files** (marked `IP-2` blocks): `api/league_lab_api/main.py` (the router + `install_pages(blog_mod)`
+before the public-doors block; the `/rankings` shell case in the SPA fallback, before IN-1's), `ratelimit.py`
+(`bucket_for`: both routes → `research`), `web/src/lib/api.ts` (types + paths at the end), `router.svelte.ts` ("rankings"),
+`App.svelte` (the lazy screen; `/rankings` without a league → `ref:half`), `web/src/routes/Home.svelte` (one line: "Every
+player ›" → `/rankings`, IN-1's file), `web/e2e/ib1/fixtures.spec.ts` (the Players sub-tabs list gains Rankings — on
+purpose), `docs/WORDS.md`, `docs/METRICS.md` (§ "Rankings and tiers", appended), `CHANGELOG.md`, `docs/DEPLOY.md` (the
+`rankings` memory region). `blog.py` is not edited: `install_pages` appends `/rankings` to `blog.SITEMAP_PATHS` and
+`blog.PAGES` at import — **IP-5 edits the sitemap tonight: if `sitemap()` stops reading `SITEMAP_PATHS`, add
+`"/rankings"` there instead** (the test `test_rankings_in_the_shell_and_the_sitemap` will say).
+
+#### Interface (as fixed in the brief, plus)
+
+`GET /api/rankings` → `{season, week, view, position, scoring, positions, league_name, rows, total, tiers, limit, offset,
+q, tier_words, tier_rule, tier_p, assumes, from_week?, last_week?, notice?}`; a row: `{key, gsis_id (null for a DEF),
+player_name, position, team, headshot_url, rank, tier, tier_p, proj_points, p10, p25, p50, p75, p90, opponent,
+is_home, kickoff_at, game_state, report_status, matchup: {tone, words} | null, rostered_by_roster_id?, rostered_by_team?,
+ros_games?, ros_points_per_game?, bye_weeks?}`. `GET /api/rankings/start?ids=` → `{season, week, scoring, ids,
+players: [{…, p_best, pct_best, vs: {gsis: p}}], missing, answer: {pick, runner_up, verdict, p_vs_runner_up, words} |
+null, floor, assumes, multi_note, same_game, draws, notice?}`. Validation: `position` ∈ 7, `view` ∈ 2, `limit` 1–200,
+`offset` 0–1000, `q` 2–40 letters (text, never a pattern), `ids` 2–4 distinct `^\d{2}-\d{7}$`, ≤ 64 characters.
+
+#### Numbers (fixture API, this box, pinned clock)
+
+| request | cold | warm | size |
+|---|---|---|---|
+| `ref:half` WR week, fresh process | 1.05 s | 13 ms | 26.8 KB (50 rows); 104 KB at limit 200 |
+| `ref:half` Flex week (week frame warm) | 0.13 s | — | 26.9 KB |
+| `ref:half` QB season | 0.43 s | 35 ms | 25.7 KB |
+| `ref:ppr.sf.p6.t10` QB week | 0.19 s | — | 26.9 KB |
+| League of Scrubs Flex week | 0.69 s | 32 ms | 30.0 KB |
+| start, 2 players (first: builds QB / RB / TE / K) | 0.23 s | 34 ms | 1.6 KB |
+| start, 4 players | — | 49 ms | 2.8 KB |
+
+The routes are sync (FastAPI's thread pool) and `research` (behind the CPU slots). Cache: `rankings` region, ≤ 64
+entries of ~0.1 MB. Bundle: `Rankings` chunk 14.9 KB (+1.9 KB `rank`, 0.2 KB css), Compare 19.5 KB (was ~17 KB); the app chunk 244.8 KB (main's ~244).
+Tests: `test_ip2.py` 42 passed; with `test_im3 test_in2 test_in1 test_in3` 227 passed (49 s); ruff clean;
+`npm run lint && npm run build` clean; `copy_standard.py --check` clean; e2e ip2 6/6 (recorded and fixture modes); in2 + im3
+17 passed, 1 skipped; ib1 + if4 + ii2 + ib3 38 passed (ib1's tab test updated on purpose: it failed on the new sub-tab
+first); the Compare tests of `e2e/fixtures.spec.ts`, ia1, if3, inf1 10 passed (after the last Compare change). Branch added: 2,020 text lines (~127 KB) + 603 KB generated (546 KB JPEG, 8 files ≤ 97 KB each, + 57 KB recording).
+
+#### Writes, and what I saw that is not mine
+
+* **I ran `api/tests/test_io3.py` once** (it names the sitemap). It writes its own `@io3.test` account and posts into
+  `league_lab`'s `accounts` / `blog` schemas with the app role and deletes them afterwards; I checked read-only that
+  `blog.posts / revisions / images` are empty after. I should not have run it under "write nothing"; nothing of mine
+  writes.
+* `test_in1` failed three tests once (`floor-6822da` among `/api/blog`'s posts) and passes alone and with every other
+  file: another session's `test_io3` was writing to the shared `league_lab` blog schema at the same moment
+  (`blog.py` merges database posts into the public list). Two devs running `test_io3` on one database collide.
+* While a Playwright run went, the agent proxy logged a refused connection to `fishtownanalytics.sinter-collect.com`
+  (dbt's anonymous usage ping from someone's `dbt` run): `DO_NOT_TRACK=1` / `send_anonymous_usage_stats: false` would
+  silence it.
+* The season view's ranges (`ros_p10` / `ros_p90`) treat the weeks as independent normals, so they are narrow and the
+  season gets many tiers (WR 42). Honest by the rule, but the season range is likely overconfident (injuries, role
+  changes are not independent weeks) — worth a grade before the season tiers are leaned on.
+
+#### Not done / limits
+
+* The start answer's coverage line quotes "79 in 100 through week 3 of 2026" as a stamped constant
+  (`rankings_api.START_FLOOR`); it should read the record's live number when someone touches it next.
+* The chance of being the highest of three or four is not graded (the screen says so); pairs are (D6).
+* No dark-mode e2e (checked by hand: the bars, chips and tier lines read in dark at 1300).
+* Compare's "Add a third player" is checked live (it finds, adds `c`, the answer becomes three); not in the e2e (the
+  fixture player pool for `ref:half` is not recorded).
+
+#### The PO lines I need
+
+* `dbt/seeds/metric_registry.csv` (IP-1 / IP-3 own it tonight), two rows (header `metric,version,numerator,denominator,grain,status,notes`):
+  `rankings_tier,rk1.0,"a new tier where the tier's first player outscores the next one in >= 55 weeks in 100 (decisions.COIN_FLIP; both ranges centred on the projection; 400-level grid)",the ranked list at one position,scoring x week (or rest of season) x position,available,"IP-2: rankings_api.tiers; GET /api/rankings rows[].tier; METRICS § Rankings and tiers"` and
+  `start_call,rk1.0,"P(each of 2-4 players scores the most) and every pair's P(A outscores B): the week odds' piece, D6 pair_rho copula, 40,000 draws symmetrised",the picked players' joint draws,scoring x week x 2-4 players,available,"IP-2: rankings_api.prob_best / call; GET /api/rankings/start; words by D6's scale on the printed percent; no shrink (D6 grade); best-of-3/4 not graded"`.
+* `app/whats_new.md`: "**Rankings for everyone.** Every player ranked for this week or the rest of the season in your
+  scoring, in tiers. Pick two to four and see who to start — with how sure that is."
+* `docs/HANDOFF.md`: "`/rankings` + `/api/rankings` (`rankings_api.py`, the `rankings` memo region); tiers =
+  `decisions.COIN_FLIP` against the tier's first player; the start answer = the week odds' piece, no shrink."
+* Nothing for `render.yaml`, the Dockerfile or the nightly; no new env variable; no new dependency; no new relation
+  (the site answers a database without anything of mine).
+
+#### Next
+
+Grade the season ranges (and so the season tiers); read the coverage line from the record; a Rankings column for
+"value in a typical league" when browsing (`refleague.value_of` is there).
+
+#### Fix round (branch `fix/IP2` from `integ/IP` 3d1b76b)
+
+1. **Starter unclear.** `rankings_api._starters_unclear` imports IP-1's `starters.unclear(season, week)` lazily (absent,
+   broken or not a dict → `{}`; only ids matching the gsis pattern and rows with words are kept). Week view, QB: each
+   flagged quarterback's row carries `starter_unclear: {team, listed, played, role, words}`, keeps his rank by
+   projection and has `tier` / `tier_p` null — he neither joins nor opens a tier, so the other rows' tiers are exactly
+   the list's without him (a test checks this). The screen: a neutral **Starter unclear** chip (next to the name at
+   1300, at the start of the sentence line at 375), a dashed left edge, IP-1's sentence + "No tier." under the row,
+   and once in the foot what the dashed edge means; the tier lines skip him (a line is drawn only where a tiered row's
+   tier differs from the previous tiered row). "Who should I start?" with a flagged player: the answer is his sentence
+   then "Starter unclear — no call." (verdict `no call`, no chances, no bars, "Take him out to compare the others").
+   The season view is unaffected. Tests use a fake with exactly IP-1's shape (SEA Lock / Darnold, CHI Keenum / Williams:
+   the fixture database's week 4 shows the same state).
+2. **No tiers on Rest of season**: `tier` null, no lines, `tier_words` = "No tiers for the rest of the season: the
+   season ranges have not been graded yet.", `tier_rule` null; tiers are not even computed there.
+3. **Review L3**: the frame's key is now `("rk", research._ctx_key, tone source "reference" | "league", season, week,
+   view, position, flagged ids)`. Measured: `ref:ppr` and a real league priced in PPR share `_ctx_key`, and their
+   defense words differ on 123 of 219 receivers in week 4; a test builds both in either order and checks each row's
+   words against its own source. `start` has no cache of its own; it reads `ranked`'s frames, so it inherits the fix.
+4. **The floor** reads the record: `mart_projection_drift` for the reference league, pooled over the positions by
+   player-weeks ("through week 3 of 2026 they held 80 in 100" here — About's source), else `/api/status`'s
+   `odds_grades` (absent on this database), else the stamp; kept in the `rankings` region under one key.
+5. Tests: `test_ip2.py` 47 passed (+5: starters absent / broken / faked, the flagged rows and the tiers without them,
+   no call, L3 in both orders, the floor's three sources); with `test_im3 test_in2 test_in3` 204 passed; ruff, lint,
+   build, `copy_standard --check` clean. e2e `ip2` 8/8 in fixture mode (a new test: the flagged quarterback at 375 and
+   1300, the no-call answer; the browsing test now opens Rest of season: no tier line, the sentence), recorded mode 6
+   passed + 2 skipped (the fake lives in `web/fixtures/ip2/api_ip2_unclear.json`, recorded from the API with the fake in
+   place); in2 + im3 17 passed 1 skipped; ib1 + if4 + ii2 + ib3 38 passed; the Compare / tab tests of
+   `e2e/fixtures.spec.ts`, ia1, if3, inf1 and in2 / im3 (filtered) 35 passed. Screenshots: `ip2-picked-*` replaced by
+   `ip2-unclear-*` (still 8 JPEGs, ≤ 97 KB each).
+
+### IP-3 hand-back — grade what Trends and the role chips claim (Wave I-P, 2026-10-07)
+
+**Task** Wave I-P, IP-3 (BRIEF § "IP-3"). **Branch** `dev/IP3` (from `main` `e4b5eec`). **Database** `league_lab_im4`
+(the only writer; `uv run league-lab context-record` run first, as asked, then mine). Every table below is in
+docs/METRICS.md § "Trends and the role trend, graded" (cx1.1) in full.
+
+#### Done (the numbered list)
+
+1. **Does "below expectation" bounce back?** Every QB–TE player-week of 2021–2025 and 2026 weeks 1–4 with the tag
+   rebuilt from the games **before** the week, followed over his next 1, 2 and 4 games: (a) against the projection made
+   before each game, (b) raw (points per game next against before); by gap tercile, position and the reason the app
+   prints. **Done.**
+2. **Does "role up / down" carry forward?** The share over the next 1 / 2 / 4 games (does it hold, in points of share)
+   and the miss against the projection (is it priced), by position. **Done** (2021–2025: 2026 weeks 1–4 have no call —
+   the trend needs four games before the week).
+3. **On the screens.** `summary()["trend"]` / `["role"]` (frozen and graded weekly in the record), Trends' head line,
+   new row / help words. The role chip's sentence is below for the PO to place (DFS / Stats files not touched). **Done.**
+4. Tests on hand-built rows, the freeze idempotent, `summary()` without the tables and with Wave I-O's shape; METRICS
+   cx1.1 + 3 registry rows; WORDS; CHANGELOG. **Done.** No dbt model changed (rule 10); the registry seed rebuilt.
+
+#### The look-ahead finding
+
+* **Trends' tag is never stored for a past week**: `mart_league_player_season.diff_per_game` (and `mart_player_trend_tags`)
+  hold the season as it stands now — a past week read from them (or Trends with a past `season=`) has the week itself
+  and every later game inside it. Clean for the next week to play. **What I did**: rebuilt the tag per past week from
+  the games before it (`context_record.asof_trend` / `trend_asof_week`; test: a week's own game never enters its tag).
+* The reason's "his quarterback changed" reads `pn_qb_changed` for the week itself (a projection input built before
+  kickoff: as-of). Expected points are ffverse's per-game model of each game's own plays (not refitted by us).
+* The projections graded against: 2023–2025 `ops.calibration_oof` (walk-forward v3.0); **2021–2022 projected
+  walk-forward tonight in memory** with today's code (v3.3, fitted on 2016 to the season before; nothing stored);
+  2026 weeks 1–3 the post-kickoff `refit` (IO-1's caveat), week 4 the kickoff board. Two model versions are mixed.
+
+#### The grade (Half PPR; 95% bootstrap resampling whole player-seasons; vs the rest = other tagged player-weeks, same positions)
+
+| | Next | n | Raw pts/g next − before | vs the rest against the projection |
+|---|---|---|---|---|
+| below | 1 / 2 / 4 | 11,129 / 9,840 / 7,607 | +1.19 (+1.07 to +1.32) / +1.30 / +1.45 | **−0.27 (−0.43 to −0.12)** / −0.23 (−0.38 to −0.07) / −0.18 (−0.35 to −0.02) |
+| above | 1 / 2 / 4 | 7,687 / 6,921 / 5,516 | −1.54 (−1.69 to −1.39) / −1.57 / −1.60 | **+0.36 (+0.17 to +0.53)** / +0.31 (+0.13 to +0.49) / +0.30 (+0.12 to +0.49) |
+
+By size (next game, vs rest): below small −0.25, middle −0.18 (holds 0), large −0.39; above small +0.16 (holds 0),
+middle +0.40, large +0.50. By position: below QB +0.18 (holds 0), RB −0.51, WR −0.21 (holds 0), TE −0.39; above QB −0.25
+(holds 0), RB +0.59, WR +0.45, TE +0.22 (holds 0). By reason: below touchdowns −0.37, quarterback −0.61, share fell
+−0.71, none −0.07 (holds 0); above touchdowns +0.70, quarterback −0.09 (holds 0), share rose +0.42, none +0.23.
+**By season the direction is not steady**: below 2021 −0.76, 2022 −0.01, 2023 −0.41, 2024 −0.40, **2025 +0.22 (−0.14
+to +0.55)**, 2026 −0.17; above 2021 +0.53 … 2024 +0.64, **2025 −0.17 (−0.51 to +0.18)**. **The record (2025 and 2026
+weeks 1–4, what the site prints)**: below +0.17 (−0.15 to +0.49, 2,467), above −0.15 (−0.45 to +0.15, 1,815) — **no
+measurable difference**. Subsets: 22 pre-registered (66 cells) + 4 check cells; every subset clear of 0 pooled comes
+from 2021–2024 and none holds in 2025–26 (e.g. above × touchdowns +0.98 then −0.22) → **no row marked**.
+
+**Role** (2021–2025): over the next two games a role up keeps 42% of its target-share move (+3.7 of +8.7 points, +3.4 to
++4.0), 60% of carry share (+12.2 of +20.3), 70% of snap share (+15.0 of +21.3); a role down 41% / 62% / 58%. Priced?
+Role up +0.29 against the rest the next game (+0.07 to +0.49, 5,133), +0.20 over two (+0.01 to +0.39), +0.12 over four
+(holds 0); by season +0.69, −0.01, +0.59, −0.03, +0.21; TE +0.43 (+0.06 to +0.81) the only position clear of 0 (6
+subsets, 18 cells; not marked). Role down −0.13 (−0.35 to +0.09): no measurable effect. The record (2025): role up
++0.22 (−0.21 to +0.64, 1,022) — none. The projection reads `*_share_l3` (the two recent games are two thirds of it) and
+`*_std`: a two-game move is mostly in the number already.
+
+#### What the screens say now
+
+**Trends, before** (main): head "**Below expectation: Jameis Winston** (getting the throws and runs of a 15.3-point player,
+scoring 3.6). **Above expectation: Jaxon Smith-Njigba** (…). Points per game in Forever Unclean Dynasty scoring." —
+picked row: "…: 4 touchdowns in 2 games on 6 red-zone targets. 19.4 above what his opportunities suggest: an observed
+gap, not a forecast." — help: "That is what happened, not a forecast — the gap may close or not; a buy needs a price,
+which this screen does not have." / API help: "Above = running hot, below = due."
+**After**: the same head + under it "Graded on 2025 and 2026 weeks 1–4 (Half PPR): in their next game, players below
+expectation scored 1.5 points more than their average before and players above it 1.9 less — and their projections
+already expected that (no measurable difference against them; 4,282 games)." — row: "… 19.4 above what his
+opportunities suggest: what happened, and his projection already counts it." — help: "Graded on past weeks, players
+like him scored more the next week, about as much as their projection already expected: the gap is what happened, not
+a reason to buy on its own — look at his projection." + "**Graded**: <the record's sentence>".
+
+**The role chip (DFS, Stats — for the PO to place; exact sentence)**: "Graded on 2021–2025 (Half PPR): a two-game role
+change kept about half of its move over the next two games (snaps 70%, carries 60%, targets 42%), and his projection
+already counts most of it — after a role up players finished 0.3 points above the rest against their projection the
+next game (+0.1 to +0.5; 5,133 games), not every season; after a role down, no measurable difference."
+
+#### Files
+
+`src/league_lab/context_record.py` (IP-3 blocks: as-of tag, outcomes, study, record columns, backfill, grade rows,
+sentences, `python -m league_lab.context_record study`), `api/league_lab_api/context_record.py` (`trend`, `role`),
+`api/league_lab_api/research.py` (`TRENDS_HOWTO`, `record` on `/api/trends`), `web/src/routes/Trends.svelte`,
+`web/src/lib/research.ts`, `docs/METRICS.md` (cx1.1), `dbt/seeds/metric_registry.csv` (3 rows), tests
+`tests/test_ip3_trend_record.py` (13), `api/tests/test_ip3.py` (16), e2e `web/e2e/ip3/fixtures.spec.ts` (+
+`web/fixtures/ip3/context_record.json`, 1.7 KB), screenshots `docs/handbacks/ip3/` (3 JPEG, 263 KB).
+**Outside my files** (marked / minimal): `src/league_lab/db.py` (`migrate` creates the two record tables — see below),
+`web/src/lib/api.ts` (types at the end), `api/tests/test_io1.py` (one assertion: the route's keys are now a superset,
+changed on purpose), `docs/WORDS.md` (one dictionary row points to the new section + the section), `CHANGELOG.md`.
+
+#### Schema
+
+`ops.context_record` + `trend_games`, `trend_ppg`, `trend_gap`, `trend_tag`, `trend_reason` (`alter … add column if not
+exists` in the DDL every run executes; rows written before them filled once by `backfill_trend`). On im4: 9,358 rows,
+11 MB on disk after the one-time rewrite (≈ +0.3 MB of data). `ops.context_grade` 21 → 192 rows, 80 kB (kinds `trend`,
+`trend_raw`, `role`; `summary` `trend` / `trend_head` / `role`). No new relation. Neon: ≈ +0.4 MB once vacuumed.
+
+#### Commands and evidence
+
+`uv run league-lab context-record`: Wave I-O's tables in 17 s, then with IP-3 (migration + backfill of 8,790 rows) 13 s,
+then 8–18 s a night (was ≈ 3 s: the bootstraps). Study: 21 s for the frames + 80 s for the 2021–22 in-memory fit.
+Tests: `tests/test_ip3_trend_record.py` 13 passed; `api/tests/test_ip3.py` + `test_io1.py` 24 passed;
+`test_i0a test_i0b test_ia1 test_im3 test_io4 test_n1 test_research test_io1 test_ip3` 198 passed, 6 failed (4 in the
+known list; 2 in `test_io4` that assume the database has no `ops.context_grade` — see below); `test_metric_registry`
+3 passed; `dbt build --select metric_registry` PASS 3; ruff clean; copy standard clean; `npm run lint && npm run build`
+clean; e2e `ip3` 6 passed, `ia1` 10, `im3` + `ib1` 19, `ih1` (Trends) 2; `check_root.sh` no new failures.
+
+#### Without my rows / tables
+
+Wave I-O's tables only (the live site until the nightly): `summary()` answers `corner` / `worth` as before and `trend` /
+`role` graded False; `/api/trends` `record.graded` false → no head line; the new help and row words show (code).
+No tables: the same, `summary()` all four graded False. The first nightly migrates the table itself (no line needed).
+
+#### Not mine, seen
+
+* **The nightly would stop on a fresh database** (main, IO-1): `STATE_TABLES` lists `ops.context_record` /
+  `ops.context_grade`, `restore_state` runs `select count(*)` on each right after `db migrate`, and `migrate` did not
+  create them; the Actions Postgres is a fresh service container. Fixed with a marked block in `src/league_lab/db.py`
+  (`migrate` runs the record's DDL) — the PO's call; without it, put the same DDL before `hard restore-state`.
+* `api/tests/test_io4.py::test_the_honesty_line_with_and_without_the_record` and `::test_the_week_context_carries_the_
+  corner_as_information` assume "this database has no ops.context_grade": they fail on any database with the record.
+* The **Trades screen's buy-low / sell-high lists** (`roster_value.trade_candidates`: PPG − xPPG < 0 / > 0) rest on the
+  same gap this grade found already priced; the player card's help (`api/league_lab_api/player.py`: "above = running
+  hot, below = due") says what Trends no longer says.
+* For the model's owner, not acted on: 2021–2024 suggests the projection pulled hot players back further than they went
+  (2025 does not) — a harness candidate, not a fact.
+
+#### The PO lines
+
+None required in `scripts/nightly.sh` (IO-1's `context-record` line migrates, backfills and grades). `app/whats_new.md`,
+if wanted: "Trends now says what its gap has meant: graded on past weeks, players below expectation scored more the next
+week — about as much as their projection already expected. A gap is what happened, not a reason to buy on its own."
+
+#### Next
+
+Grade the record's kickoff weeks from 2026 week 5 (the same rows, `record_source = 'kickoff'`); retire or regrade
+Trades' buy-low / sell-high on this result.
+
+#### Fix round (branch `fix/IP3` from `integ/IP` 3d1b76b)
+
+* **Role sentence, from the record** (`summary()["role"]["words"]`, never hard-coded; nothing without the record): DFS —
+  the role chip's detail / title (`signal.graded`, `graded_effect`) and "What the projection already holds" (`meta.role_record`,
+  `dfs-role-record`); Stats — the Role change columns carry `graded` (`stats.catalogue`) and How to read this prints
+  "Role change, graded: …" once (`stats-role-record`).
+* **Trades**: "Buy low" / "Sell high" → **Scoring below his work** / **Scoring above his work**; under the section
+  heading the record's line (`context_record.gap_line`; without the record a plain line that claims no grade); the cards
+  lead with the fit ("the fit, from the projections, is the reason to ask about him — not the gap"). **Not re-ranked**:
+  `roster_value.trade_candidates` already orders both lists by the lineup fit over the horizon (projections); the gap
+  only decides who is in a list and breaks exact ties. API keys unchanged (`buy_low`, `sell_high`, `buy_line`,
+  `sell_line`); new `titles`, `gap_line`, `gap_graded`. Waivers' pointer and the player card's help reworded.
+* **test_io4**: both tests monkeypatch `context_record.summary` (no record / graded) instead of assuming the database.
+* Changed on purpose: `api/tests/test_h1.py`, `test_ia2.py` (the lines' words), `test_io4.py`; `web/e2e/h1` (Trades'
+  help word); `web/fixtures/trades_lists_*.json` (lines regenerated with the API's builders, `titles` / `gap_line` added).
+* Console pages (the PO's): `app/pages/6_Trade_Finder.py` lines 4, 7, 161, 288, 292, 309, 313, 634–635, 666, 686,
+  701–702, 710 and `app/pages/0_Player.py` line 419 still say buy low / sell high / "running hot, below = due".
+
+### IP-4 — the player card (Wave I-P)
+
+**Branch** `dev/IP4` from `main` `e4b5eec`. **Dev**: IP-4. **Database**: `league_lab`, read only (nothing written).
+
+#### Task
+
+The player page (`/player/<gsis>`) and the drawer were a stack of text sections. Make them the card Andrew keeps
+describing ("player pictures and real charts", "Madden Ultimate Team / franchise — dark, data-dense panels, player
+cards"): a head with one headline number, honest ratings, real charts, and every section the card had, reorganised.
+
+#### Done (against the brief's list)
+
+1. **The head** (`components/card/CardHead.svelte`, `RangeBar.svelte`; `lib/card.ts` `headRange` / `nextGame` /
+   `headValue` / `headNumber` / `statusTone`): his picture on his team's colour (the team `primary` as the photo's
+   field, the `accent` as a glow and the card's 6 px edge; no text on team colour), first name / LAST NAME, position and
+   team badges, the status chip in the injury's word, "Game started", this week's game, kickoff and the opponent's rank
+   vs his position, the depth-chart / whose-team line; **this week's projection as the one headline number** (48 px,
+   64 px from 1280 px; the Projection tile's own string, so the head and the tile never disagree on rounding), its range
+   bar (low-end · typical · high-end, the numbers printed), and his value in the scoring on screen (browsing: IN-2's
+   `ref_value`, "WR1 · +140 over a free WR"; with a league: the Value section's rank and points per game). Every number
+   is one the card already carried; the head computes none.
+2. **Ratings** — `GET /api/player/{gsis}/ratings?league=` (`api/league_lab_api/ratings.py`; the fixed interface
+   `{season, through_week, position, n_ranked, ratings: [{key, label, value, percentile, rating, words}], overall}` plus
+   `display`, `n`, `minimum`, `definition`, `lower_is_better`, `population`, `qualified`, `overall_n`, `overall_words`,
+   `label`, `how`). Built on the Stats frame: `stats.season_rows` + `stats.aggregate_window` with the **same cache key
+   as the Stats table's season window** (no new cache, no new relation, no cache keyed by user text). Rules:
+   - population = his position's players this season with QB 50+ dropbacks · RB 20+ touches · WR 15+ targets · TE 10+
+     targets (2026 through week 4: 33 QBs, 55 RBs, 71 WRs);
+   - a rating also needs the catalogue's own minimum for its column (e.g. EPA per target 20+ targets, yards after
+     contact 20+ carries charted by PFR); percentile = (players below + half the ties, himself excluded) / (others
+     ranked); rating = round(99 × percentile); "fewer is better" columns (sacks per dropback, interceptions per attempt)
+     rank the other way and say so;
+   - under a minimum, a missing value or a population of one: `rating: null` and the reason, never a low number;
+   - **overall = the plain mean of the ratings shown, shown with 3 or more**, labelled "average of 8"; the panel's first
+     line: "Where he ranks this season among receivers with 15+ targets, 0–99. Not a projection.";
+   - per position (6–8, a test pins it): **WR / TE** target share, air-yard share, first-read share, red-zone target
+     share, snap share, yards per target, EPA per target, catch rate; **RB** carry share, target share, snap share,
+     goal-line (inside-5) carry share, yards after contact per carry, rushing success rate, yards per touch; **QB** EPA
+     per dropback, dropback success rate, adjusted yards per attempt, CPOE, intended air yards per attempt, carry share,
+     sacks per dropback (fewer better), interceptions per attempt (fewer better). K / DEF: no panel; the route answers
+     `ratings: []` and the words.
+   - NFL-wide: the same in every league and scoring (`league` validated, not used). `research` bucket via the existing
+     `/api/player/` prefix (a test asserts it); the id validated by `^00-\d{7}$` (freetrade.py's pattern).
+3. **Real charts** (`components/card/WeekChart.svelte` — the chart kit's week chart: categorical axis, rounded bars, a
+   band, lines, hollow points for a week with no game; `lib/chart.ts` `bandPath` / `bands`):
+   (a) **Points against the projection** (`PointsChart.svelte`): his points as bars against the **projection made before
+   each game** as a line with its low-end to high-end band — new `GET /api/player/{gsis}/projections?league=` (house
+   league: `mart_player_week_projections`; a reference key: `ops.projection_ranges` when the key prices a stored scoring
+   exactly — Half PPR, PPR, Standard; anything else: `weeks: []` + the reason, the bars alone). The answer above it in
+   counts ("Above his projection in 1 of 2 games, inside its range in 2 of 2"); the notes say which weeks are the board
+   shown before kickoff and which were **rebuilt after kickoff** (2026 weeks 1–3, `frozen_source = 'refit'`).
+   (b) **His role by week** (`RoleChart.svelte`): target, carry and snap share as lines from the game log's own columns
+   (the request the game log already makes), toggled (`aria-pressed`), the default set by position; IP-3's
+   `summary()["role"]` sentence under it when graded (absent: nothing — a test with a hand-built record).
+   (c) **Expected against actual**: the existing `GameLog` / `LineChart`, now keyboard-reachable too.
+   Every chart: tap / hover a week → the line under the chart says its numbers (the last played week by default);
+   the plot is a `role="slider"` (← → Home End; `aria-valuetext` is the week's sentence); "Show the numbers" is the
+   table; dark and light from the tokens.
+4. **Every section stays** (`lib/card.ts`'s sections, unchanged): the page is the head, then the ratings (5/12, 4/12
+   from 1280 px) beside the points chart, then CSS columns (two from 900 px, three from 1280 px): Projection + "Why this
+   number", Availability + the news line, the role chart, the game log, Role, Value, Usage, Signals, Schedule, "How to
+   read this", the foot. Section tiles two to a row inside a column. The drawer's Overview: the compact head, the
+   reason, the actions, the ratings, the points chart, then its sections as before.
+5. Performance (numbers below); the ratings and the charts load in a chunk of their own (`card/panels.ts`, `lazy.ts`).
+6. Tests and e2e (below).
+
+#### Not done / limits
+
+- **Phone: the sections stay open** (not "sections that open"): existing e2e (the root fixtures spec, ia3, if4, il1, n1, …) assert `section-*` visible on the
+  page. At 375 the head and the start of the ratings fill the first screen; the first chart is ~1.3 screens down.
+- **Past projections where none are kept**: a kicker's come from `ops.kd_ranges` on a reference key (done); in a house
+  league the mart keeps a kicker's current week only, and a defense has no card. Any league that is not a house league
+  or a stored reference scoring (Half PPR, PPR, Standard — not the ESPN / Yahoo variants, TE premium or 6-point passing
+  TDs): the bars alone, titled "Points by week", with the reason (pricing `ops.projection_lines` in its scoring on
+  request is the next step).
+- **The research budget**: a full player page now asks card + games + ratings (`research`) + projections (`read`) —
+  three research calls where it asked two; the drawer's Overview asks card + games + ratings where it asked the card
+  alone. At the default 60 a minute, 40 at once, a person opening 20 players in a minute still fits (60 tokens); the
+  IM-3 comment's "a dozen player cards (two calls each)" now reads three. The PO decides whether ratings should move
+  to `read` (warm it is a 23 ms read of a cached frame; cold it aggregates the season, 0.42 s) — the brief put it in
+  `research`, so it is there.
+- No "schedule ahead" rating: it is not a percentile of a Stats column (the schedule table stays).
+- Pictures: the sandbox reaches no picture host, so every screenshot shows `Headshot`'s silhouette on the team field
+  (designed for: the card reads as a card without a photo). A real picture is 104 px round in the same place.
+- The defense case in the e2e is **hand-built** (the kicker's card with a defense's identity): the API answers no card
+  for a defense at all (see "Wrong, not mine").
+
+#### Files
+
+New: `api/league_lab_api/ratings.py`, `api/tests/test_ip4.py`, `web/src/components/card/{CardHead,RangeBar,Ratings,
+WeekChart,PointsChart,RoleChart}.svelte`, `card/{panels,lazy}.ts`, `web/e2e/ip4/fixtures.spec.ts`,
+`web/fixtures/ip4/api_ip4.json` (121 KB, trimmed: game rows to the 11 fields read, the players list to 6 rows),
+`docs/handbacks/ip4/*.jpg` (7). Changed (mine): `routes/Player.svelte`, `components/PlayerPane.svelte`,
+`LineChart.svelte`, `lib/card.ts`, `lib/chart.ts`, `docs/DESIGN.md` (§ "The player card (Wave I-P, IP-4)").
+**Edits outside my files** (marked blocks): `api/league_lab_api/main.py` (the router, before the SPA catch-all, after
+IO-1), `api/league_lab_api/ratelimit.py` (`bucket_for`: `/api/player/{gsis}/projections` → `read`, 3 lines before the
+research rule; the ratings stay `research` through the existing `/api/player/` prefix),
+`web/src/lib/api.ts` (types + `cardPaths`, at the end), `docs/WORDS.md` (§ "The player card"), `CHANGELOG.md` (the
+Wave I-P heading created, one bullet), `web/e2e/app.spec.ts` (one assertion, on purpose: see below).
+
+#### Schema in / out
+
+In: `analytics.fct_player_game`, `mart_player_game_advanced`, `mart_player_ngs_week` (through the Stats frame),
+`dim_player`, `mart_player_week_projections`, `ops.projection_ranges`, `ops.kd_ranges`. Out: nothing. **No new relation.** On a
+database without anything new: everything works (no new object is read); a copy without `ops.projection_ranges` or
+the projections mart gives the bars alone, never a 500.
+
+#### Evidence
+
+- `GET /api/player/{gsis}/ratings`: **cold 0.42 s** (a fresh process's first read of the season frame: query 0.15 s +
+  aggregate 0.20 s; the Stats table's cache, so a visit to Stats warms it too), **warm 0.023 s** (curl, HTTP
+  included). `…/projections`: 8–13 ms (house), 5 ms (reference).
+- Page (fixture API, warm, 4 loads each, Puka on `ref:half` and St. Brown in the dynasty league): **the head visible
+  181–563 ms** (the card's own request dominates), first contentful paint 60–200 ms, the points chart 197–733 ms, at
+  375 and at 1300. (A tight measuring loop hits the `research` limit — see "the research budget" above.)
+- Bundle: the app chunk **243.40 → 256.54 KB (+13.1 KB; gzip 75.95 → 80.92, +5.0 KB)**; the new lazy `panels` chunk
+  22.0 KB (8.2 KB gzip), loaded with the player page or the first drawer; the old `PlayerCard` (now used only by lazy
+  screens) moved into a 4.6 KB shared chunk. All JS: 749.1 → 784.4 KB.
+- Tests: `api/tests/test_ip4.py` **21 passed** (percentiles on hand-built frames, ties, lower-is-better, a population
+  of one, the minimum sample, a column's own minimum, a missing value, a player with no games, the overall's 3-rating
+  rule, 6–8 catalogue columns per position, formats, the buckets, bad ids / league / season, the routes on the
+  database, a kicker's past projections). With `test_im3`, `test_im4`, `test_h0`, `test_auth` (modules touched: the
+  router, ratelimit): **118 passed** (the last run of test_ip4 + test_im3 after the bucket change: 84 passed). `ruff check src app tests api` clean; `npm run lint && npm run build` clean; `copy_standard.py --check`
+  clean.
+- e2e `e2e/ip4` (FIXTURES_PORT=8940): **16 passed** (8 × phone at 375, desktop at 1300): WR (Puka Nacua), RB (Breece
+  Hall, Out), QB (Lamar Jackson), a rookie with two games (Colbie Young: one reason line, every rating a dash, "no
+  average yet"), a kicker (Brandon Aubrey) and a defense (no ratings, the card stands), the drawer, the record's role
+  sentence; tap, keyboard and "Show the numbers" on the charts; no sideways scroll; at 1300 the ratings and the chart
+  side by side. Recorded with `IP4_LIVE=http://localhost:8964`.
+- Existing e2e that read the card, the pane or the player page (fixtures.spec, ia3, ib1, if3, if4, ig1, ig2, ii2, ii3,
+  ii6, il1, il5, im2, im3, im5, in1, in2, inf1, io3, n1, n2): **86 + 142 passed, 14 skipped** (their existing skips).
+  io3's "a 429 too_fast is waited out" failed once while three suites shared the box and passed on the rerun (blog
+  editor timing; not the card).
+- **Changed on purpose**: `web/e2e/app.spec.ts` (the live-API spec, not run here): "the projection starts in the top
+  half" now reads the head's `card-number` (the projection is the head's number; the Projection section follows the
+  ratings and the first chart).
+- Screenshots (`docs/handbacks/ip4/`, JPEG q70, 47–160 KB each, 752 KB in all): `ip4-wr-1300-dark`,
+  `ip4-qb-1300-light`, `ip4-k-1300-dark`, `ip4-pane-1300-light` (the drawer alone), `ip4-wr-375-dark`,
+  `ip4-rb-375-light`, `ip4-rookie-375-dark`.
+- Branch size: ~2,130 lines added (~246 KB of text, 130 KB of it the e2e recording, plus its first version, 122 KB, in
+  history); binaries 7 JPEGs 752 KB (+ two earlier versions of `ip4-k-1300-dark.jpg`, 66 KB each, in history) — about
+  1.1 MB generated in all, under the 2 MB rule.
+
+#### PO lines
+
+- `app/whats_new.md` (yours), suggested: "**The player card.** Every player's page leads with a card: his picture on
+  his team's colour, this week's projection and its range, his value in your scoring, ratings that say where he ranks
+  this season among players at his position (0–99, from his own numbers — not a projection), and charts of his points
+  against the projection made before each game and of his role by week."
+- `docs/STATUS.md` / `HANDOFF.md`: this file.
+- Nothing for the nightly, the Dockerfile, render.yaml or the workflows. No new env variables. No new dependencies.
+
+#### Wrong, not mine
+
+1. **A defense has no card**: `GET /api/player/DEN?league=…` answers 404 "No player with id `DEN`" in a house league
+   and on `ref:half`, while `/api/search` returns `{"gsis_id": "DEN", "player_name": "Denver Broncos"}` — a defense
+   picked in search opens an error page.
+2. **One rounding, two answers**: the API formats with Python (`f"{8.25:.1f}"` → "8.2"), the web with `toFixed`
+   ("8.3"); on Brandon Aubrey's card the old head said 8.3 above a tile saying 8.2. The head now uses the tile's string;
+   other screens that print `fmt.pts(proj_points)` beside an API string can still differ by 0.1.
+3. Running the existing e2e rewrites committed PNGs under `docs/handbacks/in1/` and `docs/handbacks/io3/` (those specs
+   write their screenshots into docs by default): a `git add -A` after a test run would commit them.
+
+#### Next
+
+Past projections for kickers / defenses (`ops.kd_ranges`) and for any league priced on request; a rating's trend
+(this season's percentile against last season's, same rule); real pictures checked on the live site at both widths.
+
+#### Fix round (after the merge, `fix/IP4` from `integ/IP` 3d1b76b)
+
+1. **A defense has a card** (option a). `GET /api/player/{code}` for a team code — a closed set: the 32 Sleeper
+   defense codes plus `LA` → `LAR` (`api/league_lab_api/unitcard.py`, a marked block at the top of main.py's card
+   route) — answers the card shape the page renders for a kicker: the head (the team code on the team field where a
+   face would be), this week's projection and range (a house league's own row; any other league: the K / DEF board
+   priced in its scoring, `ondemand.PlayerContext.projection` — My Week's path), the game and kickoff, the bye, whose
+   team (a league that is not a house league or a reference key), the schedule. `…/projections` for a code returns
+   the projection made before each week (house mart / `ops.kd_ranges` for a reference scoring) and **its points by
+   week** (`mart_kd_week`'s outcomes priced with `kdef.unit_points` in the league's scoring), which the chart draws; no
+   ratings panel, no player game log (the drawer's Game log tab says the points are on the Overview's chart). A league
+   whose lineup has no DEF spot (the dynasty league): a dash and that reason. Anything outside the set: 404 as before.
+2. **Buckets and L2**: `…/ratings` is `read` (with `…/projections`), and the web asks for it without `league`; outside
+   `research` the limiter never reads a `league=` (`league_of` only runs for research), so neither route can mark a
+   league seen. Test: `test_card_reads_never_mark_a_league_seen`.
+3. **375**: the order was already head → ratings → first chart → sections (page and drawer); what pushed the chart down
+   was the ratings' height. The ratings are two tiles to a row on a phone and in the drawer (rows from 640 px on the
+   page): the chart card starts at y = 894 at 375 × 812 (was 1,001); the ratings panel 388 px (was 495). Collapsed
+   nothing. The e2e pins the order (ratings → chart → sections) and the gap (< 24 px) on the page and in the drawer.
+4. **Rounding on the card**: the head (the tile's string), the range bar, the points chart's readout and table, the game
+   log's chart and its "points per game" sentence, the schedule table and "they add up to the …" all print one decimal
+   the API's way (`lib/card.ts` `pts1`: a tie to the even digit). Elsewhere `fmt.pts` / `toFixed(1)` still rounds a tie
+   up beside API strings — for the next wave: Rankings, Compare and StartAnswer, Team, LineupCard (My Week), Players /
+   Stats (`columns.ts`), Trends, Receivers, Matchups' board, DFS, the free trade calculator, Outlook, Home, Watchlist.
+5. Tests: `test_ip4.py` + `test_im3.py` 87 passed; ruff, lint, build, copy standard clean; `e2e/ip4` 18 passed (adds
+   "search Denver, pick the defense": the drawer and the full page are its card; the hand-built defense is gone); the
+   card / pane specs 86 + 143 passed, 15 skipped. Changed on purpose: `test_bad_ids_and_parameters` (DEN's projections
+   answer now). Edits outside my files: `main.py` (the marked block in the card route), `ratelimit.py` (my block),
+   `GameLog.svelte` and `ScheduleTable.svelte` (the rounding, one import each). Screenshots: `ip4-def-375-dark.jpg`
+   (new) and `ip4-wr-375-dark.jpg` (the tiles); the other five are unchanged (rule 12).
+
+### IP-5 hand-back — robustness and reach (Wave I-P, 2026-10-07)
+
+**Task**: BRIEF § "IP-5 — robustness and reach" (`/home/claude/waveIP/BRIEF.md`). **Branch** `dev/IP5` from `main`
+`e4b5eec` (worktree `wt-ip5`; database `league_lab`, read only — nothing written anywhere). Security notes:
+docs/SECURITY_PUBLIC.md § 15. Words: docs/WORDS.md § "Player pages that share, and "busy" for a refused read".
+
+#### 1. A refused provider read is never remembered as "nothing there" — done
+
+`src/league_lab/provider_trouble.py` (new): the Sleeper and MFL clients `note()` a read that raises (refused or failed
+with nothing held); a cache builds inside `watch()` (a context variable holding mutable counters: pools that carry the
+request's context — § 13's rule — count into it); a troubled build is not kept; `kept(region, key, build, ttl, stamp)`
+keeps `(stamp, fresh_until, value)` and serves the last good value for a troubled or refused rebuild, else
+`SleeperBusy` (503 "busy, try again in a minute"; the web retries). A held value served is taken back off the outer
+watches, so the cache around it still keeps its answer. The full table, every cache with before / after, is
+SECURITY_PUBLIC § 15. In short:
+
+| Cache | Before (refused / failed / nonsense) | Now |
+|---|---|---|
+| Sleeper client per path | held or raised / held or raised / **an empty body kept as data** (rosters `[]` 10 min, users a day, the directory `{}` a day) | the same + noted / the same + noted / a failure (held, else raised) |
+| Sleeper directory on disk | read only under a day old | any age answers a refusal or failure |
+| MFL client per URL | held or raised; **a 429 raised past a held answer** / held or raised / **an empty body kept a day** | 429 serves the held answer; all noted; an empty body is a failure |
+| MFL id mapping (`MFLLeagues.translate`) | refused → ids recorded as "MFL player <id>", no position (a defense lost) | busy, nothing recorded |
+| injury report copy | held / held / **0 entries replaced the held copy** (and the disk copy) | the held copy stays (counted failed) |
+| ESPN news per athlete | held / held / **`{}` replaced the held items** | a failure, held kept |
+| roster contexts (`contexts`; My Week, Team, Waivers, card, trades) | a swallowed refusal **kept 10 / 2 min** under a key without the directory's stamp | never kept; the roster's last good context (≤ 1 h) with its stamps, else busy |
+| decision memos (`decisions`) | swallowed → kept 10 / 2 min | not kept, busy |
+| `league_weeks`, `ros` (anyleague) | swallowed → kept 5 / 10 min (`ros`: units renamed `TMQB-KC` when the directory read was refused) | not kept (`ros`: busy) |
+| outlook (IO-2) | refusals not kept; **a failure counted as clean** (MFL standings down → 0-0 records kept 2 min) | failures counted too: not kept |
+| ESPN / Yahoo clients | ESPN sound; **Yahoo raised a 429 / 999 past a held answer** | ESPN unchanged; Yahoo serves the held answer (`tests/test_ip5_providers.py`) |
+| il4 free agents, outlook cards / store, scoring checks, research, matchup board, priced weeks, boards | sound as built or no provider read | unchanged |
+
+Behaviour change to know: an MFL league whose standings or live-scoring export **fails with nothing held** (cold) now
+answers busy where it showed 0-0 records or last week's starters; a held copy answers as before.
+
+Tests (`api/tests/test_ip5.py`, one per cache, each refuses or breaks the read and then proves the next reader gets
+the real answer): the Sleeper empty directory, null rosters (held served), refusal noted; the directory's disk copy of
+any age; MFL's empty body, its 429; MFL's id lookup (unit: nothing recorded; route: My Week 503 busy then the full
+roster, no "MFL player"); the watch across a pool and nested; `kept` (busy with nothing held, then kept, then the held
+value with the outer cache clean); the decisions memo; the roster contexts (not kept, then kept, then the held one for
+a troubled rebuild under a new stamp); `league_weeks` and `ros_table`; My Week refused → 503 busy → the lineup; the
+injury and news feeds; the outlook with a failed MFL export (503, nothing kept, then the 12-team answer kept).
+
+#### 2. MFL's League screen — the same numbers, ~20 % less CPU; about 2 s cold (not reliably under)
+
+Profiled on the fixtures, `LEAGUE_LAB_AVAILABILITY` off and on (on = the ESPN fixtures): power part 1.95 s off / 2.03 s
+on, the whole answer after it 0.70 / 0.82 s (load avg 2.7; on `main` the whole answer with the overlay on was the 500
+in item 1). The power part = the lineups' board (`_context`: the rosters solved for the horizon, MFL's EV pricing of
+every line) + the rest-of-season board (`ros_table`: every week to the final). Fixed, numbers unchanged:
+
+* `unit_lines`' starter rule in one pass (was 32 teams × 15 weeks of `.loc`; ~1.0 s under load → 0.15 s);
+* the window's TMQB lines priced in one `price_lines` call (was one a week) and its unit rows read as plain dicts
+  (TMQB and TMPK; ~0.67 → ~0.2 s profiled);
+* tried and dropped: building the rest-of-season board in a thread beside the lineups' board (no measurable gain on a
+  loaded box; not shipped).
+
+| `GET /api/league/outlook?league=mfl:70587&team=1&part=power` (this box, 2 cores shared by five devs) | main `e4b5eec` | `dev/IP5` |
+|---|---|---|
+| cold process (load avg 3.3–4.2): wall | 2.56 s, 3.11 s | 1.96 s, 1.96 s, 1.99 s (one 4.85 s at load 3.9) |
+| cold process: CPU of the process | 2.10–2.31 s | 1.68–1.86 s |
+| a warm process, the league cold (another league opened first): CPU | 1.86 s | 1.44–1.55 s (wall 1.58 s at load 2.7) |
+| **the live-like path**: a fresh `uvicorn` on the fixtures (port 8965), `curl` the power part first (load 1.6) | 2.56 s | 1.99 s, 2.21 s |
+| … then `/api/league`, then the whole outlook | 0.12 s, 0.80 s | 0.09–0.11 s, 0.75–0.80 s |
+
+So: about 2 s cold (−0.4 to −0.6 s), **not reliably under 2 s** on this box; the CPU is ~20 % lower everywhere.
+
+Where the rest goes (thread CPU, warm): rest-of-season board 0.70 s (skill lines 0.25, units 0.19, the window's read
+0.18), lineups' board 0.55 s (four weeks priced 0.35: MFL's per-threshold yardage odds), league inputs 0.07 s. Next
+(not done): weeks 4–7 are priced twice (the horizon board and the window) — one price cache for both.
+
+**Equality** (`<scratchpad>/ip5/capture.py`; run on `main` `e4b5eec`'s code, on this branch after item 1, after
+each item-2 step and on the final code): 18 answers — the outlook's power part and whole answer, `/api/league`,
+`/api/ros` (points, `source=sleeper` / Team for MFL, the lineup view) for `mfl:70587` (team 1), League of Scrubs
+(team 2) and Forever Unclean Dynasty (team 12) — **150,736 numbers, byte-identical JSON** (7.57 MB) apart from MFL's
+`roster_updated_at` (the fetch time); `main` against the final branch included.
+
+#### 3. The "best corners" split — removed
+
+As-of it would be honest only as a description of noise: 184 receivers have a split (2025 + 2026 weeks 1–4); the
+median receiver has **3** games against a top-quarter corner (90th percentile 6, at most 9), a per-game mean with a
+95 % interval of about ±8 points, beside a call IO-1 graded on 2,190 receiver-games as no measurable effect. The web
+never showed it (only `/api/matchups/cb`'s `cover_split` and the Streamlit console); the answer keeps the key, always
+null, and two queries per request are gone. The console's own copy is the PO's file (line below).
+
+#### 4. Player pages that share — done
+
+`api/league_lab_api/player_share.py` (new), marked blocks in `main.web` and `blog.sitemap`. Example (the fixtures,
+pinned to 2026-10-03): title **"Josh Allen (QB, BUF): 23.8 projected this week, 14–35 · isuckatfantasy"**, description
+**"Week 4, Half PPR: vs NE, Sun 1 PM ET; the highest projection of 93 quarterbacks this week. 8 in 10 weeks like this
+land between 14 and 35 points."** Only from the matchup board's frame this process holds for Half PPR (a crawler's hit:
+0 queries, 0 provider calls, nothing built — tested); cold → the default card, no players in the sitemap. The sitemap
+lists the 200 highest projections. `?league=` anywhere → `X-Robots-Tag: noindex` + the robots meta tag.
+
+#### 5. The nightly: three ways it leaves the site on yesterday's numbers (read only; the PO's files)
+
+1. **A hard step fails the same way three times.** `migrate`, `restore-state`, `dbt-build`, **`backtests`**,
+   `projection-marts` and `sync-hosted` stop the night before the sync; the Worker's re-checks (09:37, 11:37) and the
+   13:07 cron rerun the same commit and fail the same way. Tonight's risk: a `MODEL_VERSION` bump (IP-1) makes
+   Wednesday's night run `backtest-v2` for the first time (~15 extra minutes) as a **hard** step. Self-healing: run
+   the backtests soft (or after the sync) when an older model's backtest exists; on a `dbt-build` failure, build again
+   with the failing node's descendants excluded and publish the rest (their hosted tables stay as they were).
+2. **The re-check's "today" is UTC.** The Worker and the `gate` job count any success since 00:00 UTC; a manual run
+   that succeeds after 20:00 EDT (tonight's merge, say) is "today" for the next morning, so if the 07:37 run fails,
+   the 09:37 / 11:37 re-checks and the 13:07 cron all see a success and do nothing — a whole day on yesterday's
+   numbers. Self-healing: count only runs created after this morning's 07:37 ET dispatch (Worker `todaysRuns`, the
+   `gate` job's `created>=`).
+3. **The hosted publish itself.** `sync_to_hosted.sh` drops the previous marts and restores the new copy; its header
+   says the swap is not atomic on the free tier, so a connection lost mid-restore (Neon's free compute) leaves the
+   marts missing ("the numbers are not ready yet") until a later run; a copy over the size budget exits 6 and keeps
+   yesterday's (deterministic: every retry). Self-healing: retry the restore with backoff on a connection error, prune
+   what can be pruned (old outlook snapshots, events) before the size check, and say the hosted size in the run
+   summary each night so the budget is seen before it is hit.
+
+#### Files
+
+Mine: `src/league_lab/provider_trouble.py` (new), `api/league_lab_api/player_share.py` (new), `api/tests/test_ip5.py`
+(new, 30 tests), `tests/test_ip5_providers.py` (new, 1), `src/league_lab/anyleague.py`, `src/league_lab/mfl_client.py`,
+`api/league_lab_api/availability.py`, `decisions.py` (`_memo` only), `research.py` (the split only), `outlook.py` (`_refusals` only), `blog.py` (the
+sitemap only), SECURITY_PUBLIC § 15, this file. **Edits outside my files** (marked IP-5, smallest possible):
+`src/league_lab/sleeper_client.py` (`_get`'s refusal / failure paths + `_held_or_raise`, `_players_from_disk(any_age)`),
+`src/league_lab/platforms.py` (one `except` in `translate`), `src/league_lab/injury_feed.py` (an empty copy),
+`src/league_lab/news_feed.py` (an empty body), `src/league_lab/yahoo_client.py` (one `except` in `get`),
+`api/league_lab_api/main.py` (the shell's player case, `noindex`),
+`api/tests/test_io2.py` (one assertion changed on purpose: the default League card now carries the robots tag),
+`docs/WORDS.md`, `CHANGELOG.md`. `ratelimit.py` untouched: no new route.
+
+New env variables: none. New dependencies: none. New relations: none (a database without anything new answers as
+before). Sizes: 0 binary files; about +1,290 / −69 lines (78 KB of added text, docs and tests included).
+
+#### Checks
+
+`test_ip5.py` 30 passed, `tests/test_ip5_providers.py` 1 passed. The test files of what I edited (availability, decisions, outlook, the MFL / Sleeper paths,
+research, feeds: test_i0a, ib0, ib2, decisions, io2, in6, io4, i0b, ic2, ic4, il2, f3, research, n1, n2, ig2, if2,
+h1, i0c, ia2, ie1, ie2, ig1, ig3, ii0, ii1, ii5, ik3, il4, in5): every failure on the known list **except three in
+`test_ig2.py`** (`test_what_changed_lists_a_brief_with_its_source`, `…without_the_store_is_if4s`,
+`test_the_matchup_evidence_cites_the_event`) — they fail identically on `main`'s code (checked out over the tree;
+their answers carry today's real `checked_at`, so the date likely turned them red after midnight UTC); not mine. Root suite
+(`check_root.sh`, at the end): 1,553 passed, 4 failed, 0 new. ruff clean; the copy standard clean; `npm run lint` (193 files, 0)
+and `npm run build` clean (no web file changed). No e2e: no screen changed.
+
+#### The PO lines I need
+
+* `app/pages/5_Matchups.py` (the console): delete the block `with st.expander("His points against the best
+  corners"):` (lines 284–306) and `cover_split,` from the import (line 21) — the same look-ahead split.
+* Nothing in `scripts/nightly.sh`, the workflow, `render.yaml` or the Dockerfile.
+
+#### Next
+
+Note to `provider_trouble` in the ESPN / Yahoo clients and their adapters' four swallow sites; one price cache for
+the horizon weeks the window prices again (MFL's power part ~0.3 s); the nightly's three self-healing changes above.
+
+#### Fix round (after the independent review; branch `fix/IP5` from `integ/IP` 3d1b76b)
+
+* **M1** — a held answer served past its TTL is noted `stale` by the Sleeper, MFL, ESPN and Yahoo clients (not trouble:
+  `TOTALS["stale_served"]`); a build that saw one is served to its requester and kept by nobody (`kept()`,
+  `decisions._memo`, `league_weeks`, `ros_table`, the outlook); a cache's own held value counts stale for the caches
+  around it; the caches' hold is 15 minutes. Age bound (`provider_trouble.STALE_MAX_S`): rosters 30 min, live scores
+  15, standings / status an hour, schedules / settled weeks a day, settings / the directory / players 2 days; a game day
+  (Thu / Sun / Mon) rosters 15 and live scores 10; older → busy. The reviewer's script as a test: attacker 16 players
+  (stale, not kept), good-2 15 (Sleeper read again); 31 minutes on, the refused attacker gets busy. (The script itself
+  now trips before step 1 on its fixed clock: 10,000 s is below this box's monotonic uptime, so the bucket refuses.)
+* **M2** — `outlook()` judges a build by its own `watch()`, not the process's counters; test: X refused in its own
+  thread during Y's build → Y's build kept.
+* **L1** and the grep: fixed — week odds, `mfl_results`, three `decisions` context sites, `MFLLeagues.rosters`
+  (standings; starters when both reads are refused) and `_with_live`, `ESPNLeagues.league` (week, status),
+  `YahooLeagues._records` / `_week_of`; listed with reasons in SECURITY_PUBLIC § 15.
+* The PO's call (listed Low): when everyone's budget is spent, every on-demand build is stale-only → uncached → CPU.
+
+#### Fix round 2 (the PO's decision on the age bound; branch `fix2/IP5` from `integ/IP` e5c785b)
+
+* `STALE_MAX_S`: rosters and live scores **an hour on any day** (sleeper `rosters` / `matchups`, mfl `rosters` /
+  `live_scoring`, espn `rosters` / `schedule`, yahoo `roster` / `scoreboard`); `DEFAULT_MAX_S` an hour; the game-day
+  tightening (`GAME_DAY_MAX_S`, `game_day`) removed — nothing else read them; `HOLD_S` and `CONTEXT_HOLD_S` an hour.
+* Why: an outage must not turn into "busy" while a last good answer with its stamp exists (`test_f3`'s rule, unedited);
+  the M1 rule (stale noted, served to its requester, kept by nobody) is unchanged. The M1 test's bound step is 61 min.
