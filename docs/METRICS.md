@@ -4489,3 +4489,52 @@ league_lab.context_record study` (≈ 2 minutes with the in-memory 2021–2022 f
 Bump the `version` in `metric_registry.csv` when a definition changes; the explorer shows the
 registry on the Data Status page. Old versions are not recomputed retroactively unless the change
 is a bug fix, in which case say so in `STATUS.md`.
+
+<!-- ---- IP-2 -->
+## Rankings and tiers (rk1.0, IP-2, Wave I-P, 2026-10-07; `api/league_lab_api/rankings_api.py`, `GET /api/rankings`, `GET /api/rankings/start`)
+
+**What is ranked.** No new number: the week view ranks the matchup board's week frame (`matchup_board._week_rows`:
+every QB / RB / WR / TE with a game this week, the projection and P10 / P25 / P75 / P90 in the league's scoring) plus
+P50 (the mart for a house league, `anyleague.price_week`'s ranges otherwise) and K / DEF (the mart / `price_week`'s
+`kd` frames, where the slots start them); the season view ranks the rest-of-season table `/api/ros`'s projections view
+reads (`mart_player_ros_projection` for a house league, `anyleague.ros_table` otherwise; `is_ranked` rows), its range
+`ros_p10` / `ros_p90`. Rank = order by projection (ties by id). FLEX = RB, WR and TE in one list (its own tiers).
+
+**The distribution** of a player's week (or season): `decisions._week_dist` on his quantiles and his projection — D6's
+piecewise-linear quantile function (five knots; a row with P10 / P90 only takes its projection, clipped into the range,
+as the median: K / DEF and the season) — moved so its mean is the projection (`decisions._centred`). This is the piece
+the week's odds (`lineup_win_probability`) and the season outlook draw; nothing is fitted here.
+
+**Tiers.** Down the list, a player joins the current tier while its first player (the opener) would outscore him in
+fewer than **55** weeks in 100 (`TIER_P = decisions.COIN_FLIP`, D6's "coin flip" edge); the first player the opener
+beats 55 times in 100 or more opens the next tier. Measured against the opener, not the neighbour: small steps add up
+(a run of coin flips between neighbours still breaks once the opener clearly leads). P(A > B) for the tiers treats the
+two as independent (a tier is a property of the list, not of one game) and is computed on a 400-level grid of each
+distribution (`p_beats`: every pair of levels, a tie counting half; within 0.006 of D6's Monte Carlo on the same shapes,
+within 0.02 of the closed form for normal-shaped ranges — `api/tests/test_ip2.py`). A player without a projection has no
+tier and opens none; one without a range is a point at his projection. Not graded as a forecast: a tier says how far
+apart two ranges are, the same quantity the start call grades below. Typical counts (week 4 of 2026, Half PPR): 16
+tiers in 219 receivers, 4 in 32 kickers, 6 in 32 defenses; the season view's ranges are narrower (a sum of weeks), so
+it has more (23–24 in 69 quarterbacks).
+
+**Who should I start?** For two to four players this week: one Gaussian copula over them with D6's `pair_rho` for a
+pair that shares a game (teammates, opponents; K / DEF independent), 40,000 draws (`decisions.N_DRAWS`, seed
+`decisions.SEED`) symmetrised over every order of the players (the standard normals permuted before the copula's
+symmetric root: identical players get identical chances; the draws follow the ids, so the order asked does not matter;
+`P(A beats B) + P(B beats A) = 1` exactly, a tie split). Reported: each player's chance of scoring the most
+(`p_best`, whole percent 1–99) and every pair's chance. **The call**: the pick is the highest `p_best`; the word is D6's
+scale on the whole percent the sentence prints for the pick against the runner-up: under 55 **a coin flip** ("A coin
+flip: … — either is fine."), 55–64 **a lean** ("Lean …: … — close; either is fine."), 65+ **clear** ("Start …: … — a
+clear call, not a sure one."). **No calibration shrink**: D6 graded the pairwise number (4,895 start / sit pairs of
+2024–2025 where both played; "a lean" predicted 59.6%, observed 57.7%; "clear" 74.3% / 74.0%; slightly overconfident on
+average, 0.9 points) and a shrink fitted on one season did not help the other; the week's odds' shrink (0.60) is for a
+sum of nine players and does not apply to a pair. Centring on the projection changes the week odds' Brier by 0.0002
+(§ "Win probability — the week"); the pair grade above is on the uncentred ranges. **Not graded**: the chance of being
+the highest of three or four (the screen says so). The honest floor on the screen quotes the ranges' 2026 coverage
+through week 3 (79 in 100 where they aim at 80) — a stamped constant (`rankings_api.START_FLOOR`), to be read from the
+record when it is next touched.
+
+**The cache**: `league_lab.memo` region `rankings` (10 minutes, ≤ 64 entries), one entry per (canonical scoring key,
+season, week, view, position) — ~0.1 MB; never keyed by the search or the page. The start answer is not cached (two to
+four ids are not a countable set): ~25 ms warm.
+<!-- ---- end IP-2 -->

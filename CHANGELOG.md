@@ -35,6 +35,14 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   backtest of the model that made it (QB: 6.52 against 5.86). Found: nflverse's schedule keeps stale projected starters
   (33 team-games in 2024; SEA weeks 3–5 of 2026 list Lock while Darnold plays). docs/METRICS.md § "v3.4: the
   quarterback weak spot"; `scripts/analysis/ip1_qb_diagnosis.py`, `ip1_qb_candidates.py`; docs/handbacks/IP-1.md.
+- **IP-2 — rankings for everyone, and "Who should I start?"** `/rankings` (a tab while browsing, a Players sub-tab with
+  a league): this week's or the rest of the season's rankings at QB / RB / WR / TE / Flex (K and DEF where the scoring
+  starts them) in the bar's scoring or the league's own, the range as a bar, the defense's matchup chip (never the
+  corner), who has him with a league, and **tiers** (a run the first of them outscores in fewer than 55 weeks in 100).
+  Pick two to four → Compare opens on the answer in words from the ranges the week's odds draw ("Lean Olave: he
+  outscores Nacua in 57 of 100 such weeks — close; either is fine.") with how sure such a call is. `GET /api/rankings`,
+  `GET /api/rankings/start` (research bucket, no new relation); the home's "Every player ›" opens it; `/rankings` in the
+  shell's previews and the sitemap.
 
 ## 2026-10-06 — Wave I-O
 

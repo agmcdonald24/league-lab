@@ -63,6 +63,7 @@ const TABS: { tab: string; label: string; first: string; subs: [string, string, 
     first: "players", // ---- II-3: Stats · Trends · Matchups · Compare (Receivers is the Stats WR / TE preset)
     subs: [
       ["players", "Stats", "players"],
+      ["rankings", "Rankings", "rankings"], // ---- IP-2 (Wave I-P): with a league, Rankings is a sub-tab under Players
       ["trends", "Trends", "trends"],
       ["matchups", "Matchups", "matchups"],
       ["compare", "Compare", "compare"],

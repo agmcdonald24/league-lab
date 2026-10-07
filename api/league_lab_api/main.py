@@ -896,6 +896,14 @@ app.include_router(context_record_mod.router, dependencies=[Depends(require_auth
 # ---- end IO-1
 
 
+# ---- IP-2 (Wave I-P): rankings for everyone — GET /api/rankings, GET /api/rankings/start (rankings_api.py; research)
+from . import rankings_api as rankings_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(rankings_mod.router, dependencies=[Depends(require_auth)])
+rankings_mod.install_pages(blog_mod)        # /rankings in the sitemap and the shell's fixed previews
+# ---- end IP-2
+
+
 # ---- IM-3 (Wave I-M): the public site's doors. The rate limiter (ratelimit.py) inside the Guard (security.py: cross-site
 # writes, body sizes, the response headers on every answer, a 429 included); both outermost, ahead of the routes.
 #   GET /api/ratelimit   how this request was keyed ({keyed_by, test_address_used, bucket_tag}; never the address)
@@ -952,6 +960,13 @@ def web(path: str, request: Request):  # ---- IO-2: the request (a League link's
     if shaped_player is not None:
         return HTMLResponse(shaped_player, headers={"Cache-Control": SHELL_CACHE, **robots})
     # ---- end IP-5
+    # ---- IP-2 (Wave I-P): /rankings previews per position and view (a closed set: rankings_api.preview)
+    if path.strip("/") == "rankings":
+        shaped_rankings = rankings_mod.shell(index, request.query_params)
+        if shaped_rankings is not None:
+            return HTMLResponse(player_share.noindex(shaped_rankings) if league_q else shaped_rankings,
+                                headers={"Cache-Control": SHELL_CACHE, **robots})      # PO (I-P merge): IP-5's robots
+    # ---- end IP-2
     # ---- IN-1 (Wave I-N): the link preview for this path (title, description, canonical, Open Graph, Twitter) in the
     # shell's head — a shared post or tool unfurls in iMessage / X / Reddit / Discord; an unknown post answers 404
     shaped = blog_mod.shell(index, path)

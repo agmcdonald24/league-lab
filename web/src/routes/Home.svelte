@@ -155,7 +155,7 @@
           {:else}
             Projected points this week in {scoring} scoring.
           {/if}
-          <a class="ll-link" href={link("/players")}>Every player ›</a>
+          <a class="ll-link" href={link("/rankings")} data-testid="home-every-player">Every player ›</a><!-- ---- IP-2: the rankings -->
         </p>
       {/if}
     </section>
