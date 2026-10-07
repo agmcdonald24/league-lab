@@ -134,8 +134,10 @@ for (const [league, team, gsis, tag] of PLAYERS) {
     await page.goto(`/player/${gsis}?league=${league}&team=${team}`);
     await expect(page.getByTestId("player-name")).toBeVisible();
     for (const s of ["projection", "value", "availability", "usage", "signals"]) await expect(page.getByTestId(`section-${s}`)).toBeVisible();
-    const proj = (await page.getByTestId("section-projection").boundingBox())!;
-    expect(proj.y, "the projection starts below the first screen").toBeLessThan(page.viewportSize()!.height / 2);
+    // IP-4 (Wave I-P, changed on purpose): this week's projection is the card's headline number in the head; the
+    // Projection section follows the ratings and the first chart
+    const proj = (await page.getByTestId("card-number").boundingBox())!;
+    expect(proj.y, "the projection is on the first screen").toBeLessThan(page.viewportSize()!.height / 2 + 120);
     await noSidewaysScroll(page);
     // opened straight from a link (nothing behind it in the app): Back says "My week" and goes there, same league / team
     await expect(page.getByTestId("back")).toHaveText(/My week/);

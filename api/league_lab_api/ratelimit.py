@@ -116,6 +116,9 @@ PAGES_READ_PREFIX = ("/blog/img/",)
 # `write` (POST / PUT / DELETE) and `read` (GET /api/blog/mine, /api/blog/posts/{id}) by the rules below
 RESEARCH_EXACT = RESEARCH_EXACT | {"/api/blog/export"}
 # ---- end IO-3
+# ---- IP-4 (Wave I-P): the player card's /api/player/{gsis}/ratings is `research` through RESEARCH_PREFIX above;
+# /api/player/{gsis}/projections is `read` (bucket_for; api/tests/test_ip4.py asserts both)
+# ---- end IP-4
 
 
 def norm(value: str | None) -> str:
@@ -155,6 +158,11 @@ def bucket_for(method: str, path: str, query: str = "") -> str | None:
         return "heavy"
     if method.upper() in WRITES:
         return "write"
+    # ---- IP-4 (Wave I-P): a player's past projections — one indexed read of at most 18 rows (5–13 ms), not an
+    # aggregate: `read`, so the card's extra call does not spend the research budget (his ratings do: `research`)
+    if path.startswith("/api/player/") and path.endswith("/projections"):
+        return "read"
+    # ---- end IP-4
     if path in RESEARCH_EXACT or path.startswith(RESEARCH_PREFIX):
         return "research"
     # ---- IN-3 (Wave I-N): the matchup board prices the week and aggregates (matchup_board.py)

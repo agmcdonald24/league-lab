@@ -2539,3 +2539,168 @@ export interface TrendRecord {
 }
 export type TrendsGraded = Trends & { record?: TrendRecord | null };
 // ---- end IP-3
+// ---- IP-2 (Wave I-P): rankings for everyone — GET /api/rankings?league=&position=&view=week|season&limit=&offset=&q= and
+// "Who should I start?" — GET /api/rankings/start?league=&ids=a,b[,c,d] (api/league_lab_api/rankings_api.py)
+export type RankPosition = "QB" | "RB" | "WR" | "TE" | "FLEX" | "K" | "DEF";
+export type RankView = "week" | "season";
+export interface RankRow {
+  key: string; // gsis_id, or "DEF:<team>" for a defense
+  gsis_id: string | null;
+  player_name: string;
+  position: string;
+  team: string | null;
+  headshot_url: string | null;
+  rank: number;
+  tier: number | null;
+  tier_p: number | null; // how often the tier's first player outscores him (null: he opens the tier)
+  proj_points: number | null;
+  p10: number | null;
+  p25?: number | null;
+  p50?: number | null;
+  p75?: number | null;
+  p90: number | null;
+  opponent: string | null;
+  is_home: boolean | null;
+  kickoff_at: string | null;
+  game_state: GameState;
+  report_status: string | null;
+  matchup: { tone: MatchupTone; words: string | null } | null; // the defense's tone only (never the corner)
+  rostered_by_roster_id?: number | null; // with a league only
+  rostered_by_team?: string | null;
+  ros_games?: number | null; // the season view
+  ros_points_per_game?: number | null;
+  bye_weeks?: number[];
+}
+export interface Rankings {
+  season: number;
+  week: number | null;
+  view: RankView;
+  position: RankPosition;
+  scoring: string;
+  positions: RankPosition[];
+  league_name: string | null;
+  rows: RankRow[];
+  total: number;
+  tiers: number;
+  limit: number;
+  offset: number;
+  q: string | null;
+  tier_words: string;
+  tier_rule: string;
+  tier_p: number;
+  assumes?: string;
+  from_week?: number;
+  last_week?: number;
+  notice?: string;
+}
+export interface StartPlayer {
+  gsis_id: string;
+  player_name: string;
+  position: string;
+  team: string | null;
+  headshot_url: string | null;
+  opponent: string | null;
+  is_home: boolean | null;
+  proj_points: number | null;
+  p10: number | null;
+  p25?: number | null;
+  p75?: number | null;
+  p90: number | null;
+  rank: number | null;
+  tier: number | null;
+  p_best: number;
+  pct_best: number;
+  vs: Record<string, number>;
+}
+export interface StartAnswer {
+  season: number;
+  week: number | null;
+  scoring: string;
+  ids: string[];
+  players: StartPlayer[];
+  missing: { gsis_id: string; why: string }[];
+  answer: { pick: string; runner_up: string; verdict: "clear" | "a lean" | "a coin flip"; p_vs_runner_up: number; words: string } | null;
+  floor: string;
+  assumes: string;
+  multi_note: string | null;
+  same_game?: boolean;
+  started_note?: string | null; // a picked player's game has kicked off: the chances are from before kickoff
+  notice?: string;
+}
+export interface RankQuery {
+  position: string;
+  view: RankView;
+  q: string;
+  offset: number;
+  limit: number;
+}
+export const rankingsPath = (league: string, r: RankQuery) => {
+  const p = new URLSearchParams({ league, position: r.position, view: r.view, limit: String(r.limit), offset: String(r.offset) });
+  if (r.q.trim().length >= 2) p.set("q", r.q.trim());
+  return `/api/rankings?${p.toString()}`;
+};
+export const startPath = (league: string, ids: string[]) => `/api/rankings/start?league=${encodeURIComponent(league)}&ids=${ids.map(encodeURIComponent).join(",")}`;
+// ---- end IP-2
+
+// ---- IP-4 (Wave I-P): the player card's ratings (GET /api/player/{gsis}/ratings: percentiles of the Stats frame's
+// season columns among his position's players with a stated minimum sample; NFL-wide, not a forecast) and the
+// projection made before each game (GET /api/player/{gsis}/projections: the frozen board, `source` kickoff | refit |
+// null = this week's live one; `weeks: []` + `why` where past boards are not kept)
+export interface Rating {
+  key: string;
+  label: string;
+  value: number | null;
+  display: string;
+  percentile: number | null; // 0–100 (share of the ranked players below him, ties half)
+  rating: number | null; // 0–99; null = not rated (the reason in `words`)
+  n: number | null; // players ranked on this column
+  lower_is_better: boolean;
+  minimum: string | null; // this column's own sample ("20+ targets")
+  definition: string | null;
+  source: string | null;
+  words: string;
+}
+export interface Ratings {
+  gsis_id: string;
+  player_name: string;
+  season: number;
+  through_week: number | null;
+  position: string;
+  n_ranked: number;
+  population?: string; // "15+ targets"
+  qualified?: boolean;
+  ratings: Rating[];
+  overall: number | null; // the plain mean of the ratings shown (3 or more), 0–99
+  overall_n?: number;
+  overall_words?: string;
+  label?: string;
+  how?: string;
+  words: string | null;
+}
+export interface WeekProjection {
+  week: number;
+  proj_points: number | null;
+  p10: number | null;
+  p25: number | null;
+  p75: number | null;
+  p90: number | null;
+  source: "kickoff" | "refit" | null;
+}
+export interface PastProjections {
+  gsis_id: string;
+  season: number;
+  through_week: number;
+  weeks: WeekProjection[];
+  why: string | null;
+  notes: string[];
+}
+export interface GameRow {
+  target_share?: number | null;
+  carry_share?: number | null;
+  season_type?: string | null;
+}
+export const cardPaths = {
+  ratings: (gsis: string, league: string | null) => `/api/player/${q(gsis)}/ratings${league ? `?league=${q(league)}` : ""}`,
+  projections: (gsis: string, league: string) => `/api/player/${q(gsis)}/projections?league=${q(league)}`,
+};
+// ---- end IP-4

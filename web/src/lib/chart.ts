@@ -58,3 +58,35 @@ export function areaPath(pts: { x: number; y: number | null }[], base: number): 
     .map((r) => `M${r[0].x.toFixed(1)},${base}` + r.map((p) => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join("") + `L${r[r.length - 1].x.toFixed(1)},${base}Z`)
     .join("");
 }
+
+// ---- IP-4 (Wave I-P): the player card's charts (components/card/WeekChart.svelte)
+/** A band between two lines (a projection's range), one closed shape per unbroken run of weeks with both ends. */
+export function bandPath(pts: { x: number; lo: number | null; hi: number | null }[]): string {
+  const runs: { x: number; lo: number; hi: number }[][] = [];
+  let cur: { x: number; lo: number; hi: number }[] = [];
+  for (const p of pts) {
+    if (p.lo === null || p.hi === null) {
+      if (cur.length) runs.push(cur);
+      cur = [];
+    } else cur.push({ x: p.x, lo: p.lo, hi: p.hi });
+  }
+  if (cur.length) runs.push(cur);
+  return runs
+    .map((r) => {
+      if (r.length === 1) {
+        const p = r[0];
+        return `M${(p.x - 6).toFixed(1)},${p.hi.toFixed(1)}L${(p.x + 6).toFixed(1)},${p.hi.toFixed(1)}L${(p.x + 6).toFixed(1)},${p.lo.toFixed(1)}L${(p.x - 6).toFixed(1)},${p.lo.toFixed(1)}Z`;
+      }
+      const top = r.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(1)},${p.hi.toFixed(1)}`).join("");
+      const bottom = [...r].reverse().map((p) => `L${p.x.toFixed(1)},${p.lo.toFixed(1)}`).join("");
+      return `${top}${bottom}Z`;
+    })
+    .join("");
+}
+
+/** A categorical x scale: n slots across [r0, r1], the slot's centre and its width. */
+export function bands(n: number, r0: number, r1: number): { at: (i: number) => number; step: number } {
+  const step = (r1 - r0) / Math.max(1, n);
+  return { at: (i: number) => r0 + step * (i + 0.5), step };
+}
+// ---- end IP-4

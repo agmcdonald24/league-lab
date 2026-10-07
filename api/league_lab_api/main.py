@@ -904,6 +904,14 @@ rankings_mod.install_pages(blog_mod)        # /rankings in the sitemap and the s
 # ---- end IP-2
 
 
+# ---- IP-4 (Wave I-P): the player card's ratings and past projections — GET /api/player/{gsis}/ratings,
+# /api/player/{gsis}/projections (league_lab_api/ratings.py; research bucket: the /api/player/ prefix)
+from . import ratings as ratings_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(ratings_mod.router, dependencies=[Depends(require_auth)])
+# ---- end IP-4
+
+
 # ---- IM-3 (Wave I-M): the public site's doors. The rate limiter (ratelimit.py) inside the Guard (security.py: cross-site
 # writes, body sizes, the response headers on every answer, a 429 included); both outermost, ahead of the routes.
 #   GET /api/ratelimit   how this request was keyed ({keyed_by, test_address_used, bucket_tag}; never the address)
