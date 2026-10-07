@@ -363,3 +363,102 @@ def test_corners_the_look_ahead_split_is_gone_and_the_page_still_stands(client):
     rows = r.json()["matchups"]
     assert all(m.get("cover_split") is None for m in rows)
     assert "season to date" not in r.text                               # the look-ahead note went with it
+
+
+# ------------------------------------------------------------------ 4. player pages that share
+@pytest.fixture
+def dist(tmp_path, monkeypatch):
+    from league_lab_api.settings import ROOT
+    d = tmp_path / "dist"
+    d.mkdir()
+    (d / "index.html").write_text((ROOT / "web" / "index.html").read_text())
+    monkeypatch.setenv("LEAGUE_LAB_WEB_DIST", str(d))
+    return d
+
+
+def _meta(text: str, prop: str) -> str | None:
+    import re
+    m = re.search(rf'<meta (?:property|name)="{re.escape(prop)}" content="([^"]*)"', text)
+    return m.group(1) if m else None
+
+
+def _counting(monkeypatch) -> list:
+    from league_lab_api import db as DB
+    seen: list = []
+    real = DB._run
+    monkeypatch.setattr(DB, "_run", lambda sql, params: seen.append(sql) or real(sql, params))
+    return seen
+
+
+@needs_db
+def test_player_shell_is_the_default_card_when_nothing_is_held_and_reads_nothing(client, dist, monkeypatch):
+    from league_lab_api import matchup_board
+    matchup_board.clear()
+    queries = _counting(monkeypatch)
+    calls = A.sleeper().calls
+    t = client.get("/player/00-0039075").text
+    assert _meta(t, "og:title") == "isuckatfantasy" and t == (dist / "index.html").read_text()
+    assert queries == [] and A.sleeper().calls == calls and len(matchup_board._cache) == 0   # nothing read, built or kept
+    sm = client.get("/sitemap.xml").text
+    assert "/player/" not in sm
+
+
+@needs_db
+def test_player_shell_carries_his_card_from_the_held_board(client, dist, monkeypatch):
+    from league_lab_api import matchup_board
+    from league_lab_api import player_share as P
+    matchup_board.clear()
+    b = client.get("/api/matchups/board?league=ref:half&limit=5")
+    assert b.status_code == 200
+    df = P.held_frame()
+    assert df is not None and len(df) > 100
+    top = df.sort_values("proj_points", ascending=False).iloc[0]
+    queries = _counting(monkeypatch)
+    calls = A.sleeper().calls
+    t = client.get(f"/player/{top['gsis_id']}").text
+    assert queries == [] and A.sleeper().calls == calls                  # the crawler's hit: no query, no provider
+    title = _meta(t, "og:title")
+    print("card:", title, "|", _meta(t, "og:description"))
+    assert title.startswith(f"{top['player_name']} ({top['position']}, {top['team']}): {float(top['proj_points']):.1f} "
+                            "projected this week") and title.endswith(" · isuckatfantasy")
+    desc = _meta(t, "og:description")
+    assert desc.startswith("Week ") and "Half PPR" in desc and "the highest projection of" in desc
+    assert f"/player/{top['gsis_id']}" in t and t.count("<title>") == 1 and 'content="noindex"' not in t
+    # a league in the query string: noindex (header and tag), still his card
+    r = client.get(f"/player/{top['gsis_id']}?league=1389709692405551104")
+    assert r.headers.get("x-robots-tag") == "noindex" and 'name="robots" content="noindex"' in r.text
+    # the sitemap: the 200 highest projections, from the held board
+    sm = client.get("/sitemap.xml").text
+    n = sm.count("/player/")
+    assert n == min(200, df["gsis_id"].nunique()) and f"/player/{top['gsis_id']}<" in sm
+
+
+@pytest.mark.parametrize("path", ["/player/00-00390755", "/player/00-003907%22%3E", "/player/%2e%2e%2fsecret",
+                                  "/player/00-00%0a39075", "/player/4046", "/player/<script>"])
+def test_player_shell_ids_outside_the_pattern_get_the_default_card(client, dist, path):
+    r = client.get(path)
+    assert r.status_code == 404 or _meta(r.text, "og:title") == "isuckatfantasy"      # a newline: the router's 404
+    assert "<script>alert" not in r.text and "projected this week" not in r.text
+
+
+def test_player_shell_text_is_escaped(monkeypatch, dist):
+    from league_lab_api import player_share as P
+    df = pd.DataFrame([{"gsis_id": "00-0000001", "player_name": 'Evil "><script>x</script>', "position": "WR",
+                        "team": "LAR", "proj_points": 18.44, "p10": 9.2, "p90": 31.6, "opponent": "SF", "is_home": False,
+                        "kickoff_at": pd.Timestamp("2026-10-04T17:00:00Z")}])
+    df.attrs["ip5_week"] = (2026, 5)
+    monkeypatch.setattr(P, "held_frame", lambda: df)
+    t = P.shell(dist / "index.html", "player/00-0000001", False)
+    assert "<script>x</script>" not in t and "&lt;script&gt;" in t
+    c = P.card("00-0000001")
+    assert c["title"] == 'Evil "><script>x</script> (WR, LAR): 18.4 projected this week, 9–32 · isuckatfantasy'
+    assert c["description"] == ("Week 5, Half PPR: at SF, Sun 1 PM ET; the highest projection of 1 wide receivers "
+                                "this week. 8 in 10 weeks like this land between 9 and 32 points.")
+
+
+def test_a_league_in_the_query_string_is_noindex_everywhere(client, dist):
+    for path in ("/week?league=1389709692405551104&team=2", "/players?league=mfl:70587", "/blog?league=x"):
+        r = client.get(path)
+        assert r.headers.get("x-robots-tag") == "noindex" and 'name="robots" content="noindex"' in r.text, path
+    r = client.get("/players")
+    assert "x-robots-tag" not in r.headers and 'content="noindex"' not in r.text

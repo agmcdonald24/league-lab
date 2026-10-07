@@ -383,6 +383,9 @@ def dist(tmp_path, monkeypatch):
     return d
 
 
+from league_lab_api import player_share as P5  # noqa: E402 - ---- IP-5: the noindex shell
+
+
 def _meta(text: str, prop: str) -> str | None:
     m = re.search(rf'<meta (?:property|name)="{re.escape(prop)}" content="([^"]*)"', text)
     return m.group(1) if m else None
@@ -393,7 +396,8 @@ def test_the_league_links_card_comes_from_the_cache_and_never_calls_a_provider(a
     from league_lab import anyleague as A
     calls = A.sleeper().calls
     t = api.get("/league", params={"league": SCRUBS}).text
-    assert _meta(t, "og:title") == "isuckatfantasy" and t == (dist / "index.html").read_text()   # nothing kept: default
+    # nothing kept: the default card (IP-5: with the robots meta tag — a league in the query string is never indexed)
+    assert _meta(t, "og:title") == "isuckatfantasy" and t == P5.noindex((dist / "index.html").read_text())
     assert A.sleeper().calls == calls and len(O._cache) == 0                     # no provider call, no build
     o = api.get(f"/api/league/outlook?league={SCRUBS}&team=2").json()
     calls = A.sleeper().calls
