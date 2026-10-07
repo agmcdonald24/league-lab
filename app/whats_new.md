@@ -3,6 +3,18 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 7 (evening) · rest-of-season quarterbacks, fixed
+
+- **A reader caught us, and he was right.** Our rest-of-season quarterback list had Kyler Murray and Malik Willis
+  ahead of Josh Allen. For weeks that have no betting line yet, the model was treating every team as average, so a
+  quarterback's later weeks had little to do with this week's. That list also sets quarterback values in the trade
+  calculator. This week's projections were not affected.
+- **What changed.** Later weeks now use each team's own scoring level this season and this week's starter. We tested
+  it on five past seasons, projecting two to eight weeks ahead: closer to what happened in all five. Allen is back in
+  the top three.
+- **What is still true.** A quarterback projection more than a week out misses by about 7.6 points per game, against
+  6.4 for next week, and the order is less sure than at the other positions. We now check that every night.
+
 ## Oct 7 · rankings for everyone, "Who should I start?", the player card, and more honest grades
 
 - **Rankings for everyone.** Every player ranked for this week or the rest of the season in your scoring, in tiers.

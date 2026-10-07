@@ -386,6 +386,17 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Hotfix v3.5 (2026-10-07 evening; STATUS § "PO — hotfix v3.5")**: a reader caught the rest-of-season QB list
+  (Murray and Willis ahead of Allen). **A projection more than one week ahead had never been graded.** Now:
+  `scripts/analysis/iq1_horizon.py` (as of week W, project 1–8 weeks ahead, 2021–2025) is the harness for anything
+  that touches the weeks after the market week; `calibration.future_inputs` (fi1.0, `LEAGUE_LAB_FUTURE_INPUTS`) gives
+  those weeks the team's own season-so-far line and the market week's personnel; the dbt test
+  `assert_rest_of_season_follows_the_market_week` (warn) watches the top-24 agreement per position. **Before a
+  number goes on a public screen: a grade, or the PO's own face-validity check against what the players have
+  scored** (the five-minute query that found this: top 24 by this week's projection against the later weeks' mean;
+  QB was 0.15). Known and open: QB accuracy 2–8 weeks ahead is still 7.56 against 6.44 for next week; the listed
+  starter is stale for some teams (SEA, CHI) and nothing corrects it yet; `projections._matrix` turns a column that
+  is NULL in a whole batch into 0 (harmless for the nightly's season batch — do not predict a later-weeks-only batch).
 * **Wave I-P (2026-10-06/07, overnight; five Opus devs, an independent review, fix rounds; STATUS § "Wave I-P" PO
   section first)**: **delivery changed for good** — the PO never runs git on Andrew's Mac (git needs to delete its
   lock files and deleting is off there: Wave I-O's delivery left the repository locked) and never asks for delete
