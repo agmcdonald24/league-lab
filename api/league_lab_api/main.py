@@ -939,12 +939,26 @@ def web(path: str, request: Request):  # ---- IO-2: the request (a League link's
     if path.strip("/") == "league" and request.query_params.get("league"):
         shaped_league = outlook_mod.shell(index, request.query_params.get("league"))
         if shaped_league is not None:
-            return HTMLResponse(shaped_league, headers={"Cache-Control": SHELL_CACHE})
+            from . import player_share  # ---- IP-5: noindex
+            return HTMLResponse(player_share.noindex(shaped_league), headers={"Cache-Control": SHELL_CACHE,
+                                                                              "X-Robots-Tag": "noindex"})
     # ---- end IO-2
+    # ---- IP-5 (Wave I-P): a player's page shares as his card (player_share: from what this process holds, never a
+    # query); a page with a league in its query string is not for search engines (noindex)
+    from . import player_share
+    league_q = bool(request.query_params.get("league"))
+    robots = {"X-Robots-Tag": "noindex"} if league_q else {}
+    shaped_player = player_share.shell(index, path, league_q)
+    if shaped_player is not None:
+        return HTMLResponse(shaped_player, headers={"Cache-Control": SHELL_CACHE, **robots})
+    # ---- end IP-5
     # ---- IN-1 (Wave I-N): the link preview for this path (title, description, canonical, Open Graph, Twitter) in the
     # shell's head — a shared post or tool unfurls in iMessage / X / Reddit / Discord; an unknown post answers 404
     shaped = blog_mod.shell(index, path)
     if shaped is not None:
-        return HTMLResponse(shaped[0], status_code=shaped[1], headers={"Cache-Control": SHELL_CACHE})
+        return HTMLResponse(player_share.noindex(shaped[0]) if league_q else shaped[0], status_code=shaped[1],
+                            headers={"Cache-Control": SHELL_CACHE, **robots})          # ---- IP-5: robots
     # ---- end IN-1
+    if league_q:                                                                       # ---- IP-5
+        return HTMLResponse(player_share.noindex(player_share._index_text(index)), headers={"Cache-Control": SHELL_CACHE, **robots})
     return FileResponse(index, headers={"Cache-Control": SHELL_CACHE})

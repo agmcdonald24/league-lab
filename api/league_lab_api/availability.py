@@ -42,7 +42,7 @@ import pandas as pd
 from league_lab import anyleague as A
 from league_lab import injury_feed as F
 from league_lab import lineup as LU
-from league_lab import memo, player_ids
+from league_lab import memo, player_ids, provider_trouble  # ---- IP-5: provider_trouble
 
 from .db import query
 
@@ -405,6 +405,11 @@ def apply_to_rows(rows: pd.DataFrame, *, build_as_of: datetime | None = None, pl
     rows = rows.copy()
     for c in ("chip", "why"):
         rows[c] = None
+    # ---- IP-5: a frame with no status at all reads report_status as float64 (all NaN); writing "Questionable" into it
+    # was a TypeError (a 500 on an MFL league's week odds with the overlay on). The same values, as objects
+    if "report_status" in rows and rows["report_status"].dtype.kind == "f":
+        rows["report_status"] = rows["report_status"].astype(object)
+    # ---- end IP-5
     gs = [g for g in rows["gsis_id"] if isinstance(g, str)]
     sleeper_of = {g: str(s) for g, s in zip(rows["gsis_id"], rows["sleeper_player_id"], strict=False)
                   if isinstance(g, str) and isinstance(s, str)}
@@ -746,6 +751,7 @@ CONTEXT_TTL_S = {"house": 600, "sleeper": 120}     # the query cache's 10 minute
 STATUS_OF_REASON = {"Out": "OUT", "Doubtful": "DOUBTFUL", "NFL injured reserve": "IR", "IR slot": "IR"}
 # INF-2 (Wave I-J): the memory budget's ``contexts`` region (was a dict cleared past 512 entries); the TTL per entry
 _ctx_cache = memo.region("contexts", ttl=CONTEXT_TTL_S["house"])
+CONTEXT_HOLD_S = 3600.0          # ---- IP-5: a roster's last good context, for a rebuild a provider refused (the LRU evicts)
 
 
 def clear_context() -> None:
@@ -889,26 +895,30 @@ def roster_context(league_id: str, roster_id: int, week: int | None = None, *, h
     on = enabled()
     if on:
         snapshot()                                  # the feed read first, so the stamp in the key is the one applied
-    key = (league_id, int(roster_id), int(week), is_house, on, _iso(checked_at()), _iso(build_time()))
+    # ---- IP-5 (Wave I-P): the stamps are the entry's stamp, not its key — a build during which a provider read was
+    # refused or failed (provider_trouble: the directory, a roster, an MFL id lookup) is never kept; the last good
+    # context for this roster is served with its own stamps, else 503 busy (never an empty or wrong lineup kept for
+    # the next manager). SECURITY_PUBLIC § 15.
+    key = (league_id, int(roster_id), int(week), is_house, on)
+    stamp = (_iso(checked_at()), _iso(build_time()))
     keep = as_of is None and exclude_reference is None
     ttl = min(CONTEXT_TTL_S["house" if is_house else "sleeper"], F.feed().interval_s() if on else 10 ** 9)
-    if keep:
-        hit = _ctx_cache.get(key)
-        if hit is not None:
-            return hit
-    od = None
-    if is_house:
-        base = cards.lineup_rows(league_id, int(season), int(week), int(roster_id))
-        rows, meta = apply_to_rows(base)
-    else:
-        od = A.lineup_rows(query, league_id, int(roster_id), int(week), as_of=as_of, client=client,
-                           exclude_reference=exclude_reference)
-        base = od.rows
-        rows, meta = apply_to_rows(base, build_as_of=build_time())
-    ctx = RosterContext(league_id, int(roster_id), int(week), int(season), is_house, base, rows, meta, od)
-    if keep:
-        _ctx_cache.put(key, ctx, ttl=ttl)
-    return ctx
+
+    def build() -> RosterContext:
+        od = None
+        if is_house:
+            base = cards.lineup_rows(league_id, int(season), int(week), int(roster_id))
+            rows, meta = apply_to_rows(base)
+        else:
+            od = A.lineup_rows(query, league_id, int(roster_id), int(week), as_of=as_of, client=client,
+                               exclude_reference=exclude_reference)
+            base = od.rows
+            rows, meta = apply_to_rows(base, build_as_of=build_time())
+        return RosterContext(league_id, int(roster_id), int(week), int(season), is_house, base, rows, meta, od)
+    if not keep:
+        return build()
+    return provider_trouble.kept(_ctx_cache, key, build, ttl=ttl, stamp=stamp, hold_s=CONTEXT_HOLD_S)
+    # ---- end IP-5
 
 
 def contexts(league_id: str, roster_ids: Iterable[int], week: int | None = None, *, house: bool | None = None,

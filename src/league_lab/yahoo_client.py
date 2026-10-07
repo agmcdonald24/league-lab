@@ -770,6 +770,11 @@ class Yahoo:
         self.calls += 1
         try:
             data = self._read(path, session, league_key)
+        except YahooBusy:                       # ---- IP-5: Yahoo's 429 / 999 — the held answer, as for an empty bucket
+            if hit is not None:
+                self.stale_served += 1
+                return hit[3]
+            raise
         except YahooUnavailable:
             if hit is not None:
                 self.stale_served += 1

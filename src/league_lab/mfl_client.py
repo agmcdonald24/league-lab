@@ -44,7 +44,10 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
-from . import provider_share  # ---- IO-4: each client's own share of the budget
+from . import (
+    provider_share,  # ---- IO-4: each client's own share of the budget
+    provider_trouble,  # ---- IP-5: a refused / failed read is noted, never kept as data
+)
 from .sleeper_client import (
     LeagueNotFound,
     SleeperBusy,
@@ -275,15 +278,28 @@ class MFL:
             if hit is not None:
                 self.stale_served += 1
                 return hit[3]
+            provider_trouble.note("busy")                                                    # ---- IP-5
             raise MFLBusy("busy, try again in a minute")
         self.calls += 1
         try:
             data = self._read(type_, league, extra, fixture, api_host)
-        except MFLUnavailable:
+            # ---- IP-5 (Wave I-P): MFL always answers an object — an empty body (``null``) is a failure, never kept
+            if not isinstance(data, dict):
+                raise MFLUnavailable(f"MyFantasyLeague {type_}: an empty answer")
+        except MFLBusy:                        # an HTTP 429 (``_http``): the held answer, as for an empty bucket
             if hit is not None:
                 self.stale_served += 1
                 return hit[3]
+            provider_trouble.note("busy")
             raise
+        except MFLUnavailable as exc:
+            if hit is not None:
+                self.stale_served += 1
+                return hit[3]
+            if not str(exc).startswith("no fixture"):          # a fixture never recorded is the test's "not there"
+                provider_trouble.note("failed")
+            raise
+            # ---- end IP-5
         if isinstance(data, dict) and "error" in data:
             msg = (_t(data.get("error")) or "").lower()
             if "too many" in msg or "slow down" in msg or "rate" in msg:
@@ -291,6 +307,7 @@ class MFL:
                 if hit is not None:
                     self.stale_served += 1
                     return hit[3]
+                provider_trouble.note("busy")                                                # ---- IP-5
                 raise MFLBusy("busy, try again in a minute")
             raise LeagueNotFound(PRIVATE_SENTENCE)
         with self._lock:

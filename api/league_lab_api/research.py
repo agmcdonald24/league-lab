@@ -964,23 +964,13 @@ def matchups_cb(league_id: str, *, team: int | None = None, limit: int | None = 
     faced = query(f"select {FACED_COLS} from analytics.mart_receiver_vs_cb where season = %s and receiver_gsis_id = any(%s) "
                   "order by defense, defender_snap_share desc nulls last, targets desc", (ctx.season, list(cbm["gsis_id"])))
     faced_by = _grouped(faced, "receiver_gsis_id")
-    # his points per game vs a shutdown corner vs the rest, this league's scoring (the page's "best corners" split)
-    wr = list(cbm.loc[cbm["position"] == "WR", "gsis_id"])
-    split = {}
-    if wr:
-        called = query("""select gsis_id, player_name, season, week, game_id, opponent, likely_cover_name, cover_rank, cover_label
-                          from analytics.mart_cb_matchups where gsis_id = any(%s) and call_status = 'called' and season >= %s
-                            and (season < %s or week < %s) order by gsis_id, season, week""",
-                       (wr, ctx.season - 1, ctx.season, int(week)))
-        if not called.empty:
-            pts = pd.concat([league_games(ctx, s, wr) for s in sorted(set(called["season"].astype(int)))])
-            pts = pts[pts["played"].fillna(False).astype(bool)][["gsis_id", "game_id", "points"]]
-            sg = called.merge(pts, on=["gsis_id", "game_id"], how="inner")
-            split = {r["gsis_id"]: {k: r[k] for k in ("ppg_vs_shutdown", "games_vs_shutdown", "ppg_vs_rest", "games_vs_rest")}
-                     | {"text": M.cover_split_text(r), "note": COVER_SPLIT_NOTE}           # ---- IO-4 fix: the note
-                     for r in _records(M.cover_split(sg))}
-            # ---- IO-4 fix round: the mart's cover_rank / cover_label for a past week are the season's ranks to date
-            # (look-ahead, IO-1 found), not what was known that week; said beside the split, not rebuilt tonight
+    # ---- IP-5 (Wave I-P): the "best corners" split (his points per game against shutdown corners against the rest) is
+    # gone. It ranked past weeks by the season to date (look-ahead: IO-1); rebuilt as-of (``context_record.cb_rank_asof``)
+    # it would describe 3 games against top-quarter corners for the median receiver (6 at the 90th percentile, 9 at most:
+    # 184 receivers, 2025 + 2026 weeks 1-4), a mean with a 95 % interval of about ±8 points, beside a call graded on
+    # 2,190 receiver-games as no measurable effect. ``cover_split`` stays in the answer, always null.
+    split: dict = {}
+    # ---- end IP-5
     page = decorate(cbm, ctx)
     out = []
     # ---- IF-3: the corners now, for every defense on the page at once; this league's ranks (as on Compare)

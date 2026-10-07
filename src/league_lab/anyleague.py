@@ -58,7 +58,7 @@ from typing import ClassVar
 import numpy as np
 import pandas as pd
 
-from . import clock, memo
+from . import clock, memo, provider_trouble  # ---- IP-5: provider_trouble
 from . import lineup as LU
 from .scoring import (  # noqa: F401 - compute_points: the reference the vector form equals
     MAPPED_KEYS,
@@ -746,6 +746,20 @@ def unit_lines(b: Board, proj: pd.Series | None = None, rule: str | None = None)
     # screen's first load spent ~1 s here: 32 teams × 15 weeks of a column-wise apply)
     num = qb[list(STAT_LINE)].apply(pd.to_numeric, errors="coerce").fillna(0.0)
     # ---- end IO-2
+    # ---- IP-5 (Wave I-P): the starter rule picked in one pass (the same starter: the best rank among the team's
+    # quarterbacks who can play — all of them when none can — the first in the board's order on a tie; his line as the
+    # loop's one-row sum gave it). MFL's League screen spent ~1 s here cold: 32 teams × 15 weeks of ``.loc``.
+    if rule != "sum" and qb.index.is_unique:
+        ok_team = team.map(lambda x: isinstance(x, str) and bool(x)).astype(bool)
+        f = pd.DataFrame({"team": team, "out": out_.astype(bool), "rank": rank, "pos": np.arange(len(qb))})[ok_team]
+        has_ok = (~f["out"]).groupby(f["team"]).transform("any")
+        f = f[~f["out"] | ~has_ok].sort_values(["rank", "pos"], ascending=[False, True], kind="mergesort")
+        starters = f.drop_duplicates("team").sort_values("team", kind="mergesort")
+        vals = num.loc[starters.index].to_numpy(dtype=float)
+        for (g, t), v in zip(starters["team"].items(), vals, strict=True):
+            rows[t] = {"position": "TMQB", **dict(zip(STAT_LINE, v.tolist(), strict=True)), "starter_gsis": g, "n_players": 1}
+        return pd.DataFrame.from_dict(rows, orient="index", columns=cols)
+    # ---- end IP-5
     for t, idx in qb.groupby(team).groups.items():
         if not isinstance(t, str) or not t:
             continue
@@ -833,29 +847,41 @@ def unit_window(win: Window, weeks: list[int], scoring: Mapping[str, float], sk:
     if "TMQB" in units and not win.lines.empty and not sk.empty:
         qb = win.lines[win.lines["week"].isin(weeks) & (win.lines["position"] == "QB")]
         st = win.status if not win.status.empty else pd.DataFrame(columns=["week", "gsis_id"])
+        per_week = []
         for w, lw in qb.groupby("week"):
             line = lw.drop_duplicates("gsis_id").set_index("gsis_id")
             status = st[st["week"] == w].drop_duplicates("gsis_id").set_index("gsis_id")
             skw = sk[sk["week"] == w].drop_duplicates("gsis_id").set_index("gsis_id")
             ul = unit_lines(SimpleNamespace(line=line, status=status), skw["proj_points"])
-            if ul.empty:
-                continue
-            pts = price_lines(ul, scoring)
-            for t, r in ul.iterrows():
+            if not ul.empty:
+                per_week.append((w, status, skw, ul))
+        # ---- IP-5 (Wave I-P): every week's unit lines priced in one ``price_lines`` call (it prices row by row: the
+        # same points; was one call a week — 15 on MFL 70587's window)
+        priced_all = (price_lines(pd.concat([ul for *_, ul in per_week], keys=[w for w, *_ in per_week]), scoring)
+                      if per_week else None)
+        for w, status, skw, ul in per_week:
+            pts = priced_all.loc[w].to_dict()
+            # rows as plain dicts, not pandas row lookups (the same values; ~480 rows on MFL 70587's window)
+            sk_rows = skw[[c for c in ("proj_points", "p10", "p90") if c in skw]].to_dict("index")
+            names = status["player_name"].to_dict() if "player_name" in status else None
+            # ---- end IP-5
+            for t, r in ul.to_dict("index").items():
                 g = r["starter_gsis"]
                 p = float(pts[t])
-                pg = skw["proj_points"].get(g, np.nan)
-                rng = {q: (round(max(0.0, p + float(skw.at[g, q]) - float(pg)), 2)
-                           if g in skw.index and pd.notna(skw.at[g, q]) and pd.notna(pg) else np.nan) for q in ("p10", "p90")}
+                sr = sk_rows.get(g)
+                pg = sr["proj_points"] if sr is not None else np.nan
+                rng = {q: (round(max(0.0, p + float(sr[q]) - float(pg)), 2)
+                           if sr is not None and pd.notna(sr[q]) and pd.notna(pg) else np.nan) for q in ("p10", "p90")}
                 rows.append({"player_key": f"TMQB-{t}", "gsis_id": None, "position": "TMQB", "proj_points": round(p, 2),
                              **rng, "team": t, "roster_status": "ACT", "player_name": None, "implied_team_total": None,
                              "week": int(w), **{c: float(r[c]) for c in STAT_LINE},
-                             "starter_gsis": g, "starter_name": status["player_name"].get(g) if "player_name" in status else None})
+                             "starter_gsis": g, "starter_name": names.get(g) if names is not None else None})
     if "TMPK" in units and kfr is not None and not kfr.empty:
         k = kfr.assign(_p=pd.to_numeric(kfr["proj_points"], errors="coerce")).dropna(subset=["_p"])
         k = k[k["team"].map(lambda x: isinstance(x, str) and bool(x))]
-        for (w, t), g in k.sort_values("_p", ascending=False).groupby(["week", "team"], sort=False):
-            r = g.iloc[0]
+        # ---- IP-5: each (week, team)'s first row of the sorted frame, as ``groupby(sort=False)`` + ``iloc[0]`` took it
+        for r in k.sort_values("_p", ascending=False).drop_duplicates(["week", "team"], keep="first").to_dict("records"):
+            w, t = r["week"], r["team"]
             rows.append({"player_key": f"TMPK-{t}", "gsis_id": None, "position": "TMPK", "proj_points": round(float(r["_p"]), 2),
                          "p10": pd.to_numeric(r.get("p10"), errors="coerce"), "p90": pd.to_numeric(r.get("p90"), errors="coerce"),
                          "team": t, "roster_status": "ACT", "player_name": None, "implied_team_total": None, "week": int(w),
@@ -892,7 +918,7 @@ def unit_directory(league_id: str) -> dict[tuple[str, str], dict]:
     try:
         r.rosters(league_id)                     # registers the league's units in the directory (cached calls)
         mf = r.mfl
-    except (LeagueNotFound, SleeperUnavailable, SleeperBusy, AttributeError):
+    except (LeagueNotFound, AttributeError):     # ---- IP-5: refused / failed raises (the caller keeps nothing)
         return {}
     mine = {k for k, how in mf.mapping.get(platforms.mfl_id(league_id), {}).values() if how == "unit"}
     out: dict[tuple[str, str], dict] = {}
@@ -1418,8 +1444,12 @@ def ros_table(query: Query, league_id: str, league: Mapping, from_week: int, las
            exclude_reference, src)
     hit = _ros_cache.get(key)
     if hit is None:
-        hit = _ros_cache.put(key, _ros_table(query, league_id, scoring, slots, season, from_week, last_week,
-                                             playoff_week_start, exclude_reference, src))
+        with provider_trouble.watch() as w:          # ---- IP-5: a unit's name read refused -> not kept (busy)
+            hit = _ros_table(query, league_id, scoring, slots, season, from_week, last_week, playoff_week_start,
+                             exclude_reference, src)
+        if not w.clean:
+            raise SleeperBusy("busy, try again in a minute")
+        hit = _ros_cache.put(key, hit)
     res = hit.copy()
     res.attrs = dict(hit.attrs)
     return res
@@ -1735,8 +1765,9 @@ def league_weeks(query: Query, league_id: str, week: int, *, client: Sleeper | N
               for w in sorted(set(weeks) | set(rest_weeks))}
     t2 = time.perf_counter()
     when = as_of or clock.now()  # ---- INF-1
-    inp, gsis_of, dp = league_inputs(query, league_id, season, rosters, players, priced, slots, weeks, extra_sids=extra)
-    rows, totals, _ = LU.build(inp, as_of=when)
+    with provider_trouble.watch() as trouble:        # ---- IP-5: a build that swallowed a refused read is not kept
+        inp, gsis_of, dp = league_inputs(query, league_id, season, rosters, players, priced, slots, weeks, extra_sids=extra)
+        rows, totals, _ = LU.build(inp, as_of=when)
     t3 = time.perf_counter()
     out = LeagueWeeks(league=league, league_id=league_id, season=season, weeks=weeks, rest_weeks=rest_weeks, slots=slots,
                       scoring=scoring, rosters=rosters, users=users, names=team_names(rosters, users), players=players,
@@ -1744,7 +1775,7 @@ def league_weeks(query: Query, league_id: str, week: int, *, client: Sleeper | N
                       timings_ms={"sleeper": round((t1 - t0) * 1000, 1), "price": round((t2 - t1) * 1000, 1),
                                   "solve": round((t3 - t2) * 1000, 1), "total": round((t3 - t0) * 1000, 1)},
                       sleeper_calls=sl.calls - calls0)
-    if cache:
+    if cache and trouble.clean:                      # ---- IP-5
         _league_weeks.put(key, out)
     return out
 

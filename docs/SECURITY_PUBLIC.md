@@ -358,6 +358,63 @@ does not reset it), its queue is bounded at 64 and off the request thread.
 New environment variables: `LEAGUE_LAB_EDITORS` (set in Render's dashboard), `LEAGUE_LAB_OUTLOOK_STORE`,
 `LEAGUE_LAB_PROVIDER_SHARE`, `LEAGUE_LAB_PROVIDER_SHARE_MFL` (unset on Render: the defaults).
 
+## 15. Wave I-P (IP-5): a refused read is never kept as data; player pages that share
+
+**Why**: § 13 gave each visitor a share of Sleeper's and MFL's budget, so a refused read is common now — the visitor
+whose share is spent is refused while everyone else is served. Many readers turn a refusal into a default (no
+opponent, an empty directory, "unmapped" players, 0-0 records), which is right for that one answer and wrong for a
+cache the next manager reads. § 14's M2 was this class in the outlook; IO-2 saw it in the roster contexts and the
+player directory.
+
+**The mechanism** (`src/league_lab/provider_trouble.py`): the Sleeper and MFL clients `note()` every read that raises —
+refused with nothing held, or failed with nothing held (a read served from what the client holds, even past its TTL,
+is not trouble). A cache builds inside `watch()`; notes made in pools that carry the request's context (§ 13's rule,
+`test_every_pool_carries_the_client_or_says_why_not`) land on it. A troubled build is **not kept**; `kept()` serves the
+last good value held for the key (its own stamps ride with it — never a "stale" warning), else **503 `busy`** in the
+app's words (the web retries). A held value served for a troubled rebuild is taken back off the watches around it, so
+an outer cache still keeps its answer.
+
+**Every cache on a request path that stores a provider read** (Sleeper, MFL, ESPN, Yahoo, the injury and news feeds):
+
+| Cache (where; life) | Refused (`…Busy`) | Failed (`…Unavailable`, a timeout) | Nonsense (an empty body, a 200 error page) | Test (`api/tests/test_ip5.py`) |
+|---|---|---|---|---|
+| Sleeper client, per path (`Sleeper._get`; 5 min – a day by kind) | held served (even expired, ≤ 1 h past), else raised — unchanged; now **noted** | the same | before: an empty body (`null`) was **kept as data** — rosters / users `[]` ("nobody on this roster") for 10 min / a day, the directory `{}` for a day; now a failure: held served, else raised (an HTML page was already a failure) | `…empty_directory_is_a_failure…`, `…null_roster_answer_serves_the_held…`, `…refusal_with_nothing_held_is_noted…` |
+| Sleeper's directory on disk (`.cache/sleeper_players_nfl.json`) | before: read only under a day old, else the refusal raised and readers swallowed it into an empty directory; now the copy **of any age** answers (the last good one) | the same | an empty directory is never written (unchanged) | `…disk_copy_of_any_age_answers_a_refusal` |
+| MFL client, per URL (`MFL._get`; 5 min – a day) | empty bucket / share / backoff: held, else raised; **an HTTP 429 raised past a held answer** → now held served; noted | held, else raised; noted | an empty body was **kept a day** (players: every id "unknown") → now a failure | `…mfl_an_empty_body…`, `…mfl_an_http_429_serves_the_held…` |
+| MFL id mapping (`platforms.MFLLeagues.mapping`, `extra_players`; process life) | `players()` refused → every id it could not map **recorded as "MFL player <id>"** with no position (a defense lost, an empty slot) and the roster built on it → now **busy**, nothing recorded | the same | — | `…translate_refused_is_busy…`, `…mfl_a_refused_id_lookup_is_busy_then_the_full_roster` |
+| ESPN client (per league, per visitor's cookies) | held or raised | held or raised | not a dict → a failure | sound as built; not noted (read with the visitor's own connection; its two swallow sites are Low, below) |
+| Yahoo client (per manager) | **an HTTP 429 / 999 (`YahooBusy`) was raised past a held answer** (as MFL's was) → now held served, else busy | held or raised (unchanged) | not an object → a failure (unchanged) | `tests/test_ip5_providers.py` |
+| ESPN injury report (`injury_feed`; memory + disk; 15 min / 1 h) | held copy (unchanged) | held copy (unchanged) | before: a copy with **no entries replaced the held one** ("nobody is injured") and was written to disk → now the held copy stays, the read counts as failed | `…injury_feed_keeps_its_held_copy…` |
+| ESPN news per athlete (`news_feed`) | held (unchanged) | held (unchanged) | an empty body `{}` replaced the held items with none → now a failure | `…news_feed_keeps_its_held_items…` |
+| the overlay's snapshot (`availability._snap`; 120 s) | the directory refused cold → the Sleeper side empty, kept under a key that changes once the directory reads again (self-healing per call); now noted, so nothing built on it is kept | the same | (the client's rule) | via the contexts' test |
+| **roster contexts** (`availability` → region `contexts`; 10 min house, 2 min on demand; My Week, Team, Waivers, the card, trades, the outlook's week) | before: a refusal swallowed in the build (the directory, `_resolve`, MFL's standings / live scoring / ids) was **kept for the TTL** under a key without the directory's stamp — the next manager's lineup; now never kept: the roster's **last good context** (held ≤ 1 h in the budget's LRU) answers with its own stamps, else 503 busy; a raised refusal: the held context answers | the same | (the clients' rule) | `…roster_context_is_not_kept…`, `…my_week_refused_answers_busy_then…` |
+| decision memos (`decisions._memo` → region `decisions`; trade context, waiver sweep, partners, trade lists, rest of season, the outlook's context) | swallowed → kept → now not kept, 503 busy (the clients hold their reads: the next build is whole) | the same | — | `…decisions_memo_keeps_nothing…` |
+| a league's solved weeks (`anyleague.league_weeks` → `league_weeks`; 5 min) | swallowed → kept → now not kept (the cache around it answers busy) | the same | — | `…league_weeks_and_rest_of_season…` |
+| rest of season (`anyleague.ros_table` → `ros`; 10 min) | a unit's directory read refused (`unit_directory` → `{}`: units keyed `TMQB-KC`, names lost) → kept → now busy, nothing kept | the same | — | the same test |
+| the outlook (`outlook` + `outlook_schedule`; IO-2) | not kept (IO-2) | before: **a failure was not counted** (IO-2 counted refusals): MFL's standings down → records 0-0 kept 2 minutes; now counted → not kept (the requester: busy) | — | `…outlook_keeps_nothing_built_while_a_provider_failed` |
+| `il4_free_agents`, the outlook's cards and store, scoring checks, research's priced boards and memos, the matchup board | sound as built: keyed by the directory's fetch and size, written from a clean build only, or every provider error raised (nothing kept) | | | — |
+| priced weeks, boards, stats, About, DFS, the blog, reference values | no provider read | | | — |
+
+**A behaviour change to know**: an MFL league whose standings or live-scoring export fails **with nothing held** (cold)
+now answers busy where it showed 0-0 records or last week's starters; a held copy (10 minutes, then up to an hour
+past it) answers as before.
+
+**A 500 fixed on the way** (on `main` too): with the availability overlay on (the site's default), a roster frame with
+no status at all (`report_status` all NaN: float64) could not take "Questionable" — MFL 70587's whole outlook was a 500
+on the fixtures. `availability.apply_to_rows` makes the column objects first (the same values; tested).
+
+**Player pages that share** (`api/league_lab_api/player_share.py`; `main.web` and `blog.sitemap`, marked IP-5):
+`/player/<gsis>` previews as "Josh Allen (QB, BUF): 23.8 projected this week, 14–35 · isuckatfantasy" with the
+opponent, kickoff and rank at the position — **from the matchup board's week frame for the default scoring that this
+process already holds, and nothing else**: a crawler's hit reads that region's keys and one entry (tested: 0 database
+queries, 0 provider calls, nothing built or kept); not held → the default card. The default scoring's key is computed
+only when the reference scorings are already loaded. Ids `fullmatch` `^00-\d{7}$` (`%22%3E`, `..%2f`, `%0a`, a
+Sleeper id: the default card or the router's 404); every value through `blog.seo_tags` (escaped; tested with
+`"><script>`); the inline script untouched (the CSP hash holds). The sitemap lists the 200 highest projections from the
+same frame (none when nothing is held). A page whose query string names a league (`?league=`) answers
+`X-Robots-Tag: noindex` and carries `<meta name="robots" content="noindex">` (the League link's card included).
+No new route, no new environment variable, no new relation.
+
 ## What is left, by severity
 
 | Severity | Item | Where |
@@ -366,6 +423,7 @@ New environment variables: `LEAGUE_LAB_EDITORS` (set in Render's dashboard), `LE
 | Low | Provider budgets: each client now has its own share (§ 13), but **many addresses** together (a botnet, an IPv6 range wider than a /64 per client) still spend Sleeper's / MFL's global budget; one address cannot | `provider_share` (§ 13); a per-/48 share like the limiter's `heavy` /48 key if it is ever seen |
 | Low | `--forwarded-allow-ips='*'` makes `request.client` client-written on Render; nothing in the app trusts it now, but a future reader would | `api/Dockerfile` (the PO): keep, and say so in the Dockerfile's comment, or set Render's proxy range if Render publishes one |
 | Low | Other clients follow redirects anywhere (only their fixed hosts could send one) | `sleeper_client`, `espn_client`, `yahoo_client`, `news_feed`, `injury_feed` |
+| Low | ESPN's and Yahoo's league adapters swallow a refusal in two places each (`espn_leagues` 253 / 259, `yahoo_leagues` 221 / 291) and their clients do not note to `provider_trouble` (their reads are the visitor's own connection; nothing shared is kept from them) | the two adapters and clients (§ 15) |
 | Low | `/api/status` and `/api/usage/summary` are public: operational numbers (memory, cache ages, counts) — no secret, no league id | consider a token for them later |
 | Low | 422 answers echo the requester's own input | FastAPI default |
 | Info | GA: no cookie banner (PO call 2026-10-04); About says GA is used and what is sent — still true with no password. A public launch to EU / UK visitors needs Consent Mode first (HOSTING § Google Analytics) | Andrew's call |

@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-07 — Wave I-P
+
+- **IP-5 — robustness and reach.** A refused or failed provider read is never kept as data: the provider clients note
+  it (`league_lab.provider_trouble`), and the caches on a request path (the roster contexts My Week shares, the
+  decision memos, a league's solved weeks and rest of season, the outlook) keep nothing built during one — the last
+  good value is served with its own stamps, else "busy" (503) and the screen retries; an empty Sleeper directory, a
+  null roster or an empty MFL body is a failure, the directory's disk copy of any age answers a refusal, the injury
+  and news feeds keep their held copy over an empty answer, MFL's id lookup refused is busy (never "MFL player 1234").
+  MFL's League screen cold: the same numbers (150,736 compared, three leagues) with about 20 % less CPU (the TMQB
+  starter in one pass, the window's units priced once). The look-ahead "best corners" split is gone. Player pages
+  share as the player's card (from what the server already holds; never a query), the sitemap lists the 200 highest
+  projections, and a page with a league in its address is `noindex`. SECURITY_PUBLIC § 15.
+
 ## 2026-10-06 — Wave I-O
 
 - **PO — the wave merged, reviewed and hardened; the corner call stops moving anything.** Four branches (IO-1 … IO-4)

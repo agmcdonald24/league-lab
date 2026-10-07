@@ -441,6 +441,11 @@ def shell(index_html: Path, path: str) -> tuple[str, int] | None:
 def sitemap() -> str:
     urls = [(f"{ORIGIN}/", None)] + [(ORIGIN + p, None) for p in SITEMAP_PATHS]
     urls += [(f"{ORIGIN}/blog/{p['slug']}", p["date"]) for p in posts() if not p.get("draft")]   # ---- IO-3
+    # ---- IP-5 (Wave I-P): the 200 highest projections this week in the default scoring — from the matchup board this
+    # process holds (player_share.top: no query; none when nothing is held)
+    from . import player_share
+    urls += [(f"{ORIGIN}/player/{g}", None) for g in player_share.top()]
+    # ---- end IP-5
     body = "".join(f"<url><loc>{html.escape(u)}</loc>" + (f"<lastmod>{d}</lastmod>" if d else "") + "</url>" for u, d in urls)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
             + body + "</urlset>\n")
