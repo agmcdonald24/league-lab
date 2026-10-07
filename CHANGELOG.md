@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-07 — Wave I-P
+
+- **IP-3 — Trends and the role chips, graded.** Every player-week of 2021–2025 and 2026 weeks 1–4 rebuilt as Trends
+  would have read it before the week (the mart only holds the season as it stands: a past week's tag read from it is
+  look-ahead) and followed over his next 1, 2 and 4 games against the projection made before each. "Below expectation"
+  players scored 1.2 more per game the next week than before — and did not beat their projection (−0.27 against the
+  rest, −0.43 to −0.12; 11,129 player-weeks); "above" players scored 1.5 less and did not fall short of theirs (+0.36,
+  +0.17 to +0.53); the record's weeks (2025–2026): no measurable difference either way. Trends stops implying "buy low":
+  its head carries the record's line, the words say "what happened, and his projection already counts it". A role up
+  keeps 42–70% of its move over two games and is mostly priced (+0.29 the next game, +0.07 to +0.49, not steady by
+  season); a role down, no measurable effect. `ops.context_record` keeps the tag every week; `summary()` gains `trend`
+  and `role` (docs/METRICS.md cx1.1).
+
 ## 2026-10-06 — Wave I-O
 
 - **PO — the wave merged, reviewed and hardened; the corner call stops moving anything.** Four branches (IO-1 … IO-4)

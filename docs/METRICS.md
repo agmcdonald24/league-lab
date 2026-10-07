@@ -4082,6 +4082,167 @@ projection**: projection v3 reads no `wx_` column (`tests/test_io1_context_recor
 plan D3 tested the group and did not keep it. A forecast can miss (the train / serve gap above, § Weather). The weather
 flag is not graded (2025 kept no forecasts).
 
+## Trends and the role trend, graded (cx1.1, IP-3, Wave I-P, 2026-10-07; `league_lab.context_record` § IP-3, `ops.context_record` trend columns, `ops.context_grade` kinds `trend` / `trend_raw` / `role`)
+
+Two more things the app says imply something about next week and had never been graded: **Trends' "below / above
+expectation"** (`GET /api/trends`: his points per game minus his expected points per game — what his targets and
+carries are usually worth, ffverse's per-game expected stats priced in the scoring — over the season so far;
+`mart_league_player_season.diff_per_game`; the screen calls it below / above past 0.5 per game, `research.NEAR`) and
+the **role chips' "role up / down"** (`role_trend.role_trend`: his last two games against his games before them; DFS and
+the Stats Explorer's "Role change"). Method = cx1.0's: as-of inputs, the miss against the projection made before the
+game, intervals from bootstraps, every group against the rest and never against 50%.
+
+### What a past week's tag knew (the look-ahead check)
+
+* **The tag itself is never stored for a past week.** `mart_league_player_season` (and the Trends page for a past
+  `season=`) holds the season **as it stands now**: read as "what Trends said in week W" it would be look-ahead (the
+  week and every later game inside it). For the next week to play it is clean (the games so far are all that exist).
+  **What was done**: the tag is rebuilt for every past week from his games **before** the week only
+  (`context_record.asof_trend` / `trend_asof_week`), in Half PPR, with the reason the screen prints
+  (`trend_reason` = the category of `research.trend_cause`, the same rules in the same order; a test checks the two
+  agree). Test: a week's own game, and every later one, never enters its own tag
+  (`tests/test_ip3_trend_record.py::test_a_weeks_own_game_never_enters_its_own_tag`).
+* The reason's quarterback change reads `mart_player_week_features.pn_qb_changed` **for the week itself** — a
+  projection input, built before kickoff (as-of by construction).
+* Expected points per game come from ffverse's model of each game's own plays (we do not refit it; its training seasons
+  are ffverse's): a past game's value never reads a later game.
+* The role trend: `role_trend` on his games of the season before the week, routes per dropback left out (the
+  participation file arrives after the season; the live screen never had it) — as cx1.0 rebuilt it.
+* The projection made before each game: 2023–2025 `ops.calibration_oof` (walk-forward, v3.0, each season fitted on the
+  ones before it); **2021–2022 projected walk-forward tonight in memory** with the same code
+  (`calibration.oof_rows(..., ranges=False)`, today's `MODEL_VERSION` v3.3, fitted on 2016 up to the season before; not
+  stored); 2026 `ops.projections` (weeks 1–3 the `refit` labelled in cx1.0 — fitted after those weeks kicked off — week 4
+  the kickoff board). Two model versions are mixed across seasons: read the per-season rows below with that in mind.
+* Actual points: Half PPR priced from the stat line exactly as the projection's (no 2-point conversions); so the gap
+  here is Trends' gap in Half PPR, not each league's scoring.
+
+### How it is graded
+
+Every player-week (QB / RB / WR / TE, regular season, a played game) with the tag as it read before the week. **Next k
+games** = this week's game and his next k − 1 played games of the season, all with a projection (fewer left: not in the
+k row). **(a) Miss** = mean over those games of (actual − the projection made before each game): does the projection
+already know? **(b) Raw** = his points per game over them minus his points per game before the week (regression to the
+mean, for the sentence). **vs the rest** = the group's mean minus the mean of every other tagged player-week at the same
+positions (below vs near + above; the projection's bias at a position cancels). **Interval**: 95% bootstrap, 2,000
+draws, **resampling whole player-seasons** (his overlapping next-k windows come along together). Pre-registered
+subsets (the brief's): gap size (terciles of |gap| within the tag), position, reason — 11 per tag, 22 in all, each at
+k = 1, 2, 4 (66 cells): about 3 would clear 0 at 95% by chance. Looked at besides, as checks (not subsets to act
+on): each season alone, the "near" group alone as the comparison, the projection's level held fixed, and games before
+the week 1–3 against 4+ (4 cells). For the role trend: trend × position (6 subsets, 18 cells).
+
+### "Below / above expectation" (2021–2025 and 2026 weeks 1–4, Half PPR)
+
+| Tag | Next | n (players) | Raw: pts/g next − before (95%) | Miss vs projection (95%) | Scored above (rest) | vs the rest (95%) |
+|---|---|---|---|---|---|---|
+| below | 1 | 11,129 (2,134) | +1.19 (+1.07 to +1.32) | −0.16 (−0.28 to −0.04) | 37% (40%) | **−0.27** (−0.43 to −0.12) |
+| below | 2 | 9,840 (1,933) | +1.30 (+1.17 to +1.43) | −0.09 (−0.21 to +0.04) | 41% (42%) | **−0.23** (−0.38 to −0.07) |
+| below | 4 | 7,607 (1,575) | +1.45 (+1.30 to +1.61) | 0.00 (−0.13 to +0.14) | 42% (45%) | **−0.18** (−0.35 to −0.02) |
+| above | 1 | 7,687 (1,594) | −1.54 (−1.69 to −1.39) | +0.24 (+0.09 to +0.40) | 42% (37%) | **+0.36** (+0.17 to +0.53) |
+| above | 2 | 6,921 (1,484) | −1.57 (−1.73 to −1.40) | +0.25 (+0.09 to +0.40) | 44% (41%) | **+0.31** (+0.13 to +0.49) |
+| above | 4 | 5,516 (1,219) | −1.60 (−1.79 to −1.41) | +0.30 (+0.14 to +0.48) | 47% (43%) | **+0.30** (+0.12 to +0.49) |
+
+(near, |gap| ≤ 0.5: 6,897 player-weeks; no game before the week: 3,955.) By season, next game, vs the rest — below:
+2021 −0.76 (−1.12 to −0.39), 2022 −0.01 (−0.30 to +0.31), 2023 −0.41 (−0.77 to −0.05), 2024 −0.40 (−0.80 to −0.03),
+**2025 +0.22 (−0.14 to +0.55)**, 2026 wk 1–4 −0.17 (−0.90 to +0.56); above: 2021 +0.53 (+0.07 to +1.00), 2022 +0.20
+(−0.18 to +0.56), 2023 +0.66 (+0.22 to +1.08), 2024 +0.64 (+0.21 to +1.07), **2025 −0.17 (−0.51 to +0.18)**, 2026 wk 1–4
+−0.10 (−0.89 to +0.72). Checks: against "near" alone, below −0.13 (−0.30 to +0.03), above +0.28 (+0.09 to +0.47);
+with the projection's level held fixed (the miss minus the mean miss of his position × projection decile), below −0.26
+(−0.42 to −0.11), above +0.32 (+0.14 to +0.50) — not an artefact of who gets projected high. By games before the week:
+1–3 games, below −0.10 (−0.34 to +0.13), above −0.03 (−0.30 to +0.25); 4+ games, below −0.35 (−0.54 to −0.15), above
++0.53 (+0.31 to +0.75).
+
+| Tag | Group | n | Raw next game (95%) | vs the rest, next game (95%) | vs the rest, next 4 (95%, n) |
+|---|---|---|---|---|---|
+| below | small (gap −1.07 to −0.50) | 3,712 | +0.78 (+0.60 to +0.98) | −0.25 (−0.45 to −0.06) | −0.26 (−0.43 to −0.08, 2,413) |
+| below | middle (−1.97 to −1.07) | 3,707 | +1.14 (+0.94 to +1.35) | −0.18 (−0.41 to +0.03) | −0.14 (−0.36 to +0.09, 2,462) |
+| below | large (below −1.97) | 3,710 | +1.65 (+1.41 to +1.88) | −0.39 (−0.63 to −0.14) | −0.16 (−0.42 to +0.10, 2,732) |
+| above | small (+0.50 to +1.08) | 2,562 | −0.35 (−0.56 to −0.13) | +0.16 (−0.05 to +0.39) | +0.19 (−0.01 to +0.39, 1,697) |
+| above | middle (+1.08 to +2.16) | 2,562 | −0.88 (−1.13 to −0.63) | +0.40 (+0.15 to +0.66) | +0.24 (+0.02 to +0.46, 1,845) |
+| above | large (above +2.16) | 2,563 | −3.40 (−3.71 to −3.10) | +0.50 (+0.18 to +0.82) | +0.45 (+0.14 to +0.75, 1,974) |
+| below | QB | 1,775 | +1.21 (+0.77 to +1.61) | +0.18 (−0.38 to +0.75) | +0.45 (−0.18 to +1.09, 1,141) |
+| below | RB | 2,779 | +1.21 (+0.96 to +1.47) | −0.51 (−0.85 to −0.18) | −0.30 (−0.64 to +0.05, 1,908) |
+| below | WR | 4,638 | +1.18 (+1.01 to +1.35) | −0.21 (−0.44 to +0.03) | −0.24 (−0.47 to +0.02, 3,206) |
+| below | TE | 1,937 | +1.18 (+0.99 to +1.39) | −0.39 (−0.65 to −0.13) | −0.31 (−0.59 to −0.01, 1,352) |
+| above | QB | 681 | −2.09 (−2.72 to −1.44) | −0.25 (−0.86 to +0.39) | −0.51 (−1.19 to +0.16, 482) |
+| above | RB | 1,877 | −1.52 (−1.87 to −1.19) | +0.59 (+0.20 to +0.98) | +0.44 (+0.06 to +0.82, 1,364) |
+| above | WR | 3,469 | −1.63 (−1.85 to −1.41) | +0.45 (+0.17 to +0.72) | +0.43 (+0.13 to +0.69, 2,511) |
+| above | TE | 1,660 | −1.16 (−1.44 to −0.89) | +0.22 (−0.08 to +0.54) | +0.33 (−0.01 to +0.68, 1,159) |
+| below | reason: touchdowns | 2,401 | +1.76 (+1.52 to +2.02) | −0.37 (−0.61 to −0.12) | −0.22 (−0.48 to +0.04, 1,683) |
+| below | reason: quarterback | 1,430 | +0.87 (+0.59 to +1.16) | −0.61 (−0.90 to −0.33) | −0.34 (−0.62 to −0.08, 915) |
+| below | reason: share fell | 1,286 | +0.31 (−0.01 to +0.66) | −0.71 (−1.05 to −0.35) | −0.28 (−0.58 to +0.04, 906) |
+| below | no reason named | 6,012 | +1.23 (+1.06 to +1.40) | −0.07 (−0.28 to +0.12) | −0.11 (−0.31 to +0.10, 4,103) |
+| above | reason: touchdowns | 2,054 | −3.35 (−3.71 to −2.99) | +0.70 (+0.33 to +1.05) | +0.57 (+0.20 to +0.93, 1,575) |
+| above | reason: quarterback | 712 | −1.92 (−2.36 to −1.45) | −0.09 (−0.49 to +0.31) | +0.24 (−0.11 to +0.60, 486) |
+| above | reason: share rose | 1,570 | −0.33 (−0.65 to −0.02) | +0.42 (+0.10 to +0.75) | +0.24 (−0.04 to +0.53, 1,083) |
+| above | no reason named | 3,351 | −0.92 (−1.13 to −0.72) | +0.23 (+0.02 to +0.46) | +0.20 (−0.02 to +0.40, 2,372) |
+
+**The finding.** The gap does close in part — raw, players below expectation scored 1.2 more per game the next week
+than before, those above 1.5 less (the bigger the gap, the bigger the move) — **and the projection already expects
+that, and then some**: below-expectation players did *not* beat their projection afterwards (−0.27 against the rest,
+−0.43 to −0.12; never above 0 in any season), and above-expectation players did not fall short of it (+0.36, +0.17 to
++0.53). Neither direction supports "buy low" or "sell high" for a manager who can see the projection. **The record's
+weeks (2025 and 2026 weeks 1–4, what the site prints) say no measurable difference either way** (below +0.17, −0.15 to
++0.49, 2,467 games; above −0.15, −0.45 to +0.15, 1,815). **Subsets**: of the 22, the ones clear of 0 in the pooled
+grade (above × touchdowns +0.70, below × share fell −0.71, below × quarterback −0.61, below × touchdowns −0.37, the
+large gaps, RB / WR above) all come from 2021–2024 and **none holds in 2025–2026** (above × touchdowns 2021–24 +0.98,
++0.52 to +1.43; 2025–26 −0.22, −0.77 to +0.26; below × share fell +0.17, −0.65 to +1.06; below × quarterback −0.14, −0.73
+to +0.46; below × touchdowns +0.20, −0.31 to +0.74) — **no row is marked on the screen**. What 2021–2024 does suggest,
+for the model's owner and not acted on here: the projection pulled hot players (touchdown-heavy ones most) further back
+than they went; 2025 does not show it — a candidate for the harness, not a fact.
+
+### "Role up / role down" (2021–2025; 2026 weeks 1–4 have no call: the trend needs four games before the week)
+
+| Trend | Measure | Next | n (players) | Before | Last two | Next | Moved | Held (95%) | Kept |
+|---|---|---|---|---|---|---|---|---|---|
+| up | target share | 2 | 2,375 (1,037) | 11.8% | 20.4% | 15.4% | +8.7 | +3.7 (+3.4 to +4.0) | 42% |
+| up | carry share | 2 | 793 (301) | 29.8% | 50.1% | 42.0% | +20.3 | +12.2 (+10.5 to +13.9) | 60% |
+| up | snap share | 2 | 3,078 (1,107) | 42.8% | 64.2% | 57.8% | +21.3 | +15.0 (+14.0 to +16.0) | 70% |
+| down | target share | 2 | 1,769 (815) | 17.6% | 9.6% | 14.3% | −8.0 | −3.3 (−3.6 to −2.9) | 41% |
+| down | carry share | 2 | 658 (258) | 42.5% | 24.8% | 31.6% | −17.8 | −11.0 (−12.5 to −9.4) | 62% |
+| down | snap share | 2 | 2,398 (976) | 58.4% | 38.4% | 46.7% | −20.0 | −11.7 (−12.6 to −10.7) | 58% |
+
+(Moved / held in points of share: held = the next two games' share minus the share before; kept = held ÷ moved. The
+next game alone and the next four keep within 5 points of these — target share up 44% / 41%, snaps up 72% / 68%, snaps down 62% / 53%.)
+
+| Trend | Group | Next | n (players) | Miss (95%) | Scored above (rest) | vs the rest (95%) |
+|---|---|---|---|---|---|---|
+| up | all | 1 | 5,133 (1,487) | +0.25 (+0.07 to +0.43) | 41% (37%) | **+0.29** (+0.07 to +0.49) |
+| up | all | 2 | 4,522 (1,398) | +0.18 (0.00 to +0.35) | 44% (40%) | **+0.20** (+0.01 to +0.39) |
+| up | all | 4 | 3,407 (1,203) | +0.20 (+0.04 to +0.37) | 46% (43%) | +0.12 (−0.03 to +0.30) |
+| up | RB / WR / TE, next game | 1 | 1,461 / 2,475 / 1,197 | | | +0.29 (−0.17 to +0.75) / +0.23 (−0.06 to +0.51) / +0.43 (+0.06 to +0.81) |
+| down | all | 1 | 4,066 (1,297) | −0.17 (−0.35 to +0.03) | 37% (37%) | −0.13 (−0.35 to +0.09) |
+| down | all | 2 | 3,565 (1,216) | +0.04 (−0.13 to +0.23) | 41% (40%) | +0.07 (−0.12 to +0.27) |
+| down | all | 4 | 2,629 (1,018) | +0.08 (−0.09 to +0.26) | 43% (43%) | 0.00 (−0.19 to +0.18) |
+
+(The rest = every other RB / WR / TE game with four games before it and no call. By season, role up next game: 2021
++0.69 (+0.23 to +1.18), 2022 −0.01 (−0.47 to +0.46), 2023 +0.59 (+0.13 to +1.11), 2024 −0.03 (−0.49 to +0.42), 2025
++0.21 (−0.24 to +0.64).)
+
+**The finding.** **The new role holds in part**: over the next two games a role up keeps about 70% of its snap-share
+move, 60% of its carry-share move and 42% of its target-share move (a role down the same, mirrored) — real, and about
+half of what the two games showed. **Is it priced?** Mostly: the projection reads `target_share_l3` / `carry_share_l3`
+/ `snap_pct_l3` (the last three games: the two recent games are two thirds of it) and the season-to-date `_std` shares,
+so a two-game move is already partly in the number. What is left is small and not steady: role up +0.29 points against
+the rest the next game (+0.07 to +0.49; two seasons of five clear of 0, none below), +0.20 over two, +0.12 over four
+(interval holds 0); role down **no measurable effect**. The record's weeks (2025) say no measurable difference (role up
++0.22, −0.21 to +0.64, 1,022 games). Six subsets (trend × position), 18 cells: TE role up +0.43 (+0.06 to +0.81) is the
+only one clear of 0 at the next game — not marked.
+
+### The record and the stored grade
+
+`ops.context_record` gains `trend_games` (his games before the week; 0 = none), `trend_ppg`, `trend_gap`,
+`trend_tag` (below / above / near; NULL = no game before), `trend_reason` — written by every freeze and rebuild like the
+rest, and filled once for rows written before them (`backfill_trend`: the tag depends only on games before the week, so
+it is what the freeze would have stored, a later stat correction aside). Size: +5 columns, ≈ 0.3 MB on 9,358 rows; the
+first run after the deploy rewrites every row once (≈ 6 MB of dead rows until the table is vacuumed). `ops.context_grade`
+gains kinds `trend` (grp `tag/by/group/k`: the miss against the projection over the next k graded rows of the record,
+vs the rest), `trend_raw` (the same groups: points per game next minus before) and `role` (grp `trend/by/group/k`), and
+`summary` grp `trend`, `trend_head`, `role` (the sentences): 21 → 192 rows, 80 kB. The next-k outcome is read from the
+record itself (his next graded rows of the season), so the grade moves to kickoff-frozen weeks as they come. The run
+went from ≈ 3 s to ≈ 8–14 s a night (the bootstraps). The site reads it through `context_record.summary()["trend"]` /
+`["role"]` (`GET /api/context/record`, and `GET /api/trends`' `record`). Reproduce the long study: `uv run python -m
+league_lab.context_record study` (≈ 2 minutes with the in-memory 2021–2022 fit; prints every table above as JSON).
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |
