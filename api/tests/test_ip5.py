@@ -352,3 +352,14 @@ def test_mfl_power_part_prices_the_window_once_and_answers_the_same(client):
     finally:
         O._prefetch_ros = real
     assert a["power"]["rows"] == b["power"]["rows"] and len(a["power"]["rows"]) == 12
+
+
+# ------------------------------------------------------------------ 3. the "best corners" split
+@needs_db
+def test_corners_the_look_ahead_split_is_gone_and_the_page_still_stands(client):
+    from .conftest import SCRUBS
+    r = client.get(f"/api/matchups/cb?league={SCRUBS}&team=2")
+    assert r.status_code == 200
+    rows = r.json()["matchups"]
+    assert all(m.get("cover_split") is None for m in rows)
+    assert "season to date" not in r.text                               # the look-ahead note went with it
