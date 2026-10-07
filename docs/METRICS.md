@@ -3557,6 +3557,10 @@ it is on). Seed rows: none (the harness rows live in the scripts' output, not `f
   harness never saw such a row.
 * **The switch.** `LEAGUE_LAB_QB_PASS_TD`: unset or empty = on (`PASS_TD_DEFAULT`, the harness's verdict); `0` gives
   v3.3's lines. Under 300 fitting rows: the identity. `LAST_PASS_TD` keeps the run's a, b, rows and lines moved (logged).
+* **Scenarios** (`signals.scenarios` refits the models, so its base is the model's line): `rescale_to_stored` now moves
+  the larger role component by component (M6 scaled every component by one k, which is the same thing for a cold start),
+  so a QB's base is the stored line and his larger role's passing TDs follow by the same ratio — the "points gain" stays
+  the role's, not pt1.0's. "Why this number" prices the stored line, so its pieces carry the new passing TDs.
 * **The nightly.** Nothing new to run: the fit is inside `project`, from the training frame it already loads; no table.
   The version bump makes the existing `calibration-oof` step (`ensure_oof`) rebuild `ops.calibration_oof` once for v3.4
   (M6: about 2–3 CPU-minutes alone) and `project` recompute the importance once (U-15). `backtest-v2` under v3.4

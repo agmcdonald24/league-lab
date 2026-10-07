@@ -61,7 +61,9 @@ QB range covered 78.6%).
   ---- IP-1`): on the stat line before anything is priced (the frozen-line path), so `ops.projection_lines`,
   `ops.projections`, `ops.projection_ranges` and every request agree. Switch `LEAGUE_LAB_QB_PASS_TD` (unset = on; `0` =
   v3.3). Fitted inside `project` from its training frame (3 QB component fits). Weeks without an implied total keep the
-  model's count. `MODEL_VERSION` "v3.4".
+  model's count. `MODEL_VERSION` "v3.4". `calibration.rescale_to_stored` (M6's, used by the scenarios) now moves the
+  larger role component by component, so a QB scenario's gain is the role's and not pt1.0's (identical for M6's cold
+  starts: their line is the model's × k in every component).
 * **The drift** (`mart_projection_drift`, a view): each complete week against the backtest of the model that made it
   (newest backtested version at or before the week's). Reference league QB 6.52 against **5.86** (was 5.41), TE 3.51 /
   3.01, RB 4.18 / 4.28, WR 4.15 / 4.07. Also keeps the backtest columns filled once a v3.3 / v3.4 week completes on a
@@ -99,7 +101,10 @@ Outside my list: `dbt/models/marts/nfl/mart_projection_drift.sql` + its `schema.
   the model + b = 0.0637 x implied total x attempts / 33, on 2021 fitting rows (2023-2025); 465 QB lines moved"; wrote
   weeks 5–18, kept 1–4 frozen — **0 cells changed** in weeks 1–4 (4,856 house rows, 2,396 lines); week 5's QB rows are
   v3.4 and equal the isolated switch-on run to the cent (Josh Allen 21.87, Dak Prescott 20.95 …); importance recomputed
-  once for v3.4 (QB's top input `pn_qb_starting` +1.84).
+  once for v3.4 (QB's top input `pn_qb_starting` +1.84). A second `project` after the scenario change (`rescale_to_stored`
+  per component): "scenarios written: 130 rows … base = stored projection to 0.00e+00 on 130 rows"; RB / WR / TE scenario
+  gains moved 0 of 114, QB 6 of 16 (week 5: a "gain" of −1.71 that was pt1.0's shift reads −0.28, the role's own); the
+  projection-marts selection again PASS 147, WARN 0.
 * pt1.0's ranges (reported, 2023–2025, the production path): 80% interval score −0.0027 (reference) / +0.0016
   (dynasty), 50% −0.010 / −0.016, coverage 80% 0.757 → 0.757 / 0.756 → 0.762.
 * Tests: `tests/test_ip1_qb.py` 9 + `tests/test_ip1_pass_td.py` 9 passed; the edited modules' root files (calibration,
