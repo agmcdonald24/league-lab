@@ -4,6 +4,8 @@
 * rt1.0 -- QB rushing TDs, a mean-unbiased scale (the one bias the diagnosis found in every sample): k_S = sum of actual
   rushing TDs / sum of projected over the played QB rows of the 3 seasons before S (the walk-forward rows, production
   inputs), clipped to [0.70, 1.50]; every QB line's rushing TDs x k_S.
+* pt1.0 -- passing TDs regressed toward the team's implied total: per S, least squares without intercept on the played
+  QB rows of the 3 seasons before: actual passing TDs = a x projected + b x (implied total x projected attempts / 33).
 * st1.0 -- "Is he the starter?" from what happened (dbt var ``pn_starter_from_play``, int_pn_team_game): training rows
   read the corrected history; the test season's rows keep the stored listing except where the as-of guard fires (a
   listing that repeats one already contradicted by the team's newest played game -> that game's real starter). Needs
@@ -13,7 +15,7 @@
 Each is judged by ``experiments.decide`` on the QB board (2021-2025, both house scorings, the season paired; scorer =
 the priced line, the backtest's scope: every played row with its 12 outcomes known, weeks with >= 8 players).
 
-usage: OMP_NUM_THREADS=1 uv run python scripts/analysis/ip1_qb_candidates.py rt --rows rows.parquet [--rows-early r.parquet]
+usage: OMP_NUM_THREADS=1 uv run python scripts/analysis/ip1_qb_candidates.py rt|pt --rows rows.parquet [--rows-early r.parquet]
        OMP_NUM_THREADS=1 uv run python scripts/analysis/ip1_qb_candidates.py st --rows rows.parquet --before before.parquet
 (rows: the walk-forward cache of scripts/analysis/ip1_qb_diagnosis.py; --rows-early: the same for 2018-2020, QB)
 """
@@ -142,6 +144,60 @@ def run_rt(rows: pd.DataFrame, leagues: dict) -> None:
     print(f"rushing-TD bias (points at 6 a TD, played rows): {rb:+.3f} → {rc:+.3f}")
 
 
+# ------------------------------------------------------------------------------ pt1.0
+PT_ATTEMPTS = 33.0     # a starter's attempts a game, about: the team-total term is the implied total x his share of that
+
+
+def pass_td_blend(rows: pd.DataFrame, s: int) -> tuple[float, float, int]:
+    """(a, b, fitting rows): least squares without intercept of the actual passing TDs on the projected passing TDs and
+    the implied team total x projected attempts / ``PT_ATTEMPTS``, over the played QB rows of the 3 seasons before."""
+    fit = rows[(rows["season"] >= s - RT_WINDOW) & (rows["season"] < s) & rows["played"].fillna(False).astype(bool)
+               & rows["out_passing_tds"].notna() & rows["implied_team_total"].notna()]
+    x = np.column_stack([fit["v3_passing_tds"], fit["implied_team_total"] * fit["v3_attempts"] / PT_ATTEMPTS])
+    coef, *_ = np.linalg.lstsq(x, fit["out_passing_tds"].to_numpy(dtype=float), rcond=None)
+    return float(coef[0]), float(coef[1]), len(fit)
+
+
+def run_pt(rows: pd.DataFrame, leagues: dict) -> None:
+    qb = rows[rows["position"] == "QB"].copy()
+    cand = qb.copy()
+    fits = {}
+    for s in [*TESTS, 2026]:
+        a, b, n = pass_td_blend(qb, s)
+        fits[s] = (a, b, n)
+        sel = (cand["season"] == s) & cand["implied_team_total"].notna()
+        team = cand.loc[sel, "implied_team_total"] * cand.loc[sel, "v3_attempts"] / PT_ATTEMPTS
+        cand.loc[sel, "v3_passing_tds"] = np.clip(a * cand.loc[sel, "v3_passing_tds"] + b * team, 0, None)
+    print("fits by season (a on the model, b on implied total x attempts / 33; rows):",
+          {s: f"{a:.3f} / {b:.4f} ({n})" for s, (a, b, n) in fits.items()})
+    t = qb[qb["season"].isin(TESTS)]
+    c = cand[cand["season"].isin(TESTS)]
+    base, alt = priced(t, "v3_", leagues), priced(c, "v3_", leagues)
+    report("pt1.0: passing TDs regressed toward the team's implied total", paired(base, alt), base, alt)
+    pb = (t["out_passing_tds"] - t["v3_passing_tds"])[t["played"].astype(bool)].mean() * 4
+    pc = (c["out_passing_tds"] - c["v3_passing_tds"])[c["played"].astype(bool)].mean() * 4
+    print(f"passing-TD bias (points at 4 a TD, played rows): {pb:+.3f} → {pc:+.3f}")
+    # where it acts (information, not the rule): per league; projected starters (>= 20 attempts) and the rest; 2026
+    for lid in leagues:
+        wb, wc = weekly(base[base["league_id"] == lid]), weekly(alt[alt["league_id"] == lid])
+        print(f"league {lid[-6:]}: season-mean MAE {wb.groupby('season')['mae'].mean().mean():.3f} → "
+              f"{wc.groupby('season')['mae'].mean().mean():.3f}")
+    att = t.set_index(["gsis_id", "season", "week"])["v3_attempts"]
+    for name, sel in (("projected >= 20 attempts", lambda d: d >= 20), ("projected < 20 attempts", lambda d: d < 20)):
+        k = base.set_index(["gsis_id", "season", "week"]).index
+        m = sel(att.reindex(k).to_numpy())
+        eb = (base["proj"] - base["actual"]).abs()[m].mean()
+        ec = (alt["proj"] - alt["actual"]).abs()[m].mean()
+        print(f"{name}: pooled MAE {eb:.3f} → {ec:.3f} ({int(m.sum()) // len(leagues)} player-weeks a scoring)")
+    t26, c26 = qb[qb["season"] == 2026], cand[cand["season"] == 2026]
+    if len(t26):
+        b26, a26 = priced(t26, "v3_", leagues), priced(c26, "v3_", leagues)
+        for w in (3, 4):
+            bw, aw = b26[b26["week"] <= w], a26[a26["week"] <= w]
+            print(f"2026 weeks 1-{w} (v3.0 inputs refit now, information only): pooled MAE "
+                  f"{(bw['proj'] - bw['actual']).abs().mean():.3f} → {(aw['proj'] - aw['actual']).abs().mean():.3f}")
+
+
 # ------------------------------------------------------------------------------ st1.0
 TEAM_GAME_SQL = """select season, week, team, listed_qb_id, starting_qb_id, is_played from intermediate.int_pn_team_game
                    where season >= 2016 order by team, season, week"""
@@ -224,7 +280,7 @@ def run_st(rows: pd.DataFrame, before: pd.DataFrame, leagues: dict) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("candidate", choices=["rt", "st"])
+    ap.add_argument("candidate", choices=["rt", "pt", "st"])
     ap.add_argument("--rows", type=Path, required=True)
     ap.add_argument("--rows-early", type=Path, default=None)
     ap.add_argument("--before", type=Path, default=None)
@@ -238,6 +294,8 @@ def main() -> None:
         leagues = P.league_scorings(conn)
     if args.candidate == "rt":
         run_rt(rows, leagues)
+    elif args.candidate == "pt":
+        run_pt(rows, leagues)
     else:
         if args.before is None:
             raise SystemExit("--before is required for st")
