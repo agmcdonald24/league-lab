@@ -3,6 +3,7 @@
   // the actual in series 1 (2 px line, a 10 % wash, dots with a surface ring), the expected in the muted ink, dashed
   // (it is a model's line, not a score). A legend for the two, the last value labelled, a hairline grid; tap or hover a
   // week to read it; "Show as a table" is the chart's twin (every value reachable without the picture).
+  import { pts1 } from "../lib/card";
   import { areaPath, extent, linear, linePath, niceTicks } from "../lib/chart";
   import { SERIES } from "../lib/theme";
 
@@ -37,7 +38,8 @@
   const expectedPts = $derived(points.map((p) => ({ x: x(p.week), y: p.expected === null || p.expected === undefined ? null : y(p.expected) })));
   const last = $derived([...points].reverse().find((p) => p.actual !== null) ?? null);
   const step = $derived(points.length > 12 && width < 500 ? 2 : 1);
-  const f = (v: number | null | undefined) => (v === null || v === undefined ? "—" : v.toFixed(1));
+  // IP-4 fix round: one decimal the way the API prints it (a tie to the even digit), as the card's tiles and charts do
+  const f = (v: number | null | undefined) => pts1(v);
   const shown = $derived(focus === null ? null : (points.find((p) => p.week === focus) ?? null));
 
   function onkey(e: KeyboardEvent) {

@@ -6,9 +6,8 @@
   // are" holds how they are made. They describe the season so far: they are not a forecast, and say it.
   import { ApiError, cardPaths, get, peek, Unauthorized, type Rating, type Ratings } from "../../lib/api";
 
-  let { gsis, league, position, compact = false, onauth, testid = "card-ratings" }: {
+  let { gsis, position, compact = false, onauth, testid = "card-ratings" }: {
     gsis: string;
-    league: string | null;
     position: string;
     compact?: boolean;
     onauth?: () => void;
@@ -28,7 +27,7 @@
       data = null;
       return;
     }
-    const path = cardPaths.ratings(id, league);
+    const path = cardPaths.ratings(id);
     const hit = peek<Ratings>(path);
     data = hit ?? null;
     if (hit) return;
@@ -47,6 +46,8 @@
   const tier = (r: number) => (r >= 80 ? "var(--ll-good)" : r >= 60 ? "var(--ll-series-1)" : r >= 40 ? "var(--ll-ink-3)" : "var(--ll-warn)");
   const shown = $derived((data?.ratings ?? []).filter((r) => r.rating !== null).length);
   const plural = (p: string) => ({ QB: "quarterbacks", RB: "running backs", WR: "receivers", TE: "tight ends" })[p] ?? "players";
+  /** the tile classes (a phone, the drawer) plus, on the page from 640 px, the row's (`sm:` ones) */
+  const cls = (tile: string, row: string) => (compact ? tile : `${tile} ${row}`);
   const short = (r: Rating) => (r.rating !== null ? r.words : r.words.replace(/^Not rated: /, "").replace(/^No value for him: /, ""));
 </script>
 
@@ -83,23 +84,31 @@
         <!-- not in the ranked group at all: one reason for every row (the rows keep their raw numbers) -->
         <p class="mt-2 rounded-md bg-raised px-3 py-2 text-sm leading-snug text-ink-2" data-testid="ratings-words">{data.ratings[0]?.words ?? data.words}</p>
       {/if}
-      <ul class="mt-3 divide-y divide-line" data-testid="ratings-list">
+      <!-- fix round: two tiles to a row on a phone and in the drawer (the first chart comes up a screen); one row each
+           from 640 px on the page -->
+      <ul class={cls("mt-3 grid grid-cols-2 gap-x-4", "sm:block sm:divide-y sm:divide-line")} data-testid="ratings-list">
         {#each data.ratings as r (r.key)}
-          <li data-testid="rating" data-key={r.key}>
+          <li data-testid="rating" data-key={r.key} class={open === r.key ? cls("col-span-2", "") : ""}>
             <button
               type="button"
-              class="grid w-full grid-cols-[minmax(0,1fr)_3.5rem_2.25rem_3.25rem] sm:grid-cols-[minmax(0,1fr)_5.5rem_2.25rem_3.5rem] items-center gap-x-2.5 py-1.5 text-left {compact ? 'min-h-9' : 'min-h-10'}"
+              class={cls(
+                "grid w-full grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-2 border-t border-line py-1.5 text-left",
+                "sm:min-h-10 sm:grid-cols-[minmax(0,1fr)_5.5rem_2.25rem_3.5rem] sm:items-center sm:gap-x-2.5 sm:border-t-0",
+              )}
               aria-expanded={open === r.key}
               onclick={() => (open = open === r.key ? null : r.key)}
             >
-              <span class="min-w-0 text-sm leading-tight text-ink-2">{r.label}</span>
-              <span class="relative h-2 rounded-sm bg-sunken" aria-hidden="true">
+              <span class={cls("order-1 col-span-2 line-clamp-2 min-w-0 text-xs leading-tight text-ink-2", "sm:col-span-1 sm:text-sm")}>{r.label}</span>
+              <span class={cls("relative order-4 col-span-2 mt-1 h-1.5 rounded-sm bg-sunken", "sm:order-2 sm:col-span-1 sm:mt-0 sm:h-2")} aria-hidden="true">
                 {#if r.rating !== null}<span class="absolute inset-y-0 left-0 rounded-sm" style="width:{Math.max(3, r.rating)}%;background:{tier(r.rating)}"></span>{/if}
               </span>
-              <span class="text-right text-lg leading-none font-extrabold tabular-nums" style={r.rating !== null ? `color:${tier(r.rating)}` : ""} class:text-ink-3={r.rating === null} data-testid="rating-value"
-                >{r.rating ?? "—"}</span
+              <span
+                class={cls("order-2 text-lg leading-none font-extrabold tabular-nums", "sm:order-3 sm:text-right")}
+                style={r.rating !== null ? `color:${tier(r.rating)}` : ""}
+                class:text-ink-3={r.rating === null}
+                data-testid="rating-value">{r.rating ?? "—"}</span
               >
-              <span class="truncate text-right text-xs text-ink-3 tabular-nums" data-testid="rating-raw">{r.display}</span>
+              <span class={cls("order-3 truncate text-right text-xs text-ink-3 tabular-nums", "sm:order-4")} data-testid="rating-raw">{r.display}</span>
             </button>
             {#if r.rating === null && open !== r.key && data.qualified !== false}
               <p class="-mt-1 pb-1.5 text-xs leading-snug text-ink-3" data-testid="rating-reason">{short(r)}</p>

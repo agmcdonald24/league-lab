@@ -116,8 +116,8 @@ PAGES_READ_PREFIX = ("/blog/img/",)
 # `write` (POST / PUT / DELETE) and `read` (GET /api/blog/mine, /api/blog/posts/{id}) by the rules below
 RESEARCH_EXACT = RESEARCH_EXACT | {"/api/blog/export"}
 # ---- end IO-3
-# ---- IP-4 (Wave I-P): the player card's /api/player/{gsis}/ratings is `research` through RESEARCH_PREFIX above;
-# /api/player/{gsis}/projections is `read` (bucket_for; api/tests/test_ip4.py asserts both)
+# ---- IP-4 (Wave I-P): the player card's /api/player/{gsis}/ratings and /api/player/{gsis}/projections are `read`
+# (bucket_for, ahead of RESEARCH_PREFIX; api/tests/test_ip4.py asserts both and that neither marks a league seen)
 # ---- end IP-4
 
 
@@ -158,9 +158,10 @@ def bucket_for(method: str, path: str, query: str = "") -> str | None:
         return "heavy"
     if method.upper() in WRITES:
         return "write"
-    # ---- IP-4 (Wave I-P): a player's past projections — one indexed read of at most 18 rows (5–13 ms), not an
-    # aggregate: `read`, so the card's extra call does not spend the research budget (his ratings do: `research`)
-    if path.startswith("/api/player/") and path.endswith("/projections"):
+    # ---- IP-4 (Wave I-P): a player's past projections (one indexed read of at most 18 rows, 5–13 ms) and his ratings
+    # (the Stats frame's cached season aggregate, 23 ms warm): `read`, so the card's two extra calls do not spend the
+    # research budget — and, outside `research`, a `league=` they carry never marks that league "seen" (fix round, L2)
+    if path.startswith("/api/player/") and path.endswith(("/projections", "/ratings")):
         return "read"
     # ---- end IP-4
     if path in RESEARCH_EXACT or path.startswith(RESEARCH_PREFIX):

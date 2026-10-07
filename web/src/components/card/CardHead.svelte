@@ -47,9 +47,18 @@
     >
       <span class="absolute inset-0" style="background:radial-gradient(120% 70% at 50% 105%, color-mix(in oklab, {c.accent} 70%, transparent) 0%, transparent 60%)"></span>
       <span class="absolute -top-6 -right-10 h-28 w-28 rotate-45" style="background:color-mix(in oklab, {onColor(c.primary)} 7%, transparent)"></span>
-      <span class="relative mb-[-2px]">
-        <Headshot url={d.headshot_url ?? null} name={d.player_name} team={d.team} size={compact ? 84 : 104} eager />
-      </span>
+      {#if d.position === "DEF" && !d.headshot_url}
+        <!-- a team defense: its code where a face would be (the team badge's own pairing of colour and ink) -->
+        <span
+          class="relative mb-4 grid place-items-center rounded-full font-black tracking-tight ring-2 ring-inset"
+          style="width:{compact ? 84 : 104}px;height:{compact ? 84 : 104}px;font-size:{compact ? 26 : 32}px;color:{onColor(c.primary)};background:color-mix(in oklab, {c.primary} 80%, #000);--tw-ring-color:color-mix(in oklab, {c.accent} 70%, transparent)"
+          data-testid="card-unit-mark">{teamLabel(d.team)}</span
+        >
+      {:else}
+        <span class="relative mb-[-2px]">
+          <Headshot url={d.headshot_url ?? null} name={d.player_name} team={d.team} size={compact ? 84 : 104} eager />
+        </span>
+      {/if}
     </div>
 
     <!-- who he is and this week's game -->

@@ -2693,6 +2693,7 @@ export interface PastProjections {
   weeks: WeekProjection[];
   why: string | null;
   notes: string[];
+  games?: GameRow[]; // a team defense: its points by week (the game log's shape)
 }
 export interface GameRow {
   target_share?: number | null;
@@ -2700,7 +2701,8 @@ export interface GameRow {
   season_type?: string | null;
 }
 export const cardPaths = {
-  ratings: (gsis: string, league: string | null) => `/api/player/${q(gsis)}/ratings${league ? `?league=${q(league)}` : ""}`,
+  // fix round: no `league` (NFL-wide; a league in the query would only mark it "seen" for the rate limiter)
+  ratings: (gsis: string) => `/api/player/${q(gsis)}/ratings`,
   projections: (gsis: string, league: string) => `/api/player/${q(gsis)}/projections?league=${q(league)}`,
 };
 // ---- end IP-4

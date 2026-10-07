@@ -8,13 +8,14 @@
   import { teamLabel } from "../../lib/theme";
   import WeekChart from "./WeekChart.svelte";
 
-  let { gsis, league, season, scoring, schedule = [], tall = false, testid = "card-points" }: {
+  let { gsis, league, season, scoring, schedule = [], tall = false, position = null, testid = "card-points" }: {
     gsis: string;
     league: string;
     season: number;
     scoring: string;
     schedule?: ScheduleRow[];
     tall?: boolean; // the full page from 900 px: a taller plot beside the ratings
+    position?: string | null; // DEF: its points by week come with the projections (no game log for a unit)
     testid?: string;
   } = $props();
 
@@ -31,7 +32,8 @@
     games = g0;
     proj = p0;
     failed = false;
-    if (!g0) get<Games>(gp).then((d) => gsis === id && (games = d)).catch(() => gsis === id && (failed = true));
+    if (position === "DEF") games = { games: [] }; // the unit's games ride on the projections answer
+    else if (!g0) get<Games>(gp).then((d) => gsis === id && (games = d)).catch(() => gsis === id && (failed = true));
     if (!p0)
       get<PastProjections>(pp)
         .then((d) => gsis === id && (proj = d))
@@ -50,7 +52,7 @@
   }
   const rows = $derived.by((): Wk[] => {
     if (!games || !proj) return [];
-    const reg = games.games.filter((g) => (g.season_type ?? "REG") === "REG" && g.season === season);
+    const reg = (proj.games ?? games.games).filter((g) => (g.season_type ?? "REG") === "REG" && g.season === season);
     // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a local lookup built and read inside one derivation
     const by = new Map<number, Wk>();
     for (const g of reg) {

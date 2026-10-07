@@ -2,6 +2,7 @@
   // The player card's chart: points by week in this league's scoring, with the expected points (what his work is
   // usually worth) beside them; this season or last (GET /api/player/{gsis}/games). The answer above the chart.
   import { researchPaths, type Games } from "../lib/api";
+  import { pts1 } from "../lib/card"; // ---- IP-4 fix round: the API's rounding (one number, one way on the card)
   import { Remote } from "../lib/remote.svelte";
   import Card from "./Card.svelte";
   import LineChart from "./LineChart.svelte";
@@ -49,11 +50,11 @@
     <p class="text-sm text-ink-3" data-testid="game-log-empty">No games played in {shown} yet.</p>
   {:else}
     <p class="mb-3 text-base leading-snug" data-testid="game-log-answer">
-      <strong>{ppg?.toFixed(1)} points per game</strong> over {points.length} game{points.length === 1 ? "" : "s"}{#if xppg !== null}
-        &nbsp;on work worth <strong>{xppg.toFixed(1)}</strong>
+      <strong>{pts1(ppg)} points per game</strong> over {points.length} game{points.length === 1 ? "" : "s"}{#if xppg !== null}
+        &nbsp;on work worth <strong>{pts1(xppg)}</strong>
         <!-- ---- IF-4 (the decision-quality review: '"Expect him to pick up" follows below-expected historical scoring'): the
              observed gap and its uncertainty, no promise of regression -->
-        ({Math.abs(ppg! - xppg).toFixed(1)} {ppg! - xppg >= 0 ? "above" : "below"} what his opportunities suggest over {points.length} game{points.length === 1 ? "" : "s"}:
+        ({pts1(Math.abs(ppg! - xppg))} {ppg! - xppg >= 0 ? "above" : "below"} what his opportunities suggest over {points.length} game{points.length === 1 ? "" : "s"}:
         an observed gap, not a forecast){/if}, in {leagueName} scoring.
     </p>
     <LineChart {points} actualLabel="Points" expectedLabel="Expected points" />

@@ -259,8 +259,8 @@
     {/if}
     {@render actionsRow()}
     {#await panels() then P}
-      <P.Ratings gsis={d.gsis_id} {league} position={d.position} compact {onauth} testid="pane-ratings" />
-      <P.PointsChart gsis={d.gsis_id} {league} season={d.season} scoring={isRef(league) ? refScoringLabel(league) : d.league_name} schedule={d.schedule ?? []} testid="pane-points" />
+      <P.Ratings gsis={d.gsis_id} position={d.position} compact {onauth} testid="pane-ratings" />
+      <P.PointsChart gsis={d.gsis_id} {league} season={d.season} scoring={isRef(league) ? refScoringLabel(league) : d.league_name} schedule={d.schedule ?? []} position={d.position} testid="pane-points" />
     {/await}
     <!-- ---- end IP-4 -->
     {#each focused as x (x.key)}
@@ -311,7 +311,12 @@
 
 {#snippet gamelogPanel(d: PlayerCard)}
   <div data-testid="drawer-gamelog">
+    {#if d.position === "DEF"}
+      <!-- ---- IP-4 fix round: a team defense has no player game log; its points by week are the Overview's chart -->
+      <p class="ll-empty" data-testid="drawer-gamelog-unit">A team defense's points by week are in the Overview's chart.</p>
+    {:else}
     <GameLog gsis={d.gsis_id} {league} season={d.season} {onauth} leagueName={isRef(league) ? refScoringLabel(league) : d.league_name} /><!-- IN-2: the scoring -->
+    {/if}
   </div>
 {/snippet}
 

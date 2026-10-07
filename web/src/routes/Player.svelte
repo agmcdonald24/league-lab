@@ -101,11 +101,11 @@
     <CardHead d={data} line={headLine} scoring={scoringWord} testid="player-header" />
     <div class="grid grid-cols-1 gap-3 wide:grid-cols-12 wide:items-start">
       {#if RATED.includes(data.position)}
-        <div class="wide:col-span-5 xl:col-span-4">{#await panels() then P}<P.Ratings gsis={data.gsis_id} {league} position={data.position} {onauth} />{/await}</div>
+        <div class="wide:col-span-5 xl:col-span-4">{#await panels() then P}<P.Ratings gsis={data.gsis_id} position={data.position} {onauth} />{/await}</div>
       {/if}
       {#if league}
         <div class={RATED.includes(data.position) ? "wide:col-span-7 xl:col-span-8" : "wide:col-span-12"}>
-          {#await panels() then P}<P.PointsChart gsis={data.gsis_id} {league} season={data.season} scoring={scoringWord} schedule={data.schedule ?? []} tall={wideScreen} />{/await}
+          {#await panels() then P}<P.PointsChart gsis={data.gsis_id} {league} season={data.season} scoring={scoringWord} schedule={data.schedule ?? []} tall={wideScreen} position={data.position} />{/await}
         </div>
       {/if}
     </div>
@@ -145,7 +145,7 @@
         </SectionBox>
       {/each}
       {#if league && RATED.includes(data.position)}{#await panels() then P}<P.RoleChart gsis={data.gsis_id} {league} season={data.season} position={data.position} />{/await}{/if}
-      {#if league}<GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={browsing ? refScoringLabel(league) : data.league_name} />{/if}<!-- IN-2: the scoring -->
+      {#if league && data.position !== "DEF"}<GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={browsing ? refScoringLabel(league) : data.league_name} />{/if}<!-- IN-2: the scoring -->
       {#each rest as x (x.key)}
         <SectionBox section={x.sec} {ctx} testid={`section-${x.key}`} />
       {/each}
