@@ -103,10 +103,12 @@ export function statusOf(r: RankRow): string | null {
   return r.report_status && r.report_status !== "Active" ? r.report_status : null;
 }
 
-/** True where a new tier starts (the first row of the page counts when it opens a tier). */
+/** True where a new tier starts (the first row of the page counts when it opens a tier). A row without a tier (a
+ * starter unclear, the rest of the season) never draws a line and is skipped when looking back. */
 export function tierBreak(rows: RankRow[], i: number): boolean {
   const t = rows[i]?.tier;
   if (t == null) return false;
-  return i === 0 || rows[i - 1]?.tier !== t;
+  for (let j = i - 1; j >= 0; j--) if (rows[j]?.tier != null) return rows[j].tier !== t;
+  return true;
 }
 // ---- end IP-2

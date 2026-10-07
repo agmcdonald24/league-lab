@@ -39,17 +39,29 @@
             <span class="min-w-0">
               <span class="block truncate font-semibold">{p.player_name}</span>
               <span class="block truncate text-xs text-ink-3">{p.position} · {p.is_home === false ? "at" : "vs"} {teamLabel(p.opponent) ?? "—"} · {fmt.pts(p.proj_points)} projected</span>
-              <span class="mt-1 block h-2 rounded-sm bg-sunken" aria-hidden="true">
-                <span class="block h-full rounded-sm" style="width:{Math.max(2, p.pct_best)}%;background:{colors[i] ?? colors[0]}"></span>
-              </span>
+              {#if p.pct_best != null}
+                <span class="mt-1 block h-2 rounded-sm bg-sunken" aria-hidden="true">
+                  <span class="block h-full rounded-sm" style="width:{Math.max(2, p.pct_best)}%;background:{colors[i] ?? colors[0]}"></span>
+                </span>
+              {/if}
             </span>
-            <span class="tabnum text-right whitespace-nowrap" data-testid={`${testid}-pct`}><span class="text-lg font-extrabold">{p.pct_best}</span><span class="text-xs text-ink-3">&nbsp;in 100</span></span>
+            {#if p.pct_best != null}
+              <span class="tabnum text-right whitespace-nowrap" data-testid={`${testid}-pct`}><span class="text-lg font-extrabold">{p.pct_best}</span><span class="text-xs text-ink-3">&nbsp;in 100</span></span>
+            {:else}
+              <span class="text-right text-xs font-semibold whitespace-nowrap text-ink-3" data-testid={`${testid}-nocall`}>{p.starter_unclear ? "Starter unclear" : "no call"}</span>
+            {/if}
           </li>
         {/each}
       </ul>
-      <p class="text-xs leading-snug text-ink-3">
-        {d.players.length === 2 ? "How often each outscores the other" : `How often each scores the most of the ${tally(d.players.length)}`} this week, in {d.scoring} scoring.
-      </p>
+      {#if d.answer.verdict === "no call"}
+        <p class="text-xs leading-snug text-ink-3" data-testid={`${testid}-nocall-why`}>
+          No chances are given: a projection may be on the wrong quarterback. Take him out to compare the others.
+        </p>
+      {:else}
+        <p class="text-xs leading-snug text-ink-3">
+          {d.players.length === 2 ? "How often each outscores the other" : `How often each scores the most of the ${tally(d.players.length)}`} this week, in {d.scoring} scoring.
+        </p>
+      {/if}
       </div>
       <div class="space-y-2">
       <p class="text-sm leading-snug text-ink-2" data-testid={`${testid}-floor`}>{d.floor}</p>

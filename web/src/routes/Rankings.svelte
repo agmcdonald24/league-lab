@@ -153,7 +153,15 @@
               <span class="h-px flex-1 bg-line" aria-hidden="true"></span>
             </li>
           {/if}
-          <li class="flex items-stretch border-t border-line first:border-t-0 {picked ? 'bg-accent-soft' : ''}" data-testid="rankings-row" data-key={x.key} data-tier={x.tier ?? ""}>
+          {@const unclear = x.starter_unclear ?? null}
+          <li
+            class="flex items-stretch border-t border-line first:border-t-0 {picked ? 'bg-accent-soft' : ''}"
+            style={unclear ? "border-left:3px dashed var(--ll-ink-3)" : ""}
+            data-testid="rankings-row"
+            data-key={x.key}
+            data-tier={x.tier ?? ""}
+            data-unclear={unclear ? "1" : null}
+          >
             <button
               type="button"
               class="grid w-10 shrink-0 place-items-center text-ink-3 hover:text-accent disabled:opacity-30"
@@ -178,7 +186,10 @@
                   <Headshot url={x.headshot_url} name={x.player_name} team={x.team} size={36} />
                 {/if}
                 <span class="min-w-0 flex-1">
-                  <span class="block truncate font-semibold text-ink" data-testid="rankings-name">{x.player_name}</span>
+                  <span class="flex min-w-0 items-center gap-1.5">
+                    <span class="truncate font-semibold text-ink" data-testid="rankings-name">{x.player_name}</span>
+                    {#if unclear}<span class="hidden shrink-0 rounded-sm bg-raised px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:inline" data-testid="rankings-unclear-chip">Starter unclear</span>{/if}
+                  </span>
                   <span class="block truncate text-xs text-ink-3">
                     {x.position} · {teamLabel(x.team) ?? "—"}{#if statusOf(x)} · <span class="font-semibold text-warn">{statusOf(x)}</span>{/if}<span class="wide:hidden">
                       · {game(x)}{#if view === "season" && x.ros_games} · {x.ros_games} games left{/if}</span
@@ -216,6 +227,12 @@
               </span>
               <span class="hidden truncate text-sm text-ink-2 wide:block">{owners ? owner(x) : (statusOf(x) ?? (x.game_state ? STATE_WORD[x.game_state] : ""))}</span>
               {#if owners}<span class="mt-1 block truncate pl-[4.25rem] text-xs text-ink-3 wide:hidden">Who has him: {owner(x)}</span>{/if}
+              {#if unclear}
+                <!-- fix round: the sentence under the row (no tier: he is left out of them) -->
+                <span class="mt-1 block pl-[4.25rem] text-xs leading-snug text-ink-2 wide:col-span-full wide:pl-[2.75rem]" data-testid="rankings-unclear-words"
+                  ><span class="mr-1 rounded-sm bg-raised px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:hidden" data-testid="rankings-unclear-chip-phone">Starter unclear</span>{unclear.words} No tier.</span
+                >
+              {/if}
             </button>
           </li>
         {/each}
@@ -230,7 +247,8 @@
     </div>
     <div class="space-y-1 text-xs leading-snug text-ink-3" data-testid="rankings-honest">
       {#if d.assumes}<p>{d.assumes}</p>{/if}
-      <p>{d.tier_rule}</p>
+      {#if d.tier_rule}<p>{d.tier_rule}</p>{/if}
+      {#if d.unclear_words}<p data-testid="rankings-unclear-foot">{d.unclear_words}</p>{/if}
       {#if browsing}<p>Open your league to see who has him, in your league's own scoring.</p>{/if}
     </div>
   {/if}

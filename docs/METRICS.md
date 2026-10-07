@@ -4567,8 +4567,7 @@ distribution (`p_beats`: every pair of levels, a tie counting half; within 0.006
 within 0.02 of the closed form for normal-shaped ranges — `api/tests/test_ip2.py`). A player without a projection has no
 tier and opens none; one without a range is a point at his projection. Not graded as a forecast: a tier says how far
 apart two ranges are, the same quantity the start call grades below. Typical counts (week 4 of 2026, Half PPR): 16
-tiers in 219 receivers, 4 in 32 kickers, 6 in 32 defenses; the season view's ranges are narrower (a sum of weeks), so
-it has more (23–24 in 69 quarterbacks).
+tiers in 219 receivers, 4 in 32 kickers, 6 in 32 defenses. The season view draws none (fix round, below).
 
 **Who should I start?** For two to four players this week: one Gaussian copula over them with D6's `pair_rho` for a
 pair that shares a game (teammates, opponents; K / DEF independent), 40,000 draws (`decisions.N_DRAWS`, seed
@@ -4583,11 +4582,24 @@ clear call, not a sure one."). **No calibration shrink**: D6 graded the pairwise
 average, 0.9 points) and a shrink fitted on one season did not help the other; the week's odds' shrink (0.60) is for a
 sum of nine players and does not apply to a pair. Centring on the projection changes the week odds' Brier by 0.0002
 (§ "Win probability — the week"); the pair grade above is on the uncentred ranges. **Not graded**: the chance of being
-the highest of three or four (the screen says so). The honest floor on the screen quotes the ranges' 2026 coverage
-through week 3 (79 in 100 where they aim at 80) — a stamped constant (`rankings_api.START_FLOOR`), to be read from the
-record when it is next touched.
+the highest of three or four (the screen says so). The honest floor on the screen quotes the ranges' 2026 coverage from
+the record (fix round, below).
+
+**Fix round (rk1.1, Wave I-P).** (1) **No tiers on the rest of the season** (the PO's decision): the season's ranges
+read the weeks as independent normals and have not been graded; tiers drawn from them (42 at WR) would claim a
+precision we do not have — `tier` is null on that view and the screen says so once. (2) **Starter unclear**: a
+quarterback IP-1's `starters.unclear(season, week)` flags (his team's listed starter took no dropback in its newest game
+while another led them — both of the team's quarterbacks; imported lazily, `{}` without it) keeps his rank by
+projection, carries `starter_unclear` and is left out of the tiers (no distribution: he neither joins nor opens one, so
+the others' tiers are exactly the list's without him); "Who should I start?" with him gives no chance and no call
+("Starter unclear — no call."). (3) **The cache key** gains where the tone comes from ("reference" for a reference key,
+"league" for a real league: review L3 — `research._ctx_key` is the same for `ref:ppr` and a real league priced in PPR,
+whose own defense ranks differ on 123 of 219 receivers in week 4) and the flagged set. (4) The honest floor's
+coverage is read from the record (`mart_projection_drift`, the reference league, pooled over the positions by
+player-weeks — 80 in 100 through week 3 of 2026 here; else `analytics.odds_grades`), the stamp only without either.
 
 **The cache**: `league_lab.memo` region `rankings` (10 minutes, ≤ 64 entries), one entry per (canonical scoring key,
-season, week, view, position) — ~0.1 MB; never keyed by the search or the page. The start answer is not cached (two to
+the tone's source, season, week, view, position, the flagged quarterbacks) — ~0.1 MB; never keyed by the search or the
+page; one more entry holds the floor's sentence. The start answer is not cached (two to
 four ids are not a countable set): ~25 ms warm.
 <!-- ---- end IP-2 -->
