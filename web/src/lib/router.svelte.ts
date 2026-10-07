@@ -36,7 +36,9 @@ export type RouteName =
   | "blog"
   | "post"
   // ---- IO-3: the blog's editor ("/blog/new", "/blog/edit/<id>": the post's id in `slug`)
-  | "write";
+  | "write"
+  // ---- IP-2: the rankings for everyone ("/rankings": a tab while browsing, a Players sub-tab with a league)
+  | "rankings";
 
 const NAMED: Record<string, RouteName> = {
   "/leagues": "leagues",
@@ -58,6 +60,7 @@ const NAMED: Record<string, RouteName> = {
   "/dfs": "dfs", // ---- IM-5
   "/home": "home", // ---- IN-1
   "/blog": "blog", // ---- IN-1
+  "/rankings": "rankings", // ---- IP-2
 };
 
 export interface Route {

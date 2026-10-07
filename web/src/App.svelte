@@ -47,6 +47,7 @@
     about: () => import("./routes/About.svelte"),
     watchlist: () => import("./routes/Watchlist.svelte"), // ---- IL-5: the watchlist, in the league frame (the drawer)
     dfs: () => import("./routes/Dfs.svelte"), // ---- IM-5: DFS (in the frame with a league; alone without one, below)
+    rankings: () => import("./routes/Rankings.svelte"), // ---- IP-2: the rankings for everyone (in the frame; Half PPR without a league)
   } as const;
   type LazyName = keyof typeof LAZY;
   const isLazy = (n: string): n is LazyName => n in LAZY;
@@ -132,6 +133,11 @@
     if (phase === "ready" && r.name === "matchups" && !league) setParams({ league: REF_DEFAULT });
   });
   // ---- end IN-3
+  // ---- IP-2 (Wave I-P): /rankings with no league at all → the rankings on the reference league (a shared link opens for anyone)
+  $effect(() => {
+    if (phase === "ready" && r.name === "rankings" && !league) setParams({ league: REF_DEFAULT });
+  });
+  // ---- end IP-2
 
   // remember the pick and keep the URL shareable (replace: no extra Back step)
   $effect(() => {
@@ -256,6 +262,10 @@
 {:else if r.name === "dfs" && !league}
   <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>
 <!-- ---- end IM-5 -->
+<!-- ---- IP-2: /rankings without a league: the frame on the reference league (the effect above writes the URL) -->
+{:else if r.name === "rankings" && !league}
+  <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>
+<!-- ---- end IP-2 -->
 {:else if r.name === "leagues" || (!league && !openDoor)}<!-- IN-1: the home / blog without a league stay in the frame -->
   <LeaguesPage {mine} current={league} onuser={signedInUser} onauth={needLogin} />
 {:else}

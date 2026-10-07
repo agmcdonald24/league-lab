@@ -17,6 +17,9 @@
   import PlayerCard from "../components/PlayerCard.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
   import ErrorCard from "../components/ErrorCard.svelte"; // ---- IH-1: the API down / a 500 / still waiting
+  import StartAnswer from "../components/rankings/StartAnswer.svelte"; // ---- IP-2: "Who should I start?" first
+  import { compareIds } from "../components/rankings/rank"; // ---- IP-2
+  import { isRef, refLabel } from "../lib/refleague"; // ---- IP-2: the scoring's name while browsing
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -25,10 +28,11 @@
   $effect(() => pool.load(researchPaths.players(league), onauth));
 
   const ctx = $derived({ league, team });
-  const leagueName = $derived(options.find((o) => o.league_id === league)?.name ?? "this league");
+  const leagueName = $derived(isRef(league) ? refLabel(league) : (options.find((o) => o.league_id === league)?.name ?? "this league")); // IP-2: browsing says the scoring
   const params = $derived(route.current.params);
   const a = $derived(params.get("a"));
   const b = $derived(params.get("b"));
+  const startIds = $derived(compareIds(params)); // ---- IP-2: a, b and up to two more (c, d) from the rankings' picks
 
   // no pair in the URL: your closest call this week, else the two best at the most common position
   $effect(() => {
@@ -224,6 +228,10 @@
       {/if}
     {/snippet}
   </ScreenHead>
+
+  <!-- ---- IP-2 (Wave I-P): the question in the visitor's words, answered from both ranges (two to four players) -->
+  <StartAnswer {league} ids={startIds} {onauth} testid="compare-start" />
+  <!-- ---- end IP-2 -->
 
   <div class="grid grid-cols-2 gap-2" data-testid="compare-pickers">
     {@render picker("a", "Choose a player")}

@@ -2519,3 +2519,104 @@ export interface LeagueOutlookMoved extends Omit<LeagueOutlook, "power" | "outlo
 }
 export const outlookPowerPath = (league: string, team: number | null) => `${outlookPath(league, team)}&part=power`;
 // ---- end IO-2
+// ---- IP-2 (Wave I-P): rankings for everyone — GET /api/rankings?league=&position=&view=week|season&limit=&offset=&q= and
+// "Who should I start?" — GET /api/rankings/start?league=&ids=a,b[,c,d] (api/league_lab_api/rankings_api.py)
+export type RankPosition = "QB" | "RB" | "WR" | "TE" | "FLEX" | "K" | "DEF";
+export type RankView = "week" | "season";
+export interface RankRow {
+  key: string; // gsis_id, or "DEF:<team>" for a defense
+  gsis_id: string | null;
+  player_name: string;
+  position: string;
+  team: string | null;
+  headshot_url: string | null;
+  rank: number;
+  tier: number | null;
+  tier_p: number | null; // how often the tier's first player outscores him (null: he opens the tier)
+  proj_points: number | null;
+  p10: number | null;
+  p25?: number | null;
+  p50?: number | null;
+  p75?: number | null;
+  p90: number | null;
+  opponent: string | null;
+  is_home: boolean | null;
+  kickoff_at: string | null;
+  game_state: GameState;
+  report_status: string | null;
+  matchup: { tone: MatchupTone; words: string | null } | null; // the defense's tone only (never the corner)
+  rostered_by_roster_id?: number | null; // with a league only
+  rostered_by_team?: string | null;
+  ros_games?: number | null; // the season view
+  ros_points_per_game?: number | null;
+  bye_weeks?: number[];
+}
+export interface Rankings {
+  season: number;
+  week: number | null;
+  view: RankView;
+  position: RankPosition;
+  scoring: string;
+  positions: RankPosition[];
+  league_name: string | null;
+  rows: RankRow[];
+  total: number;
+  tiers: number;
+  limit: number;
+  offset: number;
+  q: string | null;
+  tier_words: string;
+  tier_rule: string;
+  tier_p: number;
+  assumes?: string;
+  from_week?: number;
+  last_week?: number;
+  notice?: string;
+}
+export interface StartPlayer {
+  gsis_id: string;
+  player_name: string;
+  position: string;
+  team: string | null;
+  headshot_url: string | null;
+  opponent: string | null;
+  is_home: boolean | null;
+  proj_points: number | null;
+  p10: number | null;
+  p25?: number | null;
+  p75?: number | null;
+  p90: number | null;
+  rank: number | null;
+  tier: number | null;
+  p_best: number;
+  pct_best: number;
+  vs: Record<string, number>;
+}
+export interface StartAnswer {
+  season: number;
+  week: number | null;
+  scoring: string;
+  ids: string[];
+  players: StartPlayer[];
+  missing: { gsis_id: string; why: string }[];
+  answer: { pick: string; runner_up: string; verdict: "clear" | "a lean" | "a coin flip"; p_vs_runner_up: number; words: string } | null;
+  floor: string;
+  assumes: string;
+  multi_note: string | null;
+  same_game?: boolean;
+  notice?: string;
+}
+export interface RankQuery {
+  position: string;
+  view: RankView;
+  q: string;
+  offset: number;
+  limit: number;
+}
+export const rankingsPath = (league: string, r: RankQuery) => {
+  const p = new URLSearchParams({ league, position: r.position, view: r.view, limit: String(r.limit), offset: String(r.offset) });
+  if (r.q.trim().length >= 2) p.set("q", r.q.trim());
+  return `/api/rankings?${p.toString()}`;
+};
+export const startPath = (league: string, ids: string[]) => `/api/rankings/start?league=${encodeURIComponent(league)}&ids=${ids.map(encodeURIComponent).join(",")}`;
+// ---- end IP-2

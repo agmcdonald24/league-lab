@@ -5,11 +5,14 @@
   // IB-1 (Wave I-B): the screens grouped by task — four tabs: My Team · Waivers · Trades · Players. Each tab with more
   // than one screen shows them as a second row (sub-tabs). The paths stay (bookmarks, shared links); About the
   // numbers moved to the bar's overflow menu (⋯) and the foot of My Team.
-  export type Section = "home" | "myteam" | "waivers" | "trades" | "players" | "dfs"; // ---- IM-5: "dfs"; PO (I-N merge): "home"
+  export type Section = "home" | "myteam" | "waivers" | "trades" | "players" | "dfs" | "rankings"; // ---- IM-5: "dfs"; PO (I-N merge): "home"; IP-2: "rankings"
   export const SECTIONS: { key: Section; label: string; screens: { name: RouteName; label: string; path: string }[] }[] = [
     // ---- PO (Wave I-N merge): Home — a tab while browsing without a league (with a league My Team is the home; the
     // menu's Home and Blog stay): IN-1's screen in the place IN-2's REF_ORDER keeps for it
     { key: "home", label: "Home", screens: [{ name: "home", label: "Home", path: "/home" }] },
+    // ---- IP-2 (Wave I-P): Rankings — a tab of its own while browsing; with a league it is a sub-tab under Players
+    { key: "rankings", label: "Rankings", screens: [{ name: "rankings", label: "Rankings", path: "/rankings" }] },
+    // ---- end IP-2
     {
       key: "myteam",
       label: "My Team",
@@ -36,6 +39,7 @@
       // Stats WR / TE preset (/receivers redirects there; its role cards stay at /receivers?view=cards, lit as Stats)
       screens: [
         { name: "players", label: "Stats", path: "/players" },
+        { name: "rankings", label: "Rankings", path: "/rankings" }, // ---- IP-2: with a league (browsing: its own tab)
         { name: "trends", label: "Trends", path: "/trends" },
         { name: "matchups", label: "Matchups", path: "/matchups" },
         { name: "compare", label: "Compare", path: "/compare" },
@@ -47,20 +51,21 @@
   ];
   // ---- IN-2 (Wave I-N): the tabs while browsing without a league, in this order (a tab another package adds — Home —
   // keeps its place in the list; one this list does not name goes last); a screen that needs a team is left out
-  const REF_ORDER = ["home", "players", "trades", "dfs"];
+  const REF_ORDER = ["home", "rankings", "players", "trades", "dfs"]; // ---- IP-2: + rankings
   const REF_HIDDEN = new Set<string>(["myteam", "waivers"]);
   const REF_SCREENS_HIDDEN = new Set<string>(["trades", "week", "team", "league", "waivers", "watchlist"]);
   export function refSections<T extends { key: string; screens: { name: RouteName }[] }>(all: T[]): T[] {
     const rank = (k: string) => (REF_ORDER.indexOf(k) < 0 ? REF_ORDER.length : REF_ORDER.indexOf(k));
     return all
       .filter((s) => !REF_HIDDEN.has(s.key))
-      .map((s) => ({ ...s, screens: s.screens.filter((x) => !REF_SCREENS_HIDDEN.has(x.name)) }))
+      .map((s) => ({ ...s, screens: s.screens.filter((x) => !REF_SCREENS_HIDDEN.has(x.name) && (x.name !== "rankings" || s.key === "rankings")) })) // IP-2: its own tab
       .filter((s) => s.screens.length > 0)
       .sort((a, b) => rank(a.key) - rank(b.key));
   }
   // ---- end IN-2
-  export function sectionOf(name: RouteName): Section | null {
+  export function sectionOf(name: RouteName, browsing = false): Section | null {
     if (name === "receivers") return "players"; // ---- II-3: the role cards sit under Players
+    if (name === "rankings") return browsing ? "rankings" : "players"; // ---- IP-2: a tab browsing, a Players sub-tab with a league
     return SECTIONS.find((s) => s.screens.some((x) => x.name === name))?.key ?? null;
   }
   // the player's page and About keep the tab you came from lit (Back goes there)
@@ -122,19 +127,19 @@
   const ctx = $derived({ league, team });
   const here = $derived(route.current.name);
   const section = $derived.by(() => {
-    const s = sectionOf(here);
+    const s = sectionOf(here, isRef(league)); // ---- IP-2: browsing
     if (s) lastSection = s;
     return s ?? (here === "player" || here === "about" || here === "watchlist" ? lastSection : null); // IL-5: watchlist
   });
   const href = (path: string) => withContext(path, ctx);
   // ---- IN-2 (Wave I-N): browsing without a league the tab bar reads Home · Players · Trades · DFS — My Team and
   // Waivers are behind "Open your league" — and Trades is the calculator alone (never the invitation card)
-  const sections = $derived(isRef(league) ? refSections(SECTIONS) : SECTIONS.filter((s) => s.key !== "home"));
+  const sections = $derived(isRef(league) ? refSections(SECTIONS) : SECTIONS.filter((s) => s.key !== "home" && s.key !== "rankings")); // IP-2: rankings
   // ---- end IN-2
   // a tab opens its first screen
   const tabs = $derived(sections.map((s) => ({ key: s.key, label: s.label, href: href(s.screens[0].path) })));
   // the second row: the screens of the tab on screen (not on a player's page or About: no screen of the row is there)
-  const sub = $derived(sections.find((s) => s.key === sectionOf(here) && s.screens.length > 1)?.screens ?? []);
+  const sub = $derived(sections.find((s) => s.key === sectionOf(here, isRef(league)) && s.screens.length > 1)?.screens ?? []); // IP-2: browsing
 
   // ---- the search field: a player's name → the research pane
   let q = $state("");
@@ -211,6 +216,9 @@
       <path d="M12 5v14M5 12h14" /><circle cx="12" cy="12" r="9" />
     {:else if key === "trades"}
       <path d="M4 8h13l-3-3M20 16H7l3 3" />
+    {:else if key === "rankings"}
+      <!-- ---- IP-2: Rankings (a ranked list) -->
+      <path d="M9 6h11M9 12h11M9 18h11" /><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3" />
     {:else if key === "players"}
       <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
     {:else if key === "dfs"}
