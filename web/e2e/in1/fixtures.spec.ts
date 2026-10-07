@@ -132,10 +132,15 @@ test("home: the name, one sentence, two actions and live projections above the f
   await expect(targets.first()).not.toContainText("starting corners"); // an unclear corner call: the defense's line only
   await expect(page.getByTestId("home-matchup-proj").first()).toHaveText("16.8 this week");
   await expect(page.getByTestId("home-matchups-note")).toContainText("who plays cornerback is not");
-  // the record, straight: four positions, the worse ones marked
+  // the record, straight: four positions; three weeks call no difference (IP-1 fix round, on purpose: was "worse" /
+  // "quarterbacks are our weak spot" by a 10% rule that ignored how few weeks were in)
   await expect(page.getByTestId("home-grade")).toHaveCount(4);
-  await expect(page.locator('[data-testid="home-grade"][data-verdict="worse"]').first()).toBeVisible();
-  await expect(page.getByTestId("home-record-lead")).toContainText("quarterbacks are our weak spot");
+  await expect(page.locator('[data-testid="home-grade"][data-verdict="unclear"]').first()).toBeVisible();
+  await expect(page.locator('[data-testid="home-grade"][data-verdict="worse"]')).toHaveCount(0);
+  await expect(page.getByTestId("home-record-lead")).toHaveText(
+    "Through week 3, quarterbacks are where our projections miss most against past seasons: 6.5 points per game, against 5.4 for the same model in past seasons — too few weeks to call that a difference.",
+  );
+  await expect(page.getByTestId("home-record-lead")).not.toContainText("weak spot");
   await expect(page.getByTestId("home-record-line")).toBeVisible();
   await expect(page.getByTestId("home-post")).toHaveCount(1);
   await expect(page.getByTestId("home-tool")).toHaveCount(4);
@@ -357,3 +362,39 @@ test("home: a matchup's line is the defense's only, never the corner's", async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   expect(homeWords(ctx("unclear") as any)).toBe("Kansas City is in the middle against receivers.");
 });
+
+// ---- IP-1 (Wave I-P, fix round): the grades' words, on hand-built About answers (pure code)
+test("home: the grades call a difference only when the weeks can carry it", async () => {
+  test.skip(test.info().project.name !== "desktop", "pure code: once is enough");
+  const { gradeLead, gradeRows, MIN_WEEKS } = await import("../../src/components/home/home");
+  const past = (lo: number, hi: number) => [2021, 2022, 2023, 2024, 2025].map((season, i) => ({ season, weeks: 18, spearman: 0.5, mae: lo + ((hi - lo) * i) / 4, coverage_80: 0.8 }));
+  const grades = (weeks: number, qb: number, te: number) => ({
+    scored_in: "League of Scrubs", season: 2026, weeks: weeks === 1 ? "week 1" : `weeks 1–${weeks}`, backtest_seasons: "2021–2025", answer: "", howto: [],
+    positions: [
+      { position: "QB", season: { weeks_scored: weeks, spearman: 0.4, mae: qb, coverage_80: 0.79 }, backtest: { spearman: 0.58, mae: 5.41, coverage_80: 0.78 }, by_season: past(5.2, 5.73) },
+      { position: "RB", season: { weeks_scored: weeks, spearman: 0.68, mae: 4.18, coverage_80: 0.82 }, backtest: { spearman: 0.67, mae: 4.25, coverage_80: 0.81 }, by_season: past(4.1, 4.47) },
+      { position: "TE", season: { weeks_scored: weeks, spearman: 0.54, mae: te, coverage_80: 0.79 }, backtest: { spearman: 0.56, mae: 3.02, coverage_80: 0.82 }, by_season: past(2.85, 3.14) },
+    ],
+  });
+  expect(MIN_WEEKS).toBe(6);
+  // three weeks: never "weak spot", whatever the gap
+  let rows = gradeRows(grades(3, 6.52, 3.51));
+  expect(rows.map((r) => r.verdict)).toEqual(["unclear", "same", "unclear"]);
+  expect(gradeLead(rows, "weeks 1–3")).toBe(
+    "Through week 3, quarterbacks are where our projections miss most against past seasons: 6.5 points per game, against 5.4 for the same model in past seasons — too few weeks to call that a difference.",
+  );
+  // nine weeks, above every past season and more than 10% over: a difference, said with the past range
+  rows = gradeRows(grades(9, 6.2, 3.1));
+  expect(rows.map((r) => r.verdict)).toEqual(["worse", "same", "same"]);
+  expect(gradeLead(rows, "weeks 1–9")).toBe(
+    "Through week 9, quarterbacks are where our projections miss most against past seasons: 6.2 points per game, against 5.4 for the same model in past seasons, more than in any of them (5.2 to 5.7).",
+  );
+  // nine weeks, more than 10% over the backtest but inside a past season's miss: no difference to call
+  const inside = grades(9, 5.97, 3.1);
+  inside.positions[0].by_season = past(5.2, 6.05); // a past season missed by 6.05
+  rows = gradeRows(inside);
+  expect(rows[0].verdict).toBe("same");
+  expect(gradeLead(rows, "weeks 1–9")).toBe("Through week 9, the projections miss by about as much as in past seasons at every position, or less.");
+  for (const lead of [gradeLead(gradeRows(grades(3, 6.52, 3.51)), "weeks 1–3"), gradeLead(gradeRows(grades(9, 6.2, 3.1)), "weeks 1–9")]) expect(lead).not.toContain("weak spot");
+});
+// ---- end IP-1

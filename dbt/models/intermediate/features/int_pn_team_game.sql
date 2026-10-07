@@ -83,6 +83,66 @@ guarded as (
     from played as p
     window w_prev as (partition by p.team, p.season order by p.week desc
                       rows between 1 following and unbounded following)
+),
+
+-- ---- IP-1 fix round (Wave I-P): st1.1, the listing stands unless the evidence says it is stale (var
+-- 'pn_starter_stale_rule'; docs/METRICS.md § "st1.1"). Week W's pick is Q instead of the listing L only when, in the
+-- team's two newest played games of the season before W (g1 newer, g2): g1 was listed for L too; L took no dropback in
+-- either; the same QB Q took the team's most dropbacks in both; and L was available in both (on the team's weekly
+-- roster as ACT, not Out / Doubtful on that week's injury report: a hurt starter coming back keeps his listing). Read
+-- only from weeks before W, played or not. A data-quality rule for who starts, judged on identification accuracy.
+dropbacks as (
+    select p.game_id, {{ kd_team('p.posteam') }} as team, coalesce(p.passer_player_id, p.rusher_player_id) as gsis_id,
+           count(*) as dropbacks
+    from {{ ref('fct_play') }} as p
+    where p.season_type = 'REG' and p.is_dropback and not p.is_no_play
+      and coalesce(p.passer_player_id, p.rusher_player_id) is not null
+    group by 1, 2, 3
+),
+
+top_dropback as (
+    select distinct on (game_id, team) game_id, team, gsis_id as top_qb_id
+    from dropbacks
+    order by game_id, team, dropbacks desc, gsis_id
+),
+
+available as (
+    select r.gsis_id, r.season, r.week, {{ kd_team('r.team') }} as team
+    from {{ ref('int_player_week_team') }} as r
+    where r.season_type = 'REG' and r.roster_status = 'ACT'
+      and not exists (select 1 from {{ ref('stg_nflverse__injuries') }} as i
+                      where i.gsis_id = r.gsis_id and i.season = r.season and i.week = r.week and i.game_type = 'REG'
+                        and i.report_status in ('Out', 'Doubtful'))
+),
+
+st11_hist as (
+    select gd.*,
+           (array_agg(gd.game_id) filter (where gd.is_played) over w_two)[1]      as g1_game_id,
+           (array_agg(gd.game_id) filter (where gd.is_played) over w_two)[2]      as g2_game_id,
+           (array_agg(gd.week) filter (where gd.is_played) over w_two)[1]         as g1_week,
+           (array_agg(gd.week) filter (where gd.is_played) over w_two)[2]         as g2_week,
+           (array_agg(gd.listed_qb_id) filter (where gd.is_played) over w_two)[1] as g1_listed_qb_id,
+           (array_agg(td.top_qb_id) filter (where gd.is_played) over w_two)[1]    as g1_top_qb_id,
+           (array_agg(td.top_qb_id) filter (where gd.is_played) over w_two)[2]    as g2_top_qb_id
+    from guarded as gd
+    left join top_dropback as td on td.game_id = gd.game_id and td.team = gd.team
+    window w_two as (partition by gd.team, gd.season order by gd.week desc
+                     rows between 1 following and unbounded following)
+),
+
+st11 as (
+    select h.*,
+           (h.listed_qb_id is not null and h.g2_game_id is not null
+            and h.g1_listed_qb_id = h.listed_qb_id
+            and h.g1_top_qb_id is not null and h.g1_top_qb_id = h.g2_top_qb_id and h.g1_top_qb_id <> h.listed_qb_id
+            and not exists (select 1 from dropbacks as d
+                            where d.team = h.team and d.gsis_id = h.listed_qb_id and d.game_id in (h.g1_game_id, h.g2_game_id))
+            and exists (select 1 from available as a
+                        where a.gsis_id = h.listed_qb_id and a.team = h.team and a.season = h.season and a.week = h.g1_week)
+            and exists (select 1 from available as a
+                        where a.gsis_id = h.listed_qb_id and a.team = h.team and a.season = h.season and a.week = h.g2_week)
+           )                                                                    as listing_stale
+    from st11_hist as h
 )
 
 select
@@ -91,10 +151,12 @@ select
     case when is_played then played_qb_id
          when listed_qb_id is not null and listed_qb_id = prev_listed_qb_id and prev_listing_wrong then prev_played_qb_id
          else listed_qb_id end                                               as starting_qb_id,
+    {%- elif var('pn_starter_stale_rule', false) %}
+    case when listing_stale then g1_top_qb_id else listed_qb_id end          as starting_qb_id,
     {%- else %}
     listed_qb_id                                                             as starting_qb_id,
     {%- endif %}
     listed_qb_id,
     is_played, team_snaps, team_targets, team_carries, game_no
-from guarded
+from {% if var('pn_starter_stale_rule', false) and not var('pn_starter_from_play', false) %}st11{% else %}guarded{% endif %}   -- off: st1.1's CTEs are never read
 -- ---- end IP-1

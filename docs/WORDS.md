@@ -560,17 +560,20 @@ where it would add something. "No league" is never shown (the API's `league_name
 <!-- ---- end IN-6 -->
 
 <!-- ---- IP-1 (Wave I-P) -->
-## How the projections have done, honestly (Wave I-P, IP-1; METRICS § "v3.4: the quarterback weak spot")
+## How the projections have done, honestly (Wave I-P, IP-1 and its fix round; METRICS § "v3.4: the quarterback weak spot")
 
-Proposed words for the home's "How the projections have done" lead and About's grades (`web/src/components/home/home.ts`
-`gradeLead` is not IP-1's file: the PO places them). The rule behind them: a gap the sample cannot tell from the past is
-said as that, with the past range beside it; a weak spot is named only when the interval says so.
+The home's "How the projections have done" lead and its grade tiles (`web/src/components/home/home.ts`, `gradeRows` /
+`gradeLead`, IP-1's marked block). The rule behind the words: a gap the weeks in cannot tell from the past is said as
+that; a difference is called only from six complete weeks on (`MIN_WEEKS`) and only when the miss is outside every past
+season of the same model. "Weak spot" is never said.
 
 | Where | The words we use | Never |
 |---|---|---|
-| the lead, a position worse on the means but inside the past range | "Through week 3, quarterbacks are where our projections miss most: 6.5 points per game. The model that made those weeks missed by 5.6 to 6.4 in the first three weeks of past seasons, so three weeks cannot tell this from a normal start." | "our weak spot" for a gap three weeks cannot measure |
-| the lead, a position worse and measurably so | "Tight ends: 3.5 points per game, against 2.6 to 3.4 in past seasons' first three weeks — they caught more touchdowns than projected." | a cause the numbers do not show |
-| "before" in the grades | the backtest of the model that made the weeks shown (`mart_projection_drift`, IP-1): "6.5 (before 5.9)" | the newest model's backtest beside an older model's weeks |
+| the lead, fewer than six weeks in and a position more than 10% above its past | "Through week 3, quarterbacks are where our projections miss most against past seasons: 6.5 points per game, against 5.9 for the same model in past seasons — too few weeks to call that a difference." | "our weak spot", "worse than before", on three weeks |
+| the lead, six weeks or more, above every past season and more than 10% over | "Through week 9, quarterbacks are where our projections miss most against past seasons: 6.2 points per game, against 5.4 for the same model in past seasons, more than in any of them (5.2 to 5.7)." · then "Tight ends miss more than in past seasons too." | a cause the numbers do not show |
+| the lead, otherwise | "Through week 9, the projections miss by about as much as in past seasons at every position, or less." | — |
+| the tile | **Average miss** "6.5 (before 5.9)"; in the bad color only when the lead calls a difference (`data-verdict` worse); "unclear" under six weeks is plain | red on three weeks |
+| "before" | the backtest of the model that made the weeks shown (`mart_projection_drift`, IP-1) | the newest model's backtest beside an older model's weeks |
 <!-- ---- end IP-1 -->
 
 ## Adding to it

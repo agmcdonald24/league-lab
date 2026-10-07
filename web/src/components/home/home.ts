@@ -86,17 +86,28 @@ export function longDate(iso: string): string {
 
 const POS_WORDS: Record<string, string> = { QB: "Quarterbacks", RB: "Running backs", WR: "Wide receivers", TE: "Tight ends" };
 
+// ---- IP-1 (Wave I-P, fix round): the grades say what the sample can carry. Three weeks are about 110 quarterback-games, and
+// the same model's first three weeks have ranged from 5.6 to 6.4 points at QB in past seasons, so a 10% gap after three
+// weeks is no finding: under MIN_WEEKS the lead says "too few weeks to call that a difference" and the tile is
+// "unclear", never "weak spot". From MIN_WEEKS on, a miss is "worse" only above every past season of the same model
+// (About's by_season) and more than 10% above its backtest; "better" the mirror. docs/WORDS.md § "How the projections
+// have done, honestly"; docs/METRICS.md § "v3.4: the quarterback weak spot".
+export const MIN_WEEKS = 6;
+
 export interface GradeRow {
   position: string;
   miss: number | null; // this season's average miss (points per player)
-  missBefore: number | null; // the backtest's
+  missBefore: number | null; // the backtest of the model that made the weeks shown (mart_projection_drift, IP-1)
   inside: number | null; // this season's share inside the low-end to high-end range
   insideBefore: number | null;
-  verdict: "worse" | "better" | "same" | null;
+  weeks: number; // complete weeks behind the miss
+  pastLow: number | null; // the same model's lowest and highest season miss in the backtest (About's by_season)
+  pastHigh: number | null;
+  verdict: "worse" | "better" | "same" | "unclear" | null;
 }
 
-/** About's grades → one row per position with a verdict on the miss (worse / better / about the same as before:
- *  more than 10% apart is a change). */
+/** About's grades → one row per position with a verdict on the miss: "unclear" while fewer than MIN_WEEKS weeks are in and
+ *  the gap is more than 10%; then "worse" / "better" only outside every past season and more than 10% from the backtest. */
 export function gradeRows(g: AboutAnswer["grades"]): GradeRow[] {
   if (!g) return [];
   return g.positions
@@ -104,25 +115,50 @@ export function gradeRows(g: AboutAnswer["grades"]): GradeRow[] {
     .map((p) => {
       const miss = num(p.season?.mae);
       const before = num(p.backtest?.mae);
-      const verdict = miss === null || before === null || before <= 0 ? null : miss > before * 1.1 ? "worse" : miss < before * 0.9 ? "better" : "same";
-      return { position: p.position, miss, missBefore: before, inside: num(p.season?.coverage_80), insideBefore: num(p.backtest?.coverage_80), verdict };
+      const weeks = num(p.season?.weeks_scored) ?? 0;
+      const past = (p.by_season ?? []).map((s) => num(s.mae)).filter((v): v is number => v !== null);
+      const pastLow = past.length ? Math.min(...past) : null;
+      const pastHigh = past.length ? Math.max(...past) : null;
+      let verdict: GradeRow["verdict"] = null;
+      if (miss !== null && before !== null && before > 0) {
+        const gap = miss > before * 1.1 ? "worse" : miss < before * 0.9 ? "better" : "same";
+        if (gap === "same") verdict = "same";
+        else if (weeks < MIN_WEEKS) verdict = "unclear";
+        else if (gap === "worse") verdict = pastHigh === null || miss > pastHigh ? "worse" : "same";
+        else verdict = pastLow === null || miss < pastLow ? "better" : "same";
+      }
+      return { position: p.position, miss, missBefore: before, inside: num(p.season?.coverage_80), insideBefore: num(p.backtest?.coverage_80),
+               weeks, pastLow, pastHigh, verdict };
     });
 }
 
-/** The grades in one sentence, the bad news first. */
+/** "weeks 1–3" → "week 3" (the newest complete week); null when the span says nothing. */
+export function throughWeek(weeks: string | null): string | null {
+  const m = weeks ? /(\d+)\D*$/.exec(weeks) : null;
+  return m ? `week ${m[1]}` : null;
+}
+
+/** The grades in one sentence: the position where the projections miss most against the same model's past seasons,
+ *  its miss and that model's, and whether the weeks in can call it a difference. */
 export function gradeLead(rows: GradeRow[], weeks: string | null): string | null {
   if (!rows.length) return null;
-  const span = weeks ? `Through ${weeks} of this season` : "So far this season";
-  const worse = rows.filter((r) => r.verdict === "worse").sort((a, b) => (b.miss! / b.missBefore!) - (a.miss! / a.missBefore!));
-  if (worse.length) {
-    const w = worse[0];
-    const others = worse.slice(1).map((r) => POS_WORDS[r.position].toLowerCase());
+  const through = throughWeek(weeks);
+  const span = through ? `Through ${through}` : "So far this season";
+  const behind = rows.filter((r) => r.verdict === "worse" || r.verdict === "unclear")
+    .sort((a, b) => (b.miss! / b.missBefore!) - (a.miss! / a.missBefore!));
+  if (behind.length) {
+    const w = behind[0];
+    const head = `${span}, ${POS_WORDS[w.position].toLowerCase()} are where our projections miss most against past seasons: ` +
+      `${w.miss!.toFixed(1)} points per game, against ${w.missBefore!.toFixed(1)} for the same model in past seasons`;
+    if (w.verdict === "unclear") return `${head} — too few weeks to call that a difference.`;
+    const others = behind.slice(1).filter((r) => r.verdict === "worse").map((r) => POS_WORDS[r.position].toLowerCase());
     return (
-      `${span}, ${POS_WORDS[w.position].toLowerCase()} are our weak spot: ${w.miss!.toFixed(1)} points off on average, against ${w.missBefore!.toFixed(1)} in past seasons.` +
-      (others.length ? ` ${others.join(" and ").replace(/^./, (c) => c.toUpperCase())} miss more than before too.` : "")
+      `${head}, more than in any of them${w.pastLow !== null && w.pastHigh !== null ? ` (${w.pastLow.toFixed(1)} to ${w.pastHigh.toFixed(1)})` : ""}.` +
+      (others.length ? ` ${others.join(" and ").replace(/^./, (c) => c.toUpperCase())} miss more than in past seasons too.` : "")
     );
   }
   return `${span}, the projections miss by about as much as in past seasons at every position, or less.`;
 }
+// ---- end IP-1
 
 export const posWords = (p: string) => POS_WORDS[p] ?? p;

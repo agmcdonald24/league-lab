@@ -13,7 +13,7 @@ with p as (
 ),
 
 sched as (
-    {%- if var('pn_starter_from_play', false) %}
+    {%- if var('pn_starter_from_play', false) or var('pn_starter_stale_rule', false) %}
     -- ---- IP-1: with the starter from what happened, the starter is int_pn_team_game's corrected one (its own rule is
     -- checked against the play data by assert_starter_from_play)
     select t.season, t.week, t.team, t.starting_qb_id as qb, t.is_played as played

@@ -4,7 +4,9 @@
 --     corrected starter threw no pass for the team;
 --   * an unplayed game whose starter is not the listing although the guard does not apply (the listing does not repeat
 --     the team's newest played game's listing, or that listing was right).
--- Off (var pn_starter_from_play false): the starter is the listing everywhere.
+-- IP-1 fix round: under var pn_starter_stale_rule (st1.1) instead, a pick other than the listing is the newest played
+-- game's dropback leader, for a listing that game already carried and that its listed QB did not throw in.
+-- Both off: the starter is the listing everywhere.
 {{ config(severity='error') }}
 with t as (
     select * from {{ ref('int_pn_team_game') }}
@@ -24,6 +26,7 @@ prev as (
     window w as (partition by t.team, t.season order by t.week desc rows between 1 following and unbounded following)
 )
 
+{%- if var('pn_starter_from_play', false) %}
 select p.season, p.week, p.team, p.listed_qb_id, p.starting_qb_id, 'played: corrected although the listed QB threw' as problem
 from prev as p
 where p.is_played and p.starting_qb_id is distinct from p.listed_qb_id
@@ -41,10 +44,19 @@ from prev as p
 where not p.is_played and p.starting_qb_id is distinct from p.listed_qb_id
   and not (p.listed_qb_id = p.prev_listed and p.prev_starter is distinct from p.prev_listed
            and p.starting_qb_id is not distinct from p.prev_starter)
-{%- if not var('pn_starter_from_play', false) %}
-
-union all
-select season, week, team, listed_qb_id, starting_qb_id, 'switch off: the starter is not the listing'
+{%- elif var('pn_starter_stale_rule', false) %}
+-- ---- IP-1 fix round, st1.1
+select p.season, p.week, p.team, p.listed_qb_id, p.starting_qb_id, 'st1.1: overruled without a repeated, unthrown listing' as problem
+from prev as p
+where p.starting_qb_id is distinct from p.listed_qb_id
+  and not (p.listed_qb_id = p.prev_listed
+           and not exists (select 1 from passes as x
+                           where x.team = p.team and x.gsis_id = p.listed_qb_id
+                             and x.game_id = (select g.game_id from t as g where g.team = p.team and g.season = p.season
+                                              and g.is_played and g.week < p.week order by g.week desc limit 1)))
+-- ---- end IP-1 fix round
+{%- else %}
+select season, week, team, listed_qb_id, starting_qb_id, 'switch off: the starter is not the listing' as problem
 from t
 where starting_qb_id is distinct from listed_qb_id
 {%- endif %}
