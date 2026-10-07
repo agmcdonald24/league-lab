@@ -165,3 +165,34 @@ the projections mart gives the bars alone, never a 500.
 
 Past projections for kickers / defenses (`ops.kd_ranges`) and for any league priced on request; a rating's trend
 (this season's percentile against last season's, same rule); real pictures checked on the live site at both widths.
+
+## Fix round (after the merge, `fix/IP4` from `integ/IP` 3d1b76b)
+
+1. **A defense has a card** (option a). `GET /api/player/{code}` for a team code — a closed set: the 32 Sleeper
+   defense codes plus `LA` → `LAR` (`api/league_lab_api/unitcard.py`, a marked block at the top of main.py's card
+   route) — answers the card shape the page renders for a kicker: the head (the team code on the team field where a
+   face would be), this week's projection and range (a house league's own row; any other league: the K / DEF board
+   priced in its scoring, `ondemand.PlayerContext.projection` — My Week's path), the game and kickoff, the bye, whose
+   team (a league that is not a house league or a reference key), the schedule. `…/projections` for a code returns
+   the projection made before each week (house mart / `ops.kd_ranges` for a reference scoring) and **its points by
+   week** (`mart_kd_week`'s outcomes priced with `kdef.unit_points` in the league's scoring), which the chart draws; no
+   ratings panel, no player game log (the drawer's Game log tab says the points are on the Overview's chart). A league
+   whose lineup has no DEF spot (the dynasty league): a dash and that reason. Anything outside the set: 404 as before.
+2. **Buckets and L2**: `…/ratings` is `read` (with `…/projections`), and the web asks for it without `league`; outside
+   `research` the limiter never reads a `league=` (`league_of` only runs for research), so neither route can mark a
+   league seen. Test: `test_card_reads_never_mark_a_league_seen`.
+3. **375**: the order was already head → ratings → first chart → sections (page and drawer); what pushed the chart down
+   was the ratings' height. The ratings are two tiles to a row on a phone and in the drawer (rows from 640 px on the
+   page): the chart card starts at y = 894 at 375 × 812 (was 1,001); the ratings panel 388 px (was 495). Collapsed
+   nothing. The e2e pins the order (ratings → chart → sections) and the gap (< 24 px) on the page and in the drawer.
+4. **Rounding on the card**: the head (the tile's string), the range bar, the points chart's readout and table, the game
+   log's chart and its "points per game" sentence, the schedule table and "they add up to the …" all print one decimal
+   the API's way (`lib/card.ts` `pts1`: a tie to the even digit). Elsewhere `fmt.pts` / `toFixed(1)` still rounds a tie
+   up beside API strings — for the next wave: Rankings, Compare and StartAnswer, Team, LineupCard (My Week), Players /
+   Stats (`columns.ts`), Trends, Receivers, Matchups' board, DFS, the free trade calculator, Outlook, Home, Watchlist.
+5. Tests: `test_ip4.py` + `test_im3.py` 87 passed; ruff, lint, build, copy standard clean; `e2e/ip4` 18 passed (adds
+   "search Denver, pick the defense": the drawer and the full page are its card; the hand-built defense is gone); the
+   card / pane specs 86 + 143 passed, 15 skipped. Changed on purpose: `test_bad_ids_and_parameters` (DEN's projections
+   answer now). Edits outside my files: `main.py` (the marked block in the card route), `ratelimit.py` (my block),
+   `GameLog.svelte` and `ScheduleTable.svelte` (the rounding, one import each). Screenshots: `ip4-def-375-dark.jpg`
+   (new) and `ip4-wr-375-dark.jpg` (the tiles); the other five are unchanged (rule 12).
