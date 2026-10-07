@@ -2576,6 +2576,15 @@ export interface RankRow {
   ros_games?: number | null; // the season view
   ros_points_per_game?: number | null;
   bye_weeks?: number[];
+  // fix round (Wave I-P): his team's listed starter did not play its newest game (IP-1's starters.unclear): no tier
+  starter_unclear?: StarterUnclear | null;
+}
+export interface StarterUnclear {
+  team: string | null;
+  listed: string | null;
+  played: string | null;
+  role: "listed" | "played" | null;
+  words: string;
 }
 export interface Rankings {
   season: number;
@@ -2592,8 +2601,9 @@ export interface Rankings {
   offset: number;
   q: string | null;
   tier_words: string;
-  tier_rule: string;
-  tier_p: number;
+  tier_rule: string | null; // null on the rest of the season (no tiers there: its ranges are not graded)
+  tier_p: number | null;
+  unclear_words?: string | null; // the week's quarterbacks: what the dashed edge means, when one is flagged
   assumes?: string;
   from_week?: number;
   last_week?: number;
@@ -2614,9 +2624,10 @@ export interface StartPlayer {
   p90: number | null;
   rank: number | null;
   tier: number | null;
-  p_best: number;
-  pct_best: number;
+  p_best: number | null; // null: no call (a starter unclear)
+  pct_best: number | null;
   vs: Record<string, number>;
+  starter_unclear?: StarterUnclear | null;
 }
 export interface StartAnswer {
   season: number;
@@ -2625,7 +2636,14 @@ export interface StartAnswer {
   ids: string[];
   players: StartPlayer[];
   missing: { gsis_id: string; why: string }[];
-  answer: { pick: string; runner_up: string; verdict: "clear" | "a lean" | "a coin flip"; p_vs_runner_up: number; words: string } | null;
+  answer: {
+    pick: string | null;
+    runner_up: string | null;
+    verdict: "clear" | "a lean" | "a coin flip" | "no call"; // no call: a picked quarterback's starter is unclear
+    p_vs_runner_up: number | null;
+    words: string;
+  } | null;
+  starter_unclear?: (StarterUnclear & { gsis_id: string })[];
   floor: string;
   assumes: string;
   multi_note: string | null;

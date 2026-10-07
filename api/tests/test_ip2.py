@@ -4,6 +4,8 @@ the route on a reference key, a shaped key and a house league (ownership only th
 
 from __future__ import annotations
 
+import re
+
 import numpy as np
 import pytest
 from league_lab import decisions as WP
@@ -240,6 +242,10 @@ def test_rankings_views_and_positions(client):
     assert season["view"] == "season" and season["from_week"] <= season["last_week"]
     assert all(x["ros_games"] for x in season["rows"]) and all(x["matchup"] is None for x in season["rows"])
     assert season["rows"][0]["proj_points"] > 100                         # a season, not a week
+    # the PO's decision (fix round): no tiers on the rest of the season — its ranges are not graded
+    assert all(x["tier"] is None and x["tier_p"] is None for x in season["rows"]) and season["tiers"] == 0
+    assert season["tier_words"] == RK.SEASON_NO_TIERS and season["tier_rule"] is None
+    assert "starter_unclear" not in season["rows"][0]
     # the season view is /api/ros's projections view, ranked: the same points for the same player
     ros = client.get("/api/ros", params={"league": "ref:half", "position": "QB", "view": "projections", "limit": 5}).json()
     top = {p["gsis_id"]: p["ros_points"] for p in ros["players"]}
@@ -282,8 +288,8 @@ def test_search_and_paging(client):
     for bad in ({"limit": 201}, {"offset": 1001}, {"q": "a"}, {"position": "XX"}, {"view": "year"}):
         assert client.get(ROUTE, params={"league": "ref:half", **bad}).status_code == 400, bad
     # the cache is keyed by the scoring, the week, the view and the position — never by the search or the page
-    keys = [k for k in RK._cache.keys() if k[0] == "rk"]
-    assert all(len(k) == 6 for k in keys) and len({k for k in keys if k[-1] == "WR"}) == 1
+    keys = [k for k in RK._cache.keys() if k[0] == "rk"]      # rk, scoring, tone source, season, week, view, position, flagged
+    assert all(len(k) == 8 for k in keys) and len({k for k in keys if k[-2] == "WR"}) == 1
 
 
 @needs_db
@@ -295,7 +301,7 @@ def test_start_answers_two_to_four(client):
     d = two.json()
     assert d["answer"]["verdict"] in ("clear", "a lean", "a coin flip") and "of 100 such weeks" in d["answer"]["words"]
     assert sum(p["p_best"] for p in d["players"]) == pytest.approx(1.0, abs=1e-3)
-    assert d["floor"] == RK.START_FLOOR and d["multi_note"] is None
+    assert d["floor"] == RK.floor_words() and d["multi_note"] is None          # fix round: the record's coverage
     a, b = d["players"]
     assert a["vs"][b["gsis_id"]] + b["vs"][a["gsis_id"]] == pytest.approx(1.0, abs=1e-3)
     three = client.get(START, params={"league": "ref:half", "ids": ",".join(ids)}).json()
@@ -348,3 +354,132 @@ def test_a_started_game_is_said(client):
     assert "kicked off" in d["started_note"] and "before kickoff" in d["started_note"]
     d2 = client.get(START, params={"league": "ref:half", "ids": f"{to_play[0]['gsis_id']},{to_play[1]['gsis_id']}"}).json()
     assert d2["started_note"] is None
+
+
+
+# ------------------------------------------------------------------------------------------- fix round (Wave I-P)
+SEA_LOCK, SEA_DARNOLD, CHI_KEENUM, CHI_WILLIAMS = "00-0035704", "00-0034869", "00-0028986", "00-0039918"
+
+
+def _fake_starters(monkeypatch, *, boom: bool = False):
+    """IP-1's ``starters.unclear`` with exactly its interface (week 5 flags CHI, SEA, WAS; the fixture database's week 4
+    has Seattle and Chicago in the same state)."""
+    import sys
+    import types
+
+    import league_lab_api
+
+    def unclear(season: int, week: int) -> dict[str, dict]:
+        if boom:
+            raise RuntimeError("starters broke")
+        sea = "Seattle lists Drew Lock as the starter; Sam Darnold took every dropback in its last game."
+        chi = "Chicago lists Case Keenum as the starter; Caleb Williams took every dropback in its last game."
+        return {SEA_LOCK: {"team": "SEA", "listed": "Drew Lock", "played": "Sam Darnold", "role": "listed", "words": sea},
+                SEA_DARNOLD: {"team": "SEA", "listed": "Drew Lock", "played": "Sam Darnold", "role": "played", "words": sea},
+                CHI_KEENUM: {"team": "CHI", "listed": "Case Keenum", "played": "Caleb Williams", "role": "listed", "words": chi},
+                CHI_WILLIAMS: {"team": "CHI", "listed": "Case Keenum", "played": "Caleb Williams", "role": "played",
+                               "words": chi}}
+    fake = types.ModuleType("league_lab_api.starters")
+    fake.unclear = unclear
+    monkeypatch.setitem(sys.modules, "league_lab_api.starters", fake)
+    monkeypatch.setattr(league_lab_api, "starters", fake, raising=False)
+    RK.clear()
+
+
+def test_starters_absent_or_broken_flags_nobody(monkeypatch):
+    import sys
+    monkeypatch.delitem(sys.modules, "league_lab_api.starters", raising=False)
+    assert isinstance(RK._starters_unclear(2026, 4), dict)            # absent (or IP-1's real one): a dict, never a raise
+    _fake_starters(monkeypatch, boom=True)
+    assert RK._starters_unclear(2026, 4) == {}
+    _fake_starters(monkeypatch)
+    got = RK._starters_unclear(2026, 4)
+    assert set(got) == {SEA_LOCK, SEA_DARNOLD, CHI_KEENUM, CHI_WILLIAMS} and got[SEA_LOCK]["role"] == "listed"
+
+
+@needs_db
+def test_a_flagged_quarterback_keeps_his_rank_and_leaves_the_tiers(client, monkeypatch):
+    _fake_starters(monkeypatch)
+    d = client.get(ROUTE, params={"league": "ref:half", "position": "QB", "limit": 200}).json()
+    rows = d["rows"]
+    by = {x["gsis_id"]: x for x in rows}
+    for g in (SEA_LOCK, SEA_DARNOLD, CHI_KEENUM, CHI_WILLIAMS):
+        x = by[g]
+        assert x["starter_unclear"]["words"] and x["starter_unclear"]["role"] in ("listed", "played")
+        assert x["tier"] is None and x["tier_p"] is None
+    assert [x["rank"] for x in rows] == list(range(1, len(rows) + 1))              # his place by projection is kept
+    assert all(a["proj_points"] >= b["proj_points"] for a, b in zip(rows, rows[1:], strict=False))
+    others = [x for x in rows if not x["starter_unclear"]]
+    tiers = [x["tier"] for x in others]
+    assert tiers[0] == 1 and tiers == sorted(tiers) and None not in tiers
+    assert d["unclear_words"] == RK.UNCLEAR_TIER
+    # the tiers are the ones the list would have without the flagged four (they never open or join a tier)
+    gs = [RK.grid(RK.predictive(x)) for x in others]
+    assert RK.tiers(gs)[0] == tiers
+    # FLEX and the season view are unaffected
+    assert "starter_unclear" not in client.get(ROUTE, params={"league": "ref:half", "position": "QB", "view": "season"}).json()["rows"][0]
+
+
+@needs_db
+def test_who_should_i_start_gives_no_call_with_a_flagged_quarterback(client, monkeypatch):
+    _fake_starters(monkeypatch)
+    qbs = client.get(ROUTE, params={"league": "ref:half", "position": "QB", "limit": 5}).json()["rows"]
+    clear_qb = next(x["gsis_id"] for x in qbs if not x["starter_unclear"])
+    d = client.get(START, params={"league": "ref:half", "ids": f"{SEA_LOCK},{clear_qb}"}).json()
+    assert d["answer"]["verdict"] == "no call" and d["answer"]["pick"] is None
+    assert d["answer"]["words"].startswith("Seattle lists Drew Lock as the starter")
+    assert d["answer"]["words"].endswith("Starter unclear — no call.")
+    assert all(p["p_best"] is None and p["pct_best"] is None for p in d["players"])
+    assert d["starter_unclear"][0]["gsis_id"] == SEA_LOCK
+    # two clear players still get the call
+    two = [x["gsis_id"] for x in qbs if not x["starter_unclear"]][:2]
+    ok = client.get(START, params={"league": "ref:half", "ids": ",".join(two)}).json()
+    assert ok["answer"]["verdict"] in ("clear", "a lean", "a coin flip") and ok["starter_unclear"] == []
+
+
+@needs_db
+def test_a_reference_key_and_a_real_league_of_one_scoring_never_share_a_frame():
+    """Review L3: ``research._ctx_key`` is the same for ``ref:ppr`` and a real league priced in PPR, but their tones come
+    from different ranks (the reference mart vs the league's own points allowed). Built in either order, each gets its
+    own words."""
+    import dataclasses
+
+    from league_lab_api import matchup_board as MB
+    from league_lab_api import research as R
+    ref = R.context("ref:ppr")
+    league = dataclasses.replace(R.context(SCRUBS, "sleeper"), scoring=dict(ref.scoring))     # a real PPR league
+    assert R._ctx_key(ref) == R._ctx_key(league) and not league.house
+    own = MB.league_defense(league, league.season)
+    ctx_ref = MB.matchup_context(ref.season, ref.week)
+
+    def check(ctx, df):
+        for x in df.to_dict("records"):
+            want = (f"{own[(x['opponent'], x['position'])]['words']}." if ctx is league
+                    else ctx_ref[x["gsis_id"]]["words"])
+            assert x["tone_words"] == want, (x["player_name"], x["tone_words"], want)
+
+    differ = 0
+    for order in ((league, ref), (ref, league)):
+        RK.clear()
+        frames = {id(c): RK.ranked(c, "week", "WR")[0] for c in order}
+        for c in order:
+            check(c, frames[id(c)])
+        a, b = frames[id(league)], frames[id(ref)]
+        differ = int((a.set_index("gsis_id")["tone_words"] != b.set_index("gsis_id")["tone_words"].reindex(a["gsis_id"])).sum())
+    assert differ > 0                                   # the two sources really disagree, so sharing would have shown
+
+
+@needs_db
+def test_the_floor_reads_the_record(monkeypatch):
+    RK.clear()
+    w = RK.floor_words()
+    assert re.search(r"through week \d+ of 20\d\d they held \d{2} in 100", w) and "Read anything under 65" in w
+    RK.clear()
+    monkeypatch.setattr(RK, "missing_relations", lambda names: list(names))
+    from league_lab import odds_grade
+    monkeypatch.setattr(odds_grade, "status", lambda q: {"season": 2026, "through_week": 4, "coverage_80": 0.786})
+    assert "through week 4 of 2026 they held 79 in 100" in RK.floor_words()
+    RK.clear()
+    monkeypatch.setattr(odds_grade, "status", lambda q: None)
+    assert RK.floor_words() == RK.START_FLOOR and RK.FLOOR_STAMP in RK.START_FLOOR
+    RK.clear()

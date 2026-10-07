@@ -31,13 +31,18 @@ const mine = (u: URL) =>
   u.pathname === "/api/rankings" || u.pathname === "/api/rankings/start" || (u.pathname === "/api/compare" && /^ref:/i.test(u.searchParams.get("league") ?? ""));
 // the fields the rankings screen reads (the recording keeps nothing else)
 const ROW_FIELDS = ["key", "gsis_id", "player_name", "position", "team", "rank", "tier", "proj_points", "p10", "p90", "opponent", "is_home", "kickoff_at", "game_state",
-  "report_status", "matchup", "rostered_by_roster_id", "rostered_by_team", "ros_games", "ros_points_per_game"];
+  "report_status", "matchup", "rostered_by_roster_id", "rostered_by_team", "ros_games", "ros_points_per_game", "starter_unclear"];
 const trim = (u: URL, body: unknown): unknown => {
   if (u.pathname !== "/api/rankings" || !body || typeof body !== "object") return body;
   const b = body as RankBody;
   return { ...b, rows: (b.rows ?? []).map((r) => Object.fromEntries(ROW_FIELDS.filter((k) => k in r).map((k) => [k, r[k]]))) };
 };
 const recorded: Recorded = existsSync(RECORDED) ? (JSON.parse(readFileSync(RECORDED, "utf8")) as Recorded) : {};
+// ---- fix round: the flagged quarterbacks (a fake starters.unclear with IP-1's interface: Seattle lists Drew Lock, Sam
+// Darnold took the dropbacks; Chicago the same), recorded from the API with the fake in place (fixture mode only)
+const UNCLEAR = join(DIR, "api_ip2_unclear.json");
+const unclear: Recorded = existsSync(UNCLEAR) ? (JSON.parse(readFileSync(UNCLEAR, "utf8")) as Recorded) : {};
+const LOCK = "00-0035704";
 
 async function api(context: BrowserContext): Promise<string[]> {
   const calls: string[] = [];
@@ -137,6 +142,16 @@ test("browsing: the Rankings tab, tiers as lines, the range bar, the defense's c
   await expect(page.getByTestId("rankings-row")).toHaveCount(1);
   await expect(page.getByTestId("rankings-name")).toHaveText("Puka Nacua");
   expect(calls.filter((c) => c.startsWith("/api/rankings?")).every((c) => !/team=/.test(c))).toBe(true);
+
+  // the rest of the season: the rank, the projection and the range, no tier lines, the line that says why
+  await page.getByTestId("rankings-search").fill("");
+  await page.getByTestId("rankings-view-season").click();
+  await expect(page).toHaveURL(/view=season/);
+  await expect(page.getByTestId("rankings-head")).toContainText("Rest-of-season rankings");
+  await expect(page.getByTestId("rankings-row").first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("tier-break")).toHaveCount(0);
+  await expect(page.getByTestId("rankings-tier-words")).toHaveText("No tiers for the rest of the season: the season ranges have not been graded yet.");
+  await expect(page.getByTestId("rankings-answer")).not.toContainText("tier");
 });
 
 test("pick two → Compare answers who to start, as unsure as it is", async ({ context, page }, info) => {
@@ -150,7 +165,6 @@ test("pick two → Compare answers who to start, as unsure as it is", async ({ c
   await picks.nth(2).click();
   await expect(page).toHaveURL(/pick=00-\d{7}%2C00-\d{7}|pick=00-\d{7},00-\d{7}/);
   await expect(page.getByTestId("rankings-compare")).toContainText("Who should I start? Compare 2");
-  await shot(page, `ip2-picked-${info.project.name}`);
   await page.getByTestId("rankings-compare").click();
   await expect(page).toHaveURL(/\/compare\?.*a=00-\d{7}.*b=00-\d{7}/);
   const words = page.getByTestId("compare-start-words");
@@ -181,4 +195,42 @@ test("a league: Rankings under Players, who has him, the league's own scoring", 
   await expect(page.getByTestId("rankings")).toContainText(/Who has him|Yours|Free agent/);
   await noSideways(page, "rankings");
   await shot(page, `ip2-league-${info.project.name}`);
+});
+
+test("a starter unclear: the chip, the dashed edge, no tier; Who should I start? gives no call", async ({ context, page }, info) => {
+  test.skip(!!LIVE, "the fake starters.unclear is in the recording only");
+  await api(context);
+  await context.route(/\/api\/(rankings|compare)/, async (route) => {
+    const hit = unclear[keyOf(new URL(route.request().url()))];
+    if (!hit) return route.fallback();
+    return route.fulfill({ status: hit.status, contentType: "application/json", body: JSON.stringify(hit.body) });
+  });
+  await page.goto("/rankings?league=ref:half&position=QB");
+  const lock = page.locator(`[data-testid=rankings-row][data-key="${LOCK}"]`);
+  await expect(lock).toBeVisible({ timeout: 30_000 });
+  await expect(lock).toHaveAttribute("data-unclear", "1");
+  await expect(lock).toHaveAttribute("data-tier", "");
+  await expect(lock.getByTestId(info.project.name.includes("phone") ? "rankings-unclear-chip-phone" : "rankings-unclear-chip")).toHaveText("Starter unclear");
+  await expect(lock.getByTestId("rankings-unclear-words")).toContainText("Seattle lists Drew Lock as the starter");
+  await expect(lock.getByTestId("rankings-unclear-words")).toContainText("No tier.");
+  // he keeps his place by projection: the rows around him are ranked one either side
+  const ranks = await page.getByTestId("rankings-row").evaluateAll((els) => els.map((e) => e.getAttribute("data-key")));
+  const i = ranks.indexOf(LOCK);
+  expect(i).toBeGreaterThan(0);
+  await expect(page.getByTestId("rankings-honest")).toContainText("Starter unclear (the dashed edge)");
+  await noSideways(page, "rankings");
+  await lock.scrollIntoViewIfNeeded();
+  await shot(page, `ip2-unclear-${info.project.name}`);
+  // pick him and a clear quarterback: the sentence first, no call, no chances
+  await lock.getByTestId("rankings-pick").click();
+  await page.locator("[data-testid=rankings-row]:not([data-unclear])").first().getByTestId("rankings-pick").click();
+  await page.getByTestId("rankings-compare").click();
+  const words = page.getByTestId("compare-start-words");
+  await expect(words).toBeVisible({ timeout: 30_000 });
+  await expect(words).toHaveAttribute("data-verdict", "no call");
+  await expect(words).toHaveText(/^Seattle lists Drew Lock as the starter.* Starter unclear — no call\.$/);
+  await expect(page.getByTestId("compare-start-pct")).toHaveCount(0);
+  await expect(page.getByTestId("compare-start-nocall").first()).toBeVisible();
+  await expect(page.getByTestId("compare-start-nocall-why")).toContainText("No chances are given");
+  await noSideways(page, "compare");
 });

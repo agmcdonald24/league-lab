@@ -56,7 +56,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   Pick two to four → Compare opens on the answer in words from the ranges the week's odds draw ("Lean Olave: he
   outscores Nacua in 57 of 100 such weeks — close; either is fine.") with how sure such a call is. `GET /api/rankings`,
   `GET /api/rankings/start` (research bucket, no new relation); the home's "Every player ›" opens it; `/rankings` in the
-  shell's previews and the sitemap.
+  shell's previews and the sitemap. **Fix round**: a quarterback whose team's listed starter did not play its last game
+  shows **Starter unclear** (a neutral chip, a dashed edge, his rank kept, no tier) and "Who should I start?" gives no
+  call for him; no tiers on "Rest of season" (its ranges are not graded); the cache keyed by where the tone comes from
+  (review L3); the "how sure" line reads the record's coverage.
 - **IP-4 — the player card.** The player page and the drawer lead with a card: his picture on his team's colour, this
   week's projection as the one headline number with its range (low-end, typical, high-end) and his value in the scoring on
   screen; **ratings** — his percentile (0–99) among his position's players this season with a stated minimum sample, for
