@@ -177,3 +177,27 @@ editor does not exist whatever the tables. Tested: `test_without_the_tables_*`, 
 
 The editor's link-preview picture for a database post (an `image` field pointing at an uploaded picture); a feed / sitemap
 cache that clears on publish; "Earlier versions" with a diff.
+
+## Fix round (after the merge and the independent review; branch `fix/IO3` from `integ/IO` 72d959b)
+
+The review found nothing Critical, High or Medium here; three Lows and two notes, all fixed:
+
+* **L1, churn**: a save whose title, summary, tags, author and body are unchanged writes nothing (200, the same
+  revision); a post is saved at most once every 5 seconds (`SAVE_FLOOR_S`; 429 `too_fast` "Saving again in a moment:
+  your text is kept." + `Retry-After` — the editor schedules its autosave past the floor and waits out a 429 by itself;
+  Publish / Save changes wait and retry); **the revision rule**: a new revision only when the title or body differs from
+  the newest kept one by more than whitespace AND the newest kept one is ≥ 30 s old (explicit) / ≥ 2 min (autosave) —
+  otherwise nothing is written to revisions (the post's row holds the text); rows are only added, never rewritten. The
+  review's 10-in-a-row of 200 KB noise now: 1 × 200, 9 × 429, no new revision.
+* **L2, a 500 from a slug**: `_free_slug` strips a trailing dash before `-n`; every `IntegrityError` / `DataError` on the
+  editor's routes is 409 `taken` / 422 `not_saved` in words.
+* **L5, invisible characters**: U+200B–200F, U+202A–202E, U+2066–2069, U+FEFF stripped from title, summary, author,
+  tags and the address (the body keeps them: emoji joiners).
+* **Notes**: drafts on the device are keyed by the account id, never written for a signed-out visitor, and cleared by
+  Sign out / Sign out everywhere / Delete my account (an expired session leaves them, so a timeout loses no text);
+  `/blog/img/db/<id>` is cached a day with an ETag (304 on `If-None-Match`), no longer a year immutable.
+
+Tests: `test_io3` 23 passed (+5: unchanged save, the floor, the revision rule, the 80-character slug and the database's
+refusal, invisible characters; the picture cache asserts the ETag / 304); `test_io3 + test_in1 + test_ik4` 68 passed;
+ruff, copy standard, lint, build clean; e2e `io3` 16 passed / 8 skipped (+3: the floor and Publish right after typing,
+a 429 waited out, sign-out clears the drafts), `in1` 16 passed, `ik4` 6 passed.

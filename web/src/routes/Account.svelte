@@ -8,6 +8,7 @@
   // (never the last way in). The emailed-link form stays when the server has a mailer; with both, both are offered.
   import { onMount } from "svelte";
   import AccountId from "../components/blog/AccountId.svelte"; // ---- IO-3: "Your account id" (the blog's editors)
+  import { forgetDrafts } from "../components/blog/editor.svelte"; // ---- IO-3 fix round: signing out leaves no unsent draft
   import { APP_MARK, APP_NAME } from "../lib/brand";
   import { leagueLine } from "../lib/leagues";
   import { withContext } from "../lib/md";
@@ -106,7 +107,7 @@
   }
 
   async function leave(everywhere: boolean) {
-    if (await run(() => signOut(everywhere))) sentTo = null;
+    if (await run(() => signOut(everywhere).then(forgetDrafts))) sentTo = null; // ---- IO-3 fix round: + forgetDrafts
   }
 
   // ---- IM-4: the passkey buttons (each opens the device's own sheet)
@@ -391,7 +392,7 @@
                 class="rounded-md border border-bad bg-bad-soft px-3 py-2 text-sm font-bold text-bad disabled:opacity-60"
                 disabled={busy}
                 onclick={async () => {
-                  if (await run(deleteAccount)) {
+                  if (await run(() => deleteAccount().then(forgetDrafts))) { // ---- IO-3 fix round: + forgetDrafts
                     gone = true;
                     sentTo = null;
                     confirmDelete = false;

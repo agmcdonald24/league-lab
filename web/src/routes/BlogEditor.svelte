@@ -36,6 +36,9 @@
   let { id = null, league }: { id?: string | null; league: string } = $props();
 
   const AUTOSAVE_MS = 2500;
+  const FLOOR_MS = 5200; // ---- fix round (L1): the server saves a post at most once every 5 s (429 too_fast otherwise)
+  let lastSaveAt = 0; // when the server last wrote this post from here (a save, a publish …)
+  const untilFloor = () => Math.max(0, lastSaveAt + FLOOR_MS - Date.now());
   const LIMIT_KB = 200;
 
   type Gate = "loading" | "ok" | "signed_out" | "not_editor" | "missing" | "failed";
@@ -139,7 +142,7 @@
     keepLocal(localKey(), draft(), post?.revision ?? 0);
     saveState = "dirty";
     clearTimeout(saveTimer);
-    if (!published && !conflict && !over) saveTimer = setTimeout(() => void save(true), AUTOSAVE_MS);
+    if (!published && !conflict && !over) saveTimer = setTimeout(() => void save(true), Math.max(AUTOSAVE_MS, untilFloor()));
   });
   $effect(() => {
     const b = body;
@@ -152,8 +155,26 @@
   });
 
   let inFlight: Promise<boolean> | null = null;
-  /** Send the draft (create it on the first save). True when the server holds this text. */
+  let tooFastMs = 0; // ---- fix round (L1): the server's "save again in N seconds" (429 too_fast), 0 otherwise
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  /** Send the draft (create it on the first save). True when the server holds this text. An autosave the server asks
+   * to wait comes back by itself after the wait; an explicit save (Publish, Save changes) waits and tries again. */
   async function save(auto = false): Promise<boolean> {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      if (!auto && untilFloor() > 0) await sleep(untilFloor());
+      const ok = await saveOnce(auto);
+      if (ok || !tooFastMs) return ok;
+      if (auto) {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => void save(true), tooFastMs + 200);
+        return false;
+      }
+      await sleep(tooFastMs + 200);
+    }
+    return false;
+  }
+  async function saveOnce(auto: boolean): Promise<boolean> {
+    tooFastMs = 0;
     if (inFlight) await inFlight;
     const d = draft();
     const text = JSON.stringify(d);
@@ -168,6 +189,7 @@
       try {
         const p = post ? await editorApi.save(post.id, d, post.revision, auto, !slugTouched) : await editorApi.create(d);
         const first = !post;
+        if (!post || p.revision !== post.revision) lastSaveAt = Date.now(); // the server wrote (an unchanged save does not)
         post = { ...p, body: d.body };
         sent.text = text;
         slugWords = p.slug_words ?? null;
@@ -186,7 +208,12 @@
         if (p.status === "published") forgetPublic(p.slug);
         return true;
       } catch (e) {
-        if (e instanceof EditorError && e.code === "conflict" && e.post) {
+        if (e instanceof EditorError && e.status === 429 && e.code === "too_fast") {
+          tooFastMs = Math.max(1, e.retryAfter ?? 5) * 1000; // the text stays here and on the device: it goes in a moment
+          lastSaveAt = Date.now() + tooFastMs - FLOOR_MS;
+          saveState = "dirty";
+          problem = null;
+        } else if (e instanceof EditorError && e.code === "conflict" && e.post) {
           conflict = e.post;
           saveState = "error";
           problem = e.message;
@@ -250,6 +277,7 @@
               ? await editorApi.remove(post.id)
               : await editorApi.restore(post.id);
       post = { ...p, body };
+      lastSaveAt = Date.now(); // ---- fix round (L1): the server wrote the post
       problem = null;
       confirmDelete = false;
       forgetPublic(p.slug);

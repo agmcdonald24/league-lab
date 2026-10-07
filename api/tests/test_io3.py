@@ -96,6 +96,7 @@ def api(monkeypatch, schema, folder):
     monkeypatch.setenv("LEAGUE_LAB_PUBLIC_URL", "https://isuckatfantasy.io")
     accounts.reset()
     blog_store.reset()
+    monkeypatch.setattr(blog_store, "SAVE_FLOOR_S", 0.0)          # the floor has its own test (fix round, L1)
     with TestClient(app) as c:
         yield c
     accounts.reset()
@@ -208,7 +209,9 @@ def test_every_new_route_has_a_bucket():
 
 
 # ====================================================================================== the flow
-def test_write_conflict_publish_read_unpublish_delete_restore(editor, folder):
+def test_write_conflict_publish_read_unpublish_delete_restore(editor, folder, monkeypatch):
+    monkeypatch.setattr(blog_store, "REVISION_MIN_S", 0)          # every real change kept here; the rule's own test below
+    monkeypatch.setattr(blog_store, "REVISION_GAP_S", 0)
     mine = editor.get("/api/blog/mine").json()
     assert mine["posts"] == [] and mine["author"] == "" and mine["limits"]["body_kb"] == 200
     p = new_post(editor, title="Start Washington: a case", body="\n\nFirst words.")
@@ -245,20 +248,15 @@ def test_write_conflict_publish_read_unpublish_delete_restore(editor, folder):
     assert save(editor, p | {"revision": gone["revision"]}).status_code == 409           # restore before editing
     back = editor.post(f"/api/blog/posts/{p['id']}/restore", headers=SAME).json()
     assert back["status"] == "draft" and back["deleted_at"] is None
-    # revisions: every explicit save kept (autosaves within two minutes fold into one), the newest 20 at most
+    # revisions: the creation and Tab A's save (the address-only save on the published post changed nothing: no write)
     full = editor.get(f"/api/blog/posts/{p['id']}").json()
-    assert [r["revision"] for r in full["revisions"]][:2] == [3, 2]
+    assert [r["revision"] for r in full["revisions"]] == [2, 1]
     old = editor.get(f"/api/blog/posts/{p['id']}/revisions/{full['revisions'][-1]['id']}").json()
     assert old["body"] == "First words."
     cur = full
-    for i in range(25):
-        r = save(editor, cur, body=f"Autosave {i}", autosave=True)
-        cur = r.json()
-    full = editor.get(f"/api/blog/posts/{p['id']}").json()
-    assert len(full["revisions"]) == 4 and full["revisions"][0]["revision"] == cur["revision"]
     for i in range(22):
         cur = save(editor, cur, body=f"Explicit {i}").json()
-    assert len(editor.get(f"/api/blog/posts/{p['id']}").json()["revisions"]) == 20
+    assert len(editor.get(f"/api/blog/posts/{p['id']}").json()["revisions"]) == 20          # the newest 20 at most
 
 
 def test_another_editors_posts_are_not_mine(editor, monkeypatch):
@@ -494,8 +492,10 @@ def test_pictures_by_first_bytes_served_with_their_type(editor):
         got[kind] = r.json()
         img = editor.get(r.json()["url"])
         assert img.status_code == 200 and img.headers["content-type"] == mime and img.content == data
-        assert img.headers["cache-control"] == "public, max-age=31536000, immutable"
+        assert img.headers["cache-control"] == "public, max-age=86400" and img.headers["etag"]   # fix round: a day + ETag
         assert img.headers["x-content-type-options"] == "nosniff"
+        again = editor.get(r.json()["url"], headers={"If-None-Match": img.headers["etag"]})
+        assert again.status_code == 304 and again.content == b""
     assert {i["id"] for i in editor.get("/api/blog/mine").json()["images"]} == {g["id"] for g in got.values()}
     for bad in (b"<svg onload=alert(1)>" + b" " * 64, b"<html><script>alert(1)</script>" + b" " * 64, b"GIF89a" + b"\x00" * 64,
                 b"\x89PNG", b""):
@@ -527,3 +527,89 @@ def test_without_the_tables_a_picture_is_404(api, monkeypatch):
     monkeypatch.setattr(blog_store, "TABLES", ("blog.absent_io3", "blog.absent_io3_revisions", "blog.absent_io3_images"))
     blog_store.reset()
     assert api.get(f"/blog/img/db/{ID}").status_code == 404
+
+
+# ====================================================================================== fix round (the review's L1, L2, L5)
+def _age(table: str, column: str, where: str, secs: int, *args) -> None:
+    q(f"update blog.{table} set {column} = {column} - interval '{secs} seconds' where {where}", *args)
+
+
+def test_a_save_that_changes_nothing_writes_nothing(editor, monkeypatch):
+    monkeypatch.setattr(blog_store, "SAVE_FLOOR_S", 5.0)
+    p = new_post(editor, title="Unchanged", body="Same words.")
+    before = q("select updated_at, revision from blog.posts where id = %s", p["id"])
+    for _ in range(5):                                                  # even straight away: no write, no 429
+        r = save(editor, p)
+        assert r.status_code == 200 and r.json()["revision"] == p["revision"], r.text
+    assert q("select updated_at, revision from blog.posts where id = %s", p["id"]) == before
+    assert len(editor.get(f"/api/blog/posts/{p['id']}").json()["revisions"]) == 1
+
+
+def test_one_save_every_five_seconds(editor, monkeypatch):
+    """The review's churn: 26 saves of random 200 KB bodies in 0.9 s, all 200. Now one per post per 5 seconds."""
+    import secrets
+    monkeypatch.setattr(blog_store, "SAVE_FLOOR_S", 5.0)
+    p = new_post(editor, title="Churn", body="x")
+    r = save(editor, p, body="changed at once")
+    assert r.status_code == 429 and r.json()["code"] == "too_fast" and 1 <= int(r.headers["retry-after"]) <= 5
+    assert r.json()["error"] == "Saving again in a moment: your text is kept."
+    assert editor.get(f"/api/blog/posts/{p['id']}").json()["body"] == "x"            # nothing written
+    _age("posts", "updated_at", "id = %s", 6, p["id"])
+    codes = []
+    cur = p
+    for _ in range(10):
+        r = save(editor, cur, body=secrets.token_hex(100 * 1024))       # 200 KB of noise each time
+        codes.append(r.status_code)
+        if r.status_code == 200:
+            cur = r.json()
+    assert codes.count(200) == 1 and codes.count(429) == 9, codes
+    assert len(editor.get(f"/api/blog/posts/{p['id']}").json()["revisions"]) == 1      # inside 30 s: no new revision
+
+
+def test_the_revision_rule(editor):
+    """A new revision only for a change beyond whitespace, and not sooner than 30 s (explicit) / 2 min (autosave) after
+    the newest kept one; rows are only added, never rewritten."""
+    p = new_post(editor, title="Rule", body="One two three.")
+    revs = lambda: [r["revision"] for r in editor.get(f"/api/blog/posts/{p['id']}").json()["revisions"]]  # noqa: E731
+    cur = save(editor, p, body="One two three. Four.").json()
+    assert revs() == [1]                                                # 0 s after the newest kept one: the post holds it
+    _age("revisions", "saved_at", "post_id = %s", 31, p["id"])
+    cur = save(editor, cur, body="One two three. Four. Five.").json()
+    assert revs() == [3, 1]                                             # 31 s: kept
+    _age("revisions", "saved_at", "post_id = %s", 31, p["id"])
+    cur = save(editor, cur, body="One  two three.\n\nFour.   Five.  ").json()
+    assert cur["revision"] == 4 and revs() == [3, 1]                    # whitespace only: saved, not a revision
+    cur = save(editor, cur, body="An autosave.", autosave=True).json()
+    assert revs() == [3, 1]                                             # an autosave 31 s on: under its 2 minutes
+    _age("revisions", "saved_at", "post_id = %s", 120, p["id"])
+    cur = save(editor, cur, body="An autosave, later.", autosave=True).json()
+    assert revs() == [6, 3, 1]
+
+
+def test_an_80_character_address_never_doubles_its_dash(editor, monkeypatch):
+    s80 = "a" * 73 + "-" + "b" * 6
+    assert len(s80) == 80 and blog.SLUG.fullmatch(s80)
+    one = new_post(editor, title="One", slug=s80)
+    two = new_post(editor, title="Two", slug=s80)                       # the review: 500 CheckViolation posts_slug_shape
+    assert one["slug"] == s80 and two["slug"] == "a" * 73 + "-2" and blog.SLUG.fullmatch(two["slug"])
+    three = new_post(editor, title="Three")
+    r = save(editor, three, slug=s80, slug_auto=True)
+    assert r.status_code == 200 and blog.SLUG.fullmatch(r.json()["slug"]), r.text
+    # whatever slips past the checks, the database's refusal is a 4xx in words, never a 500
+    monkeypatch.setattr(blog_store, "_free_slug", lambda *a, **k: "a--b")
+    r = editor.post("/api/blog/posts", json={"title": "Bad"}, headers=SAME)
+    assert r.status_code == 422 and r.json()["code"] == "not_saved" and "could not be saved" in r.json()["error"]
+    monkeypatch.setattr(blog_store, "_free_slug", lambda *a, **k: s80)
+    r = editor.post("/api/blog/posts", json={"title": "Race"}, headers=SAME)
+    assert r.status_code == 409 and r.json()["code"] == "taken"
+
+
+def test_invisible_characters_are_stripped_from_one_line_fields(editor):
+    hidden = "\u200b\u200c\u200d\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069\ufeff"
+    p = new_post(editor, title="Safe \u202egnp.exe", summary=f"A{hidden} summary", author=f"\ufeffAndrew{hidden}",
+                 tags=[f"dfs{hidden}", "\u200bweek 5"], slug="my\u200b-post\u202e", body="Body keeps \u200d joiners.")
+    assert p["title"] == "Safe gnp.exe" and p["summary"] == "A summary" and p["author"] == "Andrew"
+    assert p["tags"] == ["dfs", "week 5"] and p["slug"] == "my-post"
+    assert p["body"] == "Body keeps \u200d joiners."                      # the body is not a one-line field
+    r = save(editor, p, title="\u2067Edited\u2069 title")
+    assert r.json()["title"] == "Edited title"
