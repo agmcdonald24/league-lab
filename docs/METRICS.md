@@ -3372,6 +3372,176 @@ in the dynasty / 8.23 → 6.54 in Scrubs, Michael Pittman (PIT, 1 game) 9.84 →
 6.45 → 5.13. Rostered in week 5: A.J. Brown (unplayable on both), Pittman, Jennings and Marquise Brown (bench) — no
 week-5 starter is scaled. The same run's cold-start blend moves 1,014 lines (M6's count); frozen weeks 1–4 moved 0.
 
+### The quarterback weak spot (IP-1, Wave I-P, 2026-10-07; candidates rt1.0 and st1.0, both dropped; `scripts/analysis/ip1_qb_diagnosis.py`, `ip1_qb_candidates.py`)
+
+The home and About said: "quarterbacks are our weak spot: 6.5 points off on average, against 5.4 in past seasons"
+(tight ends 3.5 against 3.0). Both numbers come from `mart_projection_drift` for the reference league (half PPR,
+4-point passing TD): the season's complete weeks (2026 weeks 1–3; week 4 is still being played in this database, 15 of
+16 games) against the backtest's mean over 2021–2025. Reproduced from the rows: `scripts/analysis/ip1_qb_diagnosis.py`
+(read only; the walk-forward rows are the component models of `fit_position` trained on 2016..S−1, v2.0 and v3.0
+inputs; their season means equal `ops.projection_backtest`'s to ±0.01, single weeks to ±0.21 — the stored record is
+an older run on an older build of the features).
+
+**1. The comparison was v2.0 against v3.0.** 2026 weeks 1–3 were projected by **v2.0** (the refit of 2026-09-29, after
+those games; v3.0 shipped on 2026-10-01 and made week 4 on). The mart joins the backtest of the season's newest
+`model_version` — v3.0, because week 4's rows exist — so the 6.5 (v2.0) sat beside **v3.0's** 5.4. v3.0's main gain
+was exactly at quarterback (MAE −0.52 in the backtest: "is he the projected starter?"). v2.0's own backtest is 5.86.
+
+**2. Is 6.5 a signal?** Played, rankable QBs (the drift's scope), the reference league's scoring; interval = 95%,
+resampling whole players (all his weeks together), 4,000 draws:
+
+| Rows | player-weeks | MAE | 95% interval | by week |
+|---|---|---|---|---|
+| **2026 wk 1–3, the board as scored (v2.0)** | 112 | **6.52** | 5.56–7.51 | 6.72 / 6.50 / 6.35 |
+| v2.0 inputs, wk 1–3 of 2021 / 2022 / 2023 / 2024 / 2025 | 116 / 109 / 115 / 118 / 117 | 6.42 / 5.62 / 5.80 / 5.63 / 6.42 | 5.73–7.18 … 5.61–7.12 | |
+| v2.0 inputs, every week of 2021 / … / 2025 | 671 / 638 / 680 / 664 / 677 | 5.93 / 5.51 / 5.86 / 5.95 / 6.05 | | |
+| v3.0 inputs, wk 1–3 of 2021 / … / 2025 | the same | 5.57 / 5.08 / 5.21 / 4.97 / 5.53 | 4.87–6.26 … 4.76–6.20 | |
+| v3.0 inputs, every week of 2021 / … / 2025 | the same | 5.42 / 5.20 / 5.27 / 5.74 / 5.41 | | |
+| 2026 wk 1–3, v3.0 inputs refit now (what v3.0 would have said) | 112 | 6.18 | 5.28–7.15 | 6.49 / 6.18 / 5.87 |
+| 2026 wk 4, the board frozen at kickoff (v3.0; 15 of 16 games) | 32 | 4.37 | | |
+
+* 2026 against v2.0's own weeks 1–3 of 2021–2025 (pooled): **+0.54 points (95% −0.45 to +1.62)** — not
+  distinguishable; 6.52 is just above the range of v2.0's first three weeks (5.62–6.42; 2021 and 2025 were 6.42).
+* 2026 (refit with v3.0's inputs) against v3.0's weeks 1–3: +0.91 (−0.12 to +1.99) — not distinguishable at 95%
+  either (2026 worse in 96% of draws). Against the 5.4 the home printed, the v2.0 board is +1.26 (+0.28 to +2.32): a
+  difference made mostly by the model change, not by 2026.
+* Early weeks are not worse at QB under v3.0 (weeks 1–3 pooled 5.27 against 5.41 every week); slightly under v2.0
+  (5.98 against 5.88). Three weeks are about 112 quarterback-games: the interval on one 3-week MAE is ±1 point.
+
+**3. By component** (points of the reference scoring; "if exact" = the line's MAE with that one component replaced
+by what happened, the change in brackets — how much of the miss it carries):
+
+| Rows | passing yards: bias / MAE / if exact | passing TDs | interceptions | rushing yards | rushing TDs | the line: bias / MAE |
+|---|---|---|---|---|---|---|
+| 2026 wk 1–3, the board (v2.0) | −0.31 / 2.65 / 4.80 (−1.72) | +0.55 / 3.76 / 3.76 (−2.77) | +0.04 / 0.61 / (−0.08) | −0.01 / 1.02 / (−0.12) | +0.29 / 1.61 / (−0.58) | +0.56 / 6.52 |
+| 2026 wk 1–3, v3.0 refit now | −0.15 / 2.35 / (−1.52) | +0.61 / 3.65 / (−2.58) | +0.01 / 0.60 / (−0.13) | −0.00 / 1.03 / (−0.12) | +0.31 / 1.62 / (−0.59) | +0.76 / 6.18 |
+| 2021–2025 wk 1–3, v3.0 | −0.43 / 2.15 / (−1.18) | −0.22 / 3.18 / (−1.90) | +0.05 / 0.66 / (−0.06) | +0.01 / 1.18 / (−0.25) | +0.22 / 1.46 / (−0.50) | −0.36 / 5.27 |
+| 2021–2025 every week, v3.0 | −0.12 / 2.25 / (−1.33) | +0.01 / 3.17 / (−2.00) | +0.01 / 0.65 / (−0.03) | −0.11 / 1.17 / (−0.28) | +0.21 / 1.38 / (−0.39) | +0.00 / 5.41 |
+
+Passing touchdowns carry most of every miss (about 2 of the 5.4 points in the backtest, 2.8 of the 6.5 in 2026), then
+passing yards. 2026's quarterbacks threw 1.41 touchdowns a game in weeks 1–3 (112 games) against 1.10–1.25 a season in 2021–2025:
+the +0.55 is league-wide and three weeks old. **The one bias found in every sample is rushing touchdowns**: +0.21 to
++0.31 points a game too low (actual 0.148–0.168 rushing TDs a game a season, projected 0.102–0.154). Rushing yards are
+unbiased. From the play-by-play (2021–2025 starters): scrambles are 13.2 rushing yards a start and designed runs 5.0,
+but designed runs score most of the touchdowns (0.12 a start against 0.06): the goal-line sneak, not the scramble.
+
+**4. By kind of quarterback** (2021–2025, v3.0 inputs, bias = actual − projected with a player-resampled 95%
+interval; "bias² / MSE" = the share of the kind's squared miss that a constant correction could remove):
+
+| Kind | n | bias | 95% interval | MAE | bias² / MSE | bias by season 2021 / 22 / 23 / 24 / 25 |
+|---|---|---|---|---|---|---|
+| every QB who played | 3,330 | +0.00 | −0.28 to +0.26 | 5.41 | 0% | |
+| started | 2,674 | −0.02 | −0.35 to +0.30 | 5.82 | 0% | |
+| came off the bench | 656 | +0.11 | −0.37 to +0.60 | 3.74 | 0% | |
+| started, rushing < 15% of his points | 1,412 | +0.03 | −0.46 to +0.48 | 5.70 | 0% | +0.58 / −0.27 / +0.06 / −0.37 / +0.11 |
+| started, rushing 15–30% | 735 | +0.05 | −0.56 to +0.64 | 5.75 | 0% | |
+| started, rushing ≥ 30% | 417 | −0.31 | −1.02 to +0.38 | 6.52 | 0% | −0.87 / −0.81 / −0.54 / +0.54 / +0.10 |
+| started, a new starter (< 8 career starts) | 373 | +0.32 | −0.45 to +1.15 | 5.81 | 0% | +0.58 / −0.78 / +0.94 / −0.14 / +0.50 |
+| started, a rookie | 294 | +0.08 | −0.92 to +1.14 | 5.74 | 0% | −0.86 / −1.03 / −0.63 / +1.32 / +1.21 |
+| started, a new team (< 3 games with it) | 192 | +0.21 | −0.75 to +1.12 | 5.47 | 0% | +0.36 / −1.11 / +0.55 / −0.52 / +1.91 |
+| started, a new head coach this season (stand-in for a new play-caller: the data has no play-caller) | 635 | +0.35 | −0.23 to +0.96 | 5.70 | 0% | −0.04 / +0.44 / +0.63 / −0.27 / +0.99 |
+
+No kind's bias is distinguishable from zero, none explains a measurable share of its own squared miss, and the
+signs flip from season to season: **the misses by kind are variance, not bias.** The kinds the brief proposed (a
+rushing archetype, a new starter, a rookie, a new team, a play-caller) give a candidate nothing stable to fit; M5
+already measured the cold-start prior at QB (the fit kept the model, w = 1). 2026 weeks 1–3 (93 starters) show the
+same: every kind's interval spans zero except "rushing < 15%" on the v2.0 board (+1.96, +0.08 to +3.70, n 41), which
+v3.0's inputs shrink to +1.35 (−0.54 to +2.98).
+
+**5. Game script** (starters, 2021–2025, v3.0; the team's points minus its implied total): ≥ 7 under −5.89 (n 584),
+3–7 under −2.19, within 3 −0.09, 3–7 over +1.95, ≥ 7 over +5.93 (n 621). corr(miss, points − implied total) = 0.60:
+**36% of a starter's squared miss is his team scoring more or less than Vegas expected** — known only after the game.
+By the implied total known before it: < 20 −0.19, 20–24 +0.03, ≥ 24 +0.05: the projection already uses the line
+correctly. 2026 weeks 1–3 have the same shape (≥ 7 under −7.31, ≥ 7 over +8.12).
+
+**6. The three largest 2026 misses** (the board, weeks 1–3):
+* **Sam Darnold, week 3 (SEA at WAS): 5.02 projected, 29.66 scored (+24.6).** The model did not know he was starting.
+  He left week 1 after 2 passes and missed week 2; v2.0 had no starter input and read his one 2-pass game as his role
+  (7.6 attempts projected; he threw 45). v3.0's input would not have saved it: **nflverse's schedule lists Drew Lock as
+  Seattle's starter for weeks 3, 4 and 5** (Lock threw no pass in weeks 3–4), so v3.0 refit now gives Darnold 2.89. On
+  this database's live board week 5 reads Lock 13.72, Darnold 4.38 (below).
+* **Caleb Williams, week 1 (CHI at CAR): 16.88 → 37.26 (+20.4).** 65 rushing yards and 2 rushing TDs against 21 and 0.16
+  projected: the rushing-touchdown tail.
+* **Jaxson Dart, week 2 (NYG vs LA): 21.03 → 0.80 (−20.2).** He left after 5 passes: unknowable before kickoff.
+* Next: Case Keenum week 3 (7.33 → 24.48: v2.0 did not know Williams was out; v3.0's input knew, 14.07), Bryce Young
+  week 1 (361 yards, 3 TDs), Kyler Murray week 1 (left after 5 passes).
+
+**7. The starter listing** (`raw.nfl_schedules` home_qb_id / away_qb_id → `int_pn_team_game.starting_qb_id`, the
+source of v3.0's strongest QB input, "is he the projected starter?", +1.83 points of error when scrambled). The model
+was trained on it as "the QB who started", but nflverse sometimes keeps the **pre-game** projected starter after the
+game: team-games whose listed starter threw no pass — 2016–2021: 0 a season; 2022: 4; 2023: 0; **2024: 33** (WAS
+weeks 9–13 "Mariota" while Daniels started, IND "Flacco" while Richardson started, TEN, CAR, NYG, NO, CLE, LV, MIA);
+2025: 7; **2026 weeks 1–4: 5** (SEA weeks 3–4, CHI week 4 …). So 2024 trained and tested with starters labelled as
+backups (v3.0's worst backtest season at QB, 5.74 against 5.20–5.42), and the live board inherits any listing nflverse
+does not update.
+
+**8. Tight ends** (one table; no candidate):
+
+| Rows | player-weeks | MAE | 95% interval | receptions: bias / if exact | receiving yards | receiving TDs | the line's bias |
+|---|---|---|---|---|---|---|---|
+| **2026 wk 1–3, the board (v2.0)** | 234 | **3.51** | 3.05–4.02 | +0.02 / (−0.54) | −0.05 / (−1.29) | **+0.36** / (−1.33) | +0.38 |
+| 2026 wk 1–3, v3.0 refit now | 234 | 3.52 | 3.05–4.03 | +0.02 / (−0.54) | −0.03 / (−1.32) | +0.36 / (−1.32) | +0.40 |
+| v2.0, wk 1–3 of 2021 / 22 / 23 / 24 / 25 | 204–215 | 3.44 / 2.93 / 2.61 / 2.85 / 2.80 | 3.02–3.88 … 2.45–3.16 | | | | |
+| v3.0, wk 1–3 of 2021–2025 (pooled) | 1,032 | 2.94 | | −0.01 / (−0.49) | −0.24 / (−1.21) | −0.17 / (−0.79) | −0.41 |
+| v3.0, every week of 2021–2025 | 6,045 | 3.01 | | +0.02 / (−0.46) | −0.08 / (−1.17) | +0.03 / (−0.91) | +0.01 |
+| 2026 wk 4, the board frozen at kickoff (v3.0; 15 of 16 games) | 73 | 3.05 | | | | | |
+
+At tight end the gap **is** distinguishable: 2026 minus the weeks 1–3 of 2021–2025 = +0.59 (95% +0.09 to +1.12), the
+same under either model's inputs (v2.0 and v3.0 differ by 0.01 at TE, so the v2 / v3 mix-up does not matter here). It
+is made of touchdowns: tight ends caught more TDs than projected (+0.36 points a game, where 2021–2025's first weeks
+were −0.17), and an exact TD count would cut the miss by 1.33 of 3.51. 2021's first three weeks were as bad (3.44).
+Variance in a three-week touchdown count, by every number here; week 4 is back at 3.05.
+
+#### Candidates through the harness
+
+Written down before any candidate number was read (22:25 ET): each walk-forward on 2021–2025, the production inputs
+(v3.0) as the baseline, both house scorings, judged by `experiments.decide` on the QB board (the season the paired unit;
+MAE ≥ 0.05 lower or Spearman ≥ 0.005 higher, in ⌈2·5/3⌉ = 4 of 5 seasons). Only what the tables point at:
+
+* **rt1.0 — QB rushing TDs, a mean-unbiased scale** (the one bias in every sample): k_S = Σ actual rushing TDs /
+  Σ projected over the played QB rows of the 3 seasons before S (production's window), clipped to [0.70, 1.50]; every
+  QB line's rushing TDs × k_S. k = 1.50 (the clip) / 1.50 / 1.50 / 1.41 / 1.26 for 2021–2025 (1.19 for 2026).
+* **st1.0 — "is he the starter?" from what happened** (§ 7; dbt var `pn_starter_from_play`, `int_pn_team_game`): a
+  played game's starter = the listed QB if he threw a pass for the team, else the team's QB with the most attempts (any
+  listed position: Taysom Hill started at QB listed as a TE — the first build filtered on position and mislabelled
+  him; fixed before the run below, the first run read Δ MAE −0.018, drop); an unplayed game's = the listing, unless it
+  repeats a listing the team's newest played game contradicted, then that game's real starter. Training rows read the
+  corrected history; the test season keeps the stored listing with that guard applied (what a board before kickoff
+  could have known). Also judged by M6's flagged-row rule (flagged = test rows whose input moved: MAE ≥ 0.05 lower on
+  average and in 4 of 5 seasons); never kept if `decide` says "hurts".
+
+| Candidate | Δ MAE board, by season 2021 / 22 / 23 / 24 / 25 | Δ MAE (seasons better, of 5) | Δ Spearman (better) | bias before → after | flagged rows | decision |
+|---|---|---|---|---|---|---|
+| rt1.0 rushing-TD scale | +0.047 / +0.054 / +0.033 / +0.031 / +0.016 | +0.036 (0) | −0.0018 (2) | board +0.22 → −0.10; rushing TDs +0.21 → −0.11 | every QB row | **drop** (worse in every season) |
+| st1.0 starter from what happened | +0.000 / +0.004 / +0.036 / −0.151 / −0.017 | −0.026 (2) | +0.0025 (2) | board +0.22 → +0.23 | 0 / 1 / 0 / 21 / 6 player-weeks a scoring: Δ — / +2.47 / — / **−4.40** / +0.96; lower in 1 of 5 | **drop** |
+
+(MAE here is the two house scorings averaged, so it is above the reference league's 5.4.) rt1.0 removes the bias and
+costs accuracy every season: the board is graded on the absolute miss, which the median minimises, and a quarterback's
+rushing-TD count is a skewed count — raising every mean moves most QBs away from what they score. st1.0 is a large gain
+where the listing was stale (2024: the flagged rows' miss 11.47 → 7.07; the season −0.15) and a loss elsewhere: the
+guard reads the right starter in 17 of the 26 played team-games where it fires in 2022–2025 (WAS 2024 weeks 10–13,
+TEN 11–14, CAR 12–14 …) and the wrong one in 9 — a listed starter who missed a game hurt and then returned (PIT 2022
+week 16 Pickett, WAS 2025 weeks 5 and 9 Daniels, IND 2024 weeks 9 and 17 Flacco …) — and the corrected training labels
+move 2023 by +0.04. By the rule: **nothing
+passes; nothing ships in the model; `MODEL_VERSION` stays v3.3.** The dbt switch ships off (default false, the
+schedule's listing exactly as before; `assert_starter_from_play` checks the correction against the play data when it is
+on). Seed rows: none (the harness rows live in the scripts' output, not `feature_experiments.csv`).
+
+**What the home should say** (the sentence is built in `web/src/components/home/home.ts` from About's grades; not
+IP-1's file): the comparison is v2.0's weeks against v3.0's backtest, and three weeks cannot separate 6.5 from the
+past. Honest, in the copy standard's words: *"Through week 3, quarterbacks are where our projections miss most: 6.5
+points per game. The model that made those weeks missed by 5.6 to 6.4 in the first three weeks of past seasons, so three
+weeks cannot tell this from a normal start. Our newer model has made the projections since week 4."* And tight ends:
+*"Tight ends: 3.5 points per game, against 2.6 to 3.4 in past seasons' first three weeks — more touchdowns than
+expected."* `mart_projection_drift`'s backtest is the backtest of the season's newest model; until it compares each
+week with the model that made it, About's "backtest" column at QB reads 5.41 beside v2.0's weeks (v2.0: 5.86).
+
+**The starter listing, live** (not a model change; the PO's call): this database's week-5 board projects Drew Lock as
+Seattle's starter (13.72, reference scoring) and Sam Darnold at 4.38, because the schedule still lists Lock; Darnold
+threw 45 and 22 passes in weeks 3–4 and Lock none. st1.0's guard would read Darnold for SEA and Tyson Bagent for CHI
+(listed Keenum, who threw no pass in week 4) — it is measured and dropped on 2021–2025 because it also misfires on a
+returning starter, so it is not switched on here.
+
 
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
