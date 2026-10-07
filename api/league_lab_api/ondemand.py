@@ -1033,8 +1033,10 @@ def mfl_results(league_id: str) -> dict:
         last = int((lg.get("settings") or {}).get("last_scored_leg") or 0)
         names = A.team_names(cl.rosters(league_id), cl.users(league_id))
         weeks = cl.season_matchups(league_id, last) if last > 0 else {}
-    except (A.LeagueNotFound, A.SleeperUnavailable, A.SleeperBusy):
+    except A.LeagueNotFound:
         return {"results": [], "records": []}
+    except A.SleeperUnavailable as exc:        # ---- IP-5 fix round: busy (503) / down (502), never "no results"
+        raise SleeperDown(str(exc)) from exc
     results = [m for w in sorted(weeks) if (m := week_matchups(w, weeks[w], names, played=True)) is not None]
     rec: dict[int, dict] = {}
     for m in results:

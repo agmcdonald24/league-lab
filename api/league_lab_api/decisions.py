@@ -202,8 +202,10 @@ def _memo(key: tuple, is_house: bool, fn):
     # asks again (the clients still hold their last good reads, so the next build is whole). SECURITY_PUBLIC § 15.
     with provider_trouble.watch() as w:
         value = fn()
-    if not w.clean:
+    if w.troubled:
         raise A.SleeperBusy("busy, try again in a minute")
+    if w.stale:                         # ---- IP-5 fix round (review M1): built on a held answer past its TTL — this
+        return value                    # requester's, kept for nobody (no client pins another to its old reads)
     # ---- end IP-5
     return _memo_cache.put(key, value, ttl=MEMO_TTL_S["house" if is_house else "sleeper"])
 
@@ -546,8 +548,10 @@ def _waiver_context(league_id: str, team: int | None, week: int, is_house: bool)
         return None
     try:
         return availability.roster_context(league_id, int(team), int(week), house=is_house)
-    except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+    except A.LeagueNotFound:
         return None
+    except A.SleeperUnavailable as exc:        # ---- IP-5 fix round: refused (busy, 503) or down (502) — never the page
+        raise SleeperDown(str(exc)) from exc   # without its roster's week
 
 
 def context_weakest(rctx) -> dict | None:
@@ -876,8 +880,10 @@ def board_on_context(league_id: str, is_house: bool, horizon: pd.DataFrame, this
     by_roster = {int(r): list(g) for r, g in tw.groupby("roster_id")["gsis_id"]}
     try:
         ctxs = availability.contexts(league_id, availability.touched(by_roster), int(this_week), house=is_house)
-    except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+    except A.LeagueNotFound:
         return horizon, {}
+    except A.SleeperUnavailable as exc:        # ---- IP-5 fix round: busy (503) or down (502), never the board without
+        raise SleeperDown(str(exc)) from exc   # this week's statuses
     ctxs = {rid: c for rid, c in ctxs.items() if c is not None and c.changed and not c.rows.empty}
     if not ctxs:
         return horizon, ctxs
@@ -2838,8 +2844,10 @@ def _team_contexts(league_id: str, team_id: int, is_house: bool, hf: pd.DataFram
                    if hf is not None else pd.DataFrame())
         by_roster = ({int(r): list(g) for r, g in ids.groupby("roster_id")["gsis_id"]} if not ids.empty else {})
         return availability.contexts(league_id, availability.touched(by_roster) | {int(team_id)}, house=is_house)
-    except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+    except A.LeagueNotFound:
         return {}
+    except A.SleeperUnavailable as exc:        # ---- IP-5 fix round: busy (503) or down (502), never "no contexts"
+        raise SleeperDown(str(exc)) from exc
 
 
 def _team_rows(ctx, old: pd.DataFrame) -> pd.DataFrame:

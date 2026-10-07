@@ -61,10 +61,11 @@ def test_sleeper_a_null_roster_answer_serves_the_held_rosters():
     answers = [[{"roster_id": 1, "players": ["4046"]}], None]
     sl = Sleeper(fetch=lambda path: answers.pop(0), bucket=TokenBucket(1000), clock=clk, cache_path=None)
     assert sl.rosters("1111111111")[0]["players"] == ["4046"]
-    clk.t += 3600                                                      # past the 10-minute TTL
+    clk.t += 12 * 60                                                   # past the 10-minute TTL, inside every bound
     with PT.watch() as w:
         got = sl.rosters("1111111111")                                 # Sleeper sent an empty body: the held one
-    assert got[0]["players"] == ["4046"] and w.clean and sl.stale_served == 1
+    # fix round (review M1): served, and noted stale — a cache built on it keeps nothing
+    assert got[0]["players"] == ["4046"] and not w.troubled and w.stale == 1 and sl.stale_served == 1
 
 
 def test_sleeper_a_refusal_with_nothing_held_is_noted_and_busy():
@@ -74,16 +75,22 @@ def test_sleeper_a_refusal_with_nothing_held_is_noted_and_busy():
     assert w.busy == 1 and w.failed == 0
 
 
-def test_the_directory_disk_copy_of_any_age_answers_a_refusal(tmp_path):
+def test_the_directory_disk_copy_answers_a_refusal_inside_its_bound(tmp_path):
     import json
     f = tmp_path / "sleeper_players_nfl.json"
     f.write_text(json.dumps({"4046": {"player_id": "4046", "full_name": "Patrick Mahomes", "position": "QB"}}))
-    old = time.time() - 3 * 86400
-    os.utime(f, (old, old))                                            # three days old: past the day's TTL
+    old = time.time() - 36 * 3600
+    os.utime(f, (old, old))                                            # a day and a half: past the TTL, inside 2 days
     sl = Sleeper(fetch=lambda path: {}, bucket=_Empty(1), cache_path=tmp_path)
     with PT.watch() as w:
         d = sl.players()
-    assert d["4046"]["full_name"] == "Patrick Mahomes" and w.clean    # the last good copy, not an empty directory
+    assert d["4046"]["full_name"] == "Patrick Mahomes" and w.stale == 1 and not w.troubled
+    old = time.time() - 3 * 86400                                      # three days: past the bound — busy
+    os.utime(f, (old, old))
+    sl = Sleeper(fetch=lambda path: {}, bucket=_Empty(1), cache_path=tmp_path)
+    with PT.watch() as w, pytest.raises(SleeperBusy):
+        sl.players()
+    assert w.busy == 1
 
 
 def test_mfl_an_empty_body_is_a_failure_never_kept():
@@ -108,10 +115,10 @@ def test_mfl_an_http_429_serves_the_held_answer():
         return url, '{"players": {"player": [{"id": "13604", "name": "Nacua, Puka"}]}}'
     m = MFL(fetch=fetch, bucket=TokenBucket(1000), year=2026, clock=clk)
     m.players()
-    clk.t += 2 * 86400
+    clk.t += 25 * 3600                                                 # past the day's TTL, inside the 2-day bound
     with PT.watch() as w:
         assert m.players()[0]["id"] == "13604"                         # was: MFLBusy raised past a held answer
-    assert w.clean and m.stale_served == 1
+    assert w.stale == 1 and not w.troubled and m.stale_served == 1
 
 
 def test_mfl_translate_refused_is_busy_never_an_unmapped_player():
@@ -163,8 +170,17 @@ def test_kept_never_keeps_a_troubled_build_and_serves_the_held_one():
     clk.t += 120                                                       # past its TTL (and a new stamp)
     with PT.watch() as outer:
         got = PT.kept(region, "k", build, ttl=60, stamp="s2", clock=clk)
-    assert got == {"lineup": ["Mahomes"]} and outer.clean              # the last good one; the outer cache keeps it
+    # the last good one; the cache around it counts it stale (serves it, keeps nothing: fix round, review M1)
+    assert got == {"lineup": ["Mahomes"]} and not outer.troubled and outer.stale == 1
     assert region.get("k")[0] == "s1"                                  # the troubled build replaced nothing
+    # a build on a provider answer past its TTL: this requester's, never kept
+    region.clear()
+
+    def stale_build():
+        PT.note("stale")
+        return {"lineup": ["Old"]}
+    assert PT.kept(region, "k", stale_build, ttl=60, stamp="s3", clock=clk) == {"lineup": ["Old"]}
+    assert region.get("k") is None
 
 
 def test_the_decisions_memo_keeps_nothing_built_in_trouble():
@@ -458,10 +474,8 @@ def test_the_outlook_keeps_nothing_built_while_a_provider_failed(client, monkeyp
     monkeypatch.setattr(MFL, "standings", failing)
     A._default = None
     r = client.get("/api/league/outlook?league=mfl:70587&team=1&part=power")
-    assert r.status_code in (200, 503)
+    assert r.status_code in (502, 503)                                    # fix round: never 0-0 records (raised)
     assert len(O._cache) == 0                                             # nothing kept for the next reader
-    if r.status_code == 200:
-        assert r.json()["power"]["kept"] == "not_kept"
     monkeypatch.setattr(MFL, "standings", real)
     A._default = None
     ok = client.get("/api/league/outlook?league=mfl:70587&team=1&part=power")
@@ -483,3 +497,212 @@ def test_the_overlay_writes_a_status_into_a_frame_that_had_none():
                    "note": "ankle", "cannot_play": False, "flagged": True}}
     out, meta = availability.apply_to_rows(rows, overlay=overlay)
     assert out.loc[out["gsis_id"] == g, "report_status"].iloc[0] == "Questionable" and meta["applied"] == 1
+
+
+# ------------------------------------------------------------------ fix round (independent review M1, M2, L1)
+@needs_db
+def test_review_m1_a_refused_client_cannot_pin_others_to_its_held_rosters(monkeypatch):
+    """The reviewer's script (stale_share.py) as a test: good-1 builds the roster's context; Sleeper's roster changes;
+    11 minutes pass; the attacker (his share spent) gets the client's held rosters past their TTL — served to him,
+    noted stale, kept for nobody; good-2 then reads Sleeper again and gets the changed roster."""
+    import json
+
+    from league_lab import provider_share as PS
+    from league_lab.sleeper_client import Sleeper
+
+    from .conftest import SLEEPER_FIXTURES as FX
+    monkeypatch.setenv("LEAGUE_LAB_PROVIDER_SHARE", "60,40")
+    monkeypatch.setattr(availability, "CONTEXT_TTL_S", {"house": 600, "sleeper": 1})
+    A._default = None
+    availability.clear_context()
+    clk = _Clock()
+    r = A.sleeper()
+    sl = r.sleeper
+    sl.clock = clk
+    sl.bucket = TokenBucket(1000, clock=clk)
+    PS.reset(PS.from_env())
+    plain = Sleeper(fixtures=FX)
+    state = {"v": 1, "reads": []}
+
+    def fetch(path):
+        state["reads"].append(path)
+        p = path.strip("/")
+        if p == f"league/{ON_DEMAND}/rosters":
+            data = json.loads((FX / f"rosters_{ON_DEMAND}.json").read_text())
+            if state["v"] == 2:
+                for ro in data:
+                    if ro["roster_id"] == 1:
+                        ro["players"] = ro["players"][1:]
+                        ro["starters"] = [x for x in ro["starters"] if x in ro["players"]] or ro["starters"]
+            return data
+        parts = p.split("/")
+        name = {"players": "players_nfl.json", "state": "state_nfl.json"}.get(parts[0])
+        if name is None and parts[0] == "league":
+            name = (f"league_{parts[1]}.json" if len(parts) == 2 else f"{parts[2]}_{parts[1]}.json" if len(parts) == 3
+                    else f"{parts[2]}_{parts[1]}_{parts[3]}.json")
+        return plain._read(path, name, "players" if parts[0] == "players" else None)
+    sl._fetch = fetch
+
+    def as_client(who, fn):
+        tok = PS.CLIENT.set(who)
+        try:
+            return fn()
+        finally:
+            PS.CLIENT.reset(tok)
+
+    def players():
+        c = availability.roster_context(ON_DEMAND, 1, 4, house=False)
+        return sorted(str(p) for p in c.base["sleeper_player_id"].dropna())
+    try:
+        v1 = as_client("good-1", players)
+        state["v"] = 2
+        clk.t += 11 * 60                       # rosters (10 min) and the context (1 s here) expired
+        time.sleep(1.2)
+        while PS.shares().take("sleeper", "attacker"):
+            pass
+        with PT.watch() as w:
+            att = as_client("attacker", players)
+        print("attacker:", len(att), "players; watch clean:", w.clean, "stale:", w.stale, "stale_served:", sl.stale_served)
+        assert att == v1 and w.stale >= 1 and not w.troubled               # his own answer, from the held rosters
+        reads_before = len([x for x in state["reads"] if x.endswith("/rosters")])
+        g2 = as_client("good-2", players)
+        print("good-2:", len(g2), "players (v1 had", len(v1), "); rosters read again:",
+              len([x for x in state["reads"] if x.endswith("/rosters")]) - reads_before)
+        assert len(g2) == len(v1) - 1 and g2 != v1                         # the changed roster, read from Sleeper
+        # past the bound (31 minutes: rosters 30, 15 on a game day) the refused client gets busy, not the held rosters
+        clk.t += 31 * 60
+        time.sleep(1.2)
+        availability.clear_context()
+        while PS.shares().take("sleeper", "attacker"):     # his share refills on the real clock: spent again
+            pass
+        with pytest.raises(SleeperBusy):
+            as_client("attacker", players)
+    finally:
+        PS.reset()
+        A._default = None
+        availability.clear_context()
+
+
+@needs_db
+def test_review_m2_another_clients_refusal_does_not_make_this_build_uncacheable(client, monkeypatch):
+    """The outlook judged a build by the process's refusal counters: client X refused during client Y's build made Y's
+    build "degraded" (uncached). Now only what Y's own build met counts."""
+    import threading
+
+    from league_lab import provider_share as PS
+
+    from league_lab_api import outlook as O
+
+    from .conftest import SCRUBS
+    O._cache.clear()
+    PS.reset(PS.Shares({"sleeper": (60.0, 1.0)}, clock=_Clock()))
+    real = O._league_inputs
+    seen = {}
+
+    def refuse_x():
+        with PS.acting_for("198.51.100.9"):
+            for i in range(3):                         # three users the fixtures do not know: the share's one call,
+                try:                                   # then refusals
+                    A.sleeper().sleeper.user_leagues(f"91000000000000000{i + 2:02d}", 2026)
+                except SleeperBusy:
+                    seen["refused"] = True
+                except SleeperUnavailable:
+                    pass
+
+    def inputs(*a, **k):
+        t = threading.Thread(target=refuse_x)          # another request: its own context, not Y's
+        t.start()
+        t.join()
+        return real(*a, **k)
+    monkeypatch.setattr(O, "_league_inputs", inputs)
+    try:
+        r = client.get(f"/api/league/outlook?league={SCRUBS}&team=2&part=power")
+    finally:
+        PS.reset()
+    assert seen.get("refused") and r.status_code == 200
+    assert len(O._cache) == 1 and r.json()["power"].get("kept") != "not_kept"      # Y's build is kept
+
+
+@needs_db
+def test_review_l1_week_odds_answers_busy_not_no_games(client, monkeypatch):
+    from league_lab import sleeper_client
+
+    def refused(self, league_id, week):
+        PT.note("busy")
+        raise SleeperBusy("busy, try again in a minute")
+    monkeypatch.setattr(sleeper_client.Sleeper, "matchups", refused)
+    r = client.get(f"/api/league/week-odds?league={ON_DEMAND}&source=sleeper")
+    assert r.status_code == 503 and r.json()["code"] == "busy"
+
+
+def test_mfl_rosters_refused_standings_or_starters_are_busy_not_0_0():
+    from league_lab import platforms
+
+    class Client:
+        year = 2026
+        hosts: dict = {}
+
+        def __init__(self, fail):
+            self.fail = fail
+
+        def league(self, lid):
+            return {"franchises": {"franchise": [{"id": "0001", "name": "A"}, {"id": "0002", "name": "B"}]}}
+
+        def rosters(self, lid):
+            return [{"id": "0001", "week": "4", "player": []}, {"id": "0002", "week": "4", "player": []}]
+
+        def _maybe(self, what, value):
+            if what in self.fail:
+                raise MFLBusy("busy, try again in a minute")
+            return value
+
+        def live_scoring(self, lid, week):
+            return self._maybe("live", {})
+
+        def weekly_results(self, lid, week):
+            return self._maybe("weekly", {"franchise": [{"id": "0001", "starters": "13604"},
+                                                        {"id": "0002", "starters": "13605"}]})
+
+        def standings(self, lid):
+            return self._maybe("standings", [])
+
+        def players(self, ids=None):
+            return []
+    for fail in ({"standings"}, {"live", "weekly"}):
+        mf = platforms.MFLLeagues(Client(fail), lambda: {})
+        with pytest.raises(MFLBusy):
+            mf.rosters("mfl:70587")
+    assert len(platforms.MFLLeagues(Client({"live"}), lambda: {}).rosters("mfl:70587")) == 2   # last week's stand in
+
+
+def test_espn_and_yahoo_adapters_raise_a_refusal_never_week_1_or_0_0():
+    from league_lab import espn_client as E
+    from league_lab import espn_leagues as EL
+    from league_lab import yahoo_client as Y
+    from league_lab import yahoo_leagues as YL
+
+    class ESPN:
+        season = 2026
+
+        def season_of(self, s):
+            return 2026
+
+        def settings(self, lid, season):
+            return {"settings": {"size": 2, "scheduleSettings": {"matchupPeriodCount": 14}}}
+
+        def status(self, lid, season):
+            raise E.ESPNBusy("busy, try again in a minute")
+    with pytest.raises(E.ESPNBusy):
+        EL.ESPNLeagues(ESPN(), lambda: {}).league("espn:4242")
+
+    class Yahoo:
+        def standings(self, lk):
+            raise Y.YahooUnavailable("Yahoo standings: HTTP 503")
+
+        def game_weeks(self, g):
+            raise Y.YahooBusy("busy, try again in a minute")
+    ya = YL.YahooLeagues(Yahoo(), lambda: {})
+    with pytest.raises(Y.YahooUnavailable):
+        ya._records("461.l.1")
+    with pytest.raises(Y.YahooBusy):
+        ya._week_of("461.l.1", 1.7e9)

@@ -32,6 +32,7 @@ from typing import Any
 
 from . import espn_client as E
 from . import player_ids as PI
+from . import provider_trouble  # ---- IP-5 fix round
 from .sleeper_client import LeagueNotFound
 
 PREFIX = E.PREFIX
@@ -250,13 +251,21 @@ class ESPNLeagues:
                                                  + " spots are left out (not projected here)"]}
         try:
             week = self.week(key)
-        except (LeagueNotFound, E.ESPNUnavailable, E.ESPNBusy):
+        except LeagueNotFound:
+            week = 1
+        except (E.ESPNUnavailable, E.ESPNBusy) as exc:     # ---- IP-5 fix round: refused → raised, never "week 1"
+            if not provider_trouble.fixture_gap(exc):
+                raise
             week = 1
         sched = st.get("scheduleSettings") or {}
         acq = st.get("acquisitionSettings") or {}
         try:
             status = (self.client.status(lid, season) or {}).get("status") or {}
-        except (LeagueNotFound, E.ESPNUnavailable, E.ESPNBusy):
+        except LeagueNotFound:
+            status = {}
+        except (E.ESPNUnavailable, E.ESPNBusy) as exc:     # ---- IP-5 fix round
+            if not provider_trouble.fixture_gap(exc):
+                raise
             status = {}
         n = int(st.get("size") or 0) or len(self._team_ids(lid, season))
         reg = int(sched.get("matchupPeriodCount") or 0)

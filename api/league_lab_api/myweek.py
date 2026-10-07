@@ -1616,7 +1616,14 @@ def week_odds(league_id: str, *, house: bool | None = None) -> dict:
         return out
     try:
         ms = client.matchups(league_id, int(week))
-    except (A.SleeperBusy, A.SleeperUnavailable):
+    except A.SleeperBusy:
+        if not house:               # ---- IP-5 fix round (review L1): no database to fall back on — busy, never "no games"
+            raise
+        ms = []
+    except A.SleeperUnavailable as exc:
+        if not house:               # ---- IP-5 fix round: the provider down (502), never "no games"
+            from .ondemand import SleeperDown
+            raise SleeperDown(str(exc)) from exc
         ms = []
     if not ms and house:
         ms = query(MATCHUPS_DB_SQL, (league_id, int(season), int(week))).to_dict("records")

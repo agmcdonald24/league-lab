@@ -70,7 +70,12 @@ import pandas as pd
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from league_lab import anyleague as A
-from league_lab import clock, memo, provider_share  # ---- IO-2: clock; fix round: provider_share
+from league_lab import (  # ---- IO-2: clock; fix round: provider_share; IP-5: the watch
+    clock,
+    memo,
+    provider_share,
+    provider_trouble,
+)
 from league_lab import decisions as WP  # the week's win probability: one model in the product
 
 from . import availability
@@ -770,17 +775,25 @@ def outlook(league_id: str, team: int | None = None, *, source: str | None = Non
         # ---- IO-2 fix round (the review's M2): a build during which a provider call was refused (this client's share
         # spent, or everyone's budget) or failed over to the nightly's copy is NOT cached, NOT stored and leaves no card:
         # another client must never get it; incomplete, the requester gets 503 busy (the screen asks again)
-        r0 = _refusals()
-        try:
-            built = _build(str(league_id), is_house, source, int(seasons), part=part)
-        except (A.SleeperBusy, A.SleeperUnavailable) as exc:          # refused (503) / the provider failed (502)
+        # ---- IP-5 fix round (review M2): only what THIS build met — its own watch (provider_trouble: the clients note
+        # each refusal / failure on the request's context) — never the process's counters, which any client's refusal
+        # moved (one address with its share spent made every build "degraded": uncached, 429s at the simulation lock)
+        with provider_trouble.watch() as w:
+            try:
+                built = _build(str(league_id), is_house, source, int(seasons), part=part)
+            except (A.SleeperBusy, A.SleeperUnavailable) as exc:          # refused (503) / the provider failed (502)
+                _forget_context(str(league_id), is_house)
+                if isinstance(exc, A.SleeperBusy):
+                    raise
+                from .ondemand import SleeperDown
+                raise SleeperDown(str(exc)) from exc
+        degraded = bool(built.pop("degraded", False)) or w.troubled
+        if w.stale and not degraded:              # built on a held answer past its TTL: served, kept for nobody
             _forget_context(str(league_id), is_house)
-            if isinstance(exc, A.SleeperBusy):
-                raise
-            from .ondemand import SleeperDown
-            raise SleeperDown(str(exc)) from exc
-        degraded = bool(built.pop("degraded", False)) or _refusals() != r0
-        if degraded:
+            built["power"]["kept"] = "not_kept"
+            hit = built
+        elif degraded:
+            # ---- end IP-5
             _forget_context(str(league_id), is_house)
             if built["power"].get("note") or (part is None and not built["outlook"].get("available")
                                                and built["outlook"].get("reason")):
@@ -812,12 +825,7 @@ def _refusals() -> int:
         n += int(getattr(getattr(getattr(r, "_mfl_client", None), "bucket", None), "refused", 0) or 0)
     except Exception:  # noqa: BLE001
         pass
-    # ---- IP-5 (Wave I-P): a provider read that FAILED with nothing held (an MFL standings export down: the records
-    # read 0-0) was not counted, only refusals: now every noted refusal or failure (provider_trouble) counts too
-    from league_lab import provider_trouble
-    t = provider_trouble.info()
-    return n + t["busy"] + t["failed"]
-    # ---- end IP-5
+    return n                  # ---- IP-5 fix round: no longer read by outlook() (its own watch; review M2)
 
 
 def _forget_context(lid: str, is_house: bool) -> None:

@@ -309,8 +309,7 @@ class Sleeper:
                 return disk
         # ---- IO-4: the request's client's own share first (none for the nightly / tests), then everyone's bucket
         if not provider_share.take("sleeper") or not self.bucket.take():
-            if hit is not None:                # busy: the last good answer beats an error
-                self.stale_served += 1
+            if self._held_ok(hit, kind, now):  # busy: the last good answer beats an error (fix round: bounded, noted)
                 return hit[3]
             return self._held_or_raise(kind, SleeperBusy("busy, try again in a minute"))   # ---- IP-5
         self.calls += 1
@@ -323,8 +322,7 @@ class Sleeper:
                 raise SleeperUnavailable(f"Sleeper {path}: an empty answer")
             # ---- end IP-5
         except SleeperUnavailable as exc:
-            if hit is not None:
-                self.stale_served += 1
+            if self._held_ok(hit, kind, now):                                              # ---- IP-5 fix round
                 return hit[3]
             return self._held_or_raise(kind, exc)                                          # ---- IP-5
         with self._lock:
@@ -338,25 +336,36 @@ class Sleeper:
     # good one (served, not an empty directory); else the refusal is noted (provider_trouble) and raised
     def _held_or_raise(self, kind: str, exc: SleeperUnavailable | SleeperBusy) -> Any:
         if kind == "players":
-            disk = self._players_from_disk(any_age=True)
+            disk = self._players_from_disk(max_age=provider_trouble.max_age("sleeper", "players", self.wall()))
             if disk is not None:
                 self.stale_served += 1
+                provider_trouble.note("stale")
                 return disk
         if not str(exc).startswith("no fixture"):          # a fixture never recorded is the test's "not there"
             provider_trouble.note(exc)
         raise exc
+
+    def _held_ok(self, hit: tuple | None, kind: str, now: float) -> bool:
+        """Fix round (review M1): a held answer past its TTL is served only while younger than
+        ``provider_trouble.max_age`` (rosters 30 min, 15 on a game day; the directory 2 days …) and is noted ``stale``
+        (a cache built on it serves this requester and keeps nothing)."""
+        if hit is None or not provider_trouble.held_usable("sleeper", kind, now - hit[1], self.wall()):
+            return False
+        self.stale_served += 1
+        provider_trouble.note("stale")
+        return True
     # ---- end IP-5
 
     # ------------------------------------------------------------------ the player directory on disk
     def _players_file(self) -> Path | None:
         return None if self.cache_path is None else self.cache_path / PLAYERS_FILE
 
-    def _players_from_disk(self, any_age: bool = False) -> dict | None:       # ---- IP-5: any_age
+    def _players_from_disk(self, max_age: float | None = None) -> dict | None:   # ---- IP-5: a refusal's bound
         f = self._players_file()
         if f is None or not f.exists():
             return None
         age = self.wall() - f.stat().st_mtime
-        if age >= TTL_S["players"] and not any_age:
+        if age >= (TTL_S["players"] if max_age is None else max(float(max_age), TTL_S["players"])):
             return None
         try:
             data = loads_directory(f.read_text())      # ---- IL-4: a copy written before the trim is trimmed here

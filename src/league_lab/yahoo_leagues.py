@@ -33,6 +33,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from . import player_ids as PI
+from . import provider_trouble  # ---- IP-5 fix round
 from . import yahoo_client as Y
 from .sleeper_client import LeagueNotFound
 
@@ -218,7 +219,11 @@ class YahooLeagues:
         out: dict[int, dict] = {}
         try:
             rows = self.client.standings(lk)
-        except (Y.YahooUnavailable, Y.YahooBusy, Y.YahooLeagueNotFound):
+        except Y.YahooLeagueNotFound:
+            return out
+        except (Y.YahooUnavailable, Y.YahooBusy) as exc:   # ---- IP-5 fix round: refused → raised, never 0-0 records
+            if not provider_trouble.fixture_gap(exc):
+                raise
             return out
         for t in rows:
             ts = t.get("team_standings") or {}
@@ -288,7 +293,11 @@ class YahooLeagues:
         """The Yahoo game week whose dates hold ``ts`` (epoch seconds, US Eastern days); before week 1: 1."""
         try:
             weeks = self.client.game_weeks(lk.split(".l.")[0])
-        except (Y.YahooUnavailable, Y.YahooBusy, LeagueNotFound):
+        except LeagueNotFound:
+            weeks = []
+        except (Y.YahooUnavailable, Y.YahooBusy) as exc:   # ---- IP-5 fix round: refused → raised, never "week 1"
+            if not provider_trouble.fixture_gap(exc):
+                raise
             weeks = []
         day = (dt.datetime.fromtimestamp(ts, dt.UTC) - dt.timedelta(hours=5)).date().isoformat()
         best = 1

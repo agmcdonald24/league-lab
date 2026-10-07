@@ -31,6 +31,7 @@ from typing import Any
 
 from . import mfl_client as M
 from . import player_ids as PI
+from . import provider_trouble  # ---- IP-5 fix round: a refusal is raised, never a default
 from .sleeper_client import LeagueNotFound, Sleeper
 from .sleeper_client import check_id as sleeper_check_id
 
@@ -424,22 +425,35 @@ class MFLLeagues:
         week = self.week(lid)
         ids = sorted({str(p.get("id")) for f in fr for p in M._as_list(f.get("player"))})
         starters_mfl: dict[str, list[str]] = {}
+        gaps: list[Exception] = []          # ---- IP-5 fix round: a refused / failed read, never "no starters" / 0-0
         try:
             starters_mfl = M.starters_by_franchise(self.client.live_scoring(lid, week), None)
-        except (M.MFLUnavailable, M.MFLBusy, LeagueNotFound):
+        except LeagueNotFound:
             pass
+        except (M.MFLUnavailable, M.MFLBusy) as exc:
+            if not provider_trouble.fixture_gap(exc):
+                gaps.append(exc)
         if len(starters_mfl) < len(fr) and week > 1:
             try:
                 prev = M.starters_by_franchise(None, self.client.weekly_results(lid, week - 1))
                 for fid, s in prev.items():
                     starters_mfl.setdefault(fid, s)
-            except (M.MFLUnavailable, M.MFLBusy, LeagueNotFound):
+            except LeagueNotFound:
                 pass
+            except (M.MFLUnavailable, M.MFLBusy) as exc:
+                if not provider_trouble.fixture_gap(exc):
+                    gaps.append(exc)
+        if gaps and not starters_mfl:       # neither this week's nor last week's starters: busy, not "nothing set"
+            raise gaps[-1]
         ids = sorted(set(ids) | {i for s in starters_mfl.values() for i in s})
         tr = self.translate(lid, ids)
         try:
             settings = M.standings_settings(self.client.standings(lid))
-        except (M.MFLUnavailable, M.MFLBusy, LeagueNotFound):
+        except LeagueNotFound:
+            settings = {}
+        except (M.MFLUnavailable, M.MFLBusy) as exc:   # ---- IP-5 fix round: refused → raised, never 0-0 records
+            if not provider_trouble.fixture_gap(exc):
+                raise
             settings = {}
         # ---- IC-2: Sleeper's starters array is ordered like the starting slots ("0" = empty); MFL's lists ids only, so
         # each starter is seated in the narrowest slot that admits him (the lock rule reads the slot from it)
@@ -488,7 +502,11 @@ class MFLLeagues:
             if week != self.week(lid):
                 return rows
             live = self.client.live_scoring(lid, week)
-        except (M.MFLUnavailable, M.MFLBusy, LeagueNotFound):
+        except LeagueNotFound:
+            return rows
+        except (M.MFLUnavailable, M.MFLBusy) as exc:   # ---- IP-5 fix round: refused → raised (the schedule's 0 is no
+            if not provider_trouble.fixture_gap(exc):  # live score)
+                raise
             return rows
         players = M.live_players(live)
         tr = self.translate(lid, sorted(players), record=False) if players else {}

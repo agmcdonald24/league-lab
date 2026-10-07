@@ -147,3 +147,20 @@ and `npm run build` clean (no web file changed). No e2e: no screen changed.
 
 Note to `provider_trouble` in the ESPN / Yahoo clients and their adapters' four swallow sites; one price cache for
 the horizon weeks the window prices again (MFL's power part ~0.3 s); the nightly's three self-healing changes above.
+
+## Fix round (after the independent review; branch `fix/IP5` from `integ/IP` 3d1b76b)
+
+* **M1** — a held answer served past its TTL is noted `stale` by the Sleeper, MFL, ESPN and Yahoo clients (not trouble:
+  `TOTALS["stale_served"]`); a build that saw one is served to its requester and kept by nobody (`kept()`,
+  `decisions._memo`, `league_weeks`, `ros_table`, the outlook); a cache's own held value counts stale for the caches
+  around it; the caches' hold is 15 minutes. Age bound (`provider_trouble.STALE_MAX_S`): rosters 30 min, live scores
+  15, standings / status an hour, schedules / settled weeks a day, settings / the directory / players 2 days; a game day
+  (Thu / Sun / Mon) rosters 15 and live scores 10; older → busy. The reviewer's script as a test: attacker 16 players
+  (stale, not kept), good-2 15 (Sleeper read again); 31 minutes on, the refused attacker gets busy. (The script itself
+  now trips before step 1 on its fixed clock: 10,000 s is below this box's monotonic uptime, so the bucket refuses.)
+* **M2** — `outlook()` judges a build by its own `watch()`, not the process's counters; test: X refused in its own
+  thread during Y's build → Y's build kept.
+* **L1** and the grep: fixed — week odds, `mfl_results`, three `decisions` context sites, `MFLLeagues.rosters`
+  (standings; starters when both reads are refused) and `_with_live`, `ESPNLeagues.league` (week, status),
+  `YahooLeagues._records` / `_week_of`; listed with reasons in SECURITY_PUBLIC § 15.
+* The PO's call (listed Low): when everyone's budget is spent, every on-demand build is stale-only → uncached → CPU.
