@@ -246,3 +246,85 @@ export function projText(v: number | null | undefined, digits = 2): string {
   return v === null || v === undefined || Number.isNaN(v) ? "—" : v.toFixed(digits);
 }
 // ---- end IG-1
+
+// ---- IP-4 (Wave I-P): the card's head — the numbers it leads with, read from what the card already carries (the
+// Projection section's tiles, the schedule rows, the Availability lines, the value). Nothing is recomputed: a number on
+// the head is the same number the section under it shows.
+export interface HeadRange {
+  p10: number | null;
+  p25: number | null;
+  p75: number | null;
+  p90: number | null;
+}
+
+const num = (s: string | null | undefined): number | null => {
+  if (s === null || s === undefined) return null;
+  const v = Number(String(s).replace(/[^\d.-]/g, ""));
+  return String(s).trim() === "" || String(s).trim() === "—" || Number.isNaN(v) ? null : v;
+};
+
+/** The projection's range from the Projection section's tiles (Floor, Most weeks "9–19", Ceiling): the API's labels,
+ * read before the dictionary renames them. Unknown parts are null (a week frozen before the 50 % range existed). */
+export function headRange(d: Pick<PlayerCard, "sections">): HeadRange {
+  const ms = (d.sections.projection?.blocks ?? []).flatMap((b) => b.metrics ?? []);
+  const by = (l: string) => ms.find((m) => m.label === l)?.value ?? null;
+  const mid = (by("Most weeks") ?? "").split(/[–-]/);
+  return { p10: num(by("Floor")), p25: mid.length === 2 ? num(mid[0]) : null, p75: mid.length === 2 ? num(mid[1]) : null, p90: num(by("Ceiling")) };
+}
+
+export interface NextGame {
+  week: number;
+  opponent: string | null; // null = a bye
+  home: boolean | null;
+  rank: number | null; // the opponent's rank vs his position (1 = gives up the most)
+  kickoff: string | null; // "Sun Oct 4, 1:00 PM ET" (the Availability line's words)
+  locked: boolean;
+}
+
+/** This week's game: the schedule row of the card's week, the kickoff from the Availability line. */
+export function nextGame(d: Pick<PlayerCard, "week" | "schedule" | "sections" | "locked">): NextGame | null {
+  if (!d.week) return null;
+  const row = (d.schedule ?? []).find((r) => r.week === d.week);
+  const text = (d.sections.availability?.blocks ?? []).map((b) => b.text ?? "").join("\n");
+  const k = text.match(/kickoff ([A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M) ET/) ?? text.match(/kicked off ([A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2}, \d{1,2}:\d{2} [AP]M) ET/);
+  if (!row && !k) return null;
+  return { week: d.week, opponent: row?.opponent ?? null, home: row?.is_home ?? null, rank: row?.opp_rank ?? null, kickoff: k ? `${k[1]} ET` : null, locked: !!d.locked };
+}
+
+export interface HeadValue {
+  label: string; // "Value · Half PPR, rest of season"
+  big: string; // "WR1"
+  small: string; // "+140 over a free WR"
+  help: string;
+}
+
+/** His value in the chosen scoring: browsing, the reference key's value (IN-2 `ref_value`); with a league, the Value
+ * section's own tiles (his rank by points per game and his points per game, in the league's scoring). */
+export function headValue(d: Pick<PlayerCard, "ref_value" | "sections" | "position" | "league_name">): HeadValue | null {
+  const rv = d.ref_value;
+  if (rv && rv.value !== null && rv.value !== undefined) {
+    return {
+      label: "Value, rest of season",
+      big: `${rv.position}${rv.value_rank_pos}`,
+      small: `${rv.value >= 0 ? "+" : "−"}${Math.abs(Math.round(rv.value))} over a free ${rv.position}`,
+      help: rv.words ?? rv.assumes,
+    };
+  }
+  const ms = (d.sections.value?.blocks ?? []).flatMap((b) => b.metrics ?? []);
+  const rank = ms.find((m) => m.label === "Rank")?.value ?? null;
+  const ppg = ms.find((m) => m.label === "Points / game")?.value ?? null;
+  if (!rank && !ppg) return null;
+  return {
+    label: `${d.league_name} scoring, this season`,
+    big: rank ?? ppg ?? "—",
+    small: rank && ppg ? `${ppg} points per game` : "points per game",
+    help: "His rank by points per game among every player at his position, and his points per game, in this league's scoring.",
+  };
+}
+
+/** The status chip's tone: out-type designations read bad, questionable reads warn. */
+export function statusTone(s: string | null | undefined): "bad" | "warn" | null {
+  if (!s) return null;
+  return /^(out|ir|pup|nfi|sus|doubtful|inactive|injured reserve)/i.test(s.trim()) ? "bad" : "warn";
+}
+// ---- end IP-4

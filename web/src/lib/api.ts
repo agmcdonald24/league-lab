@@ -2519,3 +2519,66 @@ export interface LeagueOutlookMoved extends Omit<LeagueOutlook, "power" | "outlo
 }
 export const outlookPowerPath = (league: string, team: number | null) => `${outlookPath(league, team)}&part=power`;
 // ---- end IO-2
+
+// ---- IP-4 (Wave I-P): the player card's ratings (GET /api/player/{gsis}/ratings: percentiles of the Stats frame's
+// season columns among his position's players with a stated minimum sample; NFL-wide, not a forecast) and the
+// projection made before each game (GET /api/player/{gsis}/projections: the frozen board, `source` kickoff | refit |
+// null = this week's live one; `weeks: []` + `why` where past boards are not kept)
+export interface Rating {
+  key: string;
+  label: string;
+  value: number | null;
+  display: string;
+  percentile: number | null; // 0–100 (share of the ranked players below him, ties half)
+  rating: number | null; // 0–99; null = not rated (the reason in `words`)
+  n: number | null; // players ranked on this column
+  lower_is_better: boolean;
+  minimum: string | null; // this column's own sample ("20+ targets")
+  definition: string | null;
+  source: string | null;
+  words: string;
+}
+export interface Ratings {
+  gsis_id: string;
+  player_name: string;
+  season: number;
+  through_week: number | null;
+  position: string;
+  n_ranked: number;
+  population?: string; // "15+ targets"
+  qualified?: boolean;
+  ratings: Rating[];
+  overall: number | null; // the plain mean of the ratings shown (3 or more), 0–99
+  overall_n?: number;
+  overall_words?: string;
+  label?: string;
+  how?: string;
+  words: string | null;
+}
+export interface WeekProjection {
+  week: number;
+  proj_points: number | null;
+  p10: number | null;
+  p25: number | null;
+  p75: number | null;
+  p90: number | null;
+  source: "kickoff" | "refit" | null;
+}
+export interface PastProjections {
+  gsis_id: string;
+  season: number;
+  through_week: number;
+  weeks: WeekProjection[];
+  why: string | null;
+  notes: string[];
+}
+export interface GameRow {
+  target_share?: number | null;
+  carry_share?: number | null;
+  season_type?: string | null;
+}
+export const cardPaths = {
+  ratings: (gsis: string, league: string | null) => `/api/player/${q(gsis)}/ratings${league ? `?league=${q(league)}` : ""}`,
+  projections: (gsis: string, league: string) => `/api/player/${q(gsis)}/projections?league=${q(league)}`,
+};
+// ---- end IP-4
