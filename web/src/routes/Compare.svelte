@@ -79,6 +79,18 @@
     setParams({ [side]: p.gsis_id });
   }
 
+  // ---- IP-2 (Wave I-P): a third and a fourth player for "Who should I start?" (c, d in the URL; the side-by-side stays a / b)
+  let qx = $state("");
+  const extraKeys = ["c", "d"] as const;
+  const extras = $derived(extraKeys.map((k) => ({ k, g: params.get(k) })).filter((x): x is { k: "c" | "d"; g: string } => !!x.g && startIds.includes(x.g)));
+  const nameOfId = (g: string) => (pool.data?.players ?? []).find((p) => p.gsis_id === g)?.player_name ?? g;
+  function addExtra(p: SeasonRow) {
+    qx = "";
+    if (startIds.includes(p.gsis_id)) return;
+    setParams({ [params.get("c") ? "d" : "c"]: p.gsis_id });
+  }
+  // ---- end IP-2
+
   type Pick = (s: CompareSide) => number | null | undefined;
   interface Pair {
     label: string;
@@ -231,6 +243,34 @@
 
   <!-- ---- IP-2 (Wave I-P): the question in the visitor's words, answered from both ranges (two to four players) -->
   <StartAnswer {league} ids={startIds} {onauth} testid="compare-start" />
+  {#if a && b}
+    {@const xs = hits(qx)}
+    <div class="flex flex-wrap items-center gap-2" data-testid="compare-extra">
+      {#each extras as x (x.k)}
+        <span class="inline-flex min-h-9 items-center gap-1 rounded-full border border-line-strong pr-1 pl-3 text-sm font-semibold" data-testid="compare-extra-chip">
+          {nameOfId(x.g)}
+          <button type="button" class="grid h-7 w-7 place-items-center rounded-full text-ink-3 hover:text-ink" aria-label={`Take ${nameOfId(x.g)} out`} onclick={() => setParams({ [x.k]: null })}>×</button>
+        </span>
+      {/each}
+      {#if startIds.length < 4}
+        <div class="relative min-w-0 flex-1 basis-48">
+          <label class="sr-only" for="ll-cmp-x">Add a player to who should I start</label>
+          <input id="ll-cmp-x" class="ll-input w-full py-1.5 text-sm" type="search" autocomplete="off" placeholder={startIds.length === 2 ? "Add a third player" : "Add a fourth player"} bind:value={qx} data-testid="compare-search-x" />
+          {#if xs.length}
+            <ul class="absolute inset-x-0 top-full z-20 mt-1 max-h-72 overflow-y-auto rounded-md border border-line bg-surface shadow-lg" data-testid="compare-hits-x">
+              {#each xs as h, ix (`${h.gsis_id}#${ix}`)}
+                <li>
+                  <button type="button" class="block min-h-11 w-full px-3 py-2 text-left text-sm hover:bg-raised" onclick={() => addExtra(h)}>
+                    <span class="font-semibold">{h.player_name}</span> <span class="text-ink-3">{h.position} · {teamLabel(h.team) ?? "FA"}</span>
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          {/if}
+        </div>
+      {/if}
+    </div>
+  {/if}
   <!-- ---- end IP-2 -->
 
   <div class="grid grid-cols-2 gap-2" data-testid="compare-pickers">

@@ -2,7 +2,6 @@
 // the range bar's scale, the kickoff words, the Compare link for two to four picked players.
 import type { RankPosition, RankRow, RankView } from "../../lib/api";
 import { withContext } from "../../lib/md";
-import { rangeBar } from "../../lib/ros";
 
 export const POSITIONS: RankPosition[] = ["QB", "RB", "WR", "TE", "FLEX", "K", "DEF"];
 export const DEFAULT_POSITION: RankPosition = "WR";
@@ -62,13 +61,30 @@ export function compareIds(params: URLSearchParams): string[] {
   return picksOf(["a", "b", "c", "d"].map((k) => params.get(k) ?? "").join(","));
 }
 
-/** The range bar on one scale for the rows on screen: the low end, the high end and the projection, in percent. */
-export function bar(r: RankRow, max: number) {
-  return rangeBar({ p10: r.p10, p90: r.p90, ros_points: r.proj_points }, max);
+/** The scale the rows on screen share. This week: from 0 to the highest high end (a floor of 0 is a real week). The
+ * rest of the season: the spread around each projection (a season's range is narrow against its total, so on a scale
+ * from 0 every bar would be a sliver at one end) — the tick in the middle, the widest spread on the page reaching the
+ * edges, the numbers printed beside it. */
+export type Scale = { kind: "points"; hi: number } | { kind: "spread"; w: number };
+export function scaleOf(rows: RankRow[], view: RankView = "week"): Scale {
+  if (view === "week") return { kind: "points", hi: Math.max(1, ...rows.map((r) => r.p90 ?? r.proj_points ?? 0)) };
+  const w = Math.max(
+    1,
+    ...rows.map((r) => (r.proj_points == null ? 0 : Math.max(r.proj_points - (r.p10 ?? r.proj_points), (r.p90 ?? r.proj_points) - r.proj_points))),
+  );
+  return { kind: "spread", w };
 }
 
-export function scaleOf(rows: RankRow[]): number {
-  return Math.max(1, ...rows.map((r) => r.p90 ?? r.proj_points ?? 0));
+/** The range bar on that scale: the low end, the high end and the projection, in percent. */
+export function bar(r: RankRow, s: Scale) {
+  if (r.p10 === null || r.p90 === null || r.proj_points === null) return null;
+  const clip = (v: number) => Math.max(0, Math.min(100, v));
+  if (s.kind === "points") {
+    const pc = (v: number) => clip((v / s.hi) * 100);
+    return { lo: pc(r.p10), hi: pc(r.p90), mid: pc(r.proj_points) };
+  }
+  const pc = (v: number) => clip(50 + ((v - r.proj_points!) / s.w) * 50);
+  return { lo: pc(r.p10), hi: pc(r.p90), mid: 50 };
 }
 
 export function kickoff(iso: string | null): string {

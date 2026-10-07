@@ -66,7 +66,7 @@
   $effect(() => r.load(path, onauth, true));
   const d = $derived(r.data);
   const rows = $derived(d?.rows ?? []);
-  const scale = $derived(scaleOf(rows));
+  const scale = $derived(scaleOf(rows, view));
   const posItems = $derived(
     ((d?.positions?.length ? d.positions : POSITIONS) as RankPosition[]).map((p) => ({ key: p, label: p === "FLEX" ? "Flex" : p })),
   );
@@ -139,7 +139,7 @@
         <span class="ll-label">#</span>
         <span class="ll-label">Player</span>
         <span class="ll-label">{view === "week" ? "Game" : "This week"}</span>
-        <span class="ll-label">{view === "week" ? "Projected · range 8 weeks in 10" : "Rest of season · range"}</span>
+        <span class="ll-label">{view === "week" ? "Projected · range 8 weeks in 10" : "Rest of season · the range around it"}</span>
         <span class="ll-label">{view === "week" ? "Matchup" : "Games left"}</span>
         <span class="ll-label">{owners ? "Who has him" : "Status"}</span>
       </div>
