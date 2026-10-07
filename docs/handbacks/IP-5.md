@@ -26,7 +26,7 @@ SECURITY_PUBLIC § 15. In short:
 | decision memos (`decisions`) | swallowed → kept 10 / 2 min | not kept, busy |
 | `league_weeks`, `ros` (anyleague) | swallowed → kept 5 / 10 min (`ros`: units renamed `TMQB-KC` when the directory read was refused) | not kept (`ros`: busy) |
 | outlook (IO-2) | refusals not kept; **a failure counted as clean** (MFL standings down → 0-0 records kept 2 min) | failures counted too: not kept |
-| ESPN / Yahoo clients | ESPN sound; Yahoo raises a 429 past a held answer and keeps `null` | ESPN unchanged; Yahoo listed (Low), not mine |
+| ESPN / Yahoo clients | ESPN sound; **Yahoo raised a 429 / 999 past a held answer** | ESPN unchanged; Yahoo serves the held answer (`tests/test_ip5_providers.py`) |
 | il4 free agents, outlook cards / store, scoring checks, research, matchup board, priced weeks, boards | sound as built or no provider read | unchanged |
 
 Behaviour change to know: an MFL league whose standings or live-scoring export **fails with nothing held** (cold) now
@@ -110,12 +110,12 @@ lists the 200 highest projections. `?league=` anywhere → `X-Robots-Tag: noinde
 ## Files
 
 Mine: `src/league_lab/provider_trouble.py` (new), `api/league_lab_api/player_share.py` (new), `api/tests/test_ip5.py`
-(new, 30 tests), `src/league_lab/anyleague.py`, `src/league_lab/mfl_client.py`, `api/league_lab_api/availability.py`,
+(new, 30 tests; + `tests/test_ip5_providers.py`, 1), `src/league_lab/anyleague.py`, `src/league_lab/mfl_client.py`, `api/league_lab_api/availability.py`,
 `decisions.py` (`_memo` only), `research.py` (the split only), `outlook.py` (`_refusals` only), `blog.py` (the
 sitemap only), SECURITY_PUBLIC § 15, this file. **Edits outside my files** (marked IP-5, smallest possible):
 `src/league_lab/sleeper_client.py` (`_get`'s refusal / failure paths + `_held_or_raise`, `_players_from_disk(any_age)`),
 `src/league_lab/platforms.py` (one `except` in `translate`), `src/league_lab/injury_feed.py` (an empty copy),
-`src/league_lab/news_feed.py` (an empty body), `api/league_lab_api/main.py` (the shell's player case, `noindex`),
+`src/league_lab/news_feed.py` (an empty body), `src/league_lab/yahoo_client.py` (one `except` in `get`), `api/league_lab_api/main.py` (the shell's player case, `noindex`),
 `api/tests/test_io2.py` (one assertion changed on purpose: the default League card now carries the robots tag),
 `docs/WORDS.md`, `CHANGELOG.md`. `ratelimit.py` untouched: no new route.
 
@@ -141,6 +141,5 @@ and `npm run build` clean (no web file changed). No e2e: no screen changed.
 
 ## Next
 
-Yahoo's client: serve the held answer on a 429, and note to `provider_trouble` in the ESPN / Yahoo adapters' four
-swallow sites; one price cache for the horizon weeks the window prices again (MFL's power part ~0.3 s); the nightly's
+Note to `provider_trouble` in the ESPN / Yahoo clients and their adapters' four swallow sites; one price cache for the horizon weeks the window prices again (MFL's power part ~0.3 s); the nightly's
 three self-healing changes above.
