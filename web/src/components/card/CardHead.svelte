@@ -4,8 +4,8 @@
   // and kickoff; then ONE headline number — this week's projection — with its range, and his value in the scoring on
   // screen. Every number is the card's own (lib/card.ts headRange / nextGame / headValue): the head adds no new one.
   import type { PlayerCard } from "../../lib/api";
-  import { headRange, headValue, nextGame, projLabel, statusTone } from "../../lib/card";
-  import { fmt, onColor, splitName, team as teamColors, teamLabel } from "../../lib/theme";
+  import { headNumber, headRange, headValue, nextGame, projLabel, statusTone } from "../../lib/card";
+  import { onColor, splitName, team as teamColors, teamLabel } from "../../lib/theme";
   import Headshot from "../Headshot.svelte";
   import PosBadge from "../PosBadge.svelte";
   import TeamBadge from "../TeamBadge.svelte";
@@ -94,7 +94,7 @@
             title={d.proj_points === null ? "No projection for him this week: unknown, not 0" : `A forecast in ${scoring} scoring, not a guarantee`}
             data-testid="card-number"
           >
-            {fmt.pts(d.proj_points)}
+            {headNumber(d)}
           </div>
         </div>
         {#if value}

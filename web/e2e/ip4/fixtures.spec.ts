@@ -199,6 +199,15 @@ for (const [kind, p] of Object.entries(P).filter(([k]) => k !== "k")) {
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-pressed", pressed === "true" ? "false" : "true");
 
+    // the game log's chart (expected against actual) is reachable by keyboard too
+    const log = page.getByTestId("game-log");
+    await log.getByRole("slider").focus();
+    await page.keyboard.press("End");
+    await expect(log.getByTestId("chart-readout")).toContainText("Week");
+    // the head's number is the Projection tile's own (one rounding on the card)
+    const num = ((await head.getByTestId("card-number").textContent()) ?? "").trim();
+    if (num !== "—") await expect(page.getByTestId("section-projection").getByTestId("metrics").locator("button").first()).toContainText(num);
+
     // every section the card had is still there
     for (const s of ["projection", "availability", "value", "usage", "signals"]) await expect(page.getByTestId(`section-${s}`)).toBeVisible();
     await expect(page.getByTestId("game-log")).toBeVisible();

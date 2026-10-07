@@ -272,6 +272,14 @@ export function headRange(d: Pick<PlayerCard, "sections">): HeadRange {
   return { p10: num(by("Floor")), p25: mid.length === 2 ? num(mid[0]) : null, p75: mid.length === 2 ? num(mid[1]) : null, p90: num(by("Ceiling")) };
 }
 
+/** The head's number as the Projection tile prints it (the API's rounding: 8.25 → "8.2", where JS's toFixed says
+ * "8.3"), so the head and the tile under it never disagree; the card's own number otherwise; "—" for none. */
+export function headNumber(d: Pick<PlayerCard, "sections" | "proj_points">): string {
+  if (d.proj_points === null || d.proj_points === undefined) return "—";
+  const tile = (d.sections.projection?.blocks ?? []).flatMap((b) => b.metrics ?? []).find((m) => m.label === "Projected")?.value;
+  return tile && /^-?\d+(\.\d)?$/.test(tile.trim()) ? tile.trim() : d.proj_points.toFixed(1);
+}
+
 export interface NextGame {
   week: number;
   opponent: string | null; // null = a bye

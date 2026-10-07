@@ -40,6 +40,16 @@
   const f = (v: number | null | undefined) => (v === null || v === undefined ? "—" : v.toFixed(1));
   const shown = $derived(focus === null ? null : (points.find((p) => p.week === focus) ?? null));
 
+  function onkey(e: KeyboardEvent) {
+    const ws = points.map((p) => p.week);
+    if (!ws.length) return;
+    const cur = focus === null ? ws.length - 1 : Math.max(0, ws.indexOf(focus));
+    const to = e.key === "ArrowRight" ? Math.min(ws.length - 1, cur + (focus === null ? 0 : 1)) : e.key === "ArrowLeft" ? Math.max(0, cur - (focus === null ? 0 : 1)) : e.key === "Home" ? 0 : e.key === "End" ? ws.length - 1 : -1;
+    if (to < 0) return;
+    e.preventDefault();
+    focus = ws[to];
+  }
+
   function onmove(e: PointerEvent) {
     const r = (e.currentTarget as SVGElement).getBoundingClientRect();
     const px = e.clientX - r.left;
@@ -73,12 +83,24 @@
       {#if shown}<strong>{shown.label ?? `Week ${shown.week}`}</strong>: {f(shown.actual)}{hasExpected ? ` · expected ${f(shown.expected)}` : ""}{/if}
     </span>
   </div>
-  <div bind:clientWidth={width} class="w-full">
+  <!-- ---- IP-4 (Wave I-P): keyboard reach — the plot is a slider over the weeks (← → Home End), the readout above says
+       the week's numbers; tap / hover as before -->
+  <div
+    bind:clientWidth={width}
+    class="w-full rounded-md outline-none focus-visible:ring-2 focus-visible:ring-accent"
+    role="slider"
+    tabindex="0"
+    aria-label="{actualLabel} by week{hasExpected ? `, with ${expectedLabel.toLowerCase()}` : ''}: the week shown. Left and right arrows move between weeks."
+    aria-valuemin={weeks.length ? Math.min(...weeks) : 0}
+    aria-valuemax={weeks.length ? Math.max(...weeks) : 0}
+    aria-valuenow={shown?.week ?? last?.week ?? 0}
+    aria-valuetext={shown ? `${shown.label ?? `Week ${shown.week}`}: ${f(shown.actual)}${hasExpected ? `, expected ${f(shown.expected)}` : ""}` : "No week picked"}
+    onkeydown={onkey}
+  >
     <svg
       {width}
       {height}
-      role="img"
-      aria-label="{actualLabel} by week{hasExpected ? `, with ${expectedLabel.toLowerCase()}` : ''}"
+      aria-hidden="true"
       class="block touch-pan-y overflow-visible"
       onpointermove={onmove}
       onpointerdown={onmove}
