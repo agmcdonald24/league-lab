@@ -100,7 +100,7 @@ entries of ~0.1 MB. Bundle: `Rankings` chunk 14.9 KB (+1.9 KB `rank`, 0.2 KB css
 Tests: `test_ip2.py` 42 passed; with `test_im3 test_in2 test_in1 test_in3` 227 passed (49 s); ruff clean;
 `npm run lint && npm run build` clean; `copy_standard.py --check` clean; e2e ip2 6/6 (recorded and fixture modes); in2 + im3
 17 passed, 1 skipped; ib1 + if4 + ii2 + ib3 38 passed (ib1's tab test updated on purpose: it failed on the new sub-tab
-first); the Compare tests of `e2e/fixtures.spec.ts`, ia1, if3, inf1 10 passed (after the last Compare change). Branch added: 1,859 text lines (~112 KB) + 603 KB generated (546 KB JPEG + 57 KB recording).
+first); the Compare tests of `e2e/fixtures.spec.ts`, ia1, if3, inf1 10 passed (after the last Compare change). Branch added: 2,020 text lines (~127 KB) + 603 KB generated (546 KB JPEG, 8 files ≤ 97 KB each, + 57 KB recording).
 
 ## Writes, and what I saw that is not mine
 
