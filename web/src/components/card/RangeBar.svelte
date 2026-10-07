@@ -2,6 +2,7 @@
   // IP-4: this week's projection as a range — the low-end to high-end outcome (one week in ten below / above) as the
   // track's band, the typical range (the middle half) thicker inside it, the projection a tick in ink. The numbers are
   // printed under it (the bar never carries a value alone).
+  import { pts1 } from "../../lib/card";
   import { fmt } from "../../lib/theme";
 
   let {
@@ -34,9 +35,9 @@
     </div>
     {#if has}
       <div class="tabnum mt-1.5 flex items-baseline justify-between gap-2 text-xs text-ink-3">
-        <span><strong class="font-semibold text-ink-2">{fmt.pts(p10)}</strong> low-end</span>
+        <span><strong class="font-semibold text-ink-2">{pts1(p10)}</strong> low-end</span>
         {#if p25 !== null && p75 !== null}<span>typical <strong class="font-semibold text-ink-2">{fmt.whole(p25)}–{fmt.whole(p75)}</strong></span>{/if}
-        <span><strong class="font-semibold text-ink-2">{fmt.pts(p90)}</strong> high-end</span>
+        <span><strong class="font-semibold text-ink-2">{pts1(p90)}</strong> high-end</span>
       </div>
     {/if}
   </div>

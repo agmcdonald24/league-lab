@@ -4,7 +4,8 @@
   // /api/player/{gsis}/projections (the frozen board). A week without a kept projection shows the bar alone; a week
   // he did not play (or this week, not played yet) shows the projection as a hollow point and no bar.
   import { cardPaths, get, peek, researchPaths, type Games, type PastProjections, type ScheduleRow } from "../../lib/api";
-  import { fmt, teamLabel } from "../../lib/theme";
+  import { pts1 } from "../../lib/card";
+  import { teamLabel } from "../../lib/theme";
   import WeekChart from "./WeekChart.svelte";
 
   let { gsis, league, season, scoring, schedule = [], tall = false, testid = "card-points" }: {
@@ -72,8 +73,8 @@
     const r = rows[i];
     if (!r) return "";
     const head = `Week ${r.week}${r.opp ? ` ${r.opp}` : ""}: `;
-    const pts = r.played ? `${fmt.pts(r.points)} points` : r.source === null && r.p !== null ? "not played yet" : "did not play";
-    const pj = r.p === null ? "" : ` · projected ${fmt.pts(r.p)}${r.lo !== null && r.hi !== null ? ` (${fmt.pts(r.lo)}–${fmt.pts(r.hi)})` : ""}${r.source ? `, ${SRC[r.source] ?? r.source}` : ""}`;
+    const pts = r.played ? `${pts1(r.points)} points` : r.source === null && r.p !== null ? "not played yet" : "did not play";
+    const pj = r.p === null ? "" : ` · projected ${pts1(r.p)}${r.lo !== null && r.hi !== null ? ` (${pts1(r.lo)}–${pts1(r.hi)})` : ""}${r.source ? `, ${SRC[r.source] ?? r.source}` : ""}`;
     return head + pts + pj;
   }
 </script>
@@ -105,9 +106,9 @@
       ariaLabel="His points by week against the projection made before each game"
       columns={[
         { label: "Opp.", cell: (i) => rows[i].opp ?? "—" },
-        { label: "Points", cell: (i) => (rows[i].played ? fmt.pts(rows[i].points) : "did not play") },
-        { label: "Projected", cell: (i) => fmt.pts(rows[i].p) },
-        { label: "Range", cell: (i) => (rows[i].lo !== null && rows[i].hi !== null ? `${fmt.pts(rows[i].lo)}–${fmt.pts(rows[i].hi)}` : "—") },
+        { label: "Points", cell: (i) => (rows[i].played ? pts1(rows[i].points) : "did not play") },
+        { label: "Projected", cell: (i) => pts1(rows[i].p) },
+        { label: "Range", cell: (i) => (rows[i].lo !== null && rows[i].hi !== null ? `${pts1(rows[i].lo)}–${pts1(rows[i].hi)}` : "—") },
       ]}
       height={tall ? 240 : 180}
       testid="card-points-chart"

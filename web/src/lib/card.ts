@@ -277,7 +277,17 @@ export function headRange(d: Pick<PlayerCard, "sections">): HeadRange {
 export function headNumber(d: Pick<PlayerCard, "sections" | "proj_points">): string {
   if (d.proj_points === null || d.proj_points === undefined) return "—";
   const tile = (d.sections.projection?.blocks ?? []).flatMap((b) => b.metrics ?? []).find((m) => m.label === "Projected")?.value;
-  return tile && /^-?\d+(\.\d)?$/.test(tile.trim()) ? tile.trim() : d.proj_points.toFixed(1);
+  return tile && /^-?\d+(\.\d)?$/.test(tile.trim()) ? tile.trim() : pts1(d.proj_points);
+}
+
+/** One decimal the way the API's sentences and tiles print it (Python: a tie goes to the even digit, 8.25 → "8.2";
+ * JS's toFixed says "8.3"), so the card's charts agree with its tiles; "—" for unknown. */
+export function pts1(v: number | null | undefined): string {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  const x = v * 10;
+  const f = Math.floor(x);
+  const r = Math.abs(x - f - 0.5) < 1e-9 ? (f % 2 === 0 ? f : f + 1) : Math.round(x);
+  return (r / 10).toFixed(1);
 }
 
 export interface NextGame {

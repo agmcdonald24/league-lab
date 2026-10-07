@@ -241,6 +241,10 @@ REF_SQL = """select distinct on (week) week, proj_points, p10, p25, p75, p90, fr
              from ops.projection_ranges
              where scoring_name = %s and season = %s and week <= %s and gsis_id = %s
              order by week, (frozen_source is not null) desc, fitted_at desc nulls last"""
+KD_SQL = """select distinct on (week) week, proj_points, p10, null::numeric as p25, null::numeric as p75, p90, frozen_source
+            from ops.kd_ranges
+            where scoring_name = %s and season = %s and week <= %s and unit_id = %s and position = 'K'
+            order by week, (frozen_source is not null) desc, fitted_at desc nulls last"""   # a kicker's board (F1)
 SOURCE_WORDS = {
     "kickoff": "the projection shown before kickoff",
     "refit": "rebuilt after that week kicked off (before projections were frozen at kickoff), not the one shown then",
@@ -276,6 +280,8 @@ def player_projections(gsis: str, league: str, season: int | None = None, throug
         else:
             try:
                 rows = query(REF_SQL, (seed, season, int(week), gsis))
+                if rows.empty:                                    # a kicker's weeks are on the K / DEF board
+                    rows = query(KD_SQL, (seed, season, int(week), gsis))
             except Exception:  # noqa: BLE001 - no NFL-wide ranges on this copy: the bars alone, never a 500
                 rows, why = pd.DataFrame(), NOT_KEPT
     elif re.fullmatch(r"\d{6,24}", league or "") and not missing_relations(("mart_player_week_projections",)):

@@ -182,3 +182,10 @@ def test_projections_route(client):
     assert ref["weeks"] and ref["why"] is None
     tep = client.get(f"/api/player/{PUKA}/projections", params={"league": "ref:ppr.tep"}).json()
     assert tep["weeks"] == [] and "Half PPR" in tep["why"]
+
+
+@needs_db
+def test_a_kickers_past_projections_on_a_reference_key(client):
+    j = client.get("/api/player/00-0037692/projections", params={"league": "ref:half"}).json()   # Brandon Aubrey
+    assert j["weeks"] and all(w["p25"] is None and w["p10"] is not None for w in j["weeks"])
+
