@@ -30,7 +30,6 @@ const P = {
   rookie: { id: "00-0041069", name: "Young", pos: "WR" }, // Colbie Young, a 2026 rookie with two games
   k: { id: "00-0037692", name: "Aubrey", pos: "K" }, // Brandon Aubrey
 };
-const DEF_ID = "00-0099001"; // the hand-built defense card (an id no player has: the pattern the routes accept)
 
 if (LIVE) test.use({ baseURL: LIVE });
 
@@ -55,21 +54,6 @@ function trim(path: string, body: unknown): unknown {
   return body;
 }
 
-// the defense: the kicker's card with a defense's identity (the API answers no card for a defense today)
-function defenseCard(k: Record<string, unknown>): Record<string, unknown> {
-  return { ...k, gsis_id: DEF_ID, player_name: "Denver Broncos", position: "DEF", team: "DEN", header: "DEF · DEN", headshot_url: null, injury_status: null };
-}
-
-// the hand-built defense: its card from the kicker's (recorded first); no games, no past projections
-function defense(u: URL): { status: number; body: unknown } | null {
-  if (!u.pathname.startsWith(`/api/player/${DEF_ID}`)) return null;
-  const k = recorded[keyOf(new URL(`http://x/api/player/${P.k.id}?league=${REF}`))];
-  if (u.pathname === `/api/player/${DEF_ID}`) return k ? { status: 200, body: defenseCard(k.body as Record<string, unknown>) } : null;
-  if (u.pathname.endsWith("/games")) return { status: 200, body: { games: [] } };
-  if (u.pathname.endsWith("/projections")) return { status: 200, body: { gsis_id: DEF_ID, season: 2026, through_week: 4, weeks: [], why: null, notes: [] } };
-  return null;
-}
-
 async function api(context: BrowserContext): Promise<string[]> {
   const calls: string[] = [];
   await context.route(/^https?:\/\/(?!localhost)/, (route) => route.abort()); // headshots, GA: never fetched by a test
@@ -77,8 +61,6 @@ async function api(context: BrowserContext): Promise<string[]> {
     await context.route(/\/api\//, async (route) => {
       const u = new URL(route.request().url());
       calls.push(u.pathname + u.search);
-      const def = defense(u);
-      if (def) return route.fulfill({ status: def.status, contentType: "application/json", body: JSON.stringify(def.body) });
       try {
         const res = await route.fetch();
         if (route.request().method() === "GET" && !NOT_RECORDED.has(u.pathname)) recorded[keyOf(u)] = { status: res.status(), body: trim(u.pathname, await res.json()) };
@@ -93,7 +75,7 @@ async function api(context: BrowserContext): Promise<string[]> {
   await context.route(/\/api\//, async (route) => {
     const u = new URL(route.request().url());
     calls.push(u.pathname + u.search);
-    const hit = recorded[keyOf(u)] ?? defense(u);
+    const hit = recorded[keyOf(u)];
     if (!hit) return route.fallback();
     return route.fulfill({ status: hit.status, contentType: "application/json", body: JSON.stringify(hit.body) });
   });
@@ -122,7 +104,7 @@ test.afterAll(() => {
 
 /** the ratings route's answer as the page read it (recorded), for the numbers the test checks */
 function ratingsOf(id: string): Ratings | null {
-  const hit = recorded[`/api/player/${id}/ratings?league=ref%3Ahalf`];
+  const hit = recorded[`/api/player/${id}/ratings?`]; // fix round: asked without a league (NFL-wide)
   return (hit?.body as Ratings) ?? null;
 }
 
@@ -208,6 +190,16 @@ for (const [kind, p] of Object.entries(P).filter(([k]) => k !== "k")) {
     const num = ((await head.getByTestId("card-number").textContent()) ?? "").trim();
     if (num !== "—") await expect(page.getByTestId("section-projection").getByTestId("metrics").locator("button").first()).toContainText(num);
 
+    // fix round: the first chart sits directly under the ratings, above the sections (a phone and the page alike)
+    const order = await page.locator("[data-testid=card-ratings], [data-testid=card-points], [data-testid=section-projection]").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
+    expect(order).toEqual(["card-ratings", "card-points", "section-projection"]);
+    if (isMobile) {
+      const pts = (await page.getByTestId("card-points").boundingBox())!;
+      const rat = (await card.boundingBox())!;
+      expect(pts.y).toBeGreaterThan(rat.y + rat.height - 1);
+      expect(pts.y - (rat.y + rat.height)).toBeLessThan(24);
+    }
+
     // every section the card had is still there
     for (const s of ["projection", "availability", "value", "usage", "signals"]) await expect(page.getByTestId(`section-${s}`)).toBeVisible();
     await expect(page.getByTestId("game-log")).toBeVisible();
@@ -237,29 +229,54 @@ test("the rookie with two games: dashes with the reason, never a low number", as
   await expect(card.getByTestId("ratings-overall")).toContainText("no average yet");
 });
 
-test("a kicker and a defense: no ratings, the card still stands", async ({ context, page, isMobile }, info) => {
+test("a kicker: no ratings, the card still stands", async ({ context, page, isMobile }) => {
   await api(context);
-  for (const id of [P.k.id, DEF_ID]) {
-    await openCard(page, id);
-    await expect(page.getByTestId("card-number")).toBeVisible();
-    await expect(page.getByTestId("card-ratings")).toHaveCount(0);
-    await expect(page.getByTestId("section-projection")).toBeVisible();
-    await expect(page.getByTestId("card-points")).toBeVisible();
-    await noSideways(page);
-  }
-  await expect(page.getByTestId("player-header")).toContainText("Broncos", { ignoreCase: true });
+  await openCard(page, P.k.id);
+  await expect(page.getByTestId("card-number")).toBeVisible();
+  await expect(page.getByTestId("card-ratings")).toHaveCount(0);
+  await expect(page.getByTestId("section-projection")).toBeVisible();
+  await expect(page.getByTestId("card-points-chart")).toBeVisible({ timeout: 30_000 });
+  await noSideways(page);
   if (!isMobile) {
-    // the screenshot is the kicker's (real numbers; the defense's card is hand-built from his)
-    await openCard(page, P.k.id);
-    await expect(page.getByTestId("card-points-chart")).toBeVisible({ timeout: 30_000 });
     await page.emulateMedia({ colorScheme: "dark" });
     await shot(page, `ip4-k-1300-dark`);
   }
-  void info;
+});
+
+// fix round: a defense has a card — search "Denver", pick the defense: the drawer and the full page are the card, not an
+// error (its projection and range, its game, its points by week in the scoring; no ratings)
+test("a defense: search Denver, pick it, its card (not an error)", async ({ context, page, isMobile }) => {
+  await api(context);
+  await page.goto(`/players?league=${REF}`);
+  if (isMobile) await page.getByTestId("search-open").click();
+  await expect(page.getByTestId("search")).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId("search").fill("Denver");
+  const hit = page.getByTestId("search-hit").filter({ hasText: "Denver Broncos" });
+  await expect(hit).toHaveCount(1, { timeout: 30_000 });
+  await hit.click();
+  const pane = page.getByTestId("pane");
+  await expect(pane.getByTestId("pane-card")).toContainText("Broncos", { ignoreCase: true, timeout: 30_000 });
+  await expect(pane.getByTestId("card-unit-mark")).toHaveText("DEN");
+  await expect(pane.getByTestId("pane-ratings")).toHaveCount(0);
+  await expect(pane.getByTestId("pane-points").getByTestId("card-points-chart")).toBeVisible({ timeout: 30_000 });
+  await expect(pane.locator(".ll-error")).toHaveCount(0);
+  await pane.getByTestId("pane-full").click();
+  await expect(page).toHaveURL(/\/player\/DEN\?/);
+  await expect(page.getByTestId("player-header")).toContainText("Broncos", { ignoreCase: true, timeout: 30_000 });
+  await expect(page.getByTestId("card-number")).toHaveText(/^\d+\.\d$/);
+  await expect(page.getByTestId("section-projection")).toBeVisible();
+  await expect(page.getByTestId("card-points-chart").getByTestId("chart-readout")).toContainText(/^Week \d+/);
+  await expect(page.getByTestId("game-log")).toHaveCount(0); // a unit has no player game log; its points are the chart
+  await expect(page.locator(".ll-error")).toHaveCount(0);
+  await noSideways(page);
+  if (isMobile) {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await shot(page, "ip4-def-375-dark");
+  }
 });
 
 test("the pane: the head, the ratings and the first chart, then the sections", async ({ context, page, isMobile }, info) => {
-  await api(context);
+  const calls = await api(context);
   await page.goto(`/players?league=${REF}&pane=${P.wr.id}&from=search`);
   const pane = page.getByTestId("pane");
   await expect(pane.getByTestId("pane-card")).toBeVisible({ timeout: 30_000 });
@@ -268,6 +285,11 @@ test("the pane: the head, the ratings and the first chart, then the sections", a
   await expect(pane.getByTestId("pane-points").getByTestId("card-points-chart")).toBeVisible({ timeout: 30_000 });
   await expect(pane.getByTestId("pane-section-projection")).toBeVisible();
   await expect(pane.getByTestId("pane-actions")).toBeVisible();
+  // fix round: in the drawer too, the first chart sits directly under the ratings, above the sections
+  const order = await pane.locator("[data-testid=pane-ratings], [data-testid=pane-points], [data-testid=pane-section-projection]").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
+  expect(order).toEqual(["pane-ratings", "pane-points", "pane-section-projection"]);
+  // the ratings are asked without a league (the limiter never marks it seen: L2)
+  expect(calls.some((c) => /\/ratings\?league=/.test(c))).toBe(false);
   await noSideways(page);
   if (!isMobile) {
     await page.emulateMedia({ colorScheme: "light" });

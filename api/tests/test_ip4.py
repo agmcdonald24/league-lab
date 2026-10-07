@@ -139,7 +139,7 @@ def test_display(value, fmt, want):
 
 
 def test_the_routes_buckets():
-    assert ratelimit.bucket_for("GET", f"/api/player/{PUKA}/ratings", "league=ref:half") == "research"
+    assert ratelimit.bucket_for("GET", f"/api/player/{PUKA}/ratings", "league=ref:half") == "read"       # fix round: a cached read
     assert ratelimit.bucket_for("GET", f"/api/player/{PUKA}/projections", "league=ref:half") == "read"   # one indexed read
     assert ratelimit.bucket_for("GET", f"/api/player/{PUKA}/games", "league=ref:half") == "research"     # unchanged
     assert ratelimit.bucket_for("GET", f"/api/player/{PUKA}", "league=ref:half") == "research"           # unchanged
@@ -147,8 +147,9 @@ def test_the_routes_buckets():
 
 # ------------------------------------------------------------------------------------------------ the routes
 def test_bad_ids_and_parameters(client):
-    for bad in ("DEN", "00-123", "../etc", "00-00390751"):
+    for bad in ("DEN", "00-123", "../etc", "00-00390751"):          # a defense has no ratings (QB / RB / WR / TE)
         assert client.get(f"/api/player/{bad}/ratings").status_code in (400, 404)
+    for bad in ("XYZ", "00-123", "../etc", "00-00390751"):          # fix round: DEN is a defense's projections now
         assert client.get(f"/api/player/{bad}/projections", params={"league": "ref:half"}).status_code in (400, 404)
     assert client.get(f"/api/player/{PUKA}/ratings", params={"league": "x" * 65}).status_code == 400
     assert client.get(f"/api/player/{PUKA}/ratings", params={"season": 1999}).status_code == 400
@@ -190,4 +191,40 @@ def test_projections_route(client):
 def test_a_kickers_past_projections_on_a_reference_key(client):
     j = client.get("/api/player/00-0037692/projections", params={"league": "ref:half"}).json()   # Brandon Aubrey
     assert j["weeks"] and all(w["p25"] is None and w["p10"] is not None for w in j["weeks"])
+
+
+# ---- fix round (the review's L2): a ratings or projections request never marks its `league=` as seen by the limiter
+def test_card_reads_never_mark_a_league_seen(client):
+    lg = "4242424242424242"
+    client.get(f"/api/player/{PUKA}/ratings", params={"league": lg})
+    client.get(f"/api/player/{PUKA}/projections", params={"league": lg})
+    assert not ratelimit.SEEN.fresh(lg)
+    assert ratelimit.league_of(f"league={lg}") == lg          # the limiter would have read it: the bucket is what stops it
+
+
+# ---- fix round: a team defense's card (league_lab_api/unitcard.py)
+def test_unit_codes_are_a_closed_set():
+    from league_lab_api import unitcard as U
+    assert U.unit_code("DEN") == "DEN" and U.unit_code("den") == "DEN" and U.unit_code("LA") == "LAR"
+    assert U.unit_code("LAR") == "LAR" and len(U.UNIT_TEAM) == 32 and U.UNIT_TEAM["LAR"] == "LA"
+    for bad in ("XYZ", "", None, "DENV", "00-0039075", "mfl:0656", "D"):
+        assert U.unit_code(bad) is None
+
+
+@needs_db
+def test_a_defense_has_a_card(client):
+    for lg in ("ref:half", SCRUBS):
+        r = client.get("/api/player/DEN", params={"league": lg})
+        assert r.status_code == 200
+        j = r.json()
+        assert j["player_name"] == "Denver Broncos" and j["position"] == "DEF" and j["team"] == "DEN"
+        assert j["sections"]["projection"]["blocks"] and "availability" in j["sections"]
+        if j["proj_points"] is not None:
+            tiles = j["sections"]["projection"]["blocks"][0]["metrics"]
+            assert tiles[0]["label"] == "Projected" and tiles[0]["value"] == f"{j['proj_points']:.1f}"
+        p = client.get("/api/player/DEN/projections", params={"league": lg}).json()
+        assert p["games"] and all(g["played"] and g["points"] is not None for g in p["games"])
+    assert client.get("/api/player/LA", params={"league": "ref:half"}).json()["player_name"] == "Los Angeles Rams"
+    assert client.get("/api/player/XYZ", params={"league": "ref:half"}).status_code == 404
+    assert client.get("/api/player/XYZ/projections", params={"league": "ref:half"}).status_code == 400
 

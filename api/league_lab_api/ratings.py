@@ -265,9 +265,31 @@ def _ref_scoring(key: str) -> str | None:
     return seed if not change and not sh.tep and not sh.p6 else None
 
 
+UNIT_NONE = "No projection for a defense in this league (its lineup has no DEF spot): the chart shows its points alone."
+
+
+def unit_projections(code: str, league: str) -> dict:
+    """A team defense (fix round): the projection made before each week and its points by week (``games``, the game
+    log's shape: the chart's bars), both in the league's scoring (league_lab_api/unitcard.py)."""
+    from . import research
+    from . import unitcard as U
+    ctx = research.context(league)
+    week = ctx.week or 18
+    weeks = U.past_projections(code, league, ctx, week)
+    srcs = sorted({w["source"] or "live" for w in weeks})
+    return {"gsis_id": code, "season": ctx.season, "through_week": int(week), "weeks": weeks,
+            "why": None if weeks else (UNIT_NONE if ctx.house else NOT_KEPT.replace("his points", "its points")),
+            "games": U.week_points(code, ctx.season, ctx.scoring),
+            "notes": [f"{_span([w['week'] for w in weeks if (w['source'] or 'live') == s])}: "
+                      f"{SOURCE_WORDS[None if s == 'live' else s]}." for s in srcs]}
+
+
 def player_projections(gsis: str, league: str, season: int | None = None, through: int | None = None) -> dict:
-    gsis = check_id(gsis)
+    from .unitcard import unit_code
     check_league(league)
+    if unit_code(gsis) is not None:                                       # ---- fix round: a team defense
+        return unit_projections(unit_code(gsis), league)
+    gsis = check_id(gsis)
     season = _season(season)
     from .applib import cards  # the card's own week (lazy: cards imports the world)
     week = through if through is not None else (cards.decision_week(season) or 18)

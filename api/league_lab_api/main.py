@@ -431,6 +431,11 @@ def my_week(league: str, team: int, response: Response, source: str | None = Non
 
 @app.get("/api/player/{gsis}", dependencies=[Depends(require_auth)])
 def player_card(gsis: str, league: str, response: Response, team: int | None = None, source: str | None = None):
+    # ---- IP-4 fix round (Wave I-P): a team defense's card (a closed set of team codes; league_lab_api/unitcard.py)
+    from . import unitcard as unitcard_mod
+    if unitcard_mod.unit_code(gsis) is not None:
+        return _research(unitcard_mod.defense_card(league, gsis, team), league, response)
+    # ---- end IP-4
     if source == "sleeper" or not myweek.known_league(league):
         out = ondemand.player_card(league, gsis)
     else:

@@ -8,13 +8,14 @@
   import { teamLabel } from "../../lib/theme";
   import WeekChart from "./WeekChart.svelte";
 
-  let { gsis, league, season, scoring, schedule = [], tall = false, testid = "card-points" }: {
+  let { gsis, league, season, scoring, schedule = [], tall = false, position = null, testid = "card-points" }: {
     gsis: string;
     league: string;
     season: number;
     scoring: string;
     schedule?: ScheduleRow[];
     tall?: boolean; // the full page from 900 px: a taller plot beside the ratings
+    position?: string | null; // DEF: its points by week come with the projections (no game log for a unit)
     testid?: string;
   } = $props();
 
@@ -31,7 +32,8 @@
     games = g0;
     proj = p0;
     failed = false;
-    if (!g0) get<Games>(gp).then((d) => gsis === id && (games = d)).catch(() => gsis === id && (failed = true));
+    if (position === "DEF") games = { games: [] }; // the unit's games ride on the projections answer
+    else if (!g0) get<Games>(gp).then((d) => gsis === id && (games = d)).catch(() => gsis === id && (failed = true));
     if (!p0)
       get<PastProjections>(pp)
         .then((d) => gsis === id && (proj = d))
@@ -50,7 +52,7 @@
   }
   const rows = $derived.by((): Wk[] => {
     if (!games || !proj) return [];
-    const reg = games.games.filter((g) => (g.season_type ?? "REG") === "REG" && g.season === season);
+    const reg = (proj.games ?? games.games).filter((g) => (g.season_type ?? "REG") === "REG" && g.season === season);
     // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a local lookup built and read inside one derivation
     const by = new Map<number, Wk>();
     for (const g of reg) {
@@ -67,6 +69,7 @@
   const both = $derived(rows.filter((r) => r.played && r.points !== null && r.p !== null));
   const above = $derived(both.filter((r) => r.points! > r.p!).length);
   const inside = $derived(both.filter((r) => r.lo !== null && r.hi !== null && r.points! >= r.lo && r.points! <= r.hi).length);
+  const his = $derived(position === "DEF" ? "its" : "his"); // a team defense is "it"
   const SRC: Record<string, string> = { kickoff: "shown before kickoff", refit: "rebuilt after kickoff" };
 
   function describe(i: number): string {
@@ -90,20 +93,20 @@
   {:else}
     <p class="mt-1 mb-3 text-sm leading-snug text-ink-2" data-testid="card-points-answer">
       {#if both.length}
-        Above his projection in <strong class="text-ink">{above} of {both.length}</strong> game{both.length === 1 ? "" : "s"}, inside its range (low-end to high-end) in
+        Above {his} projection in <strong class="text-ink">{above} of {both.length}</strong> game{both.length === 1 ? "" : "s"}, inside its range (low-end to high-end) in
         <strong class="text-ink">{inside} of {both.length}</strong>. {scoring} scoring.
       {:else}
-        {proj.why ?? `His points by week in ${scoring} scoring.`}
+        {proj.why ?? `${position === "DEF" ? "Its" : "His"} points by week in ${scoring} scoring.`}
       {/if}
     </p>
     <WeekChart
       weeks={rows.map((r) => r.week)}
-      bars={{ label: "His points", color: "var(--ll-series-1)", values: rows.map((r) => (r.played ? r.points : null)) }}
+      bars={{ label: position === "DEF" ? "Its points" : "His points", color: "var(--ll-series-1)", values: rows.map((r) => (r.played ? r.points : null)) }}
       lines={rows.some((r) => r.p !== null) ? [{ key: "proj", label: "Projected before the game", color: "var(--ll-ink-2)", values: rows.map((r) => r.p) }] : []}
       band={rows.some((r) => r.lo !== null) ? { label: "Low-end to high-end", color: "var(--ll-ink-3)", lo: rows.map((r) => r.lo), hi: rows.map((r) => r.hi) } : null}
       tick={(v) => String(v)}
       {describe}
-      ariaLabel="His points by week against the projection made before each game"
+      ariaLabel="{position === 'DEF' ? 'Its' : 'His'} points by week against the projection made before each game"
       columns={[
         { label: "Opp.", cell: (i) => rows[i].opp ?? "—" },
         { label: "Points", cell: (i) => (rows[i].played ? pts1(rows[i].points) : "did not play") },
