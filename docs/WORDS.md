@@ -641,3 +641,13 @@ sees these; a visitor sees the blog as before.
 | the editor's address, not an editor | **Sign in to write** "Writing on the blog needs the editor's account. Sign in" · **This account does not write on the blog** "The blog has one editor for now. Read the blog" | — |
 | the Account screen | **Your account id** · the id · **Copy** → "Copied" · "Only needed to be made a writer on the blog. It is not a password." | "user id", "uuid" |
 <!-- ---- end IO-3 -->
+<!-- ---- IP-5 (Wave I-P) -->
+## Player pages that share, and "busy" for a refused read (Wave I-P, IP-5; SECURITY_PUBLIC § 15)
+
+| Where | The words we use | Never |
+|---|---|---|
+| a player page's link preview (`/player/<gsis>`, the page shell; `player_share.card`) | title "Josh Allen (QB, BUF): 23.8 projected this week, 14–35 · isuckatfantasy" (the projection and its 80 % range in the default scoring, Half PPR); description "Week 4, Half PPR: vs NE, Sun 1 PM ET; the highest projection of 93 quarterbacks this week. 8 in 10 weeks like this land between 14 and 35 points." (a lower rank: "the 7th-highest projection of 120 wide receivers this week"; away: "at SF"; no range: the last sentence is left out) | a number this process does not already hold (the default card instead); "No league"; "stale" |
+| a page whose address names a league (`?league=`) | (nothing on screen: `X-Robots-Tag: noindex` and `<meta name="robots" content="noindex">`) | — |
+| any screen whose provider read was refused or failed and nothing good is held | the app's existing "Busy right now. Try again in a minute." (503 `busy`; the screen retries) — a held good answer is served instead, with its own stamps | "stale", "data may be out of date", an empty roster, a lineup built from an empty directory, "MFL player 12345" for a player MyFantasyLeague would not describe |
+| the matchup evidence's "best corners" split (`/api/matchups/cb` → `cover_split`) | removed: always null (it ranked past weeks by the season to date; rebuilt as-of it is 3 games against top-quarter corners for the median receiver) | "vs shutdown corners 14.2 per game (5 games)" |
+<!-- ---- end IP-5 -->
