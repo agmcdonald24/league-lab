@@ -2,6 +2,17 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-07 — Wave I-P
+
+- **IP-2 — rankings for everyone, and "Who should I start?"** `/rankings` (a tab while browsing, a Players sub-tab with
+  a league): this week's or the rest of the season's rankings at QB / RB / WR / TE / Flex (K and DEF where the scoring
+  starts them) in the bar's scoring or the league's own, the range as a bar, the defense's matchup chip (never the
+  corner), who has him with a league, and **tiers** (a run the first of them outscores in fewer than 55 weeks in 100).
+  Pick two to four → Compare opens on the answer in words from the ranges the week's odds draw ("Lean Olave: he
+  outscores Nacua in 57 of 100 such weeks — close; either is fine.") with how sure such a call is. `GET /api/rankings`,
+  `GET /api/rankings/start` (research bucket, no new relation); the home's "Every player ›" opens it; `/rankings` in the
+  shell's previews and the sitemap.
+
 ## 2026-10-06 — Wave I-O
 
 - **PO — the wave merged, reviewed and hardened; the corner call stops moving anything.** Four branches (IO-1 … IO-4)
