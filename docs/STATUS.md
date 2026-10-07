@@ -14272,3 +14272,20 @@ the horizon weeks the window prices again (MFL's power part ~0.3 s); the nightly
   Washington (Daniels 18.3, Kaliakmanis 5.0) and Seattle (Lock 14.1, Darnold 4.4). Chicago is not flagged on live
   (the sandbox copy's week-4 state differed). **Still Andrew's**: his passkey account → the account id into Render
   as `LEAGUE_LAB_EDITORS`; this hotfix's push.
+
+### PO — the first outside traffic (2026-10-07, Wednesday; Andrew's Reddit comment about trade calculators)
+
+* **By 14:00 ET** — the site's own counter (`/api/usage/summary`): **75 sessions, 350 screen views, 40 league keys**
+  today (Tuesday: 20 / 107 / 2). By screen: home 90, My Week 80, the league picker 63, Trades 19, rest of season 18,
+  the free trade calculator 14, Waivers 12, a blog post 10, League 9, Players 9, account 5, Team 5, blog 4, other 4
+  (Rankings is not in `usage.SCREENS`: counted as "other"), Trends 3, DFS 2. Google Analytics, today so far (still
+  processing): 64 users, 45 first visits, 281 `screen_view` (4.8 a user), `form_start` 24 by 21 users,
+  `trade_evaluate` 14 by 4 users, `select_content` 7 by 5, `waiver_view` 5 by 4; 75 sessions, 17 "engaged" so far,
+  1 m 40 s a session; the source shows as Direct / Unassigned (no Reddit referrer yet).
+* **The site held**: 0 requests refused in any bucket, 69 waited for a CPU slot and none was refused, Sleeper's
+  budget never refused (476 calls, 53 leagues' settings held), RSS 359 MB of 2 GB, version `97099c7`.
+* **For the next build**: `usage.record` failed 30 of 323 writes since the last restart (`process.failed`: about 9 %
+  of screen views not counted — find out why: the write's own transaction against Neon); add `rankings` to
+  `usage.SCREENS`; the home page is the top screen by a wide margin (90 of 350) — what a first-time visitor sees
+  there, and the step from it to the calculator or a league, is the funnel to measure next (a per-session depth in
+  the usage summary: sessions with 1, 2–3, 4+ screens).
