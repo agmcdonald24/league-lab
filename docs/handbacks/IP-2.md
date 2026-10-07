@@ -26,7 +26,7 @@ Branch `dev/IP2` from `main` `e4b5eec`; worktree `/home/claude/wt-ip2`; database
    in the shell's previews (title + description per position and view, a closed set: `?position=<script>` gets the
    default title, never the text) and in `/sitemap.xml`. `/rankings` without a league opens on Half PPR. 375: two lines a
    row (the range bar under the name), no sideways scroll; 1300: a six-column row using the width, the pane beside it.
-4. **Tests** — `api/tests/test_ip2.py` (41): the distribution is the week odds' piece; `p_beats` symmetric / ties /
+4. **Tests** — `api/tests/test_ip2.py` (42): the distribution is the week odds' piece; `p_beats` symmetric / ties /
    within 0.006 of D6's Monte Carlo and 0.02 of the normal closed form; the tier rule on hand-built ranges (three tiers,
    the break measured against the opener not the neighbour, identical players one tier, no projection no tier);
    head-to-head symmetry (pairs add to 1 exactly), sums to 1, identical players equal (exactly), order-independent, the
@@ -35,7 +35,8 @@ Branch `dev/IP2` from `main` `e4b5eec`; worktree `/home/claude/wt-ip2`; database
    the dynasty's K refused in words, the season view equal to `/api/ros?view=projections`'s points; `q=` (1 / 41
    letters, `%%`) and paging bounds (limit 0 / 201, offset −1 / 1001, past the end), the cache never keyed by `q`; the
    start route's ids (none, one, five, a duplicate, a path, too long, an unknown id → "missing"); the research bucket;
-   the preview's closed set; the shell and the sitemap; a fresh copy without the marts → the notice, a 200.
+   the preview's closed set; the shell and the sitemap; a fresh copy without the marts → the notice, a 200; a pick whose
+   game has kicked off gets "… kicked off: these chances are from before kickoff …".
    e2e `web/e2e/ip2/fixtures.spec.ts` (3 tests × phone 375 / desktop 1300, recorded and fixture modes both green):
    browsing (the tab, 50 rows, tiers, bar, chip, search, no "No league", the list ≥ 1000 px wide at 1300), pick two →
    the answer, a league (the sub-tab lit under Players, who has him).
@@ -96,10 +97,10 @@ null, floor, assumes, multi_note, same_game, draws, notice?}`. Validation: `posi
 
 The routes are sync (FastAPI's thread pool) and `research` (behind the CPU slots). Cache: `rankings` region, ≤ 64
 entries of ~0.1 MB. Bundle: `Rankings` chunk 14.9 KB (+1.9 KB `rank`, 0.2 KB css), Compare 19.5 KB (was ~17 KB); the app chunk 244.8 KB (main's ~244).
-Tests: `test_ip2.py` 41 passed; with `test_im3 test_in2 test_in1 test_in3` 225 passed (46.8 s); ruff clean;
-`npm run lint && npm run build` clean; `copy_standard.py --check` clean; e2e ip2 6/6 (both modes), in2 + im3 17 passed
-1 skipped, ib1 + if4 + ii2 30 passed + ib1's tab test 2 failed, then passed once updated on purpose, the Compare tests in `e2e/fixtures.spec.ts`, ia1, if3,
-ib3, inf1 passed. Branch added: 1,859 text lines (~112 KB) + 603 KB generated (546 KB JPEG + 57 KB recording).
+Tests: `test_ip2.py` 42 passed; with `test_im3 test_in2 test_in1 test_in3` 227 passed (49 s); ruff clean;
+`npm run lint && npm run build` clean; `copy_standard.py --check` clean; e2e ip2 6/6 (recorded and fixture modes); in2 + im3
+17 passed, 1 skipped; ib1 + if4 + ii2 + ib3 38 passed (ib1's tab test updated on purpose: it failed on the new sub-tab
+first); the Compare tests of `e2e/fixtures.spec.ts`, ia1, if3, inf1 10 passed (after the last Compare change). Branch added: 1,859 text lines (~112 KB) + 603 KB generated (546 KB JPEG + 57 KB recording).
 
 ## Writes, and what I saw that is not mine
 
