@@ -161,3 +161,17 @@ def test_the_switch_defaults_to_the_harness_verdict_and_the_version(monkeypatch)
         monkeypatch.setenv(C.PASS_TD_FLAG, v)
         assert C.pass_td_enabled() is on
     assert P.MODEL_VERSION == "v3.4" and C.PASS_TD_POSITIONS == ("QB",)
+
+
+def test_a_scenario_larger_role_follows_the_new_passing_tds():
+    """signals.scenarios refits the models: the base becomes the stored line (pt1.0's passing TDs) and the larger role's
+    passing TDs move by the same ratio, every other component as the model made it; M6's cold start (every component
+    x k) is unchanged."""
+    model = {c: 0.0 for c in COMPS} | {"proj_attempts": 33.0, "proj_passing_yards": 250.0, "proj_passing_tds": 2.0,
+                                        "proj_rushing_yards": 10.0}
+    larger = {c: v * 1.1 for c, v in model.items()}
+    stored = {"gsis_id": "qb", "week": 5, **model, "proj_passing_tds": 1.5}
+    b, s = C.rescale_to_stored(pd.DataFrame([model]), pd.DataFrame([larger]), [("qb", 5)], pd.DataFrame([stored]))
+    assert b.iloc[0]["proj_passing_tds"] == 1.5 and b.iloc[0]["proj_passing_yards"] == 250.0
+    assert s.iloc[0]["proj_passing_tds"] == pytest.approx(2.2 * 0.75)
+    assert s.iloc[0]["proj_passing_yards"] == pytest.approx(275.0) and s.iloc[0]["proj_rushing_yards"] == pytest.approx(11.0)

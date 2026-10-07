@@ -1078,8 +1078,13 @@ def rescale_to_stored(comp_b: pd.DataFrame, comp_s: pd.DataFrame, keys: list[tup
         if mo[c] == 0:
             continue
         k = st[c] / mo[c]
+        # ---- IP-1 (Wave I-P): component by component (a component the model put at 0 takes the line's k). A cold
+        # start's line is the model's x k in every component, so this is M6's rule exactly; pt1.0 changes a QB's passing
+        # TDs alone, and the larger role's passing TDs follow by the same ratio (the gain stays the role's, not pt1.0's)
+        ratio = np.where(mo != 0, st / np.where(mo != 0, mo, 1.0), k)
+        # ---- end IP-1
         b.iloc[j, at] = st
-        s.iloc[j, s.columns.get_indexer(cols)] = s[cols].iloc[j].to_numpy(dtype=float) * k
+        s.iloc[j, s.columns.get_indexer(cols)] = s[cols].iloc[j].to_numpy(dtype=float) * ratio
     return b, s
 
 
