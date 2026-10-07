@@ -277,6 +277,13 @@ def migrate(conn: psycopg.Connection) -> None:
         cur.execute(calibration.OOF_MODEL_DDL)
         cur.execute(projections.MARKET_RECORD_DDL)       # the record's Sleeper side at the odds (dbt reads it as a source)
         # ---- end M6
+        # ---- IP-3 (Wave I-P): the context record and its grade exist on a fresh database (IO-1 put them in the nightly's
+        # STATE_TABLES; restore-state counts every state table, so a fresh database stopped the night there), with every
+        # column the hosted copy may hold (Wave I-P's trend columns included): the restore copies into them
+        from . import context_record
+        cur.execute(context_record.DDL)
+        cur.execute(context_record.GRADE_DDL)
+        # ---- end IP-3
     conn.commit()
     # plan D3: raw.nfl_weather + the stadium reference (dbt resolves venues before any weather is fetched)
     from .ingest import weather

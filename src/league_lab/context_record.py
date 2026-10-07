@@ -35,6 +35,16 @@ Two kinds of context have been shown without a grade: the **cornerback call** (t
   whose games are final (``actual_points``, ``miss``).
 
 ``league-lab context-record`` runs it (idempotent, safe every night). docs/METRICS.md § "The context record".
+
+**Wave I-P (IP-3)** grades two more claims the same way (docs/METRICS.md § "Trends and the role trend, graded"):
+Trends' "below / above expectation" (the season's points per game minus expected points per game; the mart keeps only
+the season as it stands, so a past week's tag is rebuilt from the games before the week: ``asof_trend`` /
+``trend_asof_week``) and the role chips' "role up / down" (``role_trend`` before the week, as above). The record keeps
+the tag each week (``trend_games``, ``trend_ppg``, ``trend_gap``, ``trend_tag``, ``trend_reason``; rows written before
+the columns are filled once from the games before their week: ``backfill_trend``) and the stored grade adds kinds
+``trend`` / ``trend_raw`` / ``role`` and the sentences ``summary`` ``trend`` / ``trend_head`` / ``role``, the next game's
+outcome read from the record itself. The long study (2021-2026, the share that holds) is ``study_frame`` +
+``trend_grade`` / ``role_grade``: ``uv run python -m league_lab.context_record study`` prints its tables.
 """
 
 from __future__ import annotations
@@ -73,7 +83,9 @@ COLUMNS = ["run_at", "as_of", "first_kickoff_at", "record_source", "model_versio
            "gsis_id", "player_name", "position", "team", "opponent", "game_id", "proj_points", "signals",
            "defense_tone", "corner_certainty", "corner_tier", "corner_rank", "corner_n", "role_trend", "game_tone",
            "weather_tone", "worth", "listed", "worth_corner", "listed_corner", "actual_points", "miss", "graded_at",
-           "worth_two"]
+           "worth_two",
+           # ---- IP-3: Trends' tag as it read before the week (games before it only) — graded over the next 1 / 2 / 4 games
+           "trend_games", "trend_ppg", "trend_gap", "trend_tag", "trend_reason"]
 DDL = """create table if not exists ops.context_record (
         run_at timestamptz, as_of timestamptz, first_kickoff_at timestamptz, record_source text, model_version text,
         scoring text, season integer, week integer, gsis_id text, player_name text, position text, team text,
@@ -82,7 +94,10 @@ DDL = """create table if not exists ops.context_record (
         weather_tone text, worth boolean, listed boolean, worth_corner boolean, listed_corner boolean,
         actual_points double precision, miss double precision, graded_at timestamptz);
         create index if not exists context_record_idx on ops.context_record (season, week, gsis_id);
-        alter table ops.context_record add column if not exists worth_two boolean"""
+        alter table ops.context_record add column if not exists worth_two boolean;
+        alter table ops.context_record add column if not exists trend_games integer,
+            add column if not exists trend_ppg double precision, add column if not exists trend_gap double precision,
+            add column if not exists trend_tag text, add column if not exists trend_reason text"""
 # ---- IO-1 fix round: the candidate the PO wants graded out of sample from 2026 week 5 — at least two favourable signals
 # other than the cornerback (all of them in the projection today). In-sample (2025 and 2026 weeks 1-4): 829 player-weeks,
 # +0.43 against the rest (+0.03 to +0.81) — found on those weeks, so not adopted; the kickoff weeks answer it.
@@ -464,6 +479,8 @@ class SeasonInputs:
     dvp: pd.DataFrame | None = None
     role_games: pd.DataFrame | None = None
     weeks: dict = field(default_factory=dict)
+    trend_games: pd.DataFrame | None = None       # ---- IP-3: the season's played QB-TE games (load_trend_games)
+    qb_changed: dict = field(default_factory=dict)
 
 
 def load_season(conn, season: int) -> SeasonInputs:
@@ -481,7 +498,9 @@ def load_season(conn, season: int) -> SeasonInputs:
         proj = proj.assign(source=proj["frozen_source"].fillna("live")).drop(columns=["frozen_source"])
     proj = _num(proj, ["proj_points"])
     dvp = _num(_df(conn, DVP_SQL, (s,)), ["points_allowed_per_game_std", "week"])
-    return SeasonInputs(s, games, calls, cov, off, proj, actual_points(conn, s), dvp=dvp)
+    act = actual_points(conn, s)
+    tg, qbc = load_trend_games(conn, s, act)          # ---- IP-3
+    return SeasonInputs(s, games, calls, cov, off, proj, act, dvp=dvp, trend_games=tg, qb_changed=qbc)
 
 
 def first_kickoffs(games: pd.DataFrame) -> dict[int, datetime]:
@@ -552,6 +571,7 @@ def rebuild_week(conn, si: SeasonInputs, week: int, *, live: bool = False) -> pd
     calls = {str(r["gsis_id"]): r for r in si.calls[si.calls["week"] == w].to_dict("records")}
     dranks = defense_rank_asof(si.dvp, w) if si.dvp is not None and not si.dvp.empty else {}
     role = _role(conn, si.season, w, routes=live)
+    tw = trend_asof_week(si.trend_games, w, si.qb_changed)      # ---- IP-3: Trends' tag before the week
     wx = _weather(conn, si.season, w, kept_forecast_only=not live)
     pj = si.proj[si.proj["week"] == w].drop_duplicates("gsis_id").set_index("gsis_id")
     act = si.actual[si.actual["week"] == w].drop_duplicates("gsis_id").set_index("gsis_id")
@@ -591,6 +611,7 @@ def rebuild_week(conn, si: SeasonInputs, week: int, *, live: bool = False) -> pd
             "weather_tone": tone.get("weather"), "worth": bool(ok), "worth_corner": bool(ok_corner),
             "worth_two": worth_two(sig),
             "actual_points": actual,
+            **trend_fields(tw.get(gid)),
         })
     out = pd.DataFrame(rows)
     if out.empty:
@@ -789,7 +810,8 @@ GRADE_DDL = """create table if not exists ops.context_grade (
         vs_rest_lo double precision, vs_rest_hi double precision, rest_n integer, rest_beat_share double precision,
         span text, scoring text, words text, graded_at timestamptz)"""
 RECORD_GRADE_SQL = """select season, week, game_id, position, proj_points, miss, corner_certainty, corner_tier, defense_tone,
-                             role_trend, game_tone, worth, listed, worth_corner, listed_corner, worth_two, record_source
+                             role_trend, game_tone, worth, listed, worth_corner, listed_corner, worth_two, record_source,
+                             gsis_id, actual_points, trend_games, trend_ppg, trend_gap, trend_tag, trend_reason
                       from ops.context_record where miss is not null and proj_points is not null"""
 
 
@@ -831,13 +853,14 @@ def grade_rows(h: pd.DataFrame, graded_at: datetime | None = None) -> list[dict]
             out.append({**{c_: r.get(c_) for c_ in GRADE_COLUMNS if c_ in r}, "kind": "corner_live",
                         "grp": f"{r['corner_certainty']}/{r['corner_tier']}", "span": lspan, "scoring": SCORING_WORDS,
                         "words": tier_sentence(r), "graded_at": graded_at})
+    out += trend_grade_rows(h, graded_at)             # ---- IP-3: Trends' tag and the role trend, graded
     return out
 
 
 def write_grade(conn, now: datetime) -> int:
     """Replace ``ops.context_grade`` with the grade of ``ops.context_record`` as it stands."""
     h = _df(conn, RECORD_GRADE_SQL)
-    h = _num(h, ["proj_points", "miss"])
+    h = _num(h, ["proj_points", "miss", "actual_points", "trend_ppg", "trend_gap", "trend_games"])
     rows = grade_rows(h, now) if not h.empty else []
     with conn.cursor() as cur:
         cur.execute(GRADE_DDL)
@@ -905,7 +928,7 @@ def _rows_for_db(f: pd.DataFrame, source: str, as_of: datetime, first_kickoff: d
              "actual_points": _f(r.get("actual_points")) if source == "reconstructed" else None,
              "miss": _f(r.get("miss")) if source == "reconstructed" else None,
              "graded_at": graded_at if source == "reconstructed" and _f(r.get("actual_points")) is not None else None}
-        for k in ("corner_rank", "corner_n"):
+        for k in ("corner_rank", "corner_n", "trend_games"):
             d[k] = None if d.get(k) is None or (isinstance(d[k], float) and math.isnan(d[k])) else int(d[k])
         d["proj_points"] = _f(d.get("proj_points"))
         out.append([None if isinstance(d.get(c), float) and not math.isfinite(d[c]) else d.get(c) for c in COLUMNS])
@@ -930,6 +953,9 @@ def write_record(conn, season: int | None = None, now: datetime | None = None, f
     with conn.cursor() as cur:
         cur.execute(DDL)
         cur.execute(TWO_BACKFILL_SQL, (TWO_MIN_FAVOURABLE,))
+    conn.commit()
+    backfill_trend(conn)                         # ---- IP-3: rows written before the trend columns existed
+    with conn.cursor() as cur:
         if season is None:
             cur.execute("select max(season) from analytics.dim_game where season_type = 'REG' and kickoff_at <= %s", (now,))
             season = cur.fetchone()[0]
@@ -1000,3 +1026,593 @@ def run(season: int | None = None) -> tuple[list[RecordRun], int]:
     with psycopg.connect(get_settings().pipeline_dsn(), autocommit=False) as conn:
         runs = write_record(conn, season, now=now)
         return runs, write_grade(conn, now)
+
+
+# ================================================================================================ IP-3: Trends and the role
+# ---- IP-3 (Wave I-P): grade what Trends ("below / above expectation") and the role chips ("role up / down") claim.
+#
+# Trends' gap = his points per game minus his expected points per game (what his targets and carries are usually worth,
+# ffverse's per-game expected stats priced in the scoring) over the season's games so far (mart_league_player_season's
+# ``diff_per_game``; the screen calls it below / above expectation past ``TREND_NEAR`` = research.NEAR = 0.5). The mart
+# keeps only the season as it stands now, so a past week's tag is never stored anywhere: it is rebuilt here from the
+# games BEFORE the week (``asof_trend``), in Half PPR, with the reason the screen gives (``trend_reason`` = the
+# category of research.trend_cause). The role trend is ``role_trend.role_trend`` on the games before the week (as
+# context_record already rebuilds it; routes per dropback left out). Each player-week is then followed over his next 1,
+# 2 and 4 games played: (a) his points against the projection made before each game (``miss``); (b) his points per game
+# against his points per game before the week (raw regression to the mean). Intervals: 95% bootstrap resampling whole
+# players (a player-season's rows come along together — his overlapping next-k windows are not independent); every
+# group against the rest (the other player-weeks with a tag at the same positions), never against 50%.
+TREND_NEAR = 0.5                 # = api research.NEAR and web lib/research.ts NEAR (points per game)
+TREND_KS = (1, 2, 4)
+ROLE_KS = (1, 2, 4)
+TREND_TAGS = ("below", "above")
+TREND_REASONS = ("touchdowns", "quarterback", "share", "none")
+REASON_WORDS = {"touchdowns": "touchdowns against red-zone chances", "quarterback": "a quarterback change",
+                "share": "his share of the work moved", "none": "no reason named"}
+TREND_GAMES_SQL = """select p.gsis_id, p.week, p.game_id, p.position, p.team, p.played, p.targets, p.team_targets, p.carries,
+                            p.team_carries, p.offense_snaps, p.offense_snap_pct, p.red_zone_targets, p.red_zone_carries,
+                            coalesce(p.receiving_tds, 0) + coalesce(p.rushing_tds, 0) as tds, p.passing_tds,
+                            p.target_share::float8 as target_share, p.carry_share::float8 as carry_share,
+                            e.points_expected::float8 as points_expected, coalesce(e.expected_known, false) as expected_known
+                     from analytics.fct_player_game p
+                     left join analytics.mart_player_expected_points e on e.gsis_id = p.gsis_id and e.game_id = p.game_id
+                     where p.season = %s and p.season_type = 'REG' and p.position in ('QB', 'RB', 'WR', 'TE') and p.played"""
+QB_CHANGED_SQL = """select gsis_id, week, pn_qb_changed from analytics.mart_player_week_features
+                    where season = %s and pn_qb_changed is not null"""
+
+
+def load_trend_games(conn, season: int, actual: pd.DataFrame | None = None) -> tuple[pd.DataFrame, dict]:
+    """(the season's played QB-TE games with Half PPR ``actual`` and expected points, (gsis, week) -> his quarterback
+    changed this week). ``actual``: ``actual_points`` when the caller has it."""
+    s = int(season)
+    g = _df(conn, TREND_GAMES_SQL, (s,))
+    if g.empty:
+        return g, {}
+    g = _num(g, ["targets", "team_targets", "carries", "team_carries", "offense_snaps", "offense_snap_pct",
+                 "red_zone_targets", "red_zone_carries", "tds", "passing_tds", "target_share", "carry_share",
+                 "points_expected", "week"])
+    g["week"] = g["week"].astype(int)
+    a = actual_points(conn, s) if actual is None else actual
+    a = a[a["actual"].notna()][["gsis_id", "week", "actual"]].copy()
+    a["week"] = pd.to_numeric(a["week"]).astype(int)
+    g = g.merge(a.drop_duplicates(["gsis_id", "week"]), on=["gsis_id", "week"], how="left")
+    try:
+        qb = _df(conn, QB_CHANGED_SQL, (s,))
+    except Exception:  # noqa: BLE001 - no personnel inputs on this database: no quarterback reason
+        conn.rollback()
+        qb = pd.DataFrame(columns=["gsis_id", "week", "pn_qb_changed"])
+    qbc = {(str(r.gsis_id), int(r.week)): bool(r.pn_qb_changed == 1) for r in qb.itertuples()}
+    return g, qbc
+
+
+def trend_fields(t: tuple | None) -> dict:
+    """The record's five trend columns from ``trend_asof_week``'s tuple (no game before the week: 0 games, the rest
+    unknown)."""
+    if not t:
+        return {"trend_games": 0, "trend_ppg": None, "trend_gap": None, "trend_tag": None, "trend_reason": None}
+    games, ppg, _xppg, gap, tag, reason = t
+    return {"trend_games": int(games), "trend_ppg": _f(ppg), "trend_gap": _f(gap), "trend_tag": tag, "trend_reason": reason}
+
+
+def backfill_trend(conn) -> int:
+    """Fill the trend columns of record rows written before they existed (Wave I-O's rows): the tag depends only on the
+    games before the week, so it is what the freeze would have stored (a later stat correction aside)."""
+    with conn.cursor() as cur:
+        cur.execute("select distinct season, week from ops.context_record where trend_games is null order by 1, 2")
+        todo = cur.fetchall()
+    if not todo:
+        return 0
+    n = 0
+    for s in sorted({int(r[0]) for r in todo}):
+        g, qbc = load_trend_games(conn, s)
+        rows = []
+        for w in sorted(int(r[1]) for r in todo if int(r[0]) == s):
+            for gid, t in trend_asof_week(g, w, qbc).items():
+                f = trend_fields(t)
+                rows.append([gid, w, f["trend_games"], f["trend_ppg"], f["trend_gap"], f["trend_tag"], f["trend_reason"]])
+        with conn.cursor() as cur:
+            cur.execute("""create temp table if not exists _ctx_trend (gsis_id text, week integer, trend_games integer,
+                           trend_ppg double precision, trend_gap double precision, trend_tag text, trend_reason text)
+                           on commit drop""")
+            cur.execute("truncate _ctx_trend")
+            with cur.copy("copy _ctx_trend from stdin") as cp:
+                for r in rows:
+                    cp.write_row(r)
+            cur.execute("""update ops.context_record c set trend_games = coalesce(t.trend_games, 0), trend_ppg = t.trend_ppg,
+                                  trend_gap = t.trend_gap, trend_tag = t.trend_tag, trend_reason = t.trend_reason
+                           from (select c2.ctid as id, t.* from ops.context_record c2
+                                 left join _ctx_trend t on t.gsis_id = c2.gsis_id and t.week = c2.week
+                                 where c2.season = %s and c2.trend_games is null) t
+                           where c.ctid = t.id""", (s,))
+            n += cur.rowcount
+        conn.commit()
+    log.info("context record: trend columns filled on %s rows written before them", n)
+    return n
+
+
+def trend_tag(gap) -> str | None:
+    """The screen's word for a gap (points per game): below / above past ``TREND_NEAR``, near inside it, None unknown."""
+    g = _f(gap)
+    if g is None:
+        return None
+    return "below" if g < -TREND_NEAR else "above" if g > TREND_NEAR else "near"
+
+
+def trend_reason(position: str, gap, games, tds, rz, pass_tds, share_first, share_last, qb_changed) -> str | None:
+    """The category of the reason Trends prints (research.trend_cause, the same order of rules): ``touchdowns``
+    (none on 2+ red-zone chances / no touchdown pass in 2+ games below; 2+ and 0.6 per game / 2 passes per game above),
+    ``quarterback`` (his quarterback changed this week), ``share`` (his share of the targets — carries for a running
+    back — moved 6 points or more from his first game to his last), ``none`` (no reason named); None near or unknown."""
+    g = _f(gap)
+    if g is None or abs(g) <= TREND_NEAR:
+        return None
+    games, tds, rz, ptd = int(games or 0), int(tds or 0), int(rz or 0), int(pass_tds or 0)
+    a, b = _f(share_first), _f(share_last)
+    move = None if a is None or b is None or abs(b - a) < 0.06 else (b - a)
+    qb = bool(qb_changed) and position != "QB"
+    if g < 0:
+        if position == "QB":
+            if ptd == 0 and games >= 2:
+                return "touchdowns"
+        elif tds == 0 and rz >= 2:
+            return "touchdowns"
+        if qb:
+            return "quarterback"
+        if move is not None and move < 0:
+            return "share"
+        return "none"
+    if position == "QB":
+        if games and ptd >= 2 * games:
+            return "touchdowns"
+    elif tds >= 2 and games and tds / games >= 0.6:
+        return "touchdowns"
+    if move is not None and move > 0:
+        return "share"
+    if qb:
+        return "quarterback"
+    return "none"
+
+
+def _player_arrays(g: pd.DataFrame) -> dict:
+    """One player's played games of a season (sorted by week) as the arrays the tag reads."""
+    pos = str(g["position"].iloc[-1])
+    act = pd.to_numeric(g["actual"], errors="coerce").to_numpy(dtype=float)
+    xp = pd.to_numeric(g["points_expected"], errors="coerce").to_numpy(dtype=float)
+    rz = pd.to_numeric(g["red_zone_targets"], errors="coerce").fillna(0).to_numpy()
+    if pos in ("RB", "QB"):
+        rz = rz + pd.to_numeric(g["red_zone_carries"], errors="coerce").fillna(0).to_numpy()
+    return {"pos": pos, "week": g["week"].astype(int).to_numpy(), "act": act, "xp": xp,
+            "known": g["expected_known"].fillna(False).astype(bool).to_numpy() & ~np.isnan(xp) & ~np.isnan(act),
+            "tds": pd.to_numeric(g["tds"], errors="coerce").fillna(0).to_numpy(),
+            "ptd": pd.to_numeric(g["passing_tds"], errors="coerce").fillna(0).to_numpy(), "rz": rz,
+            "share": pd.to_numeric(g["carry_share" if pos == "RB" else "target_share"], errors="coerce").to_numpy(dtype=float)}
+
+
+def _tag_before(a: dict, i: int, qb_changed) -> tuple:
+    """(games, ppg, xppg, gap, tag, reason) from the first ``i`` games of ``a`` only (the games before the week)."""
+    k = a["known"][:i]
+    n_x = int(k.sum())
+    ppg = float(np.nansum(a["act"][:i]) / i) if i else None
+    xppg = float(a["xp"][:i][k].mean()) if n_x else None
+    gap = float((a["act"][:i][k] - a["xp"][:i][k]).mean()) if n_x else None
+    sh = a["share"][:i][~np.isnan(a["share"][:i])]
+    reason = trend_reason(a["pos"], gap, i, a["tds"][:i].sum(), a["rz"][:i].sum(), a["ptd"][:i].sum(),
+                          sh[0] if sh.size >= 2 else None, sh[-1] if sh.size >= 2 else None, qb_changed)
+    return i, ppg, xppg, gap, trend_tag(gap), reason
+
+
+TREND_COLS = ["trend_games", "ppg_before", "xppg_before", "trend_gap", "trend_tag", "trend_reason"]
+
+
+def asof_trend(games: pd.DataFrame, qb_changed: Mapping[tuple[str, int], bool] | None = None) -> pd.DataFrame:
+    """One row per played game of ``games`` (one season: gsis_id, week, position, actual, points_expected,
+    expected_known, tds, passing_tds, red_zone_targets, red_zone_carries, target_share, carry_share): the Trends tag as
+    it would have read BEFORE that week — from his earlier games of the season only (a game never enters its own tag):
+    ``trend_games`` (games before), ``ppg_before``, ``xppg_before``, ``trend_gap``, ``trend_tag``, ``trend_reason``."""
+    cols = ["gsis_id", "week", *TREND_COLS]
+    if games is None or games.empty:
+        return pd.DataFrame(columns=cols)
+    out = []
+    qb_changed = qb_changed or {}
+    for gid, g in games.sort_values(["gsis_id", "week"], kind="mergesort").groupby("gsis_id", sort=False):
+        a = _player_arrays(g)
+        for i, w in enumerate(a["week"]):
+            out.append((str(gid), int(w), *_tag_before(a, i, qb_changed.get((str(gid), int(w))))))
+    return pd.DataFrame(out, columns=cols)
+
+
+def trend_asof_week(games: pd.DataFrame, week: int, qb_changed: Mapping[tuple[str, int], bool] | None = None) -> dict[str, tuple]:
+    """gsis_id -> (games, ppg, xppg, gap, tag, reason) as Trends would have read before ``week`` (his games of the
+    season before the week; the week's own game and later ones never enter). The record's freeze and its backfill."""
+    if games is None or games.empty:
+        return {}
+    qb_changed = qb_changed or {}
+    g0 = games[games["week"].astype(int) < int(week)]
+    out = {}
+    for gid, g in g0.sort_values(["gsis_id", "week"], kind="mergesort").groupby("gsis_id", sort=False):
+        a = _player_arrays(g)
+        out[str(gid)] = _tag_before(a, len(g), qb_changed.get((str(gid), int(week))))
+    return out
+
+
+def _team_snaps(g: pd.DataFrame) -> pd.Series:
+    pct = pd.to_numeric(g["offense_snap_pct"], errors="coerce")
+    return (pd.to_numeric(g["offense_snaps"], errors="coerce") / pct).where(pct > 0).round()
+
+
+def asof_role(games: pd.DataFrame) -> pd.DataFrame:
+    """One row per played game of an RB / WR / TE (one season): the role trend as it would have read BEFORE that week
+    (``role_trend.role_trend`` on his earlier games of the season, routes left out as on the live screen) and, for each
+    measure that moved, its share before, in the two recent games, and over his next 1 / 2 / 4 games from this one
+    (summed numerator over summed denominator; None when a game lacks it)."""
+    from .role_trend import ROLE_MEASURES, role_trend
+    cols = ["gsis_id", "week", "role_games", "role_trend", "measure", "before", "recent", *[f"next{k}" for k in ROLE_KS]]
+    if games is None or games.empty:
+        return pd.DataFrame(columns=cols)
+    g0 = games[games["position"].isin(["RB", "WR", "TE"])].copy()
+    g0["team_snaps"] = _team_snaps(g0)
+    g0["routes"] = np.nan
+    g0["team_dropbacks_with_participation"] = np.nan
+    out = []
+    for gid, g in g0.sort_values(["gsis_id", "week"], kind="mergesort").groupby("gsis_id", sort=False):
+        pos = str(g["position"].iloc[-1])
+        g = g.reset_index(drop=True)
+        arrs = {m: (pd.to_numeric(g[d["num"]], errors="coerce").to_numpy(dtype=float),
+                    pd.to_numeric(g[d["den"]], errors="coerce").to_numpy(dtype=float)) for m, d in ROLE_MEASURES.items()}
+        for i in range(len(g)):
+            w = int(g["week"].iloc[i])
+            rt = role_trend(g.iloc[:i], pos) if i >= 4 else None
+            if not rt:
+                out.append((str(gid), w, i, None, None, None, None, *[None] * len(ROLE_KS)))
+                continue
+            for m in rt["measures"]:
+                num, den = arrs[m["measure"]]
+                nxt = []
+                for k in ROLE_KS:
+                    if i + k > len(g):
+                        nxt.append(None)
+                        continue
+                    x, d = num[i:i + k], den[i:i + k]
+                    ok = (~np.isnan(x) & ~np.isnan(d) & (d > 0)).all()
+                    nxt.append(float(x.sum() / d.sum()) if ok else None)
+                out.append((str(gid), w, i, rt["trend"], m["measure"], m["before"], m["recent"], *nxt))
+    return pd.DataFrame(out, columns=cols)
+
+
+def _next_mean(v: np.ndarray, k: int) -> np.ndarray:
+    """Per row i of one player's played games (in order): the mean of v[i .. i+k-1], NaN when fewer than k games are
+    left or any of them is NaN (a game without a projection or a final)."""
+    n = len(v)
+    out = np.full(n, np.nan)
+    for i in range(n - k + 1):
+        w = v[i:i + k]
+        if not np.isnan(w).any():
+            out[i] = float(w.mean())
+    return out
+
+
+def outcomes(games: pd.DataFrame, ks: Sequence[int] = TREND_KS) -> pd.DataFrame:
+    """Per played game (gsis_id, week): ``miss{k}`` = mean (actual - projection made before the game) over this game and
+    his next k-1 played games, ``pts{k}`` = his mean points over them (NaN when fewer than k are left or a game has no
+    projection). ``games``: gsis_id, week, actual, proj_points."""
+    rows = []
+    for gid, g in games.sort_values(["gsis_id", "week"], kind="mergesort").groupby("gsis_id", sort=False):
+        act = pd.to_numeric(g["actual"], errors="coerce").to_numpy(dtype=float)
+        prj = pd.to_numeric(g["proj_points"], errors="coerce").to_numpy(dtype=float)
+        d = {"gsis_id": [str(gid)] * len(g), "week": g["week"].astype(int).to_numpy()}
+        for k in ks:
+            d[f"miss{k}"] = _next_mean(act - prj, k)
+            d[f"pts{k}"] = _next_mean(np.where(np.isnan(prj), np.nan, act), k)
+        rows.append(pd.DataFrame(d))
+    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame(columns=["gsis_id", "week"])
+
+
+def study_projections(conn, season: int, extra: pd.DataFrame | None = None) -> pd.DataFrame:
+    """gsis_id, week, proj_points (Half PPR, made before the game): ``ops.calibration_oof`` (walk-forward) where it holds
+    the season, else ``ops.projections`` (2026: as context_record grades it), else ``extra`` (a caller's walk-forward rows
+    for an older season, ``calibration.oof_rows``)."""
+    oof = _df(conn, OOF_SQL, (int(season), ANCHOR_LEAGUE))
+    if oof.empty and extra is not None and not extra.empty:
+        oof = extra[(extra["season"] == int(season)) & (extra["league_id"] == ANCHOR_LEAGUE)]
+    if oof.empty:
+        oof = _df(conn, PROJ_SQL, (int(season), ANCHOR_LEAGUE))
+    p = _num(oof[["gsis_id", "week", "proj_points"]].copy(), ["proj_points"])
+    p["week"] = p["week"].astype(int)
+    return p.drop_duplicates(["gsis_id", "week"])
+
+
+def study_frame(conn, seasons: Iterable[int], extra: pd.DataFrame | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """(trend rows, role rows) for ``seasons``: every played QB-TE game with the as-of tag before it and his next-k
+    outcomes; every RB / WR / TE game with the as-of role trend, its moved measures' shares and the same outcomes."""
+    tf, rf = [], []
+    for s in seasons:
+        s = int(s)
+        g, qbc = load_trend_games(conn, s)
+        if g.empty:
+            continue
+        g = g.merge(study_projections(conn, s, extra), on=["gsis_id", "week"], how="left")
+        oc = outcomes(g)
+        base = g[["gsis_id", "week", "game_id", "position", "team", "proj_points", "actual"]]
+        t = base.merge(asof_trend(g, qbc), on=["gsis_id", "week"]).merge(oc, on=["gsis_id", "week"], how="left")
+        tf.append(t.assign(season=s))
+        r = asof_role(g).merge(base, on=["gsis_id", "week"]).merge(oc, on=["gsis_id", "week"], how="left")
+        rf.append(r.assign(season=s))
+    T = pd.concat(tf, ignore_index=True) if tf else pd.DataFrame()
+    R = pd.concat(rf, ignore_index=True) if rf else pd.DataFrame()
+    for f in (T, R):
+        if not f.empty:
+            f["player"] = f["gsis_id"].astype(str) + ":" + f["season"].astype(str)
+    return T, R
+
+
+def _gk(a: pd.DataFrame, rest: pd.DataFrame, col: str, base: str | None = None) -> dict:
+    """n, players, the mean of ``col`` (minus ``base`` when given) with its player-resampled interval, the share above 0,
+    and the difference from ``rest`` with its interval."""
+    def val(d):
+        v = d[col] - (d[base] if base else 0)
+        ok = v.notna()
+        return v[ok].to_numpy(dtype=float), d.loc[ok, "player"].to_numpy()
+    av, ap = val(a)
+    bv, bp = val(rest)
+    mean, lo, hi = bootstrap_mean(av, ap)
+    diff, dlo, dhi = bootstrap_diff(av, ap, bv, bp)
+    return {"n": int(av.size), "players": int(len(set(ap))), "mean": _r(mean), "lo": _r(lo), "hi": _r(hi),
+            "above": _r(float((av > 0).mean()) if av.size else None, 3), "rest_n": int(bv.size),
+            "rest_mean": _r(float(bv.mean()) if bv.size else None),
+            "rest_above": _r(float((bv > 0).mean()) if bv.size else None, 3),
+            "vs_rest": _r(diff), "vs_rest_lo": _r(dlo), "vs_rest_hi": _r(dhi)}
+
+
+def trend_grade(T: pd.DataFrame, ks: Sequence[int] = TREND_KS) -> list[dict]:
+    """The grade of "below / above expectation": per tag x k (and by gap tercile, position and reason), (a) the miss
+    against the projection over the next k games against the rest (the other player-weeks with a known gap at the same
+    positions), (b) the raw change: points per game over the next k minus his points per game before the week."""
+    d = T[T["trend_tag"].notna()].copy()
+    out = []
+    for tag in TREND_TAGS:
+        g = d[d["trend_tag"] == tag]
+        if g.empty:
+            continue
+        cuts = np.quantile(g["trend_gap"].abs(), [1 / 3, 2 / 3])
+        size = np.where(g["trend_gap"].abs() <= cuts[0], "small", np.where(g["trend_gap"].abs() <= cuts[1], "middle", "large"))
+        g = g.assign(size=size)
+        groups = [("all", "all", g)]
+        groups += [("size", s, g[g["size"] == s]) for s in ("small", "middle", "large")]
+        groups += [("position", p, g[g["position"] == p]) for p in ("QB", "RB", "WR", "TE")]
+        groups += [("reason", r, g[g["trend_reason"] == r]) for r in TREND_REASONS]
+        for by, grp, a in groups:
+            if a.empty:
+                continue
+            rest = d[(d["trend_tag"] != tag) & d["position"].isin(a["position"].unique())]
+            for k in ks:
+                row = {"tag": tag, "by": by, "grp": grp, "k": k,
+                       "gap_lo": _r(float(a["trend_gap"].min())), "gap_hi": _r(float(a["trend_gap"].max()))}
+                row.update(_gk(a, rest, f"miss{k}"))
+                raw = _gk(a, rest, f"pts{k}", "ppg_before")
+                row.update({f"raw_{x}": raw[x] for x in ("n", "mean", "lo", "hi", "vs_rest", "vs_rest_lo", "vs_rest_hi")})
+                if by == "size":
+                    row["cuts"] = [_r(float(c)) for c in cuts]
+                out.append(row)
+    return out
+
+
+def role_grade(R: pd.DataFrame, ks: Sequence[int] = ROLE_KS) -> dict:
+    """"Role up / down": (1) does the share hold — per trend x measure, the share before, in the two recent games and
+    over the next 1 / 2 / 4 games (what moved = recent - before; held = next - before, both in share points, with a
+    player-resampled interval); (2) is it priced — the miss against the projection over the next k games, against the
+    rest (every other RB / WR / TE game with four games before it and no trend called)."""
+    share = []
+    m = R[R["role_trend"].notna()]
+    for (trend, measure), g in m.groupby(["role_trend", "measure"]):
+        for k in ks:
+            d = g[g[f"next{k}"].notna()]
+            if d.empty:
+                continue
+            moved = (d["recent"] - d["before"]).to_numpy(dtype=float)
+            held = (d[f"next{k}"] - d["before"]).to_numpy(dtype=float)
+            hm, hlo, hhi = bootstrap_mean(held, d["player"].to_numpy())
+            share.append({"trend": trend, "measure": measure, "k": k, "n": len(d), "players": int(d["player"].nunique()),
+                          "before": _r(float(d["before"].mean()), 4), "recent": _r(float(d["recent"].mean()), 4),
+                          "next": _r(float(d[f"next{k}"].mean()), 4), "moved": _r(float(moved.mean()), 4),
+                          "held": _r(hm, 4), "held_lo": _r(hlo, 4), "held_hi": _r(hhi, 4),
+                          "kept": _r(float(held.mean() / moved.mean()) if moved.mean() else None, 3)})
+    return {"share": share, "priced": role_priced(R.drop_duplicates(["player", "week"]), ks)}
+
+
+def role_priced(one: pd.DataFrame, ks: Sequence[int] = ROLE_KS) -> list[dict]:
+    """Is "role up / down" priced: per trend (and position), the miss over the next k games against the rest — every
+    other RB / WR / TE game with four games before it (a trend could have been called) and none called. ``one``: one
+    row per player-week (role_trend, role_games, position, player, miss{k})."""
+    called = one[one["role_trend"].notna()]
+    priced = []
+    for trend in ("up", "down"):
+        a = called[called["role_trend"] == trend]
+        if a.empty:
+            continue
+        # the rest: every other game with four games before it (a trend could have been called) and none called
+        rest = one[one["role_trend"].isna() & (one["role_games"] >= 4)]
+        for by, grp, sub in [("all", "all", a)] + [("position", p, a[a["position"] == p]) for p in ("RB", "WR", "TE")]:
+            if sub.empty:
+                continue
+            r2 = rest[rest["position"].isin(sub["position"].unique())]
+            for k in ks:
+                row = {"trend": trend, "by": by, "grp": grp, "k": k}
+                row.update(_gk(sub, r2, f"miss{k}"))
+                priced.append(row)
+    return priced
+def record_frame(h: pd.DataFrame, ks: Sequence[int] = TREND_KS) -> pd.DataFrame:
+    """The record's graded rows (one per player-week with a final game) with the next-k outcomes read from the record
+    itself — his next k graded rows of the season, this week's first — in the study's shape (``player``,
+    ``ppg_before``, ``role_games``, ``miss{k}``, ``pts{k}``)."""
+    if h.empty:
+        return h
+    d = h[h["miss"].notna() & h["proj_points"].notna()].copy()
+    d["actual"] = pd.to_numeric(d["actual_points"], errors="coerce")
+    d["week"] = d["week"].astype(int)
+    oc = []
+    for s_, g in d.groupby("season"):
+        oc.append(outcomes(g[["gsis_id", "week", "actual", "proj_points"]], ks).assign(season=s_))
+    d = d.merge(pd.concat(oc, ignore_index=True), on=["season", "gsis_id", "week"], how="left")
+    d["player"] = d["gsis_id"].astype(str) + ":" + d["season"].astype(str)
+    d["ppg_before"] = pd.to_numeric(d["trend_ppg"], errors="coerce")
+    d["trend_gap"] = pd.to_numeric(d["trend_gap"], errors="coerce")
+    d["role_games"] = pd.to_numeric(d["trend_games"], errors="coerce")
+    return d
+
+
+def _tag_row(rows: Sequence[Mapping], tag: str, k: int = 1, by: str = "all", grp: str = "all") -> Mapping | None:
+    return next((r for r in rows if r.get("tag", r.get("trend")) == tag and r["by"] == by and r["grp"] == grp
+                 and r["k"] == k), None)
+
+
+def _effect(r: Mapping | None) -> str | None:
+    if not r or r.get("vs_rest") is None or r.get("vs_rest_lo") is None or r.get("vs_rest_hi") is None:
+        return None
+    return "none" if r["vs_rest_lo"] <= 0 <= r["vs_rest_hi"] else "above" if r["vs_rest"] > 0 else "below"
+
+
+def _against(r: Mapping, who: str = "the other players") -> str:
+    """'0.2 points above the other players against their projection (−0.1 to +0.5; 2,467 games)'."""
+    v = r["vs_rest"]
+    ci = f"{_signed(r['vs_rest_lo'])} to {_signed(r['vs_rest_hi'])}; " if r.get("vs_rest_lo") is not None else ""
+    where = f"level with {who}" if round(v, 1) == 0 else f"{_pts(v)} {'above' if v > 0 else 'below'} {who}"
+    return f"{where} against their projection ({ci}{r['n']:,} games)"
+
+
+def _verdict(r: Mapping) -> str:
+    eff = _effect(r)
+    return ("no measurable difference" if eff in (None, "none")
+            else "more than their projection gave them" if eff == "above" else "less than their projection gave them")
+
+
+def _raw(r: Mapping, before: str = "their points per game before") -> str:
+    raw = r.get("raw_mean")
+    if raw is None:
+        return ""
+    return f"scored {_pts(raw)} {'more' if raw > 0 else 'less'} than {before} and "
+
+
+def trend_sentence(rows: Sequence[Mapping], span: str | None) -> str | None:
+    """What "below / above expectation" has meant for the next game, from the record's grade: the raw change (his
+    points next against his points per game before) and the miss against the projection, against the rest."""
+    b, a = _tag_row(rows, "below"), _tag_row(rows, "above")
+    if not b or not a or not b.get("n") or not a.get("n") or b.get("vs_rest") is None or a.get("vs_rest") is None:
+        return None
+    return (f"Graded on {span} ({SCORING_WORDS}), in their next game: players below expectation {_raw(b)}finished "
+            f"{_against(b)} — {_verdict(b)}; players above expectation {_raw(a, 'before')}finished "
+            f"{_against(a, 'the others')} — {_verdict(a)}. The projection already counts a player's work and his "
+            "points: a gap here is what happened, not a reason to buy or sell on its own.")
+
+
+def trend_head(rows: Sequence[Mapping], span: str | None) -> str | None:
+    """Trends' line under its title: "Graded on 2025 and 2026 weeks 1–4 (Half PPR): in their next game, players below expectation
+    scored 1.5 points more than their average before and players above it 1.9 less — and their projections already
+    expected that (no
+    measurable difference against them; 4,282 games)." """
+    b, a = _tag_row(rows, "below"), _tag_row(rows, "above")
+    if not b or not a or b.get("raw_mean") is None or a.get("raw_mean") is None or b.get("vs_rest") is None \
+            or a.get("vs_rest") is None:
+        return None
+    rb, ra = b["raw_mean"], a["raw_mean"]
+    lead = (f"Graded on {span} ({SCORING_WORDS}): in their next game, players below expectation scored {_pts(rb)} "
+            f"{'more' if rb > 0 else 'less'} than their average before and players above it {abs(ra):.1f} "
+            f"{'more' if ra > 0 else 'less'}")
+    eb, ea = _effect(b), _effect(a)
+    n = int(b["n"]) + int(a["n"])
+    if eb in (None, "none") and ea in (None, "none"):
+        return f"{lead} — and their projections already expected that (no measurable difference against them; {n:,} games)."
+    parts = []
+    for r, word, e in ((b, "below", eb), (a, "above", ea)):
+        if e in (None, "none"):
+            parts.append(f"those {word} expectation level with their projection")
+        else:
+            parts.append(f"those {word} expectation finished {_against(r, 'the rest')}")
+    return f"{lead}; " + " and ".join(parts) + "."
+
+
+def role_sentence(rows: Sequence[Mapping], span: str | None) -> str | None:
+    """What "role up / role down" has meant for the next game against the projection, one sentence."""
+    up, dn = _tag_row(rows, "up"), _tag_row(rows, "down")
+    if not up or not up.get("n") or up.get("vs_rest") is None:
+        return None
+    out = (f"Graded on {span} ({SCORING_WORDS}), in their next game: after \"role up\" players finished {_against(up)} "
+           f"— {_verdict(up)}")
+    if dn and dn.get("n") and dn.get("vs_rest") is not None:
+        out += f"; after \"role down\" {_against(dn, 'the others')} — {_verdict(dn)}"
+    return out + "."
+
+
+def trend_grade_rows(h: pd.DataFrame, graded_at: datetime | None = None) -> list[dict]:
+    """``ops.context_grade`` rows for Trends and the role trend from the record: kind ``trend`` (the miss against the
+    projection over the next k games; grp ``tag/by/group/k``), ``trend_raw`` (points per game next minus before),
+    ``role`` (grp ``trend/by/group/k``), and ``summary`` grp ``trend`` / ``role`` (the sentences)."""
+    if h.empty or "trend_tag" not in h:
+        return []
+    d = record_frame(h)
+    if d.empty:
+        return []
+    span = span_words(d)
+    out = []
+
+    def put(kind, grp, r, mean, lo, hi, vs=("vs_rest", "vs_rest_lo", "vs_rest_hi"), words=None, sp=None):
+        out.append({"kind": kind, "grp": grp, "corner_certainty": None, "corner_tier": None, "n": r.get("n"),
+                    "games": r.get("players"), "mean_miss": r.get(mean), "lo": r.get(lo), "hi": r.get(hi),
+                    "beat": None if r.get("above") is None else int(round(r["above"] * r["n"])),
+                    "beat_share": r.get("above"), "vs_rest": r.get(vs[0]), "vs_rest_lo": r.get(vs[1]),
+                    "vs_rest_hi": r.get(vs[2]), "rest_n": r.get("rest_n"), "rest_beat_share": r.get("rest_above"),
+                    "span": sp or span, "scoring": SCORING_WORDS, "words": words, "graded_at": graded_at})
+    t = trend_grade(d[d["trend_tag"].notna()]) if d["trend_tag"].notna().any() else []
+    for r in t:
+        g = f"{r['tag']}/{r['by']}/{r['grp']}/{r['k']}"
+        put("trend", g, r, "mean", "lo", "hi")
+        put("trend_raw", g, {**r, "n": r.get("raw_n"), "above": None, "rest_above": None}, "raw_mean", "raw_lo", "raw_hi",
+            ("raw_vs_rest", "raw_vs_rest_lo", "raw_vs_rest_hi"))
+    rw = d[d["position"].isin(["RB", "WR", "TE"])].copy()
+    rw["role_trend"] = rw["role_trend"].where(rw["role_trend"].isin(["up", "down"]), None)
+    rp = role_priced(rw) if rw["role_trend"].notna().any() else []
+    rspan = span_words(rw[rw["role_trend"].notna()]) if rp else None
+    for r in rp:
+        put("role", f"{r['trend']}/{r['by']}/{r['grp']}/{r['k']}", r, "mean", "lo", "hi", sp=rspan)
+    tw = trend_sentence(t, span)
+    if tw:
+        n = (_tag_row(t, "below") or {}).get("n", 0) + (_tag_row(t, "above") or {}).get("n", 0)
+        put("summary", "trend", {"n": n}, "x", "x", "x", words=tw)
+        put("summary", "trend_head", {"n": n}, "x", "x", "x", words=trend_head(t, span))
+    rwds = role_sentence(rp, rspan)
+    if rwds:
+        put("summary", "role", {"n": (_tag_row(rp, "up") or {}).get("n", 0) + (_tag_row(rp, "down") or {}).get("n", 0)},
+            "x", "x", "x", words=rwds, sp=rspan)
+    return out
+# ---- end IP-3 (study)
+
+
+# ---- IP-3: the study from the command line (docs/METRICS.md § "Trends and the role trend, graded" — every table)
+def study(seasons: Sequence[int] = (2021, 2022, 2023, 2024, 2025, 2026), fit_missing: bool = True) -> dict:
+    """The tables of the study. Seasons without stored walk-forward rows (``ops.calibration_oof`` holds 2023-2025 on
+    the sandbox) are projected walk-forward in memory with ``calibration.oof_rows`` (the production fit on the seasons
+    before each; ~80 s for 2021-2022 with ``OMP_NUM_THREADS=1``) when ``fit_missing``; nothing is written."""
+    import psycopg
+
+    from .config import get_settings
+    with psycopg.connect(get_settings().pipeline_dsn()) as conn:
+        extra = None
+        have = {int(r[0]) for r in conn.execute("select distinct season from ops.calibration_oof where league_id = %s",
+                                                 (ANCHOR_LEAGUE,)).fetchall()}
+        missing = [int(s) for s in seasons if int(s) not in have and int(s) < max(int(x) for x in seasons)]
+        if fit_missing and missing:
+            from . import calibration as CAL
+            from . import projections as P
+            sc = {k: v for k, v in P.league_scorings(conn).items() if k == ANCHOR_LEAGUE}
+            alls = P.available_seasons(conn)
+            frame = P.load_frame(conn, [s for s in alls if s <= max(missing)])
+            extra = CAL.oof_rows(frame, missing, sc, min(alls), ranges=False)
+        T, R = study_frame(conn, seasons, extra)
+    return {"trend": trend_grade(T), "role": role_grade(R), "rows": {"trend": len(T), "role": len(R)}}
+
+
+if __name__ == "__main__":  # pragma: no cover - the reproducible study (prints JSON)
+    import sys
+
+    if sys.argv[1:2] == ["study"]:
+        print(json.dumps(study(), indent=1, default=str))
+# ---- end IP-3
