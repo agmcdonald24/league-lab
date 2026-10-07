@@ -10,11 +10,12 @@
 --
 -- Bounds (the site is public: any visitor's League screen can trigger a write):
 --   * a row: power + rows ≤ 8 KB of JSON (a 32-team league with names ≈ 7 KB; a 12-team ≈ 2.7 KB), checked here;
---   * leagues: house leagues and leagues an account has saved always; other leagues ("visitor") at most 20 new a day
---     and at most 200 held (the API checks both inside the write's transaction);
+--   * leagues: house leagues always; every other league — saved by an account or not (fix round: no exemption) — at
+--     most 20 new a day and at most 200 held (the API checks both inside the write's transaction); a league-week is
+--     replaced at most once an hour; past 40 MB of pg_total_relation_size (read at most once a minute) no new row;
 --   * weeks: rows built more than 20 weeks (140 days) ago are pruned below, and each league keeps its newest 20 weeks.
---   Worst case: (200 visitor + house + saved leagues) × 20 weeks × ~8.3 KB ≈ 33 MB + 166 KB per house / saved league;
---   typical (12 teams, ~2.8 KB a row, compressed further by TOAST) ≈ 11 MB at the visitor cap.
+--   Worst case: (200 + 2 house leagues) × 20 weeks × ≤ 8.5 KB a row on disk ≈ 34.3 MB + indexes (< 40 MB, the guard);
+--   typical (12 teams, 1.75 KB a row on disk) ≈ 7 MB at the cap.
 --
 -- The schema `outlook` is NOT one the sync replaces: scripts/sync_to_hosted.sh drops and restores analytics,
 -- analytics_seeds and ops only, then runs this file — so the rows survive every nightly. The read-only app role keeps

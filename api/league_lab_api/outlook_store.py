@@ -18,11 +18,18 @@ compared with this week's if it was written down at the time. This module writes
   lands before the nightly applies the SQL) everything is off and quiet: no arrows, no write, no error.
 * **Bounds** (the site is public — any visitor's League screen triggers a write): only leagues anyone can read
   (Sleeper, MyFantasyLeague; never an ESPN or Yahoo key); a row ≤ ``MAX_BYTES`` of JSON (the table checks it too);
-  house leagues and leagues an account has saved always; any other league at most ``NEW_PER_DAY`` new a day and
-  ``VISITOR_MAX`` held (checked inside the write's transaction); 20 weeks kept (the nightly prunes, the SQL file).
+  house leagues always; **every other league — saved by an account or not, no exemption (fix round, the review's M1:
+  an account could save 50 leagues, remove them and save 50 more)** — at most ``NEW_PER_DAY`` new a day and
+  ``LEAGUES_MAX`` held (both checked inside the write's transaction); a league-week replaced at most once an hour
+  (``REPLACE_AFTER``: a popular league's rebuilds every few minutes would otherwise churn dead rows); and a guard on the
+  table's real size (``pg_total_relation_size``, read at most once a minute): past ``SIZE_BUDGET`` no new row is
+  written (a stored week may still be replaced). 20 weeks kept (the nightly prunes, the SQL file).
+  Worst case: (``LEAGUES_MAX`` + 2 house leagues) × 20 weeks × ≤ 8.5 KB a row on disk ≈ 34.3 MB + indexes < 40 MB.
 * **Reads**: ``movement`` (last week's row for the arrows; a DB read per outlook build, never per request) and
   ``card`` (the page shell's preview: the last build kept in memory, else the newest stored row — never a provider
-  call, never a simulation).
+  call, never a simulation). The shell looks up only a league this process built or one in the set of stored league
+  keys (``stored_keys``: re-read at most once a minute, ≤ ``KEYS_MAX``); any other key costs a set lookup and
+  nothing else (the review's L4: unknown keys spent a shared read budget and switched real cards off).
 """
 
 from __future__ import annotations
@@ -45,40 +52,32 @@ from . import db
 log = logging.getLogger("league_lab_api.outlook_store")
 
 ENV = "LEAGUE_LAB_OUTLOOK_STORE"
-NEW_PER_DAY = 20          # leagues nobody keeps (not a house league, not saved by an account) first stored in a day
-VISITOR_MAX = 200         # such leagues held at once (each ≤ 20 rows)
+NEW_PER_DAY = 20          # leagues that are not house leagues first stored in a rolling day (saved ones included)
+LEAGUES_MAX = 200         # such leagues held at once (each ≤ 20 rows ≤ 8.5 KB: ≤ 170 KB a league, 34 MB in all)
+SIZE_BUDGET = 40 * 1024 * 1024    # the table's real size (pg_total_relation_size) past which no new row is written
+SIZE_CHECK_S = 60.0
+REPLACE_AFTER = "1 hour"  # a stored league-week is replaced by a later build at most this often (until its kickoff)
+KEYS_MAX = 2000           # the shell's set of stored league keys (≥ LEAGUES_MAX + house leagues)
+KEYS_TTL_S = 60.0
 KEEP_WEEKS = 20
 MAX_BYTES = 8192          # power + rows as JSON text (a 32-team league with names ≈ 7 KB)
 QUEUE_MAX = 64
 SHARE_PLATFORMS = frozenset({"sleeper", "mfl"})     # leagues anyone can read: a share link, a stored row, a preview
 NAME_MAX, NAME_BYTES = 40, 80   # a team's name in a row (provider text, cut to 40 letters and 80 UTF-8 bytes: 32 teams fit)
 
-stats = {"queued": 0, "written": 0, "closed": 0, "capped": 0, "failed": 0, "dropped": 0, "skipped": 0}
+stats = {"queued": 0, "written": 0, "closed": 0, "capped": 0, "full": 0, "unchanged": 0, "failed": 0, "dropped": 0,
+         "skipped": 0}
 _queue: queue.Queue[dict] = queue.Queue(maxsize=QUEUE_MAX)
 _worker: threading.Thread | None = None
 _wlock = threading.Lock()
 _ready = {"ok": False, "next": 0.0}
 # the preview card of each league's latest build (a league key → {name, week, top}), ~300 bytes each; and the shell's
-# lookups of the stored row (a hit or a miss) so a crawler's repeated hit never repeats the query
+# reads of a stored league's newest row (only keys in ``stored_keys``), kept 10 minutes
 _cards = memo.region("outlook_card", ttl=14 * 86400.0, max_entries=512)
-_card_reads = memo.region("outlook_card_db", ttl=600.0, max_entries=1024)
-# the page shell is not rate limited (a link opens for anyone): its reads of the store share one budget, a token
-# bucket of CARD_READS_PER_MIN — past it a League link gets the default card until the bucket refills
-CARD_READS_PER_MIN = 120
-_card_bucket = {"tokens": float(CARD_READS_PER_MIN), "at": 0.0}
-_card_lock = threading.Lock()
-
-
-def _card_read_allowed() -> bool:
-    with _card_lock:
-        now = time.monotonic()
-        b = _card_bucket
-        b["tokens"] = min(float(CARD_READS_PER_MIN), b["tokens"] + (now - b["at"]) * CARD_READS_PER_MIN / 60.0)
-        b["at"] = now
-        if b["tokens"] < 1.0:
-            return False
-        b["tokens"] -= 1.0
-        return True
+_card_reads = memo.region("outlook_card_db", ttl=600.0, max_entries=KEYS_MAX)
+_keys: dict[str, Any] = {"keys": frozenset(), "next": 0.0}
+_keys_lock = threading.Lock()
+_size: dict[str, Any] = {"bytes": None, "next": 0.0}
 
 READY_SQL = ("select coalesce(has_table_privilege(to_regclass('outlook.snapshots'), 'insert'), false) "
              "and coalesce(has_table_privilege(to_regclass('outlook.snapshots'), 'update'), false) "
@@ -95,15 +94,16 @@ UPSERT_SQL = """insert into outlook.snapshots
                 on conflict (league_key, season, week) do update
                    set kind = excluded.kind, league_name = excluded.league_name, model_version = excluded.model_version,
                        built_at = excluded.built_at, teams = excluded.teams, power = excluded.power, rows = excluded.rows
-                 where outlook.snapshots.closes_at > %(now)s"""
-SAVED_SQL = ("select exists (select 1 from accounts.user_leagues ul join accounts.leagues l using (league_key) "
-             "where l.provider = %s and l.external_id = %s)")
-SAVED_READY_SQL = ("select coalesce(has_table_privilege(to_regclass('accounts.user_leagues'), 'select'), false) "
-                   "and coalesce(has_table_privilege(to_regclass('accounts.leagues'), 'select'), false)")
+                 where outlook.snapshots.closes_at > %(now)s
+                   and outlook.snapshots.built_at <= %(now)s - interval '""" + REPLACE_AFTER + """'"""
 KNOWN_SQL = "select exists (select 1 from outlook.snapshots where league_key = %s)"
-NEW_TODAY_SQL = ("select count(*) from (select league_key from outlook.snapshots where kind = 'visitor' "
+KNOWN_WEEK_SQL = "select exists (select 1 from outlook.snapshots where league_key = %s and season = %s and week = %s)"
+# every league that is not a house league counts, whatever kind an older row carries (no exemption)
+NEW_TODAY_SQL = ("select count(*) from (select league_key from outlook.snapshots where kind <> 'house' "
                  "group by league_key having min(built_at) > %s) x")
-VISITORS_SQL = "select count(distinct league_key) from outlook.snapshots where kind = 'visitor'"
+LEAGUES_SQL = "select count(distinct league_key) from outlook.snapshots where kind <> 'house'"
+SIZE_SQL = "select pg_total_relation_size(to_regclass('outlook.snapshots'))"
+KEYS_SQL = f"select distinct league_key from outlook.snapshots limit {KEYS_MAX}"
 
 
 # ------------------------------------------------------------------------------------------------------- the switch
@@ -131,7 +131,8 @@ def reset() -> None:
     _ready.update(ok=False, next=0.0)
     _cards.clear()
     _card_reads.clear()
-    _card_bucket.update(tokens=float(CARD_READS_PER_MIN), at=time.monotonic())
+    _keys.update(keys=frozenset(), next=0.0)
+    _size.update(bytes=None, next=0.0)
 
 
 def shareable(league_key: str | None) -> bool:
@@ -236,27 +237,32 @@ def flush(timeout: float = 10.0) -> None:
         time.sleep(0.02)
 
 
-def _saved(conn: psycopg.Connection, league_key: str) -> bool:
-    """An account has saved this league (accounts.user_leagues): False when the accounts tables are not there."""
-    if not conn.execute(SAVED_READY_SQL).fetchone()[0]:
-        return False
-    provider = platforms.platform(league_key)
-    external = league_key.split(":", 1)[1] if ":" in league_key else league_key
-    return bool(conn.execute(SAVED_SQL, (provider, external)).fetchone()[0])
+def table_bytes(conn: psycopg.Connection) -> int:
+    """``outlook.snapshots``' real size on disk (with its indexes and TOAST), read at most once a minute."""
+    now = time.monotonic()
+    if _size["bytes"] is None or now >= _size["next"]:
+        _size.update(bytes=int(conn.execute(SIZE_SQL).fetchone()[0] or 0), next=now + SIZE_CHECK_S)
+    return int(_size["bytes"])
 
 
 def write(item: dict) -> str:
-    """One row in one read-write transaction: written | capped | closed. The caps are checked inside it."""
+    """One row in one read-write transaction: written | capped | full | unchanged | closed. Every league that is not a
+    house league is under the same caps (no exemption for one an account has saved); the size guard first."""
     def fn(conn: psycopg.Connection) -> str:
         key = item["league_key"]
-        kind = item.get("kind") or ("saved" if _saved(conn, key) else "visitor")
-        if kind == "visitor" and not conn.execute(KNOWN_SQL, (key,)).fetchone()[0]:
-            since = item["now"] - timedelta(days=1)
-            if (conn.execute(NEW_TODAY_SQL, (since,)).fetchone()[0] >= NEW_PER_DAY
-                    or conn.execute(VISITORS_SQL).fetchone()[0] >= VISITOR_MAX):
-                return "capped"
+        kind = "house" if item.get("kind") == "house" else "visitor"
+        if not conn.execute(KNOWN_WEEK_SQL, (key, item["season"], item["week"])).fetchone()[0]:
+            if table_bytes(conn) > SIZE_BUDGET:
+                return "full"
+            if kind != "house" and not conn.execute(KNOWN_SQL, (key,)).fetchone()[0]:
+                since = item["now"] - timedelta(days=1)
+                if (conn.execute(NEW_TODAY_SQL, (since,)).fetchone()[0] >= NEW_PER_DAY
+                        or conn.execute(LEAGUES_SQL).fetchone()[0] >= LEAGUES_MAX):
+                    return "capped"
         cur = conn.execute(UPSERT_SQL, {**item, "kind": kind})
-        return "written" if cur.rowcount else "closed"
+        if cur.rowcount:
+            return "written"
+        return "closed" if item["now"] >= item["closes_at"] else "unchanged"
     return db.run_rw(fn, purpose="outlook")
 
 
@@ -285,6 +291,25 @@ def stored(league_key: str, season: int, week: int) -> dict:
     return out
 
 
+def stored_keys() -> frozenset:
+    """The league keys the store holds (≤ ``KEYS_MAX``), re-read at most once a minute; empty when the store is off."""
+    now = time.monotonic()
+    with _keys_lock:
+        if now < _keys["next"]:
+            return _keys["keys"]
+        _keys["next"] = now + KEYS_TTL_S
+    keys: frozenset = frozenset()
+    if ready():
+        try:
+            df = db.fresh(KEYS_SQL)
+            keys = frozenset(str(k) for k in df["league_key"]) if not df.empty else frozenset()
+        except Exception:  # noqa: BLE001 - no card from the store, the default
+            keys = frozenset()
+    with _keys_lock:
+        _keys["keys"] = keys
+    return keys
+
+
 def remember_card(league_key: str, card: dict) -> None:
     if shareable(league_key):
         _cards.put(str(league_key), card)
@@ -303,13 +328,11 @@ def card(league_key: str | None) -> dict | None:
     hit = _cards.get(key)
     if hit is not None:
         return hit
-    if not ready():
+    if key not in stored_keys():                    # an unknown key: a set lookup, nothing else
         return None
     got = _card_reads.get(key, "miss")
     if got != "miss":
         return got
-    if not _card_read_allowed():                    # many unknown links at once: the default card, nothing read
-        return None
     res = None
     try:
         df = db.fresh(LATEST_SQL, (key,))

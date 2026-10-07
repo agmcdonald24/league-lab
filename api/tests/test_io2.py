@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import psycopg
@@ -82,13 +82,13 @@ def api(monkeypatch):
 
 
 def _row(key: str, *, week: int = 5, teams: int = 4, per_week: float = 100.0, name: str = "Test league",
-         team: str | None = None) -> dict:
+         team: str | None = None, built_at: datetime = BEFORE) -> dict:
     ans = {"league_id": key, "season": 2026, "version": "ol1.0",
            "power": {"rows": [{"roster_id": r, "rank": r, "per_week": per_week - r, "team_name": team or f"Team {r}"}
                               for r in range(1, teams + 1)]},
            "outlook": {"rows": [{"roster_id": r, "wins_mean": 7.5, "playoff": 0.5, "top_seed": 0.25}
                                 for r in range(1, teams + 1)]}}
-    return S.snapshot(ans, league_name=name, week=week, built_at=BEFORE)
+    return S.snapshot(ans, league_name=name, week=week, built_at=built_at)
 
 
 def _stored(key: str) -> list[dict]:
@@ -109,7 +109,12 @@ def test_first_build_writes_a_later_build_replaces_until_kickoff_then_never():
         got = _stored(key)
         assert len(got) == 1 and got[0]["kind"] == "house" and got[0]["power"][0]["per_week"] == 99.0
         assert got[0]["closes_at"] == datetime(2026, 10, 9, 0, 15, tzinfo=UTC)          # week 5's first kickoff
-        assert S.offer(_row(key, per_week=120.0), house=True, now=BEFORE) == "queued"     # before kickoff: replaced
+        # a rebuild within the hour leaves the row (fix round: at most one replacement an hour)
+        assert S.offer(_row(key, per_week=110.0), house=True, now=BEFORE) == "queued"
+        S.flush()
+        assert _stored(key)[0]["power"][0]["per_week"] == 99.0 and S.stats["unchanged"] >= 1
+        later = BEFORE + timedelta(hours=2)
+        assert S.offer(_row(key, per_week=120.0, built_at=later), house=True, now=later) == "queued"   # replaced
         S.flush()
         assert _stored(key)[0]["power"][0]["per_week"] == 119.0
         assert S.offer(_row(key, per_week=140.0), house=True, now=AFTER) == "closed"      # after: never offered
@@ -164,14 +169,88 @@ def test_the_daily_cap_on_leagues_nobody_keeps(monkeypatch):
         assert S.offer(_row(keys[3]), house=True, now=BEFORE) == "queued"
         S.flush()
         assert len(_stored(keys[0])) == 2 and _stored(keys[3])[0]["kind"] == "house"
-        # the total held: past VISITOR_MAX nothing new either
+        # the total held: past LEAGUES_MAX nothing new either
         monkeypatch.setattr(S, "NEW_PER_DAY", 100)
-        monkeypatch.setattr(S, "VISITOR_MAX", 2)
+        monkeypatch.setattr(S, "LEAGUES_MAX", 2)
         assert S.offer(_row(keys[4]), house=False, now=BEFORE) == "queued"
         S.flush()
         assert not _stored(keys[4])
     finally:
         _clean(*keys)
+
+
+@needs_db
+@needs_store
+def test_a_league_an_account_saved_has_no_exemption(monkeypatch):
+    """Fix round, the review's M1: an account saving 50 leagues wrote all 50 (kind 'saved' escaped the caps). Now the
+    write never asks the accounts tables, every league that is not a house league is 'visitor' under the same caps, and
+    rows an older build stored as 'saved' count against them too."""
+    monkeypatch.setattr(S, "NEW_PER_DAY", 100)
+    monkeypatch.setattr(S, "LEAGUES_MAX", 2)
+    keys = FAKE[2:5]
+    _clean(*keys)
+    seen: list[str] = []
+    real = S.db.run_rw
+
+    def recording(fn, *, purpose="accounts"):
+        def wrapped(conn):
+            class Rec:
+                def execute(self, sql, *a, **k):
+                    seen.append(str(sql))
+                    return conn.execute(sql, *a, **k)
+            return fn(Rec())
+        return real(wrapped, purpose=purpose)
+    monkeypatch.setattr(S.db, "run_rw", recording)
+    try:
+        with _owner() as c:                        # a row as the first build stored a saved league ("saved")
+            c.execute("""insert into outlook.snapshots (league_key, season, week, kind, model_version, built_at, closes_at,
+                                                         teams, power, rows)
+                         values (%s, 2026, 5, 'saved', 'ol1.0', %s, %s, 1, '[]', '[]')""",
+                      (keys[0], BEFORE, datetime(2026, 10, 9, 0, 15, tzinfo=UTC)))
+        assert S.offer(_row(keys[1]), house=False, now=BEFORE) == "queued"
+        assert S.offer(_row(keys[2]), house=False, now=BEFORE) == "queued"
+        S.flush()
+        assert _stored(keys[1])[0]["kind"] == "visitor" and not _stored(keys[2])     # the old 'saved' row counted
+        assert seen and not any("accounts." in q for q in seen)
+    finally:
+        _clean(*keys)
+
+
+@needs_db
+@needs_store
+def test_the_size_guard_stops_new_rows(monkeypatch):
+    key, other = FAKE[5], FAKE[6]
+    _clean(key, other)
+    try:
+        assert S.offer(_row(key), house=True, now=BEFORE) == "queued"
+        S.flush()
+        monkeypatch.setattr(S, "SIZE_BUDGET", 0)                     # the table "over budget"
+        S._size.update(bytes=None, next=0.0)
+        assert S.offer(_row(other), house=True, now=BEFORE) == "queued"
+        S.flush()
+        assert not _stored(other) and S.stats["full"] >= 1           # nothing new, not even a house league
+        later = BEFORE + timedelta(hours=2)                           # a stored week may still be replaced
+        assert S.offer(_row(key, per_week=130.0, built_at=later), house=True, now=later) == "queued"
+        S.flush()
+        assert _stored(key)[0]["power"][0]["per_week"] == 129.0
+        # read at most once a minute
+        calls = []
+        monkeypatch.setattr(S, "SIZE_SQL", "select 1")
+        S._size.update(bytes=None, next=0.0)
+
+        class Conn:
+            def execute(self, sql, *a):
+                calls.append(sql)
+
+                class R:
+                    def fetchone(self):
+                        return (1,)
+                return R()
+        for _ in range(5):
+            S.table_bytes(Conn())
+        assert len(calls) == 1
+    finally:
+        _clean(key, other)
 
 
 @needs_db
@@ -351,11 +430,28 @@ def test_the_card_from_the_stored_row_alone_is_escaped(api, dist):
         assert _meta(t, "og:description").startswith("1. &quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt; 121.2 (84% playoffs)")
         # the stored row is read once, then kept (a crawler's repeated hit does not repeat the query)
         assert S._card_reads.get(key, "miss") != "miss"
-        # the shell's reads share one budget: spent, an unknown link gets the default card without a read
-        S._card_reads.clear()
-        S._card_bucket.update(tokens=0.0)
-        assert _meta(api.get("/league", params={"league": key}).text, "og:title") == "isuckatfantasy"
-        assert S._card_reads.get(key, "miss") == "miss"
+    finally:
+        _clean(key)
+
+
+@needs_db
+@needs_store
+def test_unknown_league_links_cost_a_set_lookup_and_never_switch_real_cards_off(api, dist, monkeypatch):
+    """Fix round, the review's L4: /league?league=<random id> spent a shared read budget. Now only a stored key (the
+    set re-read at most once a minute) or one this process built is looked up; anything else reads nothing."""
+    key = FAKE[9]
+    _clean(key)
+    try:
+        _seed_prev(key, 2026, 5, [{"roster_id": 1, "rank": 1, "per_week": 101.0, "team_name": "Kept"}], [])
+        reads: list[str] = []
+        real = S.db.fresh
+        monkeypatch.setattr(S.db, "fresh", lambda sql, params=(): reads.append(sql) or real(sql, params))
+        for i in range(300):                                   # a flood of unknown keys
+            t = api.get("/league", params={"league": f"77{i:017d}"}).text
+            assert _meta(t, "og:title") == "isuckatfantasy"
+        assert sum("distinct league_key" in q for q in reads) == 1 and not any("order by season desc" in q for q in reads)
+        t = api.get("/league", params={"league": key}).text    # the real link still has its card
+        assert "<title>Night League: power rankings, week 5</title>" in t or "power rankings, week 5" in t
     finally:
         _clean(key)
 
@@ -371,8 +467,12 @@ def test_the_bracket_order_and_rounds():
     assert why is None and b == {"rounds": [[15], [16], [17]], "reseed": True}
     assert O.title_bracket({"playoff_week_start": 15, "playoff_teams": 6}, "mfl", weeks)[0] is None
     assert O.title_bracket({"playoff_week_start": 15, "playoff_teams": 6, "divisions": 2}, "sleeper", weeks)[0] is None
-    b, why = O.title_bracket({"playoff_week_start": 15, "playoff_teams": 6}, "sleeper", set(range(5, 17)))
+    b, why = O.title_bracket({"playoff_week_start": 15, "playoff_teams": 6, "playoff_seed_type": 0}, "sleeper",
+                             set(range(5, 17)))
     assert b is None and "week 17" in why
+    # fix round: settings read from the nightly's copy (Sleeper did not answer) carry no seed type: no title odds
+    b, why = O.title_bracket({"playoff_week_start": 15, "playoff_teams": 6}, "sleeper", weeks)
+    assert b is None and "not readable" in why
 
 
 def test_the_bracket_is_reseeded_or_fixed_as_the_settings_say():
@@ -417,3 +517,56 @@ def test_title_odds_on_the_house_leagues_and_none_for_mfl(api):
     assert d["title"] and d["bracket"]["reseed"] is True and len(d["bracket"]["rounds"]) == 3     # 6 teams, re-seeded
     m = api.get("/api/league/outlook?league=mfl:70587").json()["outlook"]
     assert not m["title"] and all(r["title"] is None for r in m["rows"])
+
+
+# ================================================================== 8. fix round: a refused provider read (the review's M2)
+@needs_db
+def test_one_clients_refused_reads_are_never_cached_for_everyone():
+    """Client X has spent its share of Sleeper's budget: its outlook is refused (busy) or answered uncached — never
+    cached, never stored, no card; client Y then gets the full answer."""
+    from league_lab import anyleague as A
+    from league_lab import provider_share as P
+    queued = S.stats["queued"]
+    P.reset(P.Shares({"sleeper": (1.0, 2.0), "mfl": (1.0, 2.0)}))
+    try:
+        with P.acting_for("203.0.113.7"):
+            try:
+                x = O.outlook(SCRUBS, 2)
+            except A.SleeperBusy:
+                x = None
+        assert x is None or x["power"]["kept"] == "not_kept"
+        assert len(O._cache) == 0 and S.stats["queued"] == queued and S._cards.get(SCRUBS) is None
+        P.reset()                                  # client Y: the default share, nothing spent
+        with P.acting_for("198.51.100.9"):
+            y = O.outlook(SCRUBS, 2)
+        assert y["outlook"]["available"] and not y["power"].get("note") and len(O._cache) == 1
+        assert S.card(SCRUBS) is not None
+    finally:
+        P.reset()
+
+
+@needs_db
+def test_a_refused_schedule_read_is_busy_not_no_schedule(api, monkeypatch):
+    from league_lab import anyleague as A
+    calls = {"n": 0}
+    real = type(A.sleeper()).matchups
+
+    def refused(self, lid, w):
+        calls["n"] += 1
+        if int(w) == 9:
+            raise A.SleeperBusy("busy, try again in a minute")
+        return real(self, lid, w)
+    monkeypatch.setattr(type(A.sleeper()), "matchups", refused)
+    r = api.get(f"/api/league/outlook?league={SCRUBS}&team=2")
+    assert r.status_code == 503 and r.json()["code"] == "busy"
+    assert len(O._cache) == 0 and set(O._schedules.get(SCRUBS) or {}) <= set(range(4, 9))   # weeks read so far kept
+    monkeypatch.setattr(type(A.sleeper()), "matchups", real)
+    d = api.get(f"/api/league/outlook?league={SCRUBS}&team=2").json()
+    assert d["outlook"]["available"]
+    # a provider that failed (not our budget): 502, nothing cached either
+    O._cache.clear()
+    O._schedules.clear()
+    monkeypatch.setattr(type(A.sleeper()), "matchups",
+                        lambda self, lid, w: (_ for _ in ()).throw(A.SleeperUnavailable("down")))
+    r = api.get(f"/api/league/outlook?league={SCRUBS}&team=2&part=power")
+    assert r.status_code == 502 and len(O._cache) == 0
