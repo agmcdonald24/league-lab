@@ -96,7 +96,6 @@
           >
             {fmt.pts(d.proj_points)}
           </div>
-          <div class="mt-1 text-xs leading-tight text-ink-3">{scoring} points · not a guarantee</div>
         </div>
         {#if value}
           <button
@@ -112,6 +111,7 @@
           </button>
         {/if}
       </div>
+      <div class="mt-1 text-xs leading-tight text-ink-3">{scoring} points · a forecast, not a guarantee</div>
       {#if value && valueOpen}<p class="mt-2 text-xs leading-snug text-ink-2" data-testid="card-value-help">{value.help}</p>{/if}
       <div class="mt-3">
         <RangeBar proj={d.proj_points} p10={range.p10} p25={range.p25} p75={range.p75} p90={range.p90} color={c.accent} />

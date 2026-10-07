@@ -641,3 +641,23 @@ sees these; a visitor sees the blog as before.
 | the editor's address, not an editor | **Sign in to write** "Writing on the blog needs the editor's account. Sign in" · **This account does not write on the blog** "The blog has one editor for now. Read the blog" | — |
 | the Account screen | **Your account id** · the id · **Copy** → "Copied" · "Only needed to be made a writer on the blog. It is not a password." | "user id", "uuid" |
 <!-- ---- end IO-3 -->
+<!-- ---- IP-4 (Wave I-P) -->
+## The player card (Wave I-P, IP-4; docs/DESIGN.md § "The player card (Wave I-P, IP-4)")
+
+The player page and the drawer's Overview lead with the card's head, the ratings and a chart. The ratings are
+percentiles of numbers he has put up this season: never a forecast, and each says so.
+
+| Where | The words we use | Never |
+|---|---|---|
+| the head's number | "Week 4 projection" over the number · "Half PPR points · a forecast, not a guarantee" under it (the league's name with a league); no projection: "Week 4 · no projection" and a dash | "OVR", "rating" for the projection, 0.0 for unknown |
+| the head's range | "5.6 low-end" · "typical 9–19" · "25.0 high-end" | "floor" / "ceiling" (the dictionary's words) |
+| the head's game | "Week 4 at PHI" · "Sun Oct 4, 1:00 PM ET" · "PHI: #9 of 32 vs WR (1 = gives up the most)" · a status chip in the injury's word ("Out", "Questionable") · "Game started" | "locked" alone |
+| the head's value | browsing: "Value, rest of season" · "WR1" · "+140 over a free WR" (a tap: the value's own sentence); with a league: "League of Scrubs scoring, this season" · "RB14" · "12.5 points per game" | "No league" |
+| the ratings' head | **Ratings** · "Where he ranks this season among receivers with 15+ targets, 0–99. Not a projection." · the overall in a box, "average of 8" (or "no average yet") | "OVR", "grade", "overall rating" without "average" |
+| a rating row | the label ("Target share", "Goal-line carry share", "Sacks per dropback") · the 0–99 number · the raw value ("27.3%") · a tap: "12th of 71 receivers · 20+ targets", the column's definition, "Percentile 84: ahead of 84% of the 71 receivers ranked" (+ "(fewer is better, so the order is turned round)") | a low number for a small sample |
+| not rated | one row: "Not rated: 12 so far; this rating needs 20+ targets." · "No value for him: <the reason>." · "Not rated: too few receivers with a value to rank (1)." · outside the ranked group: one line for the panel, "Not rated: 2 targets so far; ratings start at 15+ targets." | 0, "N/A", "insufficient data" |
+| What these are | "Each rating is his percentile among receivers with 15+ targets this season (71 of them): 99 = the highest, 0 = the lowest, 50 = the middle. … The overall is the plain average of the ratings shown. These describe the season so far; they are not a forecast — the projection is." · "The same in every league and scoring: these are his usage and efficiency, not points." | — |
+| the first chart | **Points against the projection** ("Points by week" where no past projection is kept) · "Above his projection in 1 of 2 games, inside its range (low-end to high-end) in 2 of 2. Half PPR scoring." · legend "His points" · "Projected before the game" · "Low-end to high-end" · the line under it: "Week 4 at PHI: 23.2 points · projected 14.8 (5.6–25.0), shown before kickoff" ("did not play", "not played yet") · notes: "Week 4: the projection shown before kickoff." "Weeks 1–3: rebuilt after that week kicked off (before projections were frozen at kickoff), not the one shown then." · "Past weeks' projections are kept for the house leagues and the default scorings (Half PPR, PPR, Standard); for this scoring the chart shows his points alone." | "beat", "busted", "boom" |
+| the role chart | **His role by week** · toggles "Target share" · "Carry share" · "Snap share" · "Week 3 at DET: target share 8% · carry share 68% · snap share 48%" · "Shares of his team's targets, carries and offensive plays in each game he played." | — |
+| every chart | "Show the numbers" (the table) · the keyboard: "Left and right arrows move between weeks." | "Show as a table" (the game log keeps its own) |
+<!-- ---- end IP-4 -->

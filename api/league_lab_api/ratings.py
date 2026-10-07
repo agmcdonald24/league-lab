@@ -4,7 +4,7 @@
 **percentile among the players at his position this season who clear a stated minimum sample**, on a 0–99 scale, with
 the raw value beside it. Built on the Stats frame (``stats.season_rows`` + ``stats.aggregate_window``, the season
 window: the same cached aggregate the Stats table reads — no new relation, no new cache). NFL-wide: the same in every
-league and scoring (``league`` is accepted and not used). Rules (docs/METRICS.md § "Player card ratings"):
+league and scoring (``league`` is accepted and not used). Rules (docs/DESIGN.md § "The player card (Wave I-P, IP-4)"):
 
 * **the population**: his position's players this season with the position's minimum sample (``POPULATION``:
   quarterbacks 50+ dropbacks, running backs 20+ touches, receivers 15+ targets, tight ends 10+ targets);

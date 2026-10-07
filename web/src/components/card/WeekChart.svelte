@@ -60,7 +60,14 @@
 
   const M = { l: 30, r: 8, t: 10, b: 22 };
   const all = $derived([...(bars?.values ?? []), ...lines.flatMap((l) => l.values), ...(band?.hi ?? [])].filter((v): v is number => typeof v === "number"));
-  const ticks = $derived(niceTicks(0, Math.max(floor, ...all), 4));
+  // the top tick at or above the largest value (niceTicks can stop half a step short of it)
+  const ticks = $derived.by(() => {
+    const hi = Math.max(floor, ...all);
+    const t = niceTicks(0, hi, 4);
+    const stepT = t.length > 1 ? t[1] - t[0] : hi || 1;
+    while (t[t.length - 1] < hi) t.push(Math.round((t[t.length - 1] + stepT) * 1e6) / 1e6);
+    return t;
+  });
   const top = $derived(ticks[ticks.length - 1] || 1);
   const xs = $derived(bands(weeks.length, M.l, width - M.r));
   const y = (v: number) => height - M.b - (v / top) * (height - M.b - M.t);

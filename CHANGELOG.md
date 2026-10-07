@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-07 — Wave I-P
+
+- **IP-4 — the player card.** The player page and the drawer lead with a card: his picture on his team's colour, this
+  week's projection as the one headline number with its range (low-end, typical, high-end) and his value in the scoring on
+  screen; **ratings** — his percentile (0–99) among his position's players this season with a stated minimum sample, for
+  seven or eight numbers that matter at the position, the raw number beside each, a dash and the reason under the sample,
+  an overall that is the plain average of the ones shown, "not a projection" on the panel (`GET
+  /api/player/{gsis}/ratings`, built on the Stats frame's cached season aggregate); **charts** — his points by week
+  against the projection made before each game and its range (`GET /api/player/{gsis}/projections`, the frozen board),
+  his role by week (target, carry and snap share, toggled), the game log's expected against actual; tap, keyboard and
+  "Show the numbers" on each. Every section the card had stays, in two columns from 900 px and three from 1280 px.
+
 ## 2026-10-06 — Wave I-O
 
 - **PO — the wave merged, reviewed and hardened; the corner call stops moving anything.** Four branches (IO-1 … IO-4)

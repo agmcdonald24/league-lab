@@ -32,8 +32,7 @@
   import GameLog from "./GameLog.svelte";
   import NewsLine from "./NewsLine.svelte"; // ---- N1
   import CardHead from "./card/CardHead.svelte"; // ---- IP-4
-  import PointsChart from "./card/PointsChart.svelte"; // ---- IP-4
-  import Ratings from "./card/Ratings.svelte"; // ---- IP-4
+  import { panels } from "./card/lazy"; // ---- IP-4: the ratings and the first chart (a chunk of their own)
   import SectionBox from "./Section.svelte";
   import Expander from "./Expander.svelte"; // ---- IF-4
   import Md from "./Md.svelte"; // ---- IF-4
@@ -259,8 +258,10 @@
       <p class="text-sm leading-snug font-semibold text-ink-2" data-testid="pane-why">{d.why.sentence}</p>
     {/if}
     {@render actionsRow()}
-    <Ratings gsis={d.gsis_id} {league} position={d.position} compact {onauth} testid="pane-ratings" />
-    <PointsChart gsis={d.gsis_id} {league} season={d.season} scoring={isRef(league) ? refScoringLabel(league) : d.league_name} schedule={d.schedule ?? []} testid="pane-points" />
+    {#await panels() then P}
+      <P.Ratings gsis={d.gsis_id} {league} position={d.position} compact {onauth} testid="pane-ratings" />
+      <P.PointsChart gsis={d.gsis_id} {league} season={d.season} scoring={isRef(league) ? refScoringLabel(league) : d.league_name} schedule={d.schedule ?? []} testid="pane-points" />
+    {/await}
     <!-- ---- end IP-4 -->
     {#each focused as x (x.key)}
       <SectionBox section={x.main} {ctx} testid={`pane-section-${x.key}`}>

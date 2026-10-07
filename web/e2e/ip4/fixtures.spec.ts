@@ -156,6 +156,14 @@ for (const [kind, p] of Object.entries(P).filter(([k]) => k !== "k")) {
     if (shown.length >= 3) expect(Number(overall.match(/\d+/)![0])).toBe(Math.round(shown.reduce((a, b) => a + b, 0) / shown.length));
     else expect(overall).toContain("—");
     if (values.some((v) => v.trim() === "—")) await expect(card.getByTestId("rating-reason").or(card.getByTestId("ratings-words")).first()).toBeVisible();
+    // the screenshot before anything is opened (what a visitor sees first)
+    await expect(page.getByTestId("card-points-chart")).toBeVisible({ timeout: 30_000 });
+    const scheme = info.project.name === "desktop" ? (kind === "qb" ? "light" : "dark") : kind === "rb" ? "light" : "dark";
+    if (scheme === "light") {
+      await page.emulateMedia({ colorScheme: "light" });
+    } else await page.emulateMedia({ colorScheme: "dark" });
+    const pick: Record<string, string[]> = { desktop: ["wr", "qb"], phone: ["wr", "rb", "rookie"] };
+    if ((pick[info.project.name] ?? []).includes(kind)) await shot(page, `ip4-${kind}-${isMobile ? 375 : 1300}-${scheme}`);
     // a row opens its definition and sample
     await card.getByTestId("rating").first().getByRole("button").click();
     await expect(card.getByTestId("rating-detail")).toBeVisible();
@@ -203,13 +211,6 @@ for (const [kind, p] of Object.entries(P).filter(([k]) => k !== "k")) {
       expect(c.x).toBeGreaterThan(r.x + r.width - 1);
       expect(Math.abs(c.y - r.y)).toBeLessThan(4);
     }
-    const scheme = info.project.name === "desktop" ? (kind === "qb" ? "light" : "dark") : kind === "rb" ? "light" : "dark";
-    if (scheme === "light") {
-      await page.emulateMedia({ colorScheme: "light" });
-    } else await page.emulateMedia({ colorScheme: "dark" });
-    await page.evaluate(() => window.scrollTo(0, 0));
-    const pick: Record<string, string[]> = { desktop: ["wr", "qb"], phone: ["wr", "rb", "rookie"] };
-    if ((pick[info.project.name] ?? []).includes(kind)) await shot(page, `ip4-${kind}-${isMobile ? 375 : 1300}-${scheme}`);
   });
 }
 

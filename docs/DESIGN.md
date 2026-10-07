@@ -339,3 +339,60 @@ sideways). Use it for any screen whose job is reading many numbers across many p
   a frame from 17 ms to 80 ms on the test box (docs/STATUS.md § "IM-2" § Timings).
 - **A phone**: "Swipe for more →" over the table's right edge until the first sideways scroll.
 
+
+## The player card (Wave I-P, IP-4)
+
+Andrew, more than once: "player pictures and real charts", "Madden Ultimate Team / Madden franchise screens — dark,
+data-dense panels, player cards". The player page (`/player/<gsis>`) and the drawer's Overview are **the card**. The
+"OVR ratings we do not have" above still stands: the card's ratings are **percentiles of numbers he put up**, each with
+its sample, and the panel says "Not a projection" in its first line.
+
+**Files**: `components/card/CardHead.svelte` (the head), `RangeBar.svelte` (the projection's range), `Ratings.svelte`,
+`WeekChart.svelte` (the chart kit's week chart), `PointsChart.svelte`, `RoleChart.svelte`; `lib/card.ts` (`headRange`,
+`nextGame`, `headValue`, `statusTone`: the head reads the card's own numbers, it computes none); `lib/chart.ts`
+(`bandPath`, `bands`); the API in `api/league_lab_api/ratings.py`.
+
+- **The head — a card, not a header.** Three zones in one bordered panel (`rounded-xl`, the card shadow): (1) **the
+  photo on his team's field** — a gradient of the team's `primary` into a darker step of itself, the `accent` as a glow
+  under the picture and as the card's 6 px left edge; no text sits on the team colour (rule 5); the picture is
+  `Headshot` at 104 px (84 in the drawer) — when the outside host fails (always, in the sandbox), the silhouette on the
+  team field reads as a card without a photo, not a broken image; (2) **who he is** — first name small, LAST NAME in
+  `font-black` 30–36 px uppercase, position and team badges, the status chip (Out / IR / Doubtful on `bad-soft`,
+  anything else on `warn-soft`, the injury's own word), "Game started", this week's game ("Week 4 at PHI", the
+  kickoff, the opponent's rank vs his position) and the header line (depth chart, whose team); (3) **the one number** —
+  this week's projection at `text-hero` (48 px; 64 px from 1280 px), "Week 4 projection" over it, "<scoring> points · a
+  forecast, not a guarantee" under it, his value in a raised box beside it (browsing: the reference key's value, "WR1 ·
+  +140 over a free WR"; with a league: his rank and points per game in its scoring; a tap opens the value's sentence),
+  and the **range bar**: low-end to high-end as the track's band (team accent at 34 %), the typical range solid, the
+  projection a 3 px ink tick, the three numbers printed under it. Phone and drawer: the photo and the name side by
+  side, the number zone under them across the card; from 1280 px the three zones in one row (12 rem · the rest · 27 rem).
+- **Ratings** (`GET /api/player/{gsis}/ratings`): one row per rating — the label (wraps, never truncated), an 8 px bar
+  on a sunken track, the 0–99 number in `font-extrabold`, the raw value (`ink-3`, tabular). Tier colour on the number
+  and the bar: 80+ `good`, 60–79 `series-1`, 40–59 `ink-3`, under 40 `warn` (never `bad`: a low percentile is a
+  description, not an alarm); the number is always printed, so colour never carries it alone. A row is a button: a tap
+  opens "12th of 71 receivers · 20+ targets", the catalogue's definition and the percentile in words. Under a sample:
+  a dash and the reason on the row; a player outside the ranked group altogether gets one line for the panel (the same
+  reason for every row) and every raw number still shown. The overall: a 56 px square in its tier colour, "average of
+  8" under it ("no average yet" under three ratings). "What these are" holds the rule. K and DEF: no panel.
+- **WeekChart** (`components/card/WeekChart.svelte`): one categorical week axis (`bands`), bars (rounded data end, 6–28
+  px wide), a band (`bandPath`, 16 % fill) and lines (2 px; a point with no bar under it is hollow: a week he did not
+  play or this week, not played yet). The plot is a `role="slider"` (focusable; ← → Home End move the week;
+  `aria-valuetext` is the week's sentence); a tap or hover picks the week; **the line under the chart** says the
+  picked week's numbers (the last played week by default, so it is never empty); "Show the numbers" is the table.
+  The y axis reaches at least `floor` (10 points, 50 % share) and always the largest value.
+- **Points against the projection**: his points (series 1 bars) against the projection made before each game (an
+  `ink-2` line) and its low-end to high-end range (an `ink-3` band); the answer above it in counts ("Above his
+  projection in 1 of 2 games, inside its range in 2 of 2") — a description, never a verdict; the notes under it say
+  which weeks are the board shown before kickoff and which were rebuilt after kickoff (2026 weeks 1–3). A kicker, a
+  defense, or a scoring whose past boards are not kept: "Points by week", the bars alone.
+- **His role by week**: target share (series 1), carry share (the RB hue), snap share (the warm hue), toggled with pill
+  buttons (`aria-pressed`); the default set by position (RB: all three; QB: carry and snap; WR / TE: target and snap); a
+  series with no numbers for him is not offered.
+- **Expected against actual**: the existing `GameLog` (`LineChart`), unchanged.
+- **The page**: the head; then the ratings (5 / 12, 4 / 12 from 1280 px) beside the points chart (the rest); then the
+  sections as CSS columns (two from 900 px, three from 1280 px; `break-inside: avoid`): Projection (with "Why this
+  number"), Availability (with the news line), the role chart, the game log, then Role, Value, Usage, Signals, Schedule
+  — every section `lib/card.ts` builds, open (the e2e read them all). The section tiles two to a row in a column. Phone:
+  one column in that order.
+- **The drawer**: Overview = the head (compact), the one-line reason, the actions, the ratings, the points chart, then
+  the sections as before; Usage / Game log / News tabs unchanged.
