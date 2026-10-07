@@ -61,6 +61,7 @@ export class EditorError extends Error {
     public code: string | null,
     message: string,
     public post: EditorPost | null = null,
+    public retryAfter: number | null = null, // ---- fix round (L1): seconds, from a 429's Retry-After
   ) {
     super(message);
   }
@@ -86,7 +87,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   }
   if (!res.ok) {
     const words = res.status === 413 && !data?.code ? "The post is too big to send. Split it in two." : (data?.error ?? data?.detail ?? res.statusText);
-    throw new EditorError(res.status, data?.code ?? null, typeof words === "string" ? words : "Something went wrong.", data?.post ?? null);
+    const ra = Number(res.headers.get("Retry-After"));
+    throw new EditorError(res.status, data?.code ?? null, typeof words === "string" ? words : "Something went wrong.", data?.post ?? null, Number.isFinite(ra) && ra > 0 ? ra : null);
   }
   return data as T;
 }
@@ -155,13 +157,19 @@ export function checkEditor(force = false): Promise<boolean> {
   return asked;
 }
 
-// ---- the copy on this device (a dropped connection, a closed tab): one entry per post ("new" before the first save)
-const KEY = (id: string) => `ll.blog.draft.${id}`;
+// ---- the copy on this device (a dropped connection, a closed tab): one entry per post ("new" before the first save).
+// Fix round (the review's note): the entries belong to the signed-in account (its id in the key: another account on
+// this device never sees them), none is written for a signed-out visitor, and signing out clears them all
+// (`forgetDrafts`, called by the Account screen's Sign out / Sign out everywhere / Delete my account).
+const PREFIX = "ll.blog.draft.";
+const owner = (): string | null => (account.status?.signed_in ? ((account.me as { id?: string } | null)?.id ?? null) : null);
+const KEY = (id: string) => `${PREFIX}${owner()}.${id}`;
 export interface LocalCopy extends Draft {
   revision: number;
   at: number;
 }
 export function keepLocal(id: string, d: Draft, revision: number): void {
+  if (!owner()) return; // never for a signed-out visitor
   try {
     localStorage.setItem(KEY(id), JSON.stringify({ ...d, revision, at: Date.now() } satisfies LocalCopy));
   } catch {
@@ -169,6 +177,7 @@ export function keepLocal(id: string, d: Draft, revision: number): void {
   }
 }
 export function readLocal(id: string): LocalCopy | null {
+  if (!owner()) return null;
   try {
     const raw = localStorage.getItem(KEY(id));
     if (!raw) return null;
@@ -179,11 +188,26 @@ export function readLocal(id: string): LocalCopy | null {
   }
 }
 export function dropLocal(id: string): void {
+  if (!owner()) return;
   try {
     localStorage.removeItem(KEY(id));
   } catch {
     /* nothing kept */
   }
+}
+/** Every unsent draft on this device, whoever's: signing out leaves none behind. */
+export function forgetDrafts(): void {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k?.startsWith(PREFIX)) localStorage.removeItem(k);
+    }
+  } catch {
+    /* no storage: nothing kept */
+  }
+  editor.on = false;
+  editor.mine = null;
+  asked = null;
 }
 
 // ---- small text helpers the editor and its tests share

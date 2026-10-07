@@ -426,3 +426,75 @@ test("two drafts with one title: the second's address moves on to -2 with no com
   await expect(page.getByTestId("editor-slug")).toHaveValue(`${base}-part-two`);
   await expect(page.getByTestId("editor-slug-words")).toHaveCount(0);
 });
+
+test("fix round: typing again at once waits for the server's 5-second floor and loses nothing; Publish right after typing works", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the same code path at 375");
+  test.setTimeout(90_000);
+  await asEditor(page);
+  await page.goto(`${API}/blog/new`);
+  await page.getByTestId("editor-title").fill(`Floor ${randomBytes(3).toString("hex")}`);
+  await page.getByTestId("editor-body").fill("First.");
+  await expect(page).toHaveURL(/\/blog\/edit\//, { timeout: 15_000 });
+  await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  const statuses: number[] = [];
+  page.on("response", (r) => r.url().includes("/api/blog/posts/") && r.request().method() === "PUT" && statuses.push(r.status()));
+  for (const more of [" Second.", " Third.", " Fourth."]) {
+    await page.getByTestId("editor-body").press("End");
+    await page.getByTestId("editor-body").pressSequentially(more, { delay: 0 });
+    await page.waitForTimeout(600);
+  }
+  await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 20_000 });
+  await page.getByTestId("editor-body").press("End");
+  await page.getByTestId("editor-body").pressSequentially(" Fifth.", { delay: 0 });
+  await page.getByTestId("editor-publish").click(); // waits for the floor, saves, publishes
+  await expect(page.getByTestId("editor-status")).toHaveText("Published", { timeout: 20_000 });
+  await page.reload();
+  await expect(page.getByTestId("editor-body")).toHaveValue("First. Second. Third. Fourth. Fifth.");
+  expect(statuses.every((s) => s === 200 || s === 429), `PUT answers ${statuses}`).toBe(true);
+  console.log(`IO3 floor: PUT answers ${statuses.join(" ")}`);
+});
+
+test("fix round: a 429 too_fast from the server is waited out and the text still arrives", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the same code path at 375");
+  test.setTimeout(60_000);
+  await asEditor(page);
+  await page.goto(`${API}/blog/new`);
+  await page.getByTestId("editor-title").fill(`Too fast ${randomBytes(3).toString("hex")}`);
+  await expect(page).toHaveURL(/\/blog\/edit\//, { timeout: 15_000 });
+  await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  let refused = 0;
+  await page.route("**/api/blog/posts/*", async (route) => {
+    if (route.request().method() === "PUT" && refused === 0) {
+      refused++;
+      const words = "Saving again in a moment: your text is kept.";
+      return route.fulfill({ status: 429, headers: { "Retry-After": "1", "Content-Type": "application/json" }, body: JSON.stringify({ error: words, detail: words, code: "too_fast", retry_after: 1 }) });
+    }
+    return route.continue();
+  });
+  await page.waitForTimeout(5500); // past the client's own floor, so the server's answer is what is tested
+  await page.getByTestId("editor-body").fill("Sent after the wait.");
+  await expect.poll(() => refused, { timeout: 15_000 }).toBe(1);
+  await expect(page.getByTestId("editor-problem")).toHaveCount(0);
+  await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  await page.unroute("**/api/blog/posts/*");
+  await page.reload();
+  await expect(page.getByTestId("editor-body")).toHaveValue("Sent after the wait.");
+});
+
+// last in the file: signing out ends this run's editor session (the next project makes its own)
+test("fix round: signing out clears the editor's unsent drafts from the device", async ({ page }) => {
+  test.setTimeout(60_000);
+  await asEditor(page);
+  await page.goto(`${API}/blog/new`);
+  await page.getByTestId("editor-title").fill("Never sent");
+  await expect.poll(() => page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("ll.blog.draft.")).length)).toBeGreaterThan(0);
+  const keys = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("ll.blog.draft.")));
+  expect(keys.every((k) => k.startsWith(`ll.blog.draft.${who!.uid}.`)), keys.join(",")).toBe(true); // the account's own
+  await page.goto(`${API}/account`);
+  await page.getByTestId("signout").click();
+  await expect.poll(() => page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("ll.blog.draft.")).length)).toBe(0);
+  // signed out: the editor's address keeps nothing
+  await page.goto(`${API}/blog/new`);
+  await expect(page.getByTestId("editor-closed")).toContainText("Sign in to write");
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("ll.blog.draft.")).length)).toBe(0);
+});

@@ -34,14 +34,17 @@ read it, the database down → no database posts.
 
 from __future__ import annotations
 
+import hashlib
 import io
 import logging
+import math
 import os
 import re
 import time
 import unicodedata
 import uuid
 import zipfile
+from contextlib import contextmanager
 from datetime import datetime
 from typing import Any
 
@@ -63,10 +66,13 @@ MAX_POSTS = 500
 MAX_TOTAL_BYTES = 30 * 1024 * 1024
 MAX_IMAGE_BYTES = 300 * 1024
 MAX_IMAGES = 50
-IMAGE_CACHE = "public, max-age=31536000, immutable"   # an id is never reused: a new picture is a new address
+IMAGE_CACHE = "public, max-age=86400"   # fix round (the review's note): a day, revalidated by its ETag — a deleted picture
+                                        # leaves the caches within a day (was a year, immutable)
 IMAGE_TYPES = {"png": "image/png", "jpg": "image/jpeg", "webp": "image/webp"}
 KEEP_REVISIONS = 20
-REVISION_GAP_S = 120
+REVISION_GAP_S = 120                   # an autosave keeps a new revision at most every two minutes …
+REVISION_MIN_S = 30                    # … an explicit save at most every 30 seconds (fix round, the review's L1)
+SAVE_FLOOR_S = 5.0                     # one save of a post every 5 seconds at most (fix round, L1): else 429 too_fast
 RESTORE_DAYS = 30
 WRITES_PER_MIN = 60
 PUBLIC_TTL_S = 60.0
@@ -77,6 +83,9 @@ _ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 _TAG = re.compile(r"^[a-z0-9][a-z0-9 -]*$")
 _CONTROL = re.compile(r"[\x00-\x08\x0e-\x1f\x7f]")                 # no control characters (a body keeps \t and \n)
 _LINE_CONTROL = re.compile(r"[\x00-\x1f\x7f\u2028\u2029]")          # a one-line field: no newline, no tab either
+# ---- fix round (the review's L5): invisible characters — zero-width, direction marks and overrides, isolates, the BOM —
+# are stripped from every one-line field (title, summary, author, tags, the address): "Safe \u202egnp.exe" is "Safe gnp.exe"
+_INVISIBLE = re.compile(r"[\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]")
 NO_STORE = {"Cache-Control": "no-store"}
 
 _pub = memo.region("blog_db", ttl=PUBLIC_TTL_S, max_entries=BODY_ENTRIES + 21)   # bodies, the list, 20 pictures
@@ -184,7 +193,8 @@ class PublishIn(BaseModel):
 
 
 def _line(v: str, n: int, code: str, what: str) -> str:
-    v = re.sub(r"[\r\n\t\u2028\u2029\x0b\x0c]+", " ", v or "").strip()     # pasted line breaks become spaces
+    v = _INVISIBLE.sub("", v or "")
+    v = re.sub(r"[\r\n\t\u2028\u2029\x0b\x0c]+", " ", v).strip()           # pasted line breaks become spaces
     v = re.sub(r" {2,}", " ", v)
     if _LINE_CONTROL.search(v):
         raise _err(400, code, f"The {what} has a character it cannot hold.")
@@ -203,7 +213,7 @@ def clean(p: PostIn) -> dict[str, Any]:
         raise _err(400, "bad_tags", f"At most {blog.MAX_TAGS} tags.")
     tags: list[str] = []
     for t in p.tags:
-        t = re.sub(r"\s+", " ", str(t).strip().lower())
+        t = re.sub(r"\s+", " ", _INVISIBLE.sub("", str(t)).strip().lower())
         if not t:
             continue
         if len(t) > blog.MAX_TAG or not _TAG.fullmatch(t):
@@ -309,17 +319,25 @@ def _room(c: psycopg.Connection, adding: int) -> None:
         raise _err(413, "blog_full", "The blog's storage is full. Delete old drafts, or export and tidy up.")
 
 
+def _same_text(a: str, b: str) -> bool:
+    return re.sub(r"\s+", " ", a).strip() == re.sub(r"\s+", " ", b).strip()
+
+
 def _revision(c: psycopg.Connection, post_id: str, rev: int, title: str, body: str, nbytes: int, autosave: bool) -> None:
-    """Keep this body as a revision: an autosave within two minutes of the last kept autosave replaces it (20
-    revisions then reach back at least 40 minutes of typing; an explicit save is never replaced); the newest 20 stay."""
-    last = c.execute(f"select id, autosave and saved_at > now() - interval '{REVISION_GAP_S} seconds' from blog.revisions "
-                     "where post_id = %s order by saved_at desc, id desc limit 1", (post_id,)).fetchone()
-    if autosave and last is not None and last[1]:
-        c.execute("update blog.revisions set revision = %s, title = %s, body = %s, body_bytes = %s where id = %s",
-                  (rev, title, body, nbytes, last[0]))
-    else:
-        c.execute("insert into blog.revisions (post_id, revision, title, body, body_bytes, autosave) "
-                  "values (%s, %s, %s, %s, %s, %s)", (post_id, rev, title, body, nbytes, autosave))
+    """Keep this text as a revision — the rule (fix round, the review's L1): a new row only when the title or the body
+    differs from the newest kept revision by more than whitespace, AND the newest kept one is at least 30 seconds old
+    (an explicit save) or two minutes old (an autosave). Otherwise nothing is written here: the post's own row holds
+    that text, and the next save past the window keeps it. Rows are only ever added (never rewritten in place), the
+    newest 20 stay — so revisions grow by at most one row per post per 30 seconds, whatever a session sends."""
+    last = c.execute("select title, body, extract(epoch from now() - saved_at) from blog.revisions where post_id = %s "
+                     "order by saved_at desc, id desc limit 1", (post_id,)).fetchone()
+    if last is not None:
+        if last[0] == title and _same_text(last[1], body):
+            return
+        if float(last[2]) < (REVISION_GAP_S if autosave else REVISION_MIN_S):
+            return
+    c.execute("insert into blog.revisions (post_id, revision, title, body, body_bytes, autosave) "
+              "values (%s, %s, %s, %s, %s, %s)", (post_id, rev, title, body, nbytes, autosave))
     c.execute("delete from blog.revisions where id in (select id from blog.revisions where post_id = %s "
               "order by saved_at desc, id desc offset %s)", (post_id, KEEP_REVISIONS))
 
@@ -384,7 +402,7 @@ def _free_slug(c: psycopg.Connection, base: str, files: set[str], own: str | Non
     while slug in RESERVED or slug in files or c.execute("select 1 from blog.posts where slug = %s and id is distinct "
                                                          "from %s", (slug, own)).fetchone():
         n += 1
-        slug = f"{base[:74]}-{n}"
+        slug = f"{base[:74].rstrip('-')}-{n}"           # fix round (L2): never "--" (the shape check's 500)
         if n > 50:
             return f"draft-{uuid.uuid4().hex[:12]}"
     return slug
@@ -392,7 +410,7 @@ def _free_slug(c: psycopg.Connection, base: str, files: set[str], own: str | Non
 
 def create(uid: str, p: PostIn) -> dict[str, Any]:
     f = clean(p)
-    wanted = (p.slug or "").strip() or slug_from(f["title"] or "draft")
+    wanted = _INVISIBLE.sub("", p.slug or "").strip() or slug_from(f["title"] or "draft")
     files = file_slugs()
 
     def tx(c: psycopg.Connection) -> dict:
@@ -417,13 +435,38 @@ class Conflict(Exception):
         self.post = post
 
 
+class TooFast(Exception):
+    """---- fix round (L1): this post was saved less than SAVE_FLOOR_S seconds ago."""
+
+    def __init__(self, wait: float):
+        super().__init__("too fast")
+        self.wait = wait
+
+
+TOO_FAST = "Saving again in a moment: your text is kept."
+
+
+@contextmanager
+def _db_words():
+    """---- fix round (the review's L2): a database constraint is the last guard, never a 500 — a unique address taken
+    in a race is 409 with words, any other refused value 422 with words (logged by class, never by value)."""
+    try:
+        yield
+    except psycopg.errors.UniqueViolation as exc:
+        raise _err(409, "taken", SLUG_WORDS["taken"]) from exc
+    except (psycopg.errors.IntegrityError, psycopg.errors.DataError) as exc:
+        log.warning("blog: a write refused by the database (%s)", exc.__class__.__name__)
+        raise _err(422, "not_saved", "That could not be saved: a field is longer or shaped differently than the blog "
+                                     "allows.") from exc
+
+
 def save(uid: str, post_id: str, s: SaveIn) -> dict[str, Any]:
     """Save over revision ``s.revision``: a stale revision raises Conflict with the newer post (body included), never a
     silent overwrite. A slug that cannot be taken leaves the old one and says why (``slug_problem``): the words and the
     body are saved all the same (an autosave never loses text over an address)."""
     post_id = _check_id(post_id)
     f = clean(s)
-    want = (s.slug or "").strip()
+    want = _INVISIBLE.sub("", s.slug or "").strip()
     files = file_slugs()
 
     def tx(c: psycopg.Connection) -> dict:
@@ -434,7 +477,6 @@ def save(uid: str, post_id: str, s: SaveIn) -> dict[str, Any]:
             raise _err(409, "deleted", "This post is deleted. Restore it to edit it.")
         if cur["revision"] != s.revision:
             raise Conflict(cur)
-        _room(c, max(0, f["body_bytes"] * 2 - cur["bytes"]))
         slug, problem = cur["slug"], None
         if want and want != cur["slug"]:
             if cur["status"] == "published":
@@ -449,6 +491,18 @@ def save(uid: str, post_id: str, s: SaveIn) -> dict[str, Any]:
                     slug, problem = _free_slug(c, slug_from(want), files, post_id), None
                 elif problem is None:
                     slug = want
+        # ---- fix round (the review's L1): a save that changes nothing writes nothing (200, the same revision) …
+        if slug == cur["slug"] and all(f[k] == cur[k] for k in ("title", "summary", "tags", "author", "body")):
+            out = dict(cur)
+            if problem:
+                out.update(slug_problem=problem, slug_words=SLUG_WORDS[problem])
+            return out
+        # … and a post is saved at most once every SAVE_FLOOR_S seconds (429 too_fast with the seconds to wait)
+        wait = float(c.execute("select %s - extract(epoch from now() - updated_at) from blog.posts where id = %s",
+                               (SAVE_FLOOR_S, post_id)).fetchone()[0])
+        if wait > 0:
+            raise TooFast(wait)
+        _room(c, max(0, f["body_bytes"] * 2 - cur["bytes"]))
         rev = cur["revision"] + 1
         r = c.execute(f"update blog.posts set slug = %s, title = %s, summary = %s, body = %s, body_bytes = %s, "
                       f"minutes = %s, tags = %s, author = %s, revision = %s, updated_at = now() where id = %s "
@@ -637,23 +691,30 @@ def revision_route(post_id: str, rid: int, request: Request) -> JSONResponse:
 @router.post("/api/blog/posts", status_code=201)
 def create_route(body: PostIn, request: Request) -> JSONResponse:
     uid, _sid = editor(request, write=True)
-    return _json(create(uid, body), 201)
+    with _db_words():
+        return _json(create(uid, body), 201)
 
 
 @router.put("/api/blog/posts/{post_id}")
 def save_route(post_id: str, body: SaveIn, request: Request) -> JSONResponse:
     uid, _sid = editor(request, write=True)
     try:
-        return _json(save(uid, post_id, body))
+        with _db_words():
+            return _json(save(uid, post_id, body))
     except Conflict as exc:
         return _conflict(exc)
+    except TooFast as exc:
+        secs = max(1, math.ceil(exc.wait))
+        return JSONResponse({"error": TOO_FAST, "detail": TOO_FAST, "code": "too_fast", "retry_after": secs},
+                            status_code=429, headers={**NO_STORE, "Retry-After": str(secs)})
 
 
 def _action(action: str):
     def route(post_id: str, request: Request, body: PublishIn | None = None) -> JSONResponse:
         uid, _sid = editor(request, write=True)
         try:
-            return _json(_status(uid, post_id, action, body.revision if body else None))
+            with _db_words():
+                return _json(_status(uid, post_id, action, body.revision if body else None))
         except Conflict as exc:
             return _conflict(exc)
     route.__name__ = f"{action}_route"
@@ -668,7 +729,8 @@ router.post("/api/blog/posts/{post_id}/restore")(_action("restore"))
 @router.delete("/api/blog/posts/{post_id}")
 def delete_route(post_id: str, request: Request) -> JSONResponse:
     uid, _sid = editor(request, write=True)
-    return _json(_status(uid, post_id, "delete"))
+    with _db_words():
+        return _json(_status(uid, post_id, "delete"))
 
 
 # ---------------------------------------------------------------- pictures (blog.images; served by blog.py's pages router)
@@ -737,7 +799,8 @@ async def upload_route(request: Request) -> JSONResponse:
 
     def work() -> dict:                                             # the session check and the insert: off the loop
         uid, _sid = editor(request, write=True)
-        return upload(uid, data)
+        with _db_words():
+            return upload(uid, data)
     return _json(await run_in_threadpool(work), 201)
 
 
@@ -748,8 +811,12 @@ def image_delete_route(image_id: str, request: Request) -> JSONResponse:
     return _json({"ok": True})
 
 
-def image_response(image_id: str) -> Response:
+def image_response(image_id: str, if_none_match: str | None = None) -> Response:
     got = image(image_id)
     if got is None:
         return Response(status_code=404, headers={"Cache-Control": "no-store"})
-    return Response(got[1], media_type=IMAGE_TYPES[got[0]], headers={"Cache-Control": IMAGE_CACHE})
+    etag = '"' + hashlib.sha256(got[1]).hexdigest()[:32] + '"'
+    headers = {"Cache-Control": IMAGE_CACHE, "ETag": etag}
+    if if_none_match and etag in [t.strip().removeprefix("W/") for t in if_none_match.split(",")]:
+        return Response(status_code=304, headers=headers)
+    return Response(got[1], media_type=IMAGE_TYPES[got[0]], headers=headers)
