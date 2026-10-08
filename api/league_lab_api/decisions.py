@@ -2724,11 +2724,15 @@ def ir2_decision(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, boa
     reasons = []
     if not (card.get("legal") or {}).get("ok", True):
         reasons += [n for n in (card.get("legal") or {}).get("notes", []) if "deadline" in n]
+    # PO (Wave I-R): a negative number is said as a loss ("gain -3.3 beyond" read as a gain)
     if b.get("mine") is not None and b["mine"] < T.CREDIBLE_MARGIN:
-        reasons.append(f"your starters gain {b['mine']:+.1f} beyond your best waiver move {when} (the bar is "
-                       f"{T.CREDIBLE_MARGIN:.0f} point)")
+        reasons.append((f"your starters gain {b['mine']:+.1f} beyond your best waiver move {when}" if b["mine"] >= 0 else
+                        f"your starters end {-b['mine']:.1f} behind your best waiver move {when}")
+                       + f" (the bar is {T.CREDIBLE_MARGIN:.0f} point)")
     if b.get("theirs") is not None and b["theirs"] < T.CREDIBLE_MARGIN:
-        reasons.append(f"{partner_team}'s starters gain {b['theirs']:+.1f} beyond their own best move {when}")
+        reasons.append(f"{partner_team}'s starters gain {b['theirs']:+.1f} beyond their own best move {when}"
+                       if b["theirs"] >= 0 else
+                       f"{partner_team}'s starters end {-b['theirs']:.1f} behind their own best move {when}")
     plaus = card.get("plausibility") or {}
     if plaus.get("key") == "implausible":
         reasons += list(plaus.get("reasons") or [])

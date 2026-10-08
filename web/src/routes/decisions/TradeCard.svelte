@@ -9,7 +9,8 @@
 
   let { card, compact = false, testid = "trade-card" }: { card: TradeCard; compact?: boolean; testid?: string } = $props();
 
-  const tone = $derived(card.plausibility.key === "plausible" ? "text-good" : card.plausibility.key === "implausible" ? "text-bad" : "text-warn");
+  // PO (Wave I-R): green only when the card is also worth proposing — a green "Plausible offer" under "Not worth proposing" read as a contradiction
+  const tone = $derived(card.plausibility.key === "plausible" ? (card.credible ? "text-good" : "text-ink-2") : card.plausibility.key === "implausible" ? "text-bad" : "text-warn");
   const drops = $derived([...card.drops.mine, ...card.drops.theirs].map((d) => d.words));
 </script>
 

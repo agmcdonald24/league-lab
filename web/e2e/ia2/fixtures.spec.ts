@@ -63,6 +63,9 @@ test("the trade calculator is its own link in the Decisions row", async ({ page,
 
 for (const league of [TEST_LEAGUE, DYNASTY, SCRUBS]) {
   test(`tick a player: the dial moves and its label changes, no reload (${league})`, async ({ page }, info) => {
+    // PO 2026-10-08 (Wave I-R): the saved Scrubs package (Tuten to team 9) is no longer a legal trade on the fixture database, so its
+    // answer could not be re-saved with `decision`. The other two leagues run. Open: a new Scrubs package (STATUS § Wave I-R, next).
+    test.fixme(league === SCRUBS, "the saved Scrubs package is not a legal trade on today's fixtures: re-record (STATUS, Wave I-R)");
     const pk = PACKAGES[league];
     const team = TEAM[league];
     const a = fx(evalKey(league, team, pk.partner, pk.from.give, pk.from.get));
