@@ -61,17 +61,114 @@ KEEP = ["gsis_id", "player_name", "season", "week", "team", "opponent", "positio
         *[f"{c}_pg_std" for c in COMPS], *[f"prev_{c}_pg" for c in COMPS], *[f"out_{c}" for c in COMPS]]
 
 
+# ------------------------------------------------------------------------------ db1.0: the per-dropback record (inputs)
+# Defined before its run (METRICS § v3.6 lists it as "not run unless time allows, then judged by the same rule").
+# Per QB game from the play-by-play (REG, no "no play", no spike): dropbacks (his: qb_player_id), their EPA, his
+# passing TDs, interceptions, sacks, scrambles; his designed runs (not a scramble, not a kneel), their yards, his rushing
+# TDs. As of week w of season S: this season before w + 0.5 x last season + 0.25 x the seasons before (from 2016);
+# a rate per dropback shrunk toward the league's rate (all QB dropbacks before S) by k dropbacks, a per-game rate by 4
+# games; db_n the effective dropbacks. Added to the QB component models' inputs; the horizon rows carry the market row's.
+DB_SQL = """with d as (
+    select season, week, qb_player_id as gsis_id, count(*)::float8 as db, coalesce(sum(epa), 0)::float8 as epa,
+           count(*) filter (where pass_touchdown and passer_player_id = qb_player_id)::float8 as ptd,
+           count(*) filter (where is_interception)::float8 as ints, count(*) filter (where is_sack)::float8 as sacks,
+           count(*) filter (where is_scramble)::float8 as scr
+    from analytics.fct_play where season_type = 'REG' and is_dropback and not is_no_play and not is_spike
+          and qb_player_id is not null group by 1, 2, 3),
+r as (
+    select season, week, rusher_player_id as gsis_id,
+           count(*) filter (where not is_scramble and not is_kneel)::float8 as des,
+           coalesce(sum(rushing_yards) filter (where not is_scramble and not is_kneel), 0)::float8 as des_yds,
+           count(*) filter (where rush_touchdown)::float8 as rtd
+    from analytics.fct_play where season_type = 'REG' and is_rush_attempt and not is_no_play
+          and rusher_player_id is not null group by 1, 2, 3)
+select coalesce(d.season, r.season) as season, coalesce(d.week, r.week) as week, coalesce(d.gsis_id, r.gsis_id) as gsis_id,
+       coalesce(db, 0) as db, coalesce(epa, 0) as epa, coalesce(ptd, 0) as ptd, coalesce(ints, 0) as ints,
+       coalesce(sacks, 0) as sacks, coalesce(scr, 0) as scr, coalesce(des, 0) as des, coalesce(des_yds, 0) as des_yds,
+       coalesce(rtd, 0) as rtd
+from d full join r on d.season = r.season and d.week = r.week and d.gsis_id = r.gsis_id"""
+DB_RATES = {"db_epa": ("epa", 300.0), "db_td_rate": ("ptd", 400.0), "db_int_rate": ("ints", 500.0),
+            "db_sack_rate": ("sacks", 200.0), "db_scr_rate": ("scr", 150.0)}
+DB_PER_GAME = {"db_des_runs_pg": "des", "db_des_yds_pg": "des_yds", "db_rush_td_pg": "rtd"}
+DB_GAMES_K = 4.0
+DB_FEATS = [*DB_RATES, *DB_PER_GAME, "db_n"]
+DB_WEIGHTS = (1.0, 0.5, 0.25)          # this season to date, last season, the seasons before
+
+
+def db_features(conn: psycopg.Connection, rows: pd.DataFrame) -> pd.DataFrame:
+    """``rows`` (QB frame rows: gsis_id, season, week) with DB_FEATS as of the row's week."""
+    g = pd.DataFrame(conn.execute(DB_SQL).fetchall(), columns=["season", "week", "gsis_id", "db", "epa", "ptd", "ints", "sacks",
+                                                               "scr", "des", "des_yds", "rtd"])
+    g = g[g["gsis_id"].isin(set(rows["gsis_id"]))]
+    for c in g.columns[3:]:
+        g[c] = g[c].astype(float)
+    g["season"], g["week"] = g["season"].astype(int), g["week"].astype(int)
+    g["games"] = 1.0
+    sums = ["db", "epa", "ptd", "ints", "sacks", "scr", "des", "des_yds", "rtd", "games"]
+    per_season = g.groupby(["gsis_id", "season"])[sums].sum()
+    # league means before each season (all these QBs' dropbacks / games)
+    by_season = g.groupby("season")[sums].sum().sort_index()
+    before = by_season.cumsum().shift(1)
+    out = rows[["gsis_id", "season", "week"]].copy()
+    out["season"], out["week"] = out["season"].astype(int), out["week"].astype(int)
+    # this season before week w: cumulative by week, shifted
+    wk = g.groupby(["gsis_id", "season", "week"])[sums].sum()
+    weeks = list(range(1, 24))
+    this = {}
+    for c in sums:
+        w = wk[c].unstack("week").reindex(columns=weeks).fillna(0.0).cumsum(axis=1).shift(1, axis=1).fillna(0.0)
+        this[c] = w.stack()
+    this = pd.DataFrame(this)
+    this.index.names = ["gsis_id", "season", "week"]
+    idx = pd.MultiIndex.from_frame(out[["gsis_id", "season", "week"]])
+    t = this.reindex(idx).fillna(0.0).to_numpy()
+    last = per_season.reindex(pd.MultiIndex.from_arrays([out["gsis_id"], out["season"] - 1])).fillna(0.0).to_numpy()
+    car = per_season.reset_index()
+    cum = car.sort_values("season").groupby("gsis_id")[sums].cumsum()
+    car = pd.concat([car[["gsis_id", "season"]], cum], axis=1).set_index(["gsis_id", "season"])   # through season s
+    # the seasons before last: the newest cumulative row at or before S-2 (a player may skip seasons)
+    carl = car.reset_index().sort_values("season")
+    pq = pd.DataFrame({"gsis_id": out["gsis_id"].to_numpy(), "season": out["season"].to_numpy() - 2}).reset_index()
+    pq = pd.merge_asof(pq.sort_values("season"), carl.rename(columns={"season": "cs"}).sort_values("cs"), left_on="season",
+                       right_on="cs", by="gsis_id", direction="backward").sort_values("index")
+    early = pq[sums].fillna(0.0).to_numpy()
+    eff = DB_WEIGHTS[0] * t + DB_WEIGHTS[1] * last + DB_WEIGHTS[2] * early
+    e = pd.DataFrame(eff, columns=sums, index=out.index)
+    lg = before.reindex(out["season"]).to_numpy()
+    lgd = pd.DataFrame(lg, columns=sums, index=out.index)
+    for f, (num, k) in DB_RATES.items():
+        mu = (lgd[num] / lgd["db"]).to_numpy()
+        out[f] = (e[num] + k * mu) / (e["db"] + k)
+    for f, num in DB_PER_GAME.items():
+        mu = (lgd[num] / lgd["games"]).to_numpy()
+        out[f] = (e[num] + DB_GAMES_K * mu) / (e["games"] + DB_GAMES_K)
+    out["db_n"] = e["db"].to_numpy()
+    return out
+
+
 # ------------------------------------------------------------------------------ the cache
-def cache(out: Path) -> None:
+def cache(out: Path, with_db: bool = False) -> None:
     with psycopg.connect(get_settings().pipeline_dsn()) as conn:
         conn.read_only = True
         frame = H.load(conn, [s for s in P.available_seasons(conn) if s <= max(TESTS)])
-    frame["season"] = frame["season"].astype(int)
+        frame["season"] = frame["season"].astype(int)
+        if with_db:
+            qrows = frame[frame["position"] == "QB"]
+            f = db_features(conn, qrows)
+            for c in DB_FEATS:
+                frame[c] = np.nan
+                frame.loc[qrows.index, c] = f[c].to_numpy()
     qb = frame[frame["position"] == "QB"]
     parts = []
     for s in range(FIRST_CACHE, max(TESTS) + 1):
         t0 = time.monotonic()
-        models, feats = H.fit(frame, s, "QB")
+        if with_db:
+            feats = [*P.FEATURES_BY_POSITION["QB"], *DB_FEATS]
+            tr = frame[frame["season"] < s]
+            dd = tr[(tr["position"] == "QB") & tr["played"] & ~tr["no_history"]].dropna(subset=[f"out_{c}" for c in P.COMPONENTS["QB"]])
+            models = P._fit_components(P._matrix(dd.reset_index(drop=True), feats), dd.reset_index(drop=True), "QB")
+        else:
+            models, feats = H.fit(frame, s, "QB")
         board = qb[qb["season"] == s].reset_index(drop=True)
         x = board[feats].to_numpy(dtype=float)      # NaN stays NaN (the whole season's batch: as the nightly)
         b = board[KEEP].copy()
@@ -570,6 +667,33 @@ def run_candidates(cache_path: Path, out: Path | None) -> None:
     print("\nverdicts (clauses 1 and 2; 3 = ranges, 4 = QB only):", {k: (v["c1"], v["c2"]) for k, v in verdicts.items()})
 
 
+def run_candidate_db(cache_path: Path, db_cache: Path) -> None:
+    """db1.0 against B0 (v3.5): both caches' lines with pt1.0 fitted on their own walk-forward lines, the same rows."""
+    with psycopg.connect(get_settings().pipeline_dsn()) as conn:
+        leagues = P.league_scorings(conn)
+    key = ["gsis_id", "season", "week", "kind", "as_of", "h"]
+    a, b = pd.read_parquet(cache_path), pd.read_parquet(db_cache)
+    a, b = b0_lines(a, pt_fits(a)), b0_lines(b, pt_fits(b))
+    m = a.merge(b[[*key, *[f"v_{c}" for c in COMPS]]].rename(columns={f"v_{c}": f"db_{c}" for c in COMPS}),
+                on=key, how="inner", validate="one_to_one")
+    assert len(m) == len(a) == len(b), (len(m), len(a), len(b))
+    parts = []
+    for lid, (_, sc) in leagues.items():
+        r = m[["gsis_id", "season", "week", "kind", "as_of", "h", "target_week", "played", "pn_qb_starting"]].copy()
+        r["league_id"], r["actual"], r["ok"] = lid, actual(m, sc), scored(m)
+        r["B0"] = price_cols(m, {c: f"v_{c}" for c in COMPS}, sc)
+        r["db1.0"] = price_cols(m, {c: f"db_{c}" for c in COMPS}, sc)
+        parts.append(r)
+    r = pd.concat(parts, ignore_index=True)
+    print_judgement(judge(r, "db1.0"))
+    print("\n### By horizon\n")
+    print(pd.concat({c: by_h(r, c) for c in ("B0", "db1.0")}, axis=1).round(3).to_string())
+    st = r[r["pn_qb_starting"].fillna(0).gt(0.5)]
+    print("\nlisted starters only, 1 week and 2-8 (information):\n")
+    print(table({"B0 1 wk": board_seasons(st, "B0"), "db1.0 1 wk": board_seasons(st, "db1.0"),
+                 "B0 2-8": horizon_seasons(st, "B0"), "db1.0 2-8": horizon_seasons(st, "db1.0")}))
+
+
 # ------------------------------------------------------------------------------ clause 3: the ranges, production path
 def run_ranges(lines_path: Path, cand: str = "hb0") -> None:
     """Per S: ``fit_position`` (QB, the house scorings) on 2016..S-1; v3.5's 1-week line (the model's, pt1.0 where there
@@ -627,13 +751,18 @@ def run_ranges(lines_path: Path, cand: str = "hb0") -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["cache", "baselines", "candidates", "ranges"])
+    ap.add_argument("mode", choices=["cache", "cache-db", "baselines", "candidates", "candidate-db", "ranges"])
+    ap.add_argument("--db-cache", type=Path, default=None)
     ap.add_argument("--cache", type=Path, default=None)
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
     if args.mode == "cache":
         cache(args.out)
+    elif args.mode == "cache-db":
+        cache(args.out, with_db=True)
+    elif args.mode == "candidate-db":
+        run_candidate_db(args.cache, args.db_cache)
     elif args.mode == "baselines":
         run_baselines(args.cache, args.out)
     elif args.mode == "ranges":
