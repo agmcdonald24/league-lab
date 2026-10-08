@@ -2730,3 +2730,30 @@ export const cardPaths = {
   projections: (gsis: string, league: string) => `/api/player/${q(gsis)}/projections?league=${q(league)}`,
 };
 // ---- end IP-4
+// ---- IQ-4 (Wave I-Q): what we know about the rest of season (api ros_grade.py, the one place for the numbers) and the
+// bye-week row; interfaces merged with the ones above
+export interface RosGrade {
+  words: string; // "Beyond next week there is no betting line yet. Graded on 2021–2025, …"
+  kd_words: string | null; // kickers and defenses, when the answer has them
+  graded_on: string;
+  as_of: string;
+  source: string;
+  qb_next_week_mae: number;
+  qb_later_mae: number;
+  other_extra_mae: number;
+  kd_shown: boolean; // LEAGUE_LAB_KD_ROS: the K / DEF rest-of-season list is shown
+}
+export interface Rankings {
+  ros_grade?: RosGrade; // the season view
+  kd_hidden?: boolean; // the season view of K / DEF: no list (the notice says why)
+}
+export interface RankRow {
+  bye_this_week?: boolean; // the season view: ranked by his remaining games, no game this week
+}
+export interface RosList {
+  ros_grade?: RosGrade;
+}
+export interface FreeTrade {
+  ros_grade?: RosGrade;
+}
+// ---- end IQ-4

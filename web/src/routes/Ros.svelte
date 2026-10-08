@@ -219,6 +219,9 @@
 
     <!-- ---- IA-3: how to read the rankings (the honesty line), then the table -->
     <section class="rounded-lg border border-line bg-raised p-4 text-sm leading-snug text-ink-2" data-testid="ros-honesty">
+      <!-- ---- IQ-4: what we know about the rest of season -->
+      {#if data.ros_grade}<p class="mb-2" data-testid="ros-grade">{data.ros_grade.words}{data.ros_grade.kd_words ? ` ${data.ros_grade.kd_words}` : ""}</p>{/if}
+      <!-- ---- end IQ-4 -->
       <Md text={data.howto_rankings ?? RANKINGS_HOWTO} {ctx} />
     </section>
 
