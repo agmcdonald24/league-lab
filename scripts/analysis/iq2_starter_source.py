@@ -75,8 +75,8 @@ def team_games(games: pd.DataFrame, dropbacks: pd.DataFrame) -> pd.DataFrame:
     lead = (d.sort_values(["game_id", "team", "dropbacks", "gsis_id"], ascending=[True, True, False, True])
              .drop_duplicates(["game_id", "team"])[["game_id", "team", "gsis_id"]].rename(columns={"gsis_id": "truth_id"}))
     g = g.merge(lead, on=["game_id", "team"], how="left")
-    dropped = set(zip(d["game_id"], d["team"], d["gsis_id"]))
-    g["listed_dropped"] = [(a, b, c) in dropped for a, b, c in zip(g["game_id"], g["team"], g["listed_id"])]
+    dropped = set(zip(d["game_id"], d["team"], d["gsis_id"], strict=False))
+    g["listed_dropped"] = [(a, b, c) in dropped for a, b, c in zip(g["game_id"], g["team"], g["listed_id"], strict=False)]
     g = g.sort_values(["team", "season", "week"]).reset_index(drop=True)
     # the newest played game before W this season (W's own game never counts)
     prev = g[g["truth_id"].notna()][["team", "season", "week", "truth_id"]].rename(
@@ -118,7 +118,7 @@ def depth_before(g: pd.DataFrame, depth: pd.DataFrame) -> pd.Series:
         times = snaps["snapshot_at"].to_numpy()
         pos = np.searchsorted(times, k.loc[idx].to_numpy(), side="left") - 1     # strictly before kickoff
         lists = snaps["gsis_id"].tolist()
-        for i, p in zip(idx, pos):
+        for i, p in zip(idx, pos, strict=False):
             out.loc[i] = lists[p] if p >= 0 else None
     return out
 
@@ -126,8 +126,9 @@ def depth_before(g: pd.DataFrame, depth: pd.DataFrame) -> pd.Series:
 def ruled_out(g: pd.DataFrame, report: pd.DataFrame, roster: pd.DataFrame):
     """A function (season, week, gsis_id) -> True when week W's injury report says Out / Doubtful or his week-W
     weekly-roster status is outside ACT / INA / DEV (a missing row is unknown, never out)."""
-    rep = set(zip(report["season"], report["week"], report["gsis_id"]))
-    ros = {(s, w, q): st for s, w, q, st in zip(roster["season"], roster["week"], roster["gsis_id"], roster["roster_status"])}
+    report = report[report["report_status"].isin(OUT_REPORT)]          # Out / Doubtful only (Questionable never)
+    rep = set(zip(report["season"], report["week"], report["gsis_id"], strict=False))
+    ros = {(s, w, q): st for s, w, q, st in zip(roster["season"], roster["week"], roster["gsis_id"], roster["roster_status"], strict=False)}
 
     def f(season, week, q) -> bool:
         if q is None or (isinstance(q, float) and np.isnan(q)):
@@ -234,11 +235,11 @@ def load() -> pd.DataFrame:
     # did the listed QB drop back in the team's newest played game? (U0 reads it)
     d = dbk.copy()
     d["team"] = kd(d["team"])
-    dropped = set(zip(d["team"], d["gsis_id"], d["game_id"]))
+    dropped = set(zip(d["team"], d["gsis_id"], d["game_id"], strict=False))
     gid = g[g["played"]].set_index(["team", "season", "week"])["game_id"].to_dict()
     g["listed_last_dropped"] = [
         (t, L, gid.get((t, s, lw))) in dropped if isinstance(L, str) and lw == lw else False
-        for t, L, s, lw in zip(g["team"], g["listed_id"], g["season"], g["last_week"])]
+        for t, L, s, lw in zip(g["team"], g["listed_id"], g["season"], g["last_week"], strict=False)]
     depth = _read(DEPTH_SQL)
     g["depth"] = depth_before(g, depth)
     g.loc[g["season"] < DEPTH_FROM, "depth"] = None
@@ -259,7 +260,7 @@ def asof() -> None:
     lag, before, after = [], [], []
     qb1 = (depth.sort_values(["team", "snapshot_at", "pos_rank", "pos_slot", "gsis_id"])
                 .drop_duplicates(["team", "snapshot_at"]).set_index(["team", "snapshot_at"])["gsis_id"])
-    for t, kk in zip(g["team"], k):
+    for t, kk in zip(g["team"], k, strict=False):
         ts = snaps.get(t)
         i = np.searchsorted(ts, kk, side="left")
         b = ts[i - 1] if i > 0 else None
@@ -270,8 +271,7 @@ def asof() -> None:
     g["lag_h"], g["qb1_before"], g["qb1_after"] = lag, before, after
     has = g["qb1_before"].notna() & g["qb1_after"].notna()
     print(f"team-games {DEPTH_FROM}-2026 played: {len(g)}; with a snapshot before kickoff: {int(g['qb1_before'].notna().sum())}")
-    print("hours from the newest snapshot to kickoff: median %.1f, 90th percentile %.1f, max %.1f" %
-          (np.nanmedian(lag), np.nanpercentile(lag, 90), np.nanmax(lag)))
+    print(f"hours from the newest snapshot to kickoff: median {np.nanmedian(lag):.1f}, 90th percentile {np.nanpercentile(lag, 90):.1f}, max {np.nanmax(lag):.1f}")
     ch = g[has & (g["qb1_before"] != g["qb1_after"])]
     print(f"QB1 before kickoff != QB1 of the first snapshot after: {len(ch)} of {int(has.sum())}")
     print(f"  of which the post-game QB1 is the game's dropback leader: {int((ch['qb1_after'] == ch['truth_id']).sum())}; "
