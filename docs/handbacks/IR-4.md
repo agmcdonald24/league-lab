@@ -137,10 +137,10 @@ waivers and My Week lineups: `provenance.for_players(players, season, week)` giv
   test_io4, test_ip3: 293 passed, 1 skipped, 2 failed — `test_h1::test_waivers_trade_lists_on_demand_equal_the_house_path`
   (in `known_api_failures.txt`) and `test_ip3::test_without_the_table_every_key_is_quiet`, which pins the record
   summary's keys: updated on purpose for the new `horizon` key (line 88), then test_ip3 + test_io1 + test_ir4: 48 passed.
-* Root (`check_root.sh`): 1618 passed, 5 failed, all known after the registry row (the new one,
-  `test_metric_registry`, fixed: 3 passed).
+* Root (`check_root.sh`, final): 1619 passed, 4 failed, 3 skipped — no new failure (the first run's one new failure,
+  `test_metric_registry::test_every_documented_metric_has_a_registry_row` for ud1.0, fixed with the registry row).
 * ruff clean; copy standard clean; `npm run lint` (eslint + svelte-check + tsc) 0 errors 0 warnings; `npm run build` ok.
-* e2e `web/e2e/ir4` (port 8947): 12 passed (phone 375, desktop 1300; no sideways scroll), on answers recorded from the
+* e2e `web/e2e/ir4` + `web/e2e/iq4` (port 8947): 20 passed (ir4 12) (phone 375, desktop 1300; no sideways scroll), on answers recorded from the
   app on `league_lab_im4` (`web/fixtures/ir4/api_ir4.json`); `web/e2e/iq4`: 8 passed. TradeCalc (league) has no
   fixture answer for `POST /api/trades/evaluate`: its line is type-checked, not browser-tested.
 * Screenshots: `docs/handbacks/ir4/*.jpg` (rankings, ros, free trade, card, About × 2, home; phone and desktop).
