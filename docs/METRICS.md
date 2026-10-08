@@ -4830,8 +4830,9 @@ days. So the stored daily snapshots are read as of their capture time. Before 20
 
 **No candidate passes; none ships.** The depth chart alone is worse than the listing (S1: it keeps a hurt starter on
 top). The depth chart's first available quarterback finds every stale listing (S2: 12 of 12) but breaks as many right
-listings as it fixes (14 against 13: ARI 2025 weeks 6, 7, 9, MIN weeks 7–8 — a returning starter the chart had not
-moved back; the week-18 rests of BUF, LAC, PHI). The listing unless the report rules him out (S3) never breaks a listing
+listings as it fixes (14 against 13): mostly a hurt starter the chart kept on top who was Questionable on the report
+and then inactive on game day (Murray ARI 2025 weeks 6, 7, 9; McCarthy MIN weeks 7–8; Purdy SF weeks 3 and 9 — INA is
+announced 90 minutes before kickoff, after any board), and the week-18 rests (BUF, GB, LAC, PHI). The listing unless the report rules him out (S3) never breaks a listing
 and fixes 10 in five seasons — but only 20–42% of the stale ones, because a stale listing is almost never a ruled-out
 player: it is a healthy starter who lost the job (SEA 2026, NYJ 2025). The closest is S4 (83% of the stale listings,
 more accurate overall), which fails (c) on six breaks — three of them week-18 rests (BUF, LAC, PHI 2025), one ARI
