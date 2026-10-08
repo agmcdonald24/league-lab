@@ -744,7 +744,7 @@ beyond next week", as of 2026-10-07), on every screen that shows a rest-of-seaso
 
 | Where | The words we use | Never |
 |---|---|---|
-| Rankings "Rest of season" (under the list), `/ros` (the "how to read" box), the free trade calculator (under the values) | "Beyond next week there is no betting line yet. Graded on 2021–2025, a quarterback projection two to eight weeks ahead misses by about 7.6 points per game (6.4 for next week); running backs, receivers and tight ends miss by about 0.2 more than next week." | "accurate", "reliable", a number without "graded on" |
+| Rankings "Rest of season" (under the list), `/ros` (the "how to read" box), the free trade calculator (under the values) | "Beyond next week there is no betting line yet. Graded on 2021–2025, a quarterback projection two to eight weeks ahead misses by about 7.4 points per game (6.4 for next week); running backs, receivers and tight ends miss by about 0.2 more than next week." | "accurate", "reliable", a number without "graded on" |
 | Rankings "Rest of season", K or DEF (no list while `LEAGUE_LAB_KD_ROS` is off) | "Kickers and defenses: graded on 2021–2025, their order two to eight weeks ahead is no better than chance, so they have no rest-of-season ranking here." | an empty list without the reason |
 | `/ros` with kickers or defenses in it, the free trade calculator with one on a side (their numbers stay there) | the sentence, then "Kickers and defenses: graded on 2021–2025, their order two to eight weeks ahead is no better than chance; read their numbers as a rough guide." | — |
 | Rankings "Rest of season", a player whose team has no game this week | "Bye this week" (in place of the game; he is ranked by his remaining games) | "no game this week" for a bye, a missing row |

@@ -26,6 +26,7 @@
   import PosBadge from "../components/PosBadge.svelte";
   import TeamBadge from "../components/TeamBadge.svelte";
   import Md from "../components/Md.svelte";
+  import ProvenanceLine from "../components/provenance/ProvenanceLine.svelte"; // ---- IR-4
 
   let {
     options,
@@ -223,6 +224,7 @@
       {#if data.ros_grade}<p class="mb-2" data-testid="ros-grade">{data.ros_grade.words}{data.ros_grade.kd_words ? ` ${data.ros_grade.kd_words}` : ""}</p>{/if}
       <!-- ---- end IQ-4 -->
       <Md text={data.howto_rankings ?? RANKINGS_HOWTO} {ctx} />
+      <div class="mt-2"><ProvenanceLine p={data.provenance} testid="ros-provenance" /></div><!-- ---- IR-4: what is verified -->
     </section>
 
     {#snippet head(k: SortKey, text: string, cls: string, title?: string)}

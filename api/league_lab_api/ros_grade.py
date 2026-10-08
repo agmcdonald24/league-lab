@@ -9,6 +9,8 @@ week, with its betting line) misses by 6.44 points per game; two to eight weeks 
 backs, receivers and tight ends lose about 0.2 between the two (pooled 2–8 minus next week, v3.5: RB 4.70 − 4.52,
 WR 4.60 − 4.44, TE 3.41 − 3.25). Kickers and defenses (§ "Kickers and defenses beyond next week", IQ-4): their order two
 to eight weeks ahead is no better than chance (rank correlation 0.03 and 0.04 with what they scored). As of 2026-10-07.
+IR-4 (2026-10-08): v3.6 (hb1.0, § "v3.6", IQ-3) lowered the quarterback's two-to-eight-weeks miss to 7.41 (7.406);
+the sentence now says 7.4. ``provenance.py`` reads these constants for its checks.
 """
 
 from __future__ import annotations
@@ -19,7 +21,7 @@ GRADED_ON = "2021–2025"
 AS_OF = "2026-10-07"
 SOURCE = "docs/METRICS.md § v3.5: rest-of-season quarterbacks (IQ-1); § Kickers and defenses beyond next week (IQ-4)"
 QB_NEXT_WEEK_MAE = 6.44
-QB_LATER_MAE = 7.56
+QB_LATER_MAE = 7.41   # ---- IR-4: v3.6 (hb1.0, METRICS § v3.6 (IQ-3): pooled 2–8 7.406); was v3.5's 7.56
 OTHER_EXTRA_MAE = 0.2
 KD_LATER_SPEARMAN = {"K": 0.03, "DEF": 0.04}
 

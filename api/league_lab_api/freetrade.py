@@ -262,7 +262,8 @@ def free_trade(league: str = refleague.DEFAULT, give: str = "", get: str = ""):
     try:
         sh = refleague.shape(league)
         g, t = ids(give, "give"), ids(get, "get")
-        out = evaluate(sh.key, g, t)
+        from . import provenance  # ---- IR-4: what is verified, the starter caveats
+        out = provenance.with_free_trade(evaluate(sh.key, g, t))      # ---- IR-4
     except LeagueNotFound:
         return _err(404, "Not a scoring we know.", "not_found")
     except Bad as exc:

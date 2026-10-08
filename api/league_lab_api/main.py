@@ -443,6 +443,7 @@ def player_card(gsis: str, league: str, response: Response, team: int | None = N
     out["viewer_roster_id"] = team
     if refleague.is_reference(league):                         # ---- IN-2: the scoring in the head, the value, no owner
         out = refleague.card(out, league)                      # ---- end IN-2
+    out = provenance.with_card(out)                                                               # ---- IR-4
     return _research(out, league, response)                                                       # ---- IM-3
 
 
@@ -452,7 +453,7 @@ def ros(league: str, response: Response, position: str = "ALL", limit: int = 50,
     view = ratelimit.norm(view) or "points"           # ---- IM-3 fix: one spelling for the bucket, this rule and ondemand
     if ratelimit.lineup_view(view) and refleague.is_reference(league):                        # ---- IM-3
         raise refleague.NeedsLeague()
-    return _research(ondemand.ros(league, position, limit, view=view, team=team, who=who), league, response)
+    return _research(provenance.with_ros(ondemand.ros(league, position, limit, view=view, team=team, who=who)), league, response)  # ---- IR-4
 
 
 @app.exception_handler(ondemand.BadView)                                              # ---- IB-3
@@ -676,6 +677,7 @@ def trades_evaluate(body: TradeBody, response: Response, source: str | None = No
         raise refleague.NeedsLeague()
     provider_gate(body.league)                                                                   # ---- IK-3
     out = decisions.evaluate(body.league, body.team, body.partner, body.give, body.get, source=source, window=body.window)
+    out = provenance.with_trade(out)                          # ---- IR-4: provenance + the starter caveats (data)
     response.headers["Cache-Control"] = "no-store"
     return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
 
@@ -990,3 +992,8 @@ def web(path: str, request: Request):  # ---- IO-2: the request (a League link's
     if league_q:                                                                       # ---- IP-5
         return HTMLResponse(player_share.noindex(player_share._index_text(index)), headers={"Cache-Control": SHELL_CACHE, **robots})
     return FileResponse(index, headers={"Cache-Control": SHELL_CACHE})
+
+
+# ---- IR-4 (Wave I-R): what is verified, with every analysis (league_lab_api/provenance.py; no route of its own)
+from . import provenance  # noqa: E402 - the block stays self-contained
+# ---- end IR-4

@@ -2774,3 +2774,94 @@ export interface StartPlayer {
   starter_corrected?: StarterCorrected | null;
 }
 // ---- end IQ-2
+// ---- IR-4 (Wave I-R): what is verified, with every analysis (api provenance.py), and the starter caveats as data;
+// interfaces merged with the ones above
+export type ProvenanceStatus = "graded" | "graded_weak" | "chance" | "not_graded";
+export interface ProvenanceCheck {
+  span: "next" | "later" | "season_range" | "trade_gap";
+  position: string | null;
+  status: ProvenanceStatus;
+  words: string;
+  ref: string; // its docs/METRICS.md section
+  mae: number | null;
+  order: number | null;
+}
+export interface Provenance {
+  model_version: string; // the stored board's version for these weeks
+  kd_model_version: string | null;
+  published_at: string | null; // the board's newest fit
+  horizon: { first: number | null; last: number | null; market_week: number | null; words: string | null };
+  checks: ProvenanceCheck[];
+  status: ProvenanceStatus; // the weakest of the checks
+  beta: boolean;
+  words: string; // the one quiet line, printed as it is
+}
+export interface DecisionCaveat {
+  kind: "starter_unclear" | "starter_set_by_hand";
+  effect: "withhold" | "soften";
+  team: string;
+  players: string[];
+  words: string;
+}
+export interface Provenanced {
+  provenance?: Provenance;
+  caveats?: DecisionCaveat[];
+  caveat_effect?: "withhold" | "soften" | null;
+  caveat_rule?: string;
+}
+export interface Rankings {
+  provenance?: Provenance;
+  caveats?: DecisionCaveat[];
+  caveat_effect?: "withhold" | "soften" | null;
+  caveat_rule?: string;
+}
+export interface RosList {
+  provenance?: Provenance;
+  caveats?: DecisionCaveat[];
+  caveat_effect?: "withhold" | "soften" | null;
+  caveat_rule?: string;
+}
+export interface FreeTrade {
+  provenance?: Provenance;
+  caveats?: DecisionCaveat[];
+  caveat_effect?: "withhold" | "soften" | null;
+  caveat_rule?: string;
+}
+export interface TradeEval {
+  provenance?: Provenance;
+  caveats?: DecisionCaveat[];
+  caveat_effect?: "withhold" | "soften" | null;
+  caveat_rule?: string;
+}
+export interface PlayerCard {
+  provenance?: Provenance;
+  caveats?: DecisionCaveat[];
+  caveat_effect?: "withhold" | "soften" | null;
+  caveat_rule?: string;
+}
+export interface AboutWindowGrade {
+  mae: number;
+  order: number;
+  base_mae: number | null; // the simple baseline (quarterbacks: his own per-game record)
+  base_order: number | null;
+}
+export interface AboutCheckedRow {
+  position: string;
+  next: { status: ProvenanceStatus; words: string; mae: number; order: number } | null;
+  later: { status: ProvenanceStatus; words: string; mae: number; order: number } | null;
+  next4: AboutWindowGrade | null;
+  ros: AboutWindowGrade | null;
+}
+export interface AboutAnswer {
+  versions?: {
+    current: string;
+    kd: string | null;
+    published_at: string | null;
+    published_words: string | null;
+    list: { version: string; date: string; date_words: string; words: string }[];
+    by_week: string | null; // "weeks 1–3: v2.0; week 4: v3.0; weeks 5–18: v3.6"
+    words: string;
+  };
+  checked?: { head: string; graded_on: string; rows: AboutCheckedRow[]; not_graded: string[]; windows_words: string; rule: string };
+}
+// ---- end IR-4

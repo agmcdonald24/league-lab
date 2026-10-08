@@ -134,6 +134,53 @@
   {/if}
   {#if ab.data?.why}<p class="text-sm leading-snug text-ink-3" data-testid="about-why">{ab.data.why}</p>{/if}
 
+  <!-- ---- IR-4 (Wave I-R): what changed and when; what each number has been checked against (api provenance.py) -->
+  {#if ab.data?.versions}
+    {@const v = ab.data.versions}
+    <section class="space-y-3" data-testid="about-versions">
+      <h2 class="text-xl font-extrabold tracking-tight" id="versions">What changed and when</h2>
+      <p class="text-base leading-snug">{v.words} Now: {v.current}{v.kd ? ` (kickers and defenses ${v.kd})` : ""}{v.published_words ? `, data published ${v.published_words}` : ""}.</p>
+      <ol class="divide-y divide-line rounded-lg border border-line bg-surface text-base" data-testid="about-versions-list">
+        {#each v.list as x, ix (`${x.version}#${ix}`)}
+          <li class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 px-3 py-2 sm:grid-cols-[4.5rem_10rem_minmax(0,1fr)]">
+            <span class="tabnum text-ink-3">{x.date_words}</span>
+            <span class="font-semibold">{x.version}</span>
+            <span class="col-span-2 leading-snug text-ink-2 sm:col-span-1">{x.words}</span>
+          </li>
+        {/each}
+      </ol>
+      {#if v.by_week}<p class="text-sm leading-snug text-ink-3" data-testid="about-versions-weeks">This season's weeks, by the version they were made with: {v.by_week}.</p>{/if}
+    </section>
+  {/if}
+  {#if ab.data?.checked}
+    {@const c = ab.data.checked}
+    {@const two = (x: number | null | undefined) => (x === null || x === undefined ? "—" : x.toFixed(2))}
+    {@const one = (x: number | null | undefined) => (x === null || x === undefined ? "—" : x.toFixed(1))}
+    <section class="space-y-3" data-testid="about-checked">
+      <h2 class="text-xl font-extrabold tracking-tight" id="checked">What each number has been checked against</h2>
+      <p class="text-base leading-snug">{c.head}</p>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 wide:grid-cols-3">
+        {#each c.rows as r, ix (`${r.position}#${ix}`)}
+          <Card title={r.position} testid="about-checked-card">
+            <dl class="space-y-1.5 text-sm leading-snug">
+              {#if r.next}<div><dt class="inline font-semibold">Next week:</dt> <dd class="inline">{r.next.words} · order {two(r.next.order)} · miss {one(r.next.mae)}</dd></div>{/if}
+              {#if r.later}<div><dt class="inline font-semibold">Two to eight weeks ahead:</dt> <dd class="inline">{r.later.words} · order {two(r.later.order)} · miss {one(r.later.mae)}</dd></div>{/if}
+              {#if r.next4}<div><dt class="inline font-semibold">Next four weeks:</dt> <dd class="inline">order {two(r.next4.order)} · miss {one(r.next4.mae)}{r.next4.base_order !== null ? ` (his own record: ${two(r.next4.base_order)} · ${one(r.next4.base_mae)})` : ""}</dd></div>{/if}
+              {#if r.ros}<div><dt class="inline font-semibold">Rest of season:</dt> <dd class="inline">order {two(r.ros.order)} · miss {one(r.ros.mae)}{r.ros.base_order !== null ? ` (his own record: ${two(r.ros.base_order)} · ${one(r.ros.base_mae)})` : ""}</dd></div>{/if}
+            </dl>
+          </Card>
+        {/each}
+      </div>
+      <p class="text-sm leading-snug text-ink-3" data-testid="about-checked-windows">{c.windows_words}</p>
+      <div class="text-sm leading-snug text-ink-2" data-testid="about-not-graded">
+        <p class="font-semibold">Not graded yet:</p>
+        <ul class="list-disc pl-5">{#each c.not_graded as n, ix (ix)}<li>{n}</li>{/each}</ul>
+      </div>
+      <p class="text-sm leading-snug text-ink-3" data-testid="about-checked-rule">{c.rule}</p>
+    </section>
+  {/if}
+  <!-- ---- end IR-4 -->
+
   <section class="space-y-3" data-testid="record">
     <h2 class="text-xl font-extrabold tracking-tight" id="record">Our record against Sleeper's projections</h2>
     <p class="text-sm leading-snug text-ink-3">
