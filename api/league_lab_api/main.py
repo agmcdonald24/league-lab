@@ -678,6 +678,7 @@ def trades_evaluate(body: TradeBody, response: Response, source: str | None = No
     provider_gate(body.league)                                                                   # ---- IK-3
     out = decisions.evaluate(body.league, body.team, body.partner, body.give, body.get, source=source, window=body.window)
     out = provenance.with_trade(out)                          # ---- IR-4: provenance + the starter caveats (data)
+    out = provenance.rule_trade(out)                          # ---- PO (Wave I-R): the caveat rule applied to the one decision
     response.headers["Cache-Control"] = "no-store"
     return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
 

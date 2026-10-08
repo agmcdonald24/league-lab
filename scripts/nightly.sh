@@ -161,6 +161,9 @@ summary() {
       for i in "${!STEP_NAMES[@]}"; do echo "| ${STEP_NAMES[$i]} | $(fmt "${STEP_SECS[$i]}") | ${STEP_RESULTS[$i]} |"; done
       while IFS= read -r line; do printf '\n`Done. %s`\n' "${line#*Done. }"; done < <(grep -h "Done. PASS=" logs/nightly.log 2>/dev/null | tail -2)
       while IFS= read -r line; do printf '\n`%s`\n' "$line"; done < <(grep -h "^verified: all" logs/sync.log 2>/dev/null | tail -1)
+      # ---- IR-3 (Wave I-R): the post-publish check's lines, when it ran
+      if [ -s logs/post_publish_check.txt ]; then echo; echo "**Post-publish check (the live site)**"; echo; echo '```'; cat logs/post_publish_check.txt; echo '```'; fi
+      # ---- end IR-3
       # ---- IQ-4 (Wave I-Q): the list audit, whole (about 100 lines of markdown), when it ran
       if [ -s logs/list_audit.md ]; then echo; echo "<details><summary>List audit (the trust guard)</summary>"; echo; cat logs/list_audit.md; echo; echo "</details>"; fi
       # ---- end IQ-4
@@ -489,7 +492,15 @@ fi
 DBT_EXCLUDE=()
 [ -n "${NIGHTLY_DBT_EXCLUDE:-}" ] && read -r -a DBT_EXCLUDE <<< "--exclude $NIGHTLY_DBT_EXCLUDE"
 hard dbt-build dbt_step dbt-build build ${DBT_EXCLUDE[@]+"${DBT_EXCLUDE[@]}"}
-hard backtests backtests
+# ---- IR-3 (Wave I-R): a backtest of an earlier model on the copy is enough to publish tonight (the scoreboards keep it
+# one more day); only a database with none at all, or NIGHTLY_BACKTESTS=1, makes it a stop. Before: a failing
+# backtest-v2 on the first night of a new model version stopped the night three times running.
+if [ -z "${NIGHTLY_BACKTESTS:-}" ] && [ "$(q 'select count(*) from ops.projection_backtest' 2>/dev/null || echo 0)" -gt 0 ]; then
+  SOFT_WHY="the scoreboards keep the last model's backtest; the next night computes this model's" soft backtests backtests
+else
+  hard backtests backtests
+fi
+# ---- end IR-3
 # ---- M6 (Wave I-H): the cold-start prior's fitting rows, before `project` reads them (a no-op on a night they are current:
 # the newest 3 completed seasons of this MODEL_VERSION). Soft: without them `project` logs "stat lines unchanged" and
 # the board is the model's own lines (v3.0's numbers), never a failed night.
@@ -542,6 +553,12 @@ SOFT_WHY="the hosted copy keeps last night's grade; the record itself is saved" 
 # ---- IQ-4 (Wave I-Q): the trust guard — every list a visitor opens without a league is audited against what the
 # players have scored, the starters and the bye teams (src/league_lab/audit.py; logs/list_audit.md; exit 0 always:
 # never a stop). The report's head and counts go in the run's summary: the PO reads them every morning.
+# ---- IR-1 (Wave I-R): nobody who cannot play is projected — the stored board against Sleeper's directory
+# (dbt/tests/assert_nobody_who_cannot_play_is_projected, run as an error). Soft, on purpose (the PO): a name the gate
+# missed must not keep tonight's numbers from the site — the screens hide players who cannot play at request time
+# from the same definition — but the run ends red with the names, and the PO fixes the gate that day.
+SOFT_WHY="the screens hide players who cannot play at request time; the stored board still carries a number for the names this check lists" soft availability-gate dbt_step availability-gate test --select assert_nobody_who_cannot_play_is_projected --vars '{availability_gate_severity: error}'
+# ---- end IR-1
 SOFT_WHY="the lists go out unaudited tonight" soft audit-lists uv run league-lab audit-lists
 # ---- end IQ-4
 
@@ -568,6 +585,16 @@ elif in_ci || [ "${LEAGUE_LAB_MAC_WRITES_HOSTED:-}" = 1 ] || [ "${LEAGUE_LAB_HOS
     done
   fi
   # ---- end IO-2
+  # ---- IR-3 (Wave I-R): the post-publish check on the live site (health, readiness, the rankings' top with nobody who
+  # cannot play, a known trade whose numbers and words agree, the same trade from the other side). Informational: its
+  # lines go in the run's summary and a failure never fails the night (the publication is already live; the PO reads
+  # the summary every morning).
+  if in_ci; then
+    python3 scripts/post_deploy_check.py https://isuckatfantasy.io > logs/post_publish_check.txt 2>&1 \
+      || echo "note: the post-publish check reported a failure (logs/post_publish_check.txt, in the run's summary)" >&2
+    cat logs/post_publish_check.txt 2>/dev/null || true
+  fi
+  # ---- end IR-3
 else
   skip sync-hosted "GitHub Actions is the one writer of the hosted copy (LEAGUE_LAB_MAC_WRITES_HOSTED=1 publishes from here)"
 fi

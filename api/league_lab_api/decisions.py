@@ -2571,12 +2571,28 @@ IR2_OUT_REASONS = {"NFL injured reserve": "on injured reserve", "IR slot": "in t
 
 
 def ir2_out_indefinitely(ctx: TradeContext, board: RosterBoard, ids) -> list[dict]:
-    out = []
+    out, seen = [], set()
     for p in ids:
         r = board.row(p, ctx.this_week)
         why = IR2_OUT_REASONS.get(r.get("reason")) if r is not None else None
         if why:
             out.append({"player": ctx.player(p), "why": why})
+            seen.add(p)
+    # ---- PO (Wave I-R): IR-1's one definition (availability.statuses: the stored record + Sleeper + ESPN) — a player
+    # out with no return date (IR, PUP, NFI, suspended) whom the board's own reason did not name. Never raises.
+    try:
+        from . import availability as _av
+        rest = {p: ctx.player(p) for p in ids if p not in seen}
+        gs = [x.get("gsis_id") for x in rest.values() if x and x.get("gsis_id")]
+        st = _av.statuses(gs, getattr(ctx, "season", None), ctx.this_week) if gs else {}
+        for p, x in rest.items():
+            s = st.get((x or {}).get("gsis_id"))
+            if s and s.get("out_indefinitely"):
+                out.append({"player": x, "why": s.get("reason") or "out with no return date"})
+    except Exception:  # noqa: BLE001 - the verdict stands on the board's own reason
+        import logging
+        logging.getLogger(__name__).warning("ir2_out_indefinitely: the availability definition could not be read", exc_info=True)
+    # ---- end PO
     return out
 
 

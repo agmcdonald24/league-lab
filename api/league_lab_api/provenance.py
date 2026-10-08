@@ -465,6 +465,40 @@ def with_card(ans):
     return _with(ans, for_card)
 
 
+# ---- PO (Wave I-R): the rule applied to IR-2's one decision object (`decision`), after `with_trade` put the caveats on
+# the answer. Withheld: the verdict's place carries the caveat's sentence and there is no recommendation (the numbers
+# stay); softened: the verdict stands and the recommendation is a lean that says whom it assumes. The unqualified
+# words are kept beside them. Never raises; an answer without a decision or without caveats is returned as it is.
+def rule_trade(ans):
+    try:
+        d = ans.get("decision") if isinstance(ans, dict) else None
+        cvs = ans.get("caveats") if isinstance(ans, dict) else None
+        if not isinstance(d, dict) or not cvs:
+            return ans
+        ruled = apply(d.get("verdict"), cvs)
+        if ruled["effect"] is None:
+            return ans
+        d = dict(d)
+        rec = dict(d.get("recommendation") or {})
+        d["caveat"] = {"effect": ruled["effect"], "words": ruled["words"]}
+        d["verdict_unqualified"] = d.get("verdict")
+        rec["words_unqualified"], rec["label_unqualified"] = rec.get("words"), rec.get("label")
+        if ruled["effect"] == WITHHOLD:
+            d["verdict"] = ruled["words"]            # the caveat's own sentence: "No verdict while <team>'s starter is unclear: …"
+            rec.update(credible=False, key="withheld", label="No recommendation",
+                       words="The numbers below stand; the recommendation waits until the starter is known.")
+            ans = {**ans, "verdict": d["verdict"]}
+        else:
+            rec["label"] = f"{rec.get('label') or 'A lean'} (a lean)"
+            rec["words"] = f"{rec.get('words') or ''} {ruled['words']}".strip()
+        d["recommendation"] = rec
+        return {**ans, "decision": d}
+    except Exception:  # noqa: BLE001 - provenance never breaks an answer
+        log.warning("provenance.rule_trade failed", exc_info=True)
+        return ans
+# ---- end PO
+
+
 # ------------------------------------------------------------------------------------------------ About (versions, checks)
 # The model's versions this season (docs/METRICS.md, each section's date): About lists them; the sentence "its recipe
 # stays the same all season" was false (v3.0 → v3.6 since week 4).

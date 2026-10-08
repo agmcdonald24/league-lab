@@ -199,6 +199,10 @@ jobs:
           # keys; the on-demand lineup is frozen at the week's first kickoff and graded on MFL's own weekly scores).
           # Dad's league. Rollback = delete the line: the league then says it has no lineup record yet.
           LEAGUE_LAB_RECORD_MFL: "mfl:70587"
+          # Wave I-R (IR-3): a publish whose connection to the hosted database is lost mid-restore is run again whole
+          # (one transaction: nothing of the failed attempt is kept), up to twice, 30 s then 60 s apart. An SQL error
+          # is never retried. Rollback = delete the line (0 = fail on the first lost connection, as before).
+          LEAGUE_LAB_HOSTED_RETRIES: "2"
         run: ./scripts/nightly.sh ${{ inputs.full && '--full' || '' }}
 
       # Save the archive only when its content changed (the key is a fingerprint of every data

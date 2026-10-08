@@ -22,6 +22,8 @@ services:
     region: ohio
     # one process: one Sleeper call budget and one cache (docs/SLEEPER_TERMS.md)
     numInstances: 1
+    # IR-3: liveness only. /api/ready is for the post-deploy check and outside monitors: pointed here, a Neon wake-up
+    # or a nightly publish would restart a healthy process (docs/DEPLOY.md § "Readiness").
     healthCheckPath: /api/health
     # The product's address (2026-10-04): Render adds www. with a redirect to the root and issues the certificate once
     # Cloudflare answers for it (two DNS-only CNAMEs, @ and www -> league-lab.onrender.com; SSL/TLS "Full";
