@@ -19,8 +19,11 @@
 from __future__ import annotations
 
 import atexit
+import json  # ---- IS-4
+import logging  # ---- IS-4
 import sys
 import threading
+import time  # ---- IS-4
 from decimal import Decimal
 
 import numpy as np
@@ -32,6 +35,8 @@ from psycopg_pool import ConnectionPool
 
 from .settings import app_dsn
 
+log = logging.getLogger(__name__)  # ---- IS-4
+
 ANALYTICS = "analytics"
 CACHE_TTL_SECONDS = 600
 
@@ -42,7 +47,7 @@ class DataNotReady(RuntimeError):
 
 _pool: ConnectionPool | None = None
 _pool_lock = threading.Lock()
-_cache = memo.region("sql", ttl=CACHE_TTL_SECONDS)       # INF-2: (sql, params) -> DataFrame, in the shared budget
+_cache = memo.region("sql", ttl=CACHE_TTL_SECONDS, published=True)  # IS-4: dropped at a new publication       # INF-2: (sql, params) -> DataFrame, in the shared budget
 
 
 def pool() -> ConnectionPool:
@@ -137,9 +142,57 @@ def not_kept(*sqls: str) -> None:
     _not_kept.update(sqls)
 
 
+# ---- IS-4 (Wave I-S): the screens switch to a new publication at once. At most every 30 s one request reads the
+# publication id (the JSON comment scripts/sync_to_hosted.sh writes on the analytics schema) on the pool; when it differs
+# from the last one seen, every memo region registered as holding published data is dropped and the callbacks run (the
+# health check's as_of). No comment (the sandbox, a database published before IR-3): the id stays None, nothing drops.
+PUBLICATION_POLL_S = 30.0
+_pub: dict = {"id": None, "seen": False, "next": 0.0}
+_pub_lock = threading.Lock()
+on_publication: list = []                                  # callables(new_id) run after the drop
+
+
+def publication_id() -> str | None:
+    df = _run("select obj_description(to_regnamespace('analytics'), 'pg_namespace') as c", ())
+    raw = None if df.empty else df["c"].iloc[0]
+    try:
+        meta = json.loads(raw) if isinstance(raw, str) else None
+    except ValueError:
+        meta = None
+    return str(meta["publication"]) if isinstance(meta, dict) and meta.get("publication") else None
+
+
+def watch_publication(now: float | None = None) -> bool:
+    """Read the publication id when 30 s have passed; True when it changed (and the published caches were dropped)."""
+    now = time.monotonic() if now is None else now
+    if now < _pub["next"] or not _pub_lock.acquire(blocking=False):
+        return False
+    try:
+        _pub["next"] = now + PUBLICATION_POLL_S
+        try:
+            new = publication_id()
+        except Exception:  # noqa: BLE001 - a failed read changes nothing; the next one is in 30 s
+            return False
+        changed = _pub["seen"] and new != _pub["id"]
+        _pub.update(id=new, seen=True)
+        if changed:
+            dropped = memo.drop_published()
+            log.info("publication %s: dropped %s", new, ", ".join(dropped))
+            for fn in list(on_publication):
+                try:
+                    fn(new)
+                except Exception:  # noqa: BLE001
+                    log.exception("on_publication callback failed")
+        return changed
+    finally:
+        _pub_lock.release()
+# ---- end IS-4
+
+
 def query(sql: str, params: tuple = (), *, ttl: float | None = None) -> pd.DataFrame:
     """Run a read-only query (cached 10 minutes, or ``ttl`` seconds, in the budget's ``sql`` region — unless
     ``not_kept``); returns a fresh (shallow, copy-on-write) copy every time."""
+    watch_publication()                                    # ---- IS-4: at most once every 30 s
     if sql in _not_kept:
         return _run(sql, tuple(params))
     key = (sql, tuple(tuple(p) if isinstance(p, list) else p for p in params))

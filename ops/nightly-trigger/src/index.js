@@ -42,9 +42,22 @@ function headers(env) {
   };
 }
 
+// ---- IS-4 (Wave I-S): "today" is New York's morning, not UTC's day: the runs created since 07:30 America/New_York
+// (before 07:30, since yesterday's). Counting from 00:00 UTC made a run that succeeded after 20:00 EDT (a manual run, a
+// merge's) the next morning's, so a failed 07:37 run was never re-dispatched.
+export function morningSince(now) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric",
+    month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(now).map((x) => [x.type, x.value]));
+  const local = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
+  const offset = Math.round((local - now.getTime()) / 60000) * 60000;    // New York minus UTC (-4 h in EDT)
+  let since = Date.UTC(+p.year, +p.month - 1, +p.day, 7, 30) - offset;
+  if (since > now.getTime()) since -= 86400000;
+  return new Date(since).toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
 async function todaysRuns(env, now) {
-  const day = now.toISOString().slice(0, 10);
-  const url = `${API}/repos/${env.GITHUB_REPO}/actions/workflows/${env.WORKFLOW_FILE}/runs?created=>=${day}T00:00:00Z&per_page=20`;
+  const url = `${API}/repos/${env.GITHUB_REPO}/actions/workflows/${env.WORKFLOW_FILE}/runs?created=>=${morningSince(now)}&per_page=20`;  // ---- IS-4
   const r = await fetch(url, { headers: headers(env) });
   if (!r.ok) throw new Error(`runs: HTTP ${r.status}`);
   const j = await r.json();
@@ -155,14 +168,14 @@ export default {
     const lines = [
       `isuckatfantasy nightly trigger: dispatches ${env.GITHUB_REPO} / ${env.WORKFLOW_FILE} at ` +
         `${hours(env.FIRE_HOUR_ET, [7]).map((x) => `${x}:37`).join(", ")} America/New_York; re-checks at ` +
-        `${hours(env.CHECK_HOURS_ET, [9, 11]).map((x) => `${x}:37`).join(", ")} (dispatches only when nothing succeeded or is running today, UTC).`,
+        `${hours(env.CHECK_HOURS_ET, [9, 11]).map((x) => `${x}:37`).join(", ")} (dispatches only when nothing succeeded or is running since 07:30 New York).`,
       `now: ${etStamp(now)}; token: ${env.GITHUB_TOKEN ? "set" : "MISSING"}`,
       (await lastDispatch(env)).line, // ---- IH-1
     ];
     if (env.GITHUB_TOKEN) {
       try {
         const runs = await todaysRuns(env, now);
-        lines.push(runs.length ? "today's runs (UTC):" : "today's runs (UTC): none yet");
+        lines.push(runs.length ? `runs since ${morningSince(now)}:` : `runs since ${morningSince(now)}: none yet`);
         for (const r of runs) lines.push(`  #${r.number} ${r.event} ${r.status} ${r.conclusion || ""} ${r.created}`);
       } catch (e) { lines.push(`could not list today's runs: ${e.message}`); }
     }
