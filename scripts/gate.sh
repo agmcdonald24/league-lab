@@ -35,7 +35,7 @@ ROOT_GATE=(
   tests/test_decisions.py tests/test_cards.py tests/test_projection_freeze.py tests/test_memo.py tests/test_clock.py
   tests/test_ir3_post_deploy.py
 )
-API_GATE=(tests/test_ir3.py tests/test_build_context.py)
+API_GATE=(tests/test_ir3.py tests/test_build_context.py tests/test_ir0.py)  # test_ir0: PO, 2026-10-08 (the starter rule on the trade verdict; the readiness probe through the pooler)
 API_DESELECT="not on_the_database"          # test_ir3's one database test
 MIN_RAN=750                                  # 798 ran on 2026-10-08; fewer than this: something is not being collected
 

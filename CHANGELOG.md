@@ -2,6 +2,16 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — hotfix: /api/ready through the hosted pooler; the release gate enforced
+
+- **`/api/ready` answered 503 on the live site while every screen worked.** The probe opened its connection with
+  `options=-c statement_timeout=…`; the hosted database is reached through a pooler that refuses startup options
+  (the app's own pool, same address, sends none). The probe now connects without them and sets the timeout inside
+  its own transaction (`set local`). `api/tests/test_ir0.py::test_the_readiness_probe_sends_no_startup_options`.
+- **The release gate blocks.** Its first run on GitHub (image #29, `748ff76`) was green in 1m 9s; `image.yml` no
+  longer turns a red gate into a warning. `scripts/gate.sh` also runs `api/tests/test_ir0.py` (805 tests).
+- The nightly's `availability-gate` step stays soft on purpose (docs/STATUS.md § "Wave I-R", "After the push").
+
 ## 2026-10-08 — Wave I-R (dependability)
 
 - **PO — the merge, the starter rule on the league trade verdict, the nightly's lines.** The league trade verdict

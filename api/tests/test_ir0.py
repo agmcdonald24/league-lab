@@ -42,3 +42,34 @@ def test_a_hand_set_starter_softens_it_to_a_lean():
 def test_a_broken_answer_is_returned_as_it_is():
     a = {"decision": {"verdict": "x", "recommendation": None}, "caveats": [{"effect": P.WITHHOLD}]}   # a caveat with no words
     assert P.rule_trade(a)["decision"]["verdict"] in ("x", "")                    # never raises
+
+
+# ---- PO hotfix 2026-10-08: /api/ready through the hosted pooler
+def test_the_readiness_probe_sends_no_startup_options(monkeypatch):
+    """The hosted database sits behind a pooler that refuses startup options (`options=-c statement_timeout=…`): with
+    them every probe on the live site answered 503 "does not answer" while the app's own pool served every screen. The
+    timeout is set inside the probe's transaction instead."""
+    from league_lab_api import ready
+
+    seen: dict = {"kwargs": None, "sql": []}
+
+    class Conn:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def execute(self, sql, *a, **k):
+            seen["sql"].append(str(sql))
+            raise ready.psycopg.errors.UndefinedTable("stop here")
+
+    def connect(*a, **k):
+        seen["kwargs"] = k
+        return Conn()
+
+    monkeypatch.setattr(ready.psycopg, "connect", connect)
+    ok, ans = ready.check("postgresql://nobody@localhost:1/none")
+    assert ok is False and ans["code"] == "query"
+    assert "options" not in seen["kwargs"]
+    assert seen["sql"] and seen["sql"][0].startswith("set local statement_timeout")

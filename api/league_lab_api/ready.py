@@ -138,9 +138,13 @@ def check(dsn: str | None = None) -> tuple[bool, dict]:
     table dropped between two statements, a timeout) is "query"; anything else is "error" — the class name only, never
     text that could carry a host or a user, and never a 500."""
     try:
-        with psycopg.connect(dsn or app_dsn(), connect_timeout=CONNECT_TIMEOUT_S, autocommit=True,
-                             options=f"-c statement_timeout={STATEMENT_TIMEOUT_MS}",
-                             application_name="league-lab-ready") as conn:
+        # PO hotfix 2026-10-08: no `options=-c statement_timeout=…` at connect. The hosted database is reached through a
+        # pooler that refuses startup options, so every probe on the live site answered "does not answer" (503) while
+        # the app's own pool, on the same address, served every screen. The timeout is set for this transaction only
+        # (`set local`: nothing is left on a pooled connection).
+        with psycopg.connect(dsn or app_dsn(), connect_timeout=CONNECT_TIMEOUT_S,
+                             application_name="league-lab-ready") as conn:  # one transaction: `set local` lives in it
+            conn.execute(f"set local statement_timeout = {int(STATEMENT_TIMEOUT_MS)}")
             return probe(conn)
     except psycopg.OperationalError as exc:
         return False, {"ready": False, "code": "database", "checks": {"database": f"unreachable: {exc.__class__.__name__}"},

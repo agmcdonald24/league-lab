@@ -394,8 +394,12 @@ number is worse, say so and show it.
   field as the lists and passed with Achane ranked. **One trade verdict** (`decisions.ir2_decision`): a new sentence
   or tile on the trade screen reads `decision`, never its own arithmetic. **Every analysis carries `provenance`**
   and the starter rule (`provenance.rule_trade`: starter unclear → no verdict; set by hand → a lean). **The release
-  gate** (`scripts/gate.sh`, the `gate` job in `image.yml`) is advisory until its first green run on GitHub — then
-  delete the `||` line; the nightly's `availability-gate` step is soft until one green night — then `hard`. Do not
+  gate** (`scripts/gate.sh`, the `gate` job in `image.yml`) blocks the image since the hotfix of the same afternoon
+  (its first run on GitHub was green); the nightly's `availability-gate` step stays soft on purpose (a red guard
+  must not cost the publication: the screens gate at request time and the audit's first line is the alarm). **A
+  connection to the hosted database never passes startup `options`** (the pooler refuses them: `/api/ready` was 503
+  on the live site for an hour) — and anything that only the hosted setup can break is checked on the live site
+  right after the deploy, not assumed from the sandbox. Do not
   run `scripts/gate.sh` (it rebuilds `web/dist`) while the e2e suite is running. **The safe publish (`swap`) is
   built and off**: two copies do not fit Neon's free 512 MB; on is Andrew's decision. After a deploy:
   `python3 scripts/post_deploy_check.py https://isuckatfantasy.io` from any machine that reaches the site (the

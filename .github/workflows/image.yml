@@ -70,14 +70,10 @@ jobs:
           (cd api && uv sync --locked)
           (cd web && npm ci --no-audit --no-fund)
 
-      # PO (Wave I-R, 2026-10-08): ADVISORY on its first day. This job has never run on GitHub; the commit that adds
-      # it also carries the fix for injured players in the rankings, which must deploy before tonight's freeze. Until
-      # one run here is green the step reports a failure as a warning and the image is built. THEN: delete the `||`
-      # line so a red gate blocks the image (docs/HANDOFF.md, Wave I-R: "enforce the gate").
+      # PO (2026-10-08): enforced. The gate's first run on GitHub (image #29, commit 748ff76) was green in 1m 9s, so a
+      # red gate now fails this job and the image job below (needs: gate) does not run: no image, no deploy.
       - name: The gate (scripts/gate.sh - no database here, on purpose)
-        run: |
-          scripts/gate.sh \
-            || echo "::warning title=release gate::scripts/gate.sh FAILED on this commit (advisory until it has run green here once; see this step's log)"
+        run: scripts/gate.sh
   # ---- end IR-3
 
   image:

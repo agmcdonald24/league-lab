@@ -16234,3 +16234,39 @@ had no `decision`, so the screen printed "This answer has no verdict: ask again.
 * Not fixed: ia2:65 and ib2:143 for League of Scrubs (the saved package gives Tuten, who is on another roster in
   the fixture database) and ii1:126 (McLaughlin is no longer on the roster) — `test.fixme` with the reason (PO).
 * The full run: 589 passed, 6 failed (those three on two projects), 17 skipped, 13.4 minutes; `npm run lint` clean.
+
+### After the push — Wave I-R on the live site, and hotfix `wave-ir-2` (PO, 2026-10-08, 12:55–13:45 ET)
+
+* **Andrew pushed at about 12:50; Render served `748ff76` by 12:58.** Before any refresh (the request-time path, on
+  last night's schema): Rankings RB has no Achane in the week or the season view; "Not playing · 25" lists him with
+  "IR (knee - acl) · Sleeper, Sep 28" and Kyle Juszczyk as Out; the free calculator answers "Not priced: De'Von
+  Achane …"; the provenance line is on the screen. Breece Hall is ranked 19th with "Doubtful (quadriceps) ·
+  Sleeper, Oct 7" — flagged, not removed, as designed (see "next").
+* **The release gate's first run on GitHub was green** (image #29: `gate` 1m 9s, `image` 1m 21s; the only
+  annotations are GitHub's Node 20 notices).
+* **Nightly #23** (started by the PO at 13:00 on `748ff76`): green, 20m 5s, 0 failed steps. `backtests` 1 s (the
+  record was there: soft and skipped), `project` 4m 09s, **`availability-gate` ok** (PASS 1), the audit's first line
+  "Players who cannot play and are still ranked or valued: 0" (262 players by Sleeper's directory of 07:41 ET),
+  `sync-hosted` 57 s, 242 MB. The post-publish check's lines in the summary: health ok, **ready FAIL 503**, web app
+  ok, rankings ok ("30 ranked, #1 Jahmyr Gibbs 20.1, nobody ranked who cannot play"), trade ok ("reconciles, the
+  verdict carries them"), reversed ok. After the API's ten-minute query cache ran out (13:31): the screens say "data
+  published 8 Oct, 1:14 pm ET" and Achane's card reads 0 with no "why" pieces — **the stored week-5 record is clean
+  before the 20:15 freeze.** For ten minutes after a publication the screens can show the previous publication's
+  stored numbers (the SQL cache); `/api/health`'s `as_of` is cached an hour.
+* **A bug only the hosted setup could show: `/api/ready` answered 503 "The database does not answer
+  (OperationalError)" from the first minute**, while every screen worked. IR-3's probe connected with
+  `options=-c statement_timeout=…`; the hosted database is reached through a pooler that refuses startup options,
+  and the sandbox's Postgres accepts them. Nothing a visitor sees reads `/api/ready`, and Render's health check is
+  `/api/health`. Fixed in hotfix `wave-ir-2`: no startup options, `set local statement_timeout` inside the probe's
+  transaction; a test that fails on the old call. (The diagnosis is by elimination — the app's pool and the usage
+  writer use the same address without `options` and work; it is confirmed only when the hotfix is live.)
+* **The gate is enforced in the same hotfix** (the `||` line is gone; `scripts/gate.sh` also runs
+  `api/tests/test_ir0.py`: 805 tests).
+* **A decision reversed: the nightly's `availability-gate` step stays soft.** `project` applies the same definition
+  it is checked against, so a red check means a bug, and stopping the publication for it would leave yesterday's
+  numbers on every screen; the request-time gate protects the screens either way and the audit's first line says
+  it out loud in the run's summary.
+* **Next, added here**: a Doubtful player keeps his full projection and rank (Hall, RB19) — decide the discount
+  from how often Doubtful players have played (it is in the injury-report history); the post-publish check should
+  fail the run once `/api/ready` is green; `set` the SQL cache to drop at a new publication id instead of waiting
+  ten minutes.
