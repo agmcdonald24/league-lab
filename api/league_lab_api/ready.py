@@ -146,6 +146,9 @@ def check(dsn: str | None = None) -> tuple[bool, dict]:
                              application_name="league-lab-ready") as conn:  # one transaction: `set local` lives in it
             conn.execute(f"set local statement_timeout = {int(STATEMENT_TIMEOUT_MS)}")
             return probe(conn)
+    except psycopg.errors.QueryCanceled as exc:   # ---- IS-4: a statement timeout is an OperationalError in psycopg,
+        return False, {"ready": False, "code": "query", "checks": {"database": "ok"},   # but the database did answer
+                       "reason": f"A readiness query took longer than {STATEMENT_TIMEOUT_MS // 1000} s ({exc.__class__.__name__})."}
     except psycopg.OperationalError as exc:
         return False, {"ready": False, "code": "database", "checks": {"database": f"unreachable: {exc.__class__.__name__}"},
                        "reason": f"The database does not answer ({exc.__class__.__name__})."}

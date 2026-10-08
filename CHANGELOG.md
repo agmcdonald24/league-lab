@@ -2,6 +2,13 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-S (dependability, second round)
+
+- **IS-4 — what only the hosted setup can break.** `scripts/pooler_check.sh` runs the readiness probe, the API's pool,
+  the usage writer, the sync's checks and the post-deploy check through a local transaction-mode PgBouncer (it fails on
+  `748ff76`'s probe, passes now); a statement timeout is "query" on `/api/ready`; a new publication drops the API's
+  published caches within 30 s (`memo.region(..., published=True)`); the trigger Worker counts New York's morning.
+
 ## 2026-10-08 — hotfix: /api/ready through the hosted pooler; the release gate enforced
 
 - **`/api/ready` answered 503 on the live site while every screen worked.** The probe opened its connection with

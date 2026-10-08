@@ -234,12 +234,23 @@ class Budget:
             self._evict(keep=None)
         self._maybe_trim()
 
-    def region(self, name: str, ttl: float = 600.0, max_entries: int | None = None) -> Region:
+    def region(self, name: str, ttl: float = 600.0, max_entries: int | None = None, *, published: bool = False) -> Region:
         with self._lock:
             r = self.regions.get(name)
             if r is None:
                 r = self.regions[name] = Region(self, name, ttl, max_entries)
+            r.published = r.published or published      # ---- IS-4: "holds published data" (dropped at a new publication)
             return r
+
+    # ---- IS-4 (Wave I-S): a new publication drops every region that registered itself as holding published data
+    def drop_published(self) -> list[str]:
+        """Clear every ``published`` region; the names cleared."""
+        with self._lock:
+            regions = [r for r in self.regions.values() if r.published]
+        for r in regions:
+            r.clear()
+        return sorted(r.name for r in regions)
+    # ---- end IS-4
 
     def touch(self, slot: tuple[str, Hashable]) -> None:
         self._order.move_to_end(slot)
@@ -306,6 +317,7 @@ class Region:
 
     def __init__(self, budget: Budget, name: str, ttl: float, max_entries: int | None) -> None:
         self.budget, self.name, self.ttl, self.max_entries = budget, name, float(ttl), max_entries
+        self.published = False          # ---- IS-4: set by region(..., published=True)
         self._entries: dict[Hashable, _Entry] = {}
         self.nbytes = 0
 
@@ -365,9 +377,15 @@ class Region:
 BUDGET = Budget()
 
 
-def region(name: str, ttl: float = 600.0, max_entries: int | None = None) -> Region:
-    """The process-wide budget's region ``name`` (made on first use)."""
-    return BUDGET.region(name, ttl, max_entries)
+def region(name: str, ttl: float = 600.0, max_entries: int | None = None, *, published: bool = False) -> Region:
+    """The process-wide budget's region ``name`` (made on first use). ``published=True``: it holds data read from the
+    published tables, and a new publication drops it (``drop_published``; IS-4)."""
+    return BUDGET.region(name, ttl, max_entries, published=published)
+
+
+def drop_published() -> list[str]:
+    """IS-4: clear every region that holds published data (the process-wide budget's); the names cleared."""
+    return BUDGET.drop_published()
 
 
 PLAN_MB = 512          # Render's Starter plan (docs/DEPLOY.md § Memory): the RSS the host meters against

@@ -301,6 +301,15 @@ def health(response: Response) -> dict:
 # ---- end H0 health
 
 
+# ---- IS-4 (Wave I-S): a new publication refreshes as_of at the next health check (db.watch_publication's callback)
+def _publication_changed(_new_id) -> None:
+    _health_state["next"] = 0.0
+
+
+db.on_publication.append(_publication_changed)
+# ---- end IS-4
+
+
 # ---- IH-1 (Wave I-H): the stale state (league_lab/freshness.py; docs/HOSTING.md § 5 "When the nightly is late or
 # fails"). /api/status reads as_of on the pool at every call (it is behind the password and asked once a screen
 # load, not every few seconds like the health check) and hands the newer value to the health state, so the two

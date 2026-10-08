@@ -5,7 +5,7 @@
 // Worker's own log marks the invocation failed); a re-check hour with a success today dispatches nothing and records
 // nothing; no token at a trigger hour is recorded as such.
 import assert from "node:assert/strict";
-import worker from "./src/index.js";
+import worker, { morningSince } from "./src/index.js";
 
 const ENV = { GITHUB_REPO: "owner/league-lab", WORKFLOW_FILE: "nightly.yml", GIT_REF: "main", FIRE_HOUR_ET: "7", CHECK_HOURS_ET: "9,11", GITHUB_TOKEN: "t" };
 // 07:37 EDT = 11:37 UTC; 09:37 EDT = 13:37 UTC (2026-10-05, a Monday)
@@ -98,3 +98,11 @@ try {
   console.error(e);
   process.exit(1);
 }
+
+// ---- IS-4: "today" starts at 07:30 New York (EDT and EST), not 00:00 UTC; a run at 21:00 EDT is not the next morning's
+assert.equal(morningSince(new Date(Date.UTC(2026, 9, 5, 13, 37))), "2026-10-05T11:30:00Z");   // 09:37 EDT
+assert.equal(morningSince(new Date(Date.UTC(2026, 9, 6, 1, 0))), "2026-10-05T11:30:00Z");     // 21:00 EDT, still Oct 5
+assert.equal(morningSince(new Date(Date.UTC(2026, 9, 6, 11, 0))), "2026-10-05T11:30:00Z");    // 07:00 EDT Oct 6: before 07:30
+assert.equal(morningSince(new Date(Date.UTC(2026, 11, 1, 14, 37))), "2026-12-01T12:30:00Z");  // 09:37 EST
+console.log("nightly-trigger: the New York morning checks passed");
+
