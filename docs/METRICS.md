@@ -4854,4 +4854,44 @@ candidate that passes (a)–(c)). **The answer for now: the override list, plus 
 exactly.) **U1 catches more (12 against 7) with fewer flags (27 against 42): by the rule it replaces U0** wherever
 `mart_starter_check` is built (`listing_disputed`); without the mart (a deploy before the nightly) the screens keep U0.
 About 1.2 flags a week instead of 1.9, and 15 of 27 flags (56%) still turn out not stale — so the words stay "unclear".
+
+### The override list (so1.0) and what it moves (`league_lab_im4`, two full `project` runs, v3.5 both: the list off with `--vars '{starter_overrides: false}'`, then on)
+
+**The seed** (`dbt/seeds/starter_overrides.csv`): `season, team, from_week, through_week, gsis_id, reason, source,
+added_on`. `int_starter_override` gives each row its state; `int_pn_team_game` applies a row in force to the team's
+**unplayed** games of its weeks (`starter_source` 'override'); the switch `--vars '{starter_overrides: false}'` turns it
+off. Tests: two dbt unit tests on hand-built rows (the expiry, the roster, the run of led games; unplayed games only,
+an expired row, a window's end, two rows on one game) and three data tests (`assert_starter_override_on_roster`, error;
+`assert_starter_override_is_fresh`, warn after 21 days; `assert_starter_override_unplayed_only`, error). Tonight's rows,
+resolved in `dim_player` and on the week-4 roster (exactly one QB of that name on each team): **SEA from week 5, Sam
+Darnold `00-0034869`** (listed Drew Lock `00-0035704`); **CHI from week 5, Tyson Bagent `00-0038416`** (listed Case Keenum
+`00-0028986`). Both in force, both on the roster; Darnold has led Seattle's dropbacks since week 3, Bagent Chicago's in
+week 4.
+
+**What moved** (reference league, League of Scrubs; weeks 1–4 frozen and untouched): 76 of 7,917 rows, six players,
+all Seattle and Chicago quarterbacks — week 5 / the sum of weeks 6–18 (12 games):
+
+| Player | Week 5 before → after | Weeks 6–18 before → after | QB rank week 5 | QB rank weeks 5–18 |
+|---|---|---|---|---|
+| Sam Darnold (SEA) | 4.2 → **15.0** | 52.5 → **177.9** | #41 → #25 | #42 → #25 |
+| Drew Lock (SEA) | 14.1 → 4.3 | 154.9 → 47.8 | #28 → #41 | #32 → #43 |
+| Tyson Bagent (CHI) | 3.0 → **15.3** | 32.9 → **159.0** | #67 → #24 | #75 → #32 |
+| Case Keenum (CHI) | 16.2 → 5.2 | 190.3 → 59.2 | #15 → #37 | #19 → #38 |
+| Caleb Williams (CHI, out) | 7.4 → 8.1 | 93.7 → 101.2 | #32 → #31 | #34 → #33 |
+
+**The receivers do not move** (Smith-Njigba 14.7 / 176.9, Swift, Odunze, Burden, Barner … identical to the decimal):
+their `pn_qb_*` inputs do change (Smith-Njigba week 5: `pn_qb_changed` 1, `pn_qb_prev_ppg_diff` −0.96), but the RB / WR
+/ TE models do not read the QB inputs (`projections.FEATURES_BY_POSITION`: QB only; D5 kept the teammate inputs for
+the others). A receiver's projection does not know who throws to him — for IQ-3, not a defect of the list.
+
+**Face validity** (the PO's check): among the top 24 QBs by week 5, the rank correlation with the later weeks' mean
+0.60 → **0.64** (Pearson 0.60 → 0.61; RB / WR / TE unchanged 0.94 / 0.95 / 0.85); with the points per game they have
+actually scored in 2026 (2+ games) 0.11 → 0.22 (n 23 → 24) — still weak: the QB model's read of the individual (IQ-3).
+Against their own games: Darnold 15.0 against 29.7 and 14.3 in his two starts; Bagent 15.3 against 9.8 in his one
+(the model's view of a starter, not of him). History is not corrected (by design: played games keep the listing), so
+for Seattle the weeks 3–4 "starts" still belong to Lock: Darnold's and his receivers' `pn_qb_changed` read 1.
+
+**The guard and the freeze**: `assert_rest_of_season_follows_the_market_week`, `assert_projection_ranges_price_the_lines`,
+`assert_frozen_projections_precede_kickoff`, `assert_frozen_nfl_wide_precede_kickoff`: PASS; the nightly's
+projection-marts selection 145 PASS (the 146th, the registry's unique metric, fixed and re-run: PASS).
 <!-- ---- end IQ-2 -->
