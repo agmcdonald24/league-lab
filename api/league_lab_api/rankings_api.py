@@ -57,6 +57,7 @@ from league_lab import anyleague as A
 from league_lab import clock, memo
 from league_lab import decisions as WP
 
+from . import availability as AV  # ---- IR-1
 from . import matchup_board as MB
 from . import refleague, ros_grade  # ---- IQ-4: ros_grade
 from . import research as R
@@ -392,8 +393,10 @@ def _season_frame(ctx: R.Ctx, season: int, week: int, pos: str) -> tuple[pd.Data
         df = df[df["position"].isin(want)] if not df.empty else df
     if df.empty:
         return pd.DataFrame(columns=FRAME_COLS), {}
-    if "is_ranked" in df:
-        df = df[df["is_ranked"].fillna(True).astype(bool)]
+    # ---- IR-1: the rows the mart does not rank (off an active roster) are kept aside: one out indefinitely is listed
+    # under "Not playing" with his reason; the others leave the list as before
+    ranked_mask = df["is_ranked"].fillna(True).astype(bool).tolist() if "is_ranked" in df else [True] * len(df)
+    # ---- end IR-1
     win = {"from_week": WP._num(df["from_week"].min()), "last_week": WP._num(df["last_week"].max())}
     d = pd.DataFrame({"key": df["player_key"].astype(str), "gsis_id": df["gsis_id"], "player_name": df["player_name"],
                       "position": df["position"], "team": df["team"],
@@ -401,6 +404,7 @@ def _season_frame(ctx: R.Ctx, season: int, week: int, pos: str) -> tuple[pd.Data
                       "p10": pd.to_numeric(df["ros_p10"], errors="coerce"), "p90": pd.to_numeric(df["ros_p90"], errors="coerce"),
                       "ros_games": df["ros_games"], "ros_points_per_game": df["ros_points_per_game"],
                       "bye_weeks": df["bye_weeks"]})
+    d["_ranked"] = ranked_mask        # ---- IR-1
     d["gsis_id"] = [g if isinstance(g, str) and g else None for g in d["gsis_id"]]
     d["key"] = [g if g else f"DEF:{t}" if p == "DEF" else k for g, t, p, k in
                 zip(d["gsis_id"], d["team"], d["position"], d["key"], strict=True)]
@@ -416,7 +420,7 @@ def _season_frame(ctx: R.Ctx, season: int, week: int, pos: str) -> tuple[pd.Data
     d["tone"] = None
     d["tone_words"] = None
     d["name_key"] = [R._norm(n) for n in d["player_name"]]
-    return d[FRAME_COLS], win
+    return d[[*FRAME_COLS, "_ranked"]], win
 
 
 def _defense_source(ctx: R.Ctx) -> str:
@@ -465,8 +469,9 @@ def ranked(ctx: R.Ctx, view: str, pos: str) -> tuple[pd.DataFrame | None, dict]:
     season, week = int(ctx.season), ctx.week
     flagged = _starters_unclear(season, int(week)) if view == "week" and pos == "QB" and week is not None else {}
     fixed = _starters_corrected(season, int(week)) if pos == "QB" and week is not None else {}   # ---- IQ-2
+    gate = _gate(season, week, view)                                                            # ---- IR-1
     key = ("rk", R._ctx_key(ctx), _defense_source(ctx), season, week, view, pos, tuple(sorted(flagged)),
-           tuple(sorted(fixed)))
+           tuple(sorted(fixed)), gate["key"])
     hit = _cache.get(key)
     if hit is not None:
         return hit
@@ -478,6 +483,11 @@ def ranked(ctx: R.Ctx, view: str, pos: str) -> tuple[pd.DataFrame | None, dict]:
         d, extra = _season_frame(ctx, season, int(week), pos)
         if d is None:
             return None, {}
+    # ---- IR-1 (Wave I-R): nobody who cannot play is ranked. This week: cannot play (IR, PUP, NFI, suspended, Out, no
+    # team); the season: out indefinitely (no return date). They leave the ranks and the tiers and are listed under
+    # "Not playing" with the status, its source and its time; a doubtful player keeps his place, flagged
+    d, extra["not_playing"] = _split_not_playing(d, gate, view)
+    # ---- end IR-1
     d = d[d["proj_points"].notna()].copy()
     d = d.sort_values(["proj_points", "key"], ascending=[False, True]).reset_index(drop=True)
     d["rank"] = np.arange(1, len(d) + 1)
@@ -498,6 +508,68 @@ def ranked(ctx: R.Ctx, view: str, pos: str) -> tuple[pd.DataFrame | None, dict]:
 
 def clear() -> None:
     _cache.clear()
+
+
+# ---- IR-1 (Wave I-R): the gate (availability.statuses: the nightly's record + Sleeper + ESPN, freshest wins)
+NOT_PLAYING_WORDS = {"week": "Not playing this week: not ranked, not tiered.",
+                     "season": "Out with no return date: no rest-of-season value until his status changes."}
+BACK_WORDS = ("His status changed since last night's projection ({why}); his number this week comes with the next "
+              "update.")
+
+
+def _gate(season: int, week: int | None, view: str) -> dict:
+    """{st: {gsis: block}, out: the ids who leave the list, stored: the ids last night's record set to 0, key: the
+    cache key's part (a set the sources decide, never the request)}."""
+    if week is None:
+        return {"st": {}, "out": frozenset(), "stored": frozenset(), "key": ()}
+    st = AV.statuses(None, int(season), int(week))
+    want = "cannot_play" if view == "week" else "out_indefinitely"
+    out = frozenset(g for g, s in st.items() if s.get(want))
+    stored = frozenset(AV.stored_status(int(season), int(week))) if view == "week" else frozenset()
+    flags = tuple(sorted((g, s.get("code")) for g, s in st.items() if s.get("doubtful") or s.get("code") == "QUESTIONABLE"))
+    return {"st": st, "out": out, "stored": stored, "key": (tuple(sorted(out)), tuple(sorted(stored - out)), flags)}
+
+
+def _split_not_playing(d: pd.DataFrame, gate: dict, view: str) -> tuple[pd.DataFrame, list[dict]]:
+    """(the rows that stay, the "Not playing" list). A row stays unless its player cannot play (``gate['out']``), or
+    last night's record gave him 0 and he has been cleared since (no honest number until the next update); the
+    season's rows the mart does not rank leave the list (listed when he is out indefinitely)."""
+    st, out, stored = gate["st"], gate["out"], gate["stored"]
+    g = d["gsis_id"].where(d["gsis_id"].map(lambda x: isinstance(x, str)), None)
+    gone = g.isin(out) | g.isin(stored)
+    unranked = ~d["_ranked"].astype(bool) if "_ranked" in d else pd.Series(False, index=d.index)
+    rows = []
+    for r in d[gone].to_dict("records"):
+        s = st.get(r["gsis_id"])
+        if s is not None and r["gsis_id"] in out:
+            rows.append(AV.not_playing_row(r, s, view=view))
+        else:
+            rows.append({**AV.not_playing_row(r, {"status": None, "code": "BACK", "why": None}, view=view),
+                         "words": BACK_WORDS.format(why=(s or {}).get("why") or "cleared to play")})
+    rows.sort(key=lambda x: (not x.get("out_indefinitely"), str(x.get("player_name") or "")))
+    keep = d[~gone & ~unranked].copy()
+    keep["availability"] = [_flag(st.get(x)) if isinstance(x, str) else None for x in keep["gsis_id"]]
+    keep["report_status"] = [(a or {}).get("status") or r for a, r in zip(keep["availability"], keep["report_status"], strict=True)]
+    return keep.drop(columns=["_ranked"], errors="ignore"), rows
+
+
+def _out_words(r: dict) -> str:
+    """"Achane is out — on injured reserve (IR (knee - acl) · Sleeper, Sep 28)." (a player cleared since last night's
+    record: his number comes with the next update — no call either)."""
+    nm = cards.last_name(str(r.get("player_name") or "")) or str(r.get("player_name") or "He")
+    if r.get("code") == "BACK":
+        return f"{nm} has no number this week until the next update: {r.get('words')}"
+    from league_lab import availability_gate as AG
+    return AG.out_sentence(nm, {"reason": AG.REASON.get(str(r.get("code"))), "why": r.get("why")})
+
+
+def _flag(s: dict | None) -> dict | None:
+    """A ranked player's status label (Doubtful / Questionable): who said it and when."""
+    if not s or s.get("cannot_play"):
+        return None
+    return {"status": s.get("status"), "code": s.get("code"), "why": s.get("why"), "source": s.get("source"),
+            "as_of": s.get("as_of")}
+# ---- end IR-1
 
 
 FLOOR_DRIFT_SQL = """select d.season, max(d.last_week) as last_week,
@@ -558,7 +630,8 @@ def _matchup(r: dict) -> dict | None:
 
 
 ROW_KEYS = ("key", "gsis_id", "player_name", "position", "team", "headshot_url", "rank", "tier", "tier_p", "proj_points",
-            "p10", "p25", "p50", "p75", "p90", "opponent", "is_home", "kickoff_at", "report_status")
+            "p10", "p25", "p50", "p75", "p90", "opponent", "is_home", "kickoff_at", "report_status",
+            "availability")   # ---- IR-1: a doubtful / questionable label with its source and time
 
 
 def rankings(league: str, *, position: str | None = None, view: str | None = None, limit=None, offset=None,
@@ -597,6 +670,14 @@ def rankings(league: str, *, position: str | None = None, view: str | None = Non
         meta.update(from_week=int(first), last_week=int(last),
                     assumes=SEASON_ASSUMES.format(first=int(first), last=int(last), scoring=scoring))
     meta["tiers"] = int(pd.to_numeric(df["tier"], errors="coerce").max()) if len(df) and df["tier"].notna().any() else 0
+    # ---- IR-1: who is not ranked and why (the search filters it like the list; never paged: a position's list is short)
+    np_rows = list(extra.get("not_playing") or [])
+    if qq is not None:
+        kq = R._norm(qq) if MB.NAME_CHARS.match(qq.lower()) else ""
+        np_rows = [r for r in np_rows if kq and kq in R._norm(str(r.get("player_name") or ""))]
+    meta["not_playing"] = np_rows[:MAX_LIMIT]
+    meta["not_playing_words"] = NOT_PLAYING_WORDS[vw]
+    # ---- end IR-1
     if qq is not None:              # text, never a pattern (the board's rule)
         k = R._norm(qq) if MB.NAME_CHARS.match(qq.lower()) else ""
         df = df[df["name_key"].str.contains(k, regex=False)] if k else df.iloc[0:0]
@@ -638,23 +719,47 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
     ctx = R.context(league, source)
     out = {"season": ctx.season, "week": ctx.week, "scoring": _scoring(ctx, league), "ids": want, "players": [],
            "missing": [], "floor": floor_words(), "assumes": START_ASSUMES, "multi_note": None, "answer": None,
-           "started_note": None, "starter_unclear": []}
+           "started_note": None, "starter_unclear": [], "out": []}
     if ctx.week is None:
         return {**out, "notice": "The regular season is over."}
     have: dict[str, dict] = {}
+    gone: dict[str, dict] = {}                                                     # ---- IR-1: who cannot play
     for pos in ("QB", "RB", "WR", "TE", *(p for p in kd_positions(ctx) if p == "K")):
-        df, _ = ranked(ctx, "week", pos)
+        df, extra = ranked(ctx, "week", pos)
         if df is None:
             return {**out, "notice": "This week's rankings arrive with the next data refresh."}
         sub = df[df["gsis_id"].isin(want)]
         for r in R._records(sub):
             have[str(r["gsis_id"])] = r
+        for r in extra.get("not_playing") or []:                                   # ---- IR-1
+            if r.get("gsis_id") in want:
+                gone[str(r["gsis_id"])] = r
+    # ---- IR-1: a player with no row at all who cannot play (no projection, a stored 0) is out, not "missing"
+    for g, st in AV.statuses([g for g in want if g not in have and g not in gone], ctx.season, ctx.week).items():
+        if st.get("cannot_play"):
+            gone[g] = AV.not_playing_row({"gsis_id": g, "player_name": st.get("name")}, st)
+    out["out"] = [{**r, "words": _out_words(r)} for g in want if (r := gone.get(g)) is not None]
+    # ---- end IR-1
     found = [have[g] for g in want if g in have]
     out["missing"] = [{"gsis_id": g, "why": "no projection this week (a bye, or not on a team's roster)"}
-                      for g in want if g not in have]
+                      for g in want if g not in have and g not in gone]
     out["players"] = [{k: r.get(k) for k in ("gsis_id", "player_name", "position", "team", "headshot_url", "opponent",
                                              "is_home", "kickoff_at", "proj_points", "p10", "p25", "p50", "p75", "p90",
                                              "rank", "tier", "starter_unclear", "starter_corrected")} for r in found]
+    # ---- IR-1 (Wave I-R): a player who cannot play gets "He is out" — never a call on him; the call is among the others
+    if out["out"]:
+        said = " ".join(o["words"] for o in out["out"])
+        if len(found) == 1:
+            nm = cards.last_name(str(found[0].get("player_name") or "")) or str(found[0].get("player_name") or "")
+            out["answer"] = {"pick": found[0]["gsis_id"], "runner_up": None, "verdict": "out", "p_vs_runner_up": None,
+                             "words": f"{said} Start {nm}."}
+            for p in out["players"]:
+                p.update(p_best=None, pct_best=None, vs={})
+            return out
+        if len(found) < H2H_MIN:
+            out["answer"] = {"pick": None, "runner_up": None, "verdict": "out", "p_vs_runner_up": None, "words": said}
+            return out
+    # ---- end IR-1
     if len(found) < H2H_MIN:
         return {**out, "notice": "Pick at least two players with a game this week."}
     unclear = [r for r in found if r.get("starter_unclear")]
@@ -675,6 +780,8 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
         p["vs"] = {o: round(v, 4) for o, v in res["pair"][g].items()}
     out["players"].sort(key=lambda p: -p["p_best"])
     out["answer"] = call(found, res)
+    if out["out"]:                                                                                    # ---- IR-1
+        out["answer"]["words"] = " ".join(o["words"] for o in out["out"]) + " Of the others: " + out["answer"]["words"]
     out["draws"] = res["draws"]
     out["multi_note"] = START_MULTI if len(found) > 2 else None
     # a game already under way: the chances are the ones from before kickoff (the ranges do not read live scores)

@@ -129,11 +129,15 @@
           {#if p.outlook}
             <span>·</span>
             {#if p.outlook.bye}<span>bye in week {p.outlook.week}</span>
+            {:else if p.outlook.out}<span class="text-warn" data-testid="ft-outlook-out" title={p.outlook.why ?? ""}>week {p.outlook.week}: out — {p.outlook.why ?? p.outlook.out}</span><!-- ---- IR-1 -->
             {:else if p.outlook.points !== null}<span data-testid="ft-outlook"
                 >week {p.outlook.week}: {fmt.pts(p.outlook.points)}{#if p.outlook.p10 !== null && p.outlook.p90 !== null}&nbsp;({fmt.whole(p.outlook.p10)}–{fmt.whole(p.outlook.p90)}){/if}</span
               >{/if}
             {#if p.outlook.per_game !== null}<span>· {fmt.pts(p.outlook.per_game)} per game over the season left</span>{/if}
           {/if}
+        {:else if p?.out}
+          <!-- ---- IR-1 (Wave I-R): out indefinitely: no value, the reason with its source and time -->
+          <span class="text-warn" data-testid="ft-out">{p.why}</span>
         {:else if p?.no_projection}
           <span class="text-warn">no projection: unknown, not zero</span>
         {/if}

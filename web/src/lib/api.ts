@@ -2639,7 +2639,7 @@ export interface StartAnswer {
   answer: {
     pick: string | null;
     runner_up: string | null;
-    verdict: "clear" | "a lean" | "a coin flip" | "no call"; // no call: a picked quarterback's starter is unclear
+    verdict: "clear" | "a lean" | "a coin flip" | "no call" | "out"; // no call: a starter unclear; out: IR-1, a picked player cannot play
     p_vs_runner_up: number | null;
     words: string;
   } | null;
@@ -2774,3 +2774,51 @@ export interface StartPlayer {
   starter_corrected?: StarterCorrected | null;
 }
 // ---- end IQ-2
+
+// ---- IR-1 (Wave I-R): nobody who cannot play is ranked, valued or projected. A list's "Not playing" group (the status,
+// its source and time, the reason in words — never a number); a ranked player's Doubtful / Questionable label; "Who
+// should I start?"'s "He is out"; the free calculator's refusal to price a trade on a player out indefinitely
+export interface NotPlaying {
+  key: string;
+  gsis_id: string | null;
+  player_name: string | null;
+  position: string | null;
+  team: string | null;
+  headshot_url?: string | null;
+  status: string | null; // IR, PUP, NFI, Suspended, Out, No team (null: cleared since last night's number)
+  code: string | null;
+  source: string | null; // Sleeper, ESPN
+  as_of: string | null;
+  why: string | null; // "IR (knee - acl) · Sleeper, Sep 28"
+  out_indefinitely: boolean;
+  words: string | null;
+}
+export interface Availability {
+  status: string | null;
+  code: string | null;
+  why: string | null;
+  source?: string | null;
+  as_of?: string | null;
+  cannot_play?: boolean;
+}
+export interface Rankings {
+  not_playing?: NotPlaying[];
+  not_playing_words?: string;
+}
+export interface RankRow {
+  availability?: Availability | null;
+}
+export interface StartAnswer {
+  out?: (NotPlaying & { words: string })[];
+}
+export interface FreeTradePlayer {
+  out?: { status: string | null; code: string | null; why: string | null; source: string | null; as_of: string | null };
+}
+export interface FreeTradeOutlook {
+  out?: string | null;
+  why?: string | null;
+}
+export interface RosList {
+  not_playing?: NotPlaying[];
+}
+// ---- end IR-1

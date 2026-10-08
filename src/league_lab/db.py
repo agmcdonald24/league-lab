@@ -101,6 +101,7 @@ alter table ops.projections add column if not exists frozen_source text;
 alter table ops.projections add column if not exists p25 double precision;
 alter table ops.projections add column if not exists p75 double precision;
 alter table ops.projections add column if not exists pricing text;  -- M4 (Wave I-G): flat | ev, NULL = flat
+alter table ops.projections add column if not exists availability text;  -- IR-1 (Wave I-R): why a 0 (JSON)
 create index if not exists projections_idx on ops.projections (league_id, season, week, position);
 create table if not exists ops.projection_backtest (
     run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
