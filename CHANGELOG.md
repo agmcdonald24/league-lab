@@ -2,6 +2,21 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-Q
+
+<!-- ---- IQ-4 -->
+- **IQ-4 — the trust guard.** The bye-week bug: nflverse's weekly roster file lists only the teams that play, and
+  the projection universe, the kickers and the personnel status read "the newest roster week" across all teams, so
+  once week 5's file was out every Chiefs and Panthers player had no projection for weeks 6–18 and vanished from every
+  rest-of-season list, value and trade price (87 QBs from 30 teams); a team missing from the newest file now reads its
+  own (history unchanged; dbt unit tests; every reader tested on the real bye week; "Bye this week" on Rankings).
+  `league-lab audit-lists` prints every public list's laughable rows with reasons (exit 0; `logs/list_audit.md`).
+  Kickers and defenses 2–8 weeks ahead graded (keep rule first): no better than chance → their rest-of-season list
+  off Rankings behind `LEAGUE_LAB_KD_ROS`. One sentence of what we know on Rankings, `/ros` and the free calculator
+  (`ros_grade.py`). Usage: a view while browsing (a `ref:` key) failed the table's checks — now counted; `rankings`
+  is a screen; one retry on a connection error; failures by kind; sessions' depth. docs/handbacks/IQ-4.md.
+<!-- ---- end IQ-4 -->
+
 ## 2026-10-07 — hotfix: rest-of-season quarterbacks
 
 - **IQ-1 — v3.5: the weeks after the market week read a line and a starter.** A week more than one ahead had no

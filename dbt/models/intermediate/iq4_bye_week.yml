@@ -1,0 +1,83 @@
+version: 2
+
+# ---- IQ-4 (Wave I-Q): the bye-week bug. nflverse's weekly roster file lists only the teams that play that week, so the
+# newest file of a bye week has no row for the teams on a bye. Read across all teams ("the newest roster week <= W"),
+# every player of those teams dropped out of every later week: 2026 week 5's file (no KC, no CAR) took Mahomes, Kelce,
+# Walker, Hubbard and McMillan off every rest-of-season list. A team missing from the newest file now reads its own
+# newest file for the weeks after it, unless the player is on a newer file elsewhere.
+#
+# The fixture: four teams. Week 4: AAA-BBB, CCC-DDD (everyone's file). Week 5: AAA-BBB only (CCC and DDD on a bye: no
+# rows in week 5's file). Week 6: AAA-CCC, BBB-DDD (no file yet: the upcoming week). m1 was on CCC's week-4 file and
+# is on AAA's week-5 file (moved during CCC's bye): he is AAA's in week 6, never CCC's.
+#   week 4: a1 b1 c1 d1 m1 (CCC), each from file 4      week 5: a1 b1 m1 (AAA) from file 5 (CCC, DDD do not play)
+#   week 6: a1 b1 m1 from file 5; c1, d1 from their teams' file 4 (before the fix: missing)
+unit_tests:
+  - name: universe_keeps_the_bye_teams_after_their_bye
+    model: int_player_week_universe
+    given:
+      - input: ref('dim_game')
+        rows:
+          - {game_id: g4a, season: 2026, season_type: REG, week: 4, home_team: AAA, away_team: BBB, spread_line: 3.0, total_line: 44.0}
+          - {game_id: g4b, season: 2026, season_type: REG, week: 4, home_team: CCC, away_team: DDD, spread_line: 1.0, total_line: 40.0}
+          - {game_id: g5a, season: 2026, season_type: REG, week: 5, home_team: AAA, away_team: BBB, spread_line: 2.0, total_line: 46.0}
+          - {game_id: g6a, season: 2026, season_type: REG, week: 6, home_team: AAA, away_team: CCC}
+          - {game_id: g6b, season: 2026, season_type: REG, week: 6, home_team: BBB, away_team: DDD}
+      - input: ref('int_player_week_team')
+        rows:
+          - {gsis_id: a1, season: 2026, week: 4, season_type: REG, team: AAA, position: QB, roster_status: ACT, full_name: A One}
+          - {gsis_id: b1, season: 2026, week: 4, season_type: REG, team: BBB, position: WR, roster_status: ACT, full_name: B One}
+          - {gsis_id: c1, season: 2026, week: 4, season_type: REG, team: CCC, position: RB, roster_status: ACT, full_name: C One}
+          - {gsis_id: d1, season: 2026, week: 4, season_type: REG, team: DDD, position: TE, roster_status: ACT, full_name: D One}
+          - {gsis_id: m1, season: 2026, week: 4, season_type: REG, team: CCC, position: WR, roster_status: ACT, full_name: M One}
+          - {gsis_id: a1, season: 2026, week: 5, season_type: REG, team: AAA, position: QB, roster_status: ACT, full_name: A One}
+          - {gsis_id: b1, season: 2026, week: 5, season_type: REG, team: BBB, position: WR, roster_status: ACT, full_name: B One}
+          - {gsis_id: m1, season: 2026, week: 5, season_type: REG, team: AAA, position: WR, roster_status: ACT, full_name: M One}
+    expect:
+      rows:
+        - {gsis_id: a1, season: 2026, week: 4, team: AAA, roster_week: 4, game_id: g4a}
+        - {gsis_id: b1, season: 2026, week: 4, team: BBB, roster_week: 4, game_id: g4a}
+        - {gsis_id: c1, season: 2026, week: 4, team: CCC, roster_week: 4, game_id: g4b}
+        - {gsis_id: d1, season: 2026, week: 4, team: DDD, roster_week: 4, game_id: g4b}
+        - {gsis_id: m1, season: 2026, week: 4, team: CCC, roster_week: 4, game_id: g4b}
+        - {gsis_id: a1, season: 2026, week: 5, team: AAA, roster_week: 5, game_id: g5a}
+        - {gsis_id: b1, season: 2026, week: 5, team: BBB, roster_week: 5, game_id: g5a}
+        - {gsis_id: m1, season: 2026, week: 5, team: AAA, roster_week: 5, game_id: g5a}
+        - {gsis_id: a1, season: 2026, week: 6, team: AAA, roster_week: 5, game_id: g6a}
+        - {gsis_id: b1, season: 2026, week: 6, team: BBB, roster_week: 5, game_id: g6b}
+        - {gsis_id: c1, season: 2026, week: 6, team: CCC, roster_week: 4, game_id: g6a}
+        - {gsis_id: d1, season: 2026, week: 6, team: DDD, roster_week: 4, game_id: g6b}
+        - {gsis_id: m1, season: 2026, week: 6, team: AAA, roster_week: 5, game_id: g6a}
+
+  # the personnel inputs' status (int_pn_player_week_status) reads the same files: week 6's roster rows of the bye teams
+  # come from their own week-4 file; week 5 (the bye) and the played weeks are as before
+  - name: pn_status_keeps_the_bye_teams_after_their_bye
+    model: int_pn_player_week_status
+    given:
+      - input: ref('int_pn_team_game')
+        rows:
+          - {season: 2026, week: 4}
+          - {season: 2026, week: 5}
+          - {season: 2026, week: 6}
+      - input: ref('int_player_week_team')
+        rows:
+          - {gsis_id: a1, season: 2026, week: 4, season_type: REG, team: AAA, position: QB, roster_status: ACT}
+          - {gsis_id: c1, season: 2026, week: 4, season_type: REG, team: CCC, position: RB, roster_status: ACT}
+          - {gsis_id: m1, season: 2026, week: 4, season_type: REG, team: CCC, position: WR, roster_status: ACT}
+          - {gsis_id: a1, season: 2026, week: 5, season_type: REG, team: AAA, position: QB, roster_status: ACT}
+          - {gsis_id: m1, season: 2026, week: 5, season_type: REG, team: AAA, position: WR, roster_status: ACT}
+      - input: ref('stg_nflverse__injuries')
+        format: sql
+        rows: |
+          select null::text as gsis_id, null::integer as season, null::integer as week, null::text as team,
+                 null::text as report_status, null::text as practice_status, null::text as game_type
+          where false
+    expect:
+      rows:
+        - {gsis_id: a1, season: 2026, week: 4, roster_week: 4, roster_team: AAA}
+        - {gsis_id: c1, season: 2026, week: 4, roster_week: 4, roster_team: CCC}
+        - {gsis_id: m1, season: 2026, week: 4, roster_week: 4, roster_team: CCC}
+        - {gsis_id: a1, season: 2026, week: 5, roster_week: 5, roster_team: AAA}
+        - {gsis_id: m1, season: 2026, week: 5, roster_week: 5, roster_team: AAA}
+        - {gsis_id: a1, season: 2026, week: 6, roster_week: 5, roster_team: AAA}
+        - {gsis_id: m1, season: 2026, week: 6, roster_week: 5, roster_team: AAA}
+        - {gsis_id: c1, season: 2026, week: 6, roster_week: 4, roster_team: CCC}

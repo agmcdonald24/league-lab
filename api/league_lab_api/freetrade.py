@@ -32,7 +32,7 @@ from fastapi.responses import JSONResponse
 from league_lab import trades as T
 from league_lab.sleeper_client import LeagueNotFound
 
-from . import refleague
+from . import refleague, ros_grade  # ---- IQ-4: ros_grade
 
 router = APIRouter()
 PATH = "/api/trade-calc/free"
@@ -244,7 +244,8 @@ def evaluate(key: str, give_ids: list[str], get_ids: list[str]) -> dict:
                        "words": (f"weeks {first}–{facts.get('last_week')}" if first is not None else None)},
             "give": give, "get": get, "verdict": v,
             "roster_spots": roster_spots(give["n"], get["n"], facts),
-            "league_words": LEAGUE_WORDS, "max_side": MAX_SIDE}
+            "league_words": LEAGUE_WORDS, "max_side": MAX_SIDE,
+            "ros_grade": ros_grade.block([p.get("position") for p in give["players"] + get["players"]], calc=True)}   # ---- IQ-4
 
 
 def _err(status: int, words: str, code: str) -> JSONResponse:

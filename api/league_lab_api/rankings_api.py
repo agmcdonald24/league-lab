@@ -58,7 +58,7 @@ from league_lab import clock, memo
 from league_lab import decisions as WP
 
 from . import matchup_board as MB
-from . import refleague
+from . import refleague, ros_grade  # ---- IQ-4: ros_grade
 from . import research as R
 from .applib import cards
 from .applib import ros as ROS
@@ -555,6 +555,13 @@ def rankings(league: str, *, position: str | None = None, view: str | None = Non
         raise Bad(f"{scoring} does not start a {POS_WORDS[pos][0]}: pick {', '.join(positions)}.")
     if ctx.week is None:
         return {**meta, "notice": "The regular season is over."}
+    # ---- IQ-4: what we know about the rest of season (one place: ros_grade); K / DEF beyond next week rank no better
+    # than chance (METRICS § "Kickers and defenses beyond next week"): no list unless LEAGUE_LAB_KD_ROS=on
+    if vw == "season":
+        meta["ros_grade"] = ros_grade.block([pos])
+        if pos in ("K", "DEF") and not ros_grade.kd_ros_shown():
+            return {**meta, "notice": ros_grade.KD_WORDS, "kd_hidden": True}
+    # ---- end IQ-4
     df, extra = ranked(ctx, vw, pos)
     if df is None:
         return {**meta, "notice": "These rankings arrive with the next data refresh."}
@@ -591,6 +598,9 @@ def rankings(league: str, *, position: str | None = None, view: str | None = Non
         if vw == "season":
             row.update(ros_games=r.get("ros_games"), ros_points_per_game=r.get("ros_points_per_game"),
                        bye_weeks=[int(w) for w in (r.get("bye_weeks") or []) if WP._num(w) is not None])
+            # ---- IQ-4: a player on a bye this week is ranked by his remaining games; his row says so
+            row["bye_this_week"] = bool(ctx.week is not None and int(ctx.week) in row["bye_weeks"])
+            # ---- end IQ-4
         if own is not None:
             o = own.loc[r["gsis_id"]] if r.get("gsis_id") in own.index else None
             row["rostered_by_roster_id"] = (None if o is None or pd.isna(o["rostered_by_roster_id"])

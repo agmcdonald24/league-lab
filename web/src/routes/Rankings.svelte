@@ -76,7 +76,10 @@
 
   const owner = (x: RankRow) => (team !== null && x.rostered_by_roster_id === team ? "Yours" : (x.rostered_by_team ?? "Free agent"));
   const range = (x: RankRow) => (x.p10 == null || x.p90 == null ? "no range" : `${fmt.whole(x.p10)}–${fmt.whole(x.p90)}`);
-  const game = (x: RankRow) => (x.opponent ? `${x.is_home === false ? "at" : "vs"} ${teamLabel(x.opponent)}` : "no game this week");
+  // ---- IQ-4: a player on a bye is ranked by his remaining games; his row says so
+  const game = (x: RankRow) =>
+    x.opponent ? `${x.is_home === false ? "at" : "vs"} ${teamLabel(x.opponent)}` : x.bye_this_week ? "Bye this week" : "no game this week";
+  // ---- end IQ-4
   const when = (x: RankRow) => (x.game_state ? STATE_WORD[x.game_state] : kickoff(x.kickoff_at));
   function pick(g: string | null) {
     if (!g) return;
@@ -247,6 +250,9 @@
     </div>
     <div class="space-y-1 text-xs leading-snug text-ink-3" data-testid="rankings-honest">
       {#if d.assumes}<p>{d.assumes}</p>{/if}
+      <!-- ---- IQ-4: what we know about the rest of season -->
+      {#if view === "season" && d.ros_grade}<p data-testid="rankings-ros-grade">{d.ros_grade.words}</p>{/if}
+      <!-- ---- end IQ-4 -->
       {#if d.tier_rule}<p>{d.tier_rule}</p>{/if}
       {#if d.unclear_words}<p data-testid="rankings-unclear-foot">{d.unclear_words}</p>{/if}
       {#if browsing}<p>Open your league to see who has him, in your league's own scoring.</p>{/if}

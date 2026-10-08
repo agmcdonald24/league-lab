@@ -43,12 +43,39 @@ week_roster as (
     group by 1, 2
 ),
 
-kroster as (
-    -- kickers on the team's weekly roster (the latest roster week on or before the week), active
-    select r.gsis_id, wr.season, wr.week, {{ kd_team('r.team') }} as team, r.full_name as player_name, r.roster_status, c.game_id
+-- ---- IQ-4 (the bye-week bug, as int_player_week_universe): nflverse's weekly file lists only the teams that play, so
+-- a team on a bye in the newest file reads its own newest file for the weeks after it (history untouched)
+team_files as (
+    select distinct season, team, week from {{ ref('int_player_week_team') }}
+),
+
+team_fallback as (
+    select wr.season, wr.week, t.team, max(t.week) as roster_week
+    from week_roster as wr
+    join team_files as t on t.season = wr.season and t.week < wr.roster_week
+    where wr.week > wr.roster_week
+      and not exists (select 1 from team_files as x where x.season = wr.season and x.week = wr.roster_week and x.team = t.team)
+    group by 1, 2, 3
+),
+
+week_rows as (
+    select r.*, wr.week as cal_week
     from week_roster as wr
     join {{ ref('int_player_week_team') }} as r on r.season = wr.season and r.week = wr.roster_week
-    join cal as c on c.season = wr.season and c.week = wr.week
+    union all
+    select r.*, f.week as cal_week
+    from team_fallback as f
+    join {{ ref('int_player_week_team') }} as r on r.season = f.season and r.week = f.roster_week and r.team = f.team
+    where not exists (select 1 from {{ ref('int_player_week_team') }} as n
+                      where n.gsis_id = r.gsis_id and n.season = f.season and n.week > f.roster_week and n.week <= f.week)
+),
+-- ---- end IQ-4
+
+kroster as (
+    -- kickers on the team's weekly roster (the latest roster week on or before the week), active
+    select r.gsis_id, r.season, r.cal_week as week, {{ kd_team('r.team') }} as team, r.full_name as player_name, r.roster_status, c.game_id
+    from week_rows as r                                                                   -- IQ-4
+    join cal as c on c.season = r.season and c.week = r.cal_week
                  and {{ kd_team('r.team') }} in ({{ kd_team('c.home_team') }}, {{ kd_team('c.away_team') }})
     where r.position = 'K' and r.roster_status = 'ACT'
 ),

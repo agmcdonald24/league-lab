@@ -225,6 +225,9 @@
       {#if shown.roster_spots}<p class="mt-3 text-sm text-ink-2" data-testid="ft-spots">{shown.roster_spots.words}</p>{/if}
     {/if}
     <p class="mt-3 text-sm text-ink-3" data-testid="ft-assumes">{refAssumes(league)}. <a class="ll-link" href="/leagues" data-testid="ft-open">{CALC_FOOT}</a></p>
+    <!-- ---- IQ-4: what we know about the rest of season (the values are rest-of-season points) -->
+    {#if shown?.ros_grade}<p class="mt-2 text-sm text-ink-3" data-testid="ft-ros-grade">{shown.ros_grade.words}{shown.ros_grade.kd_words ? ` ${shown.ros_grade.kd_words}` : ""}</p>{/if}
+    <!-- ---- end IQ-4 -->
   </Card>
 
   <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
