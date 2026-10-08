@@ -390,9 +390,9 @@ def project_cmd(
     if gate.get("week") is not None:
         console.print(f"availability gate, week {gate['week']}: {gate.get('source')} copy of "
                       f"{gate.get('fetched_at') or 'no date'}{' (FALLBACK: no Sleeper copy)' if gate.get('fallback') else ''}; "
-                      f"{len(gate.get('players') or [])} players who cannot play get 0 this week, "
+                      f"{len(gate.get('players') or [])} players who cannot play or are unlikely to play get 0 this week, "
                       f"{sum(1 for r in gate.get('players') or [] if r.get('out_indefinitely'))} of them out indefinitely "
-                      "(no later weeks)")
+                      f"(no later weeks); kickers' league-free lines removed: {len(gate.get('kd_lines_removed') or [])}")
     # ---- end IR-1
 
 

@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 
 import pandas as pd
 import pytest
+
 from league_lab import audit as AU
 from league_lab import availability_gate as AG
 

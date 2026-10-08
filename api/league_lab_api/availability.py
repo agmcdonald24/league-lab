@@ -1298,8 +1298,38 @@ def ros_gate(out: dict, *, season: int | None = None, week: int | None = None) -
                     p["availability"] = {"status": s.get("status"), "code": s.get("code"), "why": s.get("why"),
                                          "cannot_play": bool(sits(s))}                     # ---- IS-1
                 keep.append(p)
+        # ---- IS-1: a house league's list is cut at its limit with the mart's withheld totals (NULL) sorted last, so the
+        # players it withholds are fetched apart and listed here too (bounded; `to_jsonb` reads a column that may not
+        # exist yet — a deploy lands before the refresh)
+        if out.get("source") == "database" and out.get("league_id") and k == "players":
+            have = {str(x.get("gsis_id")) for x in gone} | {str(x.get("gsis_id")) for x in keep}
+            gone += [x for x in _withheld(str(out["league_id"]), str(out.get("position") or "ALL"), season, week)
+                     if str(x.get("gsis_id")) not in have]
         out[k] = keep
         out["not_playing"] = order_not_playing(gone, {str(p.get("key")): p.get("ros_points") for p in gone if isinstance(p, dict)},
                                                season)                                          # ---- IS-1
     return out
 # ---- end IR-1
+
+
+# ---- IS-1 (Wave I-S): the house rest-of-season mart withholds a player out indefinitely (ros_points NULL)
+WITHHELD_SQL = """select r.player_key, r.gsis_id, r.player_name, r.position, r.team
+                  from analytics.mart_player_ros_projection as r
+                  where r.league_id = %s and (%s = 'ALL' or r.position = %s)
+                    and coalesce((to_jsonb(r) ->> 'out_indefinitely')::boolean, false)
+                  order by r.player_key limit 200"""
+
+
+def _withheld(league_id: str, position: str, season: int | None, week: int | None) -> list[dict]:
+    """The "Not playing" rows of the players a house league's rest-of-season mart withholds, with the status that
+    says why (the stored record / the overlay); [] on any failure or before the refresh."""
+    try:
+        d = query(WITHHELD_SQL, (league_id, position, position))
+    except Exception:  # noqa: BLE001
+        return []
+    if d.empty:
+        return []
+    st = statuses([g for g in d["gsis_id"] if isinstance(g, str)], season, week)
+    return [not_playing_row({**r, "key": r.get("player_key") or r.get("gsis_id")}, st[r["gsis_id"]], view="season")
+            for r in d.to_dict("records") if isinstance(r.get("gsis_id"), str) and (st.get(r["gsis_id"]) or {}).get("out_indefinitely")]
+# ---- end IS-1

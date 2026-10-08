@@ -2,6 +2,17 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-S (dependability, second round)
+
+- **IS-1 — a status that rarely plays is not ranked as if it will.** Measured first (2016–2025, 520 Doubtful listings,
+  6 played; 4,294 Questionable, 66.6 % played), the 25 % rule written before: Doubtful is *unlikely* — 0 this week from
+  `project` with the reason, out of this week's rankings and tiers, "He is doubtful" in "Who should I start?", his
+  season kept; Questionable stays ranked and says how often such players play (not scaled: the bias table goes to the
+  PO). The older overlay's code sets are views of the gate. "Not playing" in two parts ("Out", "Unlikely to play"),
+  the players a visitor looks for first. Kickers' league-free lines, the value without a league and the player page's
+  preview are gated; the house rest-of-season mart withholds a player out indefinitely; the audit reads Sleeper's
+  directory alone.
+
 ## 2026-10-08 — hotfix: /api/ready through the hosted pooler; the release gate enforced
 
 - **`/api/ready` answered 503 on the live site while every screen worked.** The probe opened its connection with
