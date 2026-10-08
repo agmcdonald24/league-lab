@@ -8,6 +8,7 @@ from __future__ import annotations
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
+
 from league_lab_api import db, main, usage
 from league_lab_api.main import app
 from league_lab_api.settings import ROOT
