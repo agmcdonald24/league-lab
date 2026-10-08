@@ -27,8 +27,15 @@ def _fresh_cache():
     S._cache._entries.clear()
 
 
+@pytest.fixture
+def su10(monkeypatch):
+    """IQ-2: these tests pin su1.0 itself -- the trigger the screens keep where analytics.mart_starter_check is not
+    built (a deploy before the nightly); with the mart, U1 replaces it (api/tests/test_iq2.py)."""
+    monkeypatch.setattr(S, "check", lambda season, week: None)
+
+
 @needs_db
-def test_week_5_flags_chicago_seattle_and_washington():
+def test_week_5_flags_chicago_seattle_and_washington(su10):
     f = S.unclear(2026, 5)
     assert {v["team"] for v in f.values()} == {"CHI", "SEA", "WAS"}
     assert len(f) == 6 and sorted(v["role"] for v in f.values()) == ["listed"] * 3 + ["played"] * 3
@@ -42,13 +49,13 @@ def test_week_5_flags_chicago_seattle_and_washington():
 
 
 @needs_db
-def test_weeks_without_a_flag():
+def test_weeks_without_a_flag(su10):
     assert S.unclear(2026, 1) == {}          # no game before week 1
     assert S.unclear(2026, 6) == {}          # nflverse has not listed week 6's starters yet
 
 
 @needs_db
-def test_the_weeks_own_game_never_counts():
+def test_the_weeks_own_game_never_counts(su10):
     teams = {v["team"] for v in S.unclear(2026, 4).values()}
     assert "SEA" in teams                    # Lock listed, Darnold led week 3
     assert "CHI" not in teams                # Keenum led week 3; his week-4 game (no dropback) is the week itself
@@ -86,4 +93,4 @@ def test_the_pure_part_and_the_cache(monkeypatch):
     monkeypatch.setattr(S, "missing_relations", lambda names_: [])
     monkeypatch.setattr(S, "query", lambda sql, params=(): calls.append(sql) or pd.DataFrame(columns=["team", "listed_id", "game_id", "last_week"]))
     assert S.unclear(2026, 7) == {} and S.unclear(2026, 7) == {}
-    assert len(calls) == 1
+    assert len(calls) == 2            # IQ-2: the mart's read (no row for the week), then the listing; the second call none

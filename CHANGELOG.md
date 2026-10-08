@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-Q
+
+<!-- ---- IQ-2 -->
+- **IQ-2 — who starts.** A hand-kept override list (seed `starter_overrides`: Seattle → Sam Darnold, Chicago → Tyson
+  Bagent from week 5) sets the starter of unplayed games only, expires by itself once the team plays a game he does not
+  lead, is checked against the team's roster (dbt, error) and warns after three weeks; the corrected quarterback's row
+  says so in one sentence ("Set by hand on 7 Oct.") and keeps his tier and calls. Four sources for the starter were
+  measured against who led the dropbacks (rule written first): none passes (the closest fixes 10 of 12 stale listings
+  and breaks 6), so none ships; `analytics.mart_starter_check` lists every team's listing, depth chart, last game and
+  injury status for a weekly check, and "Starter unclear" now reads the depth chart (12 of 12 stale listings caught
+  with 27 flags, against 7 with 42).
+<!-- ---- end IQ-2 -->
+
 ## 2026-10-07 — hotfix: rest-of-season quarterbacks
 
 - **IQ-1 — v3.5: the weeks after the market week read a line and a starter.** A week more than one ahead had no
