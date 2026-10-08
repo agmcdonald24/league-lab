@@ -38,3 +38,35 @@ def sits(block: Mapping | None) -> bool:
 
 
 note = LS.note
+
+
+# ---- IS-2 item 3: Waivers and My Week carry ``provenance`` and the starter ``caveats`` like the other analyses (the
+# data only: ``provenance.for_players`` over the players the answer names; a stamp never costs a screen)
+def _named(rows) -> list[dict]:
+    out = []
+    for r in rows or []:
+        if isinstance(r, dict):
+            p = r.get("add") if isinstance(r.get("add"), dict) else r
+            if isinstance(p, dict) and (p.get("gsis_id") or p.get("position")):
+                out.append({k: p.get(k) for k in ("gsis_id", "position", "team", "player_name")})
+    return out
+
+
+def with_players(ans, *keys: str):
+    from . import provenance
+    if not isinstance(ans, dict):
+        return ans
+    season, wk = week()
+    wk = ans.get("week") if isinstance(ans.get("week"), int) else wk
+    players = [p for k in keys for p in _named(ans.get(k))]
+    return provenance._with(ans, lambda a: provenance.for_players(players, season, wk,
+                                                                   last_week=a.get("horizon_last_week")))
+
+
+def with_waivers(ans):
+    return with_players(ans, "moves", "free_agents")
+
+
+def with_lineup(ans):
+    return with_players(ans, "lineup_full")
+# ---- end IS-2

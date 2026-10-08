@@ -129,3 +129,24 @@ def test_waiver_browse_without_any_record_answers(monkeypatch):
     out = D._free_agents("L", 2026, 5, "RB", 50, True, {}, {})
     assert all(p["availability"] is None for p in out)
     assert next(p for p in out if p["gsis_id"] == HEALTHY)["projection"] == 7.0
+
+
+def test_waivers_and_my_week_carry_provenance_and_the_starter_caveats(monkeypatch):
+    """Item 3: the same data the other analyses carry — provenance and the starter caveats of the players named."""
+    from league_lab_api import provenance as P
+    seen = {}
+
+    def caveats_for(players, season, week):
+        seen["players"] = [p["player_name"] for p in players]
+        return [{"kind": "starter_corrected", "effect": P.SOFTEN, "team": "SEA", "players": ["Sam Darnold"],
+                 "words": "Read this as a lean that assumes Darnold starts."}]
+    monkeypatch.setattr(P, "caveats_for", caveats_for)
+    monkeypatch.setattr(LG, "week", lambda: (2026, 5))
+    w = LG.with_waivers({"week": 5, "horizon_last_week": 8,
+                         "moves": [{"add": {"gsis_id": "g1", "position": "QB", "team": "SEA", "player_name": "Sam Darnold"}}],
+                         "free_agents": [{"gsis_id": "g2", "position": "RB", "team": "NYJ", "player_name": "B"}]})
+    assert seen["players"] == ["Sam Darnold", "B"]
+    assert w["caveat_effect"] == P.SOFTEN and w["caveats"][0]["team"] == "SEA" and "provenance" in w
+    m = LG.with_lineup({"week": 5, "lineup_full": [{"gsis_id": "g1", "position": "QB", "team": "SEA", "player_name": "Sam Darnold"}]})
+    assert m["caveats"] and m["caveat_rule"] == P.RULE_WORDS
+    assert LG.with_lineup(None) is None

@@ -424,9 +424,10 @@ def why_market_rows(out: dict, league: str, *, house: bool) -> dict:
 
 @app.get("/api/my-week", dependencies=[Depends(require_auth), Depends(needs_league)])
 def my_week(league: str, team: int, response: Response, source: str | None = None):
+    from . import league_gate as LG  # ---- IS-2 item 3: provenance + the starter caveats (data)
     if source == "sleeper" or not myweek.known_league(league):
-        return _json(why_market_rows(ondemand.my_week(league, team), league, house=False), response)   # ---- IA-3
-    return _json(why_market_rows(myweek.my_week(league, team), league, house=True), response)         # ---- IA-3
+        return _json(LG.with_lineup(why_market_rows(ondemand.my_week(league, team), league, house=False)), response)   # ---- IA-3
+    return _json(LG.with_lineup(why_market_rows(myweek.my_week(league, team), league, house=True)), response)         # ---- IA-3
 
 
 @app.get("/api/player/{gsis}", dependencies=[Depends(require_auth)])
@@ -668,7 +669,8 @@ async def _bad_request(_req: Request, exc: decisions.BadRequest):
 @app.get("/api/waivers", dependencies=[Depends(require_auth), Depends(needs_league)])
 def waivers(league: str, response: Response, team: int | None = None, position: str | None = None, limit: int = 50,
             offset: int = 0, source: str | None = None):
-    return _json(decisions.waivers(league, team, position, limit, offset, source=source), response)
+    from . import league_gate as LG  # ---- IS-2 item 3: provenance + the starter caveats (data)
+    return _json(LG.with_waivers(decisions.waivers(league, team, position, limit, offset, source=source)), response)
 
 
 @app.post("/api/trades/evaluate", dependencies=[Depends(require_auth)])
