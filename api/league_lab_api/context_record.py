@@ -48,8 +48,12 @@ EMPTY = {"corner": {"graded": False, "n": 0, "words": None, "tiers": {}},
          "worth": {"graded": False, "n": 0, "words": None, "line": None},
          # ---- IP-3 (Wave I-P): Trends' tag and the role trend, graded (absent rows: graded False)
          "trend": {"graded": False, "n": 0, "words": None, "head": None, "tags": {}},
-         "role": {"graded": False, "n": 0, "words": None, "trends": {}}}
+         "role": {"graded": False, "n": 0, "words": None, "trends": {}},
          # ---- end IP-3
+         # ---- IR-4 (Wave I-R): the trade calculator's horizons by position and the useful-decision grade (kinds
+         # `horizon` / `useful`; cells "<kind>:<position>/<window>" -> miss, order, the baseline's, the sentence)
+         "horizon": {"graded": False, "n": 0, "words": None, "cells": {}}}
+         # ---- end IR-4
 
 
 def clear() -> None:
@@ -101,6 +105,16 @@ def _build() -> dict:
         out["role"] = {"graded": True, "n": int(rl.get("n") or 0), "words": str(rl["words"]),
                        "trends": {tr: _cell(rows, "role", f"{tr}/all/all/1") for tr in ("up", "down")}}
     # ---- end IP-3
+    # ---- IR-4 (Wave I-R): the horizons and the useful-decision grade
+    hz = {f"{r['kind']}:{r['grp']}": {"miss": _num(r.get("mean_miss")), "order": _num(r.get("beat_share")),
+                                      "base_order": _num(r.get("rest_beat_share")), "vs_base": _num(r.get("vs_rest")),
+                                      "n": None if r.get("n") is None or not _num(r.get("n")) else int(r["n"]),
+                                      "span": r.get("span") if isinstance(r.get("span"), str) else None,
+                                      "words": r.get("words") if isinstance(r.get("words"), str) else None}
+          for r in rows if r.get("kind") in ("horizon", "useful") and r.get("grp")}
+    if hz:
+        out["horizon"] = {"graded": True, "n": len(hz), "words": None, "cells": hz}
+    # ---- end IR-4
     return out
 
 

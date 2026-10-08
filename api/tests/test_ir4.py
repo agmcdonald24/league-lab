@@ -232,3 +232,22 @@ def test_the_free_calculator_verdict_follows_the_rule(board, flags, monkeypatch)
     assert held["verdict"]["lean"] is None and held["verdict"]["gap"] == 103.0          # the numbers stay
     plain = P.with_free_trade({"window": {"first": 5, "last": 18}, "verdict": dict(v), "give": {"players": []}, "get": {"players": []}})
     assert plain["verdict"] == v
+
+
+def test_the_site_reads_the_record_rows(monkeypatch):
+    import copy
+
+    import pandas as pd
+    from league_lab import context_record as SR
+
+    from league_lab_api import context_record as CR
+    rows = SR.horizon_grade_rows()
+    cols = ["kind", "grp", "corner_certainty", "corner_tier", "n", "games", "mean_miss", "lo", "hi", "beat", "beat_share",
+            "vs_rest", "vs_rest_lo", "vs_rest_hi", "rest_n", "rest_beat_share", "span", "scoring", "words"]
+    df = pd.DataFrame([{c: r.get(c) for c in cols} for r in rows])
+    monkeypatch.setattr(CR, "query", lambda sql, *a, **k: pd.DataFrame({"ok": [True]}) if "to_regclass" in sql else df)
+    out = CR._build()
+    h = out["horizon"]
+    assert h["graded"] and h["n"] == 24
+    assert h["cells"]["horizon:QB/next4"]["order"] == 0.538 and h["cells"]["useful:WR/next4"]["n"] == 8643
+    assert out["corner"] == copy.deepcopy(CR.EMPTY)["corner"]          # the other kinds as they were (no rows: not graded)
