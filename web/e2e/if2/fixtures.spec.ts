@@ -17,6 +17,12 @@ const FILE = join(import.meta.dirname, "..", "..", "fixtures", "if2", "api_if2.j
 const RECORD = process.env.IF2_RECORD ?? "";
 type Saved = { status: number; body: unknown };
 const saved: Record<string, Saved> = !RECORD && existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
+
+// ---- IR-2 fix: the calculator's saved answer (its `decision` is what the screen reads); the sign as `s1` prints it
+type Ev = { decision: { alternative: { words: string }; strip: { mine: number[]; theirs: number[] } }; values: { season_value: { words: string } } };
+const savedEval = (has: string): Ev =>
+  Object.entries(saved).find(([k]) => k.startsWith("/api/trades/evaluate") && k.includes(has))![1].body as Ev;
+const sign1 = (x: number) => (Math.abs(x) >= 0.05 ? `${x > 0 ? "+" : "\u2212"}${Math.abs(x).toFixed(1)}` : "+0.0");
 const MINE = /\/api\/(trades|rosters|leagues\?mfl)|mfl/i;
 const MFL = "mfl:70587";
 
@@ -102,10 +108,11 @@ test("the calculator: the review's headline trade against the claim, the strip, 
   await page.goto(`/trade-calc?league=${encodeURIComponent(MFL)}&team=8&partner=12&give=${encodeURIComponent("mfl:0682")}&get=10229,${encodeURIComponent("mfl:0677")}`);
   const alt = page.getByTestId("trade-alternative");
   await expect(alt).toContainText("Against your best waiver move:");
-  await expect(alt).toContainText("+7.9 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points.");
+  const ev = savedEval("mfl:0677"); // IR-2 fix: the trade against the claim on the decision's basis, the strip its numbers
+  await expect(alt).toContainText(ev.decision.alternative.words);
   const strip = page.getByTestId("trade-strip");
-  await expect(strip.getByTestId("strip-mine").locator("td")).toHaveText(["+1.7", "+0.0", "+2.3", "+3.8"]);
-  await expect(strip.getByTestId("strip-theirs").locator("td").first()).toHaveText("−2.0");
+  await expect(strip.getByTestId("strip-mine").locator("td")).toHaveText(ev.decision.strip.mine.map(sign1));
+  await expect(strip.getByTestId("strip-theirs").locator("td").first()).toHaveText(sign1(ev.decision.strip.theirs[0]));
   await noSidewaysScroll(page);
   await shot(page, "team8-calc", info.project.name);
   await page.getByTestId("why").locator("summary").first().click();

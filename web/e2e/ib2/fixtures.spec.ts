@@ -159,10 +159,15 @@ for (const league of [SCRUBS, TEST_LEAGUE]) {
     // verdict bar pinned to the top of the screen
     const bar = page.getByTestId("verdict-bar");
     if (info.project.name === "desktop") {
-      // desktop: the lists scroll inside their cards, the page is short and the dial stays; open the explanation and
-      // the lineups so the page is long, and go to its end
-      await expect(page.getByTestId("dial-row")).toBeInViewport();
-      await expect(bar).toHaveCount(0);
+      // desktop: the lists scroll inside their cards; while the dial's row is on screen there is no bar (IR-2 fix: the
+      // decision's result card is longer, so at 1300 the dial's row may already have scrolled away here — then the bar
+      // below must be pinned, the same rule); open the explanation and the lineups so the page is long, and go to its end
+      const dialOn = await page.getByTestId("dial-row").evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return r.bottom > 0 && r.top < window.innerHeight;
+      });
+      if (dialOn) await expect(bar).toHaveCount(0);
+      else await expect(bar).toBeInViewport();
       await page.getByTestId("why").locator("summary").first().click();
       await page.getByTestId("lineups-x").locator("summary").first().click();
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));

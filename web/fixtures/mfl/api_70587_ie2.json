@@ -82,7 +82,7 @@
     "horizon_last_week": 7,
     "horizon_weeks": 4,
     "week_label": "week 4",
-    "horizon_label": "weeks 4–7",
+    "horizon_label": "weeks 4\u20137",
     "lineup_value": 115.41,
     "bench_value": 43.91,
     "slots_total": 8,
@@ -116,7 +116,7 @@
      "value": 432.6,
      "league_rank": 6,
      "n_rosters": 12,
-     "horizon": "weeks 4–7",
+     "horizon": "weeks 4\u20137",
      "rank_label": "6/12"
     },
     "bench_value": {
@@ -715,13 +715,13 @@
    "keeper": null,
    "words": {
     "lineup": [
-     "**Week 4: your best lineup projects 115.4** — 5th of 12 in the league (week 4).",
+     "**Week 4: your best lineup projects 115.4** \u2014 5th of 12 in the league (week 4).",
      "Your closest call: **WR+TE3, Ladd McConkey over Jordan Addison by 0.28**."
     ],
     "horizon": [
-     "**Weeks 4–7: 432.6 projected** — 6th of 12 in the league (weeks 4–7).",
+     "**Weeks 4\u20137: 432.6 projected** \u2014 6th of 12 in the league (weeks 4\u20137).",
      "Toughest week: week 7 (96.7).",
-     "**Depth: your bench alone would field 43.9** in week 4 — 7th of 12 in the league (week 4)."
+     "**Depth: your bench alone would field 43.9** in week 4 \u2014 7th of 12 in the league (week 4)."
     ],
     "source": "quoted from app/pages/1_Team_Hub.py (the first two cards)"
    },
@@ -769,7 +769,7 @@
     "horizon_last_week": 7,
     "horizon_weeks": 4,
     "week_label": "week 4",
-    "horizon_label": "weeks 4–7",
+    "horizon_label": "weeks 4\u20137",
     "lineup_value": 117.46,
     "bench_value": 50.15,
     "slots_total": 8,
@@ -803,7 +803,7 @@
      "value": 412.45,
      "league_rank": 9,
      "n_rosters": 12,
-     "horizon": "weeks 4–7",
+     "horizon": "weeks 4\u20137",
      "rank_label": "9/12"
     },
     "bench_value": {
@@ -1422,13 +1422,13 @@
    "keeper": null,
    "words": {
     "lineup": [
-     "**Week 4: your best lineup projects 117.5** — 4th of 12 in the league (week 4).",
+     "**Week 4: your best lineup projects 117.5** \u2014 4th of 12 in the league (week 4).",
      "Your closest call: **WR+TE3, Tre Tucker over George Kittle by 0.08**."
     ],
     "horizon": [
-     "**Weeks 4–7: 412.4 projected** — 9th of 12 in the league (weeks 4–7).",
+     "**Weeks 4\u20137: 412.4 projected** \u2014 9th of 12 in the league (weeks 4\u20137).",
      "Toughest week: week 5 (81.0).",
-     "**Depth: your bench alone would field 50.1** in week 4 — 4th of 12 in the league (week 4)."
+     "**Depth: your bench alone would field 50.1** in week 4 \u2014 4th of 12 in the league (week 4)."
     ],
     "source": "quoted from app/pages/1_Team_Hub.py (the first two cards)"
    },
@@ -1473,7 +1473,7 @@
     6,
     7
    ],
-   "span": "weeks 4–7",
+   "span": "weeks 4\u20137",
    "window": "next4",
    "window_label": "Next 4",
    "window_why": "the next four weeks: far enough to matter, near enough to trust",
@@ -1485,10 +1485,10 @@
      "position": "RB",
      "team": "JAX",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
-     "this_week": 9.72,
+     "this_week": 9.92,
      "cannot_play": null,
-     "market_price": 14,
-     "season_points": 138,
+     "market_price": 15,
+     "season_points": 142,
      "roster_id": 8
     }
    ],
@@ -1500,111 +1500,119 @@
      "position": "WR",
      "team": "KC",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
-     "this_week": 10.24,
+     "this_week": 11.64,
      "cannot_play": null,
-     "market_price": 7,
-     "season_points": 134,
+     "market_price": 40,
+     "season_points": 165,
      "roster_id": 12
     }
    ],
    "before": {
     "mine": {
-     "this_week": 115.41,
-     "horizon": 432.6,
-     "bench": 43.91,
+     "this_week": 119.33,
+     "horizon": 454.21,
+     "bench": 50.83,
      "by_week": [
-      115.41,
-      112.54,
-      107.94,
-      96.71
+      119.33,
+      114.07,
+      108.51,
+      112.3
      ]
     },
     "theirs": {
-     "this_week": 117.46,
-     "horizon": 412.45,
-     "bench": 50.15,
+     "this_week": 119.81,
+     "horizon": 448.19,
+     "bench": 45.59,
      "by_week": [
-      117.46,
-      81.01,
-      101.22,
-      112.76
+      119.81,
+      112.94,
+      102.78,
+      112.66
      ]
     }
    },
    "after": {
     "mine": {
-     "this_week": 118.77,
-     "horizon": 442.12,
-     "bench": 41.07,
+     "this_week": 123.89,
+     "horizon": 467.83,
+     "bench": 47.99,
      "by_week": [
-      118.77,
-      112.54,
-      110.28,
-      100.53
+      123.89,
+      114.07,
+      114.05,
+      115.82
      ]
     },
     "theirs": {
-     "this_week": 115.41,
-     "horizon": 409.78,
-     "bench": 51.68,
+     "this_week": 115.04,
+     "horizon": 437.13,
+     "bench": 48.64,
      "by_week": [
-      115.41,
-      81.01,
-      101.89,
-      111.47
+      115.04,
+      112.94,
+      100.72,
+      108.43
      ]
     }
    },
    "fit": {
     "this_week": {
-     "mine": 3.36,
-     "theirs": -2.05
+     "mine": 4.56,
+     "theirs": -4.77
     },
     "window": {
-     "mine": 9.52,
-     "theirs": -2.67
+     "mine": 13.62,
+     "theirs": -11.06
     },
     "next_4": {
-     "mine": 9.52,
-     "theirs": -2.67
+     "mine": 13.62,
+     "theirs": -11.06
     },
-    "words": "**Improvement to your starting lineup** (best lineup each week): you **+3.4** this week and **+9.5** over weeks 4–7; them **-2.0** and **-2.7**."
+    "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.6** this week and **+13.6** over weeks 4\u20137; them **-4.8** and **-11.1**."
    },
    "interest": {
-    "score": 14,
+    "score": 0,
     "label": "Makes their lineup weaker",
-    "their_gain": -2.67,
-    "you": 9.52,
-    "caption": "their starters over weeks 4–7, by our numbers",
+    "their_gain": -11.06,
+    "you": 13.62,
+    "caption": "their starters over weeks 4\u20137, against realistic replacements",
     "title": "Effect on their starters",
-    "need": null
+    "need": "puts Tucker at their WR/TE in place of Rice"
    },
    "sanity": null,
    "market": {
-    "give": 14,
-    "get": 7,
-    "season_points_give": 138,
-    "season_points_get": 134,
+    "give": 15,
+    "get": 40,
+    "season_points_give": 142,
+    "season_points_get": 165,
     "unknown": [],
     "replacement": {
      "DEF": {
-      "season_points": 160,
-      "player_name": "Atlanta Falcons"
+      "season_points": 155,
+      "player_name": "New Orleans Saints"
      },
      "RB": {
-      "season_points": 124,
-      "player_name": "Jacory Croskey-Merritt"
+      "season_points": 127,
+      "player_name": "Emanuel Wilson"
      },
      "TE": {
-      "season_points": 122,
+      "season_points": 102,
       "player_name": "Dalton Schultz"
      },
+     "TMPK": {
+      "season_points": 165,
+      "player_name": "Tampa Bay Buccaneers K"
+     },
+     "TMQB": {
+      "season_points": 393,
+      "player_name": "Arizona Cardinals QB"
+     },
      "WR": {
-      "season_points": 127,
-      "player_name": "Devaughn Vele"
+      "season_points": 125,
+      "player_name": "Malik Washington"
      }
     },
-    "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **14**, you get **7**: about even.",
+    "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **15**, you get **40**: you get 25 more.",
     "players": [
      {
       "sleeper_id": "12490",
@@ -1613,10 +1621,10 @@
       "position": "RB",
       "team": "JAX",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
-      "this_week": 9.72,
+      "this_week": 9.92,
       "cannot_play": null,
-      "market_price": 14,
-      "season_points": 138,
+      "market_price": 15,
+      "season_points": 142,
       "roster_id": 8,
       "goes_to": "Madeyes Revenge"
      },
@@ -1627,58 +1635,60 @@
       "position": "WR",
       "team": "KC",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
-      "this_week": 10.24,
+      "this_week": 11.64,
       "cannot_play": null,
-      "market_price": 7,
-      "season_points": 134,
+      "market_price": 40,
+      "season_points": 165,
       "roster_id": 12,
       "goes_to": "You"
      }
     ]
    },
-   "verdict": "Helps your lineup +3.4 this week (+9.5 over weeks 4–7), costs their lineup 2.0 (2.7 over weeks 4–7); about even by season value: a lineup loss for them.",
-   "headline": "**You give [Bhayshul Tuten](/player/00-0040719); you get [Rashee Rice](/player/00-0039067).** Helps your lineup +3.4 this week (+9.5 over weeks 4–7), costs their lineup 2.0 (2.7 over weeks 4–7); about even by season value: a lineup loss for them.",
+   "verdict": "Helps your lineup +4.6 this week (+13.6 over weeks 4\u20137), costs their lineup 4.8 (11.1 over weeks 4\u20137); you get more season value: a lineup loss for them.",
+   "headline": "**You give [Bhayshul Tuten](/player/00-0040719); you get [Rashee Rice](/player/00-0039067).** Helps your lineup +4.6 this week (+13.6 over weeks 4\u20137), costs their lineup 4.8 (11.1 over weeks 4\u20137); you get more season value: a lineup loss for them.",
    "ros": {
-    "give": 138,
-    "get": 134,
-    "window": "weeks 4–18",
-    "words": "Rest of season (weeks 4–18, through this league's final): you give **138** points, you get **134** (-4) — the players' plain totals, before the roster spot a lopsided trade frees or fills and before your lineup is re-solved (the verdict above counts both). Only this week has betting lines; later weeks lean on usage and the schedule."
+    "give": 142,
+    "get": 165,
+    "window": "weeks 4\u201318",
+    "words": "Rest-of-season projected points (weeks 4\u201318), all positions added up \u2014 not a fairness test: you give 142, you get 165.",
+    "label": "Rest-of-season projected points",
+    "fairness": false
    },
    "ranks": {
     "lineup_value": {
      "mine": [
-      6,
-      5
+      4,
+      1
      ],
      "theirs": [
-      5,
-      6
+      3,
+      7
      ],
      "n": 12
     },
     "horizon_value": {
      "mine": [
-      6,
-      5
+      7,
+      4
      ],
      "theirs": [
-      10,
+      9,
       10
      ],
      "n": 12
     },
     "bench_value": {
      "mine": [
-      10,
-      10
+      2,
+      5
      ],
      "theirs": [
-      7,
-      6
+      6,
+      3
      ],
      "n": 12
     },
-    "words": "League rank, week 4: you 6th → **5th** of 12, Madeyes Revenge 5th → 6th; weeks 4–7: you 6th → **5th** of 12, Madeyes Revenge 10th → 10th; depth: you 10th → **10th** of 12, Madeyes Revenge 7th → 6th."
+    "words": "League rank, week 4: you 4th \u2192 **1st** of 12, Madeyes Revenge 3rd \u2192 7th; weeks 4\u20137: you 7th \u2192 **4th** of 12, Madeyes Revenge 9th \u2192 10th; depth: you 2nd \u2192 **5th** of 12, Madeyes Revenge 6th \u2192 3rd."
    },
    "size_words": "Roster size: no change (1 for 1).",
    "sides": {
@@ -1693,10 +1703,10 @@
        "position": "RB",
        "team": "JAX",
        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
-       "this_week": 9.72,
+       "this_week": 9.92,
        "cannot_play": null,
-       "market_price": 14,
-       "season_points": 138,
+       "market_price": 15,
+       "season_points": 142,
        "roster_id": 8
       }
      ],
@@ -1708,10 +1718,10 @@
        "position": "WR",
        "team": "KC",
        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
-       "this_week": 10.24,
+       "this_week": 11.64,
        "cannot_play": null,
-       "market_price": 7,
-       "season_points": 134,
+       "market_price": 40,
+       "season_points": 165,
        "roster_id": 12
       }
      ],
@@ -1722,39 +1732,39 @@
       7
      ],
      "before": {
-      "this_week": 115.41,
-      "horizon": 432.6,
-      "bench": 43.91,
+      "this_week": 119.33,
+      "horizon": 442.32,
+      "bench": 50.83,
       "by_week": [
-       115.41,
-       112.54,
-       107.94,
-       96.71
+       119.33,
+       114.07,
+       108.51,
+       100.41
       ]
      },
      "after": {
-      "this_week": 118.77,
-      "horizon": 442.12,
-      "bench": 41.07,
+      "this_week": 123.89,
+      "horizon": 455.94,
+      "bench": 47.99,
       "by_week": [
-       118.77,
-       112.54,
-       110.28,
-       100.53
+       123.89,
+       114.07,
+       114.05,
+       103.93
       ]
      },
-     "gain_week": 3.36,
-     "gain_horizon": 9.52,
+     "gain_week": 4.56,
+     "gain_horizon": 13.62,
      "cuts": [],
      "limit": 14,
      "size_before": 13,
      "size_after": 13,
      "opened": 0,
      "fill": null,
-     "price_out": 14,
-     "price_in": 7,
-     "points_out": 138,
-     "points_in": 134,
+     "price_out": 15,
+     "price_in": 40,
+     "points_out": 142,
+     "points_in": 165,
      "starts": [
       {
        "sleeper_id": "10229",
@@ -1763,25 +1773,25 @@
        "position": "WR",
        "team": "KC",
        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
-       "this_week": 10.24,
+       "this_week": 11.64,
        "cannot_play": null,
-       "market_price": 7,
-       "season_points": 134,
+       "market_price": 40,
+       "season_points": 165,
        "roster_id": 12
       }
      ],
      "sits": [
       {
-       "sleeper_id": "11635",
-       "gsis_id": "00-0039915",
-       "player_name": "Ladd McConkey",
+       "sleeper_id": "9756",
+       "gsis_id": "00-0038994",
+       "player_name": "Jordan Addison",
        "position": "WR",
-       "team": "LAC",
-       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/q2sk7yforrkiusvruo1o",
-       "this_week": 6.88,
+       "team": "MIN",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mi4lzk9gvjrvo6rwdf1e",
+       "this_week": 7.08,
        "cannot_play": null,
        "market_price": 0,
-       "season_points": 102,
+       "season_points": 121,
        "roster_id": 8
       }
      ]
@@ -1797,10 +1807,10 @@
        "position": "WR",
        "team": "KC",
        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
-       "this_week": 10.24,
+       "this_week": 11.64,
        "cannot_play": null,
-       "market_price": 7,
-       "season_points": 134,
+       "market_price": 40,
+       "season_points": 165,
        "roster_id": 12
       }
      ],
@@ -1812,10 +1822,10 @@
        "position": "RB",
        "team": "JAX",
        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
-       "this_week": 9.72,
+       "this_week": 9.92,
        "cannot_play": null,
-       "market_price": 14,
-       "season_points": 138,
+       "market_price": 15,
+       "season_points": 142,
        "roster_id": 8
       }
      ],
@@ -1826,51 +1836,51 @@
       7
      ],
      "before": {
-      "this_week": 117.46,
-      "horizon": 412.45,
-      "bench": 50.15,
+      "this_week": 119.81,
+      "horizon": 411.53,
+      "bench": 45.59,
       "by_week": [
-       117.46,
-       81.01,
-       101.22,
-       112.76
+       119.81,
+       76.28,
+       102.78,
+       112.66
       ]
      },
      "after": {
-      "this_week": 115.41,
-      "horizon": 409.78,
-      "bench": 51.68,
+      "this_week": 115.04,
+      "horizon": 400.47,
+      "bench": 48.64,
       "by_week": [
-       115.41,
-       81.01,
-       101.89,
-       111.47
+       115.04,
+       76.28,
+       100.72,
+       108.43
       ]
      },
-     "gain_week": -2.05,
-     "gain_horizon": -2.67,
+     "gain_week": -4.77,
+     "gain_horizon": -11.06,
      "cuts": [],
      "limit": 14,
      "size_before": 14,
      "size_after": 14,
      "opened": 0,
      "fill": null,
-     "price_out": 7,
-     "price_in": 14,
-     "points_out": 134,
-     "points_in": 138,
+     "price_out": 40,
+     "price_in": 15,
+     "points_out": 165,
+     "points_in": 142,
      "starts": [
       {
-       "sleeper_id": "4217",
-       "gsis_id": "00-0033288",
-       "player_name": "George Kittle",
-       "position": "TE",
-       "team": "SF",
-       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
-       "this_week": 8.19,
+       "sleeper_id": "10213",
+       "gsis_id": "00-0038563",
+       "player_name": "Tre Tucker",
+       "position": "WR",
+       "team": "LV",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hazzk3hrcequzosdgzgv",
+       "this_week": 6.87,
        "cannot_play": null,
        "market_price": 0,
-       "season_points": 121,
+       "season_points": 105,
        "roster_id": 12
       }
      ],
@@ -1882,10 +1892,10 @@
        "position": "WR",
        "team": "KC",
        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
-       "this_week": 10.24,
+       "this_week": 11.64,
        "cannot_play": null,
-       "market_price": 7,
-       "season_points": 134,
+       "market_price": 40,
+       "season_points": 165,
        "roster_id": 12
       }
      ]
@@ -1898,89 +1908,102 @@
        "slot": "team QB",
        "player_name": "Houston Texans QB",
        "gsis_id": null,
-       "value": 30.4,
+       "value": 31.76,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "RB1",
        "player_name": "Jonathan Taylor",
        "gsis_id": "00-0036223",
-       "value": 19.17,
+       "value": 19.61,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "RB2",
        "player_name": "Christian McCaffrey",
        "gsis_id": "00-0033280",
-       "value": 15.45,
+       "value": 18.44,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "WR/TE 1",
-       "player_name": "Christian Watson",
-       "gsis_id": "00-0038124",
-       "value": 12.7,
-       "change": null,
-       "status": null
+       "player_name": "Rashee Rice (new)",
+       "gsis_id": "00-0039067",
+       "value": 11.64,
+       "change": 11.64,
+       "no_projection": false,
+       "status": "new",
+       "fill": false
       },
       {
        "slot": "WR/TE 2",
-       "player_name": "Rashee Rice (new)",
-       "gsis_id": "00-0039067",
-       "value": 10.24,
-       "change": 10.24,
-       "status": "new"
+       "player_name": "Christian Watson",
+       "gsis_id": "00-0038124",
+       "value": 11.12,
+       "change": null,
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "WR/TE 3",
        "player_name": "Malik Nabers",
        "gsis_id": "00-0039337",
-       "value": 7.11,
+       "value": 7.57,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "team K",
        "player_name": "Houston Texans K",
        "gsis_id": null,
-       "value": 12.89,
+       "value": 13.01,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "DEF",
        "player_name": "Jacksonville Jaguars",
        "gsis_id": null,
-       "value": 10.81,
+       "value": 10.74,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       }
      ],
      "notes": [
-      "Starts after the trade: Rashee Rice (WR/TE 2, 10.24, new).",
-      "Out of the lineup after the trade: Ladd McConkey (WR/TE 3, 6.88, to the bench)."
+      "Rashee Rice (from the trade) starts at WR/TE in place of Jordan Addison (to the bench)."
      ],
-     "closest_call": "Malik Nabers at WR/TE 3, 0.23 ahead of the next option",
+     "closest_call": "Malik Nabers at WR/TE 3, 0.49 ahead of the next option",
      "out": [
       {
        "slot": "WR/TE",
-       "player_name": "Ladd McConkey",
-       "gsis_id": "00-0039915",
-       "value": 6.88,
-       "change": -6.88,
+       "player_name": "Jordan Addison",
+       "gsis_id": "00-0038994",
+       "value": 7.08,
+       "change": -7.08,
        "why": "to the bench"
       }
      ],
-     "reshuffled": [
-      "Nabers WR/TE 2 → WR/TE 3"
-     ],
+     "reshuffled": [],
      "total": {
-      "before": 115.41,
-      "after": 118.77,
-      "change": 3.36
+      "before": 119.33,
+      "after": 123.89,
+      "change": 4.56
      }
     },
     "theirs": {
@@ -1989,89 +2012,102 @@
        "slot": "team QB",
        "player_name": "Kansas City Chiefs QB",
        "gsis_id": null,
-       "value": 32.16,
+       "value": 32.5,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "RB1",
        "player_name": "Jahmyr Gibbs",
        "gsis_id": "00-0039139",
-       "value": 23.86,
+       "value": 26.56,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "RB2",
        "player_name": "D'Andre Swift",
        "gsis_id": "00-0036275",
-       "value": 14.97,
+       "value": 15.16,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "WR/TE 1",
        "player_name": "Travis Kelce",
        "gsis_id": "00-0030506",
-       "value": 10.41,
+       "value": 8.24,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "WR/TE 2",
-       "player_name": "Tre Tucker",
-       "gsis_id": "00-0038563",
-       "value": 8.27,
+       "player_name": "George Kittle",
+       "gsis_id": "00-0033288",
+       "value": 7.41,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "WR/TE 3",
-       "player_name": "George Kittle",
-       "gsis_id": "00-0033288",
-       "value": 8.19,
-       "change": 8.19,
-       "status": "in"
+       "player_name": "Tre Tucker",
+       "gsis_id": "00-0038563",
+       "value": 6.87,
+       "change": 6.87,
+       "no_projection": false,
+       "status": "in",
+       "fill": false
       },
       {
        "slot": "team K",
        "player_name": "Baltimore Ravens K",
        "gsis_id": null,
-       "value": 9.78,
+       "value": 10.24,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       },
       {
        "slot": "DEF",
        "player_name": "Philadelphia Eagles",
        "gsis_id": null,
-       "value": 7.77,
+       "value": 8.06,
        "change": null,
-       "status": null
+       "no_projection": false,
+       "status": null,
+       "fill": false
       }
      ],
      "notes": [
-      "Starts after the trade: George Kittle (WR/TE 3, 8.19, from the bench).",
-      "Out of the lineup after the trade: Rashee Rice (WR/TE 2, 10.24, traded)."
+      "Tre Tucker (from the bench) starts at WR/TE in place of Rashee Rice (traded)."
      ],
-     "closest_call": "George Kittle at WR/TE 3, 2.03 ahead of the next option",
+     "closest_call": "Tre Tucker at WR/TE 3, 1.26 ahead of the next option",
      "out": [
       {
        "slot": "WR/TE",
        "player_name": "Rashee Rice",
        "gsis_id": "00-0039067",
-       "value": 10.24,
-       "change": -10.24,
+       "value": 11.64,
+       "change": -11.64,
        "why": "traded"
       }
      ],
-     "reshuffled": [
-      "Tucker WR/TE 3 → WR/TE 2"
-     ],
+     "reshuffled": [],
      "total": {
-      "before": 117.46,
-      "after": 115.41,
-      "change": -2.05
+      "before": 119.81,
+      "after": 115.04,
+      "change": -4.77
      }
     }
    },
@@ -2086,61 +2122,61 @@
       "position": "WR",
       "team": "KC",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
-      "this_week": 10.24,
+      "this_week": 11.64,
       "cannot_play": null,
-      "market_price": 7,
-      "season_points": 134,
+      "market_price": 40,
+      "season_points": 165,
       "roster_id": 12
      },
      "slot": "WR/TE",
-     "value": 10.24,
+     "value": 11.64,
      "how": "trade"
     }
    ],
    "starters_out": [
     {
      "player": {
-      "sleeper_id": "11635",
-      "gsis_id": "00-0039915",
-      "player_name": "Ladd McConkey",
+      "sleeper_id": "9756",
+      "gsis_id": "00-0038994",
+      "player_name": "Jordan Addison",
       "position": "WR",
-      "team": "LAC",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/q2sk7yforrkiusvruo1o",
-      "this_week": 6.88,
+      "team": "MIN",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mi4lzk9gvjrvo6rwdf1e",
+      "this_week": 7.08,
       "cannot_play": null,
       "market_price": 0,
-      "season_points": 102,
+      "season_points": 121,
       "roster_id": 8
      },
      "slot": "WR/TE",
-     "value": 6.88,
+     "value": 7.08,
      "why": "to the bench"
     }
    ],
    "cut": [],
-   "effect_words": "Your starting lineup: about 3.4 more points this week, about 10 more in total over weeks 4–7.",
-   "lineup_words": "Rice starts at WR/TE; McConkey to the bench.",
-   "backup_words": "Backup coverage: you lose Tuten, a backup RB (1 RB left on your bench).",
+   "effect_words": "Your starting lineup: about 4.6 more points this week, about 14 more in total over weeks 4\u20137.",
+   "lineup_words": "Rashee Rice (from the trade) starts at WR/TE in place of Jordan Addison (to the bench).",
+   "backup_words": "Backup coverage: you lose Bhayshul Tuten, a backup RB: 1 RB left on your bench who can play in week 4.",
    "their_change": {
-    "gain_week": -2.05,
-    "gain_window": -2.67,
+    "gain_week": -4.77,
+    "gain_window": -11.06,
     "starters_in": [
      {
       "player": {
-       "sleeper_id": "4217",
-       "gsis_id": "00-0033288",
-       "player_name": "George Kittle",
-       "position": "TE",
-       "team": "SF",
-       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
-       "this_week": 8.19,
+       "sleeper_id": "10213",
+       "gsis_id": "00-0038563",
+       "player_name": "Tre Tucker",
+       "position": "WR",
+       "team": "LV",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hazzk3hrcequzosdgzgv",
+       "this_week": 6.87,
        "cannot_play": null,
        "market_price": 0,
-       "season_points": 121,
+       "season_points": 105,
        "roster_id": 12
       },
       "slot": "WR/TE",
-      "value": 8.19,
+      "value": 6.87,
       "how": "bench"
      }
     ],
@@ -2153,50 +2189,964 @@
        "position": "WR",
        "team": "KC",
        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
-       "this_week": 10.24,
+       "this_week": 11.64,
        "cannot_play": null,
-       "market_price": 7,
-       "season_points": 134,
+       "market_price": 40,
+       "season_points": 165,
        "roster_id": 12
       },
       "slot": "WR/TE",
-      "value": 10.24,
+      "value": 11.64,
       "why": "traded"
      }
     ],
-    "effect_words": "Madeyes Revenge's starting lineup: about 2.0 fewer points this week, about 3 fewer in total over weeks 4–7.",
-    "lineup_words": "Kittle starts at WR/TE; Rice goes to you."
+    "effect_words": "Madeyes Revenge's starting lineup: about 4.8 fewer points this week, about 11 fewer in total over weeks 4\u20137.",
+    "lineup_words": "Tre Tucker (from the bench) starts at WR/TE in place of Rashee Rice (traded)."
    },
-   "window_words": "over weeks 4–7 in total",
-   "hold_words": "Standing pat keeps your starting lineup at 115.4 projected points this week. The best free agent for the same need, Devaughn Vele (WR), adds about 9 points to your starting lineup in total over weeks 4–7: about as much as this trade (a claim also needs a roster spot).",
+   "window_words": "over weeks 4\u20137 in total",
+   "hold_words": "+13.6 over weeks 4\u20137, 13.6 more than your best waiver move (add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
    "hold": {
-    "hold": "Standing pat keeps your starting lineup at 115.4 projected points this week.",
-    "waiver": "The best free agent for the same need, Devaughn Vele (WR), adds about 9 points to your starting lineup in total over weeks 4–7: about as much as this trade (a claim also needs a roster spot).",
-    "waiver_gain": 9.08,
-    "waiver_player": {
-     "sleeper_id": "11834",
-     "player_name": "Devaughn Vele",
-     "position": "WR",
-     "gsis_id": "00-0039424"
-    }
+    "hold": null,
+    "waiver": "+13.6 over weeks 4\u20137, 13.6 more than your best waiver move (add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
+    "waiver_gain": 0.0
    },
    "how": {
-    "fit": "**Improvement to your starting lineup** (best lineup each week): you **+3.4** this week and **+9.5** over weeks 4–7; them **-2.0** and **-2.7**.",
-    "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **14**, you get **7**: about even.",
-    "ros": "Rest of season (weeks 4–18, through this league's final): you give **138** points, you get **134** (-4) — the players' plain totals, before the roster spot a lopsided trade frees or fills and before your lineup is re-solved (the verdict above counts both). Only this week has betting lines; later weeks lean on usage and the schedule.",
+    "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.6** this week and **+13.6** over weeks 4\u20137; them **-4.8** and **-11.1**.",
+    "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **15**, you get **40**: you get 25 more.",
+    "ros": "Rest-of-season projected points (weeks 4\u201318), all positions added up \u2014 not a fairness test: you give 142, you get 165.",
     "size": "Roster size: no change (1 for 1).",
-    "ranks": "League rank, week 4: you 6th → **5th** of 12, Madeyes Revenge 5th → 6th; weeks 4–7: you 6th → **5th** of 12, Madeyes Revenge 10th → 10th; depth: you 10th → **10th** of 12, Madeyes Revenge 7th → 6th."
+    "ranks": "League rank, week 4: you 4th \u2192 **1st** of 12, Madeyes Revenge 3rd \u2192 7th; weeks 4\u20137: you 7th \u2192 **4th** of 12, Madeyes Revenge 9th \u2192 10th; depth: you 2nd \u2192 **5th** of 12, Madeyes Revenge 6th \u2192 3rd.",
+    "season_value": "Season value above replacement: you give 15, you get 40 (you get 25 more)."
+   },
+   "alternative": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "CHI",
+     "gsis_id": null,
+     "player_name": "Chicago Bears",
+     "position": "DEF",
+     "team": "CHI",
+     "headshot_url": null
+    },
+    "drop": null,
+    "open_spot": true,
+    "gain_week": 2.08,
+    "gain_window": 0.0,
+    "starter_gain_week": 2.08,
+    "starter_gain_window": 11.89,
+    "by_week": [
+     2.08,
+     0.0,
+     0.0,
+     9.81
+    ],
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "span": "weeks 4\u20137",
+    "drop_cost": null,
+    "words": "add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else",
+    "source": "waivers.best_waiver_move",
+    "covered_by_week": [
+     2.08,
+     0.0,
+     0.0,
+     -2.08
+    ],
+    "covered_window": 0.0,
+    "covered_week": 2.08,
+    "availability": "guaranteed",
+    "availability_words": "first come, first served: he is yours if you add him before anyone else"
+   },
+   "beyond_alternative": 13.62,
+   "beats_alternative": true,
+   "alternative_words": "+13.6 over weeks 4\u20137, 13.6 more than your best waiver move (add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
+   "other_objective": null,
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     4.56,
+     0.0,
+     5.54,
+     3.52
+    ],
+    "theirs": [
+     -4.77,
+     0.0,
+     -2.06,
+     -4.23
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": 4.56,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 13.62,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": 4.56
+     },
+     {
+      "week": 5,
+      "change": 0.0
+     },
+     {
+      "week": 6,
+      "change": 5.54
+     },
+     {
+      "week": 7,
+      "change": 3.52
+     }
+    ],
+    "words": "Your lineup gains 4.6 this week and 13.6 over weeks 4\u20137 in total."
+   },
+   "values": {
+    "projected_points": {
+     "label": "Projected points",
+     "words": "One player's forecast for one week, in this league's scoring (the lineup tables)."
+    },
+    "starter_points": {
+     "label": "Starter points",
+     "mine": 13.62,
+     "theirs": -11.06,
+     "this_week": {
+      "mine": 4.56,
+      "theirs": -4.77
+     },
+     "words": "Your starting lineup: about 4.6 more points this week, about 14 more in total over weeks 4\u20137."
+    },
+    "depth": {
+     "label": "Backup coverage",
+     "mine": {
+      "before": 50.83,
+      "after": 47.99
+     },
+     "theirs": {
+      "before": 45.59,
+      "after": 48.64
+     },
+     "words": "Backup coverage: you lose Bhayshul Tuten, a backup RB: 1 RB left on your bench who can play in week 4."
+    },
+    "season_value": {
+     "label": "Season value above replacement",
+     "give": 15,
+     "get": 40,
+     "unknown": [],
+     "fairness": true,
+     "words": "Season value above replacement: you give 15, you get 40 (you get 25 more)."
+    },
+    "ros_points": {
+     "label": "Rest-of-season projected points",
+     "give": 142,
+     "get": 165,
+     "window": "weeks 4\u201318",
+     "fairness": false,
+     "words": "Rest-of-season projected points (weeks 4\u201318), all positions added up \u2014 not a fairness test: you give 142, you get 165."
+    }
+   },
+   "card": {
+    "give": [
+     {
+      "sleeper_id": "12490",
+      "gsis_id": "00-0040719",
+      "player_name": "Bhayshul Tuten",
+      "position": "RB",
+      "team": "JAX",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+      "this_week": 9.92,
+      "cannot_play": null,
+      "market_price": 15,
+      "season_points": 142,
+      "roster_id": 8
+     }
+    ],
+    "get": [
+     {
+      "sleeper_id": "10229",
+      "gsis_id": "00-0039067",
+      "player_name": "Rashee Rice",
+      "position": "WR",
+      "team": "KC",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+      "this_week": 11.64,
+      "cannot_play": null,
+      "market_price": 40,
+      "season_points": 165,
+      "roster_id": 12
+     }
+    ],
+    "partner": 12,
+    "drops": {
+     "mine": [],
+     "theirs": []
+    },
+    "your_effect": {
+     "this_week": 4.56,
+     "window": 13.62,
+     "by_week": [
+      4.56,
+      0.0,
+      5.54,
+      3.52
+     ],
+     "raw_window": 13.62,
+     "words": "Your starters: +4.6 this week, +13.6 over weeks 4\u20137."
+    },
+    "their_effect": {
+     "this_week": -4.77,
+     "window": -11.06,
+     "by_week": [
+      -4.77,
+      0.0,
+      -2.06,
+      -4.23
+     ],
+     "raw_window": -11.06,
+     "words": "Madeyes Revenge's starters: -4.8 this week, -11.1 over weeks 4\u20137."
+    },
+    "depth_cost": {
+     "mine": "You lose Bhayshul Tuten, a backup RB: 1 RB left on your bench who can play in week 4.",
+     "theirs": null,
+     "roster_spots": 0,
+     "season_value": {
+      "give": 15,
+      "get": 40
+     },
+     "horizon": null
+    },
+    "waiver_alternative": {
+     "mine": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "CHI",
+       "gsis_id": null,
+       "player_name": "Chicago Bears",
+       "position": "DEF",
+       "team": "CHI",
+       "headshot_url": null
+      },
+      "drop": null,
+      "open_spot": true,
+      "gain_week": 2.08,
+      "gain_window": 11.89,
+      "starter_gain_week": 2.08,
+      "starter_gain_window": 11.89,
+      "by_week": [
+       2.08,
+       0.0,
+       0.0,
+       9.81
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4\u20137",
+      "drop_cost": null,
+      "words": "the Chicago Bears defense claim gives +11.9 over weeks 4\u20137 for an open spot",
+      "source": "waivers.best_waiver_move",
+      "covered_by_week": [
+       2.08,
+       0.0,
+       0.0,
+       -2.08
+      ],
+      "covered_window": 0.0,
+      "covered_week": 2.08,
+      "availability": "guaranteed",
+      "availability_words": "first come, first served: he is yours if you add him before anyone else"
+     },
+     "theirs": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "mfl:TMQB-ARI",
+       "gsis_id": null,
+       "player_name": "Arizona Cardinals QB",
+       "position": "TMQB",
+       "team": "ARI",
+       "headshot_url": null
+      },
+      "drop": {
+       "sleeper_id": "12489",
+       "gsis_id": "00-0040730",
+       "player_name": "RJ Harvey",
+       "position": "RB",
+       "team": null,
+       "headshot_url": null
+      },
+      "open_spot": false,
+      "gain_week": 0.0,
+      "gain_window": 36.66,
+      "starter_gain_week": 0.0,
+      "starter_gain_window": 36.66,
+      "by_week": [
+       0.0,
+       36.66,
+       0.0,
+       0.0
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4\u20137",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "depth_lost": 0.0,
+       "future_starts": 0.0,
+       "future_start_weeks": 0,
+       "season_value": 0.0,
+       "season_points": 102.51,
+       "replacement_points": 127.28,
+       "upside": null,
+       "cost": 0.0,
+       "piece": null,
+       "is_incumbent": false
+      },
+      "words": "the Arizona Cardinals QB claim gives +36.7 over weeks 4\u20137 (drop RJ Harvey)",
+      "source": "waivers.best_waiver_move",
+      "covered_by_week": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "covered_window": 0.0,
+      "covered_week": 0.0,
+      "availability": "guaranteed",
+      "availability_words": "first come, first served: he is yours if you add him before anyone else"
+     },
+     "words": "Yours: add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 (+11.9 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop RJ Harvey: +0.0 over weeks 4\u20137 (+36.7 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else)."
+    },
+    "beyond": {
+     "mine": 13.62,
+     "theirs": -11.06,
+     "margin": 1.0
+    },
+    "why_consider": [
+     "Bhayshul Tuten starts for them in week 6."
+    ],
+    "why_refuse": [
+     "Their starters lose 4.8 this week.",
+     "It does not improve their starters over weeks 4\u20137 (-11.1).",
+     "They give 40 season value above replacement for 15: 25 more, over 25% of what you give."
+    ],
+    "plausibility": {
+     "key": "implausible",
+     "label": "Implausible",
+     "reasons": [
+      "they give 40 season value above replacement for 15: 25 more, over 25% of what you give"
+     ]
+    },
+    "guardrails": [
+     {
+      "rule": "value_gap_theirs",
+      "words": "they give 40 season value above replacement for 15: 25 more, over 25% of what you give"
+     }
+    ],
+    "legal": {
+     "ok": true,
+     "notes": [],
+     "checks": [
+      "ownership (trades.clean_package)",
+      "roster limits and required cuts (trades._after)",
+      "locked players (RosterBoard.is_locked)",
+      "position requirements (lineup.solve)",
+      "trade deadline (league settings, not read on MFL)"
+     ]
+    },
+    "credible": false,
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: Madeyes Revenge's starters gain -11.1 beyond their own best move over weeks 4\u20137; they give 40 season value above replacement for 15: 25 more, over 25% of what you give.",
+     "plausibility": "Implausible"
+    }
+   },
+   "decision": {
+    "basis": "replacement",
+    "basis_label": "Against realistic replacements",
+    "basis_words": "Every number here fills an empty starting slot (a bye, a cut, a player traded away) with the best free agent who can play it that week, for both teams and never the same free agent for both, and compares the trade with each team's best waiver move.",
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "span": "weeks 4\u20137",
+    "window": "next4",
+    "this_week": 4,
+    "mine": {
+     "before": {
+      "this_week": 119.33,
+      "window": 454.21,
+      "by_week": [
+       119.33,
+       114.07,
+       108.51,
+       112.3
+      ]
+     },
+     "after": {
+      "this_week": 123.89,
+      "window": 467.83,
+      "by_week": [
+       123.89,
+       114.07,
+       114.05,
+       115.82
+      ]
+     },
+     "gain_week": 4.56,
+     "gain_window": 13.62,
+     "by_week": [
+      4.56,
+      0.0,
+      5.54,
+      3.52
+     ],
+     "cuts": []
+    },
+    "theirs": {
+     "before": {
+      "this_week": 119.81,
+      "window": 448.19,
+      "by_week": [
+       119.81,
+       112.94,
+       102.78,
+       112.66
+      ]
+     },
+     "after": {
+      "this_week": 115.04,
+      "window": 437.13,
+      "by_week": [
+       115.04,
+       112.94,
+       100.72,
+       108.43
+      ]
+     },
+     "gain_week": -4.77,
+     "gain_window": -11.06,
+     "by_week": [
+      -4.77,
+      0.0,
+      -2.06,
+      -4.23
+     ],
+     "cuts": []
+    },
+    "dial": {
+     "score": 0,
+     "label": "Makes their lineup weaker",
+     "their_gain": -11.06,
+     "you": 13.62,
+     "caption": "their starters over weeks 4\u20137, against realistic replacements",
+     "title": "Effect on their starters",
+     "need": "puts Tucker at their WR/TE in place of Rice"
+    },
+    "verdict": "Helps your lineup +4.6 this week (+13.6 over weeks 4\u20137), costs their lineup 4.8 (11.1 over weeks 4\u20137); you get more season value: a lineup loss for them.",
+    "headline": "**You give [Bhayshul Tuten](/player/00-0040719); you get [Rashee Rice](/player/00-0039067).** Helps your lineup +4.6 this week (+13.6 over weeks 4\u20137), costs their lineup 4.8 (11.1 over weeks 4\u20137); you get more season value: a lineup loss for them.",
+    "effect_words": "Your starting lineup: about 4.6 more points this week, about 14 more in total over weeks 4\u20137.",
+    "their_effect_words": "Madeyes Revenge's starting lineup: about 4.8 fewer points this week, about 11 fewer in total over weeks 4\u20137.",
+    "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.6** this week and **+13.6** over weeks 4\u20137; them **-4.8** and **-11.1**.",
+    "strip": {
+     "weeks": [
+      4,
+      5,
+      6,
+      7
+     ],
+     "mine": [
+      4.56,
+      0.0,
+      5.54,
+      3.52
+     ],
+     "theirs": [
+      -4.77,
+      0.0,
+      -2.06,
+      -4.23
+     ]
+    },
+    "story": {
+     "this_week": {
+      "week": 4,
+      "change": 4.56,
+      "kind": "gain"
+     },
+     "window": {
+      "change": 13.62,
+      "kind": "gain"
+     },
+     "by_week": [
+      {
+       "week": 4,
+       "change": 4.56
+      },
+      {
+       "week": 5,
+       "change": 0.0
+      },
+      {
+       "week": 6,
+       "change": 5.54
+      },
+      {
+       "week": 7,
+       "change": 3.52
+      }
+     ],
+     "words": "Your lineup gains 4.6 this week and 13.6 over weeks 4\u20137 in total."
+    },
+    "alternative": {
+     "mine": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "CHI",
+       "gsis_id": null,
+       "player_name": "Chicago Bears",
+       "position": "DEF",
+       "team": "CHI",
+       "headshot_url": null
+      },
+      "drop": null,
+      "open_spot": true,
+      "gain_week": 2.08,
+      "gain_window": 0.0,
+      "starter_gain_week": 2.08,
+      "starter_gain_window": 11.89,
+      "by_week": [
+       2.08,
+       0.0,
+       0.0,
+       9.81
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4\u20137",
+      "drop_cost": null,
+      "words": "add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else",
+      "source": "waivers.best_waiver_move",
+      "covered_by_week": [
+       2.08,
+       0.0,
+       0.0,
+       -2.08
+      ],
+      "covered_window": 0.0,
+      "covered_week": 2.08,
+      "availability": "guaranteed",
+      "availability_words": "first come, first served: he is yours if you add him before anyone else"
+     },
+     "theirs": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "mfl:TMQB-ARI",
+       "gsis_id": null,
+       "player_name": "Arizona Cardinals QB",
+       "position": "TMQB",
+       "team": "ARI",
+       "headshot_url": null
+      },
+      "drop": {
+       "sleeper_id": "12489",
+       "gsis_id": "00-0040730",
+       "player_name": "RJ Harvey",
+       "position": "RB",
+       "team": null,
+       "headshot_url": null
+      },
+      "open_spot": false,
+      "gain_week": 0.0,
+      "gain_window": 36.66,
+      "starter_gain_week": 0.0,
+      "starter_gain_window": 36.66,
+      "by_week": [
+       0.0,
+       36.66,
+       0.0,
+       0.0
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4\u20137",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "depth_lost": 0.0,
+       "future_starts": 0.0,
+       "future_start_weeks": 0,
+       "season_value": 0.0,
+       "season_points": 102.51,
+       "replacement_points": 127.28,
+       "upside": null,
+       "cost": 0.0,
+       "piece": null,
+       "is_incumbent": false
+      },
+      "words": "add Arizona Cardinals QB, drop RJ Harvey: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else",
+      "source": "waivers.best_waiver_move",
+      "covered_by_week": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "covered_window": 0.0,
+      "covered_week": 0.0,
+      "availability": "guaranteed",
+      "availability_words": "first come, first served: he is yours if you add him before anyone else"
+     },
+     "beyond": {
+      "mine": 13.62,
+      "theirs": -11.06
+     },
+     "beats": true,
+     "words": "+13.6 over weeks 4\u20137, 13.6 more than your best waiver move (add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
+     "other_objective": null
+    },
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: Madeyes Revenge's starters gain -11.1 beyond their own best move over weeks 4\u20137; they give 40 season value above replacement for 15: 25 more, over 25% of what you give.",
+     "plausibility": "Implausible"
+    },
+    "changes": {
+     "mine": [
+      {
+       "slot": "WR+TE3",
+       "slot_type": "WR+TE",
+       "in": "10229",
+       "out": "9756",
+       "in_from": null,
+       "out_to": null,
+       "order": 6,
+       "slot_word": "WR/TE",
+       "in_how": "trade",
+       "out_why": "bench",
+       "in_player": {
+        "sleeper_id": "10229",
+        "gsis_id": "00-0039067",
+        "player_name": "Rashee Rice",
+        "position": "WR",
+        "team": "KC",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+        "this_week": 11.64,
+        "cannot_play": null,
+        "market_price": 40,
+        "season_points": 165,
+        "roster_id": 12
+       },
+       "out_player": {
+        "sleeper_id": "9756",
+        "gsis_id": "00-0038994",
+        "player_name": "Jordan Addison",
+        "position": "WR",
+        "team": "MIN",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mi4lzk9gvjrvo6rwdf1e",
+        "this_week": 7.08,
+        "cannot_play": null,
+        "market_price": 0,
+        "season_points": 121,
+        "roster_id": 8
+       },
+       "in_value": 11.64,
+       "out_value": 7.08,
+       "words": "Rashee Rice (from the trade) starts at WR/TE in place of Jordan Addison (to the bench)"
+      }
+     ],
+     "theirs": [
+      {
+       "slot": "WR+TE1",
+       "slot_type": "WR+TE",
+       "in": "10213",
+       "out": "10229",
+       "in_from": null,
+       "out_to": null,
+       "order": 4,
+       "slot_word": "WR/TE",
+       "in_how": "bench",
+       "out_why": "traded",
+       "in_player": {
+        "sleeper_id": "10213",
+        "gsis_id": "00-0038563",
+        "player_name": "Tre Tucker",
+        "position": "WR",
+        "team": "LV",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hazzk3hrcequzosdgzgv",
+        "this_week": 6.87,
+        "cannot_play": null,
+        "market_price": 0,
+        "season_points": 105,
+        "roster_id": 12
+       },
+       "out_player": {
+        "sleeper_id": "10229",
+        "gsis_id": "00-0039067",
+        "player_name": "Rashee Rice",
+        "position": "WR",
+        "team": "KC",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+        "this_week": 11.64,
+        "cannot_play": null,
+        "market_price": 40,
+        "season_points": 165,
+        "roster_id": 12
+       },
+       "in_value": 6.87,
+       "out_value": 11.64,
+       "words": "Tre Tucker (from the bench) starts at WR/TE in place of Rashee Rice (traded)"
+      }
+     ],
+     "words": {
+      "mine": [
+       "Rashee Rice (from the trade) starts at WR/TE in place of Jordan Addison (to the bench)"
+      ],
+      "theirs": [
+       "Tre Tucker (from the bench) starts at WR/TE in place of Rashee Rice (traded)"
+      ]
+     }
+    },
+    "depth": {
+     "mine": {
+      "words": "you lose Bhayshul Tuten, a backup RB: 1 RB left on your bench who can play in week 4",
+      "lost": [
+       {
+        "player": {
+         "sleeper_id": "12490",
+         "gsis_id": "00-0040719",
+         "player_name": "Bhayshul Tuten",
+         "position": "RB",
+         "team": "JAX",
+         "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+         "this_week": 9.92,
+         "cannot_play": null,
+         "market_price": 15,
+         "season_points": 142,
+         "roster_id": 8
+        },
+        "position": "RB",
+        "usable": [
+         "Blake Corum"
+        ],
+        "cannot_play": [],
+        "words": "you lose Bhayshul Tuten, a backup RB: 1 RB left on your bench who can play in week 4"
+       }
+      ],
+      "joins": []
+     },
+     "theirs": {
+      "words": "Tuten joins their bench as a backup RB",
+      "lost": [],
+      "joins": [
+       "Bhayshul Tuten"
+      ]
+     }
+    },
+    "fills": {
+     "mine": {
+      "rows": [
+       {
+        "week": 7,
+        "state": "before",
+        "player": {
+         "sleeper_id": "CAR",
+         "gsis_id": null,
+         "player_name": "Carolina Panthers",
+         "position": "DEF"
+        },
+        "value": 11.89
+       },
+       {
+        "week": 7,
+        "state": "after",
+        "player": {
+         "sleeper_id": "CAR",
+         "gsis_id": null,
+         "player_name": "Carolina Panthers",
+         "position": "DEF"
+        },
+        "value": 11.89
+       }
+      ],
+      "words": "Assumed pickups for your empty slots: without the trade, Carolina Panthers (DEF, week 7); with it, Carolina Panthers (DEF, week 7). Each is an assumed pickup, not a sure one: first come, first served: another team can add him first; on a full roster it also takes a bench spot for that week (not counted)."
+     },
+     "theirs": {
+      "rows": [
+       {
+        "week": 5,
+        "state": "before",
+        "player": {
+         "sleeper_id": "mfl:TMQB-ARI",
+         "gsis_id": null,
+         "player_name": "Arizona Cardinals QB",
+         "position": "TMQB"
+        },
+        "value": 36.66
+       },
+       {
+        "week": 5,
+        "state": "after",
+        "player": {
+         "sleeper_id": "mfl:TMQB-ARI",
+         "gsis_id": null,
+         "player_name": "Arizona Cardinals QB",
+         "position": "TMQB"
+        },
+        "value": 36.66
+       }
+      ],
+      "words": "Assumed pickups for Madeyes Revenge's empty slots: without the trade, Arizona Cardinals QB (TMQB, week 5); with it, Arizona Cardinals QB (TMQB, week 5). Each is an assumed pickup, not a sure one: first come, first served: another team can add him first; on a full roster it also takes a bench spot for that week (not counted)."
+     }
+    },
+    "unfilled": {
+     "label": "If empty slots were left empty",
+     "words": "With nobody added for an empty slot (it counts 0): your starters +4.6 this week, +13.6 over weeks 4\u20137; Madeyes Revenge's -4.8 and -11.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+     "mine": {
+      "gain_week": 4.56,
+      "gain_window": 13.62,
+      "by_week": [
+       4.56,
+       0.0,
+       5.54,
+       3.52
+      ],
+      "before": {
+       "this_week": 119.33,
+       "window": 442.32
+      },
+      "after": {
+       "this_week": 123.89,
+       "window": 455.94
+      }
+     },
+     "theirs": {
+      "gain_week": -4.77,
+      "gain_window": -11.06,
+      "by_week": [
+       -4.77,
+       0.0,
+       -2.06,
+       -4.23
+      ],
+      "before": {
+       "this_week": 119.81,
+       "window": 411.53
+      },
+      "after": {
+       "this_week": 115.04,
+       "window": 400.47
+      }
+     }
+    },
+    "out_indefinitely": null
    },
    "timings_ms": {
-    "context": 0,
-    "evaluate": 8.4,
-    "words": 83.8,
-    "total": 92.2,
-    "league.sleeper": 4.3,
-    "league.price": 1965.8,
-    "league.solve": 509.5,
-    "league.total": 2479.6
-   }
+    "context": 0.0,
+    "evaluate": 5.0,
+    "words": 34.3,
+    "total": 39.3,
+    "league.sleeper": 3.4,
+    "league.price": 1326.5,
+    "league.solve": 141.6,
+    "league.total": 1471.5
+   },
+   "provenance": {
+    "model_version": "v3.0",
+    "kd_model_version": null,
+    "published_at": "2026-10-05T12:21:31.576222+00:00",
+    "horizon": {
+     "first": 4,
+     "last": 7,
+     "market_week": 4,
+     "words": "weeks 4\u20137"
+    },
+    "checks": [
+     {
+      "span": "next",
+      "position": "RB",
+      "status": "graded",
+      "mae": 4.52,
+      "order": 0.686,
+      "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+      "words": "Running backs next week: graded (order 0.69)"
+     },
+     {
+      "span": "next",
+      "position": "WR",
+      "status": "graded",
+      "mae": 4.44,
+      "order": 0.618,
+      "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+      "words": "Receivers next week: graded (order 0.62)"
+     },
+     {
+      "span": "later",
+      "position": "RB",
+      "status": "graded",
+      "mae": 4.73,
+      "order": 0.636,
+      "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+      "words": "Running backs two to eight weeks ahead: graded (order 0.64)"
+     },
+     {
+      "span": "later",
+      "position": "WR",
+      "status": "graded",
+      "mae": 4.62,
+      "order": 0.569,
+      "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+      "words": "Receivers two to eight weeks ahead: graded (order 0.57)"
+     },
+     {
+      "span": "trade_gap",
+      "position": null,
+      "status": "not_graded",
+      "mae": null,
+      "order": null,
+      "ref": "docs/METRICS.md \u00a7 What each number has been checked against (IR-4)",
+      "words": "The trade's range: not graded"
+     }
+    ],
+    "status": "not_graded",
+    "beta": true,
+    "words": "Beta \u00b7 Model v3.0, data published 5 Oct, 8:21 am ET \u00b7 weeks 4\u20137 \u00b7 checked on 2021\u20132025: next week graded; two to eight weeks ahead graded; the trade's range not graded."
+   },
+   "caveats": [],
+   "caveat_effect": null,
+   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
   }
  },
  "/api/leagues?mfl_search=70587": {
@@ -2208,7 +3158,7 @@
     "name": "Make Football Great Again",
     "season": 2026,
     "total_rosters": 12,
-    "scoring_label": "12-team redraft · standard · 6‑pt pass TD",
+    "scoring_label": "12-team redraft \u00b7 standard \u00b7 6\u2011pt pass TD",
     "url": "https://www44.myfantasyleague.com/2026/home/70587",
     "platform": "mfl"
    },
@@ -2278,10 +3228,10 @@
    "unmapped": [],
    "players": 167,
    "mapped": 167,
-   "scoring_note": "Lineup read as team QB, 2 RB, 3 WR/TE, team K, DEF. Points allowed on a projection: the league's bands (0, 1–3) are spread over the defense projection's (0, 1–6, 7–13 …) by the average over each. Kicks of 50+ yards on a projection: priced at the 50–59 band (10); the projection does not split off 60+. Return touchdowns are not projected (they count on actual lines). 2-point conversions are not projected.",
+   "scoring_note": "Lineup read as team QB, 2 RB, 3 WR/TE, team K, DEF. Points allowed on a projection: the league's bands (0, 1\u20133) are spread over the defense projection's (0, 1\u20136, 7\u201313 \u2026) by the average over each. Kicks of 50+ yards on a projection: priced at the 50\u201359 band (10); the projection does not split off 60+. Return touchdowns are not projected (they count on actual lines). 2-point conversions are not projected.",
    "card": {
     "lineup": {
-     "text": "Your lineup: TMQB · 2 RB · 3 WR/TE · TMPK · DEF",
+     "text": "Your lineup: TMQB \u00b7 2 RB \u00b7 3 WR/TE \u00b7 TMPK \u00b7 DEF",
      "slots": [
       "TMQB",
       "RB1",
@@ -2296,21 +3246,21 @@
      "bench": 6
     },
     "scoring": {
-     "text": "TDs by distance 6 / 9 / 12 (0–9 / 10–39 / 40+ yards) · 1 pt per 10 rushing / receiving yards · 1 pt per 20 passing yards · +10 at 75 rushing (QB/WR/TE) / receiving (TE) · +10 at 100 rushing (RB) / receiving (RB/WR) · +10 at 250 passing · INT −3 · fumble lost −3 · FG by distance 3 / 5 / 10 / 15 · DEF points allowed 0 → 10, 1–3 → 8",
+     "text": "TDs by distance 6 / 9 / 12 (0\u20139 / 10\u201339 / 40+ yards) \u00b7 1 pt per 10 rushing / receiving yards \u00b7 1 pt per 20 passing yards \u00b7 +10 at 75 rushing (QB/WR/TE) / receiving (TE) \u00b7 +10 at 100 rushing (RB) / receiving (RB/WR) \u00b7 +10 at 250 passing \u00b7 INT \u22123 \u00b7 fumble lost \u22123 \u00b7 FG by distance 3 / 5 / 10 / 15 \u00b7 DEF points allowed 0 \u2192 10, 1\u20133 \u2192 8",
      "pieces": [
-      "TDs by distance 6 / 9 / 12 (0–9 / 10–39 / 40+ yards)",
+      "TDs by distance 6 / 9 / 12 (0\u20139 / 10\u201339 / 40+ yards)",
       "1 pt per 10 rushing / receiving yards",
       "1 pt per 20 passing yards",
-      "+10 at 75 rushing (QB/WR/TE) / receiving (TE) · +10 at 100 rushing (RB) / receiving (RB/WR) · +10 at 250 passing",
-      "INT −3",
-      "fumble lost −3",
+      "+10 at 75 rushing (QB/WR/TE) / receiving (TE) \u00b7 +10 at 100 rushing (RB) / receiving (RB/WR) \u00b7 +10 at 250 passing",
+      "INT \u22123",
+      "fumble lost \u22123",
       "FG by distance 3 / 5 / 10 / 15",
-      "DEF points allowed 0 → 10, 1–3 → 8"
+      "DEF points allowed 0 \u2192 10, 1\u20133 \u2192 8"
      ],
      "not_priced": [],
      "approximated": [
-      "points allowed on a projection: the league's bands (0, 1–3) are spread over the defense projection's (0, 1–6, 7–13 …) by the average over each",
-      "kicks of 50+ yards on a projection: priced at the 50–59 band (10); the projection does not split off 60+",
+      "points allowed on a projection: the league's bands (0, 1\u20133) are spread over the defense projection's (0, 1\u20136, 7\u201313 \u2026) by the average over each",
+      "kicks of 50+ yards on a projection: priced at the 50\u201359 band (10); the projection does not split off 60+",
       "return touchdowns are not projected (they count on actual lines)",
       "2-point conversions are not projected"
      ],
@@ -2333,8 +3283,8 @@
    ],
    "spec_unpriced": [],
    "spec_approximated": [
-    "points allowed on a projection: the league's bands (0, 1–3) are spread over the defense projection's (0, 1–6, 7–13 …) by the average over each",
-    "kicks of 50+ yards on a projection: priced at the 50–59 band (10); the projection does not split off 60+",
+    "points allowed on a projection: the league's bands (0, 1\u20133) are spread over the defense projection's (0, 1\u20136, 7\u201313 \u2026) by the average over each",
+    "kicks of 50+ yards on a projection: priced at the 50\u201359 band (10); the projection does not split off 60+",
     "return touchdowns are not projected (they count on actual lines)",
     "2-point conversions are not projected"
    ],

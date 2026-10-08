@@ -17,6 +17,11 @@ const FILE = join(import.meta.dirname, "..", "..", "fixtures", "ig1", "api_ig1.j
 const RECORD = process.env.IG1_RECORD ?? "";
 type Saved = { status: number; body: unknown };
 const saved: Record<string, Saved> = !RECORD && existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
+
+// ---- IR-2 fix: the calculator's saved answer (its `decision` is what the screen reads); the sign as `s1` prints it
+type Ev = { decision: { alternative: { words: string }; strip: { mine: number[]; theirs: number[] } }; values: { season_value: { words: string } } };
+const savedEval = (has: string): Ev =>
+  Object.entries(saved).find(([k]) => k.startsWith("/api/trades/evaluate") && k.includes(has))![1].body as Ev;
 const MINE = /\/api\/(my-week|trades\/(partners|evaluate)|team\?|player\/00-0035700\?)|mfl/i;
 const MFL = "mfl:70587";
 
@@ -102,7 +107,8 @@ test("the team QB is counted in the season value, and the Finder leaves out trad
   await expect(page.getByTestId("trade-alternative")).toBeVisible({ timeout: 90_000 });
   await page.getByTestId("why").locator("summary").first().click();
   const sv = page.getByTestId("season-value-words");
-  await expect(sv).toContainText("Season value above replacement: you give 14, you get 7 (about even).");
+  // IR-2 fix: the season value line is the saved answer's (re-saved: the team QB still counted, no "Not counted")
+  await expect(sv).toContainText(savedEval('"mfl:0682","12490"').values.season_value.words);
   await expect(sv).not.toContainText("Not counted");
   await expect(page.getByTestId("sanity")).toHaveCount(0);
   await noSidewaysScroll(page);

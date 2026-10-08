@@ -4,11 +4,11 @@
  "roster_id": 2,
  "partner": 1,
  "partner_team": "Daejon Loves PR team",
- "week": 4,
+ "week": 5,
  "weeks": [
-  4
+  5
  ],
- "span": "week 4",
+ "span": "week 5",
  "window": "week",
  "window_label": "This week",
  "window_why": "this week only: the lineup you set for Sunday",
@@ -20,10 +20,10 @@
    "position": "QB",
    "team": "KC",
    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
-   "this_week": 20.26,
-   "cannot_play": null,
-   "market_price": 17,
-   "season_points": 261,
+   "this_week": null,
+   "cannot_play": "bye",
+   "market_price": 20,
+   "season_points": 251,
    "roster_id": 2
   }
  ],
@@ -35,105 +35,107 @@
    "position": "QB",
    "team": "PHI",
    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
-   "this_week": 16.29,
+   "this_week": 17.07,
    "cannot_play": null,
    "market_price": 0,
-   "season_points": 234,
+   "season_points": 219,
    "roster_id": 1
   }
  ],
  "before": {
   "mine": {
-   "this_week": 113.54,
-   "horizon": 113.54,
-   "bench": 27.36,
+   "this_week": 127.12,
+   "horizon": 127.12,
+   "bench": 31.9,
    "by_week": [
-    113.54
+    127.12
    ]
   },
   "theirs": {
-   "this_week": 109.43,
-   "horizon": 109.43,
-   "bench": 23.24,
+   "this_week": 109.32,
+   "horizon": 109.32,
+   "bench": 37.3,
    "by_week": [
-    109.43
+    109.32
    ]
   }
  },
  "after": {
   "mine": {
-   "this_week": 111.45,
-   "horizon": 111.45,
-   "bench": 26.44,
+   "this_week": 123.29,
+   "horizon": 123.29,
+   "bench": 31.9,
    "by_week": [
-    111.45
+    123.29
    ]
   },
   "theirs": {
-   "this_week": 113.4,
-   "horizon": 113.4,
-   "bench": 23.24,
+   "this_week": 113.15,
+   "horizon": 113.15,
+   "bench": 37.3,
    "by_week": [
-    113.4
+    113.15
    ]
   }
  },
  "fit": {
   "this_week": {
-   "mine": -2.09,
-   "theirs": 3.97
+   "mine": -3.83,
+   "theirs": 3.83
   },
   "window": {
-   "mine": -2.09,
-   "theirs": 3.97
+   "mine": -3.83,
+   "theirs": 3.83
   },
   "next_4": {
-   "mine": -2.09,
-   "theirs": 3.97
+   "mine": -3.83,
+   "theirs": 3.83
   },
-  "words": "**Fit** (what the best lineups gain): you **-2.1** this week and **-2.1** over week 4; them **+4.0** and **+4.0**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **-3.8** over week 5; them **+3.8** and **+3.8**."
  },
  "interest": {
-  "score": 62,
-  "label": "Likely",
-  "their_gain": 3.97,
-  "you": -2.09,
-  "caption": "by our numbers over week 4"
+  "score": 61,
+  "label": "Improves their lineup",
+  "their_gain": 3.83,
+  "you": -3.83,
+  "caption": "their starters over week 5, against realistic replacements",
+  "title": "Effect on their starters",
+  "need": "puts Jacoby Brissett at their QB in place of Hurts"
  },
- "sanity": null,
+ "sanity": "you give 20 season value above replacement for 0: 20 more, over 25% of what you give",
  "market": {
-  "give": 17,
+  "give": 20,
   "get": 0,
-  "season_points_give": 261,
-  "season_points_get": 234,
+  "season_points_give": 251,
+  "season_points_get": 219,
   "unknown": [],
   "replacement": {
    "DEF": {
-    "season_points": 110,
-    "player_name": "Jacksonville Jaguars"
+    "season_points": 105,
+    "player_name": "Washington Commanders"
    },
    "K": {
-    "season_points": 127,
-    "player_name": "Chris Boswell"
+    "season_points": 121,
+    "player_name": "Cameron Dicker"
    },
    "QB": {
-    "season_points": 244,
+    "season_points": 231,
     "player_name": "Malik Willis"
    },
    "RB": {
-    "season_points": 128,
-    "player_name": "Alvin Kamara"
+    "season_points": 103,
+    "player_name": "Keaton Mitchell"
    },
    "TE": {
-    "season_points": 109,
-    "player_name": "Cade Otton"
+    "season_points": 104,
+    "player_name": "T.J. Hockenson"
    },
    "WR": {
-    "season_points": 122,
-    "player_name": "Malik Washington"
+    "season_points": 117,
+    "player_name": "KC Concepcion"
    }
   },
-  "words": "**Market** (season points above the best free agent at the position): you give **17**, you get **0**: you give 17 more.",
+  "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **20**, you get **0**: you give 20 more.",
   "players": [
    {
     "sleeper_id": "4046",
@@ -142,10 +144,10 @@
     "position": "QB",
     "team": "KC",
     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
-    "this_week": 20.26,
-    "cannot_play": null,
-    "market_price": 17,
-    "season_points": 261,
+    "this_week": null,
+    "cannot_play": "bye",
+    "market_price": 20,
+    "season_points": 251,
     "roster_id": 2,
     "goes_to": "Daejon Loves PR team"
    },
@@ -156,47 +158,49 @@
     "position": "QB",
     "team": "PHI",
     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
-    "this_week": 16.29,
+    "this_week": 17.07,
     "cannot_play": null,
     "market_price": 0,
-    "season_points": 234,
+    "season_points": 219,
     "roster_id": 1,
     "goes_to": "You"
    }
   ]
  },
- "verdict": "Does not help you (-2.1 this week, -2.1 over week 4), them +4.0 (+4.0 over week 4); the market says you're giving up more: skip it.",
- "headline": "**You give [Patrick Mahomes](/player/00-0033873); you get [Jalen Hurts](/player/00-0036389).** Does not help you (-2.1 this week, -2.1 over week 4), them +4.0 (+4.0 over week 4); the market says you're giving up more: skip it.",
+ "verdict": "Does not help your lineup (-3.8 this week, -3.8 over week 5), them +3.8 (+3.8 over week 5); you give up more season value: not worth it for your lineup.",
+ "headline": "**You give [Patrick Mahomes](/player/00-0033873); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (-3.8 this week, -3.8 over week 5), them +3.8 (+3.8 over week 5); you give up more season value: not worth it for your lineup.",
  "ros": {
-  "give": 225,
+  "give": 232,
   "get": 202,
   "window": "weeks 4–16",
-  "words": "Rest of season (weeks 4–16, through this league's final): you give **225** points, you get **202** (-23) — the players' plain totals, before the roster spot a lopsided trade frees or fills and before your lineup is re-solved (the verdict above counts both). Only this week has betting lines; later weeks lean on usage and the schedule."
+  "words": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 232, you get 202.",
+  "label": "Rest-of-season projected points",
+  "fairness": false
  },
  "ranks": {
   "lineup_value": {
    "mine": [
-    6,
-    10
+    10,
+    5
    ],
    "theirs": [
-    8,
-    7
+    9,
+    10
    ],
    "n": 10
   },
   "bench_value": {
    "mine": [
-    4,
-    9
+    6,
+    6
    ],
    "theirs": [
-    8,
-    10
+    5,
+    5
    ],
    "n": 10
   },
-  "words": "League rank, week 4: you 6th → **10th** of 10, Daejon Loves PR team 8th → 7th; depth: you 4th → **9th** of 10, Daejon Loves PR team 8th → 10th."
+  "words": "League rank, week 5: you 10th → **5th** of 10, Daejon Loves PR team 9th → 10th; depth: you 6th → **6th** of 10, Daejon Loves PR team 5th → 5th."
  },
  "size_words": "Roster size: no change (1 for 1).",
  "sides": {
@@ -211,10 +215,10 @@
      "position": "QB",
      "team": "KC",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
-     "this_week": 20.26,
-     "cannot_play": null,
-     "market_price": 17,
-     "season_points": 261,
+     "this_week": null,
+     "cannot_play": "bye",
+     "market_price": 20,
+     "season_points": 251,
      "roster_id": 2
     }
    ],
@@ -226,74 +230,60 @@
      "position": "QB",
      "team": "PHI",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
-     "this_week": 16.29,
+     "this_week": 17.07,
      "cannot_play": null,
      "market_price": 0,
-     "season_points": 234,
+     "season_points": 219,
      "roster_id": 1
     }
    ],
    "weeks": [
-    4
+    5
    ],
    "before": {
-    "this_week": 113.54,
-    "horizon": 113.54,
-    "bench": 27.36,
+    "this_week": 97.54,
+    "horizon": 97.54,
+    "bench": 31.9,
     "by_week": [
-     113.54
+     97.54
     ]
    },
    "after": {
-    "this_week": 111.45,
-    "horizon": 111.45,
-    "bench": 26.44,
+    "this_week": 114.61,
+    "horizon": 114.61,
+    "bench": 31.9,
     "by_week": [
-     111.45
+     114.61
     ]
    },
-   "gain_week": -2.09,
-   "gain_horizon": -2.09,
+   "gain_week": 17.07,
+   "gain_horizon": 17.07,
    "cuts": [],
    "limit": 15,
    "size_before": 15,
    "size_after": 15,
    "opened": 0,
    "fill": null,
-   "price_out": 17,
+   "price_out": 20,
    "price_in": 0,
-   "points_out": 261,
-   "points_in": 234,
+   "points_out": 251,
+   "points_in": 219,
    "starts": [
     {
-     "sleeper_id": "12545",
-     "gsis_id": "00-0040743",
-     "player_name": "Tyler Shough",
+     "sleeper_id": "6904",
+     "gsis_id": "00-0036389",
+     "player_name": "Jalen Hurts",
      "position": "QB",
-     "team": "NO",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
-     "this_week": 18.17,
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+     "this_week": 17.07,
      "cannot_play": null,
      "market_price": 0,
-     "season_points": 212,
-     "roster_id": 2
+     "season_points": 219,
+     "roster_id": 1
     }
    ],
-   "sits": [
-    {
-     "sleeper_id": "4046",
-     "gsis_id": "00-0033873",
-     "player_name": "Patrick Mahomes",
-     "position": "QB",
-     "team": "KC",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
-     "this_week": 20.26,
-     "cannot_play": null,
-     "market_price": 17,
-     "season_points": 261,
-     "roster_id": 2
-    }
-   ]
+   "sits": []
   },
   "theirs": {
    "roster_id": 1,
@@ -306,10 +296,10 @@
      "position": "QB",
      "team": "PHI",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
-     "this_week": 16.29,
+     "this_week": 17.07,
      "cannot_play": null,
      "market_price": 0,
-     "season_points": 234,
+     "season_points": 219,
      "roster_id": 1
     }
    ],
@@ -321,34 +311,34 @@
      "position": "QB",
      "team": "KC",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
-     "this_week": 20.26,
-     "cannot_play": null,
-     "market_price": 17,
-     "season_points": 261,
+     "this_week": null,
+     "cannot_play": "bye",
+     "market_price": 20,
+     "season_points": 251,
      "roster_id": 2
     }
    ],
    "weeks": [
-    4
+    5
    ],
    "before": {
-    "this_week": 109.43,
-    "horizon": 109.43,
-    "bench": 23.24,
+    "this_week": 99.9,
+    "horizon": 99.9,
+    "bench": 37.3,
     "by_week": [
-     109.43
+     99.9
     ]
    },
    "after": {
-    "this_week": 113.4,
-    "horizon": 113.4,
-    "bench": 23.24,
+    "this_week": 82.83,
+    "horizon": 82.83,
+    "bench": 37.3,
     "by_week": [
-     113.4
+     82.83
     ]
    },
-   "gain_week": 3.97,
-   "gain_horizon": 3.97,
+   "gain_week": -17.07,
+   "gain_horizon": -17.07,
    "cuts": [],
    "limit": 15,
    "size_before": 15,
@@ -356,24 +346,10 @@
    "opened": 0,
    "fill": null,
    "price_out": 0,
-   "price_in": 17,
-   "points_out": 234,
-   "points_in": 261,
-   "starts": [
-    {
-     "sleeper_id": "4046",
-     "gsis_id": "00-0033873",
-     "player_name": "Patrick Mahomes",
-     "position": "QB",
-     "team": "KC",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
-     "this_week": 20.26,
-     "cannot_play": null,
-     "market_price": 17,
-     "season_points": 261,
-     "roster_id": 2
-    }
-   ],
+   "price_in": 20,
+   "points_out": 219,
+   "points_in": 251,
+   "starts": [],
    "sits": [
     {
      "sleeper_id": "6904",
@@ -382,10 +358,10 @@
      "position": "QB",
      "team": "PHI",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
-     "this_week": 16.29,
+     "this_week": 17.07,
      "cannot_play": null,
      "market_price": 0,
-     "season_points": 234,
+     "season_points": 219,
      "roster_id": 1
     }
    ]
@@ -396,161 +372,1086 @@
    "slots": [
     {
      "slot": "QB",
-     "player_name": "Tyler Shough",
-     "gsis_id": "00-0040743",
-     "value": 18.17,
-     "change": -2.09
+     "player_name": "Jalen Hurts (new)",
+     "gsis_id": "00-0036389",
+     "value": 17.07,
+     "change": 17.07,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
     },
     {
      "slot": "RB1",
      "player_name": "Kyren Williams",
      "gsis_id": "00-0037840",
-     "value": 12.8,
-     "change": null
+     "value": 19.25,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "RB2",
      "player_name": "Omarion Hampton",
      "gsis_id": "00-0040666",
-     "value": 11.28,
-     "change": null
+     "value": 11.92,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "WR1",
-     "player_name": "Tetairoa McMillan",
-     "gsis_id": "00-0040124",
-     "value": 12.75,
-     "change": null
+     "player_name": "Puka Nacua",
+     "gsis_id": "00-0039075",
+     "value": 17.6,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "WR2",
-     "player_name": "Parker Washington",
-     "gsis_id": "00-0038606",
-     "value": 12.16,
-     "change": null
+     "player_name": "Michael Wilson",
+     "gsis_id": "00-0038559",
+     "value": 14.14,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "TE",
-     "player_name": "Travis Kelce",
-     "gsis_id": "00-0030506",
-     "value": 10.14,
-     "change": null
+     "player_name": "T.J. Hockenson (free agent for the week)",
+     "gsis_id": "00-0035229",
+     "value": 8.68,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": true
     },
     {
      "slot": "FLEX1",
-     "player_name": "Bhayshul Tuten",
-     "gsis_id": "00-0040719",
-     "value": 9.72,
-     "change": null
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 11.42,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "FLEX2",
-     "player_name": "Michael Wilson",
-     "gsis_id": "00-0038559",
-     "value": 9.2,
-     "change": null
+     "player_name": "Justin Jefferson",
+     "gsis_id": "00-0036322",
+     "value": 10.22,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "K",
-     "player_name": "Chase McLaughlin",
-     "gsis_id": "00-0035358",
-     "value": 8.07,
-     "change": null
+     "player_name": "Nick Folk",
+     "gsis_id": "00-0025565",
+     "value": 8.51,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "DEF",
-     "player_name": "Kansas City Chiefs",
+     "player_name": "Buffalo Bills",
      "gsis_id": null,
-     "value": 7.16,
-     "change": null
+     "value": 4.48,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     }
    ],
    "notes": [
-    "Starts after the trade: Tyler Shough (QB, 18.17, from the bench).",
-    "Out of the lineup after the trade: Patrick Mahomes (QB, 20.26, traded)."
+    "Jalen Hurts (from the trade) starts at QB in place of Jacoby Brissett (the free agent who would have covered it)."
    ],
-   "closest_call": "Michael Wilson at FLEX2, 0.01 ahead of the next option"
+   "closest_call": "Justin Jefferson at FLEX2, 0.36 ahead of the next option",
+   "out": [
+    {
+     "slot": "QB",
+     "player_name": "Jacoby Brissett",
+     "gsis_id": "00-0033119",
+     "value": 20.9,
+     "change": -20.9,
+     "why": "free agent no longer needed"
+    }
+   ],
+   "reshuffled": [],
+   "total": {
+    "before": 127.12,
+    "after": 123.29,
+    "change": -3.83
+   }
   },
   "theirs": {
    "slots": [
     {
      "slot": "QB",
-     "player_name": "Patrick Mahomes (new)",
-     "gsis_id": "00-0033873",
-     "value": 20.26,
-     "change": 3.97
+     "player_name": "Jacoby Brissett (free agent for the week)",
+     "gsis_id": "00-0033119",
+     "value": 20.9,
+     "change": 20.9,
+     "no_projection": false,
+     "status": "in",
+     "fill": true
     },
     {
      "slot": "RB1",
      "player_name": "Christian McCaffrey",
      "gsis_id": "00-0033280",
-     "value": 16.48,
-     "change": null
+     "value": 15.47,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "RB2",
      "player_name": "Cam Skattebo",
      "gsis_id": "00-0040715",
-     "value": 12.58,
-     "change": null
+     "value": 12.65,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "WR1",
      "player_name": "George Pickens",
      "gsis_id": "00-0037247",
-     "value": 10.78,
-     "change": null
+     "value": 11.56,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "WR2",
-     "player_name": "Emeka Egbuka",
-     "gsis_id": "00-0040129",
-     "value": 10.29,
-     "change": null
+     "player_name": "DK Metcalf",
+     "gsis_id": "00-0035640",
+     "value": 11.01,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "TE",
      "player_name": "Dalton Kincaid",
      "gsis_id": "00-0038933",
-     "value": 9.61,
-     "change": null
+     "value": 8.32,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "FLEX1",
-     "player_name": "TreVeyon Henderson",
-     "gsis_id": "00-0040734",
-     "value": 10.75,
-     "change": null
+     "player_name": "RJ Harvey",
+     "gsis_id": "00-0040730",
+     "value": 9.48,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "FLEX2",
-     "player_name": "RJ Harvey",
-     "gsis_id": "00-0040730",
-     "value": 8.65,
-     "change": null
+     "player_name": "TreVeyon Henderson",
+     "gsis_id": "00-0040734",
+     "value": 8.86,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     },
     {
      "slot": "K",
-     "player_name": "Harrison Butker",
-     "gsis_id": "00-0033303",
-     "value": 8.48,
-     "change": null
+     "player_name": "Ka'imi Fairbairn (free agent for the week)",
+     "gsis_id": "00-0032726",
+     "value": 9.42,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": true
     },
     {
      "slot": "DEF",
      "player_name": "Philadelphia Eagles",
      "gsis_id": null,
-     "value": 5.52,
-     "change": null
+     "value": 5.48,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
     }
    ],
    "notes": [
-    "Starts after the trade: Patrick Mahomes (QB, 20.26, new).",
-    "Out of the lineup after the trade: Jalen Hurts (QB, 16.29, traded)."
+    "Jacoby Brissett (a free agent for the week) starts at QB in place of Jalen Hurts (traded)."
    ],
-   "closest_call": "RJ Harvey at FLEX2, 0.17 ahead of the next option"
+   "closest_call": "TreVeyon Henderson at FLEX2, 0.08 ahead of the next option",
+   "out": [
+    {
+     "slot": "QB",
+     "player_name": "Jalen Hurts",
+     "gsis_id": "00-0036389",
+     "value": 17.07,
+     "change": -17.07,
+     "why": "traded"
+    }
+   ],
+   "reshuffled": [],
+   "total": {
+    "before": 109.32,
+    "after": 113.15,
+    "change": 3.83
+   }
   }
  },
  "fill_players": {},
- "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)"
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)",
+ "starters_in": [
+  {
+   "player": {
+    "sleeper_id": "6904",
+    "gsis_id": "00-0036389",
+    "player_name": "Jalen Hurts",
+    "position": "QB",
+    "team": "PHI",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+    "this_week": 17.07,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 219,
+    "roster_id": 1
+   },
+   "slot": "QB",
+   "value": 17.07,
+   "how": "trade"
+  }
+ ],
+ "starters_out": [
+  {
+   "player": {
+    "sleeper_id": "3257",
+    "gsis_id": "00-0033119",
+    "player_name": "Jacoby Brissett",
+    "position": "QB"
+   },
+   "slot": "QB",
+   "value": 20.9,
+   "why": "free agent no longer needed"
+  }
+ ],
+ "cut": [],
+ "effect_words": "Your starting lineup: about 3.8 fewer points this week.",
+ "lineup_words": "Jalen Hurts (from the trade) starts at QB in place of Jacoby Brissett (the free agent who would have covered it).",
+ "backup_words": "Backup coverage: you lose Patrick Mahomes, a QB who cannot play in week 5 (on a bye): no QB left on your bench who can play in week 5 (Bryce Young on a bye cannot).",
+ "their_change": {
+  "gain_week": 3.83,
+  "gain_window": 3.83,
+  "starters_in": [
+   {
+    "player": {
+     "sleeper_id": "3257",
+     "gsis_id": "00-0033119",
+     "player_name": "Jacoby Brissett",
+     "position": "QB"
+    },
+    "slot": "QB",
+    "value": 20.9,
+    "how": "free agent"
+   }
+  ],
+  "starters_out": [
+   {
+    "player": {
+     "sleeper_id": "6904",
+     "gsis_id": "00-0036389",
+     "player_name": "Jalen Hurts",
+     "position": "QB",
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+     "this_week": 17.07,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 219,
+     "roster_id": 1
+    },
+    "slot": "QB",
+    "value": 17.07,
+    "why": "traded"
+   }
+  ],
+  "effect_words": "Daejon Loves PR team's starting lineup: about 3.8 more points this week.",
+  "lineup_words": "Jacoby Brissett (a free agent for the week) starts at QB in place of Jalen Hurts (traded)."
+ },
+ "window_words": "this week",
+ "hold_words": "-3.8 this week, not more than your best waiver move (add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "hold": {
+  "hold": null,
+  "waiver": "-3.8 this week, not more than your best waiver move (add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver_gain": 0.0
+ },
+ "how": {
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **-3.8** over week 5; them **+3.8** and **+3.8**.",
+  "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **20**, you get **0**: you give 20 more.",
+  "ros": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 232, you get 202.",
+  "size": "Roster size: no change (1 for 1).",
+  "ranks": "League rank, week 5: you 10th → **5th** of 10, Daejon Loves PR team 9th → 10th; depth: you 6th → **6th** of 10, Daejon Loves PR team 5th → 5th.",
+  "season_value": "Season value above replacement: you give 20, you get 0 (you give 20 more)."
+ },
+ "alternative": {
+  "kind": "waiver",
+  "player": {
+   "sleeper_id": "3257",
+   "gsis_id": "00-0033119",
+   "player_name": "Jacoby Brissett",
+   "position": "QB"
+  },
+  "drop": {
+   "sleeper_id": "11643",
+   "gsis_id": "00-0039874",
+   "player_name": "Jaylen Wright",
+   "position": "RB"
+  },
+  "open_spot": false,
+  "gain_week": 0.0,
+  "gain_window": 0.0,
+  "by_week": [
+   20.9
+  ],
+  "weeks": [
+   5
+  ],
+  "span": "week 5",
+  "source": "fa_pool fill",
+  "note": null,
+  "words": "add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "covered_by_week": [
+   0.0
+  ],
+  "covered_window": 0.0,
+  "covered_week": 0.0,
+  "availability": "claim",
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+ },
+ "beyond_alternative": -3.83,
+ "beats_alternative": false,
+ "alternative_words": "-3.8 this week, not more than your best waiver move (add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "other_objective": null,
+ "strip": {
+  "weeks": [
+   5
+  ],
+  "mine": [
+   -3.83
+  ],
+  "theirs": [
+   3.83
+  ]
+ },
+ "story": {
+  "this_week": {
+   "week": 5,
+   "change": -3.83,
+   "kind": "loss"
+  },
+  "window": {
+   "change": -3.83,
+   "kind": "loss"
+  },
+  "by_week": [
+   {
+    "week": 5,
+    "change": -3.83
+   }
+  ],
+  "words": "Your lineup loses 3.8 this week."
+ },
+ "values": {
+  "projected_points": {
+   "label": "Projected points",
+   "words": "One player's forecast for one week, in this league's scoring (the lineup tables)."
+  },
+  "starter_points": {
+   "label": "Starter points",
+   "mine": -3.83,
+   "theirs": 3.83,
+   "this_week": {
+    "mine": -3.83,
+    "theirs": 3.83
+   },
+   "words": "Your starting lineup: about 3.8 fewer points this week."
+  },
+  "depth": {
+   "label": "Backup coverage",
+   "mine": {
+    "before": 31.9,
+    "after": 31.9
+   },
+   "theirs": {
+    "before": 37.3,
+    "after": 37.3
+   },
+   "words": "Backup coverage: you lose Patrick Mahomes, a QB who cannot play in week 5 (on a bye): no QB left on your bench who can play in week 5 (Bryce Young on a bye cannot)."
+  },
+  "season_value": {
+   "label": "Season value above replacement",
+   "give": 20,
+   "get": 0,
+   "unknown": [],
+   "fairness": true,
+   "words": "Season value above replacement: you give 20, you get 0 (you give 20 more)."
+  },
+  "ros_points": {
+   "label": "Rest-of-season projected points",
+   "give": 232,
+   "get": 202,
+   "window": "weeks 4–16",
+   "fairness": false,
+   "words": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 232, you get 202."
+  }
+ },
+ "card": {
+  "give": [
+   {
+    "sleeper_id": "4046",
+    "gsis_id": "00-0033873",
+    "player_name": "Patrick Mahomes",
+    "position": "QB",
+    "team": "KC",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+    "this_week": null,
+    "cannot_play": "bye",
+    "market_price": 20,
+    "season_points": 251,
+    "roster_id": 2
+   }
+  ],
+  "get": [
+   {
+    "sleeper_id": "6904",
+    "gsis_id": "00-0036389",
+    "player_name": "Jalen Hurts",
+    "position": "QB",
+    "team": "PHI",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+    "this_week": 17.07,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 219,
+    "roster_id": 1
+   }
+  ],
+  "partner": 1,
+  "drops": {
+   "mine": [],
+   "theirs": []
+  },
+  "your_effect": {
+   "this_week": -3.83,
+   "window": -3.83,
+   "by_week": [
+    -3.83
+   ],
+   "raw_window": 17.07,
+   "words": "Your starters: -3.8 this week (+17.1 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+  },
+  "their_effect": {
+   "this_week": 3.83,
+   "window": 3.83,
+   "by_week": [
+    3.83
+   ],
+   "raw_window": -17.07,
+   "words": "Daejon Loves PR team's starters: +3.8 this week (-17.1 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+  },
+  "depth_cost": {
+   "mine": "You lose Patrick Mahomes, a QB who cannot play in week 5 (on a bye): no QB left on your bench who can play in week 5 (Bryce Young on a bye cannot).",
+   "theirs": null,
+   "roster_spots": 0,
+   "season_value": {
+    "give": 20,
+    "get": 0
+   },
+   "horizon": null
+  },
+  "waiver_alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "3257",
+     "gsis_id": "00-0033119",
+     "player_name": "Jacoby Brissett",
+     "position": "QB"
+    },
+    "drop": {
+     "sleeper_id": "11643",
+     "gsis_id": "00-0039874",
+     "player_name": "Jaylen Wright",
+     "position": "RB"
+    },
+    "open_spot": false,
+    "gain_week": 20.9,
+    "gain_window": 20.9,
+    "by_week": [
+     20.9
+    ],
+    "weeks": [
+     5
+    ],
+    "span": "week 5",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Jacoby Brissett claim gives +20.9 this week (drop Jaylen Wright)",
+    "covered_by_week": [
+     0.0
+    ],
+    "covered_window": 0.0,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "3451",
+     "gsis_id": "00-0032726",
+     "player_name": "Ka'imi Fairbairn",
+     "position": "K"
+    },
+    "drop": {
+     "sleeper_id": "4227",
+     "gsis_id": "00-0033303",
+     "player_name": "Harrison Butker",
+     "position": "K"
+    },
+    "open_spot": false,
+    "gain_week": 9.42,
+    "gain_window": 9.42,
+    "by_week": [
+     9.42
+    ],
+    "weeks": [
+     5
+    ],
+    "span": "week 5",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Ka'imi Fairbairn claim gives +9.4 this week (drop Harrison Butker)",
+    "covered_by_week": [
+     0.0
+    ],
+    "covered_window": 0.0,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "words": "Yours: add Jacoby Brissett, drop Jaylen Wright: +0.0 this week (+20.9 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Ka'imi Fairbairn, drop Harrison Butker: +0.0 this week (+9.4 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+  },
+  "beyond": {
+   "mine": -3.83,
+   "theirs": 3.83,
+   "margin": 1.0
+  },
+  "why_consider": [
+   "Their starters gain +3.8 this week, 3.8 more than their best waiver move (+0.0 once empty slots are filled from the free pool).",
+   "They get more season value above replacement: 20 for 0."
+  ],
+  "why_refuse": [
+   "Our numbers only: no market price for Patrick Mahomes: this is how the rosters fit, not what the players would fetch."
+  ],
+  "plausibility": {
+   "key": "roster_fit",
+   "label": "A roster-fit idea",
+   "reasons": [
+    "no market price for Patrick Mahomes: this is how the rosters fit, not what the players would fetch"
+   ]
+  },
+  "guardrails": [],
+  "legal": {
+   "ok": true,
+   "notes": [
+    "Daejon Loves PR team would have nobody for QB in week 5: counted with the best free agent there, not as an empty slot."
+   ],
+   "checks": [
+    "ownership (trades.clean_package)",
+    "roster limits and required cuts (trades._after)",
+    "locked players (RosterBoard.is_locked)",
+    "position requirements (lineup.solve)",
+    "trade deadline (league settings)"
+   ]
+  },
+  "credible": false,
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "words": "Not worth proposing: your starters gain -3.8 beyond your best waiver move this week (the bar is 1 point).",
+   "plausibility": "A roster-fit idea"
+  }
+ },
+ "decision": {
+  "basis": "replacement",
+  "basis_label": "Against realistic replacements",
+  "basis_words": "Every number here fills an empty starting slot (a bye, a cut, a player traded away) with the best free agent who can play it that week, for both teams and never the same free agent for both, and compares the trade with each team's best waiver move.",
+  "weeks": [
+   5
+  ],
+  "span": "week 5",
+  "window": "week",
+  "this_week": 5,
+  "mine": {
+   "before": {
+    "this_week": 127.12,
+    "window": 127.12,
+    "by_week": [
+     127.12
+    ]
+   },
+   "after": {
+    "this_week": 123.29,
+    "window": 123.29,
+    "by_week": [
+     123.29
+    ]
+   },
+   "gain_week": -3.83,
+   "gain_window": -3.83,
+   "by_week": [
+    -3.83
+   ],
+   "cuts": []
+  },
+  "theirs": {
+   "before": {
+    "this_week": 109.32,
+    "window": 109.32,
+    "by_week": [
+     109.32
+    ]
+   },
+   "after": {
+    "this_week": 113.15,
+    "window": 113.15,
+    "by_week": [
+     113.15
+    ]
+   },
+   "gain_week": 3.83,
+   "gain_window": 3.83,
+   "by_week": [
+    3.83
+   ],
+   "cuts": []
+  },
+  "dial": {
+   "score": 61,
+   "label": "Improves their lineup",
+   "their_gain": 3.83,
+   "you": -3.83,
+   "caption": "their starters over week 5, against realistic replacements",
+   "title": "Effect on their starters",
+   "need": "puts Jacoby Brissett at their QB in place of Hurts"
+  },
+  "verdict": "Does not help your lineup (-3.8 this week, -3.8 over week 5), them +3.8 (+3.8 over week 5); you give up more season value: not worth it for your lineup.",
+  "headline": "**You give [Patrick Mahomes](/player/00-0033873); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (-3.8 this week, -3.8 over week 5), them +3.8 (+3.8 over week 5); you give up more season value: not worth it for your lineup.",
+  "effect_words": "Your starting lineup: about 3.8 fewer points this week.",
+  "their_effect_words": "Daejon Loves PR team's starting lineup: about 3.8 more points this week.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **-3.8** over week 5; them **+3.8** and **+3.8**.",
+  "strip": {
+   "weeks": [
+    5
+   ],
+   "mine": [
+    -3.83
+   ],
+   "theirs": [
+    3.83
+   ]
+  },
+  "story": {
+   "this_week": {
+    "week": 5,
+    "change": -3.83,
+    "kind": "loss"
+   },
+   "window": {
+    "change": -3.83,
+    "kind": "loss"
+   },
+   "by_week": [
+    {
+     "week": 5,
+     "change": -3.83
+    }
+   ],
+   "words": "Your lineup loses 3.8 this week."
+  },
+  "alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "3257",
+     "gsis_id": "00-0033119",
+     "player_name": "Jacoby Brissett",
+     "position": "QB"
+    },
+    "drop": {
+     "sleeper_id": "11643",
+     "gsis_id": "00-0039874",
+     "player_name": "Jaylen Wright",
+     "position": "RB"
+    },
+    "open_spot": false,
+    "gain_week": 0.0,
+    "gain_window": 0.0,
+    "by_week": [
+     20.9
+    ],
+    "weeks": [
+     5
+    ],
+    "span": "week 5",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     0.0
+    ],
+    "covered_window": 0.0,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "3451",
+     "gsis_id": "00-0032726",
+     "player_name": "Ka'imi Fairbairn",
+     "position": "K"
+    },
+    "drop": {
+     "sleeper_id": "4227",
+     "gsis_id": "00-0033303",
+     "player_name": "Harrison Butker",
+     "position": "K"
+    },
+    "open_spot": false,
+    "gain_week": 9.42,
+    "gain_window": 9.42,
+    "by_week": [
+     9.42
+    ],
+    "weeks": [
+     5
+    ],
+    "span": "week 5",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Ka'imi Fairbairn, drop Harrison Butker: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     0.0
+    ],
+    "covered_window": 0.0,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "beyond": {
+    "mine": -3.83,
+    "theirs": 3.83
+   },
+   "beats": false,
+   "words": "-3.8 this week, not more than your best waiver move (add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "other_objective": null
+  },
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "words": "Not worth proposing: your starters gain -3.8 beyond your best waiver move this week (the bar is 1 point).",
+   "plausibility": "A roster-fit idea"
+  },
+  "changes": {
+   "mine": [
+    {
+     "slot": "QB",
+     "slot_type": "QB",
+     "in": "6904",
+     "out": "3257",
+     "in_from": null,
+     "out_to": null,
+     "order": 1,
+     "slot_word": "QB",
+     "in_how": "trade",
+     "out_why": "free agent no longer needed",
+     "in_player": {
+      "sleeper_id": "6904",
+      "gsis_id": "00-0036389",
+      "player_name": "Jalen Hurts",
+      "position": "QB",
+      "team": "PHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+      "this_week": 17.07,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 219,
+      "roster_id": 1
+     },
+     "out_player": {
+      "sleeper_id": "3257",
+      "gsis_id": "00-0033119",
+      "player_name": "Jacoby Brissett",
+      "position": "QB"
+     },
+     "in_value": 17.07,
+     "out_value": 20.9,
+     "words": "Jalen Hurts (from the trade) starts at QB in place of Jacoby Brissett (the free agent who would have covered it)"
+    }
+   ],
+   "theirs": [
+    {
+     "slot": "QB",
+     "slot_type": "QB",
+     "in": "3257",
+     "out": "6904",
+     "in_from": null,
+     "out_to": null,
+     "order": 1,
+     "slot_word": "QB",
+     "in_how": "free agent",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "3257",
+      "gsis_id": "00-0033119",
+      "player_name": "Jacoby Brissett",
+      "position": "QB"
+     },
+     "out_player": {
+      "sleeper_id": "6904",
+      "gsis_id": "00-0036389",
+      "player_name": "Jalen Hurts",
+      "position": "QB",
+      "team": "PHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+      "this_week": 17.07,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 219,
+      "roster_id": 1
+     },
+     "in_value": 20.9,
+     "out_value": 17.07,
+     "words": "Jacoby Brissett (a free agent for the week) starts at QB in place of Jalen Hurts (traded)"
+    }
+   ],
+   "words": {
+    "mine": [
+     "Jalen Hurts (from the trade) starts at QB in place of Jacoby Brissett (the free agent who would have covered it)"
+    ],
+    "theirs": [
+     "Jacoby Brissett (a free agent for the week) starts at QB in place of Jalen Hurts (traded)"
+    ]
+   }
+  },
+  "depth": {
+   "mine": {
+    "words": "you lose Patrick Mahomes, a QB who cannot play in week 5 (on a bye): no QB left on your bench who can play in week 5 (Bryce Young on a bye cannot)",
+    "lost": [
+     {
+      "player": {
+       "sleeper_id": "4046",
+       "gsis_id": "00-0033873",
+       "player_name": "Patrick Mahomes",
+       "position": "QB",
+       "team": "KC",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+       "this_week": null,
+       "cannot_play": "bye",
+       "market_price": 20,
+       "season_points": 251,
+       "roster_id": 2
+      },
+      "position": "QB",
+      "usable": [],
+      "cannot_play": [
+       {
+        "player_name": "Bryce Young",
+        "why": "on a bye"
+       }
+      ],
+      "words": "you lose Patrick Mahomes, a QB who cannot play in week 5 (on a bye): no QB left on your bench who can play in week 5 (Bryce Young on a bye cannot)"
+     }
+    ],
+    "joins": []
+   },
+   "theirs": {
+    "words": null,
+    "lost": [],
+    "joins": []
+   }
+  },
+  "fills": {
+   "mine": {
+    "rows": [
+     {
+      "week": 5,
+      "state": "before",
+      "player": {
+       "sleeper_id": "3257",
+       "gsis_id": "00-0033119",
+       "player_name": "Jacoby Brissett",
+       "position": "QB"
+      },
+      "value": 20.9
+     },
+     {
+      "week": 5,
+      "state": "before",
+      "player": {
+       "sleeper_id": "5844",
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE"
+      },
+      "value": 8.68
+     },
+     {
+      "week": 5,
+      "state": "after",
+      "player": {
+       "sleeper_id": "5844",
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE"
+      },
+      "value": 8.68
+     }
+    ],
+    "words": "Assumed pickups for your empty slots: without the trade, Jacoby Brissett (QB, week 5) and T.J. Hockenson (TE, week 5); with it, T.J. Hockenson (TE, week 5). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   },
+   "theirs": {
+    "rows": [
+     {
+      "week": 5,
+      "state": "before",
+      "player": {
+       "sleeper_id": "3451",
+       "gsis_id": "00-0032726",
+       "player_name": "Ka'imi Fairbairn",
+       "position": "K"
+      },
+      "value": 9.42
+     },
+     {
+      "week": 5,
+      "state": "after",
+      "player": {
+       "sleeper_id": "3257",
+       "gsis_id": "00-0033119",
+       "player_name": "Jacoby Brissett",
+       "position": "QB"
+      },
+      "value": 20.9
+     },
+     {
+      "week": 5,
+      "state": "after",
+      "player": {
+       "sleeper_id": "3451",
+       "gsis_id": "00-0032726",
+       "player_name": "Ka'imi Fairbairn",
+       "position": "K"
+      },
+      "value": 9.42
+     }
+    ],
+    "words": "Assumed pickups for Daejon Loves PR team's empty slots: without the trade, Ka'imi Fairbairn (K, week 5); with it, Jacoby Brissett (QB, week 5) and Ka'imi Fairbairn (K, week 5). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   }
+  },
+  "unfilled": {
+   "label": "If empty slots were left empty",
+   "words": "With nobody added for an empty slot (it counts 0): your starters +17.1 this week; Daejon Loves PR team's -17.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "mine": {
+    "gain_week": 17.07,
+    "gain_window": 17.07,
+    "by_week": [
+     17.07
+    ],
+    "before": {
+     "this_week": 97.54,
+     "window": 97.54
+    },
+    "after": {
+     "this_week": 114.61,
+     "window": 114.61
+    }
+   },
+   "theirs": {
+    "gain_week": -17.07,
+    "gain_window": -17.07,
+    "by_week": [
+     -17.07
+    ],
+    "before": {
+     "this_week": 99.9,
+     "window": 99.9
+    },
+    "after": {
+     "this_week": 82.83,
+     "window": 82.83
+    }
+   }
+  },
+  "out_indefinitely": null
+ },
+ "provenance": {
+  "model_version": "v3.0",
+  "kd_model_version": null,
+  "published_at": "2026-10-05T12:21:31.576222+00:00",
+  "horizon": {
+   "first": 5,
+   "last": 5,
+   "market_week": 5,
+   "words": "week 5"
+  },
+  "checks": [
+   {
+    "span": "next",
+    "position": "QB",
+    "status": "graded",
+    "mae": 6.44,
+    "order": 0.587,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Quarterbacks next week: graded (order 0.59)"
+   },
+   {
+    "span": "trade_gap",
+    "position": null,
+    "status": "not_graded",
+    "mae": null,
+    "order": null,
+    "ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+    "words": "The trade's range: not graded"
+   }
+  ],
+  "status": "not_graded",
+  "beta": true,
+  "words": "Beta · Model v3.0, data published 5 Oct, 8:21 am ET · week 5 · checked on 2021–2025: next week graded; the trade's range not graded."
+ },
+ "caveats": [],
+ "caveat_effect": null,
+ "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
 }

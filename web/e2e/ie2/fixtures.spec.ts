@@ -70,33 +70,40 @@ test("the trade result: assets → effect → starters in / out → backup → t
   await expect(story).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("trade-assets")).toContainText("Bhayshul Tuten");
   await expect(page.getByTestId("trade-assets")).toContainText("Rashee Rice");
-  await expect(page.getByTestId("trade-effect")).toHaveText("Your starting lineup: about 3.4 more points this week, about 10 more in total over weeks 4–7.");
-  await expect(page.getByTestId("starter-in")).toHaveCount(1);
-  await expect(page.getByTestId("starter-in")).toContainText("Rashee Rice at WR/TE");
-  await expect(page.getByTestId("starter-out")).toHaveCount(1);
-  await expect(page.getByTestId("starter-out")).toContainText("Ladd McConkey");
-  await expect(page.getByTestId("starter-out")).toContainText("to the bench");
-  await expect(story).not.toContainText("Nabers"); // only moved WR/TE 2 → 3: not a change
-  await expect(story).not.toContainText("Watson");
-  await expect(page.getByTestId("trade-total")).toContainText("115.4 → 118.8 (+3.4 projected points)");
-  await expect(page.getByTestId("trade-backup")).toHaveText("Backup coverage: you lose Tuten, a backup RB (1 RB left on your bench).");
-  await expect(page.getByTestId("trade-their-side")).toContainText("Madeyes Revenge's starting lineup: about 2.0 fewer points this week");
-  await expect(page.getByTestId("trade-hold")).toContainText("Standing pat keeps your starting lineup at 115.4");
+  // IR-2 fix: every sentence and number below is the saved answer's `decision` (re-saved; the screen reads only it)
+  type Ch = { slot_word: string; in: string | null; out: string | null; in_how: string; out_why: string; out_value: number | null; words: string; in_player: { player_name: string } | null; out_player: { player_name: string } | null };
+  const ev = Object.entries(saved).find(([k]) => k.includes("/api/trades/evaluate"))![1].body as {
+    decision: { effect_words: string; their_effect_words: string; changes: { mine: Ch[] }; depth: { mine: { words: string } };
+      mine: { before: { this_week: number }; after: { this_week: number }; gain_week: number }; alternative: { words: string } };
+  };
+  const d = ev.decision;
+  const sgn = (x: number) => (Math.abs(x) >= 0.05 ? `${x > 0 ? "+" : "\u2212"}${Math.abs(x).toFixed(1)}` : "+0.0");
+  await expect(page.getByTestId("trade-effect")).toHaveText(d.effect_words);
+  // the starters, slot by slot: Rice takes a WR/TE slot from the player who goes to the bench (one change, one slot)
+  await expect(page.getByTestId("starter-change")).toHaveText(d.changes.mine.map((c) => `${c.words}.`));
+  const rice = d.changes.mine.find((c) => c.in_player?.player_name === "Rashee Rice")!;
+  expect(rice.slot_word).toBe("WR/TE");
+  expect(rice.out_why).toBe("bench");
+  await expect(page.getByTestId("trade-starters")).not.toContainText("Nabers"); // a renumbered WR/TE is not a change
+  await expect(page.getByTestId("trade-starters")).not.toContainText("Watson");
+  await expect(page.getByTestId("trade-total")).toContainText(`${d.mine.before.this_week.toFixed(1)} → ${d.mine.after.this_week.toFixed(1)} (${sgn(d.mine.gain_week)} projected points)`);
+  await expect(page.getByTestId("trade-backup")).toHaveText(`Backup coverage: ${d.depth.mine.words}.`);
+  await expect(page.getByTestId("trade-their-side")).toContainText(d.their_effect_words);
+  await expect(page.getByTestId("trade-alternative")).toContainText(d.alternative.words); // was trade-hold (IR-2: one alternative line)
   // the order on the page (top to bottom) and the arithmetic below it
-  const order = ["trade-assets", "trade-effect", "trade-starters", "trade-backup", "trade-their-side", "trade-hold", "why", "lineups-x"];
+  const order = ["trade-assets", "trade-effect", "trade-alternative", "trade-starters", "trade-backup", "trade-their-side", "why", "lineups-x"];
   const ys = [];
   for (const t of order) ys.push(await top(page, t));
   console.log(`IE-2 ${info.project.name}: result order y = ${ys.map((y) => Math.round(y)).join(" < ")}`);
   for (let i = 1; i < ys.length; i++) expect(ys[i], `${order[i]} below ${order[i - 1]}`).toBeGreaterThan(ys[i - 1]);
   await expect(page.getByTestId("why").locator("summary")).toHaveText(/How we calculated this/);
-  // the lineup detail: Nabers and Watson show no change of their own; McConkey's row carries the -6.9
+  // the lineup detail: Nabers and Watson show no change of their own; the benched starter's row carries his points
   await page.getByTestId("lineups-x").locator("summary").first().click();
   const mine = page.getByTestId("lineup-after").first();
   await expect(mine.locator("li", { hasText: "Malik Nabers" })).not.toContainText("+");
   await expect(mine.locator("li", { hasText: "Christian Watson" })).not.toContainText("+");
-  await expect(mine.getByTestId("lineup-out")).toContainText("Ladd McConkey");
-  await expect(mine.getByTestId("lineup-out")).toContainText("−6.9"); // s1: a true minus
-  await expect(mine.getByTestId("lineup-reshuffled")).toContainText("Nabers WR/TE 2 → WR/TE 3");
+  await expect(mine.getByTestId("lineup-out")).toContainText(rice.out_player!.player_name);
+  await expect(mine.getByTestId("lineup-out")).toContainText(sgn(-(rice.out_value ?? 0))); // s1: a true minus
   await noSidewaysScroll(page);
   await story.scrollIntoViewIfNeeded();
   await page.screenshot({ path: join(SHOTS, `ie2_trade_result_${info.project.name}.png`), fullPage: false });

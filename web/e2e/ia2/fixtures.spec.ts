@@ -69,10 +69,10 @@ for (const league of [TEST_LEAGUE, DYNASTY, SCRUBS]) {
     const b = fx(evalKey(league, team, pk.partner, pk.to.give, pk.to.get));
     await page.goto(calcUrl(league, pk.partner, pk.from.give, pk.from.get));
     const dial = page.getByTestId("dial");
-    await expect(page.getByTestId("dial-label")).toHaveText(a.interest.label);
-    await expect(dial).toHaveAttribute("data-score", String(a.interest.score));
+    await expect(page.getByTestId("dial-label")).toHaveText(a.decision.dial.label);
+    await expect(dial).toHaveAttribute("data-score", String(a.decision.dial.score));
     await expect(page.getByTestId("dial-score")).toHaveCount(0); // IE-1: no 0–100 score on screen (the needle keeps it)
-    await expect(dial).toContainText(a.interest.caption);
+    await expect(dial).toContainText(a.decision.dial.caption);
     await expect(page.getByTestId("dial-you")).toContainText(a.span);
     await expect(page.getByTestId("verdict")).toHaveText(plain(a.verdict));
     await page.evaluate(() => ((window as unknown as { __noReload: number }).__noReload = 1));
@@ -80,9 +80,9 @@ for (const league of [TEST_LEAGUE, DYNASTY, SCRUBS]) {
     for (const id of pk.to.get.filter((x) => !pk.from.get.includes(x))) await page.locator(`[data-testid="get-option"][data-id="${id}"] input`).check();
     for (const id of pk.from.get.filter((x) => !pk.to.get.includes(x))) await page.locator(`[data-testid="get-option"][data-id="${id}"] input`).uncheck();
     for (const id of pk.from.give.filter((x) => !pk.to.give.includes(x))) await page.locator(`[data-testid="give-option"][data-id="${id}"] input`).uncheck();
-    await expect(page.getByTestId("dial-label")).toHaveText(b.interest.label);
-    await expect(dial).toHaveAttribute("data-score", String(b.interest.score));
-    expect(a.interest.label).not.toEqual(b.interest.label);
+    await expect(page.getByTestId("dial-label")).toHaveText(b.decision.dial.label);
+    await expect(dial).toHaveAttribute("data-score", String(b.decision.dial.score));
+    expect(a.decision.dial.label).not.toEqual(b.decision.dial.label);
     expect(await page.evaluate(() => (window as unknown as { __noReload?: number }).__noReload)).toBe(1);
     expect(calls.evaluate.at(-1)).toEqual({ league, team, partner: pk.partner, give: pk.to.give, get: pk.to.get });
     await expect(page.getByTestId("verdict")).toHaveText(plain(b.verdict));
@@ -96,7 +96,7 @@ for (const league of [TEST_LEAGUE, DYNASTY, SCRUBS]) {
       window.scrollTo(0, el.getBoundingClientRect().bottom + window.scrollY + 40);
     });
     if (info.project.name === "phone" || !(await page.getByTestId("dial-row").isVisible() && (await inView(page, "dial-row"))))
-      await expect(page.getByTestId("dial-chip")).toContainText(b.interest.label);
+      await expect(page.getByTestId("dial-chip")).toContainText(b.decision.dial.label);
     else await expect(page.getByTestId("dial-chip")).toHaveCount(0);
     await noSidewaysScroll(page);
     await shot(page, `calc_${league}`, info);
@@ -115,8 +115,8 @@ test("the window control: the caption, the span and the numbers change (calculat
     await expect(page).toHaveURL(new RegExp(`window=${w}`));
     await expect(page.getByTestId("window-caption")).toContainText(ev.window_why);
     await expect(page.getByTestId("window-caption")).toContainText(ev.span[0].toUpperCase() + ev.span.slice(1));
-    await expect(page.getByTestId("dial")).toContainText(`by our numbers over ${ev.span}`);
-    await expect(page.getByTestId("dial")).toHaveAttribute("data-score", String(ev.interest.score));
+    await expect(page.getByTestId("dial")).toContainText(ev.decision.dial.caption); // IR-2: the basis, said in the caption
+    await expect(page.getByTestId("dial")).toHaveAttribute("data-score", String(ev.decision.dial.score));
     expect(calls.evaluate.at(-1)?.window).toBe(w);
     if (w === "ros") {
       expect(ev.span).not.toEqual(next4.span);
@@ -125,7 +125,8 @@ test("the window control: the caption, the span and the numbers change (calculat
   }
   await page.getByTestId("window-next4").click();
   await expect(page).not.toHaveURL(/window=/);
-  await expect(page.getByTestId("dial")).toContainText("by our numbers over weeks 4–7");
+  await expect(page.getByTestId("dial")).toContainText(next4.decision.dial.caption); // IR-2 fix: the decision's caption (weeks 4–7)
+  expect(next4.decision.dial.caption).toContain("over weeks 4–7");
   expect(calls.evaluate.at(-1)?.window).toBeUndefined(); // the default is not sent: the body stays the G4 one
 
   // the partner suggestions: the same control, its own caption and best partner

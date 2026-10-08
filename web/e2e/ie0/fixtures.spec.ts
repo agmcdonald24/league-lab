@@ -115,7 +115,14 @@ test("the review's link: Houston Texans QB + Tuten for Rice stays a two-for-one,
   const teamQb = mineAfter.locator("li").filter({ hasText: /^\s*team QB/ }).first();
   await expect(teamQb).toContainText("Chicago Bears QB");
   await expect(mineAfter).toContainText("Rashee Rice (new)");
-  await expect(mineAfter).toContainText("Out of the lineup after the trade: Houston Texans QB (team QB, 30.40, traded)");
+  // IR-2 fix: the lineup's notes are the decision's slot sentences (the page function's "Out of the lineup after the
+  // trade: …" line is gone): Houston leaves the team QB slot, named as traded, his slot's replacement paired with him
+  const ev = saved['POST /api/trades/evaluate {"get":["10229"],"give":["mfl:0682","12490"],"league":"mfl:70587","partner":12,"team":8}']
+    .body as { decision: { changes: { words: { mine: string[] } } } };
+  const qbLine = ev.decision.changes.words.mine.find((w) => w.includes("in place of Houston Texans QB (traded)"))!;
+  expect(qbLine).toMatch(/starts at team QB in place of Houston Texans QB \(traded\)/);
+  await expect(mineAfter).toContainText(qbLine);
+  await expect(mineAfter.getByTestId("lineup-out")).toContainText("Houston Texans QB");
   // a unit's row: its team's badge, named for a screen reader; nothing on the page reads "Free agent"
   const hou = page.locator('[data-testid="give-option"][data-id="mfl:0682"]');
   await expect(hou.getByTestId("team-badge")).toHaveText("HOU");
