@@ -385,6 +385,15 @@ def project_cmd(
                   f"wrote {fz.get('rows_written', len(pred))} (weeks {fz.get('rewritten') or 'none'}), "
                   f"kept frozen weeks {fz.get('kept') or 'none'} (kickoff board: {fz.get('kickoff') or 'none'}; refit values: {fz.get('refit') or 'none'}) — "
                   "run `make build` to publish mart_player_week_projections")
+    # ---- IR-1 (Wave I-R): who the gate took out, and from which copy of which source
+    gate = pred.attrs.get("availability_gate") or {}
+    if gate.get("week") is not None:
+        console.print(f"availability gate, week {gate['week']}: {gate.get('source')} copy of "
+                      f"{gate.get('fetched_at') or 'no date'}{' (FALLBACK: no Sleeper copy)' if gate.get('fallback') else ''}; "
+                      f"{len(gate.get('players') or [])} players who cannot play get 0 this week, "
+                      f"{sum(1 for r in gate.get('players') or [] if r.get('out_indefinitely'))} of them out indefinitely "
+                      "(no later weeks)")
+    # ---- end IR-1
 
 
 @app.command("drift")

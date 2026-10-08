@@ -15,6 +15,7 @@
   import Headshot from "../Headshot.svelte";
   import MatchupEvidence from "../MatchupEvidence.svelte";
   import ToneChip from "./ToneChip.svelte";
+  import NotPlaying from "../availability/NotPlaying.svelte"; // ---- IR-1
 
   let { league, team, onauth, owners }: { league: string; team: number | null; onauth: () => void; owners: boolean } = $props();
 
@@ -278,5 +279,6 @@
       {b.data.projection_words}
       {b.data.tone_words}
     </p>
+    <NotPlaying rows={b.data.not_playing ?? []} words="Not playing this week: not on the board." testid="board-not-playing" /><!-- ---- IR-1 -->
   {/if}
 </section>

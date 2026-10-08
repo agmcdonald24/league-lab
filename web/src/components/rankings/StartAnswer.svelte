@@ -30,6 +30,22 @@
     {:else}
       <p class="text-base leading-snug font-semibold text-ink wide:text-lg" data-testid={`${testid}-words`} data-verdict={d.answer.verdict}>{d.answer.words}</p>
       {#if d.started_note}<p class="text-sm leading-snug font-semibold text-warn" data-testid={`${testid}-started`}>{d.started_note}</p>{/if}
+      <!-- ---- IR-1 (Wave I-R): a picked player who cannot play: "He is out", his status, its source and time — no chance -->
+      {#if d.out?.length}
+        <ul class="space-y-2" data-testid={`${testid}-out`}>
+          {#each d.out as o (o.key)}
+            <li class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2.5" data-testid={`${testid}-out-player`} data-gsis={o.gsis_id}>
+              <Headshot url={o.headshot_url ?? null} name={o.player_name ?? undefined} team={o.team} size={32} />
+              <span class="min-w-0">
+                <span class="block truncate font-semibold">{o.player_name}</span>
+                <span class="block text-xs leading-snug text-ink-3">{o.why ?? o.words}</span>
+              </span>
+              <span class="rounded-sm bg-raised px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-warn ring-1 ring-line-strong ring-inset">{o.status ?? "No number"}</span>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+      <!-- ---- end IR-1 -->
       <div class="space-y-3 wide:grid wide:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] wide:gap-6 wide:space-y-0">
       <div class="space-y-2">
       <ul class="space-y-2" data-testid={`${testid}-players`}>
@@ -49,12 +65,14 @@
             {#if p.pct_best != null}
               <span class="tabnum text-right whitespace-nowrap" data-testid={`${testid}-pct`}><span class="text-lg font-extrabold">{p.pct_best}</span><span class="text-xs text-ink-3">&nbsp;in 100</span></span>
             {:else}
-              <span class="text-right text-xs font-semibold whitespace-nowrap text-ink-3" data-testid={`${testid}-nocall`}>{p.starter_unclear ? "Starter unclear" : "no call"}</span>
+              <span class="text-right text-xs font-semibold whitespace-nowrap text-ink-3" data-testid={`${testid}-nocall`}>{p.starter_unclear ? "Starter unclear" : d.answer.verdict === "out" ? "Start him" : "no call"}</span>
             {/if}
           </li>
         {/each}
       </ul>
-      {#if d.answer.verdict === "no call"}
+      {#if d.answer.verdict === "out"}
+        <p class="text-xs leading-snug text-ink-3" data-testid={`${testid}-out-why`}>A player who cannot play gets no chance and no call: there is nothing to compare.</p>
+      {:else if d.answer.verdict === "no call"}
         <p class="text-xs leading-snug text-ink-3" data-testid={`${testid}-nocall-why`}>
           No chances are given: a projection may be on the wrong quarterback. Take him out to compare the others.
         </p>

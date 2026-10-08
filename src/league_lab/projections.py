@@ -981,6 +981,14 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     pred.loc[~pred["position"].isin(POSITIONS), "pricing"] = "flat"
     # ---- /M4
     now = datetime.now(UTC)
+    # ---- IR-1 (Wave I-R): nobody who cannot play is projected. The live week's rows of a player who cannot play are
+    # 0 with the reason (``availability``, frozen with the week); a player out indefinitely has no later weeks
+    # (availability_gate; the Sleeper directory the nightly has just loaded, its date logged)
+    from . import availability_gate as _ag
+    gated, gate = _ag.apply_to_project(conn, season, {"pred": pred, "lines": lines, "ranges": ranges}, target, now)
+    pred, lines, ranges = gated["pred"], gated["lines"], gated["ranges"]
+    pred.attrs["availability_gate"] = gate
+    # ---- end IR-1
     _write_projections(conn, pred, season, now)   # B5: weeks whose first game has kicked off are kept, not rewritten
     log.info("projections computed: %s rows for %s (%s leagues; ranges fitted in %s scorings: %s)", len(pred), season,
              len(leagues), len(fit), ", ".join(fit))
@@ -1179,7 +1187,8 @@ DDL = {
         alter table ops.projections add column if not exists frozen_source text;
         alter table ops.projections add column if not exists p25 double precision;
         alter table ops.projections add column if not exists p75 double precision;
-        alter table ops.projections add column if not exists pricing text""",   # ---- M4: flat / ev (NULL = flat)
+        alter table ops.projections add column if not exists pricing text;   -- M4: flat / ev (NULL = flat)
+        alter table ops.projections add column if not exists availability text""",   # ---- IR-1: why a 0 (JSON)
     "ops.projection_backtest": """create table if not exists ops.projection_backtest (
         run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
         position text, scorer text, n_players integer, spearman double precision, top_n integer, hit_rate double precision,
@@ -1223,6 +1232,7 @@ NFL_DDL = {
     "ops.projection_lines": f"""create table if not exists ops.projection_lines (
         model_version text, fitted_at timestamptz, train_seasons text, season integer, week integer, gsis_id text,
         position text, {_PROJ_DDL}, frozen_at timestamptz, frozen_source text);
+        alter table ops.projection_lines add column if not exists availability text;   -- IR-1: why a 0 (JSON)
         create index if not exists projection_lines_idx on ops.projection_lines (season, week, gsis_id)""",
     "ops.projection_ranges": """create table if not exists ops.projection_ranges (
         scoring_name text, season integer, week integer, gsis_id text, position text, model_version text,
@@ -1478,7 +1488,7 @@ def write_nfl_wide(conn: psycopg.Connection, season: int, lines: pd.DataFrame, r
     rest = sorted(set(refit) - {int(w) for w in seeded["week"]})
     rows = pd.concat([lines[lines["week"].isin(live)].assign(frozen_source=None, frozen_at=None), seeded,
                       lines[lines["week"].isin(rest)].assign(frozen_source="refit", frozen_at=None)], ignore_index=True)
-    _replace(conn, "ops.projection_lines", rows, LINE_COLUMNS, plan, None, season)
+    _replace(conn, "ops.projection_lines", rows, [*LINE_COLUMNS, "availability"], plan, None, season)   # ---- IR-1
     summary["ops.projection_lines"] = {"rows_written": len(rows), "live": live, "from_record": sorted({int(w) for w in seeded["week"]}),
                                        "refit": rest, "kept": _weeks(plan, "keep")}
     # 2. the ranges per reference scoring

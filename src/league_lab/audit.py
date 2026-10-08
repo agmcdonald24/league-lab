@@ -155,6 +155,27 @@ def against_scored(board: Board, ppg: pd.DataFrame) -> tuple[list[dict], list[di
     return flagged, explained
 
 
+# ---- IR-1 (Wave I-R): the site's definition and sources (league_lab.availability_gate), the report's first rule
+def still_ranked(boards: list[Board], st: Mapping[str, dict]) -> list[dict]:
+    """Players who cannot play and are still ranked or valued: this week's lists, a player who cannot play this week
+    with a projection above 0; the season's lists and the free calculator's values, a player out indefinitely with
+    rest-of-season points above 0."""
+    out = []
+    for b in boards:
+        want = "cannot_play" if b.view == "week" else "out_indefinitely"
+        if b.rows is None or b.rows.empty or "gsis_id" not in b.rows:
+            continue
+        for x in b.rows.itertuples():
+            s = st.get(getattr(x, "gsis_id", None)) if isinstance(getattr(x, "gsis_id", None), str) else None
+            if s is None or not s.get(want) or pd.isna(x.proj) or float(x.proj) <= 0:
+                continue
+            title = {"week": "this week", "season": "rest of season", "value": "calculator value"}[b.view]
+            out.append({"player": x.player_name, "team": x.team, "position": x.position, "view": title, "label": b.label,
+                        "proj": float(x.proj), "rank": int(x.rank), "why": s.get("why")})
+    return out
+# ---- end IR-1
+
+
 def out_but_projected(week_rows: pd.DataFrame) -> list[dict]:
     """A player ruled Out / Doubtful / on a reserve list projected above ``OUT_FLOOR`` this week."""
     out = []
@@ -447,6 +468,10 @@ def build(query: Query, *, ranks_path: Path | None = None) -> Report:
     if week is None:
         rep.add("The regular season is over: nothing to audit.")
         return rep
+    # ---- IR-1: the definition the site uses (availability_gate), from the sources the database holds
+    from . import availability_gate as AG
+    gate_st, gate_meta = AG.statuses_from_query(query, season, week)
+    # ---- end IR-1
     last_week = int(query("select max(week) as w from analytics.dim_game where season = %s and season_type = 'REG'",
                           (season,))["w"].iloc[0])
     scorings = reference_scorings(query)
@@ -465,6 +490,21 @@ def build(query: Query, *, ranks_path: Path | None = None) -> Report:
                 rep.add(f"- {label} {fn.__name__}: could not be built ({exc.__class__.__name__}: {str(exc)[:120]})")
         ppg[label] = scored(query, season, week, sc)
 
+    # ---- IR-1 (Wave I-R): the hard rule, first: nobody who cannot play is ranked or valued
+    sr = still_ranked(boards, gate_st)
+    names = _group({lb: [it for it in sr if it["label"] == lb] for lb in {it["label"] for it in sr}},
+                   lambda it: (it["player"], it["team"], it["view"]))
+    n_players = len({(it["player"], it["team"]) for it in sr})
+    rep.counts["cannot_play_ranked"] = n_players
+    n_cp = sum(1 for v in gate_st.values() if v.get("cannot_play"))
+    rep.add(f"## Players who cannot play and are still ranked or valued: {n_players}",
+            f"_Who cannot play: {n_cp} players by Sleeper's directory (copy of {gate_meta.get('fetched_at') or 'no date'}) "
+            "and last night's stored record, freshest first (league_lab.availability_gate)._")
+    rep.add(*([f"- **{it['player']} ({it['team']}, {it['position']}): {it['why']} — {it['view']} rank {it['rank']}, "
+               f"{it['proj']:.1f} [{', '.join(lb)}]**" for it, lb in names[:MAX_ROWS * 2]]
+              or ["- None: every player who cannot play is out of this week's lists, and every player out indefinitely "
+                  "out of the season lists and the calculator's values."]), "")
+    # ---- end IR-1
     # ---- coverage: the first section
     rep.add("## Coverage — every team in every list")
     miss = []

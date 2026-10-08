@@ -268,6 +268,34 @@
     </div>
   {/if}
 
+  <!-- ---- IR-1 (Wave I-R): nobody who cannot play is ranked. They are listed here: the status, its source and time, the
+  reason in words — never a number, never a tier -->
+  {#if d && !d.notice && d.not_playing?.length}
+    <section class="rounded-lg border border-line bg-surface p-3" style="box-shadow:var(--ll-shadow)" data-testid="rankings-not-playing" aria-labelledby="rk-np-h">
+      <h2 id="rk-np-h" class="text-sm font-bold text-ink">Not playing <span class="font-normal text-ink-3">· {d.not_playing.length}</span></h2>
+      {#if d.not_playing_words}<p class="mt-0.5 text-xs leading-snug text-ink-3">{d.not_playing_words}</p>{/if}
+      <ul class="mt-2 grid gap-x-6 gap-y-1 wide:grid-cols-2">
+        {#each d.not_playing as x (x.key)}
+          <li data-testid="rankings-not-playing-row" data-key={x.key} data-code={x.code}>
+            <button type="button" class="flex w-full min-w-0 items-center gap-2.5 rounded-md p-1.5 text-left hover:bg-raised" onclick={() => x.gsis_id && openPane(x.gsis_id, { from: "list", context: { name: x.player_name } })}>
+              <Headshot url={x.headshot_url ?? null} name={x.player_name ?? undefined} team={x.team} size={32} />
+              <span class="min-w-0 flex-1">
+                <span class="flex min-w-0 items-center gap-1.5">
+                  <span class="truncate font-semibold text-ink">{x.player_name}</span>
+                  <span class="shrink-0 rounded-sm bg-raised px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-warn ring-1 ring-line-strong ring-inset" data-testid="rankings-not-playing-status">{x.status ?? "No number yet"}</span>
+                </span>
+                <span class="block truncate text-xs text-ink-3">{x.position} · {teamLabel(x.team) ?? "—"}{x.why ? ` · ${x.why}` : ""}</span>
+                <span class="block text-xs leading-snug text-ink-2" data-testid="rankings-not-playing-words">{x.words}</span>
+              </span>
+              <span class="tabnum shrink-0 font-bold text-ink-3" title="No projection: he cannot play">—</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    </section>
+  {/if}
+  <!-- ---- end IR-1 -->
+
   {#if picks.length > 0}
     <!-- after the list: it sticks to the bottom of the screen while the list scrolls under it -->
     <div class="ll-rk-bar sticky z-20 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-accent bg-surface px-3 py-2 shadow-lg" data-testid="rankings-picks">

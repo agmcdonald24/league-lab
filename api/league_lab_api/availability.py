@@ -29,6 +29,7 @@ a test or this sandbox never calls ESPN.
 from __future__ import annotations
 
 import csv
+import json
 import math
 import os
 import threading
@@ -1100,3 +1101,155 @@ def drop_words(move: dict, ctx: RosterContext | None) -> dict:
         words["lines"] = [fix(x) for x in words.get("lines") or []]
     return move
 # ---- end IB-0
+
+
+# ------------------------------------------------------------------------------ IR-1: who cannot play, on every list
+# ---- IR-1 (Wave I-R): Andrew, 2026-10-08 — Achane (IR, torn ACL) ranked 21st among running backs while his card said
+# "IR (knee - acl) · Sleeper, Sep 28". ``statuses`` is the one answer every list reads (Rankings, "Who should I start?",
+# rest of season, the free calculator, Compare, DFS, the board, the home): league_lab.availability_gate's definition
+# over the freshest word of (1) the nightly's stored record (``ops.projection_lines.availability``, written by
+# ``project`` from the Sleeper directory it had just loaded — it applies with the overlay off or Sleeper / ESPN
+# unreachable) and (2) the overlay's Sleeper directory and ESPN feed (when on). A player ruled out at noon is gone at
+# noon.
+from league_lab import availability_gate as AG  # noqa: E402
+
+STORED_SQL = """select gsis_id, availability from (
+                    select distinct on (gsis_id) gsis_id, to_jsonb(l) ->> 'availability' as availability
+                    from ops.projection_lines as l
+                    where season = %s and week = %s
+                    order by gsis_id, (frozen_source is not null) desc, fitted_at desc nulls last) as x
+                where availability is not null"""
+_gate_cache = memo.region("availability_gate", ttl=600, max_entries=16)   # (season, week) -> stored / week end: ≤ 2 weeks
+
+
+def stored_status(season: int | None, week: int | None) -> dict[str, dict]:
+    """{gsis: entry} the nightly's gate recorded for the week ({} before the first gated nightly, without the column —
+    ``to_jsonb`` reads a column that may not exist — or on any failure: the overlay still answers)."""
+    if season is None or week is None:
+        return {}
+    key = ("stored", int(season), int(week))
+    hit = _gate_cache.get(key)
+    if hit is not None:
+        return hit
+    out: dict[str, dict] = {}
+    try:
+        d = query(STORED_SQL, (int(season), int(week)))
+        for g, a in zip(d["gsis_id"], d["availability"], strict=True):
+            try:
+                j = json.loads(a) if isinstance(a, str) else None
+            except ValueError:
+                j = None
+            if isinstance(g, str) and isinstance(j, dict) and j.get("code") in AG.CODES:
+                out[g] = AG.entry(j["code"], str(j.get("source") or "Sleeper"), as_of=j.get("as_of"),
+                                  fetched_at=j.get("fetched_at"), note=j.get("note"))
+    except Exception:  # noqa: BLE001 - no table / no column / no database: the overlay alone
+        out = {}
+    _gate_cache.put(key, out)
+    return out
+
+
+def _week_end(season: int | None, week: int | None):
+    """The previous week's last kickoff (a game status older than it was that week's)."""
+    if season is None or week is None:
+        return None
+    key = ("prev_end", int(season), int(week))
+    hit = _gate_cache.get(key)
+    if hit is not None:
+        return hit or None
+    try:
+        d = query("""select max(kickoff_at) as t from analytics.dim_game
+                     where season = %s and week = %s and season_type = 'REG'""", (int(season), int(week) - 1))
+        t = AG.ts(d["t"].iloc[0]) if not d.empty else None
+    except Exception:  # noqa: BLE001
+        t = None
+    _gate_cache.put(key, t or False)
+    return t
+
+
+def statuses(gsis_ids: Iterable[str] | None, season: int | None, week: int | None, *,
+             overlay: bool | None = None, stored: Mapping[str, dict] | None = None,
+             live: Mapping[str, list[dict]] | None = None) -> dict[str, dict]:
+    """{gsis: ``availability_gate.classify`` block} for the players asked (every player with a word when None), only
+    those with a status (cannot play, out indefinitely, doubtful, questionable). ``stored`` / ``live`` ({gsis: [entries]})
+    replace the record and the overlay (tests)."""
+    rec = dict(stored_status(season, week) if stored is None else stored)
+    lv: dict[str, list[dict]] = {k: list(v) for k, v in (live or {}).items()}
+    if live is None and (enabled() if overlay is None else overlay):
+        s = snapshot()
+        if s is not None:
+            for g, e in s.espn.items():
+                if e.get("code") in AG.CODES:
+                    lv.setdefault(g, []).append(AG.entry(e["code"], "ESPN", as_of=e.get("as_of"),
+                                                         fetched_at=e.get("fetched_at"), note=e.get("note"), name=e.get("name")))
+            players = getattr(s, "_players", {}) or {}
+            for g, e in s.sleeper.items():
+                p = players.get(str(e.get("sleeper_id"))) or {}
+                code = AG.sleeper_code(p) if p else None
+                if code is None and e.get("code") in AG.CODES:
+                    code = e["code"]
+                if code is not None:
+                    lv.setdefault(g, []).append(AG.entry(code, "Sleeper", as_of=e.get("as_of"),
+                                                         fetched_at=e.get("fetched_at"), note=e.get("note"), name=e.get("name")))
+    want = None if gsis_ids is None else {str(g) for g in gsis_ids if isinstance(g, str) and g}
+    keys = (set(rec) | set(lv)) if want is None else want & (set(rec) | set(lv))
+    pwe = _week_end(season, week)
+    out = {}
+    for g in keys:
+        best = AG.pick([rec.get(g), *lv.get(g, [])], pwe)
+        if best is None or best["code"] == "ACTIVE":
+            continue
+        if best["code"] == "NO_TEAM" and g not in rec:
+            continue          # the overlay's directory without a team is a free agent: the stored gate decides that
+        out[g] = {"gsis_id": g, **AG.classify(best)}
+    return out
+
+
+def not_playing_row(r: Mapping, st: Mapping, *, view: str = "week") -> dict:
+    """A list's "Not playing" entry: who, the status, its source and time, the reason in words — never a number."""
+    return {"key": r.get("key") or r.get("gsis_id"), "gsis_id": r.get("gsis_id"), "player_name": r.get("player_name"),
+            "position": r.get("position"), "team": r.get("team"), "headshot_url": r.get("headshot_url"),
+            "status": st.get("status"), "code": st.get("code"), "source": st.get("source"), "as_of": st.get("as_of"),
+            "why": st.get("why"), "out_indefinitely": bool(st.get("out_indefinitely")),
+            "words": st.get("ros_words") if view == "season" else st.get("week_words")}
+# ---- end IR-1
+
+
+# ---- IR-1: the rest-of-season lists (/api/ros, every view) and the free calculator
+def _current() -> tuple[int | None, int | None]:
+    """(season, this week) the lists use (refleague's window: the first week whose last game has not kicked off)."""
+    try:
+        from . import refleague
+        season, first, _last = refleague._window()
+        return (None if season is None else int(season)), (None if first is None else int(first))
+    except Exception:  # noqa: BLE001
+        return None, None
+
+
+def ros_gate(out: dict, *, season: int | None = None, week: int | None = None) -> dict:
+    """A rest-of-season answer with nobody out indefinitely in its ``players`` (or ``rows``): each is listed under
+    ``not_playing`` with his reason ("on injured reserve: no return date, so no rest-of-season value"), never a
+    number. A player out this week only keeps his season (this week counted as 0 by the stored record)."""
+    if not isinstance(out, dict):
+        return out
+    if season is None or week is None:
+        season, week = _current()
+    for k in ("players", "rows"):
+        ps = out.get(k)
+        if not isinstance(ps, list) or not ps:
+            continue
+        st = statuses([p.get("gsis_id") for p in ps if isinstance(p, dict) and isinstance(p.get("gsis_id"), str)], season, week)
+        keep, gone = [], list(out.get("not_playing") or [])
+        for p in ps:
+            s = st.get(p.get("gsis_id")) if isinstance(p, dict) else None
+            if s is not None and s.get("out_indefinitely"):
+                gone.append(not_playing_row({**p, "key": p.get("player_key") or p.get("gsis_id")}, s, view="season"))
+            else:
+                if s is not None and isinstance(p, dict):
+                    p["injury_status"] = s.get("status")
+                    p["availability"] = {"status": s.get("status"), "code": s.get("code"), "why": s.get("why"),
+                                         "cannot_play": bool(s.get("cannot_play"))}
+                keep.append(p)
+        out[k] = keep
+        out["not_playing"] = gone
+    return out
+# ---- end IR-1

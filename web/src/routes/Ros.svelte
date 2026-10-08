@@ -26,6 +26,7 @@
   import PosBadge from "../components/PosBadge.svelte";
   import TeamBadge from "../components/TeamBadge.svelte";
   import Md from "../components/Md.svelte";
+  import NotPlaying from "../components/availability/NotPlaying.svelte"; // ---- IR-1
 
   let {
     options,
@@ -363,6 +364,7 @@
     </table>
     </div>
     <!-- ---- end IA-3 -->
+    <NotPlaying rows={data.not_playing ?? []} words="Out with no return date: no rest-of-season value until his status changes." testid="ros-not-playing" /><!-- ---- IR-1 -->
 
     <Expander title="How to read this" testid="howto">
       <div class="text-base leading-snug">

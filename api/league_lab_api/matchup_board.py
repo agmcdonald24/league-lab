@@ -536,6 +536,7 @@ def board(league: str, *, position: str | None = None, q: str | None = None, gam
     league_def = None if ref else league_defense(ctx, season)                           # ---- IO-4
     df = _week_rows(ctx, season, week, wk, league_def)
     df = df[df["position"] == pos]
+    df, meta["not_playing"] = gate_week(df, season, week)                                  # ---- IR-1
     # ---- IO-4: a game that has kicked off moves below the games still to come; "Still to play" by default once one has
     state_of = {x["game_id"]: x["state"] for x in games}
     df = df.assign(game_state=[state_of.get(x) for x in df["game_id"]])
@@ -584,6 +585,27 @@ def board(league: str, *, position: str | None = None, q: str | None = None, gam
             **({k: r.get(k) for k in ("rostered_by_roster_id", "rostered_by_team")} if not ref else {}),
             "context": c, "cb_detail": wk["detail"].get(r["gsis_id"]), "matchup_evidence": ev.get(r["gsis_id"])})
     return {**meta, "season": season, "week": week, "rows": out_rows, "total": total, "games": games, "counts": counts}
+
+
+# ---- IR-1 (Wave I-R): nobody who cannot play is on a week's list (availability.statuses: the nightly's record +
+# Sleeper + ESPN, freshest wins); listed apart with the status, its source and time — never a number
+def gate_week(df: pd.DataFrame, season: int | None, week: int | None) -> tuple[pd.DataFrame, list[dict]]:
+    """(the rows who can play, a status refreshed on a doubtful / questionable one; the "Not playing" list)."""
+    from . import availability as AV
+    if df is None or df.empty or week is None:
+        return df, []
+    st = AV.statuses(None, season, week)
+    stored = set(AV.stored_status(season, week))
+    g = df["gsis_id"].where(df["gsis_id"].map(lambda x: isinstance(x, str)), None)
+    out = {k for k, s in st.items() if s.get("cannot_play")}
+    gone = g.isin(out | stored)
+    rows = [AV.not_playing_row(r, st[r["gsis_id"]]) for r in df[gone & g.isin(out)].to_dict("records")]
+    keep = df[~gone].copy()
+    if "report_status" in keep:
+        keep["report_status"] = [(st.get(x) or {}).get("status") or r if isinstance(x, str) else r
+                                 for x, r in zip(keep["gsis_id"], keep["report_status"], strict=True)]
+    return keep, sorted(rows, key=lambda r: str(r.get("player_name") or ""))
+# ---- end IR-1
 
 
 @router.get("/api/matchups/board")

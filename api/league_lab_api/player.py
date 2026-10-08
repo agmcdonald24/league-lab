@@ -288,7 +288,15 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
     if week is not None and (od is not None or not missing_relations((ROS.RELATION,))):
         ros = (query(f"select {ROS.ROS_COLUMNS} from analytics.mart_player_ros_projection where league_id = %s and gsis_id = %s",
                      (league_id, gsis)) if od is None else od.ros(gsis, pos))
-        if not ros.empty:
+        # ---- IR-1 (Wave I-R): out indefinitely (IR, PUP, NFI, suspended) = no rest-of-season number, the reason instead
+        try:
+            gate = AV.statuses([gsis], season, week).get(gsis) or {}
+        except Exception:  # noqa: BLE001 - the card stands without it
+            gate = {}
+        if gate.get("out_indefinitely"):
+            md(projection, f"Rest of season: — {gate.get('ros_words')} ({gate.get('why')})")
+        # ---- end IR-1
+        elif not ros.empty:
             rr = ros.iloc[0]
             from .ondemand import ros_card
             ros_out = ros_card(rr)

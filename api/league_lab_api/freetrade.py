@@ -112,7 +112,21 @@ def _this_week(key: str, first: int | None, gsis_ids: list[str]) -> dict[str, di
     return out
 
 
-def _player(g: str, row: dict | None, week: dict | None, first: int | None, names: dict) -> dict:
+OUT_PRICE = ("Not priced: {who}. The calculator does not price a trade on a player who cannot play as if he were "
+             "healthy — take him out, or try again when his status changes.")   # ---- IR-1
+
+
+def _player(g: str, row: dict | None, week: dict | None, first: int | None, names: dict, st: dict | None = None) -> dict:
+    # ---- IR-1 (Wave I-R): out indefinitely (IR, PUP, NFI, suspended) = no rest-of-season value, with the reason
+    if st is not None and st.get("out_indefinitely"):
+        n = names.get(g, {})
+        nm = (row or {}).get("player_name") or n.get("player_name") or st.get("name") or g
+        return {"gsis_id": g, "player_name": nm, "position": (row or {}).get("position") or n.get("position"),
+                "team": (row or {}).get("team"), "value": None, "ros_points": None, "no_projection": True,
+                "out": {"status": st.get("status"), "code": st.get("code"), "why": st.get("why"),
+                        "source": st.get("source"), "as_of": st.get("as_of")},
+                "why": f"{st.get('ros_words')} ({st.get('why')})"}
+    # ---- end IR-1
     if row is None:
         n = names.get(g, {})
         return {"gsis_id": g, "player_name": n.get("player_name") or g, "position": n.get("position"), "team": None,
@@ -126,6 +140,8 @@ def _player(g: str, row: dict | None, week: dict | None, first: int | None, name
     outlook = {"week": first, "points": wk.get("points"), "p10": wk.get("p10"), "p90": wk.get("p90"),
                "bye": first is not None and not plays,
                "per_game": round(ros / games, 1) if ros is not None and games else None, "games": games}
+    if st is not None and st.get("cannot_play"):                     # ---- IR-1: out this week only: no week number
+        outlook.update(points=None, p10=None, p90=None, out=st.get("week_words"), why=st.get("why"))
     return {"gsis_id": g, "player_name": row.get("player_name"), "position": row.get("position"),
             "team": row.get("team"), "value": _num(row.get("value")), "ros_points": ros,
             "ros_p10": _num(row.get("ros_p10")), "ros_p90": _num(row.get("ros_p90")),
@@ -156,6 +172,10 @@ def verdict(give: dict, get: dict) -> dict:
     if not give["n"] or not get["n"]:
         return {"even": None, "lean": None, "gap": None, "low": None, "high": None, "one_player": None,
                 "words": "Add a player to each side to compare them."}
+    out_who = [f"{p['player_name']} — {p['why']}" for p in give["players"] + get["players"] if p.get("out")]   # ---- IR-1
+    if out_who:
+        return {"even": None, "lean": None, "gap": None, "low": None, "high": None, "one_player": None,
+                "not_priced": True, "words": OUT_PRICE.format(who="; ".join(out_who))}
     if give["value"] is None or get["value"] is None:
         who = ", ".join(give["unknown"] + get["unknown"])
         return {"even": None, "lean": None, "gap": None, "low": None, "high": None, "one_player": None,
@@ -234,8 +254,12 @@ def evaluate(key: str, give_ids: list[str], get_ids: list[str]) -> dict:
             names = {str(r.gsis_id): {"player_name": r.player_name, "position": r.position} for r in df.itertuples()}
         except Exception:  # noqa: BLE001 - the id is named as it was sent
             names = {}
-    give = _side([_player(g, rows.get(g), week.get(g), first, names) for g in give_ids])
-    get = _side([_player(g, rows.get(g), week.get(g), first, names) for g in get_ids])
+    # ---- IR-1: who cannot play (availability.statuses: the nightly's record + Sleeper + ESPN, freshest wins)
+    from . import availability as AV
+    st = AV.statuses(give_ids + get_ids, refleague._window()[0], first)
+    give = _side([_player(g, rows.get(g), week.get(g), first, names, st.get(g)) for g in give_ids])
+    get = _side([_player(g, rows.get(g), week.get(g), first, names, st.get(g)) for g in get_ids])
+    # ---- end IR-1
     v = verdict(give, get)
     return {"league_id": sh.key, "league_name": sh.words, "scoring_label": sh.words,
             "assumes": sh.assumes, "value_words": facts.get("words"),

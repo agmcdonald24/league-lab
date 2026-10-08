@@ -317,6 +317,13 @@ def ros_grade_block(position: str | None) -> dict:
 
 def ros(league_id: str, position: str = "ALL", limit: int = 50, *, view: str = "points", team: int | None = None,
         who: str = "all") -> dict:
+    """GET /api/ros: ``_ros``'s answer with nobody out indefinitely in it (IR-1: listed under ``not_playing`` with the
+    reason, never a number)."""
+    return availability.ros_gate(_ros(league_id, position, limit, view=view, team=team, who=who))   # ---- IR-1
+
+
+def _ros(league_id: str, position: str = "ALL", limit: int = 50, *, view: str = "points", team: int | None = None,
+         who: str = "all") -> dict:
     from .applib import ros as ROS
     from .myweek import known_league
     if (view or "points").lower() in SEASON_VIEWS:                                              # ---- II-4
