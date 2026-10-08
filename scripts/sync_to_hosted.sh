@@ -47,6 +47,8 @@
 #         The old copy is kept as `_prev` (the app role's grants revoked) for --rollback until the next run, or
 #         dropped at once when keeping it would leave the database over the cap (or LEAGUE_LAB_HOSTED_KEEP_PREV=0).
 #   auto  swap when it fits under the cap, otherwise drop (and the log says which and why).
+# LEAGUE_LAB_HOSTED_RETRIES (default 0 = as before): a restore whose connection is lost (psql exit 2) is run again whole,
+# up to that many times, after LEAGUE_LAB_HOSTED_RETRY_WAIT_S × the attempt (default 30 s); an SQL error never is.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MODE="${1:-publish}"
@@ -112,6 +114,28 @@ do $$ declare s text; begin
   end loop;
 end $$;
 SQL
+}
+# a restore whose connection is lost (psql exit 2: Neon's free compute, the network) is run again whole - it is one
+# transaction, so nothing of the failed attempt was kept. Off by default (LEAGUE_LAB_HOSTED_RETRIES=0: as before, the
+# run fails); an SQL error (exit 3: a size limit, a failed check) is never retried.
+RETRIES="${LEAGUE_LAB_HOSTED_RETRIES:-0}"
+RETRY_WAIT_S="${LEAGUE_LAB_HOSTED_RETRY_WAIT_S:-30}"
+restore_retrying() {  # restore_retrying <stream function>
+  local attempt=0 rc
+  while :; do
+    set +e
+    "$1" | psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction
+    rc=$?
+    set -e
+    [ "$rc" = 0 ] && return 0
+    if [ "$rc" = 2 ] && [ "$attempt" -lt "$RETRIES" ]; then
+      attempt=$((attempt + 1))
+      echo "the connection was lost during the restore (attempt $attempt of $((RETRIES + 1)); nothing of it was kept: one transaction); again in $((attempt * RETRY_WAIT_S)) s" >&2
+      sleep $((attempt * RETRY_WAIT_S))
+      continue
+    fi
+    return "$rc"
+  done
 }
 if [ "$MODE" = --rollback ]; then
   have_prev="$(hosted_q "select count(*) from pg_namespace where nspname in ('analytics_prev', 'analytics_seeds_prev', 'ops_prev')")"
@@ -353,7 +377,7 @@ if [ "$use_swap" = 1 ]; then
 # restore, a lost connection, a check below) rolls all of it back and the previous publication stays as it was.
 echo "publishing: restoring beside the live publication, checking, then switching in one transaction (pages keep the previous numbers until the commit) ..."
 t0=$(date +%s)
-{
+swap_stream() {  # ---- IR-3: the swap transaction as a stream (re-run whole by restore_retrying)
   cat <<'SQL'
 drop schema if exists hosted_slim cascade;
 do $$ declare s text; begin
@@ -413,7 +437,8 @@ do $chk$ declare s int; w int; begin
   end if;
 end $chk$;
 SQL
-} | psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction
+}
+restore_retrying swap_stream
 echo "switched in $(( $(date +%s) - t0 )) s: publication ${PUB_ID} is live"
 after_mb="$(hosted_mb)"
 if [ "$KEEP_PREV" = 1 ] && [ "$after_mb" -le "$CAP_MB" ]; then
@@ -430,7 +455,7 @@ t0=$(date +%s)
 psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -q -c "do \$m\$ begin execute format('comment on database %I is %L', current_database(), '{\"publishing_since\": \"$PUB_TIME\", \"mode\": \"drop\"}'); end \$m\$;" \
   || echo "WARNING: could not mark the database as publishing (the publish goes on; /api/ready says 'missing tables' meanwhile)" >&2
 psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "drop schema if exists analytics cascade; drop schema if exists analytics_seeds cascade;"
-{
+drop_stream() {  # ---- IR-3: the pre-IR-3 restore transaction, unchanged, as a stream (re-run whole by restore_retrying)
   echo "drop schema if exists ops cascade; create schema if not exists analytics; create schema if not exists analytics_seeds; create schema ops; drop schema if exists hosted_slim cascade; create schema hosted_slim;"
   # the season-window tables first, moved into analytics so the views restored next find them
   gunzip -c "$SLIM_DUMP"
@@ -443,7 +468,8 @@ grant select on all tables in schema analytics to league_lab_app;
 grant select on all tables in schema analytics_seeds to league_lab_app;
 grant select on all tables in schema ops to league_lab_app;
 SQL
-} | psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction
+}
+restore_retrying drop_stream
 echo "restored in $(( $(date +%s) - t0 )) s"
 # ---- IR-3: the publication's id, and the marker cleared (each its own statement, never fatal)
 psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -q -c "comment on schema analytics is \$pub\$$(pub_json drop)\$pub\$;" \

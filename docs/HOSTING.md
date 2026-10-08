@@ -339,6 +339,13 @@ How a publication replaces the last one is `LEAGUE_LAB_HOSTED_PUBLISH` (the sync
 | `swap` | The previous publication, until one commit switches every table at once | Everything rolls back; the previous publication answers as before | Two copies: refused with exit 8 (nothing published, the last publication stays) when the hosted database + the new copy is over `LEAGUE_LAB_HOSTED_CAP_MB` (default 500) |
 | `auto` | `swap` when two copies fit under the cap, otherwise `drop` (the log says which and why) | As the mode it chose | — |
 
+**A lost connection** (Neon's free compute, the network) during either restore: with `LEAGUE_LAB_HOSTED_RETRIES=2`
+the restore — one transaction, so nothing of the failed attempt was kept — is run again after 30 s, then 60 s
+(`LEAGUE_LAB_HOSTED_RETRY_WAIT_S`); an SQL error (a size limit, a failed check) is never retried. Off by default (0:
+the run fails, as before). Drilled: the drop path cut off mid-restore came back on the second attempt (7 s of
+`publishing`, then the new publication); the swap path with the default 0 still exits 2 with the previous publication
+in place.
+
 **The swap, step by step** (one `psql --single-transaction`): rename `analytics` / `analytics_seeds` / `ops` to
 `…_prev`; create them empty; restore the new copy into them (the season window first, then the rest); grant the app
 role; revoke its grants on the `_prev` schemas (it never reads them, and the revoke makes every cached query plan on

@@ -21,8 +21,9 @@ scratch database `league_lab_ir3_sim` (the hosted stand-in, 198–433 MB during 
    no-store`).
 3. **The post-deploy journey.** `scripts/post_deploy_check.py` (standard library only, read only, exit 0 / 1 / 2).
 4. **Publication without the destructive gap.** `scripts/sync_to_hosted.sh`: `LEAGUE_LAB_HOSTED_PUBLISH=drop|swap|auto`,
-   `--rollback`, the publication id, the publishing marker. Drilled on `league_lab_ir3_sim`.
-5. **The nightly's three modes**: proposed below (exact lines); nothing built in `nightly.sh` / `nightly.yml`.
+   `--rollback`, the publication id, the publishing marker, `LEAGUE_LAB_HOSTED_RETRIES`. Drilled on `league_lab_ir3_sim`.
+5. **The nightly's three modes**: mode 3's restore retry built in the sync (off by default); the rest proposed below
+   (exact lines); nothing edited in `nightly.sh` / `nightly.yml`.
 
 #### The gate's proof
 
@@ -170,6 +171,12 @@ published (the hosted copy keeps the last publication)"; the live publication un
 FAILED: UndefinedTable" (10:56:16–10:56:22, the gap the swap removes), 1 × 200 with `pub=None` (the stamp is written
 just after the restore), then `pub=20261008T1456Z-a0817d7e0623`.
 
+*A lost connection, retried* (`LEAGUE_LAB_HOSTED_RETRIES=2`, wait 2 s; the default `drop` path; terminated during
+`COPY analytics.mart_cb_matchups`): `the connection was lost during the restore (attempt 1 of 3; nothing of it was
+kept: one transaction); again in 2 s` → `restored in 8 s` → `verified: all 92 relations …` → exit 0. Reader: 6 × 200
+on the old publication, 5 × 503 `publishing` (11:09:05–11:09:11), then 17 × 200 on `20261008T1509Z-9621fa52b964`.
+The same cut on the swap path with the default `RETRIES=0`: exit 2, the previous publication answering (22 × 200).
+
 **Rollback steps**: docs/HOSTING.md § "Publishing without the gap" → Rollback (Actions idle; `scripts/sync_to_hosted.sh
 --rollback` as the one writer; the post-deploy check; the decision record goes back with `ops`). After a `drop`
 publication there is nothing to roll back to: run the nightly again.
@@ -195,9 +202,11 @@ else
 fi
 ```
 
-(3) the publish retried on a lost connection, never on a deterministic refusal (replace line 560
-`hard sync-hosted ./scripts/sync_to_hosted.sh`; safe with both modes: a failed swap changed nothing, a failed drop is
-re-run whole):
+(3) the publish retried on a lost connection — **built** in the sync behind `LEAGUE_LAB_HOSTED_RETRIES` (default 0);
+to turn it on, nightly.yml's `Nightly pipeline` step `env:` gains `LEAGUE_LAB_HOSTED_RETRIES: "2"` (my
+recommendation: a retried restore is one transaction, nothing of a failed attempt is kept, an SQL error is never
+retried). If the PO prefers the whole run retried (dump included) instead, replace nightly.sh line 560
+`hard sync-hosted ./scripts/sync_to_hosted.sh` with:
 
 ```bash
 sync_with_retry() {  # IR-3: a lost connection (psql exit 2) is retried twice, 60 s then 120 s; exits 5/6/7/8/64 are not
@@ -252,8 +261,8 @@ the post-deploy check", two "When it breaks" rows). Edits outside my files (mark
 
 New relations: none. Schema in/out: two comments (on the `analytics` schema and on the database) — a database
 without them answers as before. New env variables (the sync only): `LEAGUE_LAB_HOSTED_PUBLISH` (drop),
-`LEAGUE_LAB_HOSTED_CAP_MB` (500), `LEAGUE_LAB_HOSTED_KEEP_PREV` (1), `LEAGUE_LAB_HOSTED_SKIP_ROLE` (honoured only for
-a local target). New dependencies: none (the gate job uses `actions/setup-node@v4`). Size on Neon: +2 short comments.
+`LEAGUE_LAB_HOSTED_CAP_MB` (500), `LEAGUE_LAB_HOSTED_KEEP_PREV` (1), `LEAGUE_LAB_HOSTED_RETRIES` (0),
+`LEAGUE_LAB_HOSTED_RETRY_WAIT_S` (30), `LEAGUE_LAB_HOSTED_SKIP_ROLE` (honoured only for a local target). New dependencies: none (the gate job uses `actions/setup-node@v4`). Size on Neon: +2 short comments.
 
 #### Checks
 
