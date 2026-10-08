@@ -11,7 +11,9 @@ blend the model's stat line with his own per-game line), kept by a rule written 
    model reads the quarterback (IQ-3)"), before any candidate number.
 2. `16d57d4` — the candidates' code (hb1.0, hb1.1, pe1.0, pe1.0 + hb1.0), defined before the run.
 3. `bac49fa` — v3.6 in production (`calibration.horizon_blend_lines`), tests, the `_matrix` fix, CHANGELOG, registry.
-4. the docs commit (METRICS results, this hand-back).
+4. `592374b` — METRICS results and this hand-back.
+5. `d0259d7` — db1.0 (the per-dropback record as inputs), defined and committed before its run; then its result and the
+   ceiling split (the last commit).
 
 ## Baselines (2021–2025, both house scorings averaged; season = the mean of its weeks)
 
@@ -51,6 +53,10 @@ weight) was judged by the full clause and failed.
 | hb1.1 + a market-week weight | Δ MAE −0.017 / +0.010 / +0.012 / −0.016 / +0.066 (2 of 5), Δ ρ +0.0023 | as hb1.0 | 5 / +0.0216 | drop (clause 1) |
 | pe1.0 player effect (shrunk past residuals) | Δ MAE −0.067 / +0.005 / −0.037 / −0.022 / +0.019 (3 of 5), Δ ρ +0.0010 | −0.106 / +0.056 / −0.060 / +0.030 / +0.036 | 2 / +0.0102 | drop (1, 2) |
 | pe1.0 + hb1.0 | as pe1.0 | −0.393 / −0.310 / −0.007 / +0.000 / −0.043 | 4 / +0.0209 | drop (clause 1) |
+
+db1.0 (run after the ship, defined and committed before its run): the per-dropback record as QB inputs (EPA, TD, INT,
+sack, scramble rates per dropback, empirical-Bayes shrunk; designed runs per game) — 1 week Δ MAE +0.049 (lower in 1 of
+5), 2–8 weeks Δ MAE +0.051 (0 of 5), Δ Spearman −0.0075: drop.
 
 hb1.0: pooled 2–8 MAE 7.560 → 7.406, Spearman 0.473 → 0.495 (by season 0.519 / 0.533 / 0.518 / 0.478 / 0.426; 2023
 and 2024 −0.001). Ranges (production path, 80 % coverage): 1 week 78.4 % Half PPR / 78.5 % dynasty (unchanged: holds);
@@ -112,8 +118,10 @@ step, no `scripts/nightly.sh` line.
 
 ## Limitations
 
-* Not cured: 0.495 against the 0.53 target, about two fifths of the way. The oracle that knew each QB's season level and
-  his role in the target week reaches 0.552; one week out the model is past that oracle already.
+* Not cured: 0.495 against the 0.53 target, about two fifths of the way. The ceiling, split (2–8 weeks, rows where both
+  oracles exist): B0 0.477, B2 0.502, an oracle that knew each QB's season level in the market week's role **0.533**,
+  in the target week's role 0.565. 0.53 is what perfect level knowledge gives: out of reach for a level model. 17 % of
+  the scored later-week QB rows change listed role; knowing it is worth 0.47 points of MAE.
 * The 2–8 weeks ranges stay narrow (about 72–73 % for the 80 % range): they are calibrated one week ahead.
 * The guard warns on this week's board (0.53 against its 0.55 floor); its floor was set on a footing without pt1.0.
 * The naive line uses the frame's per-game rates over games played (a game left early counts as a game).
@@ -128,6 +136,7 @@ step, no `scripts/nightly.sh` line.
 
 ## Next
 
-The one thing I would try next: the quarterback's per-dropback record (EPA, pass-TD, sack and interception rates per
-dropback, empirical-Bayes shrunk over career / last season / this season with the dropback counts) as inputs to the QB
-component models, judged on the same two boards by the same rule.
+The one thing I would try next: forecast the role for later weeks — the probability that the market week's starter
+still starts h weeks out (and that a backup does), from history by h — and project a later week as that mixture of his
+starter line and his backup line, judged on the same two boards by the same rule. The ceiling split says the role is
+the larger part of what is left (0.47 points of MAE); the per-dropback record as tree inputs (db1.0) did not help.

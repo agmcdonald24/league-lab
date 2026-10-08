@@ -3947,10 +3947,24 @@ floor is the PO's call (a QB floor of 0.45 sits below every v3.6 cell); it is le
 the market week, which v3.6 does not change), `calibration-oof` rebuilds `ops.calibration_oof` (about 2–3 CPU-minutes),
 `project` recomputes the importance once (2 minutes here). No new table, no new step, no `scripts/nightly.sh` line.
 
-**Not run** (left for the next package): the per-dropback record as inputs (EPA, pass-TD, sack and interception rates
-per dropback, empirical-Bayes shrunk), rushing as its own input (designed runs and scrambles), a model class with a
-player effect (pe1.0, a residual player effect on the trees, was the light version: it did not pass), the team's pass
-rate and pace for weeks without a line.
+**db1.0, run after the ship** (time allowed; defined and committed before its run, `iq3_qb.py cache-db` /
+`candidate-db`): the per-dropback record as inputs to the QB component models — EPA, passing-TD, interception, sack and
+scramble rates per dropback (this season to date + 0.5 × last season + 0.25 × the seasons before, shrunk toward the
+league's rate by 300 / 400 / 500 / 200 / 150 dropbacks), designed runs, their yards and rushing TDs per game (shrunk by 4
+games), the effective dropbacks. Against B0: 1 week Δ MAE −0.033 / +0.064 / +0.085 / +0.037 / +0.094 (lower in 1 of
+5), Δ Spearman −0.0030; 2–8 weeks Δ MAE +0.057 / +0.035 / +0.037 / +0.006 / +0.122 (0 of 5), Δ Spearman −0.0075 →
+**drop** (clauses 1 and 2). The trees do not use the richer record (about 6,000 QB training rows a season).
+
+**The ceiling, split** (2–8 weeks, the rows where both oracles exist): B0 7.382 / 0.477, B2 7.359 / 0.502; an oracle
+that knew each QB's season mean in the **market week's** listed role 7.049 / **0.533**; in the **target week's** role
+6.575 / 0.565. So 0.53 is what perfect knowledge of a QB's season level gives without knowing future role changes:
+"cured" as defined is out of reach for a level model. The rest is the role: 1,234 of the 7,159 scored later-week QB
+rows (17 %) have a listed role different from the market week's, and knowing it is worth 0.47 points of MAE.
+
+**Not run** (left for the next package): a forecast of the role itself for later weeks (the probability that the
+market week's starter still starts h weeks out, and that a backup does — the larger piece of the gap above); a model
+class with a player effect on the components (pe1.0, a residual player effect on the trees, was the light version and
+did not pass); the team's pass rate and pace for weeks without a line.
 
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
