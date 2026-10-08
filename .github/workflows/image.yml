@@ -7,6 +7,8 @@
 # build never reaches the server. The image here is the reproducible copy of each commit: roll back to it, run it
 # anywhere (docker run), or switch the Render service to it (docs/DEPLOY.md § "Deploying the built image instead":
 # set the RENDER_DEPLOY_HOOK_URL secret and the last step tells Render to pull this commit's image).
+# IR-3 (Wave I-R): the `gate` job runs first (scripts/gate.sh: the decision suite, ruff, the web lint, type check and
+# build) and the image job needs it, so a commit that breaks a slot assignment or the trade math is never published.
 name: image
 
 on:
@@ -38,7 +40,42 @@ defaults:
     shell: bash
 
 jobs:
+  # ---- IR-3 (Wave I-R): the release gate - the decision suite with no warehouse (trade math on hand-built frames,
+  # lineup legality and slot assignment, the chain's words, scoring, MFL units, waivers, readiness), ruff, the web
+  # lint + type check + build: scripts/gate.sh, the same command a developer runs (docs/DEPLOY.md § "The release
+  # gate"). The image job needs it: a red gate builds and publishes nothing, and Render (render.yaml
+  # autoDeployTrigger: checksPass) deploys nothing - the server keeps the last good commit.
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            api/uv.lock
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Python environments (uv.lock, api/uv.lock) and the web app's (web/package-lock.json)
+        run: |
+          uv sync --locked
+          (cd api && uv sync --locked)
+          (cd web && npm ci --no-audit --no-fund)
+
+      - name: The gate (scripts/gate.sh - no database here, on purpose)
+        run: scripts/gate.sh
+  # ---- end IR-3
+
   image:
+    needs: gate     # ---- IR-3: no image (and no deploy) unless the gate is green
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
