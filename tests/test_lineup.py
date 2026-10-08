@@ -364,6 +364,11 @@ def _inputs() -> LineupInputs:
             if w == 3 and team == "BUF":
                 continue                                           # no projection row on a bye
             proj[("L", w, g)] = {"proj_points": pts, "team": team, "report_status": status, "roster_status": "ACT"}
+            # ---- IS-2: who sits is the gate's stored record (project writes it), no longer the report status above
+            if status == "Out":
+                from league_lab import availability_gate as AG
+                proj[("L", w, g)]["availability"] = AG.record_text(AG.classify(AG.entry("OUT", "Sleeper")))
+            # ---- end IS-2
     return LineupInputs(
         season=2026, leagues=[{"league_id": "L", "roster_positions": ["QB", "RB", "TE", "FLEX", "SUPER_FLEX", "K", "DEF", "BN"],
                                "last_scored_leg": 1, "roster_ids": [1]}],
