@@ -234,7 +234,7 @@ ROS_MART_SQL = """select {cols}, a.rostered_by_roster_id, a.rostered_by_team
                          and ((r.gsis_id is not null and a.gsis_id = r.gsis_id)
                               or (r.gsis_id is null and a.sleeper_id = r.player_key))   -- a defense: its Sleeper id is the team code (QA, Wave F)
                    where r.league_id = %s and (%s = 'ALL' or r.position = %s)
-                   order by r.ros_points desc, r.player_key limit %s"""
+                   order by r.ros_points desc nulls last, r.player_key limit %s"""   # IS-1: NULL = out indefinitely
 POSITIONS = ("QB", "RB", "WR", "TE", "K", "DEF", "TMQB", "TMPK", "ALL")   # IC-4: the team units
 POS_RANK_NOTE = ("pos_rank is the player's rank at his position among every projected player on an active NFL roster "
                  "in this league's scoring, rostered or not (mart_player_ros_projection's population)")

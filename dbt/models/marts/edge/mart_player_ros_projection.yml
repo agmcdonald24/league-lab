@@ -42,6 +42,10 @@ models:
           arguments:
             expression: "(ros_rank_pos is not null) = is_ranked and (ros_rank_all is not null) = is_ranked"
       - expression_is_true:
+          name: ros_points_known_unless_out_indefinitely          # IS-1 (was: ros_points not_null)
+          arguments:
+            expression: "(ros_points is null) = out_indefinitely"
+      - expression_is_true:
           name: ros_defense_has_no_gsis_id
           arguments:
             expression: "(gsis_id is null) = (position = 'DEF') and player_key = coalesce(gsis_id, player_key)"
@@ -56,8 +60,7 @@ models:
           - accepted_values:
               arguments:
                 values: ["QB", "RB", "WR", "TE", "K", "DEF"]
-      - name: ros_points
-        tests: [not_null]
+      - name: ros_points    # IS-1: NULL (unknown) exactly when the gate's record says he is out indefinitely
       - name: from_week
         tests: [not_null]
       - name: last_week

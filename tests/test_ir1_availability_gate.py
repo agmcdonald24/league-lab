@@ -44,7 +44,7 @@ def test_sleeper_codes(row, code):
 def test_the_definition(code, cannot, indef, doubtful):
     c = AG.classify(AG.entry(code, "Sleeper", as_of=SEP28, note="Knee - ACL"))
     assert (c["cannot_play"], c["out_indefinitely"], c["doubtful"]) == (cannot, indef, doubtful)
-    assert (c["week_words"] is not None) == cannot and (c["ros_words"] is not None) == indef
+    assert (c["week_words"] is not None) == AG.sits(c) and (c["ros_words"] is not None) == indef   # IS-1: Doubtful sits
 
 
 def test_the_words_say_what_where_and_when():

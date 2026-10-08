@@ -985,8 +985,11 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     # 0 with the reason (``availability``, frozen with the week); a player out indefinitely has no later weeks
     # (availability_gate; the Sleeper directory the nightly has just loaded, its date logged)
     from . import availability_gate as _ag
-    gated, gate = _ag.apply_to_project(conn, season, {"pred": pred, "lines": lines, "ranges": ranges}, target, now)
+    gated, gate = _ag.apply_to_project(conn, season, {"pred": pred, "lines": lines, "ranges": ranges}, target, now,
+                                       drop={"kd_lines": kd.lines})                 # ---- IS-1: kickers' NFL-wide lines
     pred, lines, ranges = gated["pred"], gated["lines"], gated["ranges"]
+    if "kd_lines" in gated and gated["kd_lines"] is not None:                         # ---- IS-1
+        kd.lines = gated["kd_lines"]
     pred.attrs["availability_gate"] = gate
     # ---- end IR-1
     _write_projections(conn, pred, season, now)   # B5: weeks whose first game has kicked off are kept, not rewritten

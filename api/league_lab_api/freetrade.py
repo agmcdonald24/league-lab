@@ -140,7 +140,8 @@ def _player(g: str, row: dict | None, week: dict | None, first: int | None, name
     outlook = {"week": first, "points": wk.get("points"), "p10": wk.get("p10"), "p90": wk.get("p90"),
                "bye": first is not None and not plays,
                "per_game": round(ros / games, 1) if ros is not None and games else None, "games": games}
-    if st is not None and st.get("cannot_play"):                     # ---- IR-1: out this week only: no week number
+    from league_lab.availability_gate import sits as _sits  # ---- IS-1: sits() (cannot play, or unlikely to play)
+    if st is not None and _sits(st):                                # ---- IR-1: out this week only: no week number
         outlook.update(points=None, p10=None, p90=None, out=st.get("week_words"), why=st.get("why"))
     return {"gsis_id": g, "player_name": row.get("player_name"), "position": row.get("position"),
             "team": row.get("team"), "value": _num(row.get("value")), "ros_points": ros,

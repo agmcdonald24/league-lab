@@ -3006,3 +3006,16 @@ export interface AboutAnswer {
   };
 }
 // ---- end IR-4
+
+// ---- IS-1 (Wave I-S): a status that rarely plays (Doubtful) sits like a player who cannot play; the "Not playing" group
+// in two labelled parts; a ranked Questionable player's label carries how often such players play
+export interface NotPlaying {
+  group?: "out" | "unlikely";
+  group_label?: string;
+  p_play?: number | null;
+}
+export interface PlayAvailability {
+  p_play?: number | null;
+  words?: string | null;
+}
+// ---- end IS-1

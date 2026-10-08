@@ -44,12 +44,12 @@ def test_the_list_splits_on_the_definition():
                       "report_status": [None, None, None, None, "Questionable"]})
     st = {"a": _st("IR", note="knee - acl"), "b": _st("OUT", "ESPN", TODAY), "c": _st("DOUBTFUL", "ESPN", TODAY),
           "e": _st("QUESTIONABLE", "ESPN", TODAY)}
-    gate = {"st": st, "out": frozenset({"a", "b"}), "stored": frozenset()}
+    gate = {"st": st, "out": frozenset({"a", "b", "c"}), "stored": frozenset()}   # IS-1: Doubtful sits (unlikely)
     keep, gone = RK._split_not_playing(d, gate, "week")
-    assert list(keep["gsis_id"]) == ["c", "d", "e"]                              # Doubtful flagged, not removed
-    assert keep.set_index("gsis_id").loc["c", "availability"]["status"] == "Doubtful"
-    assert keep.set_index("gsis_id").loc["c", "report_status"] == "Doubtful"
-    assert [g["gsis_id"] for g in gone] == ["a", "b"]                            # out indefinitely first
+    assert list(keep["gsis_id"]) == ["d", "e"]                                   # IS-1: Doubtful is not ranked now
+    assert keep.set_index("gsis_id").loc["e", "availability"]["status"] == "Questionable"   # Questionable: flagged
+    assert keep.set_index("gsis_id").loc["e", "report_status"] == "Questionable"
+    assert [g["gsis_id"] for g in gone] == ["a", "b", "c"]                       # Out, then Unlikely to play
     assert gone[0]["why"] == "IR (knee - acl) · Sleeper, Sep 28" and gone[0]["words"].startswith("On injured reserve")
     assert gone[1]["words"] == "Ruled out this week: he will not play this week, so he is not ranked."
     # the season: the rows the mart does not rank leave; listed only when out indefinitely

@@ -36,6 +36,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from . import availability_gate as AG  # ---- IS-1: sits() for the first rule
+
 log = logging.getLogger(__name__)
 Query = Callable[[str, tuple], pd.DataFrame]
 
@@ -162,12 +164,13 @@ def still_ranked(boards: list[Board], st: Mapping[str, dict]) -> list[dict]:
     rest-of-season points above 0."""
     out = []
     for b in boards:
-        want = "cannot_play" if b.view == "week" else "out_indefinitely"
+        want = "sits" if b.view == "week" else "out_indefinitely"          # ---- IS-1: the week asks sits()
         if b.rows is None or b.rows.empty or "gsis_id" not in b.rows:
             continue
         for x in b.rows.itertuples():
             s = st.get(getattr(x, "gsis_id", None)) if isinstance(getattr(x, "gsis_id", None), str) else None
-            if s is None or not s.get(want) or pd.isna(x.proj) or float(x.proj) <= 0:
+            hit = AG.sits(s) if want == "sits" else bool((s or {}).get(want))
+            if s is None or not hit or pd.isna(x.proj) or float(x.proj) <= 0:
                 continue
             title = {"week": "this week", "season": "rest of season", "value": "calculator value"}[b.view]
             out.append({"player": x.player_name, "team": x.team, "position": x.position, "view": title, "label": b.label,
@@ -469,7 +472,6 @@ def build(query: Query, *, ranks_path: Path | None = None) -> Report:
         rep.add("The regular season is over: nothing to audit.")
         return rep
     # ---- IR-1: the definition the site uses (availability_gate), from the sources the database holds
-    from . import availability_gate as AG
     gate_st, gate_meta = AG.statuses_from_query(query, season, week)
     # ---- end IR-1
     last_week = int(query("select max(week) as w from analytics.dim_game where season = %s and season_type = 'REG'",
@@ -497,12 +499,14 @@ def build(query: Query, *, ranks_path: Path | None = None) -> Report:
     n_players = len({(it["player"], it["team"]) for it in sr})
     rep.counts["cannot_play_ranked"] = n_players
     n_cp = sum(1 for v in gate_st.values() if v.get("cannot_play"))
-    rep.add(f"## Players who cannot play and are still ranked or valued: {n_players}",
-            f"_Who cannot play: {n_cp} players by Sleeper's directory (copy of {gate_meta.get('fetched_at') or 'no date'}) "
-            "and last night's stored record, freshest first (league_lab.availability_gate)._")
+    n_un = sum(1 for v in gate_st.values() if v.get("unlikely"))           # ---- IS-1
+    rep.add(f"## Players who cannot play or are unlikely to play and are still ranked or valued: {n_players}",
+            f"_Who cannot play: {n_cp} players, unlikely to play (Doubtful): {n_un}, by Sleeper's directory (copy of "
+            f"{gate_meta.get('fetched_at') or 'no date'}; the directory alone, never the stored record it checks) "
+            "(league_lab.availability_gate)._")
     rep.add(*([f"- **{it['player']} ({it['team']}, {it['position']}): {it['why']} — {it['view']} rank {it['rank']}, "
                f"{it['proj']:.1f} [{', '.join(lb)}]**" for it, lb in names[:MAX_ROWS * 2]]
-              or ["- None: every player who cannot play is out of this week's lists, and every player out indefinitely "
+              or ["- None: every player who cannot play or is unlikely to play is out of this week's lists, and every player out indefinitely "
                   "out of the season lists and the calculator's values."]), "")
     # ---- end IR-1
     # ---- coverage: the first section

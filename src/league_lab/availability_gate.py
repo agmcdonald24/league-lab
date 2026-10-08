@@ -35,20 +35,34 @@ import pandas as pd
 
 log = logging.getLogger(__name__)
 
-CANNOT_PLAY = frozenset({"IR", "PUP", "NFI", "SUS", "OUT", "NO_TEAM"})
+CANNOT_PLAY = frozenset({"IR", "PUP", "NFI", "SUS", "OUT", "NO_TEAM", "INACTIVE"})
 OUT_INDEFINITELY = frozenset({"IR", "PUP", "NFI", "SUS"})
-FLAGGED = frozenset({"DOUBTFUL"})
 GAME_STATUS = frozenset({"OUT", "DOUBTFUL", "QUESTIONABLE"})
+# ---- IS-1 (Wave I-S): a status that rarely plays. The rule was written before the numbers were read (docs/METRICS.md
+# § "Who cannot play", av1.1): a game status whose players played in fewer than UNLIKELY_BELOW of cases is `unlikely`
+# — he sits this week exactly as a player who cannot play (sits()), but is not out indefinitely. P_PLAY is the
+# measured rate (2016-2025 regular seasons, QB / RB / WR / TE on nflverse's final report, "played" = any offensive or
+# special-teams snap, or a stat): Doubtful 6 of 520 (1.2 %), Questionable 2,860 of 4,294 (66.6 %), Out 2 of 3,165.
+UNLIKELY_BELOW = 0.25
+P_PLAY = {"OUT": 0.0, "DOUBTFUL": 0.01, "QUESTIONABLE": 0.67}
+UNLIKELY = frozenset(c for c, p in P_PLAY.items() if p < UNLIKELY_BELOW and c not in CANNOT_PLAY)   # {"DOUBTFUL"}
+SITS_CODES = CANNOT_PLAY | UNLIKELY            # the codes sits() is true for: the older overlay's CANNOT_PLAY is this set
+FLAGGED = frozenset(c for c in GAME_STATUS if c not in SITS_CODES)                                  # {"QUESTIONABLE"}
+# ---- end IS-1
 CODES = (*sorted(CANNOT_PLAY), "DOUBTFUL", "QUESTIONABLE", "ACTIVE")
 
 LABEL = {"IR": "IR", "PUP": "PUP", "NFI": "NFI", "SUS": "Suspended", "OUT": "Out", "NO_TEAM": "No team",
-         "DOUBTFUL": "Doubtful", "QUESTIONABLE": "Questionable", "ACTIVE": None}
+         "INACTIVE": "Inactive", "DOUBTFUL": "Doubtful", "QUESTIONABLE": "Questionable", "ACTIVE": None}
 REASON = {"IR": "on injured reserve", "PUP": "on the PUP list", "NFI": "on the non-football injury list",
           "SUS": "suspended", "OUT": "ruled out this week", "NO_TEAM": "not on an NFL team",
-          "DOUBTFUL": "doubtful this week"}
+          "INACTIVE": "not on an active NFL roster", "DOUBTFUL": "doubtful this week"}
 WEEK_WORDS = "{reason}: he will not play this week, so he is not ranked."
 ROS_WORDS = "{reason}: no return date, so no rest-of-season value."
 OUT_CALL = "{name} is out — {reason}."
+# ---- IS-1: the words for a status that rarely plays, with its measured rate
+UNLIKELY_WORDS = ("{label}: players listed {lower} have played about {n} in 100 times; not ranked this week.")
+UNLIKELY_CALL = "{name} is {lower} — players listed {lower} have played about {n} in 100 times ({why})."
+FLAG_WORDS = "{label}: players listed {lower} have played about {n} in 100 times; ranked as if he plays."
 
 # Sleeper's codes (``injury_status``); NA has no settled meaning in Sleeper's directory: ignored
 SLEEPER_INJURY = {"IR": "IR", "PUP": "PUP", "NFI": "NFI", "SUS": "SUS", "OUT": "OUT", "DNR": "OUT", "COV": "OUT",
@@ -63,6 +77,11 @@ NFLVERSE_ROSTER = {"RES": "IR", "SUS": "SUS"}
 # ------------------------------------------------------------------------------ the definition
 def cannot_play(code: str | None) -> bool:
     return code in CANNOT_PLAY
+
+
+def unlikely(code: str | None) -> bool:
+    """IS-1: a status whose players played in fewer than ``UNLIKELY_BELOW`` of cases (Doubtful)."""
+    return code in UNLIKELY
 
 
 def out_indefinitely(code: str | None) -> bool:
@@ -106,6 +125,8 @@ def sleeper_code(p: Mapping) -> str | None:
         return SLEEPER_STATUS[st]
     if not str(p.get("team") or "").strip():
         return "NO_TEAM"
+    if st == "inactive" and not inj:
+        return "INACTIVE"          # ---- IS-1: on a team's books, not on its active roster (the overlay's rule, one place)
     return "ACTIVE" if not inj or inj == "ACTIVE" else None
 
 
@@ -149,13 +170,19 @@ def classify(e: dict | None) -> dict:
     note = f" ({e['note']})" if e.get("note") else ""
     stamp = f" · {e['source']}" + (f", {when(e.get('as_of'))}" if e.get("as_of") else "")
     reason = REASON.get(code)
+    # ---- IS-1: a status that rarely plays sits this week (not out indefinitely); the measured rate goes with it
+    p_play = P_PLAY.get(code)
+    week_words = WEEK_WORDS.format(reason=reason[0].upper() + reason[1:]) if cannot_play(code) and reason else None
+    if unlikely(code):
+        week_words = UNLIKELY_WORDS.format(label=label, lower=label.lower(), n=round(100 * p_play))
+    flag_words = (FLAG_WORDS.format(label=label, lower=label.lower(), n=round(100 * p_play))
+                  if code in FLAGGED and p_play is not None else None)
     return {"status": LABEL.get(code), "code": code, "cannot_play": cannot_play(code),
-            "out_indefinitely": out_indefinitely(code), "doubtful": code in FLAGGED,
-            "unlikely": False, "p_play": None,  # PO (Wave I-S): IS-1 fills these (a status that rarely plays); see sits()
+            "out_indefinitely": out_indefinitely(code), "doubtful": code == "DOUBTFUL",
+            "unlikely": unlikely(code), "p_play": p_play,
             "source": e.get("source"),
             "as_of": iso(e.get("as_of")), "fetched_at": iso(e.get("fetched_at")), "note": e.get("note"),
-            "why": f"{label}{note}{stamp}", "reason": reason,
-            "week_words": WEEK_WORDS.format(reason=reason[0].upper() + reason[1:]) if cannot_play(code) and reason else None,
+            "why": f"{label}{note}{stamp}", "reason": reason, "week_words": week_words, "flag_words": flag_words,
             "ros_words": ROS_WORDS.format(reason=reason[0].upper() + reason[1:]) if out_indefinitely(code) and reason else None}
 
 
@@ -168,7 +195,11 @@ def sits(block: dict | None) -> bool:
 
 def out_sentence(name: str, st: dict) -> str:
     """"Who should I start?"'s sentence for a player who cannot play: "Achane is out — on injured reserve (IR (knee -
-    acl) · Sleeper, Sep 28)." Never a call on him."""
+    acl) · Sleeper, Sep 28)." Never a call on him. IS-1: a player whose status rarely plays: "Hall is doubtful — players
+    listed doubtful have played about 1 in 100 times (Doubtful (quadriceps) · Sleeper, Oct 7)." """
+    if st.get("unlikely") and st.get("p_play") is not None:
+        lab = str(LABEL.get(str(st.get("code"))) or st.get("status") or "").lower()
+        return UNLIKELY_CALL.format(name=name, lower=lab, n=round(100 * float(st["p_play"])), why=st.get("why"))
     return OUT_CALL.format(name=name, reason=f"{st.get('reason') or 'he cannot play'} ({st.get('why')})")
 
 
@@ -279,7 +310,7 @@ def gate_frame(df: pd.DataFrame, statuses: Mapping[str, dict], week: int) -> tup
     df["availability"] = df["availability"].astype(object)
     wk = pd.to_numeric(df["week"], errors="coerce")
     g = df["gsis_id"].astype(object)
-    out_now = {k for k, s in statuses.items() if s.get("cannot_play")}
+    out_now = {k for k, s in statuses.items() if sits(s)}          # ---- IS-1: cannot play, or unlikely to play
     indef = {k for k, s in statuses.items() if s.get("out_indefinitely")}
     this = (wk == int(week)) & g.isin(out_now)
     nums = [c for c in df.columns if c.startswith(NUMERIC_PREFIX) or c in RANGE_COLS]
@@ -306,8 +337,24 @@ def current_week(conn, season: int, now: datetime | None = None) -> int | None:
     return None
 
 
+def drop_frame(df: pd.DataFrame, statuses: Mapping[str, dict], week: int, key: str = "unit_id") -> tuple[pd.DataFrame, list[str]]:
+    """IS-1: a league-free K / DEF line table (``ops.kd_lines``, keyed by ``key``: a kicker's gsis id) with the rule
+    applied by removing rows — the live week of a kicker who sits, every later week of one out indefinitely. Removed,
+    not zeroed: ``ops.kd_ranges`` is the line priced plus fitted offsets, so a zero line would still carry a range; the
+    house leagues' ``ops.projections`` K rows keep their 0 and the reason. Returns (frame, the ids removed)."""
+    if df is None or df.empty or key not in df or "week" not in df:
+        return df, []
+    wk = pd.to_numeric(df["week"], errors="coerce")
+    k = df[key].astype(str)
+    now_out = {g for g, s in statuses.items() if sits(s)}
+    indef = {g for g, s in statuses.items() if s.get("out_indefinitely")}
+    gone = ((wk == int(week)) & k.isin(now_out)) | ((wk > int(week)) & k.isin(indef))
+    return df[~gone].reset_index(drop=True), sorted(set(k[gone]))
+
+
 def apply_to_project(conn, season: int, frames: dict[str, pd.DataFrame], target: pd.DataFrame | None = None,
-                     now: datetime | None = None) -> tuple[dict[str, pd.DataFrame], dict]:
+                     now: datetime | None = None, drop: dict[str, pd.DataFrame] | None = None
+                     ) -> tuple[dict[str, pd.DataFrame], dict]:
     """``projections.project``'s hook, before anything is written: every frame in ``frames`` (``pred``, ``lines``,
     ``ranges``) gated for the live week (``current_week``) by the stored copy (``stored``). Returns (frames, summary):
     the week, the source and its date, and every player changed (logged)."""
@@ -320,14 +367,19 @@ def apply_to_project(conn, season: int, frames: dict[str, pd.DataFrame], target:
         rs = dict(zip(t["gsis_id"], t["roster_status"], strict=False))
     raw, meta = stored(conn, season, week, rs)
     statuses = {g: classify(e) for g, e in raw.items()}
-    statuses = {g: s for g, s in statuses.items() if s["cannot_play"]}
+    statuses = {g: s for g, s in statuses.items() if sits(s)}      # ---- IS-1: the unlikely tier too (not indefinitely)
     out, players = {}, {}
     for name, df in frames.items():
         out[name], rep = gate_frame(df, statuses, week)
         for r in rep:
             players[r["gsis_id"]] = r
-    summary = {"week": week, **meta, "players": sorted(players.values(), key=lambda r: r["gsis_id"])}
-    log.info("availability gate: week %s, %s (copy of %s%s): %s players who cannot play get 0 this week (%s of them "
+    kd_gone: list[str] = []
+    for name, df in (drop or {}).items():                  # ---- IS-1: kickers' league-free lines (ops.kd_lines)
+        out[name], ids = drop_frame(df, statuses, week)
+        kd_gone += ids
+    summary = {"week": week, **meta, "players": sorted(players.values(), key=lambda r: r["gsis_id"]),
+               "kd_lines_removed": sorted(set(kd_gone))}
+    log.info("availability gate: week %s, %s (copy of %s%s): %s players who cannot play or are unlikely to play get 0 this week (%s of them "
              "out indefinitely: no later weeks)", week, meta["source"], meta.get("fetched_at") or "no date",
              "; FALLBACK" if meta.get("fallback") else "", len(players),
              sum(1 for r in players.values() if r.get("out_indefinitely")))
@@ -342,7 +394,7 @@ RECORD_SQL = """select gsis_id, availability from (
                 where availability is not null"""
 
 
-def statuses_from_query(query, season: int, week: int) -> tuple[dict[str, dict], dict]:
+def statuses_from_query(query, season: int, week: int, *, with_record: bool = False) -> tuple[dict[str, dict], dict]:
     """({gsis: ``classify`` block} of every player with a status, meta) from what the database holds of the site's
     sources: the Sleeper directory (``raw.sleeper_player``: the nightly's copy, stale game statuses dropped) and the
     nightly's stored record (``ops.projection_lines.availability``) — the freshest word wins, as on the site. ESPN's
@@ -363,10 +415,14 @@ def statuses_from_query(query, season: int, week: int) -> tuple[dict[str, dict],
         meta["fetched_at"] = iso(ts(pd.to_datetime(d["fetched_at"], utc=True).max()))
         for g, e in directory_statuses(d).items():
             cands.setdefault(g, []).append(e)
-    try:
-        rec = query(RECORD_SQL, (int(season), int(week)))
-    except Exception:  # noqa: BLE001 - before the first gated nightly
-        rec = pd.DataFrame(columns=["gsis_id", "availability"])
+    # ---- IS-1: the audit reads the directory alone (a guard must not read the field it guards); the stored record only
+    # when a caller asks for it
+    rec = pd.DataFrame(columns=["gsis_id", "availability"])
+    if with_record:
+        try:
+            rec = query(RECORD_SQL, (int(season), int(week)))
+        except Exception:  # noqa: BLE001 - before the first gated nightly
+            rec = pd.DataFrame(columns=["gsis_id", "availability"])
     for g, a in zip(rec["gsis_id"], rec["availability"], strict=True):
         try:
             j = json.loads(a) if isinstance(a, str) else None
