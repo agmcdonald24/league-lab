@@ -570,9 +570,64 @@ def run_candidates(cache_path: Path, out: Path | None) -> None:
     print("\nverdicts (clauses 1 and 2; 3 = ranges, 4 = QB only):", {k: (v["c1"], v["c2"]) for k, v in verdicts.items()})
 
 
+# ------------------------------------------------------------------------------ clause 3: the ranges, production path
+def run_ranges(lines_path: Path, cand: str = "hb0") -> None:
+    """Per S: ``fit_position`` (QB, the house scorings) on 2016..S-1; v3.5's 1-week line (the model's, pt1.0 where there
+    is a real line) ranged by ``predict_position(..., lines=)``; the horizon rows (v3.5's inputs) ranged around B0's line
+    and around the candidate's (``<cand>_<c>`` from the candidates' lines parquet). Coverage of the 80 % and 50 % ranges
+    against the components' price, per league x season x week (>= 8), the season the mean of its weeks."""
+    with psycopg.connect(get_settings().pipeline_dsn()) as conn:
+        conn.read_only = True
+        frame = H.load(conn, [s for s in P.available_seasons(conn) if s <= max(TESTS)])
+        leagues = P.league_scorings(conn)
+    frame["season"] = frame["season"].astype(int)
+    lines = pd.read_parquet(lines_path)
+    qb = frame[frame["position"] == "QB"]
+    keys = ["gsis_id", "season", "week"]
+    out = []
+    for s in TESTS:
+        t0 = time.monotonic()
+        m = P.fit_position(frame[frame["season"] < s], "QB", leagues)
+        board = qb[qb["season"] == s].reset_index(drop=True)
+        ln = lines[(lines["kind"] == "board") & (lines["season"] == s)]
+        bl = board[keys].assign(season=board["season"].astype(int), week=board["week"].astype(int)).merge(
+            ln.assign(week=ln["week"].astype(int)), on=keys, how="left")
+        sets = [("1 week", "B0", board, bl.rename(columns={f"v_{c}": f"proj_{c}" for c in COMPS}))]
+        for w in H.AS_OF:
+            rows = H.future_rows(qb, s, w)
+            rows = rows[(rows["position"] == "QB") & (rows["h"] > 1)].reset_index(drop=True)
+            rows = H.market_personnel(H.impute_lines(rows, H.team_lines_asof(frame, s, w))).assign(as_of=w)
+            lh = lines[(lines["kind"] == "horizon") & (lines["season"] == s) & (lines["as_of"] == w) & (lines["h"] > 1)]
+            hl = rows[["gsis_id", "h"]].merge(lh, on=["gsis_id", "h"], how="left", validate="one_to_one")
+            for name, pre in (("B0", "v"), (cand, cand)):
+                sets.append(("2-8 weeks", name, rows.assign(week=rows["target_week"]),
+                             hl.rename(columns={f"{pre}_{c}": f"proj_{c}" for c in COMPS})))
+        for horizon, name, rows, ln_ in sets:
+            assert ln_["proj_passing_yards"].notna().all(), (s, horizon, name)
+            pr = P.predict_position(m, rows, leagues, lines=ln_)
+            ok = scored(rows)
+            for lid, (_, sc) in leagues.items():
+                o = pr[pr["league_id"] == lid].reset_index(drop=True)
+                o["actual"] = np.where(ok, actual(rows, sc), np.nan)
+                o = o[ok]
+                o["week"] = rows.loc[ok, "week"].astype(int).to_numpy() if horizon == "1 week" else (
+                    rows.loc[ok, "as_of"].astype(int).to_numpy() * 100 + rows.loc[ok, "target_week"].astype(int).to_numpy()) \
+                    if "as_of" in rows else o["week"]
+                sc_ = E.score_v31(o.assign(position="QB"))
+                sc_["horizon"], sc_["variant"] = horizon, name
+                out.append(sc_)
+        log.info("ranges %s: %.0f s", s, time.monotonic() - t0)
+    res = pd.concat(out, ignore_index=True)
+    g = res.groupby(["horizon", "variant", "league_id", "season"])[["coverage_80", "coverage_50", "mae"]].mean().reset_index()
+    print("\n### QB ranges, production path (coverage of the 80 % and 50 % ranges, season = mean of its weeks)\n")
+    print(g.pivot_table(index=["horizon", "variant", "league_id"], columns="season", values="coverage_80").round(3).to_string())
+    print("\nmeans over 2021-2025:\n")
+    print(g.groupby(["horizon", "variant", "league_id"])[["coverage_80", "coverage_50", "mae"]].mean().round(3).to_string())
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["cache", "baselines", "candidates"])
+    ap.add_argument("mode", choices=["cache", "baselines", "candidates", "ranges"])
     ap.add_argument("--cache", type=Path, default=None)
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
@@ -581,6 +636,8 @@ def main() -> None:
         cache(args.out)
     elif args.mode == "baselines":
         run_baselines(args.cache, args.out)
+    elif args.mode == "ranges":
+        run_ranges(args.cache)
     else:
         run_candidates(args.cache, args.out)
 

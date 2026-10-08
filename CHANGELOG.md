@@ -2,6 +2,20 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-Q
+
+<!-- ---- IQ-3 -->
+- **IQ-3 — v3.6: a quarterback's later weeks lean on his own record.** Baselines first: two to eight weeks ahead a
+  naive line (his points per game this season and last, shrunk toward his role's mean) beat the model (MAE 7.44
+  against 7.56, Spearman 0.491 against 0.473, 2021–2025); one week ahead the model beats every baseline and even an
+  oracle that knew each QB's season level. Now a QB's weeks after the market week blend the model's line with that
+  naive line, the weight by how far out the week is, fitted on the 3 seasons before (`calibration.horizon_blend_lines`,
+  `LEAGUE_LAB_QB_HORIZON_BLEND`, on); the market week and played weeks are untouched. Judged by a rule written first:
+  pooled 2–8 weeks MAE −0.154 in 5 of 5 seasons, Spearman 0.473 → 0.495; the ranges hold; RB / WR / TE untouched.
+  Not "cured" (the target was 0.53; an oracle that knew each QB's season level and his role in the week reaches 0.55).
+  Also: `projections._matrix` no longer turns a column unknown in the whole batch into 0 (no change on a season's batch).
+<!-- ---- end IQ-3 -->
+
 ## 2026-10-07 — hotfix: rest-of-season quarterbacks
 
 - **IQ-1 — v3.5: the weeks after the market week read a line and a starter.** A week more than one ahead had no

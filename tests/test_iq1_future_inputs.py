@@ -85,7 +85,7 @@ def test_the_switch(monkeypatch):
         assert C.future_inputs_enabled() is on
     monkeypatch.delenv(C.FUTURE_INPUTS_FLAG)
     assert C.future_inputs_enabled() is C.FUTURE_INPUTS_DEFAULT is True
-    assert P.MODEL_VERSION == "v3.5"
+    assert P.MODEL_VERSION == "v3.6"   # ---- IQ-3: v3.6 keeps fi1.0
 
 
 def test_a_market_week_without_a_line_gets_one_and_nothing_played_moves(monkeypatch):
