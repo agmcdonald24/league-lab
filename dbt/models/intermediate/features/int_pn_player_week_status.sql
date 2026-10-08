@@ -24,12 +24,38 @@ roster_weeks as (
     group by 1, 2
 ),
 
+-- ---- IQ-4: a team missing from the newest roster week (a bye: nflverse's weekly file lists only the teams that play)
+-- reads its own newest file for the weeks after it, as the universe does. Only weeks past the newest file change
+-- (week > roster_week): a played week always has its own file, so history is untouched.
+team_weeks as (
+    select distinct season, team, week from {{ ref('int_player_week_team') }} where season_type = 'REG'
+),
+
+team_fallback as (
+    select w.season, w.week, t.team, max(t.week) as roster_week
+    from roster_weeks as w
+    join team_weeks as t on t.season = w.season and t.week < w.roster_week
+    where w.week > w.roster_week
+      and not exists (select 1 from team_weeks as x where x.season = w.season and x.week = w.roster_week and x.team = t.team)
+    group by 1, 2, 3
+),
+
 roster as (
     select r.gsis_id, w.season, w.week, w.roster_week, {{ kd_team('r.team') }} as roster_team, r.roster_status
     from roster_weeks as w
     join {{ ref('int_player_week_team') }} as r on r.season = w.season and r.week = w.roster_week and r.season_type = 'REG'
     where r.position in ('QB', 'RB', 'WR', 'TE', 'OL')
+    union all
+    select r.gsis_id, f.season, f.week, f.roster_week, {{ kd_team('r.team') }} as roster_team, r.roster_status
+    from team_fallback as f
+    join {{ ref('int_player_week_team') }} as r on r.season = f.season and r.week = f.roster_week and r.team = f.team
+                                               and r.season_type = 'REG'
+    where r.position in ('QB', 'RB', 'WR', 'TE', 'OL')
+      and not exists (select 1 from {{ ref('int_player_week_team') }} as n      -- on a newer file elsewhere: that one
+                      where n.gsis_id = r.gsis_id and n.season = f.season and n.week > f.roster_week and n.week <= f.week
+                        and n.season_type = 'REG')
 ),
+-- ---- end IQ-4
 
 inj as (
     select gsis_id, season, week, {{ kd_team('team') }} as report_team,
