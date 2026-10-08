@@ -39,6 +39,7 @@
             <span class="min-w-0">
               <span class="block truncate font-semibold">{p.player_name}</span>
               <span class="block truncate text-xs text-ink-3">{p.position} · {p.is_home === false ? "at" : "vs"} {teamLabel(p.opponent) ?? "—"} · {fmt.pts(p.proj_points)} projected</span>
+              {#if p.starter_corrected}<span class="block text-xs leading-snug text-ink-2" data-testid={`${testid}-corrected`}>{p.starter_corrected.words}</span>{/if}<!-- ---- IQ-2 -->
               {#if p.pct_best != null}
                 <span class="mt-1 block h-2 rounded-sm bg-sunken" aria-hidden="true">
                   <span class="block h-full rounded-sm" style="width:{Math.max(2, p.pct_best)}%;background:{colors[i] ?? colors[0]}"></span>
