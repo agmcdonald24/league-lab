@@ -15084,3 +15084,1153 @@ uv run python scripts/analysis/iq4_kd_horizon.py --out <csv>
 
 The audit's flags as a weekly check list (with IQ-2's mart); a bye-week test on the nightly's own fresh database
 (load a bye week's file, project, assert the coverage rule); the rest-of-season ranges (still ungraded; no tiers).
+
+## Wave I-R (Iteration 28) — dependability
+
+### PO merge — Wave I-R, 2026-10-08 (Thursday 10:00 – 12:50 ET; nobody who cannot play, one trade verdict, what is verified, releases that cannot quietly break)
+
+* **Why**: Andrew, Thursday 10:00, with an outside dependability review attached: "You can't have injured people in
+  the rankings who aren't playing. Devon Achane, not playing. Why is he ranked the 21st running back to start this
+  week? He's out for the year. He tore his ACL … utterly unacceptable … This needs to be addressed ASAP." He was
+  right, and it was live: Rankings had De'Von Achane RB21 at 10.9 with no status while his own card said "IR (knee -
+  acl) · Sleeper, Sep 28". The check on `main`'s code also found Breece Hall (#18), Jadarian Price, Rachaad White,
+  Rico Dowdle and Zach Charbonnet ranked while Out. The brief is `/home/claude/waveIR/BRIEF.md` in the sandbox; the
+  review is kept beside it (`review.md`; five items: P0 one comparison behind every part of a trade verdict, P0
+  correct slot sentences and depth counts, P1 confidence in the horizons the trades use, P1 the destructive gap in
+  publication, P1 regression checks as a release requirement).
+* **Why nobody caught Achane — the audit included**: the projection run reads availability from nflverse's weekly
+  injury report, which does not exist until Wednesday–Friday and never lists a player on a reserve list; the card
+  read Sleeper's directory through the request-time overlay, the lists did not. Wave I-Q's audit asked "is anyone
+  ruled out projected above a backup" of the same stored field, so it printed "No player ruled out or on a reserve
+  list is projected above a backup" on nightly #22 with Achane at 10.9. **Rule: a guard must not read the field it
+  guards. The audit's status rule now reads Sleeper's directory itself and is the report's first line.** The PO's
+  face-validity pass on Wednesday looked at quarterbacks and bye teams and did not open the RB list against an
+  injury list; it does now (the post-deploy check does it by program).
+* **How it ran**: four Opus devs in one message at 10:08 from `main` `3dfa01d`, all handed back by 11:12; merged on
+  `integ/IR` in the order IR-3, IR-1, IR-2, IR-4 (CHANGELOG / WORDS / METRICS / the registry kept both;
+  `web/src/lib/api.ts` = `main` + each branch's in-place edits + the appended blocks, `waveIR/merge_api_ts.py`;
+  `Ros.svelte` and `TradeCalc.svelte` keep both devs' lines).
+* **What was built** (the hand-backs below; the tables are in docs/METRICS.md):
+  * **IR-1 — one definition of "cannot play"** (`src/league_lab/availability_gate.py`): IR, PUP, NFI, suspended,
+    Out, no team; "out indefinitely" = the reserve lists; Doubtful is flagged, not removed; the freshest dated word
+    of Sleeper's directory and ESPN wins; last week's game status rules nothing; the nflverse weekly report is never
+    the source. `project` writes 0 with the reason for the live week and no later week for a player out
+    indefinitely; every public route applies it again at request time (Rankings week and season with a "Not playing"
+    group, "Who should I start?" says "He is out", `/api/ros`, the free calculator refuses to price him, Compare,
+    DFS, the matchup board). On the copy of this morning's board: **79 players who cannot play were carrying 320.5
+    projected points this week; now 0** (Achane 11.42 → 0, no weeks 6–18); frozen weeks: 0 cells changed.
+  * **IR-2 — one trade verdict** (`decisions.ir2_decision`): the dial, the tiles, the week table, the headline, the
+    alternative and the recommendation read one answer on one basis — against realistic replacements (an empty slot
+    is filled with the best free agent that week, for both teams, never the same one twice) — and the roster-only
+    result is a labelled explanation. The review's case (Folk for Stafford + Reichard) now reads You +0.5 / them
+    −1.3 over weeks 5–8 everywhere and "Not worth proposing"; slot sentences pair the two players of the same slot;
+    depth has one definition.
+  * **IR-4 — what is verified** (`api/league_lab_api/provenance.py`, `ProvenanceLine.svelte`): model version, the
+    data's publication time, the weeks covered and what was checked for that horizon and position, on Rankings, the
+    season list, both calculators and the card; About lists the versions (its "the recipe stays the same all season"
+    was false). The first "useful decision" grade (ud1.0, 2021–2025, would following the pick over his own record
+    have scored more): RB 0.575 / WR 0.584 / TE 0.555 against 0.552 / 0.539 / 0.524 for his own record; **QB 0.594
+    against 0.615 — for quarterbacks beyond next week the model's pick is no better than the player's own record**,
+    and the screens say so.
+  * **IR-3 — releases and publication**: `scripts/gate.sh` (798 decision tests that need no database, ruff, the web
+    lint, type check and build; a skip fails it; proven to block a deliberately broken slot assignment) as a `gate`
+    job before the image; `/api/ready` (200 only when the published numbers can be served; `/api/health` stays the
+    liveness answer Render reads); `scripts/post_deploy_check.py` (health, ready, a Rankings top with nobody who
+    cannot play, the review's trade reconciled and reversed); `sync_to_hosted.sh` stamps each publication, marks the
+    database while the tables are away, retries a lost connection, and has a `swap` mode with `--rollback`.
+* **The PO's glue** (commit `9bdb1a7` + the lint fix): the league trade verdict reads IR-1's definition for "out
+  with no return date" (`decisions.ir2_out_indefinitely`, never raises) and applies IR-4's starter rule
+  (`provenance.rule_trade`, called in `main.py::trades_evaluate`): **starter unclear → no verdict, the numbers
+  stand; starter set by hand → the verdict as "a lean"**; `api/tests/test_ir0.py`.
+* **The PO's decisions**:
+  * **The stored-board check runs in the nightly as a soft step tonight** (IR-1 wrote it as a hard stop). The
+    screens gate at request time whatever the stored board holds, so a red check must not cost the night's
+    publication on its first run on CI's fresh database. Hard after one green night.
+  * **The release gate is advisory on its first day** (`scripts/gate.sh || ::warning`): it has never run on GitHub's
+    runner, and a red gate today would block the one deploy that removes Achane before the 20:15 freeze. Enforce it
+    (delete the `||` line in `image.yml`) after its first green run.
+  * **Publication stays on the drop path.** The safe swap needs two copies of the data side by side (about 485 MB)
+    and Neon's free tier holds 512 MB. It is built, drilled on the sandbox and off; turning it on is Andrew's
+    decision (a paid database tier). Until then: `/api/ready` answers "publishing" during the ~30 s gap and the
+    publish retries a lost connection twice (`LEAGUE_LAB_HOSTED_RETRIES=2` in `nightly.yml`).
+  * **Backtests are a soft step when a backtest record already exists** (a failure there no longer stops the
+    projections; `NIGHTLY_BACKTESTS=hard` restores the stop).
+  * **The post-publish check runs after every publication in CI, informational** (its lines go into the run's
+    summary); it becomes a failing step once it has been green for a week.
+* **Verified**: on the merged tree (`integ/IR`, with the fix round): ruff clean; copy standard clean; `npm run lint` 207 files,
+  0 errors; the build; `scripts/gate.sh` GATE PASSED (91 s here); the API suite 89 failed / 1322 passed, **0 new by
+  name** (the 89 are the sandbox's known data-state failures), run twice; the root suite 4 failed / 1668 passed, 0
+  new; `fresh_db_check.sh`: every state table exists after `db migrate` (20 tables). **The nightly's middle rehearsed
+  on a real copy** (`league_lab_iq4`, `waveIR/ir_chain.sh`): the full `dbt build` PASS 731 / WARN 5 / ERROR 0 of 736;
+  `project` printed the gate line (79 players, all 79 out indefinitely) and kept frozen weeks 1–4; the projection
+  marts PASS 144; the stored-board check run as an error PASS; the audit's first line 0. **The window between the
+  deploy and the refresh** (the new API on last night's schema — `league_lab_im4`, no `availability` column):
+  health, ready, Rankings week and season, `/api/ros`, the free calculator and the card all answer 200; until the
+  refresh writes the column the screens gate through the request-time overlay alone. **The e2e was red after the
+  merge, and only the whole suite showed it**: 17 older trade-calculator tests per project failed because their
+  saved answers predated `decision` (IR-2 had run its own spec only; the PO's brief did not say "every spec that
+  opens the calculator" — it does from now on). IR-2's fix round re-saved 30 answer files
+  (`web/fixtures/save_ir2_fixtures.py`, +0.95 MB), rewrote the old assertions to read `decision`, and found a real
+  bug on the way (the decision's lineup rows named slots "WR+TE3" / "TMQB" instead of "WR/TE 3" / "team QB":
+  `814a3d9`). The full fixtures e2e after it: 589 passed, 6 failed, 17 skipped; the 6 are 3 tests on 2 projects
+  whose saved trade is no longer legal on the fixture database — `test.fixme` with the reason (ia2:65 and ib2:143
+  for League of Scrubs only; ii1:126, whose meaning e2e/ir2 and `test_ir2.py` cover today); the trade folders run
+  again after the PO's last edits: 80 passed, 2 skipped. **QA at 375 and 1300** on the rehearsal board: Rankings RB
+  (Achane under "Not playing · 23" with "IR (knee - acl) · Sleeper, Sep 28"; not ranked in the week or the season
+  view), the free calculator ("Not priced: De'Von Achane — On injured reserve: no return date …"), a hand-set
+  starter (Darnold for Allen: "… (a lean: it assumes Darnold starts)"), the review's trade on the fixtures (You
+  +0.5 / Run Bijan Run −1.3 over weeks 5–8 in the dial row, the tiles, the week table, the headline and the
+  recommendation; "Not worth proposing"), About, the card; no sideways scroll, no page errors. Two wording fixes
+  from that QA: a negative "gain -3.3 beyond their own best move" is now "end 3.3 behind"; "Plausible offer" is
+  green only on a card that is also worth proposing. **Not verified here** (no outside world in the sandbox): the
+  request-time overlay against live Sleeper and ESPN (IR-1's tests use saved answers), the gate job on GitHub's
+  runner, the post-publish check from CI — the PO checks those on the live site after the push
+* **The audit on the merged board** (rehearsal): first line "Players who cannot play and are still ranked or valued: 0" (236 by
+  Sleeper's directory, 79 of them on the board); every team in all 54 lists; flagged this week: Kyler Murray (#10
+  here, #30 in points per game), Tyler Shough (#3 in points per game, #19 here), George Pickens (Standard), the
+  tight ends Gesicki, Juwan Johnson and Barner, and the kickers and defenses as before. For the record, nightly #22
+  on `3dfa01d` (Thursday 09:42 ET, green, 30 m 27 s) printed the old rule's "No player ruled out or on a reserve
+  list is projected above a backup" with Achane at RB21 — the miss described above
+* **Not done / next** (in the order the PO would take them):
+  1. Enforce the release gate; make the stored-board check hard; make the post-publish check a failing step.
+  2. **The stale readers of the old status field** (IR-1's list: `trades.py:112`, `decisions.py:243`,
+     `anyleague.py:1602`, `waivers.py:639,1135`, `signals.py:909`, `reports.py:226–302`, `ondemand.py:586,693`,
+     `player.py:338`, `mart_player_role_alerts.sql`) still read `mart_player_availability.injury_status`. League
+     screens get the gate through the stored board (0 points) but not its words; one definition everywhere is the
+     next wave's first item. Kickers' NFL-wide lines are not gated. Monday–Wednesday a player "Out" last week with
+     no new word is not ruled out (by design: last week's game status rules nothing).
+  3. The Trade Finder's partner rows and the best-waiver search still rank on the roster-only basis (IR-2); the
+     tile's caption (basis total against the roster-only total other screens show); evaluate is 1.2 s (was 0.6 s).
+  4. Publication: the swap needs a paid tier (Andrew); the publication id is not pinned across one decision's
+     reads; no automatic post-deploy workflow (Render deploys outside Actions); `image.yml`'s paths omit `tests/**`
+     and `scripts/gate.sh`; the nightly's "already ran today" reads UTC, not New York.
+  5. IR-4: start/sit does not soften for a hand-corrected quarterback; Waivers and Lineups carry no caveats; the QB
+     useful-decision grade is on v3.5-era rows, not v3.6; no prospective record of the 2–8 week horizons yet; the
+     free calculator's window ends at week 18 and `/ros` at week 17.
+  6. Tests and small things: re-record the three e2e trades marked `test.fixme` (a Scrubs package for ia2 / ib2, a
+     kicker-for-starter package for ii1) on trades that are legal on today's fixtures; the "Not playing" group is
+     alphabetical (the players a visitor looks for should lead); "Helps your lineup +0.5 … (-0.3 this week)" mixes
+     two minus signs.
+  7. Still open from Wave I-Q: the role forecast for later weeks; "listing unless ruled out" through the board; a
+     quarterback input for the receivers' models; Tampa Bay's starter (the listing says Jalon Daniels, the depth
+     chart Mayfield).
+
+### IR-1 — nobody who cannot play is ranked, valued or projected (Wave I-R, 2026-10-08)
+
+Branch `dev/IR1` (from `main` `3dfa01d`), worktree `/home/claude/wt-iq4`, database `league_lab_iq4` (2026 week 5, merged
+v3.6 board, Sleeper directory copy of 2026-10-05 12:00 UTC). Plan § Wave I-R, METRICS § "Who cannot play" (av1.0),
+WORDS § "Who cannot play".
+
+#### The definition and which source wins (`src/league_lab/availability_gate.py`)
+
+* **cannot_play** (this week): IR, PUP, NFI, suspended, Out, no NFL team (released / retired / unsigned).
+  **out_indefinitely**: IR, PUP, NFI, suspended. **Doubtful**: flagged, never removed. **Questionable**: untouched.
+* Sources: Sleeper's directory (`injury_status` first, else a reserve list its `status` names, else no team; dated by
+  `news_updated`) and ESPN's injuries feed (API only). **The freshest dated word wins** (ESPN first on an equal time; an
+  undated word loses). A game status (Out / Doubtful / Questionable) dated before the previous week's last kickoff is
+  last week's and rules nothing — this is why the 207 "Out" entries in this database's Monday-morning Sleeper copy rule
+  nobody out of week 5. nflverse's weekly injury report is never a source; nflverse's weekly roster status (`RES`,
+  `SUS`) is the fallback only when there is no Sleeper copy at all.
+* One divergence kept on purpose: My Week's lineup solver still sits a Doubtful player (`availability.CANNOT_PLAY`,
+  the lineup policy since Wave I-0); every list now flags him instead.
+
+#### `project` (the stored board)
+
+Before anything is written, for the live week (first REG week whose first game has not kicked off; today week 5):
+a player who cannot play keeps his row with **every number 0** and `availability` = the reason as JSON (new nullable
+column on `ops.projections` and `ops.projection_lines`, created by `db migrate` and the writers' DDL); a player out
+indefinitely has **no row in any later week**. Why 0 and not "no row" this week: he scores 0 if he does not play (a
+known 0), so lineups, waiver gains, a trade's week and the outlook sum the same rows; a missing row is "no value yet"
+and `lineup.solve` could seat him as a filler. Frozen weeks are never touched (B5).
+The copy is `raw.sleeper_player` (the nightly's fetch, upserted; a failed fetch leaves the last good copy, the replay
+step's archive copy on a fresh database) — `project` prints `availability gate, week 5: Sleeper directory copy of
+2026-10-05T12:00:39Z; 79 players who cannot play get 0 this week, 79 of them out indefinitely (no later weeks)`. No copy
+at all: the week's NFL roster file decides and the line says FALLBACK (tested) — never "everyone is healthy".
+
+#### Every route, at request time (`availability.statuses`: the stored record + the overlay's Sleeper and ESPN words)
+
+Rankings week (not ranked, not tiered, "Not playing" with status, source, time and the reason; FLEX the same; the
+search filters it; cache key carries the set) · Rankings season (out indefinitely) · "Who should I start?" ("Achane is
+out — on injured reserve (IR (knee - acl) · Sleeper, Sep 28). Start Judkins."; with 3–4 picks the call is among the
+others) · `/api/ros` every view (`ondemand.ros` → `availability.ros_gate`) · the free calculator (no value, "Not
+priced: …", out-this-week's outlook withheld) · Compare (`research._compare_gate`) · DFS (`dfs._statuses` reads the one
+definition) · the matchup board (`matchup_board.gate_week`; the home's top projections and matchups read it) · the
+player card's rest-of-season line. With the overlay off the stored record still applies (tested; run on week 5 below).
+
+#### Inventory (surface → knew before? → knows now? → source, freshness)
+
+| Surface / table | Before | Now | Source |
+|---|---|---|---|
+| `ops.projections`, `ops.projection_lines`, `ops.projection_ranges` (`project`) | no (Achane 11.42 wk 5, 126.9 ROS) | yes: 0 + reason this week, no later weeks | Sleeper copy the nightly loaded (daily) |
+| `mart_player_week_projections` (house) | `report_status` / `roster_status` (nflverse; `RES` only in `is_rankable`) | inherits the 0 | stored |
+| `mart_player_ros_projection` (house) | unranked if `roster_status` ≠ ACT, total kept (Achane 126.9) | 0.0 over 1 game, unranked; `/api/ros` lists him with the reason | stored + request time |
+| My Week / `roster_context` / ops.lineups | yes (overlay; lineup.py RES / Out / Doubtful) | unchanged + stored 0 | overlay (ESPN 15 min game days; Sleeper cached a day) |
+| Waivers | this week (overlay drops claims); later weeks healthy | later weeks from the stored board (0 / none) | overlay + stored (nightly) |
+| Trades' lists / partner search / trade board | this week (`horizon_overlay`); later weeks healthy | later weeks from the stored board | overlay + stored (nightly) |
+| League outlook roster values | no | from the stored board (nightly) | stored |
+| `/api/rankings` week | no (Achane #21 RB) | yes | statuses (record + Sleeper + ESPN) |
+| `/api/rankings` season | house: `is_ranked`; ref: no | yes (out indefinitely) | statuses |
+| `/api/rankings/start` | no | "He is out", no call on him | statuses |
+| `/api/ros` (all views) | label only | removed, `not_playing` | statuses |
+| `/api/trade-calc/free` | no | refuses to price | statuses |
+| `/api/compare` | label only | no number, the reason, "He is out" | statuses |
+| `/api/dfs/projections`, slate | overlay (its own def: Doubtful / Inactive out) + nflverse report | the one definition | statuses |
+| `/api/matchups/board` (+ home top projections, home matchups) | no | yes, `not_playing` | statuses |
+| Player card | status line (overlay) | + ROS withheld for out indefinitely | statuses |
+| Stats | no projection column | — | — |
+| `league-lab audit-lists` | nflverse report + roster status | the same definition and sources, first rule | Sleeper copy + record |
+
+**Readers that treat `mart_player_availability.injury_status` (nflverse's newest report row: midweek, last week's) as
+current** — not changed (not mine, flagged for the PO): `src/league_lab/trades.py:112` (free-agent replacement level),
+`api/league_lab_api/decisions.py:243` (Waiver Wire free-agent browse), `src/league_lab/anyleague.py:1602` (on-demand
+waivers' NFL status), `src/league_lab/waivers.py:639,1135` (the nightly's free-agent filter), `signals.py:909`,
+`reports.py:226-302`, `ondemand.py:586,693`, `player.py:338` (the card's injury line), `mart_player_role_alerts.sql`
+(the fingerprints in `waivers.py:559` / `mart_waiver_moves.sql:47` are cache keys only).
+
+#### The audit (`src/league_lab/audit.py`) and the stored check
+
+First lines of `logs/list_audit.md` on `league_lab_iq4` after the gated `project`:
+
+```
+## Players who cannot play and are still ranked or valued: 0
+_Who cannot play: 236 players by Sleeper's directory (copy of 2026-10-05T12:00:39.609393Z) and last night's stored record, freshest first (league_lab.availability_gate)._
+- None: every player who cannot play is out of this week's lists, and every player out indefinitely out of the season lists and the calculator's values.
+```
+
+(236 = every directory entry who cannot play, free agents without a team included; 79 of them were on the board.)
+`dbt/tests/assert_nobody_who_cannot_play_is_projected.sql`: the stored board (live week and later) against the
+directory's reserve lists. Severity by var (warn inside the builds — the full build runs before `project` on last
+night's board). Before the position fix it **warned 26 rows** (Scott Matlock, Sleeper position "DT", on IR, an RB on the
+board): the gate now reads every Sleeper position. After: PASS; with `availability_gate_severity: error`: PASS.
+
+##### The PO's lines for `scripts/nightly.sh` (after `hard projection-marts …`, before `audit-lists`)
+
+```bash
+# ---- IR-1 (Wave I-R): nobody who cannot play is projected — a hard stop (the stored board against Sleeper's directory)
+hard availability-gate dbt_step availability-gate test --select assert_nobody_who_cannot_play_is_projected --vars '{availability_gate_severity: error}'
+```
+
+##### What the first nightly does differently
+
+`db migrate` adds `ops.projections.availability` (and the `project` DDL adds `ops.projection_lines.availability`);
+the full `dbt build` runs the new test as a warning on the restored board; `project` prints the gate line and writes
+the live week's 0s with reasons and drops the later weeks of players out indefinitely (79 on this copy); the waiver,
+lineup and trade tables solved inside `project` read those rows; the projection marts carry them; the audit's first
+section is the new rule. Nothing else moves (frozen weeks: 0 cells changed).
+
+**Week 5 freezes at 20:15 ET tonight and the nightly runs tomorrow at 07:37 ET.** The API (deploy) gates every
+screen at request time from the overlay as soon as it is live; the stored week-5 record is only clean if a `project`
+with this branch runs before 20:15 (a dispatched nightly). Otherwise week 5's frozen rows keep last night's numbers
+(Achane 11.42) and the stored record has no `availability` for week 5 (the screens still gate through the overlay).
+
+#### Evidence (`league_lab_iq4`, `project` + the nightly's projection-marts selection)
+
+* `project`: EXIT 0, 79 players gated; projection marts + guards: `PASS=144 WARN=0 ERROR=0` (incl.
+  `assert_rest_of_season_follows_the_market_week`, `assert_house_projections_are_the_nfl_wide_rows`,
+  `assert_projection_ranges_price_the_lines`, the new check).
+* Frozen weeks 1–4: `ops.projections` 4,856 rows, `ops.projection_lines` 2,396, `ops.projection_ranges` 11,980 —
+  identical before / after, **0 cells changed**.
+* **De'Von Achane (gsis 00-0039040) is on IR in this database's snapshot**: Sleeper id 9226, `injury_status` IR,
+  `status` Inactive, body part "Knee - ACL", `news_updated` 2026-09-28 (nflverse roster status week 5: RES).
+  Before: Half PPR week 5 **11.42, #21 RB** (Andrew's 21st); ROS (League of Scrubs mart) 126.9 over 11 games,
+  unranked. After: week 5 **0.00** (reason recorded), no later week; Rankings: not ranked, "Not playing"; ROS:
+  listed, no number; "Who should I start?": "Achane is out — on injured reserve (IR (knee - acl) · Sleeper, Sep 28).
+  Start Judkins."; free calculator: "Not priced: De'Von Achane — On injured reserve: no return date, so no
+  rest-of-season value. (IR (knee - acl) · Sleeper, Sep 28). …"
+* With the overlay off (`LEAGUE_LAB_AVAILABILITY=off`, the stored record alone), the API code on week 5: RB 110
+  ranked / 14 tiers / 23 not playing; WR 170 / 33; TE 116 / 19; QB 83 / 4 (the tables below).
+
+| Player | Pos | Status (source, date) | Wk 5 before | Wk 5 after | ROS before (games, rank) | ROS after (mart) |
+|---|---|---|---|---|---|---|
+| De'Von Achane | RB | IR (knee - acl) · Sleeper, Sep 28 | 11.42 | 0.00 | 126.9 (11, unranked) | 0.0 (1, unranked) |
+| Travis Etienne | RB | IR (hamstring) · Sleeper, Oct 1 | 10.34 | 0.00 | 116.9 (11, unranked) | 0.0 (1, unranked) |
+| Jordan Mason | RB | IR (thumb) · Sleeper, Oct 3 | 9.24 | 0.00 | 99.2 (11, unranked) | 0.0 (1, unranked) |
+| Jadarian Price | RB | IR (chest) · Sleeper, Oct 4 | 8.59 | 0.00 | 89.9 (11, unranked) | 0.0 (1, unranked) |
+| Alec Pierce | WR | IR (heel) · Sleeper, Oct 2 | 7.60 | 0.00 | 84.0 (11, unranked) | 0.0 (1, unranked) |
+| James Conner | RB | IR (foot) · Sleeper, Oct 2 | 7.52 | 0.00 | 76.9 (11, unranked) | 0.0 (1, unranked) |
+| Jaxson Dart | QB | IR (knee - meniscus) · Sleeper, Sep 30 | 7.24 | 0.00 | 91.5 (11, unranked) | 0.0 (1, unranked) |
+| Jordyn Tyson | WR | IR (hamstring) · Sleeper, Oct 3 | 7.01 | 0.00 | 77.2 (11, unranked) | 0.0 (1, unranked) |
+| Ricky Pearsall | WR | IR (knee - pcl) · Sleeper, Oct 3 | 6.69 | 0.00 | 73.1 (11, unranked) | 0.0 (1, unranked) |
+| Trey Benson | RB | IR (knee) · Sleeper, Aug 25 | 6.67 | 0.00 | 68.6 (11, unranked) | 0.0 (1, unranked) |
+| A.J. Brown | WR | IR (ankle) · Sleeper, Oct 4 | 6.57 | 0.00 | 84.3 (11, unranked) | 0.0 (1, unranked) |
+| Zach Charbonnet | RB | PUP (knee - acl) · Sleeper, Oct 2 | 6.24 | 0.00 | 66.7 (11, unranked) | 0.0 (1, unranked) |
+| Demarcus Robinson | WR | IR (ankle) · Sleeper, Sep 26 | 6.21 | 0.00 | 70.5 (11, unranked) | 0.0 (1, unranked) |
+| Jonah Coleman | RB | IR (ankle) · Sleeper, Sep 26 | 6.13 | 0.00 | 66.4 (11, unranked) | 0.0 (1, unranked) |
+| Isiah Pacheco | RB | IR (back) · Sleeper, Sep 14 | 5.75 | 0.00 | 60.4 (11, unranked) | 0.0 (1, unranked) |
+| Dylan Sampson | RB | IR (knee) · Sleeper, Sep 15 | 5.48 | 0.00 | 57.5 (11, unranked) | 0.0 (1, unranked) |
+| Terrance Ferguson | TE | IR (ankle) · Sleeper, Oct 2 | 5.42 | 0.00 | 55.3 (11, unranked) | 0.0 (1, unranked) |
+| Jack Bech | WR | IR (forearm) · Sleeper, Sep 30 | 5.40 | 0.00 | 57.8 (11, unranked) | 0.0 (1, unranked) |
+| David Njoku | TE | IR (lower leg) · Sleeper, Sep 23 | 5.28 | 0.00 | 58.5 (11, unranked) | 0.0 (1, unranked) |
+| Chris Collier | RB | IR (undisclosed) · Sleeper, Aug 2 | 5.17 | 0.00 | 56.0 (11, unranked) | 0.0 (1, unranked) |
+| Isaac Guerendo | RB | PUP (pectoral) · Sleeper, Aug 30 | 5.01 | 0.00 | 54.9 (11, unranked) | 0.0 (1, unranked) |
+| Ronnie Rivers | RB | IR (calf) · Sleeper, Sep 23 | 4.84 | 0.00 | 51.3 (11, unranked) | 0.0 (1, unranked) |
+| Tank Dell | WR | IR (knee - acl + mcl) · Sleeper, Sep 9 | 4.78 | 0.00 | 53.8 (11, unranked) | 0.0 (1, unranked) |
+| Johnny Wilson | WR | IR (knee) · Sleeper, Aug 22 | 4.73 | 0.00 | 52.0 (11, unranked) | 0.0 (1, unranked) |
+| Jayden Higgins | WR | IR (knee - acl) · Sleeper, Aug 21 | 4.53 | 0.00 | 51.5 (11, unranked) | 0.0 (1, unranked) |
+| Ja'Kobi Lane | WR | IR (wrist) · Sleeper, Oct 3 | 4.53 | 0.00 | 48.2 (11, unranked) | 0.0 (1, unranked) |
+| Jayden Reed | WR | IR (neck) · Sleeper, Sep 30 | 4.52 | 0.00 | 48.2 (11, unranked) | 0.0 (1, unranked) |
+| Ty Chandler | RB | IR (knee) · Sleeper, Aug 25 | 4.50 | 0.00 | 49.7 (11, unranked) | 0.0 (1, unranked) |
+| De'Zhaun Stribling | WR | IR (ankle) · Sleeper, Sep 19 | 4.33 | 0.00 | 47.6 (11, unranked) | 0.0 (1, unranked) |
+| Andrei Iosivas | WR | IR (thumb) · Sleeper, Sep 26 | 4.20 | 0.00 | 46.6 (11, unranked) | 0.0 (1, unranked) |
+| Dont'e Thornton Jr. | WR | IR (undisclosed) · Sleeper, Oct 2 | 4.00 | 0.00 | 42.5 (11, unranked) | 0.0 (1, unranked) |
+| Malik Davis | RB | IR (hip) · Sleeper, Sep 12 | 3.93 | 0.00 | 42.2 (11, unranked) | 0.0 (1, unranked) |
+| Tyrell Shavers | WR | PUP (knee - acl) · Sleeper, Sep 1 | 3.88 | 0.00 | 41.6 (11, unranked) | 0.0 (1, unranked) |
+| Jake Tonges | TE | IR (knee) · Sleeper, Sep 16 | 3.78 | 0.00 | 42.2 (11, unranked) | 0.0 (1, unranked) |
+| D.J. Montgomery | WR | IR (abdomen) · Sleeper, Aug 31 | 3.76 | 0.00 | 52.0 (11, unranked) | 0.0 (1, unranked) |
+| Irvin Charles | WR | IR (undisclosed) · Sleeper, Aug 31 | 3.76 | 0.00 | 48.5 (11, unranked) | 0.0 (1, unranked) |
+| Jeremy McNichols | RB | IR (quadriceps) · Sleeper, Aug 31 | 3.74 | 0.00 | 39.2 (11, unranked) | 0.0 (1, unranked) |
+| Calvin Austin III | WR | IR (knee) · Sleeper, Aug 27 | 3.54 | 0.00 | 45.9 (11, unranked) | 0.0 (1, unranked) |
+| David Sills | WR | IR (undisclosed) · Sleeper, Aug 31 | 3.45 | 0.00 | 44.4 (11, unranked) | 0.0 (1, unranked) |
+| Dillon Gabriel | QB | IR (back) · Sleeper, Aug 31 | 3.44 | 0.00 | 41.6 (11, unranked) | 0.0 (1, unranked) |
+| Mason Tipton | WR | PUP (groin) · Sleeper, Aug 31 | 3.43 | 0.00 | 37.6 (11, unranked) | 0.0 (1, unranked) |
+| Christian Kirk | WR | IR (calf) · Sleeper, Oct 2 | 3.35 | 0.00 | 44.3 (11, unranked) | 0.0 (1, unranked) |
+| Skylar Thompson | QB | IR (undisclosed) · Sleeper, Aug 12 | 3.33 | 0.00 | 37.5 (11, unranked) | 0.0 (1, unranked) |
+| Kendrick Law | WR | IR (knee - acl) · Sleeper, Jun 18 | 3.26 | 0.00 | 35.9 (11, unranked) | 0.0 (1, unranked) |
+| Josh Oliver | TE | IR (biceps) · Sleeper, Sep 29 | 3.10 | 0.00 | 33.8 (11, unranked) | 0.0 (1, unranked) |
+| Brittain Brown | RB | IR (undisclosed) · Sleeper, Aug 31 | 3.09 | 0.00 | 33.1 (11, unranked) | 0.0 (1, unranked) |
+| Scott Matlock | RB | IR (undisclosed) · Sleeper, Aug 31 | 2.97 | 0.00 | 32.1 (11, unranked) | 0.0 (1, unranked) |
+| Luke Musgrave | TE | PUP (undisclosed) · Sleeper, Sep 1 | 2.89 | 0.00 | 31.8 (11, unranked) | 0.0 (1, unranked) |
+| British Brooks | RB | IR (hamstring) · Sleeper, Oct 2 | 2.86 | 0.00 | 31.6 (11, unranked) | 0.0 (1, unranked) |
+| Gunner Olszewski | WR | IR (achilles) · Sleeper, Jun 1 | 2.86 | 0.00 | 31.6 (11, unranked) | 0.0 (1, unranked) |
+| Tim Patrick | WR | IR (groin) · Sleeper, Sep 12 | 2.85 | 0.00 | 36.6 (11, unranked) | 0.0 (1, unranked) |
+| Cole Turner | TE | IR (undisclosed) · Sleeper, Aug 27 | 2.83 | 0.00 | 31.3 (11, unranked) | 0.0 (1, unranked) |
+| Eli Stowers | TE | IR (hamstring) · Sleeper, Oct 3 | 2.77 | 0.00 | 30.5 (11, unranked) | 0.0 (1, unranked) |
+| Graham Mertz | QB | IR (knee - acl) · Sleeper, Aug 16 | 2.76 | 0.00 | 36.5 (11, unranked) | 0.0 (1, unranked) |
+| Myles Montgomery | RB | IR (undisclosed) · Sleeper, Aug 13 | 2.71 | 0.00 | 29.8 (11, unranked) | 0.0 (1, unranked) |
+| Jalen McMillan | WR | IR (knee - pcl) · Sleeper, Sep 30 | 2.70 | 0.00 | 28.5 (11, unranked) | 0.0 (1, unranked) |
+| Adam Randall | RB | IR (undisclosed) · Sleeper, Aug 31 | 2.62 | 0.00 | 28.8 (11, unranked) | 0.0 (1, unranked) |
+| Savion Williams | WR | IR (undisclosed) · Sleeper, Sep 1 | 2.61 | 0.00 | 28.6 (11, unranked) | 0.0 (1, unranked) |
+| KeAndre Lambert-Smith | WR | IR (hamstring) · Sleeper, Sep 15 | 2.54 | 0.00 | 28.3 (11, unranked) | 0.0 (1, unranked) |
+| Omar Cooper Jr. | WR | IR (ankle) · Sleeper, Sep 19 | 2.45 | 0.00 | 26.0 (11, unranked) | 0.0 (1, unranked) |
+| Julian Hill | TE | IR (knee) · Sleeper, Jun 2 | 2.40 | 0.00 | 26.3 (11, unranked) | 0.0 (1, unranked) |
+| Nikola Kalinic | TE | IR (knee) · Sleeper, Aug 18 | 2.39 | 0.00 | 26.0 (11, unranked) | 0.0 (1, unranked) |
+| Moliki Matavao | TE | IR (knee) · Sleeper, Aug 25 | 2.29 | 0.00 | 25.1 (11, unranked) | 0.0 (1, unranked) |
+| Jake Bobo | WR | IR (knee) · Sleeper, Aug 22 | 2.28 | 0.00 | 24.7 (11, unranked) | 0.0 (1, unranked) |
+| Beaux Collins | WR | IR (undisclosed) · Sleeper, Aug 31 | 2.27 | 0.00 | 29.0 (11, unranked) | 0.0 (1, unranked) |
+| Tip Reiman | TE | PUP (ankle) · Sleeper, Sep 1 | 2.24 | 0.00 | 24.4 (11, unranked) | 0.0 (1, unranked) |
+| Joe Royer | TE | PUP (personal) · Sleeper, Aug 30 | 2.21 | 0.00 | 24.3 (11, unranked) | 0.0 (1, unranked) |
+| Caleb Lohner | TE | IR (lower body) · Sleeper, Aug 31 | 2.21 | 0.00 | 24.3 (11, unranked) | 0.0 (1, unranked) |
+| Jaren Kanak | TE | IR (pectoral) · Sleeper, Aug 17 | 2.21 | 0.00 | 24.3 (11, unranked) | 0.0 (1, unranked) |
+| Grant Calcaterra | TE | IR (back) · Sleeper, Sep 1 | 2.20 | 0.00 | 24.2 (11, unranked) | 0.0 (1, unranked) |
+| Robbie Ouzts | RB | IR (undisclosed) · Sleeper, Aug 14 | 2.15 | 0.00 | 23.6 (11, unranked) | 0.0 (1, unranked) |
+| Cole Burgess | WR | IR (undisclosed) · Sleeper, Aug 5 | 2.12 | 0.00 | 23.3 (11, unranked) | 0.0 (1, unranked) |
+| Brock Rechsteiner | WR | Suspended (suspension) · Sleeper, Aug 30 | 2.11 | 0.00 | 23.3 (11, unranked) | 0.0 (1, unranked) |
+| Trey Sermon | RB | IR (undisclosed) · Sleeper, Aug 19 | 2.08 | 0.00 | 23.1 (11, unranked) | 0.0 (1, unranked) |
+| Will Mallory | TE | IR (thumb) · Sleeper, Aug 31 | 1.80 | 0.00 | 20.1 (11, unranked) | 0.0 (1, unranked) |
+| Arian Smith | WR | IR (knee) · Sleeper, Sep 23 | 1.76 | 0.00 | 18.8 (11, unranked) | 0.0 (1, unranked) |
+| Ben Yurosek | TE | IR (undisclosed) · Sleeper, Sep 8 | 1.70 | 0.00 | 18.5 (11, unranked) | 0.0 (1, unranked) |
+| Carter Runyon | TE | IR (undisclosed) · Sleeper, Aug 31 | 1.64 | 0.00 | 18.3 (11, unranked) | 0.0 (1, unranked) |
+| Princeton Fant | TE | IR (knee - acl + mcl) · Sleeper, Aug 7 | 1.28 | 0.00 | 14.1 (11, unranked) | 0.0 (1, unranked) |
+
+players gated: 79; week-5 before > 0: 79; after > 0: 0; sum before 320.5
+
+##### QB top 15, week 5, Half PPR (before | after)
+| # | Before | proj | ppg (g) | After | proj | ppg (g) |
+|---|---|---|---|---|---|---|
+| 1 | Josh Allen BUF | 21.9 | 28.7 (4) | Josh Allen BUF | 21.9 | 28.7 (4) |
+| 2 | Dak Prescott DAL | 20.9 | 20.6 (4) | Dak Prescott DAL | 20.9 | 20.6 (4) |
+| 3 | Jared Goff DET | 20.3 | 21.5 (4) | Jared Goff DET | 20.3 | 21.5 (4) |
+| 4 | Jacoby Brissett ARI | 20.1 | 15.8 (4) | Jacoby Brissett ARI | 20.1 | 15.8 (4) |
+| 5 | Matthew Stafford LA | 20.0 | 16.9 (4) | Matthew Stafford LA | 20.0 | 16.9 (4) |
+| 6 | Drake Maye NE | 18.6 | 13.7 (4) | Drake Maye NE | 18.6 | 13.7 (4) |
+| 7 | Bo Nix DEN | 17.9 | 15.1 (4) | Bo Nix DEN | 17.9 | 15.1 (4) |
+| 8 | Jayden Daniels WAS | 17.9 | 16.2 (2) | Jayden Daniels WAS | 17.9 | 16.2 (2) |
+| 9 | Kyler Murray MIN | 17.4 | 7.8 (3) | Kyler Murray MIN | 17.4 | 7.8 (3) |
+| 10 | Trevor Lawrence JAX | 17.0 | 16.8 (4) | Trevor Lawrence JAX | 17.0 | 16.8 (4) |
+| 11 | Lamar Jackson BAL | 16.8 | 20.0 (4) | Lamar Jackson BAL | 16.8 | 20.0 (4) |
+| 12 | Justin Herbert LAC | 16.8 | 12.4 (4) | Justin Herbert LAC | 16.8 | 12.4 (4) |
+| 13 | Brock Purdy SF | 16.8 | 25.4 (4) | Brock Purdy SF | 16.8 | 25.4 (4) |
+| 14 | Jalen Hurts PHI | 16.7 | 17.5 (4) | Jalen Hurts PHI | 16.7 | 17.5 (4) |
+| 15 | C.J. Stroud HOU | 16.3 | 17.1 (4) | C.J. Stroud HOU | 16.3 | 17.1 (4) |
+
+##### RB top 24, week 5, Half PPR (before | after)
+| # | Before | proj | ppg (g) | After | proj | ppg (g) |
+|---|---|---|---|---|---|---|
+| 1 | Jahmyr Gibbs DET | 20.5 | 26.2 (4) | Jahmyr Gibbs DET | 20.5 | 26.2 (4) |
+| 2 | Bijan Robinson ATL | 19.6 | 23.7 (3) | Bijan Robinson ATL | 19.6 | 23.7 (3) |
+| 3 | Kyren Williams LA | 19.3 | 19.8 (4) | Kyren Williams LA | 19.3 | 19.8 (4) |
+| 4 | Javonte Williams DAL | 17.7 | 18.6 (4) | Javonte Williams DAL | 17.7 | 18.6 (4) |
+| 5 | Jonathan Taylor IND | 16.9 | 20.3 (4) | Jonathan Taylor IND | 16.9 | 20.3 (4) |
+| 6 | James Cook BUF | 16.4 | 15.9 (4) | James Cook BUF | 16.4 | 15.9 (4) |
+| 7 | Christian McCaffrey SF | 15.4 | 16.5 (4) | Christian McCaffrey SF | 15.4 | 16.5 (4) |
+| 8 | Derrick Henry BAL | 15.2 | 21.8 (4) | Derrick Henry BAL | 15.2 | 21.8 (4) |
+| 9 | Chase Brown CIN | 14.3 | 11.9 (4) | Chase Brown CIN | 14.3 | 11.9 (4) |
+| 10 | Jaylen Warren PIT | 14.1 | 12.4 (4) | Jaylen Warren PIT | 14.1 | 12.4 (4) |
+| 11 | D'Andre Swift CHI | 13.9 | 14.6 (4) | D'Andre Swift CHI | 13.9 | 14.6 (4) |
+| 12 | Aaron Jones MIN | 13.7 | 11.8 (4) | Aaron Jones MIN | 13.7 | 11.8 (4) |
+| 13 | Ashton Jeanty LV | 13.4 | 16.1 (4) | Ashton Jeanty LV | 13.4 | 16.1 (4) |
+| 14 | Jeremiyah Love ARI | 13.2 | 10.8 (4) | Jeremiyah Love ARI | 13.2 | 10.8 (4) |
+| 15 | Cam Skattebo NYG | 12.7 | 10.1 (4) | Cam Skattebo NYG | 12.7 | 10.1 (4) |
+| 16 | Omarion Hampton LAC | 11.9 | 10.7 (4) | Omarion Hampton LAC | 11.9 | 10.7 (4) |
+| 17 | Kyle Monangai CHI | 11.9 | 14.2 (4) | Kyle Monangai CHI | 11.9 | 14.2 (4) |
+| 18 | Breece Hall NYJ | 11.8 | 12.5 (3) | Breece Hall NYJ | 11.8 | 12.5 (3) |
+| 19 | Bucky Irving TB | 11.7 | 10.2 (4) | Bucky Irving TB | 11.7 | 10.2 (4) |
+| 20 | Quinshon Judkins CLE | 11.7 | 10.2 (4) | Quinshon Judkins CLE | 11.7 | 10.2 (4) |
+| 21 | De'Von Achane MIA **(IR)** | 11.4 | 7.0 (3) | Bhayshul Tuten JAX | 10.7 | 12.2 (4) |
+| 22 | Bhayshul Tuten JAX | 10.7 | 12.2 (4) | Tony Pollard TEN | 10.0 | 8.6 (4) |
+| 23 | Travis Etienne NO **(IR)** | 10.3 | 8.5 (3) | Rachaad White WAS | 9.8 | 8.5 (3) |
+| 24 | Tony Pollard TEN | 10.0 | 8.6 (4) | Rhamondre Stevenson NE | 9.8 | 9.3 (4) |
+
+##### WR top 24, week 5, Half PPR (before | after)
+| # | Before | proj | ppg (g) | After | proj | ppg (g) |
+|---|---|---|---|---|---|---|
+| 1 | Puka Nacua LA | 18.8 | 16.6 (2) | Puka Nacua LA | 18.8 | 16.6 (2) |
+| 2 | Amon-Ra St. Brown DET | 17.4 | 18.9 (4) | Amon-Ra St. Brown DET | 17.4 | 18.9 (4) |
+| 3 | CeeDee Lamb DAL | 15.6 | 23.4 (4) | CeeDee Lamb DAL | 15.6 | 23.4 (4) |
+| 4 | Jaxon Smith-Njigba SEA | 15.4 | 25.2 (4) | Jaxon Smith-Njigba SEA | 15.4 | 25.2 (4) |
+| 5 | Chris Olave NO | 14.7 | 19.0 (3) | Chris Olave NO | 14.7 | 19.0 (3) |
+| 6 | Davante Adams LA | 14.4 | 15.5 (4) | Davante Adams LA | 14.4 | 15.5 (4) |
+| 7 | Michael Wilson ARI | 14.3 | 11.1 (4) | Michael Wilson ARI | 14.3 | 11.1 (4) |
+| 8 | Tee Higgins CIN | 13.4 | 14.7 (4) | Tee Higgins CIN | 13.4 | 14.7 (4) |
+| 9 | Drake London ATL | 13.2 | 11.8 (3) | Drake London ATL | 13.2 | 11.8 (3) |
+| 10 | Nico Collins HOU | 12.9 | 22.5 (2) | Nico Collins HOU | 12.9 | 22.5 (2) |
+| 11 | Zay Flowers BAL | 12.2 | 19.4 (3) | Zay Flowers BAL | 12.2 | 19.4 (3) |
+| 12 | George Pickens DAL | 11.8 | 7.9 (4) | George Pickens DAL | 11.8 | 7.9 (4) |
+| 13 | DeVonta Smith PHI | 11.7 | 13.0 (3) | DeVonta Smith PHI | 11.7 | 13.0 (3) |
+| 14 | Parker Washington JAX | 11.5 | 10.8 (4) | Parker Washington JAX | 11.5 | 10.8 (4) |
+| 15 | Christian Watson GB | 11.4 | 16.8 (4) | Christian Watson GB | 11.4 | 16.8 (4) |
+| 16 | Ja'Marr Chase CIN | 11.3 | 12.4 (4) | Ja'Marr Chase CIN | 11.3 | 12.4 (4) |
+| 17 | Garrett Wilson NYJ | 11.1 | 12.8 (4) | Garrett Wilson NYJ | 11.1 | 12.8 (4) |
+| 18 | Jameson Williams DET | 11.0 | 7.7 (4) | Jameson Williams DET | 11.0 | 7.7 (4) |
+| 19 | Matthew Golden GB | 10.9 | 12.2 (4) | Matthew Golden GB | 10.9 | 12.2 (4) |
+| 20 | DK Metcalf PIT | 10.8 | 8.8 (4) | DK Metcalf PIT | 10.8 | 8.8 (4) |
+| 21 | Carnell Tate TEN | 10.5 | 8.9 (4) | Carnell Tate TEN | 10.5 | 8.9 (4) |
+| 22 | Terry McLaurin WAS | 9.9 | 8.4 (3) | Terry McLaurin WAS | 9.9 | 8.4 (3) |
+| 23 | Denzel Boston CLE | 9.8 | 12.2 (4) | Denzel Boston CLE | 9.8 | 12.2 (4) |
+| 24 | Rome Odunze CHI | 9.8 | 7.6 (4) | Rome Odunze CHI | 9.8 | 7.6 (4) |
+
+##### TE top 24, week 5, Half PPR (before | after)
+| # | Before | proj | ppg (g) | After | proj | ppg (g) |
+|---|---|---|---|---|---|---|
+| 1 | Trey McBride ARI | 14.4 | 13.2 (4) | Trey McBride ARI | 14.4 | 13.2 (4) |
+| 2 | Sam LaPorta DET | 12.2 | 11.4 (4) | Sam LaPorta DET | 12.2 | 11.4 (4) |
+| 3 | Brock Bowers LV | 10.2 | 20.1 (2) | Brock Bowers LV | 10.2 | 20.1 (2) |
+| 4 | Tucker Kraft GB | 8.9 | 7.2 (4) | Tucker Kraft GB | 8.9 | 7.2 (4) |
+| 5 | T.J. Hockenson MIN | 8.7 | 9.1 (4) | T.J. Hockenson MIN | 8.7 | 9.1 (4) |
+| 6 | Dalton Kincaid BUF | 8.4 | 9.6 (4) | Dalton Kincaid BUF | 8.4 | 9.6 (4) |
+| 7 | Tyler Warren IND | 8.3 | 9.2 (4) | Tyler Warren IND | 8.3 | 9.2 (4) |
+| 8 | George Kittle SF | 8.2 | 14.1 (4) | George Kittle SF | 8.2 | 14.1 (4) |
+| 9 | Dalton Schultz HOU | 7.9 | 8.0 (4) | Dalton Schultz HOU | 7.9 | 8.0 (4) |
+| 10 | Jake Ferguson DAL | 7.8 | 7.6 (4) | Jake Ferguson DAL | 7.8 | 7.6 (4) |
+| 11 | Cade Otton TB | 7.8 | 5.8 (4) | Cade Otton TB | 7.8 | 5.8 (4) |
+| 12 | Mark Andrews BAL | 7.7 | 7.5 (4) | Mark Andrews BAL | 7.7 | 7.5 (4) |
+| 13 | Brenton Strange JAX | 7.7 | 7.4 (4) | Brenton Strange JAX | 7.7 | 7.4 (4) |
+| 14 | AJ Barner SEA | 7.6 | 5.2 (4) | AJ Barner SEA | 7.6 | 5.2 (4) |
+| 15 | Isaiah Likely NYG | 7.5 | 10.5 (4) | Isaiah Likely NYG | 7.5 | 10.5 (4) |
+| 16 | Tyler Higbee LA | 7.1 | 8.5 (3) | Tyler Higbee LA | 7.1 | 8.5 (3) |
+| 17 | Hunter Henry NE | 7.1 | 4.8 (4) | Hunter Henry NE | 7.1 | 4.8 (4) |
+| 18 | Kenyon Sadiq NYJ | 6.9 | 8.2 (4) | Kenyon Sadiq NYJ | 6.9 | 8.2 (4) |
+| 19 | Harold Fannin Jr. CLE | 6.8 | 10.4 (4) | Harold Fannin Jr. CLE | 6.8 | 10.4 (4) |
+| 20 | Juwan Johnson NO | 6.7 | 13.6 (3) | Juwan Johnson NO | 6.7 | 13.6 (3) |
+| 21 | Michael Mayer LV | 6.7 | 8.2 (4) | Michael Mayer LV | 6.7 | 8.2 (4) |
+| 22 | Colston Loveland CHI | 6.7 | 3.6 (4) | Colston Loveland CHI | 6.7 | 3.6 (4) |
+| 23 | Pat Freiermuth PIT | 6.5 | 8.0 (4) | Pat Freiermuth PIT | 6.5 | 8.0 (4) |
+| 24 | Mike Gesicki CIN | 6.2 | 13.0 (3) | Mike Gesicki CIN | 6.2 | 13.0 (3) |
+
+(ROS "after" in the house mart is the week-5 0 over 1 game; every API list and the card withhold it with the reason.)
+
+#### Tests
+
+See the hand-back message for the counts (own tests, edited modules' files with known / environmental failures, ruff,
+copy standard, web lint + build, e2e at 375 and 1300, `check_root.sh`).
+
+#### Not done / limits
+
+* Kickers' NFL-wide `ops.kd_lines` / `ops.kd_ranges` are not gated (house `ops.projections` K rows are).
+* `refleague`'s value pane (Players' value columns without a league) and `player_share` (the player page's shell,
+  from the board's cache) read the stored board only: right after the nightly, not at noon.
+* The house ROS mart still holds 0.0 over 1 game for a player out indefinitely (its consumers in `decisions.py`,
+  `anyleague.py` and the Streamlit pages were not changed to NULL at this deadline); the API withholds it.
+* The overlay's own Sleeper copy is cached a day (Sleeper's one-call rule): "ruled out at noon" comes from ESPN.
+* A Sleeper `NA` code and `Inactive` with a team rule nothing (no settled meaning).
+
+### IR-2 — one trade verdict (Wave I-R, 2026-10-08; the dependability review's P0 1 and 2)
+
+Branch `dev/IR2` from `main` `3dfa01d`. Database `league_lab` read only (the fixtures', clock pinned at
+2026-10-03T16:00Z); nothing written anywhere.
+
+#### What was built
+
+1. **One primary basis, one response object.** `POST /api/trades/evaluate` now carries `decision`
+   (`api/league_lab_api/decisions.py::ir2_decision`). Basis: **against realistic replacements** — the II-1 covered frame
+   (every empty starting slot filled with the best free agent who can play it that week) for both teams, compared with
+   each team's best waiver move re-priced on the same frame. Why this one: it is the PO's choice and the review's; it
+   already existed and was tested (II-1's card), so making it primary was a re-wiring, not a new model; and the
+   roster-only basis is the one that manufactured the review's swings (an empty QB / K slot counted 0: "Improves it a
+   lot" for a team whose starters lose). The dial, the four tiles, the week table, the strip and story, the verdict and
+   headline, the alternative line, the recommendation, the slot changes, the depth and this week's lineup tables all
+   read it. The legacy top-level fields (`fit`, `before`, `after`, `interest`, `verdict`, `headline`, `strip`, `story`,
+   `effect_words`, `alternative`, `alternative_words`, `beats_alternative`, `beyond_alternative`, `starters_in` /
+   `starters_out`, `lineup_words`, `backup_words`, `their_change`, `hold_words`, `values.starter_points`,
+   `lineups.*.slots/out/total`, `card.credible`) are **copied** from it (`ir2_apply`), never computed beside it; `_hold`'s
+   own roster-only comparison is no longer computed. The roster-only result is `decision.unfilled` ("If empty slots were
+   left empty"), an expander on the screen labelled an explanation, not the verdict.
+2. **The waiver claim is uncertain access.** `decision.fills` names the assumed pickups per side, week and state (before
+   / after the trade) with their projections, and says they are assumed, not sure (another team can add him first; on
+   waivers a claim can be lost; on a full roster the pickup takes a bench spot, not counted). The alternative names its
+   add / drop plan and its availability ("a waiver claim (rolling waivers): it can be lost to a team ahead of you").
+   **One free agent is never counted for both teams** (`trades.covered_pair`): in each state of the league the roster
+   earlier in the league's order fills first and the other excludes those players, week by week — so the answer does not
+   depend on whose side asks. The Finder's cards use the same pair (`il4_sides`).
+3. **Explanations from the slots.** `trades.slot_changes` re-seats the after lineup to keep every player where he was
+   (`lineup._reseat`) and lists each changed slot with its two players, chained (a player entering the lineup, then the
+   player he displaces, slot by slot: the FLEX cascade). `ir2_changes` words them; `ir2_need` is the dial's line;
+   `need_words` (kept) reads the same changes. The review's "It takes over their K from Matthew Stafford" is now "It puts
+   Maye at their QB in place of Stafford and puts Folk at their K in place of Reichard."
+4. **One depth definition** (`ir2_depth`, read by the backup line and — through `_depth_words` — the card, Finder
+   included): for each player a side loses who does not start this week, the bench left at his position after the trade
+   who can play that week, and named separately those who cannot (a bye, injured reserve, the IR slot, the taxi squad).
+   The review's "1 RB left" vs "3 RB left" was the IR-slot RBs counted in one sentence and not the other.
+5. **IR-1 hook** (`ir2_out_indefinitely`, marked): IR-1's definition was not on `main`; until it is wired, the board's
+   own this-week reason ("NFL injured reserve" / the IR slot) puts a sentence in the verdict and the recommendation
+   ("Zach Charbonnet is in the IR slot, so these numbers count no games from him."). **PO line**: replace the body of
+   `ir2_out_indefinitely` with IR-1's `out_indefinitely` once merged.
+6. **IR-4 contract**: `decision` has no `caveats` key yet; IR-4's `provenance.for_trade(...)` list can be set as
+   `out["decision"]["caveats"]` right after `ir2_apply` in `evaluate` (one line) — the screen does not print it yet.
+
+#### Files
+
+`api/league_lab_api/decisions.py` (IR-2 block after IE-2; `evaluate` wiring; `need_words`, `_depth_words`, `il4_sides`,
+the card's alternative words, `trade_story`'s `_hold` call removed), `src/league_lab/trades.py` (`fill_lineup`,
+`covered_side`'s exclusion and first-week lineups, `covered_pair`, `slot_changes`), `web/src/routes/decisions/TradeCalc.svelte`,
+`web/src/lib/api.ts` (IR-2 block at the end), `web/e2e/ir2/fixtures.spec.ts`, `web/fixtures/ir2/api_ir2.json`,
+`api/tests/test_ir2.py`, `tests/test_ir2_trades.py`, tests changed on purpose (below), `docs/METRICS.md` (§ "One trade
+verdict", ct1.1), `dbt/seeds/metric_registry.csv` (the `credible_trade` row: ct1.1), `docs/WORDS.md` (§ "One trade verdict"), `CHANGELOG.md`, this file, `docs/handbacks/ir2/*.jpg`.
+Edits outside my files: `web/src/lib/api.ts` and `docs/WORDS.md`, `CHANGELOG.md` (marked blocks / one bullet).
+
+#### Response shape (`decision`, the one place the screen reads the verdict)
+
+```
+decision = {basis: "replacement", basis_label, basis_words, weeks, span, window, this_week (None in the playoffs window),
+  mine / theirs: {before: {this_week, window, by_week[]}, after: {…}, gain_week, gain_window, by_week[], cuts[]},
+  dial: {score, label, their_gain, you, caption, title, need}, verdict, headline, effect_words, their_effect_words,
+  fit_words, strip: {weeks, mine, theirs}, story,
+  alternative: {mine (the claim, gain_* on the basis), theirs, beyond: {mine, theirs}, beats, words, other_objective},
+  recommendation: {credible, key: worth_proposing | not_worth_proposing, label, words, plausibility},
+  changes: {mine: [{slot, slot_type, slot_word, in, out, in_from, out_to, in_how, out_why, in_player, out_player,
+                    in_value, out_value, words}], theirs: […], words: {mine: [], theirs: []}},
+  depth: {mine / theirs: {words, lost: [{player, position, usable[], cannot_play[{player_name, why}], words}], joins[]}},
+  fills: {mine / theirs: {rows: [{week, state, player, value}], words}},
+  unfilled: {label, words, mine / theirs: {gain_week, gain_window, by_week, before, after}},
+  out_indefinitely: {players, words} | None}
+```
+
+#### Evidence — the Folk case on the fixtures (League of Scrubs, MacZaddy 2 ↔ Run Bijan Run 3, give 650, get 421 + 11792, Next 4)
+
+Old = `main` 3dfa01d on the same database and clock; new = this branch. The fixtures' numbers differ from the live
+page the review saw (−3.1 / +2.1 vs +6.1 / −7.1); the shape of the failure is the same.
+
+| | Old page | New page |
+|---|---|---|
+| Dial | Improves it a lot (their +7.53), You +12.61 | Makes their lineup weaker (their −1.28), You +0.52 |
+| Dial line | takes over their K from Matthew Stafford | puts Maye at their QB in place of Stafford and puts Folk at their K in place of Reichard |
+| Tile You · this week | +20.6 (97.54 → 118.18) | −0.3 (127.12 → 126.86) |
+| Tile You · weeks 5–8 | +12.6 (448.75 → 461.36) | +0.5 (486.53 → 487.05) |
+| Tile RBR · this week | −0.5 | −0.5 |
+| Tile RBR · weeks 5–8 | +7.5 (480.92 → 488.45) | −1.3 (498.84 → 497.56) |
+| Week strip you / them | +20.64 −8.71 +0.48 +0.20 / −0.50 +8.71 −0.48 −0.20 | −0.26 +0.10 +0.48 +0.20 / −0.50 −0.10 −0.48 −0.20 |
+| Week table you before → after | 97.54 123.06 105.63 122.52 → 118.18 114.35 106.11 122.72 | 127.12 123.06 113.83 122.52 → 126.86 123.16 114.31 122.72 |
+| Week table them | 123.5 115.48 125.4 116.54 → 123.0 124.19 124.92 116.34 | 123.5 124.29 125.4 125.65 → 123.0 124.19 124.92 125.45 |
+| Verdict | Helps your lineup +20.6 this week (+12.6 over weeks 5–8), them +7.5 …: helps both lineups. | Helps your lineup +0.5 over weeks 5–8 (−0.3 this week), costs their lineup 0.5 (1.3 over weeks 5–8); about even by season value: a lineup loss for them. |
+| Effect | about 20.6 more points this week, about 13 more in total | about 0.3 fewer points this week, about 0.5 more points in total |
+| Against your best waiver move | +12.6; the Brissett claim gives +20.9 (drop Young): does not beat it (beyond −8.29) | +0.5, 0.5 more than your best waiver move (add Brissett, drop Young: +0.0 on the same basis; a waiver claim …) |
+| "Worth proposing?" card you / them | +0.52 / −1.28 (beside a dial saying +7.53) | +0.52 / −1.28 (= the tiles) |
+| Card beyond you / them | 0.52 / −3.29 | 0.52 / −3.29 |
+| Recommendation | card `credible` false, no sentence | Not worth proposing: your starters gain +0.5 beyond your best waiver move over weeks 5–8 (the bar is 1 point); Run Bijan Run's starters gain −3.3 beyond their own best move over weeks 5–8. |
+| Your starters | Stafford starts at QB and Reichard starts at K; Folk goes to Run Bijan Run. | Matthew Stafford (from the trade) starts at QB in place of Jacoby Brissett (the free agent who would have covered it). Will Reichard (from the trade) starts at K in place of Nick Folk (traded). |
+| Lineup total this week | 97.54 → 118.18 (+20.64) | 127.12 → 126.86 (−0.26) = the tile |
+| Their starters | Maye starts at QB and Folk starts at K; Stafford goes to you and Reichard goes to you. | Drake Maye (from the bench) starts at QB in place of Matthew Stafford (traded). Nick Folk (from the trade) starts at K in place of Will Reichard (traded). |
+| Backup line | you lose Croskey-Merritt, a backup RB (1 RB left on your bench) | you lose Jacory Croskey-Merritt, a backup RB: 1 RB left on your bench who can play in week 5 (Zach Charbonnet in the IR slot and Jonah Coleman in the IR slot cannot) |
+| Card depth line | … a backup RB (3 RB left on the bench) | the same sentence as the backup line |
+| Alternatives line | Standing pat … 97.5 … Brissett adds about 21 points …: more than this trade | (the alternative line above; the roster-only comparison is gone) |
+| Roster-only explanation | — | If empty slots were left empty: your starters +20.6 this week, +12.6 over weeks 5–8; Run Bijan Run's −0.5 and +7.5 … an explanation, not the verdict. |
+
+Assumed pickups (new): yours without the trade Brissett (QB, wk 5), Hockenson (TE, wk 5), Panthers (DEF, wk 7); with it
+Hockenson (TE, wk 5), Dicker (K, wk 6), Panthers (DEF, wk 7). Theirs without: Dicker (K, wk 6), Hockenson (TE, wk 8); with:
+Hockenson (TE, wk 8) — no player counted for both teams in one week and state.
+
+Every window on the same package (one basis each): week −0.26 / their −0.50; next4 +0.52 / −1.28; ros (weeks 5–16) −1.25
+/ −1.33; playoffs (weeks 15–16) −0.15 / −1.34 — all "Makes their lineup weaker", all "Not worth proposing". Reversed
+(team 3 giving Stafford + Reichard for Folk): each team's numbers identical (`test_folk_reversed_preserves_each_teams_effect`).
+Face validity: Stafford (QB 20.88 this week) replacing the free QB Brissett (20.90) is a wash for MacZaddy in week 5 —
+Mahomes's bye week, which the roster-only basis priced as a 20-point gain; Folk for Reichard is a near-equal kicker swap
+(8.51 / 8.27; Reichard's week-6 bye is covered by a free kicker either way). A wash for one, a small loss for the
+other, is the right answer for a kicker-for-QB-plus-kicker swap in a 1-QB league.
+
+#### Tests (regression scenarios: meaning and consistency, no hard-coded projections)
+
+`api/tests/test_ir2.py` — 13 passed:
+* `test_folk_every_primary_number_on_one_basis` — every primary number reconciles (`assert_reconciles`: by-week =
+  after − before, window = Σ, this week = first week, strip = by-week, dial = their window gain and its label, you = your
+  window gain, verdict carries the window number, headline ends with the verdict, story total, card effects = decision,
+  card beyond = decision, recommendation = card ∧ alternative line); legacy fields are copies; the lineup table total =
+  the tiles; the card and the dial agree in sign; the roster-only result labelled.
+* `test_folk_sentences_pair_the_same_slot` — Folk ↔ Reichard at K, Stafford out at QB with the bench QB in; the dial line
+  says both; never "K from"; every pairing legal for its slot.
+* `test_folk_depth_sentences_agree` — the backup line and the card's line are the same sentence; usable count = the
+  bench's; IR-slot RBs named, not counted.
+* `test_folk_reversed_preserves_each_teams_effect` — reversal.
+* `test_flex_cascade_is_a_chain_of_slots` — RB1 for a WR: WR takes FLEX in place of RB3; RB3 moves FLEX → RB in place of
+  RB1 (traded); in that order.
+* `test_mixed_position_package_pairs_each_slot` — RB + K for WR + K: kickers paired both sides; skill players at RB/FLEX.
+* `test_reversal_preserves_each_teams_effect` — hand-built reversal (numbers and sentences).
+* `test_surplus_qb_in_a_one_qb_league_adds_nothing` — a backup QB behind a better starter: 0, "Does not help".
+* `test_one_free_agent_is_never_counted_for_both_teams` — both kickers on a bye: fills disjoint per state; same answer
+  from either side; the pickups named and said to be assumed.
+* `test_depth_has_one_definition_and_names_who_cannot_play` — bench left who can play, the IR-slot player named, the
+  incoming bench player joins; the card's sentence identical.
+* `test_mfl_team_units_are_slots_like_any_other` — team QB for team QB + WR: "team QB" slot, units paired.
+* `test_need_words_pair_by_slot`, `test_a_player_on_a_reserve_list_is_said_in_the_verdict` (the IR-1 hook).
+
+`tests/test_ir2_trades.py` — 4 passed (`fill_lineup` = `fill_empty`; `covered_pair` exclusivity and side-independence;
+`slot_changes` FLEX chain and K pairing; a renumbering is not a change).
+
+Edited modules' existing tests (decisions / trades): `test_decisions, test_ii1, test_il4, test_ia2, test_ie0, test_ie1,
+test_ie2, test_if2, test_ii0, test_ig1, test_ib0, test_in5, test_ih2, test_ie_po, test_if1, test_ii4, test_ii5, test_il2,
+test_ik1, test_ik2, test_ik3` + `test_ir2`: 263 passed, 54 failed, 6 skipped — **all 54 in
+`known_api_failures.txt`, 0 new**. Re-run after the last change (the card's alternative words, the reserve-list hook) of
+`test_ii1, test_il4, test_if2, test_ie2, test_ie1, test_ia2, test_ie0, test_ii0, test_ib0, test_ir2`: 84 passed, 26
+failed (all known), 2 skipped — 0 new. Root: `tests/test_trades.py`, `tests/test_trades_ii1.py`, `tests/test_ir2_trades.py`
+46 passed; `check_root.sh`: 1623 passed, 4 failed (all known), 3 skipped — 0 new (the metric registry's coverage test
+needed the `credible_trade` row bumped to ct1.1: `dbt/seeds/metric_registry.csv`, notes name ct1.0 → ct1.1). ruff: clean. Copy standard: clean. Web lint (eslint + svelte-check + tsc): 0 errors, 0 warnings. Build:
+ok. e2e `web/e2e/ir2` (recorded from the fixture API on :8962, replayed on :8927): 2 passed (375 and 1300; no sideways
+scroll); screenshots `docs/handbacks/ir2/ir2-folk-{phone,desktop}.jpg`.
+
+**Tests changed on purpose** (their expected words were the old basis / the old pairing):
+* `api/tests/test_ia2.py::test_window_on_partners_and_evaluate_test_league` — the dial's caption says the basis
+  ("…, against realistic replacements"); the rest of the dial unchanged.
+* `api/tests/test_ib0.py::_totals` (test_one_lineup_total_on_every_screen) — the calculator's shared total is now the
+  roster-only total (`decision.unfilled`); the test also asserts the basis total = that + the named pickups.
+* `api/tests/test_ie1.py::test_the_dial_is_the_effect_on_their_starters` — the dial line pairs each changed slot of
+  their lineup (it used to claim no need when the incoming player sat); Rice is named at the WR/TE he takes.
+* `api/tests/test_ie2.py::test_the_full_package_names_both_assets_in_the_lineup_story` — "in place of Houston Texans QB
+  (traded)" (slot by slot) instead of "Texans QB goes to Madeyes Revenge".
+
+#### Commands
+
+```
+cd api && OMP_NUM_THREADS=1 uv run pytest -q tests/test_ir2.py
+OMP_NUM_THREADS=1 uv run pytest -q tests/test_ir2_trades.py tests/test_trades.py tests/test_trades_ii1.py
+# the fixture API for the e2e recording (from api/):
+LEAGUE_LAB_NOW=2026-10-03T16:00:00Z LEAGUE_LAB_SLEEPER_FIXTURES=$PWD/tests/fixtures/sleeper \
+ LEAGUE_LAB_MFL_FIXTURES=$PWD/tests/fixtures/mfl LEAGUE_LAB_MFL_YEAR=2026 \
+ LEAGUE_LAB_PLAYER_IDS_CSV=$PWD/tests/fixtures/ff/db_playerids.csv LEAGUE_LAB_GATE=open LEAGUE_LAB_AVAILABILITY=off \
+ LEAGUE_LAB_USAGE=off LEAGUE_LAB_NEWS=off LEAGUE_LAB_RATE_LIMIT=off OMP_NUM_THREADS=1 PYTHONPATH=. \
+ uv run uvicorn league_lab_api.main:app --port 8962
+cd web && npm run build && IR2_RECORD=http://127.0.0.1:8962 FIXTURES_PORT=8927 SHOTS_DIR=../docs/handbacks/ir2 \
+ npx playwright test --config playwright.fixtures.config.ts e2e/ir2      # replay: drop IR2_RECORD
+```
+
+#### Not done / limitations
+
+* **The Finder's partner rows** (`/api/trades/partners`) still carry their own `interest` / gains on the roster-only
+  basis beside their card (II-1's tiers and verdict already read the card). Not the calculator; the same re-wiring
+  (`ir2_decision` per row) is the next step — it costs a covered pair per row, which IL-4 made lazy.
+* **The best waiver move** is IF-1's / IF-2's choice made on the roster-only numbers, then re-priced on the basis; the
+  best claim on the basis itself may be a different player (here: Brissett is worth +0.0 on the basis because the free
+  fill already counts him). Not re-searched.
+* The pickup's roster cost (a drop on a full roster) and other teams' competition for the free agent are said, not
+  priced; waiver state per player is not read.
+* **League ranks** ("How we calculated this") still compare roster-only lineup values (the other rosters are valued
+  that way); labelled as before, not on the basis.
+* My Week / Waivers / Team show the roster-only total (95.48 in `test_ib0`'s case) and the calculator's tile the basis
+  total (114.23 = that + the free-agent fills); the basis line under the tiles and the pickups sentence say why. PO's call
+  whether the tile should show the roster-only total as its caption instead.
+* Evaluate is ~0.6 s slower on the fixtures (1.2 s vs 0.6 s): the covered pair for the decision is shared with the card.
+
+#### Found, not mine
+
+* `api/tests/test_ii1.py::test_folk_package_is_not_promoted` / `…_on_the_clone_rosters` fail on `main` already (known
+  list): they rebuild the Folk package by swapping kickers on the clone's rosters, and the fixtures now hold Folk on
+  roster 2 with week 5 as this week (`raw[1] >= 15` reads 0.1 here). Not investigated further; `test_ir2.py` reads the
+  fixture's own rosters.
+* The live review URL's numbers (−3.1 / +2.1, +6.1 / −7.1) cannot be reproduced here (no outside world); the fixtures
+  show the same split.
+
+### IR-3 — releases and publication that cannot quietly break (the review's P1 4 and 5)
+
+Branch `dev/IR3` from `main` `3dfa01d`; worktree `/home/claude/wt-ip1`; database `league_lab_im1` read only; the
+scratch database `league_lab_ir3_sim` (the hosted stand-in, 198–433 MB during the drills, dropped at hand-back).
+
+#### What is done
+
+1. **The release gate.** `scripts/gate.sh` (python | web | all) and a `gate` job in `.github/workflows/image.yml`
+   that the `image` job `needs:` — a red gate builds, pushes and deploys nothing (Render deploys only a commit whose
+   checks pass). The decision suite runs with every database address pointed at a closed port and **fails on a
+   skip**; at least 750 tests must run (798 do). Root (780): `test_trades`, `test_trades_ii1`, `test_roster_value`,
+   `test_lineup`, `test_lineup_ic2`, `test_lineup_ii0`, `test_ir3_gate` (new: every solved lineup legal on 450 seeded
+   rosters × the Scrubs / dynasty / MFL-style slot lists; a surplus QB never in FLEX in one-QB, in SUPER_FLEX in
+   superflex), `test_scoring`, `test_scoring_spec`, `test_scoring_ev`, `test_kdef`, `test_mfl_il2`, `test_waivers`,
+   `test_waivers_if1`, `test_waivers_ig3`, `test_decisions`, `test_cards`, `test_projection_freeze`, `test_memo`,
+   `test_clock`, `test_ir3_post_deploy` (new). API (18): `test_ir3` (bar its one database test), `test_build_context`.
+   Then `ruff check src app tests api scripts/post_deploy_check.py`, `npm run lint` (eslint + svelte-check + tsc),
+   `npm run build`.
+2. **Liveness and readiness apart.** `/api/health` unchanged. New `GET /api/ready` (`api/league_lab_api/ready.py`,
+   router registered in `main.py`, `read` bucket in `ratelimit.py`, no password, no secrets, `Cache-Control:
+   no-store`).
+3. **The post-deploy journey.** `scripts/post_deploy_check.py` (standard library only, read only, exit 0 / 1 / 2).
+4. **Publication without the destructive gap.** `scripts/sync_to_hosted.sh`: `LEAGUE_LAB_HOSTED_PUBLISH=drop|swap|auto`,
+   `--rollback`, the publication id, the publishing marker, `LEAGUE_LAB_HOSTED_RETRIES`. Drilled on `league_lab_ir3_sim`.
+5. **The nightly's three modes**: mode 3's restore retry built in the sync (off by default); the rest proposed below
+   (exact lines); nothing edited in `nightly.sh` / `nightly.yml`.
+
+#### The gate's proof
+
+Scratch commit `8db7001` ("a FLEX that admits a QB": `src/league_lab/lineup.py:87`
+`"FLEX": frozenset({"QB", "RB", "WR", "TE"})`), then `scripts/gate.sh python`, then the commit dropped
+(`git reset --hard a0817d7`):
+
+```
+FAILED tests/test_ir3_gate.py::test_a_surplus_qb_never_fills_a_flex_in_a_one_qb_league_and_does_in_superflex
+21 failed, 759 passed in 73.14s (0:01:13)
+gate FAIL decision suite (src, no database) (exit 1, 75 s)
+  root: 780 ran, 0 skipped, 21 failed
+gate ok   decision suite (api, no database) (4 s)
+gate ok   ruff (0 s)
+GATE FAILED: decision suite (src, no database) - this commit must not be published
+```
+
+(the 21 include `test_lineup::test_one_qb_flex_takes_the_best_leftover`, `test_lineup_ii0::test_the_review_case_a_cascade_through_flex`,
+`test_trades_ii1::test_guard_positions_follow_the_league_slots`, `test_roster_value::test_superflex_is_eligibility_not_a_qb_slot`.)
+Clean tree: `GATE PASSED`, 798 ran, 0 skipped; everything 72 s (root 40 s, api 2 s, ruff 0 s, web lint 26 s, build
+4 s) on the last run and 210 s on a busier one (two shared cores, four developers). The python part also passed in a `git archive` export with no `.env` and no `data/` (CI's
+condition). In CI add `uv sync` × 2 and `npm ci` (cached): about 4–5 minutes.
+
+#### `/api/ready` — the rule and its answers
+
+200 only when, in order: the database answers (`select 1`, own connection, 5 s connect, 5 s statement timeout);
+`ops.projections`, `analytics.dim_game`, `analytics.mart_player_week_projections`,
+`analytics.mart_player_ros_projection` exist; `max(ops.projections.fitted_at)` is not null; the week of the next
+regular-season kickoff after now (`league_lab.clock`) has rows in `ops.projections` (the boards) and in
+`mart_player_week_projections` (the lists) — "season over" passes; `mart_player_ros_projection` is not empty.
+Else 503 with `code` and `reason` (docs/WORDS.md § IR-3); a failing query is `query`, anything unexpected `error`
+(503 in words, never a 500, the class name only). The publication's age is reported, never a 503 (a missed
+nightly is `/api/health`'s `stale`). Kept 60 s after a success, 15 s after a failure, one probe at a time (before the first answer concurrent callers
+wait for that one probe — tested with 6 threads, 1 probe).
+
+Local answer (fixture API, im1, pinned clock):
+
+```json
+{"ready":true,"code":"ready","checks":{"database":"ok","publication":null,"as_of":"2026-10-08T12:17:47.964029+00:00",
+ "age_hours":2.8,"week":{"season":2026,"week":4,"board":true,"lists":true},"rest_of_season":true},
+ "reason":"The published numbers can be served."}
+```
+
+Without a database: `503 {"ready": false, "code": "database", "reason": "The database does not answer (OperationalError)."}`;
+during a drop-path publication: `503 … "code": "publishing", "reason": "The numbers are being replaced: a new
+publication started at 2026-10-08T14:56:08Z and is not in place yet."`
+
+**Render's health check: keep `/api/health`.** Pointed at `/api/ready`, a Neon wake-up (the free compute suspends)
+or the nightly's drop-path window (8 s in the drill, a minute or two on Neon) fails the check, Render restarts a
+healthy process, and that fixes nothing while dropping every cache and the Sleeper directory (one more call). The
+risk of staying on `/api/health`: a process that runs but cannot serve decisions stays in rotation — covered by the
+post-deploy check and an outside monitor on `/api/ready` that alerts a person, not a restart.
+
+#### The post-deploy check on the local API (`python3 scripts/post_deploy_check.py http://localhost:8963 --expect-version 3dfa01d`)
+
+```
+post-deploy check: http://localhost:8963
+ok   health     200  0.08s  version 3dfa01d35312, as_of 2026-10-08T12:17:47.964029+00:00, database ok, stale False
+ok   ready      200  0.44s  publication not recorded, as_of 2026-10-08T12:17:47.964029+00:00, week 4 of 2026
+ok   web app    200  0.02s  the page is served
+FAIL rankings   200  1.66s  ranked though they cannot play: #18 Breece Hall (OUT)
+ok   trade      200  2.30s  yours +19.8 this week, +11.8 over Next 4; theirs -0.8 / +6.5; reconciles, the verdict carries them
+ok   reversed   200  0.31s  each team's change is the same from either side
+FAILED: 1 check(s).
+```
+
+The one FAIL is real and is IR-1's defect on `main`'s code (face validity, Half PPR RB, week 4 of 2026, pinned):
+
+| # | Player | Team | Proj | Report status |
+|---|---|---|---|---|
+| 1 | Jahmyr Gibbs | DET | 23.15 | — |
+| 2 | Bijan Robinson | ATL | 21.84 | — |
+| 3 | Christian McCaffrey | SF | 18.79 | — |
+| 4 | Jonathan Taylor | IND | 17.80 | — |
+| 5 | James Cook | BUF | 17.74 | — |
+| … | … | … | … | … |
+| 17 | Jaylen Warren | PIT | 11.95 | — |
+| **18** | **Breece Hall** | NYJ | 11.85 | **Out** |
+| 19 | Travis Etienne | NO | 11.62 | — |
+
+Also ranked while Out on that list: #32 Jadarian Price, #40 Rachaad White, #41 Rico Dowdle, #49 Zach Charbonnet. The
+check reads IR-1's `availability.cannot_play` / `cannot_play` and the report status (Out, IR, PUP, NFI, Suspended;
+Questionable and Doubtful pass), so after IR-1 merges it should go green. Unreachable server: six `FAIL … no answer`
+lines, exit 1. A server on another commit: `FAIL health … version 52ff88eb5b92 … — expected version 3dfa01d`.
+
+#### Publication — the design and the drill
+
+Default **`drop`** (the pre-IR-3 path, its restore transaction unchanged) plus two new statements, both ON by
+default and never fatal: the marker `comment on database … '{"publishing_since": …}'` before the drop (cleared after
+the restore) and the stamp `comment on schema analytics '{"publication": "<UTC>-<commit>", "published_at", "code",
+"mode", "seasons_from"}'` after it. **`swap`** and **`auto`** are behind `LEAGUE_LAB_HOSTED_PUBLISH`, **OFF**:
+the swap renames the live schemas `_prev` and restores under the live names in ONE transaction with grants, a revoke
+on `_prev`, the stamp, and the checks (92 relations named by readers; the row counts of 89 tables against the local
+copy; the readiness rule) — a failure anywhere rolls the whole publication back. Room: refused with **exit 8**
+(nothing published) when the hosted database + the new copy > `LEAGUE_LAB_HOSTED_CAP_MB` (500). `_prev` kept for
+`--rollback` until the next run (dropped at its start) or dropped at once when over the cap. docs/HOSTING.md §
+"Publishing without the gap".
+
+**Does old + new fit 0.5 GB?** No. One publication as a database: **246 MB** (`league_lab_ir3_sim` filled with the
+published closure, seasons 2024+; 238.6 MB over an empty database's 7.4 MB; the sync's own estimate 254.0 MB). Two:
+**~485 MB** before `usage` / `events` / `accounts` / `outlook` / `blog`, the catalog growth and WAL — at Neon's
+512 MB limit. The swap needs a paid tier (its price is the PO's question to Andrew); on the free tier `auto` chooses
+`drop`.
+
+Drill (the sim published from itself; `LEAGUE_LAB_HOSTED_ALLOW_LOCAL=1 LEAGUE_LAB_HOSTED_SKIP_ROLE=1
+LEAGUE_LAB_HOSTED_SEASONS=2 LEAGUE_LAB_HOSTED_CAP_MB=600`; a reader every 1.5 s as `league_lab_app`: `ready.check`
+uncached, and a decision's three reads on one long-lived connection with server-side prepared statements):
+
+*Interrupted swap* (terminated the moment the restoring session ran `COPY analytics.…`):
+
+```
+publication mode: swap (the hosted database holds 273 MB; + this copy ~187.6 MB = 461 MB <= the 600 MB cap)
+the swap checks 92 relations and the rows of 89 tables before it commits
+publishing: restoring beside the live publication, checking, then switching in one transaction (pages keep the previous numbers until the commit) ...
+10:52:55 interrupting the restore: pg_terminate_backend on the restoring session (a lost connection)
+FATAL:  terminating connection due to administrator command
+CONTEXT:  COPY league_player_week, line 6312: …
+sync exit 2
+10:52:56 after: schemas analytics analytics_seeds ops, publication 20261008T1451Z-a0817d7e0623, analytics relations 71, database 201 MB
+reader, 10:52:36 → 10:54:01, 88 lines, every one:
+  ready=200 ready pub=20261008T1451Z-a0817d7e0623 | prepared reads: publication 20261008T1451Z-a0817d7e0623, ros 1282 rows, per-game from 2025 (23775 rows)
+```
+
+*Successful swap* (the first run; the readers switched at the commit, prepared statements included):
+
+```
+publication mode: swap (the hosted database holds 313 MB; + this copy ~182.9 MB = 496 MB <= the 600 MB cap)
+switched in 6 s: publication 20261008T1451Z-a0817d7e0623 is live
+the previous publication is kept as analytics_prev / analytics_seeds_prev / ops_prev until the next run (432 MB in all; …)
+verified: all 92 relations the pages and the API read are on the hosted copy (the API's 79 included; 433 MB …)
+reader: 12 × "ready=200 pub=sim-initial-copy | … per-game from 2024 (42736 rows)" (10:51:44–10:52:01)
+     then "ready=200 pub=20261008T1451Z-a0817d7e0623 | … per-game from 2025 (23775 rows)" (10:52:02 on)
+```
+
+*Swap then `--rollback`* (re-run after the last script edit): `switched in 7 s: publication 20261008T1500Z-… is
+live`; the app role on `analytics_prev`: `permission denied for schema analytics_prev`; `--rollback` → `rollback
+done: the previous publication is live (20261008T1456Z-…)`, schemas `analytics analytics_seeds ops`, 198 MB; a second
+`--rollback` → exit 9 "no previous publication is kept … nothing was touched". Reader: 13 × 1456Z, 6 × 1500Z, 11 ×
+1456Z, 0 failed reads, readiness 200 throughout.
+
+*Swap that does not fit* (`LEAGUE_LAB_HOSTED_CAP_MB=300`): exit 8, "… = 452 MB is over the 300 MB cap: nothing was
+published (the hosted copy keeps the last publication)"; the live publication unchanged.
+
+*The default `drop` path* (no switch): reader 11 × `ready=200`, then 5 × `ready=503 publishing` + "prepared reads
+FAILED: UndefinedTable" (10:56:16–10:56:22, the gap the swap removes), 1 × 200 with `pub=None` (the stamp is written
+just after the restore), then `pub=20261008T1456Z-a0817d7e0623`.
+
+*A lost connection, retried* (`LEAGUE_LAB_HOSTED_RETRIES=2`, wait 2 s; the default `drop` path; terminated during
+`COPY analytics.mart_cb_matchups`): `the connection was lost during the restore (attempt 1 of 3; nothing of it was
+kept: one transaction); again in 2 s` → `restored in 8 s` → `verified: all 92 relations …` → exit 0. Reader: 6 × 200
+on the old publication, 5 × 503 `publishing` (11:09:05–11:09:11), then 17 × 200 on `20261008T1509Z-9621fa52b964`.
+The same cut on the swap path with the default `RETRIES=0`: exit 2, the previous publication answering (22 × 200).
+
+**Rollback steps**: docs/HOSTING.md § "Publishing without the gap" → Rollback (Actions idle; `scripts/sync_to_hosted.sh
+--rollback` as the one writer; the post-deploy check; the decision record goes back with `ops`). After a `drop`
+publication there is nothing to roll back to: run the nightly again.
+
+#### The PO lines (files I may not edit)
+
+`render.yaml` — no change of value; a comment above `healthCheckPath: /api/health`:
+
+```yaml
+    # IR-3: liveness only. /api/ready (readiness) is for the post-deploy check and outside monitors: pointed here, a
+    # Neon wake-up or a nightly publish would restart a healthy process (docs/DEPLOY.md § "Readiness").
+    healthCheckPath: /api/health
+```
+
+`scripts/nightly.sh` — (1) a hard step that fails the same way three times: the backtests soft when this model's
+old one exists (replace line 492 `hard backtests backtests`):
+
+```bash
+if [ -z "${NIGHTLY_BACKTESTS:-}" ] && [ "$(q 'select count(*) from ops.projection_backtest')" -gt 0 ]; then
+  SOFT_WHY="the scoreboards keep the last model's backtest; the next night computes this model's" soft backtests backtests
+else
+  hard backtests backtests
+fi
+```
+
+(3) the publish retried on a lost connection — **built** in the sync behind `LEAGUE_LAB_HOSTED_RETRIES` (default 0);
+to turn it on, nightly.yml's `Nightly pipeline` step `env:` gains `LEAGUE_LAB_HOSTED_RETRIES: "2"` (my
+recommendation: a retried restore is one transaction, nothing of a failed attempt is kept, an SQL error is never
+retried). If the PO prefers the whole run retried (dump included) instead, replace nightly.sh line 560
+`hard sync-hosted ./scripts/sync_to_hosted.sh` with:
+
+```bash
+sync_with_retry() {  # IR-3: a lost connection (psql exit 2) is retried twice, 60 s then 120 s; exits 5/6/7/8/64 are not
+  local i rc
+  for i in 1 2 3; do
+    ./scripts/sync_to_hosted.sh && return 0
+    rc=$?
+    case "$rc" in 5|6|7|8|64) return "$rc" ;; esac
+    [ "$i" -lt 3 ] && { echo "sync-hosted: attempt $i failed (exit $rc); again in $((i * 60)) s"; sleep $((i * 60)); }
+  done
+  return "$rc"
+}
+  hard sync-hosted sync_with_retry
+```
+
+and, after IR-1 merges (its rankings check is red on `main`'s code), the site's own answer after the publish, soft:
+
+```bash
+  if in_ci; then
+    SOFT_WHY="the publication is live; the failing check's line says what the site answered" soft post-publish-check python3 scripts/post_deploy_check.py https://isuckatfantasy.io
+  fi
+```
+
+The hosted size is already in the run summary (nightly.sh line 163 copies the sync's `verified: … MB on the hosted
+database` line). The `dbt-build` retry excluding the failing node's descendants is not proposed as lines: it needs
+`run_results.json` parsing and a decision on which marts may go out a day old — next wave.
+
+`.github/workflows/nightly.yml` (2) — "today" counted from this morning's 07:30 New York, not 00:00 UTC (the `gate`
+job; the Cloudflare Worker's `todaysRuns` needs the same change, `ops/nightly-trigger/`):
+
+```bash
+          since="$(date -u -d "TZ=\"America/New_York\" $(TZ=America/New_York date +%F) 07:30" +%Y-%m-%dT%H:%M:%SZ)"
+          n="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nightly.yml/runs?status=success&created=>=${since}&per_page=10" \
+```
+
+(checked here: `2026-10-08T11:30:00Z` on 2026-10-08, EDT.) To publish with the swap on a paid tier, its `Nightly
+pipeline` step's `env:` gains `LEAGUE_LAB_HOSTED_PUBLISH: auto` and `LEAGUE_LAB_HOSTED_CAP_MB: "<plan limit − 30>"`.
+
+A post-deploy workflow triggered by `workflow_run` of `image` is **not** added: Render's `checksPass` would wait for
+it while it waits for Render's deploy (a deadlock I cannot test from here). Run the script by hand after a deploy, or
+from the nightly as above.
+
+#### Files
+
+Mine: `api/league_lab_api/ready.py` (new), `api/tests/test_ir3.py` (new, 17), `scripts/post_deploy_check.py` (new),
+`tests/test_ir3_post_deploy.py` (new, 11), `tests/test_ir3_gate.py` (new, 4), `scripts/gate.sh` (new), this file.
+Handed to me: `.github/workflows/image.yml` (the `gate` job, `needs: gate`, a header line), `scripts/sync_to_hosted.sh`
+(+ IR-3 blocks; two lines extended: the mode list, the one-writer rule now also covers `--rollback`),
+`docs/HOSTING.md` (§ "Publishing without the gap"), `docs/DEPLOY.md` (step 2, § "The release gate", § "Readiness and
+the post-deploy check", two "When it breaks" rows). Edits outside my files (marked IR-3): `api/league_lab_api/main.py`
+(the router), `api/league_lab_api/ratelimit.py` (`/api/ready` → `read`), `docs/WORDS.md`, `CHANGELOG.md`.
+
+New relations: none. Schema in/out: two comments (on the `analytics` schema and on the database) — a database
+without them answers as before. New env variables (the sync only): `LEAGUE_LAB_HOSTED_PUBLISH` (drop),
+`LEAGUE_LAB_HOSTED_CAP_MB` (500), `LEAGUE_LAB_HOSTED_KEEP_PREV` (1), `LEAGUE_LAB_HOSTED_RETRIES` (0),
+`LEAGUE_LAB_HOSTED_RETRY_WAIT_S` (30), `LEAGUE_LAB_HOSTED_SKIP_ROLE` (honoured only for a local target). New dependencies: none (the gate job uses `actions/setup-node@v4`). Size on Neon: +2 short comments.
+
+#### Checks
+
+`api/tests/test_ir3.py` 17 passed; `tests/test_ir3_post_deploy.py` 11, `tests/test_ir3_gate.py` 4 passed. Edited
+modules' tests: `test_h0`, `test_im3`, `test_ih1`, `test_static` (+ test_ir3) 98 passed; every test naming
+`bucket_for` (`-k "bucket or limit or ratelimit"` over 13 files) 24 passed. `scripts/gate.sh` (everything) passed:
+`GATE PASSED` (above). ruff clean; the copy standard clean; `bash -n` clean on `gate.sh` and `sync_to_hosted.sh`;
+actionlint 1.7.12 clean on both workflows (from PyPI's `actionlint-py`, whose build fetched the binary from
+actionlint's release page; no shellcheck here, so the `run:` scripts were not shell-linted by it). No `src/` edit
+(no check_root), no screen (no e2e, no screenshots).
+
+#### Not run here
+
+Anything on GitHub (the gate job itself, `uv sync` / `npm ci` / `setup-node` there, its timing), Render (the health
+check choice, the deploy after a green gate), Neon (the swap's size behaviour at the 512 MB limit, whether its owner
+role may `comment on database`, a long transaction under the free compute, plan invalidation through Neon's pooler —
+shown here on a direct connection only). The post-deploy check against the live site.
+
+#### Found, not mine
+
+* `main` ranks Out players (above): IR-1.
+* The API's database pool has a fixed 30 s timeout, so an API test without a database waits 30–120 s per test (the
+  first trial of the gate took 9 m 47 s for 15 files). Why the API's route suites cannot be gated as they are.
+* `image.yml`'s `paths:` (= `render.yaml`'s `buildFilter`) leave out `tests/**` and `scripts/gate.sh`: a push that
+  only changes a test runs no gate until the next push that deploys (it is then gated). Left as is.
+
+### IR-4 — say what is verified, and carry uncertainty into the verdict (Wave I-R, 2026-10-08)
+
+Task: the dependability review's P1 3 (BRIEF.md § IR-4). Branch `dev/IR4` from `main` `3dfa01d`; database
+`league_lab_im4` (written: `ops.context_grade` only, regraded once with the new kinds). Nothing pushed or merged.
+
+#### What is done (all five, in the brief's order)
+
+1. **Provenance with every analysis** — `api/league_lab_api/provenance.py`. The `provenance` key on `/api/rankings`
+   (week and season), `/api/ros`, `/api/trade-calc/free`, `POST /api/trades/evaluate` and `/api/player/{gsis}`:
+
+   ```
+   {"model_version": "v3.6",          # the stored board's newest non-K/DEF version (ops.projections), else the code's
+    "kd_model_version": "kd1.0"|null, # only when K or DEF are in scope
+    "published_at": ISO|null,         # max(ops.projections.fitted_at): the board's publication (IR-3's publication id can replace it)
+    "horizon": {"first", "last", "market_week", "words": "weeks 5–18"},
+    "checks": [{"span": "next"|"later"|"season_range"|"trade_gap", "position", "status": "graded"|"graded_weak"|"chance"|"not_graded",
+                "words", "ref": "docs/METRICS.md § …", "mae", "order"}],
+    "status": the weakest status of the checks, "beta": bool, "words": "<the one quiet line>"}
+   ```
+   One query (`BOARD_SQL`, a group-by of `ops.projections`, cached 10 minutes in `db.query`'s region); a missing table
+   or failed read gives the code's version and no time (never a guessed one); every hook is wrapped (a stamp never costs
+   a screen). The statuses are constants with their METRICS reference. The line, as each screen shows it
+   (`ProvenanceLine.svelte`, `text-xs text-ink-3`, no colour):
+   * Rankings, this week: "Model v3.6, data published 7 Oct, 8:05 pm ET · week 5 · checked on 2021–2025: next week graded."
+   * Rankings rest of season, `/ros`: "Model v3.6, data published … · weeks 5–17 · checked on 2021–2025: next week graded;
+     two to eight weeks ahead graded, weak; the season total's range not graded." (all positions: "next week graded,
+     kickers and defenses weak; two to eight weeks ahead graded, quarterbacks weak, kickers and defenses no better than
+     chance; …")
+   * Free calculator and the league trade evaluation (under the verdict): "Beta · Model v3.6, data published … · weeks 5–8 ·
+     checked on 2021–2025: next week graded; two to eight weeks ahead graded, quarterbacks weak; …; the trade's range not graded."
+   * The player card (under "How to read this"): the line for his position, this week to the season's end.
+   (My database's board is v3.5, so its recordings say "Model v3.5": the line reports the stored board, not the code.)
+2. **About**: "its recipe stays the same all season" replaced ("… and the model itself has changed during the season:
+   every version and its date is under "What changed and when" below."); new sections **What changed and when** (8
+   dated versions v2.0 → v3.6 + kd1.0, "Now: v3.6 …, data published …", and "This season's weeks, by the version they
+   were made with: weeks 1–3: v2.0; week 4: v3.0; weeks 5–18: v3.5" read from the board) and **What each number has
+   been checked against** (a card per position: next week, two to eight weeks, next four weeks, rest of season, with the
+   QB baseline; "Not graded yet: …"; the useful-decision sentence; the starter rule). The "+0.7 per team per week" claim
+   keeps its qualifier, now directly under the claim ("* Weeks 1–4 were played before this record existed: their lineups
+   were rebuilt after kickoff …", was at the foot of the block). **Beta**: "Beta · " opens the line under the trade
+   verdict (free and league); the home says "Beta. What each number has been checked against, and what has not, is on
+   About the numbers." (link `/about#checked`).
+3. **Starter uncertainty reaches the decision** (`provenance.caveats_for`, `effect`, `apply`; METRICS § "Starter
+   uncertainty in a decision"). **Rule**: a decision that depends on a quarterback whose team's starter is *unclear*
+   (`starters.unclear`, U1, not corrected) — or on an MFL team-QB unit of that team — is **withheld** (numbers stay, no
+   recommendation); one that depends on a starter *set by hand* (`starters.corrected`) is **softened** (a lean, never a
+   firm call, with whom it assumes). Why: U1's flag was right about a stale listing 12 times in 27 (2025 – 2026 wk 4),
+   and starter vs backup is ~10 points a week (SEA wk 5: 15.0 vs 4.3) — more than the 10-point "about even" band over
+   four weeks; a correction rests on evidence but a person made it. Receivers / backs / tight ends of such a team carry
+   nothing (their models do not read the QB inputs). Data: `caveats` [{kind, effect, team, players, words}],
+   `caveat_effect`, `caveat_rule` on the free calculator and the league trade evaluation. **Applied** to the free
+   calculator's verdict (withheld: "No verdict: it depends on who starts for Tampa Bay.", no lean → no colour; softened:
+   "… (a lean: it assumes Darnold starts)."; the original in `words_unqualified`). "Who should I start?" already
+   withholds the call on an unclear QB (IQ-2's "no call").
+4. **The horizons the trade calculator uses, graded by position, in the record** — `ops.context_grade` kinds `horizon`
+   (20 rows: next week, 2–8 weeks, next four weeks, rest of season × position, with the QB baseline) and `useful` (4
+   rows), written by `context_record.write_grade` (`horizon_grade_rows`; no new table), read on `/api/context/record`
+   as `horizon.cells`. Numbers (2021–2025, as of weeks 3/5/7/9, both house scorings; order = Spearman / miss in points
+   per game; source METRICS § "What each number has been checked against (IR-4)"):
+
+   | window | QB v3.6 vs B2 (his record + role, opponent, line) | RB vs his own points per game | WR | TE |
+   |---|---|---|---|---|
+   | next week | 0.587 / 6.44 vs 0.575 / 6.60 | 0.686 / 4.52 vs 0.644 / 4.70 | 0.618 / 4.44 vs 0.572 / 4.64 | 0.599 / 3.25 vs 0.519 / 3.45 |
+   | 2–8 weeks ahead | 0.495 / 7.41 vs 0.497 / 7.45 (weak) | 0.636 / 4.73 vs 0.599 / 4.95 | 0.569 / 4.62 vs 0.542 / 4.77 | 0.545 / 3.42 vs 0.485 / 3.59 |
+   | **next four weeks** (h 1–4) | 0.538 / 6.93 vs 0.537 / 7.00 | 0.664 / 4.64 vs 0.624 / 4.82 | 0.595 / 4.49 vs 0.560 / 4.64 | 0.570 / 3.35 vs 0.501 / 3.54 |
+   | **rest of season** (h 1–8) | 0.509 / 7.28 vs 0.510 / 7.33 | 0.642 / 4.71 vs 0.605 / 4.92 | 0.575 / 4.60 vs 0.546 / 4.75 | 0.553 / 3.40 vs 0.489 / 3.57 |
+
+   (order / miss in points per game.) RB / WR / TE beat their own record in every window, 5 of 5 seasons (the
+   baseline run, `ir4_useful.py --baseline`, defined and committed `b148812` 10:49 before its run 10:50–10:55; the
+   rows where he has a record); QB is level with B2 beyond next week (IQ-3). K / DEF: next week 0.095 / 0.257 (weak),
+   2–8 weeks 0.028 / 0.040 (no better than chance; IQ-4). These are per-week misses pooled over the window's weeks, not
+   window totals.
+5. **The "useful decision" grade (ud1.0)** — defined in METRICS and committed (`b03ccac`, 10:29 ET) before the run
+   (`scripts/analysis/ir4_useful.py`, 10:30–10:37, 20 fits): close one-for-ones (projected four-week totals within 20 %),
+   share where the calculator's side scored more over the four weeks, against the side his own per-game record favours:
+
+   | | pairs | calculator | his own record | by season (calc / record) 2021 … 2025 | verdict (rule: > 50 % and above the record in ≥ 4 of 5) |
+   |---|---|---|---|---|---|
+   | QB (v3.5 rows) | 3,680 | 0.594 | **0.615** | .580/.647 .578/.590 .632/.643 .593/.594 .586/.603 | no better than his own record (0 of 5) |
+   | RB | 6,320 | **0.575** | 0.552 | .554/.586 .572/.513 .578/.554 .603/.582 .569/.524 | useful (4 of 5) |
+   | WR | 8,643 | **0.584** | 0.539 | .604/.613 .615/.558 .553/.526 .566/.498 .583/.500 | useful (4 of 5) |
+   | TE | 2,939 | **0.555** | 0.524 | .544/.535 .547/.474 .572/.545 .562/.500 .550/.565 | useful (4 of 5) |
+
+   Not about even (gap > 10 %): QB 0.640 / 0.640, RB 0.611 / 0.572, WR 0.629 / 0.569, TE 0.601 / 0.523. On About: "Is
+   the trade calculator right? … 58 times in 100 at receiver, 57 at running back and 56 at tight end — more often than
+   the side his own per-game record favours (54, 55 and 52). At quarterback 59 in 100, but the side his own per-game
+   record favours did better (62). 50 would be a coin flip."
+
+#### Still ungraded (said on About and in METRICS)
+
+The ranges around a season total and around a trade's gap (weekly ranges added as independent); a trade of several
+players or across positions and the lineup effect in a league (ud1.0 is one-for-one, same position); K / DEF over a
+window as a total; QB ud1.0 on v3.6's rows (hb1.0 not in the run);
+whether the other manager accepts. The horizon rows are the studies' numbers, not a prospective record: the nightly
+rewrites later weeks every night, so no week-W projection of week W+3 survives to be graded (a prospective record needs
+the rest-of-season board frozen at each kickoff — a new table, the PO's call).
+
+#### The one call IR-2 / the PO must add (the league trade verdict)
+
+`POST /api/trades/evaluate` already carries `provenance`, `caveats`, `caveat_effect`, `caveat_rule` (hook in
+`main.trades_evaluate`, after `decisions.evaluate`). What is **not** done: the league verdict itself is not withheld or
+softened (IR-2 owns `decisions.evaluate` and the screen). In IR-2's one decision object, after its primary verdict:
+
+```python
+ruled = provenance.apply(decision["verdict"], out.get("caveats") or [])   # {"verdict": str | None, "effect", "words"}
+# None = withheld: show ruled["words"] in the verdict's place, no dial colour; "soften": the verdict as a lean + ruled["words"]
+```
+(or `provenance.caveats_for(out["give"] + out["get"], ctx.season, ctx.this_week)` if built before the hook). Start /
+sit already withholds on an unclear QB (IQ-2); a corrected QB's call is not softened there (IR-1 owns StartAnswer);
+waivers and My Week lineups: `provenance.for_players(players, season, week)` gives the same caveats — not wired.
+
+#### Edits outside my files (each in a marked `IR-4` block)
+
+* `api/league_lab_api/rankings_api.py` 696–699 (the route: `provenance.with_rankings(rankings(…))`)
+* `api/league_lab_api/main.py` 446 (`/api/player`: `provenance.with_card`), 456 (`/api/ros`: `with_ros`), 680
+  (`/api/trades/evaluate`: `with_trade`), 995–999 (the import block at the end). No new route; no limiter change.
+* `api/league_lab_api/freetrade.py` 265–266 (`provenance.with_free_trade(evaluate(…))`)
+* `api/league_lab_api/context_record.py` 51–56 (EMPTY's `horizon`), 108–117 (`_build`'s cells)
+* `src/league_lab/context_record.py` 857 (`grade_rows` += `horizon_grade_rows`), 1620–1687 (the block)
+* `api/tests/test_ip3.py` 88 (the summary's key set + `horizon`)
+* `api/league_lab_api/ros_grade.py` 12–13, 24: `QB_LATER_MAE` 7.56 → 7.41 (v3.6), the sentence says 7.4;
+  `api/tests/test_iq4.py` 122 and 134 updated on purpose; `web/e2e/iq4/fixtures.spec.ts` 25 and
+  `web/fixtures/iq4/api_iq4.json` (the sentence 7.6 → 7.4, 4 places)
+* `web/src/routes/Rankings.svelte` 21, 269; `Ros.svelte` 29, 227; `components/scoring/FreeTrade.svelte` 18, 232;
+  `routes/decisions/TradeCalc.svelte` 40, 384 (the line under `data-testid="verdict"`); `routes/Player.svelte` 15,
+  165; `routes/Home.svelte` 106 (beta); `web/src/lib/api.ts` 2777–2875 (types, at the end)
+* `web/src/lib/about.ts` 58; `About.svelte` (mine) 137–184, 244–245; `api/league_lab_api/about.py` 260–261
+* `dbt/seeds/metric_registry.csv` (one row: `useful_decision,ud1.0`); `docs/METRICS.md`, `docs/WORDS.md`,
+  `CHANGELOG.md` (the IR-4 bullet under `## 2026-10-08 — Wave I-R (dependability)`)
+
+#### Tests
+
+* Mine: `api/tests/test_ir4.py` 19 passed (18 tests, one run for week and season; pure: the line per screen, statuses, spans, no-board fallback, withhold / soften
+  / receivers / MFL TMQB / failing flags, the free verdict, About's block, the record rows = the constants, the site
+  reads them; database: rankings week + season, ros, free calculator, card, about).
+* Edited modules' API tests: test_h1, test_ig3, test_in2, test_ip2, test_iq2, test_iq4, test_im3, test_ia3, test_io1,
+  test_io4, test_ip3: 293 passed, 1 skipped, 2 failed — `test_h1::test_waivers_trade_lists_on_demand_equal_the_house_path`
+  (in `known_api_failures.txt`) and `test_ip3::test_without_the_table_every_key_is_quiet`, which pins the record
+  summary's keys: updated on purpose for the new `horizon` key (line 88), then test_ip3 + test_io1 + test_ir4: 48 passed.
+* Root (`check_root.sh`, final): 1619 passed, 4 failed, 3 skipped — no new failure (the first run's one new failure,
+  `test_metric_registry::test_every_documented_metric_has_a_registry_row` for ud1.0, fixed with the registry row).
+* ruff clean; copy standard clean; `npm run lint` (eslint + svelte-check + tsc) 0 errors 0 warnings; `npm run build` ok.
+* e2e `web/e2e/ir4` + `web/e2e/iq4` (port 8947): 20 passed (ir4 12) (phone 375, desktop 1300; no sideways scroll), on answers recorded from the
+  app on `league_lab_im4` (`web/fixtures/ir4/api_ir4.json`); `web/e2e/iq4`: 8 passed. TradeCalc (league) has no
+  fixture answer for `POST /api/trades/evaluate`: its line is type-checked, not browser-tested.
+* Screenshots: `docs/handbacks/ir4/*.jpg` (rankings, ros, free trade, card, About × 2, home; phone and desktop).
+
+#### Face validity
+
+No list order or number changed (provenance labels; the record gets constants). What changed and was checked:
+
+| Screen (week 5, `league_lab_im4`) | What it now says | Right? |
+|---|---|---|
+| Rankings QB rest of season | "Model v3.5, data published 7 Oct, 8:05 pm ET · weeks 5–17 · … two to eight weeks ahead graded, weak; the season total's range not graded." | the board is v3.5 (fitted 00:05 UTC 8 Oct = 8:05 pm ET 7 Oct); QB 2–8 order 0.495 < 0.50 |
+| Free calculator Darnold → Hubbard | "You get more: 103 points … (a lean: it assumes Darnold starts)." + the Seattle sentence | SEA's override (Darnold set, Lock listed) is in force |
+| Free calculator Mayfield → Hubbard | "No verdict: it depends on who starts for Tampa Bay." (was "You get more: 103 …") | TB is U1-unclear this week: Jalon Daniels listed, the depth chart puts Baker Mayfield first |
+| A Seattle receiver in a trade | no caveat | his projection does not read the QB (IQ-2) |
+
+Week-5 flags on this database: unclear TB (Daniels, Mayfield); corrected SEA (Darnold / Lock), CHI (Bagent / Keenum).
+
+#### Found, not mine
+
+* The free calculator's window ends week 18 while `/ros` and Rankings for the same key end week 17 (refleague's
+  `last_week` vs the ros window): "weeks 5–18" vs "weeks 5–17" on two screens of the same scoring.
+* "Who should I start?" shows a corrected QB's call as firmly as any other (IQ-2 kept it); under this rule it would be a
+  lean (IR-1's screen).
+* `about.py`'s `about()` puts `timings_ms` into the cached dict on a miss (shared object): harmless today.
+
+#### Next
+
+Freeze the rest-of-season board at each kickoff (a prospective horizon record); ud1.0 for packages and cross-position
+trades through the league calculator's own lineup math, and QB on v3.6's rows; IR-2's `provenance.apply` call.
+
+### IR-2 fix round — the older trade tests on the new answer (Wave I-R, 2026-10-08, 11:46–12:16 ET, on `integ/IR`)
+
+The PO's full e2e on the merged tree failed 17 older trade-calculator tests per project: their saved evaluate answers
+had no `decision`, so the screen printed "This answer has no verdict: ask again."
+
+* `814a3d9` — a product fix found on the way (`decisions.py`): the decision's lineup rows named slots with the
+  solver's names ("WR+TE3", "TMQB"); they use `cards.slot_label` ("WR/TE 3", "team QB").
+* `0871abb` — `web/fixtures/save_ir2_fixtures.py` re-asks each saved evaluate answer's own request in-process
+  (`league_lab`, the clock pinned at 2026-10-03T16:00Z, the Sleeper and MFL fixtures): 26 top-level
+  `trades_evaluate_*.json` and the evaluate keys in the ie1, if2, ig1, mfl ie0 and mfl ie2 recordings;
+  `ia2_packages.json`'s labels from the re-saved `decision.dial.label`. Fixtures 32.4 MB → 33.4 MB.
+* Assertions rewritten to the same meaning on `decision`: ia2:72–99, 118, 119, 128 (`interest.*` and "by our
+  numbers over …" → `decision.dial.*`); ib2:147 (labels from the re-saved answer) and ib2:160–166 (at 1300 the
+  longer result card can scroll the dial row away: no bar while it is on screen, the pinned bar otherwise); ie0:118
+  (the slot sentence "… starts at team QB in place of Houston Texans QB (traded)"); ie2:73–99 (effect words, the
+  "starter-change" rows, the lineup total, the backup line and their side from `decision`); if2:105–108
+  (`decision.alternative.words`, `decision.strip`); ig1:105 (`values.season_value.words`).
+* Meanings gone by design: ie2's `trade-hold` line (the roster-only "standing pat / best free agent" line is
+  replaced by the one alternative line, `trade-alternative`) and ie2's "Nabers WR/TE 2 → WR/TE 3" (a renumbered
+  starter keeps his slot, so there is no slot-move line; "no change of his own" is still asserted).
+* Not fixed: ia2:65 and ib2:143 for League of Scrubs (the saved package gives Tuten, who is on another roster in
+  the fixture database) and ii1:126 (McLaughlin is no longer on the roster) — `test.fixme` with the reason (PO).
+* The full run: 589 passed, 6 failed (those three on two projects), 17 skipped, 13.4 minutes; `npm run lint` clean.

@@ -388,7 +388,7 @@ previous publication answering — 0 failed reads, readiness 200 throughout, the
 successful swap switched the readers at the commit (0 failed reads, the prepared statements on the new tables);
 `--rollback` put the previous one back (0 failed reads); `swap` with a 300 MB cap exited 8 with nothing published;
 the default `drop` path answered 503 `publishing` for 8 s, then the new publication. Transcripts:
-docs/handbacks/IR-3.md.
+docs/STATUS.md § "Wave I-R" (IR-3).
 
 ### Weather in the nightly (plan D3)
 

@@ -9,7 +9,7 @@
 //
 // The answers are the API's own, recorded from a fixture API on the fixtures' database (pinned clock) into
 // web/fixtures/ir2/api_ir2.json and replayed here — the e2e needs no outside host. Re-record:
-//   (api on :8962 — docs/handbacks/IR-2.md § Commands)
+//   (api on :8962 — docs/STATUS.md § "Wave I-R", IR-2 § Commands)
 //   IR2_RECORD=http://127.0.0.1:8962 FIXTURES_PORT=8927 npx playwright test --config playwright.fixtures.config.ts e2e/ir2
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";

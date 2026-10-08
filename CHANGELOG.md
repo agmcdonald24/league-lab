@@ -21,7 +21,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `scripts/sync_to_hosted.sh` stamps each publication and marks the database while the tables are away; a new
   `LEAGUE_LAB_HOSTED_PUBLISH=swap` (off by default: two copies do not fit Neon's free tier) restores beside the live
   publication and switches in one transaction, with `--rollback`. docs/HOSTING.md § "Publishing without the gap",
-  docs/DEPLOY.md § "The release gate", docs/handbacks/IR-3.md.
+  docs/DEPLOY.md § "The release gate", docs/STATUS.md § "Wave I-R" (IR-3).
 - **IR-1 — nobody who cannot play is ranked, valued or projected.** De'Von Achane (IR, torn ACL) was the 21st running
   back on Rankings. One definition (`src/league_lab/availability_gate.py`: cannot play = IR, PUP, NFI, suspended, Out,
   no team; out indefinitely = the reserve lists; Doubtful flagged; the freshest word of Sleeper's directory and ESPN
@@ -36,7 +36,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   with the best free agent for that week, for both teams, never the same free agent for both — and say so; the
   roster-only result is a labelled explanation ("If empty slots were left empty"). Sentences pair the two players of the
   same slot ("puts Folk at their K in place of Reichard"), a FLEX move is a chain, and depth has one definition (who can
-  play that week; who cannot, named). docs/METRICS.md § "One trade verdict", docs/handbacks/IR-2.md.
+  play that week; who cannot, named). docs/METRICS.md § "One trade verdict", docs/STATUS.md § "Wave I-R" (IR-2).
 - **IR-4 — say what is verified, and carry starter uncertainty into the verdict** (the review's P1 3). Every analysis
   carries `provenance` (`api/league_lab_api/provenance.py`): the stored board's model version, the data's publication
   time, the weeks it covers and what has been checked for that horizon and position (graded / graded, weak / no better
