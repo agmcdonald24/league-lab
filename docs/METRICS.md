@@ -4806,4 +4806,51 @@ newest played game while another led it); U1 = the listing differs from S2's pic
 Counted on 2025 – 2026 week 4 (the window where all exist): team-weeks flagged and stale listings caught. A variant
 replaces U0 only if it catches **more** stale listings than U0 **and** flags no more team-weeks; of several, the most
 catches (ties: fewer flags). Otherwise U0 stays and the disagreement is shown in `mart_starter_check` only.
+
+### The result (`iq2_starter_source.py asof` / `study`, run at 19:55 ET, after the rule above was committed `3c19084`)
+
+**The as-of.** Every played team-game of 2025 – 2026 week 4 (670) has a depth-chart snapshot before kickoff; the newest
+one is taken a median 10.8 hours before kickoff (90th percentile 17.1, at most 18.7: one capture a day, about 06:00
+UTC). The snapshot before a game names a different first quarterback from the first snapshot after it in 2 of 670
+team-games — a chart rebuilt after the fact would always name the game's quarterback; this one changes on its own
+days. So the stored daily snapshots are read as of their capture time. Before 2025 there is no chart in the database.
+
+**Identification** (played team-games; truth = the dropback leader; stale = the listed QB took no dropback):
+
+| Window | Candidate | Team-games | Accuracy (listing → candidate) | Stale listings fixed | Fixed | Newly broken | Still wrong | (a) | (b) | (c) | Board (d) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2025 – 2026 wk 4 | S1 depth QB1 | 670 | 0.951 → 0.891 | 6 of 12 (50%) | 7 | 47 | 26 | fail | fail | fail | not run |
+| 2025 – 2026 wk 4 | S2 depth, first available | 670 | 0.951 → 0.949 | **12 of 12 (100%)** | 13 | 14 | 20 | fail | pass | fail | not run |
+| 2025 – 2026 wk 4 | S3 listing unless ruled out | 670 | 0.951 → **0.958** | 5 of 12 (42%) | 5 | **0** | 28 | pass | fail | pass | not run |
+| 2025 – 2026 wk 4 | S4 two sources agree (own) | 670 | 0.951 → 0.957 | 10 of 12 (83%) | 10 | 6 | 23 | pass | pass | **fail** (6 > 10 / 6) | not run |
+| 2021 – 2026 wk 4 | S3 listing unless ruled out | 2,844 | 0.955 → 0.958 | 10 of 49 (20%) | 10 | 0 | 119 | pass | fail | pass | not run |
+
+(21 in-game changes in 2025 – 2026 week 4, 80 in 2021 – 2026 week 4: no rule before kickoff can see them; they are in
+"still wrong". Stale listings by season: 0 / 4 / 0 / 33 / 7 / 5 for 2021–2025 and 2026 weeks 1–4.)
+
+**No candidate passes; none ships.** The depth chart alone is worse than the listing (S1: it keeps a hurt starter on
+top). The depth chart's first available quarterback finds every stale listing (S2: 12 of 12) but breaks as many right
+listings as it fixes (14 against 13: ARI 2025 weeks 6, 7, 9, MIN weeks 7–8 — a returning starter the chart had not
+moved back; the week-18 rests of BUF, LAC, PHI). The listing unless the report rules him out (S3) never breaks a listing
+and fixes 10 in five seasons — but only 20–42% of the stale ones, because a stale listing is almost never a ruled-out
+player: it is a healthy starter who lost the job (SEA 2026, NYJ 2025). The closest is S4 (83% of the stale listings,
+more accurate overall), which fails (c) on six breaks — three of them week-18 rests (BUF, LAC, PHI 2025), one ARI
+2025 week 6, ATL 2025 week 8, PIT 2025 week 12. The window is small (12 stale listings) and the base has partly seen the
+answer (the historical listing is nflverse's post-game value), so S4's six breaks may include listings that were wrong
+before kickoff too — but the rule was written before the run and is not moved. (d) was not run (it is for a
+candidate that passes (a)–(c)). **The answer for now: the override list, plus `mart_starter_check` read weekly.**
+
+**`starters.unclear`'s trigger** (2025 – 2026 week 4, 670 played team-weeks, 12 stale listings):
+
+| Trigger | Flags | Stale caught | Flags not stale |
+|---|---|---|---|
+| U0 su1.0 (listing vs the newest game's dropbacks) | 42 | 7 | 35 |
+| **U1 listing vs the depth chart's first available QB** | **27** | **12** | **15** |
+| U2 either | 57 | 12 | 45 |
+| U3 both | 12 | 7 | 5 |
+
+(U0 on su1.0's own window, 2022 – 2026 week 4: 169 flags, 32 of 49 caught — this script reproduces su1.0's numbers
+exactly.) **U1 catches more (12 against 7) with fewer flags (27 against 42): by the rule it replaces U0** wherever
+`mart_starter_check` is built (`listing_disputed`); without the mart (a deploy before the nightly) the screens keep U0.
+About 1.2 flags a week instead of 1.9, and 15 of 27 flags (56%) still turn out not stale — so the words stay "unclear".
 <!-- ---- end IQ-2 -->
