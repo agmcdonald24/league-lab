@@ -178,6 +178,10 @@ def bucket_for(method: str, path: str, query: str = "") -> str | None:
     if path in ("/api/rankings", "/api/rankings/start"):
         return "research"
     # ---- end IP-2
+    # ---- IR-3 (Wave I-R): readiness (ready.py) — one cached probe a minute at most, never the pool
+    if path == "/api/ready":
+        return "read"
+    # ---- end IR-3
     return "read"
 
 

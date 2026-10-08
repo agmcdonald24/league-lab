@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-R (dependability)
+
+- **IR-3 — releases and publication that cannot quietly break.** The image workflow runs a gate first
+  (`scripts/gate.sh`: 798 decision tests with no database, ruff, the web lint, type check and build; a skip fails it)
+  and builds nothing when it is red. `/api/ready` answers 200 only when the published numbers can be served, else 503
+  with the reason in words; `/api/health` stays the liveness answer Render checks. `scripts/post_deploy_check.py`
+  walks health, ready, a Rankings top (nobody who cannot play) and the review's trade, reconciled and reversed.
+  `scripts/sync_to_hosted.sh` stamps each publication and marks the database while the tables are away; a new
+  `LEAGUE_LAB_HOSTED_PUBLISH=swap` (off by default: two copies do not fit Neon's free tier) restores beside the live
+  publication and switches in one transaction, with `--rollback`. docs/HOSTING.md § "Publishing without the gap",
+  docs/DEPLOY.md § "The release gate", docs/handbacks/IR-3.md.
+
 ## 2026-10-08 — Wave I-Q
 
 - **PO — the merge, the nightly's audit step, the roster rule.** `scripts/nightly.sh` runs `league-lab audit-lists`

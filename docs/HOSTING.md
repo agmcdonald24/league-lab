@@ -329,6 +329,67 @@ and the size — from the local database only (no hosted settings needed, nothin
 API reads 63 relations (50 analytics + `analytics_seeds.reference_scorings` + 12 `ops`), the console 71; 62
 analytics relations published of 74.
 
+### Publishing without the gap (Wave I-R, IR-3)
+
+How a publication replaces the last one is `LEAGUE_LAB_HOSTED_PUBLISH` (the sync's header has the detail):
+
+| Mode | What readers see while it runs | A restore that fails or is cut off | Room it needs |
+|---|---|---|---|
+| `drop` (**the default**, as before) | The tables are away for the restore's length: the screens say the numbers are not ready yet; `/api/ready` answers 503 `publishing` with the time it started (the marker on the database) | The tables stay away until a run succeeds (the nightly fails loudly) | One copy |
+| `swap` | The previous publication, until one commit switches every table at once | Everything rolls back; the previous publication answers as before | Two copies: refused with exit 8 (nothing published, the last publication stays) when the hosted database + the new copy is over `LEAGUE_LAB_HOSTED_CAP_MB` (default 500) |
+| `auto` | `swap` when two copies fit under the cap, otherwise `drop` (the log says which and why) | As the mode it chose | — |
+
+**A lost connection** (Neon's free compute, the network) during either restore: with `LEAGUE_LAB_HOSTED_RETRIES=2`
+the restore — one transaction, so nothing of the failed attempt was kept — is run again after 30 s, then 60 s
+(`LEAGUE_LAB_HOSTED_RETRY_WAIT_S`); an SQL error (a size limit, a failed check) is never retried. Off by default (0:
+the run fails, as before). Drilled: the drop path cut off mid-restore came back on the second attempt (7 s of
+`publishing`, then the new publication); the swap path with the default 0 still exits 2 with the previous publication
+in place.
+
+**The swap, step by step** (one `psql --single-transaction`): rename `analytics` / `analytics_seeds` / `ops` to
+`…_prev`; create them empty; restore the new copy into them (the season window first, then the rest); grant the app
+role; revoke its grants on the `_prev` schemas (it never reads them, and the revoke makes every cached query plan on
+the old tables plan again); stamp the publication; then **check before committing** — every relation a reader names
+is there, every table has the local copy's row count, and the readiness rule holds (projections exist, the next
+kickoff's week is on the boards and in the lists, the rest-of-season list is not empty). Any failure raises and the
+whole transaction — the publication — rolls back. After the commit the old copy stays as `_prev` until the next run
+(dropped at its start, before the restore) so it can be put back, or is dropped at once when keeping it would leave
+the database over the cap (or `LEAGUE_LAB_HOSTED_KEEP_PREV=0`).
+
+**The publication's id**: every publish writes `{"publication": "<UTC time>-<commit>", "published_at", "code",
+"mode", "seasons_from"}` as the comment of the `analytics` schema — inside the swap's transaction, or as its own
+statement right after a drop-path restore. `/api/ready` reports it (`checks.publication`); a database published
+before IR-3 says `null`, never an error.
+
+**Does the swap fit Neon's free tier?** Measured 2026-10-08 on `league_lab_ir3_sim` (a hosted-shaped copy of
+`league_lab_im1`, seasons 2024+): **one publication is 246 MB** as a database (238 MB of tables and indexes; the
+sync's estimate says 254 MB). Two at once are about **485 MB** before `usage`, `events`, `accounts`, `outlook` and
+`blog`, the catalog and the write-ahead log — against Neon's 512 MB free limit. So on the free tier `auto` chooses
+`drop` and `swap` refuses (exit 8): **the swap needs a paid tier** (what that costs is a question for Andrew). Raise
+`LEAGUE_LAB_HOSTED_CAP_MB` to the plan's limit minus about 30 MB and set `LEAGUE_LAB_HOSTED_PUBLISH=auto` in the
+nightly's environment.
+
+**Rollback** (only after a swap that kept `_prev`):
+
+1. GitHub → Actions → nightly is not running (one writer).
+2. From GitHub (a workflow step) or, with `LEAGUE_LAB_MAC_WRITES_HOSTED=1`, from the Mac:
+   `scripts/sync_to_hosted.sh --rollback` — one transaction renames the live schemas `…_bad` and `…_prev` back to the
+   live names (grants restored), then drops `…_bad`. Exit 9 and nothing touched when no previous copy is kept.
+3. `python3 scripts/post_deploy_check.py https://isuckatfantasy.io` — `ready` names the restored publication.
+4. The decision record goes back with `ops` (the replaced night's frozen boards are gone with it); the next nightly
+   publishes anew from what it restores here.
+
+After a `drop` publication there is nothing to roll back to: run the nightly again (Actions → nightly → Run workflow).
+
+**The drill** (2026-10-08, `league_lab_ir3_sim` as the hosted copy, published from itself, a reader polling every
+1.5 s as the app role: the readiness rule and a decision's reads on one long-lived connection with prepared
+statements): a swap cut off mid-restore (`pg_terminate_backend` during `COPY analytics.league_player_week`) left the
+previous publication answering — 0 failed reads, readiness 200 throughout, the database back to its size; a
+successful swap switched the readers at the commit (0 failed reads, the prepared statements on the new tables);
+`--rollback` put the previous one back (0 failed reads); `swap` with a 300 MB cap exited 8 with nothing published;
+the default `drop` path answered 503 `publishing` for 8 s, then the new publication. Transcripts:
+docs/handbacks/IR-3.md.
+
 ### Weather in the nightly (plan D3)
 
 `league-lab ingest weather` (Open-Meteo: free, no key, reachable from the Mac and from Actions) is not
