@@ -64,8 +64,8 @@ CONTEXT_TTL_S = 600.0
 # scoring's week frame (~600 rows, ~0.2 MB); keys are the research memo's (a house league, or one of the 20 reference
 # scorings, or an on-demand league's scoring). Both 10 minutes; both inside the one byte budget.
 WEEK_ENTRIES, BOARD_ENTRIES = 8, 24
-_week = memo.region("matchup_week", ttl=CONTEXT_TTL_S, max_entries=WEEK_ENTRIES)
-_cache = memo.region("matchup_board", ttl=CONTEXT_TTL_S, max_entries=BOARD_ENTRIES)
+_week = memo.region("matchup_week", ttl=CONTEXT_TTL_S, max_entries=WEEK_ENTRIES, published=True)
+_cache = memo.region("matchup_board", ttl=CONTEXT_TTL_S, max_entries=BOARD_ENTRIES, published=True)
 
 
 def clear() -> None:

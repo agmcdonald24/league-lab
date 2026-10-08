@@ -79,7 +79,7 @@ TIER_P = WP.COIN_FLIP            # 0.55: the tier opener beats the next player a
 GRID = 400                       # probability levels per distribution for the tier chance
 DRAWS = WP.N_DRAWS               # 40,000 joint draws for two to four players
 TTL_S, ENTRIES = 600.0, 64
-_cache = memo.region("rankings", ttl=TTL_S, max_entries=ENTRIES)
+_cache = memo.region("rankings", ttl=TTL_S, max_entries=ENTRIES, published=True)
 
 POS_WORDS = {"QB": ("quarterback", "quarterbacks"), "RB": ("running back", "running backs"),
              "WR": ("wide receiver", "wide receivers"), "TE": ("tight end", "tight ends"),

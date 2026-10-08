@@ -61,6 +61,9 @@ import pandas as pd
 import psycopg
 from scipy.optimize import linear_sum_assignment
 
+from . import (
+    availability_gate as AG,  # ---- PO (Wave I-S): the week's own report through the same gate
+)
 from . import clock
 from . import league_status as LS  # ---- IS-2: the one "can he play" question
 
@@ -860,6 +863,14 @@ def _proposed_player(inp: LineupInputs, league_id: str, week: int, row: dict, cu
         blk = LS.record_block(pr.get("availability"))
         if LS.sits(blk):
             return replace(base, status=blk.get("status"), playable=False, reason=blk.get("status"))
+        # ---- PO (Wave I-S): and the week's own injury report, asked through the same gate. The stored record is
+        # written before the week's first kickoff and then frozen (Thursday), and it does not exist between a deploy
+        # and the first refresh; the report row of THIS week is rebuilt every night. Without this a player ruled Out
+        # on Friday started in every nightly solve until Tuesday (he sat here before IS-2, by the old code test).
+        rep = AG.report_block(pr.get("report_status"))
+        if AG.sits(rep):
+            return replace(base, status=rep.get("status"), playable=False, reason=rep.get("status"))
+        # ---- end PO
         return base
         # ---- end IS-2
     if positions & {"K", "DEF"}:

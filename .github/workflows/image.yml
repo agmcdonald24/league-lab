@@ -21,6 +21,9 @@ on:
       - "app/pages/**"
       - "src/league_lab/**"
       - "web/**"
+      - "tests/**"                        # PO (Wave I-S): a change to the gate's own tests or script runs the gate
+      - "scripts/gate.sh"
+      - "scripts/post_deploy_check.py"
       - ".dockerignore"
       - "render.yaml"
       - ".github/workflows/image.yml"

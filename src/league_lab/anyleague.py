@@ -278,7 +278,7 @@ def nfl_wide_ready(query: Query, season: int, week: int) -> bool:
 # ``query`` callable too: a test's stand-in query never sees the database's board.
 BOARD_TTL_S = 600
 BOARD_MAX = 20
-_boards = memo.region("boards", ttl=BOARD_TTL_S, max_entries=BOARD_MAX)
+_boards = memo.region("boards", ttl=BOARD_TTL_S, max_entries=BOARD_MAX, published=True)
 
 
 def load_board(query: Query, season: int, week: int, source: str | None = None, *, cache: bool = True) -> Board:
@@ -640,7 +640,7 @@ class Priced:
 PRICED_TTL_S = 600                         # the board changes once a night; a league's scoring almost never
 # INF-2: the memory budget's ``priced`` region (was a dict cleared when it passed 500 entries); a Priced's ``board`` is
 # the shared Board (counted in ``boards``), so an entry here is only the league's own proj / ranges / kd / units
-_priced = memo.region("priced", ttl=PRICED_TTL_S)
+_priced = memo.region("priced", ttl=PRICED_TTL_S, published=True)
 
 
 def _scoring_key(scoring: Mapping[str, float]) -> str:
@@ -1409,7 +1409,7 @@ def kd_window(win: Window, weeks: list[int], scoring: Mapping[str, float], posit
     return out[cols]
 
 
-_ros_cache = memo.region("ros", ttl=PRICED_TTL_S)        # INF-2: in the memory budget (was cleared past 100 entries)
+_ros_cache = memo.region("ros", ttl=PRICED_TTL_S, published=True)        # INF-2: in the memory budget (was cleared past 100 entries)
 ROS_LINE = [f"ros_{s}" for s in STAT_LINE.values()]   # ---- IA-3: the window's stat line (ros_targets … ros_fumbles_lost_total)
 
 

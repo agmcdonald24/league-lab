@@ -40,7 +40,7 @@ log = logging.getLogger(__name__)
 RELATIONS = ("dim_game", "fct_player_game", "dim_player")
 SEASONS = (2016, 2100)
 WEEKS = (1, 22)
-_cache = memo.region("starters", ttl=600.0, max_entries=32)   # two entries per (season, week) (IQ-2: + corrected): a few KB
+_cache = memo.region("starters", ttl=600.0, max_entries=32, published=True)   # two entries per (season, week) (IQ-2: + corrected): a few KB
 
 # the team's listed starter for the week, and the newest game before it in which the team has a box score
 LISTING_SQL = """

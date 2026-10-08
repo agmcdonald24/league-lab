@@ -1126,7 +1126,7 @@ STORED_SQL = """select gsis_id, availability from (
                     where season = %s and week = %s
                     order by gsis_id, (frozen_source is not null) desc, fitted_at desc nulls last) as x
                 where availability is not null"""
-_gate_cache = memo.region("availability_gate", ttl=600, max_entries=16)   # (season, week) -> stored / week end: ≤ 2 weeks
+_gate_cache = memo.region("availability_gate", ttl=600, max_entries=16, published=True)   # (season, week) -> stored / week end: ≤ 2 weeks
 
 
 def stored_status(season: int | None, week: int | None) -> dict[str, dict]:

@@ -45,7 +45,7 @@ RATE_BUCKETS = {"/api/dfs/slate": "heavy", "/api/dfs/lineups": "heavy", "/api/df
 # IN-4: the published slates' two GETs price a slate once and keep it: research (ratelimit.bucket_for, a marked block)
 RATE_BUCKETS_IN4 = {"/api/dfs/slates": "research", "/api/dfs/slate/{slate_id}": "research"}
 NO_STORE = {"Cache-Control": "no-store"}
-_priced = memo.region("dfs", ttl=600.0, max_entries=8)
+_priced = memo.region("dfs", ttl=600.0, max_entries=8, published=True)
 # ---- IM-5 fix (the security review): DFS work (parsing a file, pricing, solving) runs in the thread pool, never on the
 # event loop, and ONE at a time per process: a second request waits up to BUSY_WAIT_S, then answers 429 `busy`
 _WORK = threading.Semaphore(1)
@@ -660,7 +660,7 @@ LINES_SQL = """select game_id, home_team, away_team, spread_line, total_line fro
 WX_SQL = """select game_id, wx_source, wx_dome, wx_wind_mph, wx_precip_in, wx_temp_f, wx_snow, forecast_at
             from analytics.mart_game_weather where season = %s and week = %s"""
 # ---- end IO-1
-_context = memo.region("dfs_context", ttl=600.0, max_entries=4)
+_context = memo.region("dfs_context", ttl=600.0, max_entries=4, published=True)
 # IO-1 fix round: "Worth a look" is off the screen (graded: not distinguishable from chance), so the words no longer
 # mention it; the screen's one line about it comes from the record (``meta["worth_line"]``), absent without it
 CONTEXT_WORDS = "Context, not a forecast: these signals sit beside the projection and do not change it."

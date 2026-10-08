@@ -39,7 +39,7 @@ from .db import query
 router = APIRouter()
 
 TTL_S = 3600.0
-_cache = memo.region("context_record", ttl=TTL_S, max_entries=1)
+_cache = memo.region("context_record", ttl=TTL_S, max_entries=1, published=True)
 EXISTS_SQL = "select to_regclass('ops.context_grade') is not null as ok"
 GRADE_SQL = """select kind, grp, corner_certainty, corner_tier, n, games, mean_miss, lo, hi, beat, beat_share, vs_rest,
                       vs_rest_lo, vs_rest_hi, rest_n, rest_beat_share, span, scoring, words

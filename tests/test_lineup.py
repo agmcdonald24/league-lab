@@ -511,3 +511,20 @@ def test_lineup_ddl_is_the_same_everywhere(table, columns):
     assert cols == _ddl_columns(lineup.DDL[f"ops.{table}"], table)
     assert cols == _ddl_columns((ROOT / "dbt/models/marts/edge/mart_lineup_recommendation.sql").read_text(), table)
     assert cols == columns
+
+
+# ---- PO (Wave I-S): two sources, one question
+def test_the_weeks_own_injury_report_sits_a_player_who_has_no_stored_record():
+    """A week's stored record is written before its first kickoff and then frozen, and does not exist between a deploy
+    and the first refresh. A player ruled Out on that week's own injury report must still sit in the nightly's solve
+    (he did before IS-2, by a code test; now through the gate) — and Doubtful sits with him (IS-1: about 1 in 100)."""
+    inp = _inputs()
+    for v in inp.proj.values():
+        v.pop("availability", None)                                  # no stored record anywhere
+    inp.proj[("L", 3, "g5")]["report_status"] = "Doubtful"           # Kelce, week 3
+    inp.proj[("L", 3, "g1")]["report_status"] = "Questionable"       # Mahomes, week 3: flagged, plays
+    rows, _totals, _ = build(inp, as_of=datetime(2026, 9, 24, 12, 0, tzinfo=UTC))
+    w3 = {x["sleeper_player_id"]: x for x in rows if x["week"] == 3 and not x["is_realised"]}
+    assert w3["4"]["reason"] == "Out" and not w3["4"]["slot"]
+    assert w3["5"]["reason"] == "Doubtful" and not w3["5"]["slot"]
+    assert w3["1"]["slot"] and not w3["1"]["reason"]

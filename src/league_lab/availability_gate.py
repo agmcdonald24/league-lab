@@ -186,6 +186,17 @@ def classify(e: dict | None) -> dict:
             "ros_words": ROS_WORDS.format(reason=reason[0].upper() + reason[1:]) if out_indefinitely(code) and reason else None}
 
 
+REPORT_CODE = {LABEL[c]: c for c in GAME_STATUS}     # PO (Wave I-S): a weekly injury report's label -> the gate's code
+
+
+def report_block(report_status: str | None, source: str = "NFL injury report") -> dict | None:
+    """PO (Wave I-S): the gate's block for ONE week's own injury-report status ("Out", "Doubtful", "Questionable" — the
+    row of that week, never the newest row of another week); None for no status. For readers whose stored record can
+    be older than the report: a week's rows freeze at its first kickoff, the report is rebuilt every night."""
+    code = REPORT_CODE.get(report_status) if isinstance(report_status, str) else None
+    return classify(entry(code, source)) if code else None
+
+
 def sits(block: dict | None) -> bool:
     """PO (Wave I-S): THE question every list, lineup, value and verdict asks of a status block — is he left out this
     week? True when he cannot play, or (IS-1) when his status rarely plays (``unlikely``). One function so that no

@@ -249,7 +249,7 @@ SINGLE = {"QB": 1, "RB": 2, "WR": 2, "TE": 1, "K": 1, "DEF": 1}
 LAST_REG_SQL = "select max(week) as w from analytics.dim_game where season = %s and season_type = 'REG'"
 # 160 keys, but the value tables of one scoring share one priced rest of season (`anyleague`'s `ros` region): a table
 # here is ~600 rows; the region keeps the 24 most recent (memo LRU) for 10 minutes
-_values = memo.region("ref_values", ttl=600.0, max_entries=24)
+_values = memo.region("ref_values", ttl=600.0, max_entries=24, published=True)
 
 
 @dataclass(frozen=True)
