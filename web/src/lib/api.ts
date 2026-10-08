@@ -2774,3 +2774,79 @@ export interface StartPlayer {
   starter_corrected?: StarterCorrected | null;
 }
 // ---- end IQ-2
+
+// ---- IR-2 (Wave I-R): one trade verdict — the calculator reads every primary number and sentence from `decision`
+// (api/league_lab_api/decisions.py::ir2_decision): the replacement basis (empty slots filled from the free pool, both
+// teams alike, one free agent never counted for both) against each team's best waiver move. `unfilled` is the
+// separately labelled roster-only explanation.
+export interface DecisionState {
+  this_week: number;
+  window: number;
+  by_week: number[];
+}
+export interface DecisionSide {
+  before: DecisionState;
+  after: DecisionState;
+  gain_week: number;
+  gain_window: number;
+  by_week: number[];
+  cuts: TradePlayer[];
+}
+export interface DecisionChange {
+  slot: string;
+  slot_word: string;
+  in: string | null;
+  out: string | null;
+  in_from: string | null;
+  out_to: string | null;
+  in_how: "trade" | "bench" | "free agent" | "slot" | null;
+  out_why: "traded" | "cut" | "bench" | "free agent no longer needed" | "slot" | null;
+  in_value: number | null;
+  out_value: number | null;
+  words: string;
+}
+export interface DecisionDepth {
+  words: string | null;
+  lost: { position: string; usable: string[]; cannot_play: { player_name: string; why: string }[]; words: string }[];
+  joins: string[];
+}
+export interface TradeRecommendation {
+  credible: boolean;
+  key: "worth_proposing" | "not_worth_proposing";
+  label: string;
+  words: string;
+  plausibility: string | null;
+}
+export interface TradeDecision {
+  basis: "replacement";
+  basis_label: string;
+  basis_words: string;
+  weeks: number[];
+  span: string;
+  window: TradeWindow;
+  this_week: number | null;
+  mine: DecisionSide;
+  theirs: DecisionSide;
+  dial: { score: number; label: string; their_gain: number; you: number | null; caption: string; title: string; need: string | null };
+  verdict: string;
+  headline: string;
+  effect_words: string;
+  their_effect_words: string;
+  fit_words: string;
+  strip: { weeks: number[]; mine: number[]; theirs: number[] };
+  story: { words: string };
+  alternative: { words: string; beats: boolean; beyond: { mine: number; theirs: number | null }; other_objective: { kind: string; words: string } | null };
+  recommendation: TradeRecommendation;
+  changes: { mine: DecisionChange[]; theirs: DecisionChange[]; words: { mine: string[]; theirs: string[] } };
+  depth: { mine: DecisionDepth; theirs: DecisionDepth };
+  fills: { mine: { words: string | null }; theirs: { words: string | null } };
+  unfilled: { label: string; words: string; mine: { gain_week: number; gain_window: number; by_week: number[] }; theirs: { gain_week: number; gain_window: number; by_week: number[] } };
+  out_indefinitely: { players: TradePlayer[]; words: string } | null;
+}
+export interface TradeEval {
+  decision?: TradeDecision;
+}
+export interface TradeCard {
+  recommendation?: TradeRecommendation;
+}
+// ---- end IR-2

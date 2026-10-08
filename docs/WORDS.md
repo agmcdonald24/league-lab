@@ -759,3 +759,25 @@ beyond next week", as of 2026-10-07), on every screen that shows a rest-of-seaso
 | Who should I start? with a corrected quarterback | the same sentence under his name; the call and the chances as for anyone | "no call" |
 | starter unclear, U1 (where `mart_starter_check` is built) | "Starter unclear: Tampa Bay lists Jalon Daniels as the starter, but the depth chart puts Baker Mayfield first. Our projections assume the listing: Daniels as the starter, Mayfield as his backup." | "wrong", "benched" (15 of 27 such flags were not stale) |
 <!-- ---- end IQ-2 -->
+
+<!-- ---- IR-2 -->
+## One trade verdict (Wave I-R, IR-2; `decisions.ir2_decision`, the calculator)
+
+| Where | Words |
+|---|---|
+| Basis, under the tiles | **Against realistic replacements.** Every number here fills an empty starting slot (a bye, a cut, a player traded away) with the best free agent who can play it that week, for both teams and never the same free agent for both, and compares the trade with each team's best waiver move. |
+| Dial caption | their starters over weeks 5–8, against realistic replacements |
+| Dial line | It puts Maye at their QB in place of Stafford and puts Folk at their K in place of Reichard. · It moves Hall from FLEX to RB. · It puts X at their K (it was empty). · It leaves their TE empty. |
+| Recommendation | **Worth proposing:** on this basis both lineups gain at least a point more than their own best waiver move, and it is a plausible offer. · **Not worth proposing:** your starters gain +0.5 beyond your best waiver move over weeks 5–8 (the bar is 1 point); Run Bijan Run's starters gain -3.3 beyond their own best move over weeks 5–8. |
+| Card heading | Worth proposing? Not worth proposing |
+| Against your best waiver move | +0.5 over weeks 5–8, 0.5 more than your best waiver move (add Jacoby Brissett, drop Bryce Young: +0.0 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you). · … not more than your best waiver move (…): the trade does not beat it on starter points. |
+| Card, waiver alternatives | Yours: add Jacoby Brissett, drop Bryce Young: +0.0 over weeks 5–8 (+20.9 if empty slots were left empty) (a waiver claim …). |
+| Starters, slot by slot (heading) | Your starters this week, slot by slot |
+| A slot's change | Matthew Stafford (from the trade) starts at QB in place of Jacoby Brissett (the free agent who would have covered it). · Drake Maye (from the bench) starts at QB in place of Matthew Stafford (traded). · Hall moves from FLEX to RB in place of Robinson (traded). · X (a free agent for the week) starts at TE (it was empty). · TE goes empty: Kelce (traded). |
+| Lineup table, a pickup | T.J. Hockenson (free agent for the week) |
+| Depth | Backup coverage: you lose Jacory Croskey-Merritt, a backup RB: 1 RB left on your bench who can play in week 5 (Zach Charbonnet in the IR slot and Jonah Coleman in the IR slot cannot). · … a RB who cannot play in week 5 (on a bye) … · Tucker joins your bench as a backup WR. |
+| Assumed pickups | Assumed pickups for your empty slots: without the trade, Jacoby Brissett (QB, week 5) …; with it, … Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted). |
+| The roster-only explanation (expander) | **If empty slots were left empty** — With nobody added for an empty slot (it counts 0): your starters +20.6 this week, +12.6 over weeks 5–8; Run Bijan Run's -0.5 and +7.5. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict. |
+| Week table note | Each week is re-solved on its own: byes, injuries and taxi squads as in that week's lineup, an empty starting slot filled with the best free agent for that week. |
+| How to read this | **One basis for every number** (against realistic replacements): an empty starting slot (a bye, a cut, a player traded away) is filled with the best free agent who can play it that week, for both teams, never the same free agent for both. Those pickups are assumed, not sure: another team can add the player first. **If empty slots were left empty** shows the result with nobody added, as an explanation. · **Your starters this week, slot by slot**: who takes each starting slot and whom he replaces there (a starter who moves to the FLEX is a link in that chain). |
+<!-- ---- end IR-2 -->

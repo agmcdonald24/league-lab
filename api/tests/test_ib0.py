@@ -70,8 +70,14 @@ def _totals(client, league, team, source) -> dict:
     body = {"league": league, "team": team, "partner": other["roster_id"], "give": [str(mine["players"][-1])],
             "get": [str(other["players"][-1])], "window": "week"}
     ev = client.post("/api/trades/evaluate" + (f"?source={source}" if source else ""), json=body).json()
+    # IR-2: the calculator's primary basis fills an empty starting slot with the best free agent for the week; its
+    # roster-only total (the separately labelled explanation) is the one every screen shares, and the basis's total is
+    # that plus the named pickups
+    d = ev["decision"]
+    fills = sum(r["value"] or 0 for r in d["fills"]["mine"]["rows"] if r["state"] == "before" and r["week"] == ev["week"])
+    assert d["mine"]["before"]["this_week"] == pytest.approx(d["unfilled"]["mine"]["before"]["this_week"] + fills, abs=0.011)
     return {"my_week": mw["lineup_value"], "waivers": wv.get("lineup_value"), "team": (tm.get("value") or {}).get("lineup_value"),
-            "calculator": ev["before"]["mine"]["this_week"], "mw": mw, "wv": wv, "tm": tm, "ev": ev}
+            "calculator": d["unfilled"]["mine"]["before"]["this_week"], "mw": mw, "wv": wv, "tm": tm, "ev": ev}
 
 
 # ------------------------------------------------------------------------------ the four screens, one total

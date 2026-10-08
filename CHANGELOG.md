@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-R (dependability)
+
+- **IR-2 — one trade verdict.** The trade calculator's dial, tiles, week table, headline, alternative and
+  recommendation now read one answer on one basis — against realistic replacements: an empty starting slot is filled
+  with the best free agent for that week, for both teams, never the same free agent for both — and say so; the
+  roster-only result is a labelled explanation ("If empty slots were left empty"). Sentences pair the two players of the
+  same slot ("puts Folk at their K in place of Reichard"), a FLEX move is a chain, and depth has one definition (who can
+  play that week; who cannot, named). docs/METRICS.md § "One trade verdict", docs/handbacks/IR-2.md.
+
 ## 2026-10-08 — Wave I-Q
 
 - **PO — the merge, the nightly's audit step, the roster rule.** `scripts/nightly.sh` runs `league-lab audit-lists`

@@ -153,8 +153,11 @@ def test_window_on_partners_and_evaluate_test_league(client):
         assert e["window"] == w and e["span"] == out[w]["span"] and e["weeks"] == out[w]["weeks"]
         assert len(e["before"]["mine"]["by_week"]) == len(e["weeks"])
         assert e["fit"]["window"] == e["fit"]["next_4"]
-        assert {**e["interest"], "need": None} == decisions.interest(e["fit"]["window"]["theirs"], e["fit"]["window"]["mine"], e["span"])
-        assert e["interest"]["caption"] == f"their starters over {e['span']}, by our numbers"          # IE-1
+        # IR-2: the dial is the decision's (the replacement basis, said in its caption)
+        assert {**e["interest"], "need": None, "caption": None} == {
+            **decisions.interest(e["fit"]["window"]["theirs"], e["fit"]["window"]["mine"], e["span"]), "caption": None}
+        assert e["interest"]["caption"].endswith("against realistic replacements")
+        assert e["interest"]["caption"] == f"their starters over {e['span']}, against realistic replacements"  # IR-2
         assert e["fit"]["this_week"] == ev["next4"]["fit"]["this_week"]         # this week is this week, whatever the window
         assert e["lineups"]["mine"]["slots"] == ev["next4"]["lineups"]["mine"]["slots"]
     assert ev["week"]["fit"]["window"] == ev["week"]["fit"]["this_week"]

@@ -2018,21 +2018,19 @@ def _ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], spa
     lt = rules.get("league_type")
     horizon = (f"This is a {lt} league: these numbers cover weeks of this season only; next season, ages and draft picks "
                f"are not valued." if lt in ("keeper", "dynasty") else None)
-    def _covered_note(a: dict) -> str:
-        """The claim's gain on the card's frame when it differs from its own (a claim that covers a bye is worth what it
-        adds over the free fill) - the number `beyond` uses."""
+    def _basis_alt(a: dict, whose: str) -> str:
+        """IR-2: the claim on the card's basis first (what it adds over the free fill), its roster-only number after."""
         if a.get("kind") == STAND_PAT:
-            return ""
+            return f"no waiver claim improves {whose} starting lineup {when}"
+        drop = (a.get("drop") or {}).get("player_name")
         own = float(a.get("gain_week" if window == "week" else "gain_window") or 0.0)
         cov = _alt_gain(a, window)
-        return "" if abs(own - cov) < 0.05 else f"; {cov:+.1f} once empty slots are filled from the free pool"
-
-    alt_words = (f"Yours: {alternative_words(alt_m, span, window)}{_covered_note(alt_m)} ({alt_m['availability_words']}). "
-                 f"Theirs: {alternative_words(alt_t, span, window).replace('your starting', 'their starting')}"
-                 f"{_covered_note(alt_t)} ({alt_t['availability_words']}).")
+        return (f"add {_claim_name(a)}" + (f", drop {drop}" if drop else " for an open roster spot") +
+                f": {cov:+.1f} {when}" + ("" if abs(own - cov) < 0.05 else f" ({own:+.1f} if empty slots were left empty)"))
+    alt_words = (f"Yours: {_basis_alt(alt_m, 'your')} ({alt_m['availability_words']}). "
+                 f"Theirs: {_basis_alt(alt_t, 'their')} ({alt_t['availability_words']}).")
     if alt_t.get("kind") == IL4_NOT_COMPARED:                                           # ---- IL-4: said, not hidden
-        alt_words = (f"Yours: {alternative_words(alt_m, span, window)}{_covered_note(alt_m)} "
-                     f"({alt_m['availability_words']}). Theirs: {alt_t['words']}.")
+        alt_words = f"Yours: {_basis_alt(alt_m, 'your')} ({alt_m['availability_words']}). Theirs: {alt_t['words']}."
     return {
         "give": [ctx.player(x) for x in give], "get": [ctx.player(x) for x in get], "partner": int(them),
         "drops": {"mine": [{"player": ctx.player(x.player_id), "words": f"You must cut {ctx.name(x.player_id)}."}
@@ -2547,7 +2545,7 @@ def ir2_depth(ctx: TradeContext, board: RosterBoard, team: int, week: int | None
         cannot = [(q, why_not(q)) for q in after_roster if q not in seated and ctx.pos(q) == pos]
         cannot = [(q, w) for q, w in cannot if w is not None]
         playing = p in {q.id for q in lb.bench}
-        what = f"a backup {pos}" if playing else f"a {pos} who cannot play in week {week} ({why_not(p) or 'out'})"
+        what = f"a backup {pos}" if playing else f"{_a_pos(pos)} who cannot play in week {week} ({why_not(p) or 'out'})"
         line = (f"{who} lose {ctx.name(p)}, {what}: {len(usable) if usable else 'no'} {pos} left on {whose} bench who "
                 f"can play in week {week}")
         if cannot:
@@ -2561,6 +2559,27 @@ def ir2_depth(ctx: TradeContext, board: RosterBoard, team: int, week: int | None
     return {"words": "; ".join(bits) if bits else None, "lost": lost, "joins": [ctx.name(q.id) for q in joins_]}
 
 
+def _a_pos(pos: str | None) -> str:
+    from league_lab.lineup import _a
+    return _a(pos)
+
+
+# IR-2 hook for IR-1's "cannot play" definition (`out_indefinitely`), which was not on main when this was built: until
+# the PO wires IR-1's function here, the board's own this-week reason says who is on a reserve list (the rows carry
+# "NFL injured reserve" / the IR slot). A trade with such a player says so in its verdict and its recommendation.
+IR2_OUT_REASONS = {"NFL injured reserve": "on injured reserve", "IR slot": "in the IR slot"}
+
+
+def ir2_out_indefinitely(ctx: TradeContext, board: RosterBoard, ids) -> list[dict]:
+    out = []
+    for p in ids:
+        r = board.row(p, ctx.this_week)
+        why = IR2_OUT_REASONS.get(r.get("reason")) if r is not None else None
+        if why:
+            out.append({"player": ctx.player(p), "why": why})
+    return out
+
+
 def _ir2_access(rules: dict) -> str:
     w = rules.get("waiver")
     if w == "fcfs":
@@ -2570,13 +2589,16 @@ def _ir2_access(rules: dict) -> str:
             if kw else "another team can add him first, and a waiver claim can be lost to a team ahead")
 
 
-def ir2_fills(ctx: TradeContext, c: T.Covered, meta: dict, rules: dict, whose: str) -> dict:
-    """The free agents the replacement frame assumes for one side (the add plan), by week, before and after the trade."""
+def ir2_fills(ctx: TradeContext, c: T.Covered, meta: dict, rules: dict, whose: str, pool: dict | None = None) -> dict:
+    """The free agents the replacement frame assumes for one side (the add plan), by week, before and after the trade,
+    each with his projection that week (what he adds to that week's total)."""
     rows = []
     for w, fb, fa in zip(c.weeks, c.fills_before, c.fills_after, strict=True):
         for state, ids in (("before", fb), ("after", fa)):
             for pid in ids:
-                rows.append({"week": int(w), "state": state, "player": _alt_player(ctx, meta, pid)})
+                p = ((pool or {}).get(pid) or {}).get(int(w))
+                rows.append({"week": int(w), "state": state, "player": _alt_player(ctx, meta, pid),
+                             "value": None if p is None or p.value is None else T._r2(p.value)})
 
     def part(state: str) -> str:
         xs = [r for r in rows if r["state"] == state]
@@ -2591,6 +2613,14 @@ def ir2_fills(ctx: TradeContext, c: T.Covered, meta: dict, rules: dict, whose: s
     words = (f"Assumed pickups for {whose} empty slots: " + "; ".join(bits) + ". Each is an assumed pickup, not a sure "
              f"one: {_ir2_access(rules)}; on a full roster it also takes a bench spot for that week (not counted).")
     return {"rows": rows, "words": words}
+
+
+def _ir2_effect(whose: str, week_gain: float, window_gain: float, window: str, span: str) -> str:
+    """`_effect` with the window's total in one decimal under 10 points (the tiles' number: "+0.5" is never "about 1")."""
+    if window == "week":
+        return f"{whose} starting lineup: {_more(week_gain, 'this week')}."
+    return (f"{whose} starting lineup: {_more(week_gain, 'this week')}, "
+            f"{_more(window_gain, f'in total over {span}', whole=abs(window_gain) >= 10)}.")
 
 
 class _Basis:
@@ -2632,11 +2662,17 @@ def ir2_decision(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, boa
     me, th = trade.mine, trade.theirs
     basis = _Basis((gm_w, gm_h, me), (gt_w, gt_h, th))
     verdict = T.verdict(basis, span)
+    oi = ir2_out_indefinitely(ctx, ctx.board, [*g, *t])                           # ---- IR-2: the IR-1 hook
+    oi_words = None
+    if oi:
+        oi_words = " ".join(f"{x['player']['player_name']} is {x['why']}" +
+                            (": no return date, so" if x["why"] == "on injured reserve" else ", so") +
+                            " these numbers count no games from him." for x in oi)
+        verdict = f"{verdict} {oi_words}"
     ch_m = ir2_changes(ctx, nm, g, t, board.slots, meta)
     ch_t = ir2_changes(ctx, nt, t, g, board.slots, meta)
     dial = {**interest(gt_h, gm_h, span), "need": ir2_need(ctx, meta, ch_t)}
-    dial["caption"] = f"their starters over {span}, against realistic replacements" if window != "week" else \
-        "their starters this week, against realistic replacements"
+    dial["caption"] = f"their starters over {span}, against realistic replacements"
     # the alternative on the same basis (the claim priced on the replacement frame: what it adds over the free fill)
     def alt_line(a: dict, whose: str) -> str:
         if a.get("kind") == STAND_PAT:
@@ -2687,13 +2723,17 @@ def ir2_decision(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, boa
                      "waiver move, and it is a plausible offer." if credible else
                      "Not worth proposing: " + ("; ".join(reasons) if reasons else "it does not clear the bar") + "."),
            "plausibility": plaus.get("label")}
+    if oi_words:
+        rec["words"] += f" {oi_words}"
     st = strip(weeks, cm.by_week, ct.by_week)
     dm = ir2_depth(ctx, ctx.board, team, ctx.this_week, g, [c.player_id for c in nm.cuts], t, "you")
     dt = ir2_depth(ctx, ctx.board, int(out["partner"]), ctx.this_week, t, [c.player_id for c in nt.cuts], g, "they")
-    raw_m = {"gain_week": now.mine.gain_week, "gain_window": me.gain_horizon,
-             "by_week": [T._r2(a - b_) for a, b_ in zip(me.after, me.before, strict=True)]}
-    raw_t = {"gain_week": now.theirs.gain_week, "gain_window": th.gain_horizon,
-             "by_week": [T._r2(a - b_) for a, b_ in zip(th.after, th.before, strict=True)]}
+    def raw(sn: T.Side, sw: T.Side) -> dict:
+        return {"gain_week": sn.gain_week, "gain_window": sw.gain_horizon,
+                "by_week": [T._r2(a - b_) for a, b_ in zip(sw.after, sw.before, strict=True)],
+                "before": {"this_week": T._r2(sn.before[0]), "window": sw.before_horizon},
+                "after": {"this_week": T._r2(sn.after[0]), "window": sw.after_horizon}}
+    raw_m, raw_t = raw(now.mine, me), raw(now.theirs, th)
     unfilled_words = (f"With nobody added for an empty slot (it counts 0): your starters {_s1w(raw_m['gain_week'])} this "
                       f"week" + ("" if window == "week" else f", {_s1w(raw_m['gain_window'])} {when}") +
                       f"; {partner_team}'s {_s1w(raw_t['gain_week'])}" +
@@ -2709,8 +2749,8 @@ def ir2_decision(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, boa
                    "cuts": [ctx.player(c.player_id) for c in ct.cuts]},
         "dial": dial, "verdict": links(verdict),
         "headline": links(f"**You give {_names(ctx, g)}; you get {_names(ctx, t)}.** {verdict}"),
-        "effect_words": _effect("Your", gm_w, gm_h, window, span),
-        "their_effect_words": _effect(f"{partner_team}'s", gt_w, gt_h, window, span),
+        "effect_words": _ir2_effect("Your", gm_w, gm_h, window, span),
+        "their_effect_words": _ir2_effect(f"{partner_team}'s", gt_w, gt_h, window, span),
         "fit_words": (f"**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free "
                       f"pool): you **{T._s1(gm_w)}** this week and **{T._s1(gm_h)}** over {span}; them "
                       f"**{T._s1(gt_w)}** and **{T._s1(gt_h)}**."),
@@ -2723,12 +2763,10 @@ def ir2_decision(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, boa
         "changes": {"mine": ch_m, "theirs": ch_t,
                     "words": {"mine": [c["words"] for c in ch_m], "theirs": [c["words"] for c in ch_t]}},
         "depth": {"mine": dm, "theirs": dt},
-        "fills": {"mine": ir2_fills(ctx, cm, meta, frame["rules"], "your"),
-                  "theirs": ir2_fills(ctx, ct, meta, frame["rules"], f"{partner_team}'s")},
+        "fills": {"mine": ir2_fills(ctx, cm, meta, frame["rules"], "your", frame.get("pool")),
+                  "theirs": ir2_fills(ctx, ct, meta, frame["rules"], f"{partner_team}'s", frame.get("pool"))},
         "unfilled": {"label": IR2_UNFILLED_LABEL, "words": unfilled_words, "mine": raw_m, "theirs": raw_t},
-        # IR-1's "cannot play" definition was not on main when this was built: the hook the verdict reads (None = not
-        # checked here; see docs/handbacks/IR-2.md)
-        "out_indefinitely": None,
+        "out_indefinitely": {"players": oi, "words": oi_words} if oi else None,         # the IR-1 hook (above)
     }
 
 
