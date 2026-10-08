@@ -62,6 +62,7 @@ import numpy as np
 import pandas as pd
 import psycopg
 
+from . import league_status as LS  # ---- IS-2: the one "can he play" question
 from .lineup import (
     EPS,
     EPS2,
@@ -636,8 +637,12 @@ def load_and_sweep(conn: psycopg.Connection, season: int, as_of: datetime | None
             select league_id, sleeper_id, gsis_id, player_name, position, nfl_team, games_played
             from analytics.mart_player_availability
             where league_id = any(%s) and is_free_agent and roster_status = 'ACT'
-              and injury_status is distinct from 'Out' and injury_status is distinct from 'IR'
               and sleeper_id is not null""", (ids,))
+        # ---- IS-2: a free agent who sits this week (availability_gate.sits over Sleeper's directory copy and the
+        # stored record) is not an add; was the mart's injury_status ("Out" / "IR": nflverse's newest report row)
+        sit = LS.sitting(LS.blocks(LS.conn_query(conn), season, first))
+        fa_rows = [r for r in fa_rows if r.get("gsis_id") not in sit]
+        # ---- end IS-2
         fa_sids = sorted({r["sleeper_id"] for r in fa_rows} - set(inp.sleeper))
         for r in _frame(cur, """select sleeper_player_id, position, fantasy_positions, team
                                 from staging.stg_sleeper__players where sleeper_player_id = any(%s)""", (fa_sids,)):
@@ -1131,8 +1136,8 @@ select s.league_id, s.week, s.gsis_id, s.base_points, s.larger_points, s.points_
        a.sleeper_id, a.player_name, a.position, a.nfl_team, a.games_played
 from ops.player_scenarios as s
 join analytics.mart_player_availability as a on a.league_id = s.league_id and a.gsis_id = s.gsis_id
-where s.season = %s and a.is_free_agent and a.roster_status = 'ACT' and a.sleeper_id is not null
-  and a.injury_status is distinct from 'Out' and a.injury_status is distinct from 'IR'"""
+where s.season = %s and a.is_free_agent and a.roster_status = 'ACT' and a.sleeper_id is not null"""
+# ---- IS-2: UPSIDE_SQL no longer reads injury_status; upside_stashes drops who sits (league_status, the one definition)
 
 
 # ---- IG-3: the drop pieces the stash writer reads when the sweep did not hand them over (``upside_after_waivers`` run
@@ -1173,6 +1178,10 @@ def upside_stashes(conn: psycopg.Connection, season: int, as_of: datetime | None
     decision = {r["league_id"]: (int(r["week"]), int(r["last"]), r["as_of"]) for r in wk}
     if not scen or not decision:
         return []
+    # ---- IS-2: a stash who sits this week is not proposed (was the mart's injury_status "Out" / "IR")
+    sit = LS.sitting(LS.blocks(LS.conn_query(conn), season, min(w0 for (w0, _l, _a) in decision.values())))
+    scen = [r for r in scen if r.get("gsis_id") not in sit]
+    # ---- end IS-2
     inp = load_inputs(conn, season)
     obs_ppg = _observed_ppg(inp)
     by_fa: dict[tuple[str, str], dict[int, dict]] = defaultdict(dict)

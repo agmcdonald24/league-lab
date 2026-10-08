@@ -96,11 +96,14 @@ where league_id = %s and season = %s and week >= %s and proj_points is not null
 group by gsis_id"""
 
 # the replacement level per position: the most rest-of-season projected points of a free agent (on an active NFL
-# roster, not Out / IR) - params (league_id, season, week, league_id)
+# roster, not left out this week by the stored availability record - IS-2) - params (league_id, season, week, league_id)
 REPLACEMENT_SQL = """
 with season_points as (
-    select gsis_id, round(sum(round(proj_points::numeric, 2)), 2) as season_points
-    from ops.projections
+    select gsis_id, round(sum(round(proj_points::numeric, 2)), 2) as season_points,
+           -- ---- IS-2: the stored record of availability_gate (project writes it for a player who sits this week;
+           -- to_jsonb reads a column that may not exist yet) - was the mart's injury_status ("Out" / "IR")
+           bool_or(to_jsonb(p) ->> 'availability' is not null) as sits
+    from ops.projections as p
     where league_id = %s and season = %s and week >= %s and proj_points is not null
     group by gsis_id
 )
@@ -109,7 +112,7 @@ select a.position, max(s.season_points)::double precision as replacement,
 from analytics.mart_player_availability a
 join season_points s on s.gsis_id = coalesce(a.gsis_id, a.sleeper_id)
 where a.league_id = %s and a.is_free_agent and (a.roster_status = 'ACT' or a.position = 'DEF')
-  and a.injury_status is distinct from 'Out' and a.injury_status is distinct from 'IR'
+  and not s.sits                                                    -- ---- end IS-2
 group by a.position"""
 
 
