@@ -4750,3 +4750,29 @@ the tone's source, season, week, view, position, the flagged quarterbacks) — ~
 page; one more entry holds the floor's sentence. The start answer is not cached (two to
 four ids are not a countable set): ~25 ms warm.
 <!-- ---- end IP-2 -->
+
+<!-- ---- IQ-4 -->
+## Kickers and defenses beyond next week (kd1.0 2–8 weeks ahead, IQ-4, Wave I-Q, 2026-10-07; `scripts/analysis/iq4_kd_horizon.py`)
+
+**The keep rule, written at 21:50 ET on 2026-10-07, before any number of the study was read.** The study
+(`iq4_kd_horizon.py`): seasons 2021–2025, one kd1.0 fit per season and position on every completed season before it
+(2016..S−1, `kdef.fit_kd`, the production constants); as of weeks W = 3, 5, 7, 9 each unit's row for week W+h (h = 1 … 8)
+is rebuilt as the nightly builds a future week: the game's own columns (week, home, dome, opponent), its betting line
+only at h = 1 (the market week: `implied_team_total`, `opp_implied_total`, `total_line`, `spread_line` NULL from h = 2,
+as production has none), and every as-of input (the team's and the opponent's season-to-date, last-three and last-season
+rates, the kicker's career) frozen at what was known after week W (the inputs of week W+1). Scored against what each
+unit scored in week W+h, in each house league's scoring, per season × W × week × position × league with ≥ 8 units
+that played; the naive number is **this season's points per game through week W** (`kdef.ppg_baselines`'
+`season_ppg` as of week W+1: last season's before a unit's first game). "Pooled 2–8" = the mean over the cells with
+h = 2 … 8, per season, both house leagues together. Per position (K, DEF), the decision:
+
+* **keep** the kd1.0 rest-of-season list when its pooled 2–8 Spearman is higher than the naive number's in at least 4
+  of the 5 seasons **and** its pooled 2–8 MAE is not higher in at least 4 of the 5;
+* **replace by the naive number** when the naive number wins by the same rule (Spearman higher in ≥ 4 of 5 and MAE
+  not higher in ≥ 4 of 5);
+* otherwise the two are **no different**: the cheaper honest choice is the naive number (it is what a reader can
+  check), stated as such;
+* and in every case, **take the K / DEF "Rest of season" list off the public screen** when the better of the two
+  has a pooled 2–8 Spearman (mean over the seasons) below **0.15** — an order that weak is not a ranking.
+
+The market week (h = 1) is reported beside it and decides nothing. Names are not a criterion.
