@@ -45,7 +45,8 @@ NY = ZoneInfo("America/New_York")
 SCREENS = frozenset({"week", "player", "leagues", "ros", "about", "trends", "matchups", "players", "receivers",
                      "compare", "waivers", "trades", "trade-calc", "team", "league"}
                     | {"account", "watchlist"}      # ---- IL-5: IK-4's account screen and the watchlist (were "other")
-                    | {"home", "blog", "post", "dfs"})   # ---- IN-1: the home page, the blog, a post (+ IM-5's "dfs", missing)
+                    | {"home", "blog", "post", "dfs"}    # ---- IN-1: the home page, the blog, a post (+ IM-5's "dfs", missing)
+                    | {"rankings", "write"})             # ---- IQ-4: IP-2's Rankings and the blog editor (were "other")
 PER_S, BURST = 1.0, 5    # per session: a token bucket (one a second, five at once)
 GLOBAL_PER_S = 20        # all sessions together
 MAX_BODY = 2048          # bytes; a bigger body counts the view with no league / team
@@ -60,7 +61,13 @@ clock = time.monotonic   # the rate limit's clock (tests replace it)
 _lock = threading.Lock()
 _buckets: dict[str, tuple[float, float]] = {}    # session -> (tokens left, when)
 _window: list[float] = [0.0, 0]        # [the current second, rows allowed in it]
-stats = {"written": 0, "failed": 0, "limited": 0, "dropped": 0}
+stats = {"written": 0, "failed": 0, "limited": 0, "dropped": 0, "retried": 0}
+# ---- IQ-4: why a write failed, by the exception's class (a closed, small set: at most FAILED_KINDS_MAX names)
+failed_kinds: dict[str, int] = {}
+FAILED_KINDS_MAX = 20
+RETRY_ON = (psycopg.OperationalError, psycopg.InterfaceError)    # a dropped / closed connection (Neon suspended)
+RETRY_PAUSE_S = 0.5                                              # on the writer thread: never a request's time
+# ---- end IQ-4
 _queue: queue.Queue[dict] = queue.Queue(maxsize=QUEUE_MAX)
 _worker: threading.Thread | None = None
 
@@ -111,6 +118,12 @@ def event(payload: dict, *, version: str | None, session: str) -> dict:
     if isinstance(roster, str) and roster.strip().isdigit():
         roster = int(roster.strip())
     roster = roster if league and isinstance(roster, int) and not isinstance(roster, bool) and 0 <= roster <= 9999 else None
+    # ---- IQ-4: a reference key (browsing without a league: ref:half …) is no league — usage.events' checks refuse it
+    # (league_key, platform), so its insert failed and the view was not counted (30 of 323 writes, 7 Oct). Counted with
+    # no league, as a view without one is.
+    if league and platforms.platform(league) == "reference":
+        league, roster = None, None
+    # ---- end IQ-4
     version = version if version and _VERSION.match(version) else None
     return {"at": datetime.now(UTC), "screen": screen if screen in SCREENS else "other", "league_key": league,
             "roster_id": roster, "platform": platforms.platform(league) if league else None, "version": version,
@@ -145,6 +158,7 @@ def reset() -> None:
         _window[0], _window[1] = 0.0, 0
         for k in stats:
             stats[k] = 0
+        failed_kinds.clear()                                        # ---- IQ-4
 
 
 def submit(row: dict) -> bool:
@@ -181,15 +195,35 @@ def flush(timeout: float = 5.0) -> bool:
     return True
 
 
-def write(row: dict) -> bool:
-    """Insert the row; any failure is swallowed (counted, logged by class only). Runs after the response."""
-    try:
-        db.write_one(INSERT, (row["at"], row["screen"], row["league_key"], row["roster_id"], row["platform"],
-                              row["version"], row["session"]))
-    except Exception as exc:  # noqa: BLE001 - usage is never load-bearing
+def _failed(exc: BaseException) -> None:
+    k = exc.__class__.__name__
+    with _lock:
         stats["failed"] += 1
-        log.warning("usage: insert failed (%s)", exc.__class__.__name__)
-        return False
+        if k in failed_kinds or len(failed_kinds) < FAILED_KINDS_MAX:
+            failed_kinds[k] = failed_kinds.get(k, 0) + 1
+        else:
+            failed_kinds["other"] = failed_kinds.get("other", 0) + 1
+    log.warning("usage: insert failed (%s)", k)
+
+
+def write(row: dict) -> bool:
+    """Insert the row; any failure is swallowed (counted by its class, logged by class only). Runs on the writer
+    thread, after the response. IQ-4: a connection error (``RETRY_ON``) is tried once more after ``RETRY_PAUSE_S``
+    (``db.write_one`` already re-connects once at once; a waking Neon compute can refuse that too)."""
+    args = (row["at"], row["screen"], row["league_key"], row["roster_id"], row["platform"], row["version"], row["session"])
+    for attempt in (1, 2):
+        try:
+            db.write_one(INSERT, args)
+            break
+        except RETRY_ON as exc:
+            if attempt == 2:
+                _failed(exc)
+                return False
+            stats["retried"] += 1
+            time.sleep(RETRY_PAUSE_S)
+        except Exception as exc:  # noqa: BLE001 - usage is never load-bearing
+            _failed(exc)
+            return False
     stats["written"] += 1
     return True
 
@@ -202,7 +236,8 @@ _DAY = "(at at time zone 'America/New_York')::date"
 def summary(days: int = 7) -> dict:
     """Views per screen per day, views / leagues / sessions per day, the window's totals (days in New York)."""
     days = max(1, min(int(days), 90))
-    out: dict = {"enabled": enabled(), "days": days, "ready": True, "process": dict(stats)}
+    out: dict = {"enabled": enabled(), "days": days, "ready": True,
+                 "process": {**stats, "failed_kinds": dict(failed_kinds)}}                 # ---- IQ-4: the kinds
     back = (days - 1,)
     try:
         per = db.fresh(f"select {_DAY} as day, screen, count(*)::int as views from usage.events where {_SINCE} "
@@ -214,10 +249,18 @@ def summary(days: int = 7) -> dict:
                              "group by 1 order by 2 desc, 1", back)
         tot = db.fresh(f"select count(*)::int as views, count(distinct league_key)::int as leagues, "
                        f"count(distinct session)::int as sessions from usage.events where {_SINCE}", back)
+        # ---- IQ-4: did they bounce? sessions per day by how many screens they viewed (1, 2–3, 4+)
+        depth = db.fresh(f"select day, count(*) filter (where n = 1)::int as one, "
+                         f"count(*) filter (where n between 2 and 3)::int as two_three, "
+                         f"count(*) filter (where n >= 4)::int as four_plus from ("
+                         f"select {_DAY} as day, session, count(*) as n from usage.events where {_SINCE} "
+                         "and session is not null group by 1, 2) as s group by day order by day desc", back)
+        # ---- end IQ-4
     except (db.DataNotReady, psycopg.Error) as exc:
         out.update(ready=False, words="Usage is not set up on this database yet: the next nightly creates the table "
                                       "(scripts/hosted_usage.sql).", cause=exc.__class__.__name__)
         return out
     out.update(views_by_screen_day=per.to_dict("records"), by_day=by_day.to_dict("records"),
-               by_screen=by_screen.to_dict("records"), totals=tot.to_dict("records")[0])
+               by_screen=by_screen.to_dict("records"), totals=tot.to_dict("records")[0],
+               depth=depth.to_dict("records"))                                              # ---- IQ-4
     return out

@@ -254,7 +254,8 @@ def test_usage_off_writes_nothing(usage_table, api, monkeypatch, value):
     before = len(rows())
     r = post(api, {"screen": "week", "league": SCRUBS, "roster_id": 2})
     assert r.status_code == 204 and "set-cookie" not in r.headers
-    assert len(rows()) == before and usage.stats == {"written": 0, "failed": 0, "limited": 0, "dropped": 0}
+    assert len(rows()) == before and usage.stats == {"written": 0, "failed": 0, "limited": 0, "dropped": 0,
+                                                     "retried": 0}                             # ---- IQ-4: retried
     assert api.get("/api/usage/summary").json()["enabled"] is False
 
 
@@ -297,7 +298,7 @@ def test_no_name_username_or_ip_in_a_row(usage_table, api):
                                            "'usage' and table_name = 'events' order by ordinal_position")]
         assert cols == COLUMNS
         for col, bad in (("screen", "Andrew Smith"), ("league_key", "andycatmac"), ("session", "andrew"),
-                         ("platform", "espn"), ("version", "a b")):
+                         ("platform", "twitter"), ("version", "a b")):   # IQ-4: espn is a platform since IK-3
             with pytest.raises(psycopg.errors.CheckViolation):
                 conn.execute(f"insert into usage.events (screen, {col}) values ('week', %s)"
                              if col != "screen" else "insert into usage.events (screen) values (%s)", (bad,))
@@ -363,7 +364,9 @@ def test_the_sync_keeps_and_creates_the_usage_schema():
     sql = SQL_FILE.read_text().lower()
     assert "grant usage on schema usage to league_lab_app" in sql
     assert "grant select, insert on usage.events to league_lab_app" in sql
-    assert "drop " not in sql and "alter role" not in sql                  # never drops, never changes the role
+    # never drops the table or its rows' schema, never changes the role (IQ-4: IK-3's "drop constraint if exists" +
+    # "add constraint" re-creates a check, it drops nothing a row lives in — the old "drop " test refused it)
+    assert not re.search(r"drop (table|schema)", sql) and "alter role" not in sql
 
 
 def test_the_web_counts_each_screen_once():
