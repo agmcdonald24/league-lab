@@ -80,9 +80,9 @@ CHECKS: dict[tuple[str, str], dict] = {
     ("next", "K"): {"status": "graded_weak", "mae": 3.77, "order": 0.095, "ref": REF_KD},
     ("next", "DEF"): {"status": "graded_weak", "mae": 4.32, "order": 0.257, "ref": REF_KD},
     ("later", "QB"): {"status": "graded_weak", "mae": 7.41, "order": 0.495, "ref": REF_H},
-    ("later", "RB"): {"status": "graded", "mae": 4.70, "order": 0.633, "ref": REF_H},
-    ("later", "WR"): {"status": "graded", "mae": 4.59, "order": 0.568, "ref": REF_H},
-    ("later", "TE"): {"status": "graded", "mae": 3.41, "order": 0.540, "ref": REF_H},
+    ("later", "RB"): {"status": "graded", "mae": 4.73, "order": 0.636, "ref": REF_H},     # IR-4's run: the rows with
+    ("later", "WR"): {"status": "graded", "mae": 4.62, "order": 0.569, "ref": REF_H},     # a record (IQ-1's cells:
+    ("later", "TE"): {"status": "graded", "mae": 3.42, "order": 0.545, "ref": REF_H},     # 4.70 / 4.59 / 3.41)
     ("later", "K"): {"status": "chance", "mae": 3.75, "order": 0.028, "ref": REF_KD},
     ("later", "DEF"): {"status": "chance", "mae": 4.78, "order": 0.040, "ref": REF_KD},
 }
@@ -489,16 +489,17 @@ VERSIONS = (
 # Spearman), pooled over the window's weeks; 2021–2025 as of weeks 3 / 5 / 7 / 9, both house scorings. "next4" = the
 # next four weeks (horizons 1–4); "ros" = the rest of the season as far as the study reaches (horizons 1–8). QB: v3.6
 # against the naive baseline B2 (his own per-game record with his role, the opponent and the line where there is one;
-# iq3_qb.py); RB / WR / TE: v3.5 = v3.6 (iq1_horizon.py's cells), no simple baseline measured yet.
+# iq3_qb.py); RB / WR / TE: v3.5 = v3.6 against his own points per game so far (ir4_useful.py --baseline, the rows
+# where he has a record).
 WINDOWS = {
     ("next4", "QB"): {"mae": 6.93, "order": 0.538, "base_mae": 7.00, "base_order": 0.537},
-    ("next4", "RB"): {"mae": 4.63, "order": 0.660, "base_mae": None, "base_order": None},
-    ("next4", "WR"): {"mae": 4.48, "order": 0.594, "base_mae": None, "base_order": None},
-    ("next4", "TE"): {"mae": 3.35, "order": 0.564, "base_mae": None, "base_order": None},
+    ("next4", "RB"): {"mae": 4.64, "order": 0.664, "base_mae": 4.82, "base_order": 0.624},
+    ("next4", "WR"): {"mae": 4.49, "order": 0.595, "base_mae": 4.64, "base_order": 0.560},
+    ("next4", "TE"): {"mae": 3.35, "order": 0.570, "base_mae": 3.54, "base_order": 0.501},
     ("ros", "QB"): {"mae": 7.28, "order": 0.509, "base_mae": 7.33, "base_order": 0.510},
-    ("ros", "RB"): {"mae": 4.68, "order": 0.640, "base_mae": None, "base_order": None},
-    ("ros", "WR"): {"mae": 4.57, "order": 0.574, "base_mae": None, "base_order": None},
-    ("ros", "TE"): {"mae": 3.39, "order": 0.547, "base_mae": None, "base_order": None},
+    ("ros", "RB"): {"mae": 4.71, "order": 0.642, "base_mae": 4.92, "base_order": 0.605},
+    ("ros", "WR"): {"mae": 4.60, "order": 0.575, "base_mae": 4.75, "base_order": 0.546},
+    ("ros", "TE"): {"mae": 3.40, "order": 0.553, "base_mae": 3.57, "base_order": 0.489},
 }
 NOT_GRADED = (
     "the ranges around a season total and around a trade's gap (they add weekly ranges as if the weeks were independent; "
@@ -507,6 +508,7 @@ NOT_GRADED = (
     "below is one-for-one, same position)",
     "kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their "
     "order is no better than chance)",
+    "quarterbacks' useful-decision grade on the current version (it was measured on the version before)",
 )
 # The useful-decision grade (ud1.0, docs/METRICS.md § "The useful decision grade"; scripts/analysis/ir4_useful.py,
 # 2021–2025): on a close one-for-one (projected four-week totals within 20 %), how often the side the calculator favours
@@ -560,6 +562,6 @@ def about_block() -> dict:
             "checked": {"head": CHECKED_HEAD, "graded_on": GRADED_ON, "rows": rows, "not_graded": list(NOT_GRADED),
                         "windows_words": ("Next four weeks and rest of season: each week's projection in the window "
                                           "scored against that week (pooled over the window's weeks, not the window's "
-                                          "total); quarterbacks also against a simple baseline, his own per-game "
-                                          "record."),
+                                          "total), against a simple baseline in brackets: his own points per game so "
+                                          "far (for quarterbacks with his role, the opponent and the betting line)."),
                         "rule": RULE_WORDS, "useful": {"words": USEFUL_WORDS, "by_position": USEFUL}}}

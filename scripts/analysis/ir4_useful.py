@@ -103,6 +103,64 @@ def run(positions: list[str], out: str) -> pd.DataFrame:
     return r
 
 
+# ---- the simple baseline beyond next week (METRICS § "His own record beyond next week at RB / WR / TE")
+def baseline_run(positions: list[str], out: str) -> pd.DataFrame:
+    """Per season × W × target week × position × league (players who played, ≥ 8): the model's (variant ad) and his
+    own record's MAE and Spearman on the same rows (a row without a record is left out of both)."""
+    from league_lab.rankings import _spearman
+    with psycopg.connect(get_settings().pipeline_dsn()) as conn:
+        conn.read_only = True
+        frame = H.load(conn, [s for s in P.available_seasons(conn) if s <= max(TESTS)])
+        leagues = P.league_scorings(conn)
+    frame["season"] = frame["season"].astype(int)
+    res = []
+    for s in TESTS:
+        for pos in positions:
+            t0 = time.monotonic()
+            models, feats = H.fit(frame, s, pos)
+            fpos = frame[frame["position"] == pos]
+            for w in AS_OF:
+                rows = H.future_rows(fpos, s, w)
+                rows = rows[rows["position"] == pos].reset_index(drop=True)
+                v = H.market_personnel(H.impute_lines(rows, H.team_lines_asof(frame, s, w)))
+                ok = rows[OUT].notna().all(axis=1).to_numpy() & rows["played"].fillna(False).astype(bool).to_numpy()
+                for lid, (_, sc) in leagues.items():
+                    proj = H.predict(models, feats, v, sc)
+                    act = np.where(ok, P.price(rows.fillna({c: 0 for c in OUT}), sc, "out_").to_numpy(dtype=float), np.nan)
+                    cur = ppg(fpos[(fpos["season"] == s) & (fpos["week"] <= w)], sc)
+                    last = ppg(fpos[fpos["season"] == s - 1], sc)
+                    rec = cur.reindex(rows["gsis_id"]).to_numpy(dtype=float)
+                    rec = np.where(np.isfinite(rec), rec, last.reindex(rows["gsis_id"]).to_numpy(dtype=float))
+                    d = rows[["target_week", "h"]].assign(proj=proj, base=rec, act=act)
+                    d = d[np.isfinite(d["act"]) & np.isfinite(d["base"]) & np.isfinite(d["proj"])]
+                    for (t, h), g in d.groupby(["target_week", "h"]):
+                        if len(g) < 8:
+                            continue
+                        res.append({"season": s, "as_of": w, "target_week": t, "h": h, "position": pos, "league_id": lid,
+                                    "n": len(g), "mae": float((g["proj"] - g["act"]).abs().mean()),
+                                    "spearman": _spearman(g["proj"], g["act"]),
+                                    "base_mae": float((g["base"] - g["act"]).abs().mean()),
+                                    "base_spearman": _spearman(g["base"], g["act"])})
+            log.info("baseline %s %s: %.0f s", s, pos, time.monotonic() - t0)
+    r = pd.DataFrame(res)
+    r.to_parquet(out)
+    return r
+
+
+def baseline_report(r: pd.DataFrame) -> None:
+    for name, hs in (("next four weeks (h 1-4)", range(1, 5)), ("rest of season (h 1-8)", range(1, 9)),
+                     ("two to eight weeks (h 2-8)", range(2, 9))):
+        x = r[r["h"].isin(list(hs))]
+        by = x.groupby(["position", "season"])[["mae", "spearman", "base_mae", "base_spearman"]].mean()
+        print(f"\n{name}: by season")
+        print(by.round(3).to_string())
+        pooled = by.groupby("position").mean()
+        wins = by.assign(win=(by["spearman"] > by["base_spearman"]) & (by["mae"] < by["base_mae"]),
+                         loss=(by["spearman"] < by["base_spearman"]) & (by["mae"] > by["base_mae"])).groupby("position")[["win", "loss"]].sum()
+        print(f"{name}: pooled (mean over seasons) and seasons where the model is ahead on both / behind on both")
+        print(pd.concat([pooled.round(3), wins], axis=1).to_string())
+
+
 def report(r: pd.DataFrame) -> None:
     def w(g, col, n):              # pair-weighted within a season
         x = g[g[n] > 0]
@@ -133,8 +191,12 @@ def main() -> None:
     ap.add_argument("--positions", default="QB,RB,WR,TE")
     ap.add_argument("--out", default="ud.parquet")
     ap.add_argument("--report", default=None, help="only report an existing parquet")
+    ap.add_argument("--baseline", action="store_true", help="the own-record baseline beyond next week instead")
     a = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+    if a.baseline:
+        baseline_report(pd.read_parquet(a.report) if a.report else baseline_run(a.positions.split(","), a.out))
+        return
     r = pd.read_parquet(a.report) if a.report else run(a.positions.split(","), a.out)
     report(r)
 

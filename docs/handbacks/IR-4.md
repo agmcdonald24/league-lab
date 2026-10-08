@@ -58,16 +58,18 @@ Task: the dependability review's P1 3 (BRIEF.md § IR-4). Branch `dev/IR4` from 
    as `horizon.cells`. Numbers (2021–2025, as of weeks 3/5/7/9, both house scorings; order = Spearman / miss in points
    per game; source METRICS § "What each number has been checked against (IR-4)"):
 
-   | window | QB v3.6 | QB baseline B2 (his own record) | RB | WR | TE |
-   |---|---|---|---|---|---|
-   | next week | 0.587 / 6.44 | 0.575 / 6.60 (IQ-3) | 0.686 / 4.52 | 0.618 / 4.44 | 0.599 / 3.25 |
-   | 2–8 weeks ahead | 0.495 / 7.41 (weak) | 0.497 / 7.45 | 0.633 / 4.70 | 0.568 / 4.59 | 0.540 / 3.41 |
-   | next four weeks (h 1–4) | 0.538 / 6.93 | 0.537 / 7.00 | 0.660 / 4.63 | 0.594 / 4.48 | 0.564 / 3.35 |
-   | rest of season (h 1–8) | 0.509 / 7.28 | 0.510 / 7.33 | 0.640 / 4.68 | 0.574 / 4.57 | 0.547 / 3.39 |
+   | window | QB v3.6 vs B2 (his record + role, opponent, line) | RB vs his own points per game | WR | TE |
+   |---|---|---|---|---|
+   | next week | 0.587 / 6.44 vs 0.575 / 6.60 | 0.686 / 4.52 vs 0.644 / 4.70 | 0.618 / 4.44 vs 0.572 / 4.64 | 0.599 / 3.25 vs 0.519 / 3.45 |
+   | 2–8 weeks ahead | 0.495 / 7.41 vs 0.497 / 7.45 (weak) | 0.636 / 4.73 vs 0.599 / 4.95 | 0.569 / 4.62 vs 0.542 / 4.77 | 0.545 / 3.42 vs 0.485 / 3.59 |
+   | **next four weeks** (h 1–4) | 0.538 / 6.93 vs 0.537 / 7.00 | 0.664 / 4.64 vs 0.624 / 4.82 | 0.595 / 4.49 vs 0.560 / 4.64 | 0.570 / 3.35 vs 0.501 / 3.54 |
+   | **rest of season** (h 1–8) | 0.509 / 7.28 vs 0.510 / 7.33 | 0.642 / 4.71 vs 0.605 / 4.92 | 0.575 / 4.60 vs 0.546 / 4.75 | 0.553 / 3.40 vs 0.489 / 3.57 |
 
-   K / DEF: next week 0.095 / 0.257 (weak), 2–8 weeks 0.028 / 0.040 (no better than chance; IQ-4). RB / WR / TE from
-   IQ-1's cached cells (variant ad = v3.5 = v3.6 there), QB from IQ-3. These are per-week misses pooled over the
-   window's weeks, not window totals.
+   (order / miss in points per game.) RB / WR / TE beat their own record in every window, 5 of 5 seasons (the
+   baseline run, `ir4_useful.py --baseline`, defined and committed `b148812` 10:49 before its run 10:50–10:55; the
+   rows where he has a record); QB is level with B2 beyond next week (IQ-3). K / DEF: next week 0.095 / 0.257 (weak),
+   2–8 weeks 0.028 / 0.040 (no better than chance; IQ-4). These are per-week misses pooled over the window's weeks, not
+   window totals.
 5. **The "useful decision" grade (ud1.0)** — defined in METRICS and committed (`b03ccac`, 10:29 ET) before the run
    (`scripts/analysis/ir4_useful.py`, 10:30–10:37, 20 fits): close one-for-ones (projected four-week totals within 20 %),
    share where the calculator's side scored more over the four weeks, against the side his own per-game record favours:
@@ -88,7 +90,7 @@ Task: the dependability review's P1 3 (BRIEF.md § IR-4). Branch `dev/IR4` from 
 
 The ranges around a season total and around a trade's gap (weekly ranges added as independent); a trade of several
 players or across positions and the lineup effect in a league (ud1.0 is one-for-one, same position); K / DEF over a
-window as a total; RB / WR / TE against a simple baseline at 2+ weeks; QB ud1.0 on v3.6's rows (hb1.0 not in the run);
+window as a total; QB ud1.0 on v3.6's rows (hb1.0 not in the run);
 whether the other manager accepts. The horizon rows are the studies' numbers, not a prospective record: the nightly
 rewrites later weeks every night, so no week-W projection of week W+3 survives to be graded (a prospective record needs
 the rest-of-season board frozen at each kickoff — a new table, the PO's call).
@@ -167,5 +169,4 @@ Week-5 flags on this database: unclear TB (Daniels, Mayfield); corrected SEA (Da
 ## Next
 
 Freeze the rest-of-season board at each kickoff (a prospective horizon record); ud1.0 for packages and cross-position
-trades through the league calculator's own lineup math, and QB on v3.6's rows; a simple baseline for RB / WR / TE
-beyond next week; IR-2's `provenance.apply` call.
+trades through the league calculator's own lineup math, and QB on v3.6's rows; IR-2's `provenance.apply` call.

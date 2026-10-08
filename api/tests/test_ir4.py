@@ -212,7 +212,9 @@ def test_the_record_rows_hold_the_same_numbers():
         assert (r["mean_miss"], r["beat_share"], r["rest_beat_share"]) == (c["mae"], c["order"], c["base_order"])
     assert rows["QB/next4"]["words"] == ("Quarterbacks, the next four weeks: order 0.54, miss 6.9 points per game (his own "
                                          "record: 0.54, 7.0).")
-    assert rows["RB/ros"]["words"].endswith("(no simple baseline measured yet).") and rows["RB/ros"]["vs_rest"] is None
+    assert rows["RB/ros"]["words"] == ("Running backs, the rest of the season (up to eight weeks ahead): order 0.64, miss 4.7 "
+                                       "points per game (his own record: 0.60, 4.9).") and rows["RB/ros"]["vs_rest"] < 0
+    assert all(r["rest_beat_share"] is not None for r in rows.values())       # every cell has its baseline now
     # the stored grade carries them (a record with one graded row is enough to write the grade)
     assert all(k in CR.GRADE_COLUMNS for k in rows["QB/ros"])
 

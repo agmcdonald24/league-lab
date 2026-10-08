@@ -5168,10 +5168,13 @@ role, the opponent and the line where there is one) from § "v3.6" by horizon (b
 | next four weeks (h 1–4) | 0.538 / 6.93 | 0.537 / 7.00 | 0.660 / 4.63 | 0.594 / 4.48 | 0.564 / 3.35 |
 | rest of season (h 1–8) | 0.509 / 7.28 | 0.510 / 7.33 | 0.640 / 4.68 | 0.574 / 4.57 | 0.547 / 3.39 |
 
+(RB / WR / TE on all of IQ-1's rows; against his own record, on the rows where he has one, see the next section's
+table — the numbers the record and About carry.)
+
 The record's `QB/next1` row carries IQ-3's one-week baseline (B2 6.60 / 0.575, every week of 2021–2025: § "v3.6") beside
 IQ-1's model numbers (as of weeks 3 / 5 / 7 / 9): the same question on slightly different rows. Reading: at QB the model
 is level with its own per-game record on order over both windows and a little ahead on miss;
-RB / WR / TE have **no simple baseline measured** at these horizons yet (only the model). K / DEF: not pooled by window;
+RB / WR / TE against his own record: the next section. K / DEF: not pooled by window;
 two to eight weeks ahead no better than chance (above). These rows are written to the record as `ops.context_grade`
 kind `horizon` (`context_record.horizon_grade_rows`, constants with this section as their source) so the site reads
 them from one place; they are a study's numbers, not a prospective record: the nightly rewrites the later weeks' rows
@@ -5251,4 +5254,22 @@ Spearman, pooled as above (next four weeks = h 1–4, rest of season = h 1–8; 
 over seasons). QB is run too, as a check against B2 (v3.5's rows). **The reading** (a grade, no keep rule): the model
 "beats his own record" in a window at a position when its Spearman is higher **and** its MAE lower in at least 4 of the
 5 seasons; "level with his own record" when neither side does that; otherwise "behind his own record".
+
+**The result** (`ir4_useful.py --baseline`, run 10:50–10:55 ET after the definition was committed in `b148812`; 20
+fits; 1,280 cells, 87,776 scored player-weeks; model / his own record, order and miss, mean over seasons; "ahead" =
+seasons where the model's order is higher **and** its miss lower):
+
+| window | RB | WR | TE | QB (v3.5 rows, his raw points per game) |
+|---|---|---|---|---|
+| next week (h 1) | 0.687 / 4.53 vs 0.644 / 4.70 (5 of 5) | 0.618 / 4.46 vs 0.572 / 4.64 (5) | 0.605 / 3.24 vs 0.519 / 3.45 (5) | 0.565 / 6.51 vs 0.484 / 7.14 (5) |
+| next four weeks (h 1–4) | **0.664 / 4.64 vs 0.624 / 4.82 (5 of 5)** | **0.595 / 4.49 vs 0.560 / 4.64 (5)** | **0.570 / 3.35 vs 0.501 / 3.54 (5)** | 0.505 / 7.02 vs 0.466 / 7.44 (4) |
+| two to eight weeks (h 2–8) | 0.636 / 4.73 vs 0.599 / 4.95 (5) | 0.569 / 4.62 vs 0.542 / 4.77 (5) | 0.545 / 3.42 vs 0.485 / 3.59 (5) | 0.454 / 7.58 vs 0.449 / 7.80 (3; behind in 1) |
+| rest of season (h 1–8) | **0.642 / 4.71 vs 0.605 / 4.92 (5)** | **0.575 / 4.60 vs 0.546 / 4.75 (5)** | **0.553 / 3.40 vs 0.489 / 3.57 (5)** | 0.468 / 7.44 vs 0.453 / 7.72 (3) |
+
+**Reading** (the rule): at running back, receiver and tight end the model **beats his own record** in every window, in
+5 of 5 seasons (order +0.03 to +0.09, miss −0.15 to −0.22). At quarterback (v3.5's rows, against his raw points per
+game, a weaker baseline than B2) it beats it over the next four weeks (4 of 5) and is **level** two to eight weeks out
+and over the rest of season (3 of 5) — against B2 (role, opponent, line) v3.6 is level (above). The record's and
+About's RB / WR / TE numbers are this run's (the rows with a record: next week's model numbers stay IQ-1's, within
+0.02; IQ-1's 2–8 cells on all rows are 4.70 / 4.59 / 3.41, on these rows 4.73 / 4.62 / 3.42).
 <!-- ---- end IR-4 -->

@@ -1624,7 +1624,8 @@ if __name__ == "__main__":  # pragma: no cover - the reproducible study (prints 
 # ``ops.context_grade`` (kind ``horizon``; no new table). docs/METRICS.md § "What each number has been checked against
 # (IR-4)": each week's projection in the window scored against that week, pooled over the window's weeks, 2021–2025 as
 # of weeks 3 / 5 / 7 / 9, both house scorings (iq1_horizon.py's cells for RB / WR / TE, variant ad = v3.5 = v3.6 there;
-# iq3_qb.py for QB, v3.6 = hb1.0, against the naive baseline B2). A study's numbers kept as constants with their source,
+# iq3_qb.py for QB, v3.6 = hb1.0, against the naive baseline B2; RB / WR / TE against his own points per game so far,
+# ir4_useful.py --baseline, on the rows where he has a record — next week's model numbers are IQ-1's, within 0.02). A study's numbers kept as constants with their source,
 # rewritten with the grade every night (``graded_at``); not a prospective record (the nightly rewrites later weeks, so no
 # week-W projection of week W+3 is kept). Columns: ``mean_miss`` = the miss (points per game), ``beat_share`` = the order
 # (Spearman with what happened), ``vs_rest`` = the miss minus the baseline's (negative: the model misses less), ``rest_
@@ -1633,16 +1634,16 @@ HORIZON_SPAN = "2021–2025"
 HORIZON_SCORING = "Half PPR and the house dynasty"
 HORIZON_GRADES: dict[tuple[str, str], tuple[float, float, float | None, float | None]] = {
     # (position, window): (miss, order, baseline miss, baseline order)
-    ("QB", "next1"): (6.44, 0.587, 6.60, 0.575), ("RB", "next1"): (4.52, 0.686, None, None),
-    ("WR", "next1"): (4.44, 0.618, None, None), ("TE", "next1"): (3.25, 0.599, None, None),
+    ("QB", "next1"): (6.44, 0.587, 6.60, 0.575), ("RB", "next1"): (4.52, 0.686, 4.70, 0.644),
+    ("WR", "next1"): (4.44, 0.618, 4.64, 0.572), ("TE", "next1"): (3.25, 0.599, 3.45, 0.519),
     ("K", "next1"): (3.77, 0.095, 4.18, -0.004), ("DEF", "next1"): (4.32, 0.257, 5.04, 0.037),
-    ("QB", "later"): (7.41, 0.495, 7.45, 0.497), ("RB", "later"): (4.70, 0.633, None, None),
-    ("WR", "later"): (4.59, 0.568, None, None), ("TE", "later"): (3.41, 0.540, None, None),
+    ("QB", "later"): (7.41, 0.495, 7.45, 0.497), ("RB", "later"): (4.73, 0.636, 4.95, 0.599),
+    ("WR", "later"): (4.62, 0.569, 4.77, 0.542), ("TE", "later"): (3.42, 0.545, 3.59, 0.485),
     ("K", "later"): (3.75, 0.028, 4.14, 0.016), ("DEF", "later"): (4.78, 0.040, 5.30, 0.033),
-    ("QB", "next4"): (6.93, 0.538, 7.00, 0.537), ("RB", "next4"): (4.63, 0.660, None, None),
-    ("WR", "next4"): (4.48, 0.594, None, None), ("TE", "next4"): (3.35, 0.564, None, None),
-    ("QB", "ros"): (7.28, 0.509, 7.33, 0.510), ("RB", "ros"): (4.68, 0.640, None, None),
-    ("WR", "ros"): (4.57, 0.574, None, None), ("TE", "ros"): (3.39, 0.547, None, None),
+    ("QB", "next4"): (6.93, 0.538, 7.00, 0.537), ("RB", "next4"): (4.64, 0.664, 4.82, 0.624),
+    ("WR", "next4"): (4.49, 0.595, 4.64, 0.560), ("TE", "next4"): (3.35, 0.570, 3.54, 0.501),
+    ("QB", "ros"): (7.28, 0.509, 7.33, 0.510), ("RB", "ros"): (4.71, 0.642, 4.92, 0.605),
+    ("WR", "ros"): (4.60, 0.575, 4.75, 0.546), ("TE", "ros"): (3.40, 0.553, 3.57, 0.489),
 }
 HORIZON_WINDOW_WORDS = {"next1": "next week", "later": "two to eight weeks ahead", "next4": "the next four weeks",
                         "ros": "the rest of the season (up to eight weeks ahead)"}
