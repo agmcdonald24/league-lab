@@ -119,7 +119,7 @@ def test_trade_market_counts_a_bye_players_remaining_weeks(sql, week5):
 @needs_db
 def test_the_rest_of_season_sentence_is_on_all_three_answers(client):
     from league_lab_api import ros_grade as G
-    assert "7.6 points per game (6.4 for next week)" in G.WORDS and "Graded on 2021–2025" in G.WORDS
+    assert "7.4 points per game (6.4 for next week)" in G.WORDS and "Graded on 2021–2025" in G.WORDS   # IR-4: v3.6
     season = client.get("/api/rankings?league=ref:half&view=season&position=QB").json()
     assert season["ros_grade"]["words"] == G.WORDS and season["ros_grade"]["kd_words"] is None
     week = client.get("/api/rankings?league=ref:half&view=week&position=QB").json()
@@ -131,7 +131,7 @@ def test_the_rest_of_season_sentence_is_on_all_three_answers(client):
     assert ros_all["ros_grade"]["kd_words"] == G.KD_CALC_WORDS
     calc = client.get(f"/api/trade-calc/free?league=ref:half&give={MAHOMES}&get={HUBBARD}").json()
     assert calc["ros_grade"]["words"] == G.WORDS and calc["ros_grade"]["kd_words"] is None
-    assert G.QB_LATER_MAE == 7.56 and G.QB_NEXT_WEEK_MAE == 6.44     # METRICS § v3.5 (IQ-1's horizon study)
+    assert G.QB_LATER_MAE == 7.41 and G.QB_NEXT_WEEK_MAE == 6.44     # METRICS § v3.6 (IQ-3, hb1.0) / v3.5 (IQ-1)
 
 
 @needs_db

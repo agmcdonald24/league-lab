@@ -37,6 +37,7 @@
   import WindowControl from "./WindowControl.svelte";
   import FreeTrade from "../../components/scoring/FreeTrade.svelte"; // ---- IN-2: the calculator without a league
   import { isRef } from "../../lib/refleague"; // ---- IN-2
+  import ProvenanceLine from "../../components/provenance/ProvenanceLine.svelte"; // ---- IR-4
 
   let { league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -387,6 +388,7 @@
             <p class="mt-2 text-sm text-ink-2" data-testid="basis"><span class="font-semibold text-ink">{d.basis_label}.</span> {d.basis_words}</p>
             <p class="mt-3 text-lg leading-snug font-semibold text-ink" data-testid="verdict">{d.verdict}</p>
             <p class="mt-2 text-base leading-snug {d.recommendation.credible ? 'text-good' : 'text-ink'}" data-testid="recommendation"><span class="font-semibold">{d.recommendation.label}:</span> {d.recommendation.words.replace(`${d.recommendation.label}: `, "")}</p>
+            <div class="mt-2"><ProvenanceLine p={r.provenance} caveats={r.caveats} testid="trade-provenance" /></div><!-- ---- IR-4: beta, what is verified, the starter caveats -->
             {#if r.sanity}
               <p class="mt-2 rounded-md bg-warn-soft p-2 text-sm text-ink" data-testid="sanity">We would not suggest this one: {r.sanity}.</p>
             {/if}

@@ -18,6 +18,7 @@
   import Headshot from "../components/Headshot.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
   import TeamBadge from "../components/TeamBadge.svelte";
+  import ProvenanceLine from "../components/provenance/ProvenanceLine.svelte"; // ---- IR-4
   import ToneChip from "../components/matchups/ToneChip.svelte";
   import {
     bar,
@@ -265,6 +266,7 @@
       {#if d.tier_rule}<p>{d.tier_rule}</p>{/if}
       {#if d.unclear_words}<p data-testid="rankings-unclear-foot">{d.unclear_words}</p>{/if}
       {#if browsing}<p>Open your league to see who has him, in your league's own scoring.</p>{/if}
+      <ProvenanceLine p={d.provenance} testid="rankings-provenance" /><!-- ---- IR-4: what is verified -->
     </div>
   {/if}
 

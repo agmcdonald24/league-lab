@@ -103,6 +103,7 @@
         Our own projections for every player, his trends and his matchups, priced in your scoring — then your lineup, waivers and trades once you
         open your league.
       </p>
+      <p class="text-sm leading-snug text-ink-3" data-testid="home-beta">Beta. What each number has been checked against, and what has not, is on <a class="ll-link" href="/about#checked">About the numbers</a>.</p><!-- ---- IR-4 -->
       <div class="flex flex-wrap gap-2">
         <a href="/leagues" class="inline-flex min-h-11 items-center rounded-md bg-accent px-4 font-semibold text-on-accent" data-testid="home-open">Open your league</a>
         <a href={BROWSE_HREF} class="inline-flex min-h-11 items-center rounded-md border border-line px-4 font-semibold" data-testid="home-browse">Browse players</a>

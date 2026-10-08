@@ -12,6 +12,7 @@
   import { panels } from "../components/card/lazy"; // the ratings and the charts: a chunk of their own
   import SectionBox from "../components/Section.svelte";
   import ScheduleTable from "../components/ScheduleTable.svelte"; // ---- IF-4
+  import ProvenanceLine from "../components/provenance/ProvenanceLine.svelte"; // ---- IR-4
   import { isRef, PANE_FOOT, refLabel, refScoringLabel } from "../lib/refleague"; // ---- IN-2: browsing without a league
 
   let { gsis, league, team, onauth }: { gsis: string; league: string | null; team: number | null; onauth: () => void } = $props();
@@ -161,6 +162,7 @@
       </p>
     {/if}
     <Expander title="How to read this" testid="howto"><Md text={howtoWords(data.howto)} {ctx} block class="text-base leading-snug" /></Expander>
+    <ProvenanceLine p={data.provenance} testid="card-provenance" /><!-- ---- IR-4: what is verified -->
     <!-- ---- IN-2: browsing without a league — the scoring, and one quiet line at the foot -->
     {#if browsing}
       <p class="border-t border-line pt-3 text-sm text-ink-3" data-testid="player-foot">

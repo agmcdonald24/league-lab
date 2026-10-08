@@ -55,7 +55,7 @@ export function aboutSections(leagueName: string): AboutSection[] {
       title: "What it does not know",
       text:
         "Injury news after the morning refresh, the weather, how the game actually goes (a blowout sends starters to the bench early), and coaching decisions made " +
-        "during the week. Check the news before kickoff. It is refreshed every morning with the newest games; its recipe stays the same all season.",
+        "during the week. Check the news before kickoff. It is refreshed every morning with the newest games, and the model itself has changed during the season: every version and its date is under \"What changed and when\" below.", // ---- IR-4: was "its recipe stays the same all season" (v3.0 → v3.6 since week 4)
     },
     {
       key: "tried",

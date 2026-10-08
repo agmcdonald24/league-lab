@@ -257,6 +257,8 @@ def about(league_id: str, source: str | None = None) -> dict:
                           f"{ctx.league_name} reads {name or 'the closest league'}'s: the closest scoring {APP_NAME} measures."
                           if name else "The importance and the grades are measured per house league's scoring; none is close.")
         _cache.put(key, out)
+    from . import provenance  # ---- IR-4
+    out.update(provenance.about_block())                                                           # ---- IR-4: versions, checks
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
     return out
 

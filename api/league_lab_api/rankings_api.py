@@ -800,9 +800,10 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
 @router.get("/api/rankings")
 def rankings_route(league: str, response: Response, position: str = "WR", view: str = "week", limit: int = DEFAULT_LIMIT,
                    offset: int = 0, q: str | None = None, source: str | None = None):
+    from . import provenance  # ---- IR-4
     from .main import _research
-    return _research(rankings(league, position=position, view=view, limit=limit, offset=offset, q=q, source=source),
-                     league, response)
+    return _research(provenance.with_rankings(rankings(league, position=position, view=view, limit=limit, offset=offset,  # ---- IR-4
+                                                       q=q, source=source)), league, response)  # ---- IR-4
 
 
 @router.get("/api/rankings/start")

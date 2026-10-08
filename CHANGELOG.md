@@ -28,6 +28,17 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   roster-only result is a labelled explanation ("If empty slots were left empty"). Sentences pair the two players of the
   same slot ("puts Folk at their K in place of Reichard"), a FLEX move is a chain, and depth has one definition (who can
   play that week; who cannot, named). docs/METRICS.md § "One trade verdict", docs/handbacks/IR-2.md.
+- **IR-4 — say what is verified, and carry starter uncertainty into the verdict** (the review's P1 3). Every analysis
+  carries `provenance` (`api/league_lab_api/provenance.py`): the stored board's model version, the data's publication
+  time, the weeks it covers and what has been checked for that horizon and position (graded / graded, weak / no better
+  than chance / not graded, each with its docs/METRICS.md section) — on `/api/rankings`, `/api/ros`, the free trade
+  calculator, the trade evaluation and the player card, and one quiet line on those screens ("Beta · " on the trade
+  answers). A decision on a quarterback whose team's starter is unclear is withheld, one on a starter set by hand is a
+  lean (`caveats` as data; the free calculator's verdict follows the rule; the league trade verdict's one call is
+  `provenance.apply`). About lists the model's versions with their dates (the "recipe stays the same all season"
+  sentence was false) and what each number has been checked against; "Beta" on the home. The trade calculator's
+  horizons by position go to the record (`ops.context_grade` kind `horizon`); the useful-decision grade (ud1.0) on
+  2021–2025. `ros_grade`'s quarterback sentence now says v3.6's 7.4 (was v3.5's 7.6).
 
 ## 2026-10-08 — Wave I-Q
 

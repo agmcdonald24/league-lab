@@ -22,7 +22,7 @@ const SHOTS = process.env.SHOTS_IQ4 ?? join(import.meta.dirname, "..", ".out");
 type Recorded = Record<string, { status: number; body: unknown }>;
 const MAHOMES = "00-0033873";
 const HUBBARD = "00-0036555";
-const SENTENCE = /Beyond next week there is no betting line yet\. Graded on 2021–2025, a quarterback projection two to eight weeks ahead misses by about 7\.6 points per game \(6\.4 for next week\)/;
+const SENTENCE = /Beyond next week there is no betting line yet\. Graded on 2021–2025, a quarterback projection two to eight weeks ahead misses by about 7\.4 points per game \(6\.4 for next week\)/;
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 
 if (LIVE) test.use({ baseURL: LIVE });

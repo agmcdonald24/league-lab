@@ -15,6 +15,7 @@
   import PosBadge from "../PosBadge.svelte";
   import ScreenHead from "../ScreenHead.svelte";
   import TeamBadge from "../TeamBadge.svelte";
+  import ProvenanceLine from "../provenance/ProvenanceLine.svelte"; // ---- IR-4
 
   let { league, onauth }: { league: string; onauth: () => void } = $props();
 
@@ -232,6 +233,7 @@
     <!-- ---- IQ-4: what we know about the rest of season (the values are rest-of-season points) -->
     {#if shown?.ros_grade}<p class="mt-2 text-sm text-ink-3" data-testid="ft-ros-grade">{shown.ros_grade.words}{shown.ros_grade.kd_words ? ` ${shown.ros_grade.kd_words}` : ""}</p>{/if}
     <!-- ---- end IQ-4 -->
+    <div class="mt-2"><ProvenanceLine p={shown?.provenance} caveats={shown?.caveats} testid="ft-provenance" /></div><!-- ---- IR-4 -->
   </Card>
 
   <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
