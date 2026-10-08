@@ -2585,7 +2585,7 @@ def ir2_out_indefinitely(ctx: TradeContext, board: RosterBoard, ids) -> list[dic
         rest = {p: ctx.player(p) for p in ids if p not in seen}
         gs = [x.get("gsis_id") for x in rest.values() if x and x.get("gsis_id")]
         st = _av.statuses(gs, getattr(ctx, "season", None), ctx.this_week) if gs else {}
-        for p, x in rest.items():
+        for x in rest.values():
             s = st.get((x or {}).get("gsis_id"))
             if s and s.get("out_indefinitely"):
                 out.append({"player": x, "why": s.get("reason") or "out with no return date"})
