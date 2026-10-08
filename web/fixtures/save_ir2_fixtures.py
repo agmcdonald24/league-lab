@@ -76,7 +76,38 @@ def recorded() -> None:
         f.write_text(json.dumps(saved, indent=1) + "\n")
 
 
+# ---- IS-3 (Wave I-S): League of Scrubs' tick package for e2e/ia2 (tick a player: the dial's label changes) and e2e/ib2.
+# The one saved in ia2_packages.json (team 2 ↔ 9, Tuten for …) is no longer a legal trade on the fixtures' database.
+# The replacement was found by the same rule as save_ia2_fixtures.py on today's rosters (players on the same roster in
+# the saved team fixtures and in the database): MacZaddy's Kyren Williams for Christian McCaffrey (team 1), then
+# ticking Cam Skattebo as well changes the dial's label.
+SCRUBS_TICK = {"partner": 1, "from": {"give": ["8150"], "get": ["4034"]}, "to": {"give": ["8150"], "get": ["4034", "12481"]}}
+
+
+def scrubs_package() -> None:
+    lg, me = sdf.SCRUBS, 2
+    pk = json.loads((OUT / "ia2_packages.json").read_text())
+    entry = {"partner": SCRUBS_TICK["partner"]}
+    for side in ("from", "to"):
+        give, get_ = SCRUBS_TICK[side]["give"], SCRUBS_TICK[side]["get"]
+        body = {"league": lg, "team": me, "partner": SCRUBS_TICK["partner"], "give": give, "get": get_}
+        stem = f"{lg}_{me}_{SCRUBS_TICK['partner']}_{'-'.join(sorted(give))}_{'-'.join(sorted(get_))}.json"
+        for w in (None, "week", "ros", "playoffs"):
+            r = c.post("/api/trades/evaluate", json={**body, **({"window": w} if w else {})})
+            r.raise_for_status()
+            sdf.save(lg, f"trades_evaluate_{w + '_' if w else ''}{stem}", r.json())
+            if w is None:
+                entry[side] = {"give": give, "get": get_, "label": r.json()["decision"]["dial"]["label"]}
+    assert entry["from"]["label"] != entry["to"]["label"], "the tick must change the dial's label"
+    pk[lg] = entry
+    (OUT / "ia2_packages.json").write_text(json.dumps(pk, indent=1) + "\n")
+    print("scrubs tick", entry["from"]["label"], "->", entry["to"]["label"])
+
+
 if __name__ == "__main__":
+    if "--scrubs" in sys.argv:
+        scrubs_package()
+        sys.exit(0)
     if "--recorded" not in sys.argv:
         top_level()
     recorded()

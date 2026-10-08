@@ -141,8 +141,7 @@ test("waivers: ?add= (the research pane's Evaluate add / drop) shows the claim f
 
 for (const league of [SCRUBS, TEST_LEAGUE]) {
   test(`the calculator keeps the decision in view while the rosters scroll; Why? and Lineups collapsed (${league})`, async ({ page }, info) => {
-    // PO 2026-10-08 (Wave I-R): the same stale Scrubs package as e2e/ia2 (ia2_packages.json). The Test League runs.
-    test.fixme(league === SCRUBS, "the saved Scrubs package is not a legal trade on today's fixtures: re-record (STATUS, Wave I-R)");
+    // IS-3: Scrubs' package re-chosen on today's fixtures (save_ir2_fixtures.py --scrubs; ia2_packages.json)
     const team = league === SCRUBS ? 2 : 3;
     const pk = PACKAGES[league];
     await page.goto(`/trade-calc?league=${league}&team=${team}&partner=${pk.partner}&give=${pk.from.give.join(",")}&get=${pk.from.get.join(",")}`);

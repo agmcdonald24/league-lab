@@ -124,13 +124,10 @@ test("the Test League team 1: the credible trades lead, each with its full card;
 });
 
 test("the calculator: a kicker for a starter is labelled implausible, from the slots and the free pool", async ({ page }, info) => {
-  // PO 2026-10-08 (Wave I-R): McLaughlin (6650) is no longer on this roster in the fixture database, so the recorded answer could
-  // not be re-saved with `decision`. The meaning is covered today by e2e/ir2 (Folk for a starter: "Not worth proposing") and
-  // api/tests/test_ir2.py. Open: re-record on a kicker-for-starter package that exists (STATUS § Wave I-R, next).
-  test.fixme(true, "the recorded kicker package is not a legal trade on today's fixtures: re-record (STATUS, Wave I-R)");
-  // Scrubs: MacZaddy's kicker (Chase McLaughlin) for GIBB ME ANOTA ONE's starting QB (Dak Prescott); their kicker
-  // (Brandon Aubrey) is as good as the free pool's best, so a kicker is not worth a starter to them
-  await page.goto(`/trade-calc?league=${SCRUBS}&team=2&partner=10&give=6650&get=3294`);
+  // IS-3: re-recorded on today's fixtures — MacZaddy's kicker is now Nick Folk (650; McLaughlin is gone), for GIBB ME
+  // ANOTA ONE's starting QB (Dak Prescott); their kicker is as good as the free pool's best, so a kicker is not worth a
+  // starter to them
+  await page.goto(`/trade-calc?league=${SCRUBS}&team=2&partner=10&give=650&get=3294`);
   const card = page.getByTestId("calc-trade-card");
   await expect(card.getByTestId("card-plausibility")).toHaveText("Implausible", { timeout: WAIT });
   await expect(card.getByTestId("card-refuse")).toContainText("A K for a starter (Dak Prescott)");
