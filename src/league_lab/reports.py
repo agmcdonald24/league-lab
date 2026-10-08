@@ -19,6 +19,7 @@ from typing import Any
 
 import psycopg
 
+from . import league_status as LS  # ---- IS-2
 from .config import PROJECT_ROOT, get_settings
 
 
@@ -28,6 +29,29 @@ def _rows(conn: psycopg.Connection, sql: str, params: tuple = ()) -> tuple[list[
         cur.execute(sql, params)
         cols = [d.name for d in cur.description]
         return cols, cur.fetchall()
+
+
+# ---- IS-2 (Wave I-S): a report's status column is the one definition's (league_status: Sleeper's directory copy + the
+# stored record), never the mart's injury_status (nflverse's newest report row: midweek, last week's). Each query
+# selects ``gsis_id as _gsis`` last; ``_gated`` writes the block's label into ``injury_status``, drops who sits when
+# asked (a free agent to add), trims to ``limit`` and removes ``_gsis``.
+def _gated(cols: list[str], rows: list[tuple], bl: dict, *, drop: bool = False, limit: int | None = None
+           ) -> tuple[list[str], list[tuple]]:
+    if "_gsis" not in cols:
+        return cols, rows
+    st = next((c for c in ("injury_status", "report_status") if c in cols), None)
+    gi, si = cols.index("_gsis"), (cols.index(st) if st else None)
+    out = []
+    for r in rows:
+        b = bl.get(r[gi])
+        if drop and LS.sits(b):
+            continue
+        r = list(r)
+        if si is not None:
+            r[si] = (b or {}).get("status")
+        out.append(tuple(x for i, x in enumerate(r) if i != gi))
+    return [c for c in cols if c != "_gsis"], out[:limit] if limit else out
+# ---- end IS-2
 
 
 def _fmt(v: Any) -> str:
@@ -224,28 +248,34 @@ def team_brief(conn: psycopg.Connection, league_id: str, roster_id: int, out_dir
 
     c, r = _rows(conn, """
         select player_name, position, nfl_team, is_current_starter as starter, injury_status, opponent, is_bye, opp_rank_std, opp_rank_l4,
-               ppg_std, points_per_game_l3, expected_per_game, diff_per_game, target_share_l3, first_read_share_l3, carry_share_l3, snap_pct_l3
+               ppg_std, points_per_game_l3, expected_per_game, diff_per_game, target_share_l3, first_read_share_l3, carry_share_l3, snap_pct_l3,
+               gsis_id as _gsis
         from analytics.mart_player_availability where league_id = %s and rostered_by_roster_id = %s
         order by array_position(array['QB','RB','WR','TE','K'], position), coalesce(expected_per_game, ppg_std) desc nulls last""", (league_id, roster_id))
+    gate = LS.blocks(LS.conn_query(conn), season, next_wk)                          # ---- IS-2
+    c, r = _gated(c, r, gate)                                                       # ---- IS-2
     pack.add(f"Roster and week {next_wk} matchups", c, r, note="opp_rank 1 = opponent allows the most points to the position", limit=None, csv_name="roster")
 
     c, r = _rows(conn, """
         select k.position, k.rank_pos as pos_rank, k.player_name, k.team, k.opponent, k.report_status, k.proj_points, k.c_form, k.c_usage, k.c_matchup, k.c_vegas,
-               k.implied_team_total, k.xppg_l5, k.ppg_std, a.is_current_starter as starter
+               k.implied_team_total, k.xppg_l5, k.ppg_std, a.is_current_starter as starter, k.gsis_id as _gsis
         from analytics.mart_player_week_rankings k
         join analytics.mart_player_availability a on a.gsis_id = k.gsis_id and a.league_id = %s
         where k.season = %s and k.week = %s and a.rostered_by_roster_id = %s
         order by array_position(array['QB','RB','WR','TE'], k.position), k.proj_points desc nulls last""", (league_id, season, next_wk, roster_id))
+    c, r = _gated(c, r, gate)                                                       # ---- IS-2
     pack.add(f"Week {next_wk} projections for your roster (baseline)", c, r,
              note="proj = form + usage + matchup + Vegas + home (+ intercept), in the reference league's scoring (projection v2 in this league's scoring is on the Rankings page); pos_rank among all rankable players at the position. See the Rankings page backtest before trusting a single rank",
              limit=None, csv_name="projections")
 
     c, r = _rows(conn, """
-        select k.position, k.rank_pos as pos_rank, k.player_name, k.team, k.opponent, k.report_status, k.proj_points, k.c_form, k.c_matchup, k.c_vegas, k.xppg_l5, k.ppg_std
+        select k.position, k.rank_pos as pos_rank, k.player_name, k.team, k.opponent, k.report_status, k.proj_points, k.c_form, k.c_matchup, k.c_vegas, k.xppg_l5, k.ppg_std,
+               k.gsis_id as _gsis
         from analytics.mart_player_week_rankings k
         join analytics.mart_player_availability a on a.gsis_id = k.gsis_id and a.league_id = %s
         where k.season = %s and k.week = %s and a.is_free_agent and k.is_rankable and k.position in ('QB','RB','WR','TE')
-        order by k.proj_points desc nulls last limit 20""", (league_id, season, next_wk))
+        order by k.proj_points desc nulls last limit 50""", (league_id, season, next_wk))
+    c, r = _gated(c, r, gate, drop=True, limit=20)                                  # ---- IS-2: who sits is no pickup
     pack.add(f"Best projected free agents for week {next_wk}", c, r, note="baseline formula, reference league's scoring", csv_name="projections_free_agents")
 
     c, r = _rows(conn, """
@@ -264,45 +294,51 @@ def team_brief(conn: psycopg.Connection, league_id: str, roster_id: int, out_dir
 
     c, r = _rows(conn, """
         select a.player_name, a.position, a.nfl_team, a.injury_status, t.games, t.tags as trend, round(t.momentum::numeric, 2) as momentum,
-               a.target_share_l3, a.snap_pct_l3, a.expected_per_game, a.ppg_std, a.opponent, a.opp_rank_std
+               a.target_share_l3, a.snap_pct_l3, a.expected_per_game, a.ppg_std, a.opponent, a.opp_rank_std, a.gsis_id as _gsis
         from analytics.mart_player_availability a
         join analytics.mart_player_trend_tags t on t.gsis_id = a.gsis_id and t.season = %s
         where a.league_id = %s and a.is_free_agent and a.position in ('RB','WR','TE') and t.opportunity_trend = 'rising'
-          and coalesce(a.injury_status,'') not in ('Out')
-        order by t.momentum desc limit 15""", (season, league_id))
+        order by t.momentum desc limit 40""", (season, league_id))
+    c, r = _gated(c, r, gate, drop=True, limit=15)                                  # ---- IS-2: who sits is no target
     pack.add("Free agents with rising opportunity", c, r, csv_name="waiver_targets_momentum")
 
     c, r = _rows(conn, """
         select player_name, position, nfl_team, injury_status, depth_rank, games_played, target_share_l3, target_share_trend, carry_share_l3,
-               snap_pct_l3, expected_per_game, ppg_std, points_per_game_l3, diff_per_game, opponent, opp_rank_std
+               snap_pct_l3, expected_per_game, ppg_std, points_per_game_l3, diff_per_game, opponent, opp_rank_std, gsis_id as _gsis
         from analytics.mart_player_availability
         where league_id = %s and is_free_agent and position in ('RB','WR','TE') and coalesce(games_played,0) >= 2
-          and coalesce(injury_status,'') not in ('Out') and coalesce(roster_status,'') <> 'RES'
-        order by coalesce(expected_per_game, 0) desc limit 20""", (league_id,))
+          and coalesce(roster_status,'') <> 'RES'
+        order by coalesce(expected_per_game, 0) desc limit 50""", (league_id,))
+    c, r = _gated(c, r, gate, drop=True, limit=20)                                  # ---- IS-2: who sits is no target
     pack.add("Waiver targets — RB/WR/TE by expected points", c, r, csv_name="waiver_targets_skill")
 
     c, r = _rows(conn, """
-        select player_name, position, nfl_team, injury_status, games_played, target_share_l3, target_share_trend, snap_pct_l3, expected_per_game, ppg_std, opponent, opp_rank_std
+        select player_name, position, nfl_team, injury_status, games_played, target_share_l3, target_share_trend, snap_pct_l3, expected_per_game, ppg_std, opponent, opp_rank_std,
+               gsis_id as _gsis
         from analytics.mart_player_availability
         where league_id = %s and is_free_agent and position in ('RB','WR','TE') and coalesce(games_played,0) >= 2
         order by target_share_trend desc nulls last limit 15""", (league_id,))
+    c, r = _gated(c, r, gate)                                                       # ---- IS-2
     pack.add("Waiver targets — rising target share (L3 vs season)", c, r,
              note="needs 4+ games to mean anything: before that the last-3 window is the whole season", csv_name="waiver_targets_trend")
 
     c, r = _rows(conn, """
         select player_name, position, nfl_team, injury_status, games_played, first_read_share_std, first_read_share_l3, target_share, target_share_l3,
-               expected_per_game, ppg_std, opponent, opp_rank_std
+               expected_per_game, ppg_std, opponent, opp_rank_std, gsis_id as _gsis
         from analytics.mart_player_availability
         where league_id = %s and is_free_agent and position in ('RB','WR','TE') and coalesce(games_played,0) >= 2 and first_read_share_l3 is not null
         order by first_read_share_l3 desc limit 15""", (league_id,))
+    c, r = _gated(c, r, gate)                                                       # ---- IS-2
     pack.add("Waiver targets — first-read share (where the QB looks first, last 3)", c, r,
              note="first-read targets / team first-read targets from FTN charting; a rising first-read share with a flat target share is the earliest role signal", csv_name="waiver_targets_first_read")
 
     c, r = _rows(conn, """
-        select player_name, position, nfl_team, games_played, expected_per_game, ppg_std, opponent, opp_rank_std, injury_status
+        select player_name, position, nfl_team, games_played, expected_per_game, ppg_std, opponent, opp_rank_std, injury_status,
+               gsis_id as _gsis
         from analytics.mart_player_availability
         where league_id = %s and is_free_agent and position in ('QB','K') and coalesce(games_played,0) >= 1
         order by position, coalesce(expected_per_game, ppg_std) desc nulls last limit 12""", (league_id,))
+    c, r = _gated(c, r, gate)                                                       # ---- IS-2
     pack.add("Streaming options — QB and K", c, r, csv_name="waiver_targets_qb_k")
 
     c, r = _rows(conn, """

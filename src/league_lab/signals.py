@@ -74,6 +74,8 @@ import numpy as np
 import pandas as pd
 import psycopg
 
+from . import league_status as LS  # ---- IS-2
+
 log = logging.getLogger(__name__)
 
 # ra1.2 (projection v3, 2026-10-01): same rule; int_player_game_role now keeps the Raiders 2016-19 and the Chargers
@@ -903,17 +905,19 @@ def scenarios(conn: psycopg.Connection, season: int, train: pd.DataFrame, target
         return pd.DataFrame(columns=SCENARIO_COLUMNS)
     first_open = int(first_open)
     tgt = target.set_index(["gsis_id", "week"])
-    # the trigger ends when the teammate is expected back: active on his NFL roster with no injury designation
-    # today (the upcoming week's report; mart_player_availability carries the latest status)
+    # the trigger ends when the teammate is expected back: active on his NFL roster and not left out this week
+    # ---- IS-2: "left out" is the one definition's (availability_gate.sits over Sleeper's directory copy and the stored
+    # record, league_status.blocks) — was the mart's injury_status (nflverse's newest report row: midweek, last week's)
     with conn.cursor() as cur:
-        cur.execute("""select gsis_id, max(roster_status), max(injury_status) from analytics.mart_player_availability
+        cur.execute("""select gsis_id, max(roster_status) from analytics.mart_player_availability
                        where gsis_id = any(%s) group by 1""", (sorted(up["trigger_gsis_id"].dropna().unique().tolist()),))
-        status_now = {g: (r, i) for g, r, i in cur.fetchall()}
+        status_now = {g: r for g, r in cur.fetchall()}
+    gate = LS.blocks(LS.conn_query(conn), season, first_open)
     keep = []
     for r in up.itertuples():
         if r.kind == "absence_beneficiary" and isinstance(r.trigger_gsis_id, str) and r.trigger_status == "out_injured":
-            roster, injury = status_now.get(r.trigger_gsis_id, (None, None))
-            if roster == "ACT" and not injury:
+            roster = status_now.get(r.trigger_gsis_id)
+            if roster == "ACT" and not LS.sits(gate.get(r.trigger_gsis_id)):    # ---- end IS-2
                 run.lapsed += 1
                 continue                                   # the teammate is expected back: the scenario has lapsed
         keep.append(r)

@@ -27,6 +27,7 @@
   const num = (v: number | null) => (v === null || v === undefined ? "—" : v.toFixed(2));
   // I0-A: the availability overlay's reason for an OUT / DOUBTFUL / IR chip ("Out (ankle) · ESPN, Oct 2 2:35 PM ET")
   const reason = (r: LineupRow) => (r as LineupRow & { reason?: string | null }).reason ?? "";
+  const sitsNow = (r: LineupRow) => (r as LineupRow & { sits?: boolean }).sits === true; // ---- IS-2
   // IA-1: "J. Jefferson" under 640 px (unique initials within this list; a defense keeps its name), the whole name above
   const names = $derived(rows.map((r) => r.player_name));
   // ---- IC-2 (Wave I-C): a team unit (MyFantasyLeague's team QB / kicker) has no face: its team's badge instead
@@ -81,7 +82,8 @@
               {#if showMargin && r.margin !== null}<div class="tabnum text-xs text-ink-3 sm:hidden" data-testid="margin-line"
                   >{#if vsWords(r).startsWith("no eligible")}no eligible reserve{:else}margin {r.margin.toFixed(2)}{vsWords(r) ? ` ${vsWords(r)}` : ""}{/if}</div
                 >{/if}
-              {#if full && reason(r)}<div class="text-xs leading-snug text-ink-3" data-testid="avail-reason">{reason(r)}</div>{/if}
+              <!-- IS-2: a player who sits this week shows why beside his 0 in every table, not only the full list -->
+              {#if (full || sitsNow(r)) && reason(r)}<div class="text-xs leading-snug text-ink-3" data-testid="avail-reason">{reason(r)}</div>{/if}
             </div>
           </div>
         </td>

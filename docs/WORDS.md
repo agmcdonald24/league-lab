@@ -858,3 +858,19 @@ no warning, never "accurate" or "reliable".
 | The dash's title | No projection: he is not expected to play |
 | His reason, not on an active roster (Sleeper "Inactive" with a team) | Not on an active NFL roster: he will not play this week, so he is not ranked. |
 | The audit's first rule | Players who cannot play or are unlikely to play and are still ranked or valued: N |
+<!-- ---- IS-2 -->
+## Inside a league: the same check, and the reason beside the zero (IS-2, Wave I-S, 2026-10-08; My Week, Team, Waivers, the league card)
+
+The words are the one definition's (`availability_gate.classify`: `why`, `week_words`, `ros_words`); IS-2 adds no
+sentence of its own, only where they appear.
+
+| Where | Words |
+|---|---|
+| My Week, under the name of a player who sits (every table, not only the full list) | IR (ankle) · Sleeper, Sep 26 |
+| Team, the roster row's line (his place first: "IR" = his IR slot, "Bench", "RB1" …) | IR · PUP (knee - acl) · Sleeper, Oct 2 · Draft 2026 · 13.10 |
+| Waivers, "Browse every free agent", a player out this week (listed at 0) | Out (ankle) · Sleeper, Oct 7. Ruled out this week: he will not play this week, so he is not ranked. · rest of season 54 |
+| Waivers, a player with a flag only (Questionable) | Questionable (hamstring) · ESPN, Oct 8 · … |
+| The league card, "Availability" | ⚠️ **IR (knee - acl) · Sleeper, Sep 28**. On injured reserve: no return date, so no rest-of-season value. |
+| The league card, "Projection", a player who sits | unavailable: IR (knee - acl) · Sleeper, Sep 28 — On injured reserve: no return date, so no rest-of-season value. |
+| The league card, no word from the one definition | No injury designation. (last week's injury report no longer speaks for this week) |
+<!-- ---- end IS-2 -->

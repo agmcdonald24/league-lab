@@ -582,9 +582,13 @@ def lineup_values(league_id: str, team: int, frame: pd.DataFrame, *, house: bool
             if v is not None and v > repl.get((ps, int(w)), 0.0):
                 repl[(ps, int(w))] = float(v)
     out: dict[str, dict] = {}
-    status = {}
-    if "injury_status" in frame:
-        status = {str(k): str(v).upper() for k, v in zip(frame["player_key"], frame["injury_status"], strict=True) if isinstance(v, str)}
+    # ---- IS-2: who sits is the one definition's (league_gate: availability.statuses + sits) — was the frame's
+    # injury_status label against this module's own sets of codes
+    from . import league_gate as LG
+    gate = LG.blocks([g for g in frame["gsis_id"] if isinstance(g, str)] if "gsis_id" in frame else [])
+    status = {str(k): gate.get(g) for k, g in zip(frame["player_key"], frame.get("gsis_id", frame["player_key"]), strict=True)
+              if isinstance(g, str) and g in gate}
+    # ---- end IS-2
     for r in frame.to_dict("records"):
         key = str(r["player_key"])
         gs = r.get("gsis_id") if isinstance(r.get("gsis_id"), str) else None
@@ -614,7 +618,7 @@ def lineup_values(league_id: str, team: int, frame: pd.DataFrame, *, house: bool
                     starts.append(w)
         else:
             kind = "others" if owner is not None else "fa"
-            st = status.get(key, "")
+            st = status.get(key)                                                          # ---- IS-2: a block
             by_week = rw["weeks"].get(gs or key, {}) if owner is None else {}
             for h, (w, pr) in enumerate(zip(weeks, preps, strict=True)):
                 if owner is not None:
@@ -622,7 +626,7 @@ def lineup_values(league_id: str, team: int, frame: pd.DataFrame, *, house: bool
                     p = incoming(row)
                 else:
                     v = by_week.get(w)
-                    out_now = (h == 0 and st in UNPLAYABLE_NOW) or st in {"IR", "PUP", "SUSPENDED"}
+                    out_now = LG.sits(st) and (h == 0 or LG.note(st)["out_indefinitely"])   # ---- IS-2
                     p = None if v is None or out_now else Player(id=sid, position=pos, value=float(v), value_source="proj_points")
                 if p is None or p.value is None or p.value_source == UNVALUED:
                     per.append(0.0)

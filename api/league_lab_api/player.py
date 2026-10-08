@@ -14,6 +14,7 @@ import pandas as pd
 from league_lab import clock
 
 from . import availability as AV
+from . import league_gate as LG  # ---- IS-2
 from .applib import cards, links, signals, ui
 from .applib import ros as ROS
 from .db import missing_relations, query
@@ -180,6 +181,12 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
     pos, team = p["position"], p["team"]
     proj = (query(PROJ_SQL, (league_id, gsis, season, week if week is not None else -1)) if od is None    # 3
             else od.projection(gsis, pos, week))
+    # ---- IS-2: the one definition's block, read before the projection: a player who sits this week is not shown a
+    # projection the stored mart may still hold (the marts are rebuilt after project; the deploy lands before it)
+    blk = LG.blocks([gsis], season, week).get(gsis) if isinstance(gsis, str) and week is not None else None
+    gate_note = LG.note(blk)
+    sits_now = bool(gate_note and gate_note["sits"])
+    # ---- end IS-2
     sched = query(SCHED_SQL, (team, team, team, pos, season, team)) if isinstance(team, str) and team else pd.DataFrame()   # 4
     rostered = is_num(p["rostered_by_roster_id"])
     # ---- IB-0: the roster's context (the nightly's rows + the availability overlay), the rows My Week shows   # 5
@@ -250,6 +257,8 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
     projection = _section(f"**Projection** — week {week}, {league_name} scoring" if week else "**Projection**")
     if week is None:
         unav(projection, "the regular season is over.")
+    elif sits_now:                                                                         # ---- IS-2
+        unav(projection, f"{gate_note['why']} — {gate_note['words'] or 'he is left out this week'}")
     elif not proj.empty:
         r = proj.iloc[0]
         mid = ([_metric("Most weeks", f"{float(r['p25']):.0f}–{float(r['p75']):.0f}",
@@ -335,17 +344,16 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         lines.append("**Free agent** — nobody in this league has him.")
     else:
         lines.append("Not in this season's player pool for this league.")
-    inj = p["injury_status"] if isinstance(p["injury_status"], str) and p["injury_status"] else None
-    ov = overlay_status(gsis, inj)                                                     # ---- IB-0
-    if ov is not None:
-        inj = ov["status"]
-        lines.append(f"⚠️ **{AV._why(ov)}**.")
-    elif inj:
-        detail = f" ({p['injury']})" if isinstance(p["injury"], str) and p["injury"] else ""
-        prac = f"; practice: {p['practice_status']}" if isinstance(p["practice_status"], str) and p["practice_status"] else ""
-        lines.append(f"⚠️ **{inj}**{detail}{prac}.")
+    # ---- IS-2: the status line is the one definition's block (league_gate: the stored record + Sleeper + ESPN), with
+    # its source and date and, when he sits, the reason — was the mart's injury_status (nflverse's newest report row:
+    # midweek, last week's game status) and the older overlay's own set of codes
+    inj = gate_note["status"] if gate_note else None
+    if gate_note:
+        words = f" {gate_note['words']}" if gate_note.get("sits") and gate_note.get("words") else ""
+        lines.append(f"⚠️ **{gate_note['why']}**.{words}")
     elif yes(p["in_pool"]):
         lines.append("No injury designation.")
+    # ---- end IS-2
     if not sched.empty:
         weeks = set(sched["week"].astype(int))
         byes = [w for w in range(1, max(18, max(weeks)) + 1) if w not in weeks]
@@ -491,6 +499,8 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
                               f"games at the new level, in {league_name} scoring." if od is None else ""))
 
     extra = why_block(league_id, gsis, pos, season, week, proj, od, league_name)        # ---- IA-3
+    if sits_now:          # ---- IS-2: no "why this number" (the mart's 11.4) under a 0 he gets because he sits
+        extra = {**extra, "why": None, "market": None, "leans_on": None}
     role_sec = role_section(league_id, gsis, pos, team, season, week, league_name)        # ---- IL-1
     return {
         **extra,                                                                           # ---- IA-3
@@ -501,7 +511,8 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "header": header, "league_id": league_id, "league_name": league_name, "season": season, "week": week,
         "rostered_by_roster_id": int(p["rostered_by_roster_id"]) if rostered else None,
         "is_free_agent": yes(p["is_free_agent"]), "injury_status": inj, "locked": locked,
-        "proj_points": float(proj.iloc[0]["proj_points"]) if not proj.empty else None,
+        "availability": gate_note,                                                         # ---- IS-2
+        "proj_points": 0.0 if sits_now else (float(proj.iloc[0]["proj_points"]) if not proj.empty else None),   # IS-2
         "sections": {"usage": usage, "projection": projection, "availability": availability, "value": value, "signals": sig_sec,
                      "role": role_sec},                                                    # ---- IL-1: the Role block
         "howto": HOWTO.format(league=league_name),

@@ -62,6 +62,7 @@ import psycopg
 from scipy.optimize import linear_sum_assignment
 
 from . import clock
+from . import league_status as LS  # ---- IS-2: the one "can he play" question
 
 log = logging.getLogger(__name__)
 
@@ -664,7 +665,8 @@ def load_inputs(conn: psycopg.Connection, season: int) -> LineupInputs:
         # fresh projections (see module docstring) with the as-of status the mart shows next to them
         proj_rows = _frame(cur, """
             select p.league_id, p.week, p.gsis_id, round(p.proj_points::numeric, 2) as proj_points, p.model_version,
-                   f.team, f.report_status, f.roster_status
+                   f.team, f.report_status, f.roster_status,
+                   to_jsonb(p) ->> 'availability' as availability   -- ---- IS-2: the gate's stored record (may not exist)
             from ops.projections as p
             join analytics.mart_player_week_features as f using (gsis_id, season, week)
             where p.season = %s and p.league_id = any(%s)""", (season, ids))
@@ -699,7 +701,8 @@ def load_inputs(conn: psycopg.Connection, season: int) -> LineupInputs:
     for r in proj_rows:
         proj[(r["league_id"], int(r["week"]), r["gsis_id"])] = {
             "proj_points": _num(r["proj_points"]), "team": r["team"],
-            "report_status": r["report_status"], "roster_status": r["roster_status"]}
+            "report_status": r["report_status"], "roster_status": r["roster_status"],
+            "availability": r.get("availability")}                                              # ---- IS-2
         weeks[r["league_id"]].add(int(r["week"]))
         versions.add(r["model_version"])
     weekly: dict[tuple[str, int], dict[int, list[dict]]] = defaultdict(lambda: defaultdict(list))
@@ -851,9 +854,14 @@ def _proposed_player(inp: LineupInputs, league_id: str, week: int, row: dict, cu
             return unvalued if team else out("no NFL team")   # no NFL team: not on a roster, no game
         if pr["roster_status"] == "RES":
             return out("NFL injured reserve")
-        if pr["report_status"] in ("Out", "Doubtful"):
-            return out(pr["report_status"])
+        # ---- IS-2: who sits is the one definition's stored record (availability_gate, written by project for the
+        # live week) — was nflverse's report_status in ("Out", "Doubtful"): the Rankings ranked a Doubtful player the
+        # lineup benched. The reason is the block's label ("Out", "IR" ...); the screens add its why at request time.
+        blk = LS.record_block(pr.get("availability"))
+        if LS.sits(blk):
+            return replace(base, status=blk.get("status"), playable=False, reason=blk.get("status"))
         return base
+        # ---- end IS-2
     if positions & {"K", "DEF"}:
         if "K" in positions and base.value_source == "proj_points" and kp is not None:
             if kp["roster_status"] == "RES":

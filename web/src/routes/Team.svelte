@@ -100,7 +100,10 @@
     const bits = [where];
     if (r.role === "starter" && r.margin != null) bits.push(`margin ${f2(r.margin)}`);
     if (r.no_projection) bits.push("no projection"); // ---- IG-1: the dash in the number says it too
-    if (r.report_status === "Questionable") bits.push("Questionable");
+    // ---- IS-2: the one definition's status with its source and date ("IR (knee - acl) · Sleeper, Sep 28") beside his number
+    const gate = (r as TeamRosterRow & { availability?: { why: string; sits: boolean } | null }).availability ?? null;
+    if (gate) bits.push(gate.why);
+    else if (r.report_status === "Questionable") bits.push("Questionable");
     if (r.acquired) bits.push(r.acquired);
     return bits.join(" · ");
   }

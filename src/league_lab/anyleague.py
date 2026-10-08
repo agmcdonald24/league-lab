@@ -59,6 +59,7 @@ import numpy as np
 import pandas as pd
 
 from . import clock, memo, provider_trouble  # ---- IP-5: provider_trouble
+from . import league_status as LS  # ---- IS-2: the one "can he play" question
 from . import lineup as LU
 from .scoring import (  # noqa: F401 - compute_points: the reference the vector form equals
     MAPPED_KEYS,
@@ -1849,11 +1850,18 @@ def horizon_frame(lw: LeagueWeeks) -> pd.DataFrame:
     return df[cols].copy()
 
 
-def free_agents(query: Query, league_id: str, rosters: list[dict], players: Mapping[str, dict], slots: list[str]) -> pd.DataFrame:
+def free_agents(query: Query, league_id: str, rosters: list[dict], players: Mapping[str, dict], slots: list[str],
+                blocks: Mapping[str, dict] | None = None) -> pd.DataFrame:
     """The league's free agents: Sleeper's player directory minus every roster, mapped by ``player_id_map`` (never by
     name; a team defense keeps its Sleeper id), with the nightly's waiver filter (``waivers.load_and_sweep``): on an
     active NFL roster, not Out / IR, a position the league starts. NFL status from the house marts' NFL-wide columns
-    (``NFL_STATUS_SQL``), else Sleeper's directory (``status`` Active, its ``injury_status``)."""
+    (``NFL_STATUS_SQL``), else Sleeper's directory (``status`` Active).
+
+    IS-2 (Wave I-S): who sits this week is the one definition's (``availability_gate.sits``), never the mart's
+    ``injury_status`` (nflverse's newest report row: midweek, last week's): ``blocks`` ({gsis: block}, the API's
+    ``availability.statuses``) when given, else the block of Sleeper's directory entry the caller holds
+    (``league_status.directory_block``). A player who sits is not a free agent to add; ``injury_status`` carries the
+    block's label (None: no word)."""
     cols = ["sleeper_id", "gsis_id", "player_name", "position", "nfl_team", "roster_status", "injury_status", "games_played"]
     taken = {str(p) for r in rosters for p in (r.get("players") or [])}
     starts = {s.type for s in LU.parse_slots(slots)[0]}
@@ -1902,11 +1910,15 @@ def free_agents(query: Query, league_id: str, rosters: list[dict], players: Mapp
         gsis = gsis_of.get(sid)
         if position != "DEF" and position not in LU.UNITS and gsis is None:   # IC-2: a unit has no gsis by design
             continue                                   # unmapped: never joined by name
-        if rs != "ACT" or inj in ("Out", "IR"):
+        # ---- IS-2: the one definition decides who sits (was: the mart's injury_status in ("Out", "IR"))
+        blk = (blocks.get(gsis) if gsis else None) if blocks is not None else LS.directory_block(players.get(sid))
+        if rs != "ACT" or LS.sits(blk):
             continue
+        inj = (blk or {}).get("status")
+        # ---- end IS-2
         out.append({"sleeper_id": sid, "gsis_id": gsis, "player_name": _sleeper_name(sp, sid),
                     "position": position, "nfl_team": team, "roster_status": rs,
-                    "injury_status": None if inj is None or (isinstance(inj, float) and math.isnan(inj)) else inj,
+                    "injury_status": inj,
                     "games_played": None if gp is None or (isinstance(gp, float) and math.isnan(gp)) else int(gp)})
     return pd.DataFrame(out, columns=cols)
 
