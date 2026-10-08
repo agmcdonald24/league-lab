@@ -87,6 +87,8 @@ publication drops published regions only and refreshes `as_of`; no comment = tod
 `test_ir3`, `test_ir0`, `test_h0`, `test_inf2`: 34 passed; `tests/test_memo.py` 9 passed. `scripts/gate.sh python`:
 GATE PASSED, 809 ran (780 + 29; `test_is4` added to `API_GATE`). ruff clean, copy standard clean, `bash -n` clean,
 `node ops/nightly-trigger/test.mjs`: 7 + the New York morning checks passed. No `web/` change.
+`check_root.sh` (memo.py edited): 1,668 passed, 4 failed — all on the known list, 0 new. The pooler check re-run on
+the committed tree (with the publication watcher in `db.query`): the same lines as above.
 
 #### 5. Edits outside my files
 
