@@ -1,7 +1,7 @@
 -- depends_on: {{ ref('scoring_stat_map') }}
 {{ config(
     indexes=[{'columns': ['league_id', 'season', 'week', 'position']}, {'columns': ['gsis_id', 'season', 'week']}],
-    pre_hook="create table if not exists ops.projections (model_version text, fitted_at timestamptz, train_seasons text, league_id text, season integer, week integer, gsis_id text, position text, proj_targets double precision, proj_receptions double precision, proj_receiving_yards double precision, proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision, proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision, proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision, proj_points double precision, p10 double precision, p25 double precision, p50 double precision, p75 double precision, p90 double precision, frozen_at timestamptz, frozen_source text); alter table ops.projections add column if not exists frozen_at timestamptz; alter table ops.projections add column if not exists frozen_source text; alter table ops.projections add column if not exists p25 double precision; alter table ops.projections add column if not exists p75 double precision; alter table ops.projections add column if not exists pricing text"
+    pre_hook="create table if not exists ops.projections (model_version text, fitted_at timestamptz, train_seasons text, league_id text, season integer, week integer, gsis_id text, position text, proj_targets double precision, proj_receptions double precision, proj_receiving_yards double precision, proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision, proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision, proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision, proj_points double precision, p10 double precision, p25 double precision, p50 double precision, p75 double precision, p90 double precision, frozen_at timestamptz, frozen_source text); alter table ops.projections add column if not exists frozen_at timestamptz; alter table ops.projections add column if not exists frozen_source text; alter table ops.projections add column if not exists p25 double precision; alter table ops.projections add column if not exists p75 double precision; alter table ops.projections add column if not exists pricing text; alter table ops.projections add column if not exists availability text"
 ) }}
 -- Projection v2 (plan M-01/M-03) per league x season x week x player: the projected stat line,
 -- the points it is worth under THAT league's scoring, and the P10 / P50 / P90 of the league's
@@ -137,7 +137,9 @@ select
     -- 'refit' = the week was already under way when its rows were locked (2026 weeks 1-3): not a kickoff record
     p.frozen_source, p.frozen_at,
     -- M4 (Wave I-G): how the row's bonuses were priced (flat | ev; NULL = before the column = flat)
-    coalesce(p.pricing, 'flat') as pricing
+    coalesce(p.pricing, 'flat') as pricing,
+    -- IS-1 (Wave I-S): why the gate set this row to 0 (JSON: code, why, out_indefinitely; NULL = not gated)
+    p.availability
 from p
 join f using (gsis_id, season, week)
 join l on l.league_id = p.league_id
@@ -170,6 +172,7 @@ select
     case when k.played then rank() over (partition by k.league_id, k.season, k.week, k.position order by case when k.played then k.points_actual_league end desc nulls last, k.gsis_id) end as actual_rank_pos,
     k.model_version, k.train_seasons, k.fitted_at,
     k.frozen_source, k.frozen_at,
-    coalesce(k.pricing, 'flat') as pricing
+    coalesce(k.pricing, 'flat') as pricing,
+    k.availability                                                                      -- IS-1
 from kd_rows as k
 join l on l.league_id = k.league_id

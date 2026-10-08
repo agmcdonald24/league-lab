@@ -71,7 +71,7 @@
         {/each}
       </ul>
       {#if d.answer.verdict === "out"}
-        <p class="text-xs leading-snug text-ink-3" data-testid={`${testid}-out-why`}>A player who cannot play gets no chance and no call: there is nothing to compare.</p>
+        <p class="text-xs leading-snug text-ink-3" data-testid={`${testid}-out-why`}>A player who cannot play, or whose status rarely plays, gets no chance and no call: there is nothing to compare.</p>
       {:else if d.answer.verdict === "no call"}
         <p class="text-xs leading-snug text-ink-3" data-testid={`${testid}-nocall-why`}>
           No chances are given: a projection may be on the wrong quarterback. Take him out to compare the others.

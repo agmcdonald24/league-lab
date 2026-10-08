@@ -523,11 +523,12 @@ def _gate(season: int, week: int | None, view: str) -> dict:
     if week is None:
         return {"st": {}, "out": frozenset(), "stored": frozenset(), "key": ()}
     st = AV.statuses(None, int(season), int(week))
-    want = "cannot_play" if view == "week" else "out_indefinitely"
-    out = frozenset(g for g, s in st.items() if s.get(want))
+    # ---- IS-1: this week asks sits() (cannot play, or a status that rarely plays); the season, out indefinitely
+    out = frozenset(g for g, s in st.items() if (AV.sits(s) if view == "week" else s.get("out_indefinitely")))
     stored = frozenset(AV.stored_status(int(season), int(week))) if view == "week" else frozenset()
-    flags = tuple(sorted((g, s.get("code")) for g, s in st.items() if s.get("doubtful") or s.get("code") == "QUESTIONABLE"))
-    return {"st": st, "out": out, "stored": stored, "key": (tuple(sorted(out)), tuple(sorted(stored - out)), flags)}
+    flags = tuple(sorted((g, s.get("code")) for g, s in st.items() if s.get("flag_words") or s.get("doubtful")))
+    return {"st": st, "out": out, "stored": stored, "season": int(season),
+            "key": (tuple(sorted(out)), tuple(sorted(stored - out)), flags)}
 
 
 def _split_not_playing(d: pd.DataFrame, gate: dict, view: str) -> tuple[pd.DataFrame, list[dict]]:
@@ -546,7 +547,9 @@ def _split_not_playing(d: pd.DataFrame, gate: dict, view: str) -> tuple[pd.DataF
         else:
             rows.append({**AV.not_playing_row(r, {"status": None, "code": "BACK", "why": None}, view=view),
                          "words": BACK_WORDS.format(why=(s or {}).get("why") or "cleared to play")})
-    rows.sort(key=lambda x: (not x.get("out_indefinitely"), str(x.get("player_name") or "")))
+    # ---- IS-1: the players a visitor looks for lead (his projection when he still has one, else points per game)
+    would = {str(r["key"]): r.get("proj_points") for r in d[gone].to_dict("records")}
+    rows = AV.order_not_playing(rows, would, gate.get("season"))
     keep = d[~gone & ~unranked].copy()
     keep["availability"] = [_flag(st.get(x)) if isinstance(x, str) else None for x in keep["gsis_id"]]
     keep["report_status"] = [(a or {}).get("status") or r for a, r in zip(keep["availability"], keep["report_status"], strict=True)]
@@ -560,15 +563,17 @@ def _out_words(r: dict) -> str:
     if r.get("code") == "BACK":
         return f"{nm} has no number this week until the next update: {r.get('words')}"
     from league_lab import availability_gate as AG
-    return AG.out_sentence(nm, {"reason": AG.REASON.get(str(r.get("code"))), "why": r.get("why")})
+    return AG.out_sentence(nm, {"reason": AG.REASON.get(str(r.get("code"))), "why": r.get("why"), "code": r.get("code"),
+                                "status": r.get("status"), "unlikely": r.get("group") == "unlikely",
+                                "p_play": r.get("p_play")})                                     # ---- IS-1
 
 
 def _flag(s: dict | None) -> dict | None:
-    """A ranked player's status label (Doubtful / Questionable): who said it and when."""
-    if not s or s.get("cannot_play"):
+    """A ranked player's status label (Questionable): who said it and when, and how often such players play."""
+    if not s or AV.sits(s):
         return None
     return {"status": s.get("status"), "code": s.get("code"), "why": s.get("why"), "source": s.get("source"),
-            "as_of": s.get("as_of")}
+            "as_of": s.get("as_of"), "p_play": s.get("p_play"), "words": s.get("flag_words")}   # ---- IS-1
 # ---- end IR-1
 
 
@@ -736,7 +741,7 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
                 gone[str(r["gsis_id"])] = r
     # ---- IR-1: a player with no row at all who cannot play (no projection, a stored 0) is out, not "missing"
     for g, st in AV.statuses([g for g in want if g not in have and g not in gone], ctx.season, ctx.week).items():
-        if st.get("cannot_play"):
+        if AV.sits(st):                                                                    # ---- IS-1
             gone[g] = AV.not_playing_row({"gsis_id": g, "player_name": st.get("name")}, st)
     out["out"] = [{**r, "words": _out_words(r)} for g in want if (r := gone.get(g)) is not None]
     # ---- end IR-1

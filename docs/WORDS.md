@@ -845,3 +845,16 @@ no warning, never "accurate" or "reliable".
 | About, **What each number has been checked against** | the head ("… The order is the rank correlation (1 = perfect, 0 = no better than chance); the miss is in points per game."), one card per position: "Next week: graded · order 0.59 · miss 6.4", "Two to eight weeks ahead: graded, weak · …", "Next four weeks: order 0.54 · miss 6.9 (his own record: 0.54 · 7.0)", "Rest of season: …"; under them "Next four weeks and rest of season: each week's projection in the window scored against that week (pooled over the window's weeks, not the window's total), against a simple baseline in brackets: his own points per game so far (for quarterbacks with his role, the opponent and the betting line)."; the useful-decision sentence ("Is the trade calculator right? On a close one-for-one … 50 would be a coin flip."); "Not graded yet:" the ranges around a season total and a trade's gap, a trade of several players or across positions and the lineup effect, kickers and defenses over a window, quarterbacks' useful-decision grade on the current version | "validated" |
 | the record (`ops.context_grade` kind `horizon`) | "Quarterbacks, the next four weeks: order 0.54, miss 6.9 points per game (his own record: 0.54, 7.0)." · "Running backs, the rest of the season (up to eight weeks ahead): order 0.64, miss 4.7 points per game (his own record: 0.60, 4.9)." · a cell without a baseline ends "(no simple baseline measured yet)." | |
 <!-- ---- end IR-4 -->
+
+## A status that rarely plays (IS-1, Wave I-S, 2026-10-08; Rankings, "Who should I start?", the board, Compare, DFS)
+
+| Where | Words |
+|---|---|
+| "Not playing", its two parts | **Out** · N / **Unlikely to play** · N |
+| A doubtful player's reason (this week) | Doubtful: players listed doubtful have played about 1 in 100 times; not ranked this week. |
+| A questionable player's label (ranked) | Questionable: players listed questionable have played about 67 in 100 times; ranked as if he plays. |
+| "Who should I start?" | Hall is doubtful — players listed doubtful have played about 1 in 100 times (Doubtful (quadriceps) · Sleeper, Oct 7). Start Judkins. |
+| "Who should I start?", under the players | A player who cannot play, or whose status rarely plays, gets no chance and no call: there is nothing to compare. |
+| The dash's title | No projection: he is not expected to play |
+| His reason, not on an active roster (Sleeper "Inactive" with a team) | Not on an active NFL roster: he will not play this week, so he is not ranked. |
+| The audit's first rule | Players who cannot play or are unlikely to play and are still ranked or valued: N |

@@ -465,7 +465,18 @@ def value_of(key: str, gsis_ids: list[str]) -> dict[str, dict]:
     if table.empty:
         return {}
     t = table[table["gsis_id"].isin(set(gsis_ids))]
-    return {str(r["gsis_id"]): r for r in t.to_dict("records")}
+    # ---- IS-1 (Wave I-S): out indefinitely = no rest-of-season value at request time too (not only from the stored
+    # board): he is left out, so every reader (the card's value, Stats' value column, Compare) shows a dash, never a
+    # number; the free calculator says why (freetrade reads the same statuses)
+    try:
+        from . import availability as AV
+        season, first, _last = _window()
+        st = AV.statuses(list(t["gsis_id"]), season, first) if len(t) else {}
+        gone = {g for g, s in st.items() if s.get("out_indefinitely")}
+    except Exception:  # noqa: BLE001 - the values stand without it (the stored board is gated by the nightly)
+        gone = set()
+    # ---- end IS-1
+    return {str(r["gsis_id"]): r for r in t.to_dict("records") if str(r["gsis_id"]) not in gone}
 
 
 # ------------------------------------------------------------------ the player card while browsing

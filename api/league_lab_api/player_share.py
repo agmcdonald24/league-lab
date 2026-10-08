@@ -123,6 +123,17 @@ def _kickoff(v: Any) -> str | None:
     return f"{d:%a} {d:%-I:%M %p} ET".replace(":00 ", " ")
 
 
+def _sitting(season: int | None, week: int | None) -> set[str]:
+    """IS-1 (Wave I-S): the players who sit this week (availability.sits over availability.statuses: cannot play, or a
+    status that rarely plays) — the held frame is the board's cache, built before the request: gated here, at request
+    time. Empty on any failure (the card stands; the stored board is gated by the nightly)."""
+    try:
+        from . import availability as AV
+        return {g for g, s in AV.statuses(None, season, week).items() if AV.sits(s)}
+    except Exception:  # noqa: BLE001
+        return set()
+
+
 def card(gsis: str) -> dict | None:
     """{title, description, url} for one player from the held frame, or None (not held, not on it, no projection)."""
     if not isinstance(gsis, str) or not GSIS.fullmatch(gsis):
@@ -132,7 +143,7 @@ def card(gsis: str) -> dict | None:
         return None
     df, _season, week = got
     m = df[df["gsis_id"] == gsis]
-    if m.empty:
+    if m.empty or gsis in _sitting(_season, week):                  # ---- IS-1: no projection card for a player who sits
         return None
     r = m.iloc[0]
     proj = _num(r.get("proj_points"))
@@ -205,11 +216,13 @@ def noindex(text: str) -> str:
 def top(n: int = SITEMAP_TOP) -> list[str]:
     """The sitemap's players: the ``n`` highest projections this week in the default scoring, from the held frame only
     ([] when nothing is held)."""
-    df = held_frame()
-    if df is None:
+    got = held()
+    if got is None:
         return []
+    df = got[0]
+    out = _sitting(got[1], got[2])                                  # ---- IS-1: never a player who sits this week
     p = pd.to_numeric(df["proj_points"], errors="coerce")
-    d = df.assign(_p=p)[p.notna() & df["gsis_id"].map(lambda g: isinstance(g, str) and bool(GSIS.fullmatch(g)))]
+    d = df.assign(_p=p)[p.notna() & df["gsis_id"].map(lambda g: isinstance(g, str) and bool(GSIS.fullmatch(g)) and g not in out)]
     d = d.sort_values(["_p", "gsis_id"], ascending=[False, True], kind="mergesort").drop_duplicates("gsis_id")
     return [str(g) for g in d["gsis_id"].head(int(n))]
 

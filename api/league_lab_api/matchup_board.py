@@ -597,14 +597,15 @@ def gate_week(df: pd.DataFrame, season: int | None, week: int | None) -> tuple[p
     st = AV.statuses(None, season, week)
     stored = set(AV.stored_status(season, week))
     g = df["gsis_id"].where(df["gsis_id"].map(lambda x: isinstance(x, str)), None)
-    out = {k for k, s in st.items() if s.get("cannot_play")}
+    out = {k for k, s in st.items() if AV.sits(s)}                  # ---- IS-1: cannot play, or unlikely to play
     gone = g.isin(out | stored)
     rows = [AV.not_playing_row(r, st[r["gsis_id"]]) for r in df[gone & g.isin(out)].to_dict("records")]
     keep = df[~gone].copy()
     if "report_status" in keep:
         keep["report_status"] = [(st.get(x) or {}).get("status") or r if isinstance(x, str) else r
                                  for x, r in zip(keep["gsis_id"], keep["report_status"], strict=True)]
-    return keep, sorted(rows, key=lambda r: str(r.get("player_name") or ""))
+    would = {str(r.get("gsis_id")): r.get("proj_points") for r in df[gone].to_dict("records")}       # ---- IS-1
+    return keep, AV.order_not_playing(rows, would, season)
 # ---- end IR-1
 
 

@@ -5336,3 +5336,62 @@ and over the rest of season (3 of 5) — against B2 (role, opponent, line) v3.6 
 About's RB / WR / TE numbers are this run's (the rows with a record: next week's model numbers stay IQ-1's, within
 0.02; IQ-1's 2–8 cells on all rows are 4.70 / 4.59 / 3.41, on these rows 4.73 / 4.62 / 3.42).
 <!-- ---- end IR-4 -->
+
+### A status that rarely plays (av1.1, IS-1, Wave I-S, 2026-10-08; `src/league_lab/availability_gate.py` `P_PLAY`, `UNLIKELY`)
+
+**The rule, written before the numbers were read.** A game status (Out / Doubtful / Questionable on the injury
+report) whose players played in **fewer than 25 %** of cases is **unlikely**: he sits this week exactly as a player
+who cannot play (`sits()` true — 0 this week with the reason from `project`, out of this week's rankings and tiers,
+"He is doubtful" in "Who should I start?", the same request-time gate), but he is **not** out indefinitely (his later
+weeks stay), and his block carries `p_play` (the measured rate, two digits) so the words can say it. A status at or
+above 25 % stays ranked and flagged, with its `p_play` for the words. A Questionable player's projection is **not**
+scaled unless the bias table shows the stored number off by more than 10 % for that group — and then the number goes
+to the PO, and no scaling ships that the PO has not seen.
+
+**The measurement** (`<scratchpad>/is1/measure.py`, read only, on `league_lab_iq4`): nflverse's weekly injury reports
+(`staging.stg_nflverse__injuries`, `game_type = 'REG'`, 2016–2025, the final report's status per player-week), QB / RB /
+WR / TE; "played" = any offensive or special-teams snap (`intermediate.int_player_game_snaps`) or a stat line
+(`fct_player_game.played`) that week. Points: Half PPR from nflverse's standard and PPR totals. "His season average" =
+his points per game in the games he played earlier that season (at least two), chosen over his projection because the
+walk-forward projections (`ops.calibration_oof`, v3.0, 2023–2025) exist only for games he played — the model is
+trained on played games, so it cannot say what happened to the players who sat.
+
+| Status | Pos | Listed | Played | Played % |
+|---|---|---|---|---|
+| Out | all | 3,165 | 2 | 0.1 % |
+| **Doubtful** | all | **520** | **6** | **1.2 %** |
+| Doubtful | QB / RB / WR / TE | 55 / 158 / 206 / 101 | 0 / 2 / 3 / 1 | 0 / 1.3 / 1.5 / 1.0 % |
+| **Questionable** | all | **4,294** | **2,860** | **66.6 %** |
+| Questionable | QB / RB / WR / TE | 319 / 1,115 / 2,026 / 834 | 146 / 708 / 1,425 / 581 | 45.8 / 63.5 / 70.3 / 69.7 % |
+
+Doubtful by season (played / listed): 2016 0/76, 2017 1/36, 2018 1/43, 2019 1/50, 2020 2/52, 2021 0/63, 2022 0/50,
+2023 1/49, 2024 0/72, 2025 0/29 — never above 4 %. **Doubtful is unlikely (`p_play` 0.01); Questionable is not (0.67).**
+
+When he played, against his own season average (games with two or more earlier games that season):
+
+| Status | n | Points when he played | His season average | Ratio | Ratio, zeros included |
+|---|---|---|---|---|---|
+| no status (all played games) | 41,388 | 7.61 | 7.44 | 1.02 | — |
+| Questionable, all | 2,373 | 6.88 | 8.01 | 0.86 | 0.62 |
+| Questionable QB / RB / WR / TE | 130 / 580 / 1,188 / 475 | 14.30 / 8.16 / 6.40 / 4.50 | 15.87 / 9.11 / 7.67 / 5.35 | 0.90 / 0.90 / 0.83 / 0.84 | 0.51 / 0.62 / 0.64 / 0.65 |
+| Doubtful (4 who played) | 4 | 4.15 | 7.90 | 0.53 | 0.005 |
+
+**How the stored projection treats each status today.** The model has one injury input, "Listed Questionable on the
+injury report" (`questionable`), fitted on played games only; its measured importance is about 0 points (2025:
+−0.0001 on the total). Walk-forward (v3.0, Half PPR, 2023–2025, played games only): projection ÷ his season average
+is 1.03 with no status and 0.97 when Questionable — about a 5 % discount. Doubtful and Out have no input: the projection
+is a healthy player's. **Bias of the stored number:**
+
+| Group | Rows | Projection | Actual | Bias |
+|---|---|---|---|---|
+| walk-forward, Questionable, he played (2023–2025) | 672 | 7.61 | 7.24 | +5 % |
+| walk-forward, no status, he played | 16,623 | 6.92 | 6.87 | +1 % |
+| Questionable, zeros included (66.6 % played × 7.24) | — | 7.61 | ≈ 4.82 | **≈ +58 %** |
+| 2026 stored board weeks 1–4, Questionable (League of Scrubs, zeros included) | 55 | 6.33 | 3.61 | **+75 %** |
+| 2026 stored board weeks 1–4, Doubtful | 10 | 6.29 | 0.00 | (all sat) |
+| 2026 stored board weeks 1–4, no status | 2,268 | 5.64 | 4.01 | +41 % (includes every bench player who did not play) |
+
+The Questionable group is off by far more than 10 % once the games he sits count as zeros: **the PO's number is
+≈ +58 % (history) / +75 % (2026, n = 55)**. Per the rule nothing is scaled: a Questionable player stays ranked,
+flagged, with "players listed questionable have played about 67 in 100 times; ranked as if he plays." Whether to
+scale him (by about 0.62, the played share × the when-played ratio) is the PO's and Andrew's decision.

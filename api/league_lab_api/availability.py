@@ -49,9 +49,16 @@ from .db import query
 
 SWITCH_ENV = "LEAGUE_LAB_AVAILABILITY"
 IDS_CSV_ENV = "LEAGUE_LAB_PLAYER_IDS_CSV"
-CANNOT_PLAY = frozenset({"OUT", "DOUBTFUL", "IR", "PUP", "NFI", "SUS", "INACTIVE"})
-NOT_IN_TRENDS = frozenset({"OUT", "IR", "PUP", "NFI", "SUS", "INACTIVE"})        # Trends: Doubtful stays listed
-FLAGGED = frozenset({"QUESTIONABLE"})
+# ---- IS-1 (Wave I-S): one source of truth. The overlay's sets are views of league_lab.availability_gate's: a lineup
+# benches exactly whom the lists leave out (sits(): cannot play, or a status that rarely plays — Doubtful), Trends drops
+# who cannot play, Questionable is flagged. By value the three sets are what they were (the gate's NO_TEAM, which this
+# overlay never produces, is the only addition); what changed is the gate's side (Doubtful now sits on every list).
+from league_lab import availability_gate as _AG  # noqa: E402
+
+CANNOT_PLAY = _AG.SITS_CODES                     # was {OUT, DOUBTFUL, IR, PUP, NFI, SUS, INACTIVE}
+NOT_IN_TRENDS = _AG.CANNOT_PLAY                  # was {OUT, IR, PUP, NFI, SUS, INACTIVE}: Trends, Doubtful stays listed
+FLAGGED = _AG.FLAGGED                            # was {QUESTIONABLE}
+# ---- end IS-1
 LABEL = {"OUT": "Out", "DOUBTFUL": "Doubtful", "QUESTIONABLE": "Questionable", "IR": "IR", "PUP": "PUP", "NFI": "NFI",
          "SUS": "Suspended", "INACTIVE": "Inactive", "ACTIVE": None}
 WORDS = {"OUT": "is out", "DOUBTFUL": "is doubtful", "IR": "is on injured reserve", "PUP": "is on the PUP list",
@@ -1207,14 +1214,53 @@ def statuses(gsis_ids: Iterable[str] | None, season: int | None, week: int | Non
     return out
 
 
+GROUPS = {"out": "Out", "unlikely": "Unlikely to play"}                    # ---- IS-1: the two labelled parts
+
+
 def not_playing_row(r: Mapping, st: Mapping, *, view: str = "week") -> dict:
-    """A list's "Not playing" entry: who, the status, its source and time, the reason in words — never a number."""
+    """A list's "Not playing" entry: who, the status, its source and time, the reason in words — never a number.
+    IS-1: ``group`` "out" (cannot play) or "unlikely" (a status that rarely plays, with ``p_play``)."""
+    grp = "unlikely" if st.get("unlikely") and not st.get("cannot_play") else "out"
     return {"key": r.get("key") or r.get("gsis_id"), "gsis_id": r.get("gsis_id"), "player_name": r.get("player_name"),
             "position": r.get("position"), "team": r.get("team"), "headshot_url": r.get("headshot_url"),
             "status": st.get("status"), "code": st.get("code"), "source": st.get("source"), "as_of": st.get("as_of"),
             "why": st.get("why"), "out_indefinitely": bool(st.get("out_indefinitely")),
+            "group": grp, "group_label": GROUPS[grp], "p_play": st.get("p_play"),
             "words": st.get("ros_words") if view == "season" else st.get("week_words")}
 # ---- end IR-1
+
+
+# ---- IS-1 (Wave I-S): the "Not playing" group leads with the players a visitor looks for
+PPG_SQL = """select gsis_id, points_current_scoring_per_game as ppg from analytics.mart_player_season
+             where season = %s and season_type = 'REG' and gsis_id = any(%s)"""
+
+
+def season_ppg(gsis_ids: Iterable[str], season: int | None) -> dict[str, float]:
+    """{gsis: points per game this season} (the warehouse's reference scoring; {} on any failure: the order falls back
+    to the name)."""
+    ids = sorted({g for g in gsis_ids if isinstance(g, str) and g})
+    if not ids or season is None:
+        return {}
+    try:
+        d = query(PPG_SQL, (int(season), ids))
+        return {str(g): float(v) for g, v in zip(d["gsis_id"], d["ppg"], strict=True)
+                if v is not None and not (isinstance(v, float) and math.isnan(v))}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def order_not_playing(rows: list[dict], points: Mapping[str, float] | None = None,
+                      season: int | None = None) -> list[dict]:
+    """Out first, then Unlikely to play; inside each, by what he would have been projected (``points`` {key: points},
+    a positive number only) else his points per game this season, then the name."""
+    pts = {k: float(v) for k, v in (points or {}).items() if v is not None and float(v) > 0}
+    ppg = season_ppg([r.get("gsis_id") for r in rows if str(r.get("key")) not in pts], season)
+
+    def lead(r: dict) -> float:
+        k = str(r.get("key"))
+        return pts.get(k) if k in pts else ppg.get(str(r.get("gsis_id")), 0.0)
+    return sorted(rows, key=lambda r: (r.get("group") == "unlikely", -lead(r), str(r.get("player_name") or "")))
+# ---- end IS-1
 
 
 # ---- IR-1: the rest-of-season lists (/api/ros, every view) and the free calculator
@@ -1250,9 +1296,40 @@ def ros_gate(out: dict, *, season: int | None = None, week: int | None = None) -
                 if s is not None and isinstance(p, dict):
                     p["injury_status"] = s.get("status")
                     p["availability"] = {"status": s.get("status"), "code": s.get("code"), "why": s.get("why"),
-                                         "cannot_play": bool(s.get("cannot_play"))}
+                                         "cannot_play": bool(sits(s))}                     # ---- IS-1
                 keep.append(p)
+        # ---- IS-1: a house league's list is cut at its limit with the mart's withheld totals (NULL) sorted last, so the
+        # players it withholds are fetched apart and listed here too (bounded; `to_jsonb` reads a column that may not
+        # exist yet — a deploy lands before the refresh)
+        if out.get("source") == "database" and out.get("league_id") and k == "players":
+            have = {str(x.get("gsis_id")) for x in gone} | {str(x.get("gsis_id")) for x in keep}
+            gone += [x for x in _withheld(str(out["league_id"]), str(out.get("position") or "ALL"), season, week)
+                     if str(x.get("gsis_id")) not in have]
         out[k] = keep
-        out["not_playing"] = gone
+        out["not_playing"] = order_not_playing(gone, {str(p.get("key")): p.get("ros_points") for p in gone if isinstance(p, dict)},
+                                               season)                                          # ---- IS-1
     return out
 # ---- end IR-1
+
+
+# ---- IS-1 (Wave I-S): the house rest-of-season mart withholds a player out indefinitely (ros_points NULL)
+WITHHELD_SQL = """select r.player_key, r.gsis_id, r.player_name, r.position, r.team
+                  from analytics.mart_player_ros_projection as r
+                  where r.league_id = %s and (%s = 'ALL' or r.position = %s)
+                    and coalesce((to_jsonb(r) ->> 'out_indefinitely')::boolean, false)
+                  order by r.player_key limit 200"""
+
+
+def _withheld(league_id: str, position: str, season: int | None, week: int | None) -> list[dict]:
+    """The "Not playing" rows of the players a house league's rest-of-season mart withholds, with the status that
+    says why (the stored record / the overlay); [] on any failure or before the refresh."""
+    try:
+        d = query(WITHHELD_SQL, (league_id, position, position))
+    except Exception:  # noqa: BLE001
+        return []
+    if d.empty:
+        return []
+    st = statuses([g for g in d["gsis_id"] if isinstance(g, str)], season, week)
+    return [not_playing_row({**r, "key": r.get("player_key") or r.get("gsis_id")}, st[r["gsis_id"]], view="season")
+            for r in d.to_dict("records") if isinstance(r.get("gsis_id"), str) and (st.get(r["gsis_id"]) or {}).get("out_indefinitely")]
+# ---- end IS-1

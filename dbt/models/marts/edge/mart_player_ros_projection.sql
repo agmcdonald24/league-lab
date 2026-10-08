@@ -67,7 +67,7 @@ board as (
            p.league_id, p.season, p.week, p.gsis_id,
            coalesce(p.gsis_id, case p.team when 'LA' then 'LAR' else p.team end) as player_key,
            p.position, p.player_name, p.team, p.roster_status,
-           p.proj_points, p.p10, p.p90, p.implied_team_total, p.model_version
+           p.proj_points, p.p10, p.p90, p.implied_team_total, p.model_version, p.availability
     from {{ ref('mart_player_week_projections') }} as p
     join window_ as w on w.league_id = p.league_id and w.season = p.season
     where p.week between w.from_week and w.last_week
@@ -85,7 +85,10 @@ weeks as (
 ),
 
 latest as (    -- name, team and NFL status as of the first week of his window
-    select distinct on (league_id, player_key) league_id, player_key, gsis_id, position, player_name, team, roster_status
+    select distinct on (league_id, player_key) league_id, player_key, gsis_id, position, player_name, team, roster_status,
+           -- IS-1 (Wave I-S): out indefinitely by the gate's record on his first window week (`project` keeps that week at
+           -- 0 with the reason and writes no later week): no rest-of-season number, unknown — never 0.0 over 1 game
+           coalesce((availability::jsonb ->> 'out_indefinitely')::boolean, false) as out_indefinitely
     from weeks
     order by league_id, player_key, week
 ),
@@ -109,14 +112,15 @@ totals as (
 joined as (
     select l.league_id, l.league_name, l.season, t.player_key, x.gsis_id, x.position, x.player_name, x.team,
            x.roster_status,
-           x.position = 'DEF' or coalesce(x.roster_status, 'ACT') = 'ACT'                as is_ranked,
+           (x.position = 'DEF' or coalesce(x.roster_status, 'ACT') = 'ACT') and not x.out_indefinitely   as is_ranked,
+           x.out_indefinitely,
            l.from_week, l.last_week, l.playoff_week_start,
-           t.ros_games, round(t.ros_points, 2) as ros_points,
-           round(t.ros_points / t.ros_games, 2)                                          as ros_points_per_game,
-           t.playoff_games, round(t.playoff_points, 2) as playoff_points,
+           t.ros_games, case when not x.out_indefinitely then round(t.ros_points, 2) end as ros_points,
+           case when not x.out_indefinitely then round(t.ros_points / t.ros_games, 2) end as ros_points_per_game,
+           t.playoff_games, case when not x.out_indefinitely then round(t.playoff_points, 2) end as playoff_points,
            round(t.ros_sd::numeric, 2)                                                   as ros_sd,
-           round(greatest(0, t.ros_points - 1.2816 * t.ros_sd)::numeric, 1)             as ros_p10,
-           round((t.ros_points + 1.2816 * t.ros_sd)::numeric, 1)                         as ros_p90,
+           case when not x.out_indefinitely then round(greatest(0, t.ros_points - 1.2816 * t.ros_sd)::numeric, 1) end as ros_p10,
+           case when not x.out_indefinitely then round((t.ros_points + 1.2816 * t.ros_sd)::numeric, 1) end as ros_p90,
            -- his team's bye(s) inside the window (no game that week); the weeks he is not counted for
            array(select gs from generate_series(l.from_week, l.last_week) as gs
                  where not exists (select 1 from {{ ref('dim_game') }} as g
@@ -130,7 +134,7 @@ joined as (
 )
 
 select
-    league_id, league_name, season, player_key, gsis_id, position, player_name, team, roster_status, is_ranked,
+    league_id, league_name, season, player_key, gsis_id, position, player_name, team, roster_status, is_ranked, out_indefinitely,
     from_week, last_week, playoff_week_start,
     ros_games, ros_points, ros_points_per_game, ros_p10, ros_p90, ros_sd, playoff_games, playoff_points,
     case when is_ranked then rank() over (partition by league_id, position, is_ranked order by ros_points desc, player_key) end

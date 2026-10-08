@@ -1714,6 +1714,7 @@ def _compare_gate(ctx: Ctx, *pairs: tuple[dict, dict]) -> list[str]:
         x = st.get(side.get("gsis_id"))
         if not x:
             continue
+        x = {**x, "cannot_play": AV.sits(x)}                       # ---- IS-1: a status that rarely plays sits too
         side["availability"] = {k: x.get(k) for k in ("status", "code", "why", "source", "as_of", "cannot_play",
                                                       "out_indefinitely", "week_words", "ros_words")}
         if x.get("cannot_play"):

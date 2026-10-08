@@ -181,9 +181,9 @@ def _statuses(df: pd.DataFrame, season: int | None = None, week: int | None = No
         rep = rep if isinstance(rep, str) and rep and rep != "Healthy" else None
         fl = getattr(r, "injury", None)
         fl = str(fl).upper() if isinstance(fl, str) and fl.strip() else None
-        if a is not None and (a.get("cannot_play") or a.get("flagged")):
+        if a is not None and (availability.sits(a) or a.get("flagged")):          # ---- IS-1: sits()
             status.append(a.get("status"))
-            out.append(bool(a.get("cannot_play")))
+            out.append(bool(availability.sits(a)))
             src.append(a.get("source"))
         elif rep is not None:
             status.append(rep)
