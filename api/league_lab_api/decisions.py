@@ -2803,7 +2803,7 @@ def _ir2_lineup(ctx: TradeContext, c: T.Covered, changes: list[dict], gets, meta
             nm += " (free agent for the week)"
         gs = None if pid is None else (ctx.gsis(pid) if ctx.board.owner(pid) is not None else (meta.get(pid) or {}).get("gsis_id"))
         v = start_value(s)
-        rows.append({"slot": s.slot.label, "player_name": nm, "gsis_id": _str(gs), "value": v,
+        rows.append({"slot": cards.slot_label(s.slot.label), "player_name": nm, "gsis_id": _str(gs), "value": v,
                      "change": None if pid is None or pid in before else v,
                      "no_projection": s.player is not None and s.player.value_source == UNVALUED,
                      "status": "new" if pid in gets else "in" if pid is not None and pid not in before else None,
