@@ -104,3 +104,14 @@ def test_lineup_no_longer_sits_on_nflverse_report_status():
 def test_replacement_sql_reads_the_record_not_the_report():
     from league_lab import trades as T
     assert "injury_status is distinct from" not in T.REPLACEMENT_SQL and "'availability'" in T.REPLACEMENT_SQL
+
+
+def test_reports_status_column_is_the_gates_and_a_sitter_is_no_target():
+    from league_lab import reports as R
+    cols = ["player_name", "injury_status", "_gsis"]
+    rows = [("De'Von Achane", None, ACHANE), ("Last Week Out", "Out", HEALTHY), ("C", None, "g3")]
+    bl = {ACHANE: _block("IR", "knee - acl")}
+    c, r = R._gated(cols, rows, bl)
+    assert c == ["player_name", "injury_status"] and r == [("De'Von Achane", "IR"), ("Last Week Out", None), ("C", None)]
+    c, r = R._gated(cols, rows, bl, drop=True, limit=1)
+    assert r == [("Last Week Out", None)]
