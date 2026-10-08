@@ -5240,4 +5240,15 @@ finding as § "v3.6" (a QB's later weeks are about his level, which his record h
 v3.6's blend moves QB later weeks toward that record and is not in this run. What this is not: a package of several
 players, a cross-position trade, the league's lineup effect (the connected calculator's number) or whether the other
 manager accepts. The trade verdict's "about even" band is not graded by this either.
+### His own record beyond next week at RB / WR / TE (the simple baseline) — definition written at 10:49 ET 2026-10-08, before any of its numbers was read
+
+The windows above have a simple baseline at QB only. **The baseline**: a player's points per game this season through
+week W (his played games), or last season's when he has not played this season; a row whose player has neither is left
+out of both the model's and the baseline's numbers. **The rows**: `iq1_horizon.future_rows` as of W = 3, 5, 7, 9 of
+2021–2025, horizons 1–8, variant *ad* (v3.5 = v3.6 at RB / WR / TE), one fit per season and position, both house
+scorings; scored per season × W × target week × position × league on the players who played (≥ 8 a cell), MAE and
+Spearman, pooled as above (next four weeks = h 1–4, rest of season = h 1–8; mean over cells within a season, then
+over seasons). QB is run too, as a check against B2 (v3.5's rows). **The reading** (a grade, no keep rule): the model
+"beats his own record" in a window at a position when its Spearman is higher **and** its MAE lower in at least 4 of the
+5 seasons; "level with his own record" when neither side does that; otherwise "behind his own record".
 <!-- ---- end IR-4 -->
