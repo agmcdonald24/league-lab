@@ -3,6 +3,27 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 8 (afternoon) · nobody who cannot play is ranked, and one trade verdict
+
+- **We ranked a player on injured reserve, and that was wrong.** De'Von Achane is out for the season and was our
+  21st running back this week. The rankings read one injury source and his player card another. Now every list, the
+  start question and both trade calculators use the same check: a player on injured reserve, suspended or ruled out
+  gets no projection and no trade value, and is listed under "Not playing" with the reason and where it came from.
+  About 80 players were affected.
+- **The trade calculator gives one answer.** A review showed us a trade where the headline, the dial and the
+  week-by-week table disagreed. Every part now reads the same comparison: an empty starting spot is filled from the
+  waiver wire, for both teams. What happens if you leave the spot empty is shown separately and labelled.
+- **Each screen says what has been checked.** One line under rankings and trade answers: the model version, when the
+  data was published, which weeks it covers and how that kind of projection did on 2021–2025. Where we have not
+  graded something, it says "not graded".
+- **Quarterbacks beyond next week are still our weak spot.** Over five seasons, following our pick over a
+  quarterback's own scoring record would not have scored more. For running backs, receivers and tight ends it
+  would have.
+- **No verdict when a team's starter is unclear.** The trade calculator gives the numbers and holds the
+  recommendation. When we set a starter by hand, the verdict is marked "a lean".
+- **Safer releases.** Every release now runs 798 checks of lineup and trade decisions, and the site checks its own
+  rankings and a known trade after each nightly refresh.
+
 ## Oct 8 · the right starters, a better quarterback list, bye-week players back, and what we cut
 
 - **Bye-week players were missing from every rest-of-season list.** This is the first bye week, and Patrick

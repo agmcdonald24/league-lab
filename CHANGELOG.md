@@ -4,6 +4,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-08 — Wave I-R (dependability)
 
+- **PO — the merge, the starter rule on the league trade verdict, the nightly's lines.** The league trade verdict
+  reads IR-1's definition for "out with no return date" (`decisions.ir2_out_indefinitely`) and applies IR-4's
+  starter rule (`provenance.rule_trade` in `trades_evaluate`: starter unclear → no verdict and "No recommendation",
+  the numbers stand; starter set by hand → "(a lean)"); `api/tests/test_ir0.py`. `scripts/nightly.sh`: the
+  stored-board check `assert_nobody_who_cannot_play_is_projected` as a soft step before the audit (hard after one
+  green night); backtests soft when a backtest record exists; the post-publish check after the sync in CI, its lines
+  in the run's summary. `nightly.yml`: `LEAGUE_LAB_HOSTED_RETRIES=2`. `image.yml`: the `gate` job is advisory on
+  its first day (a warning, not a stop). docs/STATUS.md § "Wave I-R" has why the audit missed Achane, the
+  decisions, the rehearsal and what is not done.
 - **IR-3 — releases and publication that cannot quietly break.** The image workflow runs a gate first
   (`scripts/gate.sh`: 798 decision tests with no database, ruff, the web lint, type check and build; a skip fails it)
   and builds nothing when it is red. `/api/ready` answers 200 only when the published numbers can be served, else 503

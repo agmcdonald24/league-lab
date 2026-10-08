@@ -386,6 +386,20 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-R (2026-10-08; STATUS § "Wave I-R (Iteration 28) — dependability", the PO section first)**: a player on
+  injured reserve was ranked RB21 on the public screen and Andrew found it. **One definition of "cannot play"**
+  (`src/league_lab/availability_gate.py`; the API's `availability.statuses`): any new list, value or verdict calls
+  it — never `mart_player_availability.injury_status` directly (the readers still on the old field are listed in
+  STATUS). **A guard must not read the field it guards**: Wave I-Q's audit checked statuses through the same stored
+  field as the lists and passed with Achane ranked. **One trade verdict** (`decisions.ir2_decision`): a new sentence
+  or tile on the trade screen reads `decision`, never its own arithmetic. **Every analysis carries `provenance`**
+  and the starter rule (`provenance.rule_trade`: starter unclear → no verdict; set by hand → a lean). **The release
+  gate** (`scripts/gate.sh`, the `gate` job in `image.yml`) is advisory until its first green run on GitHub — then
+  delete the `||` line; the nightly's `availability-gate` step is soft until one green night — then `hard`. Do not
+  run `scripts/gate.sh` (it rebuilds `web/dist`) while the e2e suite is running. **The safe publish (`swap`) is
+  built and off**: two copies do not fit Neon's free 512 MB; on is Andrew's decision. After a deploy:
+  `python3 scripts/post_deploy_check.py https://isuckatfantasy.io` from any machine that reaches the site (the
+  sandbox does not; the nightly runs it and prints it in the run's summary).
 * **Wave I-Q (2026-10-07/08; STATUS § "Wave I-Q (Iteration 27) — trust", the PO section first)**: **after any gap,
   read the sandbox before answering** (`git branch --sort=-committerdate`, `git worktree list`, the newest
   `/home/claude/wave*/BRIEF.md`): this wave sat finished overnight after a usage limit and the PO started it twice.

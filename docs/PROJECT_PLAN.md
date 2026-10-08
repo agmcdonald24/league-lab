@@ -598,6 +598,26 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 28 — Wave I-R, dependability (2026-10-08, Thursday 10:00 – early afternoon ET)
+
+Andrew, with an outside dependability review attached: "You can't have injured people in the rankings who aren't
+playing. Devon Achane … Why is he ranked the 21st running back to start this week? He's out for the year … This
+needs to be addressed ASAP." Four devs: **IR-1** nobody who cannot play is ranked, valued or projected (one
+definition read from Sleeper's directory and ESPN, in `project` and again on every public route at request time; a
+"Not playing" group with the reason and its source; 79 players, 320.5 projected points, now 0; the audit's first
+rule and a dbt test on the stored board); **IR-2** one trade verdict (the dial, tiles, week table, headline,
+alternative and recommendation read one answer on one basis — against realistic replacements — with the roster-only
+result as a labelled explanation; slot sentences and depth counts corrected); **IR-3** a release gate (798 decision
+tests with no database, lint, build), `/api/ready`, a post-deploy check, publication with a marker, retries and a
+`swap` mode with rollback (off: it needs a paid database tier); **IR-4** `provenance` on every analysis and one line
+on the screens, starter uncertainty carried into the verdict, About's versions, the first "useful decision" grade
+(beyond next week the model's pick beats the player's own record at RB / WR / TE and **not at QB**). The PO's
+decisions: the nightly's stored-board check and the release gate start soft / advisory for one run; the drop
+publish stays the default. Acceptance and evidence: `docs/STATUS.md` § "Wave I-R". **Next**: enforce the gate and
+the stored-board check; move the remaining readers of the old status field to the one definition; the Finder's
+partner rows and the best-waiver search on the verdict's basis; the role forecast for later weeks (still the
+largest known quarterback error); Andrew's decision on the paid database tier for the safe publish.
+
 ### Iteration 27 — Wave I-Q, trust (2026-10-07/08, Wednesday evening – Thursday morning)
 
 After the first outside traffic and the first public criticism (hotfix v3.5: the rest-of-season QB list). Andrew:
