@@ -25,6 +25,9 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   status, its source and date ("IR (knee - acl) · Sleeper, Sep 28") beside a player who sits; the card withholds a
   projection the stored mart still holds for him. Kyler Murray (last week's "Out") is a free agent to add again in
   League of Scrubs, as the Rankings rank him. `docs/handbacks/IS-2.md`.
+- **IS-3 — the trade tests whole again.** The three trade-calculator browser tests parked this afternoon run again on
+  trades that are legal on today's test data (a League of Scrubs package whose extra player changes the dial's label;
+  a kicker for a starting quarterback, labelled implausible), re-saved from the API. docs/handbacks/IS-3.md.
 
 ## 2026-10-08 — hotfix: /api/ready through the hosted pooler; the release gate enforced
 

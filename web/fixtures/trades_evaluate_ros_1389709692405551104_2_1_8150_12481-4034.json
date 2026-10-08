@@ -1,0 +1,2612 @@
+{
+ "league_id": "1389709692405551104",
+ "source": "database",
+ "roster_id": 2,
+ "partner": 1,
+ "partner_team": "Daejon Loves PR team",
+ "week": 5,
+ "weeks": [
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16
+ ],
+ "span": "weeks 5–16",
+ "window": "ros",
+ "window_label": "Rest of season",
+ "window_why": "every week left to this league's final, playoffs included: the longest view, the least sure",
+ "give": [
+  {
+   "sleeper_id": "8150",
+   "gsis_id": "00-0037840",
+   "player_name": "Kyren Williams",
+   "position": "RB",
+   "team": "LA",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+   "this_week": 19.25,
+   "cannot_play": null,
+   "market_price": 101,
+   "season_points": 204,
+   "roster_id": 2
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "4034",
+   "gsis_id": "00-0033280",
+   "player_name": "Christian McCaffrey",
+   "position": "RB",
+   "team": "SF",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+   "this_week": 15.47,
+   "cannot_play": null,
+   "market_price": 99,
+   "season_points": 202,
+   "roster_id": 1
+  },
+  {
+   "sleeper_id": "12481",
+   "gsis_id": "00-0040715",
+   "player_name": "Cam Skattebo",
+   "position": "RB",
+   "team": "NYG",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+   "this_week": 12.65,
+   "cannot_play": null,
+   "market_price": 67,
+   "season_points": 170,
+   "roster_id": 1
+  }
+ ],
+ "before": {
+  "mine": {
+   "this_week": 127.12,
+   "horizon": 1450.29,
+   "bench": 31.9,
+   "by_week": [
+    127.12,
+    123.06,
+    113.83,
+    122.52,
+    123.11,
+    122.25,
+    111.0,
+    123.5,
+    121.47,
+    118.56,
+    122.27,
+    121.6
+   ]
+  },
+  "theirs": {
+   "this_week": 109.32,
+   "horizon": 1300.75,
+   "bench": 37.3,
+   "by_week": [
+    109.32,
+    111.23,
+    110.7,
+    99.41,
+    109.4,
+    108.13,
+    108.74,
+    111.5,
+    109.58,
+    106.04,
+    107.36,
+    109.34
+   ]
+  }
+ },
+ "after": {
+  "mine": {
+   "this_week": 125.77,
+   "horizon": 1483.63,
+   "bench": 38.65,
+   "by_week": [
+    125.77,
+    125.86,
+    123.17,
+    115.97,
+    126.7,
+    125.11,
+    120.93,
+    125.16,
+    124.57,
+    121.12,
+    124.67,
+    124.6
+   ]
+  },
+  "theirs": {
+   "this_week": 109.23,
+   "horizon": 1249.77,
+   "bench": 28.52,
+   "by_week": [
+    109.23,
+    106.94,
+    105.86,
+    106.77,
+    103.16,
+    101.83,
+    94.99,
+    107.9,
+    104.91,
+    100.93,
+    102.48,
+    104.77
+   ]
+  }
+ },
+ "fit": {
+  "this_week": {
+   "mine": -1.35,
+   "theirs": -0.09
+  },
+  "window": {
+   "mine": 33.34,
+   "theirs": -50.98
+  },
+  "next_4": {
+   "mine": 33.34,
+   "theirs": -50.98
+  },
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-1.4** this week and **+33.3** over weeks 5–16; them **-0.1** and **-51.0**."
+ },
+ "interest": {
+  "score": 0,
+  "label": "Makes their lineup weaker",
+  "their_gain": -50.98,
+  "you": 33.34,
+  "caption": "their starters over weeks 5–16, against realistic replacements",
+  "title": "Effect on their starters",
+  "need": "puts Williams at their RB in place of McCaffrey, puts Egbuka at their FLEX in place of Henderson and moves Henderson from FLEX to RB"
+ },
+ "sanity": null,
+ "market": {
+  "give": 101,
+  "get": 166,
+  "season_points_give": 204,
+  "season_points_get": 372,
+  "unknown": [],
+  "replacement": {
+   "DEF": {
+    "season_points": 105,
+    "player_name": "Washington Commanders"
+   },
+   "K": {
+    "season_points": 121,
+    "player_name": "Cameron Dicker"
+   },
+   "QB": {
+    "season_points": 231,
+    "player_name": "Malik Willis"
+   },
+   "RB": {
+    "season_points": 103,
+    "player_name": "Keaton Mitchell"
+   },
+   "TE": {
+    "season_points": 104,
+    "player_name": "T.J. Hockenson"
+   },
+   "WR": {
+    "season_points": 117,
+    "player_name": "KC Concepcion"
+   }
+  },
+  "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **101**, you get **166**: you get 65 more.",
+  "players": [
+   {
+    "sleeper_id": "8150",
+    "gsis_id": "00-0037840",
+    "player_name": "Kyren Williams",
+    "position": "RB",
+    "team": "LA",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+    "this_week": 19.25,
+    "cannot_play": null,
+    "market_price": 101,
+    "season_points": 204,
+    "roster_id": 2,
+    "goes_to": "Daejon Loves PR team"
+   },
+   {
+    "sleeper_id": "4034",
+    "gsis_id": "00-0033280",
+    "player_name": "Christian McCaffrey",
+    "position": "RB",
+    "team": "SF",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+    "this_week": 15.47,
+    "cannot_play": null,
+    "market_price": 99,
+    "season_points": 202,
+    "roster_id": 1,
+    "goes_to": "You"
+   },
+   {
+    "sleeper_id": "12481",
+    "gsis_id": "00-0040715",
+    "player_name": "Cam Skattebo",
+    "position": "RB",
+    "team": "NYG",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+    "this_week": 12.65,
+    "cannot_play": null,
+    "market_price": 67,
+    "season_points": 170,
+    "roster_id": 1,
+    "goes_to": "You"
+   }
+  ]
+ },
+ "verdict": "Helps your lineup +33.3 over weeks 5–16 (-1.4 this week), costs their lineup 0.1 (51.0 over weeks 5–16); you get more season value: a lineup loss for them.",
+ "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280) and [Cam Skattebo](/player/00-0040715).** Helps your lineup +33.3 over weeks 5–16 (-1.4 this week), costs their lineup 0.1 (51.0 over weeks 5–16); you get more season value: a lineup loss for them.",
+ "ros": {
+  "give": 186,
+  "get": 345,
+  "window": "weeks 4–16",
+  "words": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 186, you get 345.",
+  "label": "Rest-of-season projected points",
+  "fairness": false
+ },
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    10,
+    10
+   ],
+   "theirs": [
+    9,
+    9
+   ],
+   "n": 10
+  },
+  "bench_value": {
+   "mine": [
+    6,
+    5
+   ],
+   "theirs": [
+    5,
+    8
+   ],
+   "n": 10
+  },
+  "words": "League rank, week 5: you 10th → **10th** of 10, Daejon Loves PR team 9th → 9th; depth: you 6th → **5th** of 10, Daejon Loves PR team 5th → 8th."
+ },
+ "size_words": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 46 season points; costs 0.0 over weeks 5–16) to stay at 15 players; they open a spot: the best free agent for it is [Malik Willis](/player/00-0038128) (QB, +28.4 over weeks 5–16).",
+ "sides": {
+  "mine": {
+   "roster_id": 2,
+   "team_name": "MacZaddy",
+   "gives": [
+    {
+     "sleeper_id": "8150",
+     "gsis_id": "00-0037840",
+     "player_name": "Kyren Williams",
+     "position": "RB",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+     "this_week": 19.25,
+     "cannot_play": null,
+     "market_price": 101,
+     "season_points": 204,
+     "roster_id": 2
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "4034",
+     "gsis_id": "00-0033280",
+     "player_name": "Christian McCaffrey",
+     "position": "RB",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+     "this_week": 15.47,
+     "cannot_play": null,
+     "market_price": 99,
+     "season_points": 202,
+     "roster_id": 1
+    },
+    {
+     "sleeper_id": "12481",
+     "gsis_id": "00-0040715",
+     "player_name": "Cam Skattebo",
+     "position": "RB",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+     "this_week": 12.65,
+     "cannot_play": null,
+     "market_price": 67,
+     "season_points": 170,
+     "roster_id": 1
+    }
+   ],
+   "weeks": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ],
+   "before": {
+    "this_week": 97.54,
+    "horizon": 1402.84,
+    "bench": 31.9,
+    "by_week": [
+     97.54,
+     123.06,
+     105.63,
+     122.52,
+     123.11,
+     122.25,
+     101.33,
+     123.5,
+     121.47,
+     118.56,
+     122.27,
+     121.6
+    ]
+   },
+   "after": {
+    "this_week": 96.19,
+    "horizon": 1436.18,
+    "bench": 38.65,
+    "by_week": [
+     96.19,
+     125.86,
+     114.97,
+     115.97,
+     126.7,
+     125.11,
+     111.26,
+     125.16,
+     124.57,
+     121.12,
+     124.67,
+     124.6
+    ]
+   },
+   "gain_week": -1.35,
+   "gain_horizon": 33.34,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "11643",
+      "gsis_id": "00-0039874",
+      "player_name": "Jaylen Wright",
+      "position": "RB",
+      "team": "MIA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+      "this_week": 3.47,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 46,
+      "roster_id": 2
+     },
+     "horizon_loss": 0.0,
+     "season_points": 46
+    }
+   ],
+   "limit": 15,
+   "size_before": 15,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 101,
+   "price_in": 166,
+   "points_out": 204,
+   "points_in": 372,
+   "starts": [
+    {
+     "sleeper_id": "4034",
+     "gsis_id": "00-0033280",
+     "player_name": "Christian McCaffrey",
+     "position": "RB",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+     "this_week": 15.47,
+     "cannot_play": null,
+     "market_price": 99,
+     "season_points": 202,
+     "roster_id": 1
+    },
+    {
+     "sleeper_id": "12481",
+     "gsis_id": "00-0040715",
+     "player_name": "Cam Skattebo",
+     "position": "RB",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+     "this_week": 12.65,
+     "cannot_play": null,
+     "market_price": 67,
+     "season_points": 170,
+     "roster_id": 1
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "8150",
+     "gsis_id": "00-0037840",
+     "player_name": "Kyren Williams",
+     "position": "RB",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+     "this_week": 19.25,
+     "cannot_play": null,
+     "market_price": 101,
+     "season_points": 204,
+     "roster_id": 2
+    },
+    {
+     "sleeper_id": "6794",
+     "gsis_id": "00-0036322",
+     "player_name": "Justin Jefferson",
+     "position": "WR",
+     "team": "MIN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+     "this_week": 10.22,
+     "cannot_play": null,
+     "market_price": 18,
+     "season_points": 134,
+     "roster_id": 2
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 1,
+   "team_name": "Daejon Loves PR team",
+   "gives": [
+    {
+     "sleeper_id": "4034",
+     "gsis_id": "00-0033280",
+     "player_name": "Christian McCaffrey",
+     "position": "RB",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+     "this_week": 15.47,
+     "cannot_play": null,
+     "market_price": 99,
+     "season_points": 202,
+     "roster_id": 1
+    },
+    {
+     "sleeper_id": "12481",
+     "gsis_id": "00-0040715",
+     "player_name": "Cam Skattebo",
+     "position": "RB",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+     "this_week": 12.65,
+     "cannot_play": null,
+     "market_price": 67,
+     "season_points": 170,
+     "roster_id": 1
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "8150",
+     "gsis_id": "00-0037840",
+     "player_name": "Kyren Williams",
+     "position": "RB",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+     "this_week": 19.25,
+     "cannot_play": null,
+     "market_price": 101,
+     "season_points": 204,
+     "roster_id": 2
+    }
+   ],
+   "weeks": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ],
+   "before": {
+    "this_week": 99.9,
+    "horizon": 1264.45,
+    "bench": 37.3,
+    "by_week": [
+     99.9,
+     111.23,
+     110.7,
+     99.41,
+     109.4,
+     81.25,
+     108.74,
+     111.5,
+     109.58,
+     106.04,
+     107.36,
+     109.34
+    ]
+   },
+   "after": {
+    "this_week": 99.81,
+    "horizon": 1213.47,
+    "bench": 28.52,
+    "by_week": [
+     99.81,
+     106.94,
+     105.86,
+     106.77,
+     103.16,
+     74.95,
+     94.99,
+     107.9,
+     104.91,
+     100.93,
+     102.48,
+     104.77
+    ]
+   },
+   "gain_week": -0.09,
+   "gain_horizon": -50.98,
+   "cuts": [],
+   "limit": 15,
+   "size_before": 15,
+   "size_after": 14,
+   "opened": 1,
+   "fill": {
+    "sleeper_id": "8161",
+    "week_gains": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     2.53,
+     18.02,
+     2.28,
+     0.0,
+     0.51,
+     1.46,
+     1.78,
+     1.84
+    ],
+    "horizon_gain": 28.42
+   },
+   "price_out": 166,
+   "price_in": 101,
+   "points_out": 372,
+   "points_in": 204,
+   "starts": [
+    {
+     "sleeper_id": "8150",
+     "gsis_id": "00-0037840",
+     "player_name": "Kyren Williams",
+     "position": "RB",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+     "this_week": 19.25,
+     "cannot_play": null,
+     "market_price": 101,
+     "season_points": 204,
+     "roster_id": 2
+    },
+    {
+     "sleeper_id": "12514",
+     "gsis_id": "00-0040129",
+     "player_name": "Emeka Egbuka",
+     "position": "WR",
+     "team": "TB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z224kbzs62rjuykc0vha",
+     "this_week": 8.78,
+     "cannot_play": null,
+     "market_price": 4,
+     "season_points": 120,
+     "roster_id": 1
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "4034",
+     "gsis_id": "00-0033280",
+     "player_name": "Christian McCaffrey",
+     "position": "RB",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+     "this_week": 15.47,
+     "cannot_play": null,
+     "market_price": 99,
+     "season_points": 202,
+     "roster_id": 1
+    },
+    {
+     "sleeper_id": "12481",
+     "gsis_id": "00-0040715",
+     "player_name": "Cam Skattebo",
+     "position": "RB",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+     "this_week": 12.65,
+     "cannot_play": null,
+     "market_price": 67,
+     "season_points": 170,
+     "roster_id": 1
+    }
+   ]
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Jacoby Brissett (free agent for the week)",
+     "gsis_id": "00-0033119",
+     "value": 20.9,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": true
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Christian McCaffrey (new)",
+     "gsis_id": "00-0033280",
+     "value": 15.47,
+     "change": 15.47,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Cam Skattebo (new)",
+     "gsis_id": "00-0040715",
+     "value": 12.65,
+     "change": 12.65,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Puka Nacua",
+     "gsis_id": "00-0039075",
+     "value": 17.6,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Michael Wilson",
+     "gsis_id": "00-0038559",
+     "value": 14.14,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "TE",
+     "player_name": "T.J. Hockenson (free agent for the week)",
+     "gsis_id": "00-0035229",
+     "value": 8.68,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": true
+    },
+    {
+     "slot": "FLEX1",
+     "player_name": "Omarion Hampton",
+     "gsis_id": "00-0040666",
+     "value": 11.92,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "FLEX2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 11.42,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "K",
+     "player_name": "Nick Folk",
+     "gsis_id": "00-0025565",
+     "value": 8.51,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Buffalo Bills",
+     "gsis_id": null,
+     "value": 4.48,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    }
+   ],
+   "notes": [
+    "Cam Skattebo (from the trade) starts at RB in place of Kyren Williams (traded).",
+    "Christian McCaffrey (from the trade) starts at FLEX in place of Justin Jefferson (to the bench)."
+   ],
+   "closest_call": "Parker Washington at FLEX2, 1.20 ahead of the next option",
+   "out": [
+    {
+     "slot": "RB",
+     "player_name": "Kyren Williams",
+     "gsis_id": "00-0037840",
+     "value": 19.25,
+     "change": -19.25,
+     "why": "traded"
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Justin Jefferson",
+     "gsis_id": "00-0036322",
+     "value": 10.22,
+     "change": -10.22,
+     "why": "to the bench"
+    }
+   ],
+   "reshuffled": [],
+   "total": {
+    "before": 127.12,
+    "after": 125.77,
+    "change": -1.35
+   }
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Jalen Hurts",
+     "gsis_id": "00-0036389",
+     "value": 17.07,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Kyren Williams (new)",
+     "gsis_id": "00-0037840",
+     "value": 19.25,
+     "change": 19.25,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
+    },
+    {
+     "slot": "RB2",
+     "player_name": "RJ Harvey",
+     "gsis_id": "00-0040730",
+     "value": 9.48,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR1",
+     "player_name": "George Pickens",
+     "gsis_id": "00-0037247",
+     "value": 11.56,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR2",
+     "player_name": "DK Metcalf",
+     "gsis_id": "00-0035640",
+     "value": 11.01,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "TE",
+     "player_name": "Dalton Kincaid",
+     "gsis_id": "00-0038933",
+     "value": 8.32,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "FLEX1",
+     "player_name": "TreVeyon Henderson",
+     "gsis_id": "00-0040734",
+     "value": 8.86,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "FLEX2",
+     "player_name": "Emeka Egbuka",
+     "gsis_id": "00-0040129",
+     "value": 8.78,
+     "change": 8.78,
+     "no_projection": false,
+     "status": "in",
+     "fill": false
+    },
+    {
+     "slot": "K",
+     "player_name": "Ka'imi Fairbairn (free agent for the week)",
+     "gsis_id": "00-0032726",
+     "value": 9.42,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": true
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Philadelphia Eagles",
+     "gsis_id": null,
+     "value": 5.48,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    }
+   ],
+   "notes": [
+    "Kyren Williams (from the trade) starts at RB in place of Christian McCaffrey (traded).",
+    "Emeka Egbuka (from the bench) starts at FLEX in place of TreVeyon Henderson.",
+    "TreVeyon Henderson moves from FLEX to RB in place of Cam Skattebo (traded)."
+   ],
+   "closest_call": "Emeka Egbuka at FLEX2, 0.85 ahead of the next option",
+   "out": [
+    {
+     "slot": "RB",
+     "player_name": "Christian McCaffrey",
+     "gsis_id": "00-0033280",
+     "value": 15.47,
+     "change": -15.47,
+     "why": "traded"
+    },
+    {
+     "slot": "RB",
+     "player_name": "Cam Skattebo",
+     "gsis_id": "00-0040715",
+     "value": 12.65,
+     "change": -12.65,
+     "why": "traded"
+    }
+   ],
+   "reshuffled": [
+    "TreVeyon Henderson FLEX → RB"
+   ],
+   "total": {
+    "before": 109.32,
+    "after": 109.23,
+    "change": -0.09
+   }
+  }
+ },
+ "fill_players": {
+  "8161": {
+   "player_name": "Malik Willis",
+   "position": "QB",
+   "gsis_id": "00-0038128",
+   "sleeper_id": "8161"
+  }
+ },
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)",
+ "starters_in": [
+  {
+   "player": {
+    "sleeper_id": "12481",
+    "gsis_id": "00-0040715",
+    "player_name": "Cam Skattebo",
+    "position": "RB",
+    "team": "NYG",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+    "this_week": 12.65,
+    "cannot_play": null,
+    "market_price": 67,
+    "season_points": 170,
+    "roster_id": 1
+   },
+   "slot": "RB",
+   "value": 12.65,
+   "how": "trade"
+  },
+  {
+   "player": {
+    "sleeper_id": "4034",
+    "gsis_id": "00-0033280",
+    "player_name": "Christian McCaffrey",
+    "position": "RB",
+    "team": "SF",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+    "this_week": 15.47,
+    "cannot_play": null,
+    "market_price": 99,
+    "season_points": 202,
+    "roster_id": 1
+   },
+   "slot": "FLEX",
+   "value": 15.47,
+   "how": "trade"
+  }
+ ],
+ "starters_out": [
+  {
+   "player": {
+    "sleeper_id": "8150",
+    "gsis_id": "00-0037840",
+    "player_name": "Kyren Williams",
+    "position": "RB",
+    "team": "LA",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+    "this_week": 19.25,
+    "cannot_play": null,
+    "market_price": 101,
+    "season_points": 204,
+    "roster_id": 2
+   },
+   "slot": "RB",
+   "value": 19.25,
+   "why": "traded"
+  },
+  {
+   "player": {
+    "sleeper_id": "6794",
+    "gsis_id": "00-0036322",
+    "player_name": "Justin Jefferson",
+    "position": "WR",
+    "team": "MIN",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+    "this_week": 10.22,
+    "cannot_play": null,
+    "market_price": 18,
+    "season_points": 134,
+    "roster_id": 2
+   },
+   "slot": "FLEX",
+   "value": 10.22,
+   "why": "to the bench"
+  }
+ ],
+ "cut": [
+  {
+   "player": {
+    "sleeper_id": "11643",
+    "gsis_id": "00-0039874",
+    "player_name": "Jaylen Wright",
+    "position": "RB",
+    "team": "MIA",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+    "this_week": 3.47,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 46,
+    "roster_id": 2
+   },
+   "season_points": 46,
+   "words": "You must cut Jaylen Wright to make room (he does not start for you: no lineup points lost)."
+  }
+ ],
+ "effect_words": "Your starting lineup: about 1.4 fewer points this week, about 33 more in total over weeks 5–16.",
+ "lineup_words": "Cam Skattebo (from the trade) starts at RB in place of Kyren Williams (traded); Christian McCaffrey (from the trade) starts at FLEX in place of Justin Jefferson (to the bench).",
+ "backup_words": "Backup coverage: you lose Jaylen Wright, a backup RB: 1 RB left on your bench who can play in week 5 (Zach Charbonnet in the IR slot and Jonah Coleman in the IR slot cannot).",
+ "their_change": {
+  "gain_week": -0.09,
+  "gain_window": -50.98,
+  "starters_in": [
+   {
+    "player": {
+     "sleeper_id": "8150",
+     "gsis_id": "00-0037840",
+     "player_name": "Kyren Williams",
+     "position": "RB",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+     "this_week": 19.25,
+     "cannot_play": null,
+     "market_price": 101,
+     "season_points": 204,
+     "roster_id": 2
+    },
+    "slot": "RB",
+    "value": 19.25,
+    "how": "trade"
+   },
+   {
+    "player": {
+     "sleeper_id": "12514",
+     "gsis_id": "00-0040129",
+     "player_name": "Emeka Egbuka",
+     "position": "WR",
+     "team": "TB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z224kbzs62rjuykc0vha",
+     "this_week": 8.78,
+     "cannot_play": null,
+     "market_price": 4,
+     "season_points": 120,
+     "roster_id": 1
+    },
+    "slot": "FLEX",
+    "value": 8.78,
+    "how": "bench"
+   }
+  ],
+  "starters_out": [
+   {
+    "player": {
+     "sleeper_id": "4034",
+     "gsis_id": "00-0033280",
+     "player_name": "Christian McCaffrey",
+     "position": "RB",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+     "this_week": 15.47,
+     "cannot_play": null,
+     "market_price": 99,
+     "season_points": 202,
+     "roster_id": 1
+    },
+    "slot": "RB",
+    "value": 15.47,
+    "why": "traded"
+   },
+   {
+    "player": {
+     "sleeper_id": "12481",
+     "gsis_id": "00-0040715",
+     "player_name": "Cam Skattebo",
+     "position": "RB",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+     "this_week": 12.65,
+     "cannot_play": null,
+     "market_price": 67,
+     "season_points": 170,
+     "roster_id": 1
+    },
+    "slot": "RB",
+    "value": 12.65,
+    "why": "traded"
+   }
+  ],
+  "effect_words": "Daejon Loves PR team's starting lineup: about 0.1 fewer points this week, about 51 fewer in total over weeks 5–16.",
+  "lineup_words": "Kyren Williams (from the trade) starts at RB in place of Christian McCaffrey (traded); Emeka Egbuka (from the bench) starts at FLEX in place of TreVeyon Henderson; TreVeyon Henderson moves from FLEX to RB in place of Cam Skattebo (traded)."
+ },
+ "window_words": "over weeks 5–16 in total",
+ "hold_words": "+33.3 over weeks 5–16, 33.3 more than your best waiver move (add Jacoby Brissett, drop Bryce Young: +0.0 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+ "hold": {
+  "hold": null,
+  "waiver": "+33.3 over weeks 5–16, 33.3 more than your best waiver move (add Jacoby Brissett, drop Bryce Young: +0.0 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+  "waiver_gain": 0.0
+ },
+ "how": {
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-1.4** this week and **+33.3** over weeks 5–16; them **-0.1** and **-51.0**.",
+  "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **101**, you get **166**: you get 65 more.",
+  "ros": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 186, you get 345.",
+  "size": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 46 season points; costs 0.0 over weeks 5–16) to stay at 15 players; they open a spot: the best free agent for it is [Malik Willis](/player/00-0038128) (QB, +28.4 over weeks 5–16).",
+  "ranks": "League rank, week 5: you 10th → **10th** of 10, Daejon Loves PR team 9th → 9th; depth: you 6th → **5th** of 10, Daejon Loves PR team 5th → 8th.",
+  "season_value": "Season value above replacement: you give 101, you get 166 (you get 65 more). You get 2 players for 1: 1 more roster spot used."
+ },
+ "alternative": {
+  "kind": "waiver",
+  "player": {
+   "sleeper_id": "3257",
+   "gsis_id": "00-0033119",
+   "player_name": "Jacoby Brissett",
+   "position": "QB"
+  },
+  "drop": {
+   "sleeper_id": "9228",
+   "gsis_id": "00-0039150",
+   "player_name": "Bryce Young",
+   "position": "QB"
+  },
+  "open_spot": false,
+  "gain_week": 0.0,
+  "gain_window": 0.0,
+  "by_week": [
+   20.9,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "weeks": [
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ],
+  "span": "weeks 5–16",
+  "source": "fa_pool fill",
+  "note": null,
+  "words": "add Jacoby Brissett, drop Bryce Young: +0.0 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "covered_by_week": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "covered_window": 0.0,
+  "covered_week": 0.0,
+  "availability": "claim",
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+ },
+ "beyond_alternative": 33.34,
+ "beats_alternative": true,
+ "alternative_words": "+33.3 over weeks 5–16, 33.3 more than your best waiver move (add Jacoby Brissett, drop Bryce Young: +0.0 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+ "other_objective": null,
+ "strip": {
+  "weeks": [
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ],
+  "mine": [
+   -1.35,
+   2.8,
+   9.34,
+   -6.55,
+   3.59,
+   2.86,
+   9.93,
+   1.66,
+   3.1,
+   2.56,
+   2.4,
+   3.0
+  ],
+  "theirs": [
+   -0.09,
+   -4.29,
+   -4.84,
+   7.36,
+   -6.24,
+   -6.3,
+   -13.75,
+   -3.6,
+   -4.67,
+   -5.11,
+   -4.88,
+   -4.57
+  ]
+ },
+ "story": {
+  "this_week": {
+   "week": 5,
+   "change": -1.35,
+   "kind": "loss"
+  },
+  "window": {
+   "change": 33.34,
+   "kind": "gain"
+  },
+  "by_week": [
+   {
+    "week": 5,
+    "change": -1.35
+   },
+   {
+    "week": 6,
+    "change": 2.8
+   },
+   {
+    "week": 7,
+    "change": 9.34
+   },
+   {
+    "week": 8,
+    "change": -6.55
+   },
+   {
+    "week": 9,
+    "change": 3.59
+   },
+   {
+    "week": 10,
+    "change": 2.86
+   },
+   {
+    "week": 11,
+    "change": 9.93
+   },
+   {
+    "week": 12,
+    "change": 1.66
+   },
+   {
+    "week": 13,
+    "change": 3.1
+   },
+   {
+    "week": 14,
+    "change": 2.56
+   },
+   {
+    "week": 15,
+    "change": 2.4
+   },
+   {
+    "week": 16,
+    "change": 3.0
+   }
+  ],
+  "words": "Your lineup loses 1.4 this week but gains 33.3 over weeks 5–16 in total (week 8 loses 6.5)."
+ },
+ "values": {
+  "projected_points": {
+   "label": "Projected points",
+   "words": "One player's forecast for one week, in this league's scoring (the lineup tables)."
+  },
+  "starter_points": {
+   "label": "Starter points",
+   "mine": 33.34,
+   "theirs": -50.98,
+   "this_week": {
+    "mine": -1.35,
+    "theirs": -0.09
+   },
+   "words": "Your starting lineup: about 1.4 fewer points this week, about 33 more in total over weeks 5–16."
+  },
+  "depth": {
+   "label": "Backup coverage",
+   "mine": {
+    "before": 31.9,
+    "after": 38.65
+   },
+   "theirs": {
+    "before": 37.3,
+    "after": 28.52
+   },
+   "words": "Backup coverage: you lose Jaylen Wright, a backup RB: 1 RB left on your bench who can play in week 5 (Zach Charbonnet in the IR slot and Jonah Coleman in the IR slot cannot)."
+  },
+  "season_value": {
+   "label": "Season value above replacement",
+   "give": 101,
+   "get": 166,
+   "unknown": [],
+   "fairness": true,
+   "words": "Season value above replacement: you give 101, you get 166 (you get 65 more). You get 2 players for 1: 1 more roster spot used."
+  },
+  "ros_points": {
+   "label": "Rest-of-season projected points",
+   "give": 186,
+   "get": 345,
+   "window": "weeks 4–16",
+   "fairness": false,
+   "words": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 186, you get 345."
+  }
+ },
+ "card": {
+  "give": [
+   {
+    "sleeper_id": "8150",
+    "gsis_id": "00-0037840",
+    "player_name": "Kyren Williams",
+    "position": "RB",
+    "team": "LA",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+    "this_week": 19.25,
+    "cannot_play": null,
+    "market_price": 101,
+    "season_points": 204,
+    "roster_id": 2
+   }
+  ],
+  "get": [
+   {
+    "sleeper_id": "4034",
+    "gsis_id": "00-0033280",
+    "player_name": "Christian McCaffrey",
+    "position": "RB",
+    "team": "SF",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+    "this_week": 15.47,
+    "cannot_play": null,
+    "market_price": 99,
+    "season_points": 202,
+    "roster_id": 1
+   },
+   {
+    "sleeper_id": "12481",
+    "gsis_id": "00-0040715",
+    "player_name": "Cam Skattebo",
+    "position": "RB",
+    "team": "NYG",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+    "this_week": 12.65,
+    "cannot_play": null,
+    "market_price": 67,
+    "season_points": 170,
+    "roster_id": 1
+   }
+  ],
+  "partner": 1,
+  "drops": {
+   "mine": [
+    {
+     "player": {
+      "sleeper_id": "11643",
+      "gsis_id": "00-0039874",
+      "player_name": "Jaylen Wright",
+      "position": "RB",
+      "team": "MIA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+      "this_week": 3.47,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 46,
+      "roster_id": 2
+     },
+     "words": "You must cut Jaylen Wright."
+    }
+   ],
+   "theirs": []
+  },
+  "your_effect": {
+   "this_week": -1.35,
+   "window": 33.34,
+   "by_week": [
+    -1.35,
+    2.8,
+    9.34,
+    -6.55,
+    3.59,
+    2.86,
+    9.93,
+    1.66,
+    3.1,
+    2.56,
+    2.4,
+    3.0
+   ],
+   "raw_window": 33.34,
+   "words": "Your starters: -1.4 this week, +33.3 over weeks 5–16."
+  },
+  "their_effect": {
+   "this_week": -0.09,
+   "window": -50.98,
+   "by_week": [
+    -0.09,
+    -4.29,
+    -4.84,
+    7.36,
+    -6.24,
+    -6.3,
+    -13.75,
+    -3.6,
+    -4.67,
+    -5.11,
+    -4.88,
+    -4.57
+   ],
+   "raw_window": -50.98,
+   "words": "Daejon Loves PR team's starters: -0.1 this week, -51.0 over weeks 5–16."
+  },
+  "depth_cost": {
+   "mine": "You lose Jaylen Wright, a backup RB: 1 RB left on your bench who can play in week 5 (Zach Charbonnet in the IR slot and Jonah Coleman in the IR slot cannot). You use 1 more roster spot.",
+   "theirs": null,
+   "roster_spots": 1,
+   "season_value": {
+    "give": 101,
+    "get": 166
+   },
+   "horizon": null
+  },
+  "waiver_alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "3257",
+     "gsis_id": "00-0033119",
+     "player_name": "Jacoby Brissett",
+     "position": "QB"
+    },
+    "drop": {
+     "sleeper_id": "9228",
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB"
+    },
+    "open_spot": false,
+    "gain_week": 20.9,
+    "gain_window": 20.9,
+    "by_week": [
+     20.9,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16
+    ],
+    "span": "weeks 5–16",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Jacoby Brissett claim gives +20.9 over weeks 5–16 (drop Bryce Young)",
+    "covered_by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "covered_window": 0.0,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "8161",
+     "gsis_id": "00-0038128",
+     "player_name": "Malik Willis",
+     "position": "QB"
+    },
+    "drop": {
+     "sleeper_id": "12517",
+     "gsis_id": "00-0040126",
+     "player_name": "Colston Loveland",
+     "position": "TE"
+    },
+    "open_spot": false,
+    "gain_week": 0.0,
+    "gain_window": 28.42,
+    "by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     2.53,
+     18.02,
+     2.28,
+     0.0,
+     0.51,
+     1.46,
+     1.78,
+     1.84
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16
+    ],
+    "span": "weeks 5–16",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Malik Willis claim gives +28.4 over weeks 5–16 (drop Colston Loveland)",
+    "covered_by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     2.53,
+     0.0,
+     2.28,
+     0.0,
+     0.51,
+     1.46,
+     1.78,
+     1.84
+    ],
+    "covered_window": 10.4,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "words": "Yours: add Jacoby Brissett, drop Bryce Young: +0.0 over weeks 5–16 (+20.9 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Colston Loveland: +10.4 over weeks 5–16 (+28.4 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+  },
+  "beyond": {
+   "mine": 33.34,
+   "theirs": -61.38,
+   "margin": 1.0
+  },
+  "why_consider": [
+   "Kyren Williams starts for them in weeks 5, 6, 7, 8, 9, 10, 12, 13, 14, 15 and 16.",
+   "It frees 1 roster spot for them."
+  ],
+  "why_refuse": [
+   "Their starters lose 0.1 this week.",
+   "It does not improve their starters over weeks 5–16 (-51.0).",
+   "They give 166 season value above replacement for 101: 65 more, over 25% of what you give."
+  ],
+  "plausibility": {
+   "key": "implausible",
+   "label": "Implausible",
+   "reasons": [
+    "they give 166 season value above replacement for 101: 65 more, over 25% of what you give"
+   ]
+  },
+  "guardrails": [
+   {
+    "rule": "value_gap_theirs",
+    "words": "they give 166 season value above replacement for 101: 65 more, over 25% of what you give"
+   }
+  ],
+  "legal": {
+   "ok": true,
+   "notes": [
+    "You must cut Jaylen Wright to make room."
+   ],
+   "checks": [
+    "ownership (trades.clean_package)",
+    "roster limits and required cuts (trades._after)",
+    "locked players (RosterBoard.is_locked)",
+    "position requirements (lineup.solve)",
+    "trade deadline (league settings)"
+   ]
+  },
+  "credible": false,
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "words": "Not worth proposing: Daejon Loves PR team's starters end 61.4 behind their own best move over weeks 5–16; they give 166 season value above replacement for 101: 65 more, over 25% of what you give.",
+   "plausibility": "Implausible"
+  }
+ },
+ "decision": {
+  "basis": "replacement",
+  "basis_label": "Against realistic replacements",
+  "basis_words": "Every number here fills an empty starting slot (a bye, a cut, a player traded away) with the best free agent who can play it that week, for both teams and never the same free agent for both, and compares the trade with each team's best waiver move.",
+  "weeks": [
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ],
+  "span": "weeks 5–16",
+  "window": "ros",
+  "this_week": 5,
+  "mine": {
+   "before": {
+    "this_week": 127.12,
+    "window": 1450.29,
+    "by_week": [
+     127.12,
+     123.06,
+     113.83,
+     122.52,
+     123.11,
+     122.25,
+     111.0,
+     123.5,
+     121.47,
+     118.56,
+     122.27,
+     121.6
+    ]
+   },
+   "after": {
+    "this_week": 125.77,
+    "window": 1483.63,
+    "by_week": [
+     125.77,
+     125.86,
+     123.17,
+     115.97,
+     126.7,
+     125.11,
+     120.93,
+     125.16,
+     124.57,
+     121.12,
+     124.67,
+     124.6
+    ]
+   },
+   "gain_week": -1.35,
+   "gain_window": 33.34,
+   "by_week": [
+    -1.35,
+    2.8,
+    9.34,
+    -6.55,
+    3.59,
+    2.86,
+    9.93,
+    1.66,
+    3.1,
+    2.56,
+    2.4,
+    3.0
+   ],
+   "cuts": [
+    {
+     "sleeper_id": "11643",
+     "gsis_id": "00-0039874",
+     "player_name": "Jaylen Wright",
+     "position": "RB",
+     "team": "MIA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+     "this_week": 3.47,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 46,
+     "roster_id": 2
+    }
+   ]
+  },
+  "theirs": {
+   "before": {
+    "this_week": 109.32,
+    "window": 1300.75,
+    "by_week": [
+     109.32,
+     111.23,
+     110.7,
+     99.41,
+     109.4,
+     108.13,
+     108.74,
+     111.5,
+     109.58,
+     106.04,
+     107.36,
+     109.34
+    ]
+   },
+   "after": {
+    "this_week": 109.23,
+    "window": 1249.77,
+    "by_week": [
+     109.23,
+     106.94,
+     105.86,
+     106.77,
+     103.16,
+     101.83,
+     94.99,
+     107.9,
+     104.91,
+     100.93,
+     102.48,
+     104.77
+    ]
+   },
+   "gain_week": -0.09,
+   "gain_window": -50.98,
+   "by_week": [
+    -0.09,
+    -4.29,
+    -4.84,
+    7.36,
+    -6.24,
+    -6.3,
+    -13.75,
+    -3.6,
+    -4.67,
+    -5.11,
+    -4.88,
+    -4.57
+   ],
+   "cuts": []
+  },
+  "dial": {
+   "score": 0,
+   "label": "Makes their lineup weaker",
+   "their_gain": -50.98,
+   "you": 33.34,
+   "caption": "their starters over weeks 5–16, against realistic replacements",
+   "title": "Effect on their starters",
+   "need": "puts Williams at their RB in place of McCaffrey, puts Egbuka at their FLEX in place of Henderson and moves Henderson from FLEX to RB"
+  },
+  "verdict": "Helps your lineup +33.3 over weeks 5–16 (-1.4 this week), costs their lineup 0.1 (51.0 over weeks 5–16); you get more season value: a lineup loss for them.",
+  "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280) and [Cam Skattebo](/player/00-0040715).** Helps your lineup +33.3 over weeks 5–16 (-1.4 this week), costs their lineup 0.1 (51.0 over weeks 5–16); you get more season value: a lineup loss for them.",
+  "effect_words": "Your starting lineup: about 1.4 fewer points this week, about 33 more in total over weeks 5–16.",
+  "their_effect_words": "Daejon Loves PR team's starting lineup: about 0.1 fewer points this week, about 51 fewer in total over weeks 5–16.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-1.4** this week and **+33.3** over weeks 5–16; them **-0.1** and **-51.0**.",
+  "strip": {
+   "weeks": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ],
+   "mine": [
+    -1.35,
+    2.8,
+    9.34,
+    -6.55,
+    3.59,
+    2.86,
+    9.93,
+    1.66,
+    3.1,
+    2.56,
+    2.4,
+    3.0
+   ],
+   "theirs": [
+    -0.09,
+    -4.29,
+    -4.84,
+    7.36,
+    -6.24,
+    -6.3,
+    -13.75,
+    -3.6,
+    -4.67,
+    -5.11,
+    -4.88,
+    -4.57
+   ]
+  },
+  "story": {
+   "this_week": {
+    "week": 5,
+    "change": -1.35,
+    "kind": "loss"
+   },
+   "window": {
+    "change": 33.34,
+    "kind": "gain"
+   },
+   "by_week": [
+    {
+     "week": 5,
+     "change": -1.35
+    },
+    {
+     "week": 6,
+     "change": 2.8
+    },
+    {
+     "week": 7,
+     "change": 9.34
+    },
+    {
+     "week": 8,
+     "change": -6.55
+    },
+    {
+     "week": 9,
+     "change": 3.59
+    },
+    {
+     "week": 10,
+     "change": 2.86
+    },
+    {
+     "week": 11,
+     "change": 9.93
+    },
+    {
+     "week": 12,
+     "change": 1.66
+    },
+    {
+     "week": 13,
+     "change": 3.1
+    },
+    {
+     "week": 14,
+     "change": 2.56
+    },
+    {
+     "week": 15,
+     "change": 2.4
+    },
+    {
+     "week": 16,
+     "change": 3.0
+    }
+   ],
+   "words": "Your lineup loses 1.4 this week but gains 33.3 over weeks 5–16 in total (week 8 loses 6.5)."
+  },
+  "alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "3257",
+     "gsis_id": "00-0033119",
+     "player_name": "Jacoby Brissett",
+     "position": "QB"
+    },
+    "drop": {
+     "sleeper_id": "9228",
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB"
+    },
+    "open_spot": false,
+    "gain_week": 0.0,
+    "gain_window": 0.0,
+    "by_week": [
+     20.9,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16
+    ],
+    "span": "weeks 5–16",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Jacoby Brissett, drop Bryce Young: +0.0 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "covered_window": 0.0,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "8161",
+     "gsis_id": "00-0038128",
+     "player_name": "Malik Willis",
+     "position": "QB"
+    },
+    "drop": {
+     "sleeper_id": "12517",
+     "gsis_id": "00-0040126",
+     "player_name": "Colston Loveland",
+     "position": "TE"
+    },
+    "open_spot": false,
+    "gain_week": 0.0,
+    "gain_window": 28.42,
+    "by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     2.53,
+     18.02,
+     2.28,
+     0.0,
+     0.51,
+     1.46,
+     1.78,
+     1.84
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16
+    ],
+    "span": "weeks 5–16",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Malik Willis, drop Colston Loveland: +10.4 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     2.53,
+     0.0,
+     2.28,
+     0.0,
+     0.51,
+     1.46,
+     1.78,
+     1.84
+    ],
+    "covered_window": 10.4,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "beyond": {
+    "mine": 33.34,
+    "theirs": -61.38
+   },
+   "beats": true,
+   "words": "+33.3 over weeks 5–16, 33.3 more than your best waiver move (add Jacoby Brissett, drop Bryce Young: +0.0 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "other_objective": null
+  },
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "words": "Not worth proposing: Daejon Loves PR team's starters end 61.4 behind their own best move over weeks 5–16; they give 166 season value above replacement for 101: 65 more, over 25% of what you give.",
+   "plausibility": "Implausible"
+  },
+  "changes": {
+   "mine": [
+    {
+     "slot": "RB1",
+     "slot_type": "RB",
+     "in": "12481",
+     "out": "8150",
+     "in_from": null,
+     "out_to": null,
+     "order": 2,
+     "slot_word": "RB",
+     "in_how": "trade",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "12481",
+      "gsis_id": "00-0040715",
+      "player_name": "Cam Skattebo",
+      "position": "RB",
+      "team": "NYG",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+      "this_week": 12.65,
+      "cannot_play": null,
+      "market_price": 67,
+      "season_points": 170,
+      "roster_id": 1
+     },
+     "out_player": {
+      "sleeper_id": "8150",
+      "gsis_id": "00-0037840",
+      "player_name": "Kyren Williams",
+      "position": "RB",
+      "team": "LA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+      "this_week": 19.25,
+      "cannot_play": null,
+      "market_price": 101,
+      "season_points": 204,
+      "roster_id": 2
+     },
+     "in_value": 12.65,
+     "out_value": 19.25,
+     "words": "Cam Skattebo (from the trade) starts at RB in place of Kyren Williams (traded)"
+    },
+    {
+     "slot": "FLEX2",
+     "slot_type": "FLEX",
+     "in": "4034",
+     "out": "6794",
+     "in_from": null,
+     "out_to": null,
+     "order": 8,
+     "slot_word": "FLEX",
+     "in_how": "trade",
+     "out_why": "bench",
+     "in_player": {
+      "sleeper_id": "4034",
+      "gsis_id": "00-0033280",
+      "player_name": "Christian McCaffrey",
+      "position": "RB",
+      "team": "SF",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+      "this_week": 15.47,
+      "cannot_play": null,
+      "market_price": 99,
+      "season_points": 202,
+      "roster_id": 1
+     },
+     "out_player": {
+      "sleeper_id": "6794",
+      "gsis_id": "00-0036322",
+      "player_name": "Justin Jefferson",
+      "position": "WR",
+      "team": "MIN",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+      "this_week": 10.22,
+      "cannot_play": null,
+      "market_price": 18,
+      "season_points": 134,
+      "roster_id": 2
+     },
+     "in_value": 15.47,
+     "out_value": 10.22,
+     "words": "Christian McCaffrey (from the trade) starts at FLEX in place of Justin Jefferson (to the bench)"
+    }
+   ],
+   "theirs": [
+    {
+     "slot": "RB1",
+     "slot_type": "RB",
+     "in": "8150",
+     "out": "4034",
+     "in_from": null,
+     "out_to": null,
+     "order": 2,
+     "slot_word": "RB",
+     "in_how": "trade",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "8150",
+      "gsis_id": "00-0037840",
+      "player_name": "Kyren Williams",
+      "position": "RB",
+      "team": "LA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+      "this_week": 19.25,
+      "cannot_play": null,
+      "market_price": 101,
+      "season_points": 204,
+      "roster_id": 2
+     },
+     "out_player": {
+      "sleeper_id": "4034",
+      "gsis_id": "00-0033280",
+      "player_name": "Christian McCaffrey",
+      "position": "RB",
+      "team": "SF",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+      "this_week": 15.47,
+      "cannot_play": null,
+      "market_price": 99,
+      "season_points": 202,
+      "roster_id": 1
+     },
+     "in_value": 19.25,
+     "out_value": 15.47,
+     "words": "Kyren Williams (from the trade) starts at RB in place of Christian McCaffrey (traded)"
+    },
+    {
+     "slot": "FLEX2",
+     "slot_type": "FLEX",
+     "in": "12514",
+     "out": "12529",
+     "in_from": null,
+     "out_to": "RB2",
+     "order": 8,
+     "slot_word": "FLEX",
+     "in_how": "bench",
+     "out_why": "slot",
+     "in_player": {
+      "sleeper_id": "12514",
+      "gsis_id": "00-0040129",
+      "player_name": "Emeka Egbuka",
+      "position": "WR",
+      "team": "TB",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z224kbzs62rjuykc0vha",
+      "this_week": 8.78,
+      "cannot_play": null,
+      "market_price": 4,
+      "season_points": 120,
+      "roster_id": 1
+     },
+     "out_player": {
+      "sleeper_id": "12529",
+      "gsis_id": "00-0040734",
+      "player_name": "TreVeyon Henderson",
+      "position": "RB",
+      "team": "NE",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ebcjvwytgu2y4kqm8ihv",
+      "this_week": 8.86,
+      "cannot_play": null,
+      "market_price": 10,
+      "season_points": 113,
+      "roster_id": 1
+     },
+     "in_value": 8.78,
+     "out_value": 8.86,
+     "words": "Emeka Egbuka (from the bench) starts at FLEX in place of TreVeyon Henderson"
+    },
+    {
+     "slot": "RB2",
+     "slot_type": "RB",
+     "in": "12529",
+     "out": "12481",
+     "in_from": "FLEX2",
+     "out_to": null,
+     "order": 3,
+     "slot_word": "RB",
+     "in_how": "slot",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "12529",
+      "gsis_id": "00-0040734",
+      "player_name": "TreVeyon Henderson",
+      "position": "RB",
+      "team": "NE",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ebcjvwytgu2y4kqm8ihv",
+      "this_week": 8.86,
+      "cannot_play": null,
+      "market_price": 10,
+      "season_points": 113,
+      "roster_id": 1
+     },
+     "out_player": {
+      "sleeper_id": "12481",
+      "gsis_id": "00-0040715",
+      "player_name": "Cam Skattebo",
+      "position": "RB",
+      "team": "NYG",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+      "this_week": 12.65,
+      "cannot_play": null,
+      "market_price": 67,
+      "season_points": 170,
+      "roster_id": 1
+     },
+     "in_value": 8.86,
+     "out_value": 12.65,
+     "words": "TreVeyon Henderson moves from FLEX to RB in place of Cam Skattebo (traded)"
+    }
+   ],
+   "words": {
+    "mine": [
+     "Cam Skattebo (from the trade) starts at RB in place of Kyren Williams (traded)",
+     "Christian McCaffrey (from the trade) starts at FLEX in place of Justin Jefferson (to the bench)"
+    ],
+    "theirs": [
+     "Kyren Williams (from the trade) starts at RB in place of Christian McCaffrey (traded)",
+     "Emeka Egbuka (from the bench) starts at FLEX in place of TreVeyon Henderson",
+     "TreVeyon Henderson moves from FLEX to RB in place of Cam Skattebo (traded)"
+    ]
+   }
+  },
+  "depth": {
+   "mine": {
+    "words": "you lose Jaylen Wright, a backup RB: 1 RB left on your bench who can play in week 5 (Zach Charbonnet in the IR slot and Jonah Coleman in the IR slot cannot)",
+    "lost": [
+     {
+      "player": {
+       "sleeper_id": "11643",
+       "gsis_id": "00-0039874",
+       "player_name": "Jaylen Wright",
+       "position": "RB",
+       "team": "MIA",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+       "this_week": 3.47,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 46,
+       "roster_id": 2
+      },
+      "position": "RB",
+      "usable": [
+       "Jacory Croskey-Merritt"
+      ],
+      "cannot_play": [
+       {
+        "player_name": "Zach Charbonnet",
+        "why": "in the IR slot"
+       },
+       {
+        "player_name": "Jonah Coleman",
+        "why": "in the IR slot"
+       }
+      ],
+      "words": "you lose Jaylen Wright, a backup RB: 1 RB left on your bench who can play in week 5 (Zach Charbonnet in the IR slot and Jonah Coleman in the IR slot cannot)"
+     }
+    ],
+    "joins": []
+   },
+   "theirs": {
+    "words": null,
+    "lost": [],
+    "joins": []
+   }
+  },
+  "fills": {
+   "mine": {
+    "rows": [
+     {
+      "week": 5,
+      "state": "before",
+      "player": {
+       "sleeper_id": "3257",
+       "gsis_id": "00-0033119",
+       "player_name": "Jacoby Brissett",
+       "position": "QB"
+      },
+      "value": 20.9
+     },
+     {
+      "week": 5,
+      "state": "before",
+      "player": {
+       "sleeper_id": "5844",
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE"
+      },
+      "value": 8.68
+     },
+     {
+      "week": 5,
+      "state": "after",
+      "player": {
+       "sleeper_id": "3257",
+       "gsis_id": "00-0033119",
+       "player_name": "Jacoby Brissett",
+       "position": "QB"
+      },
+      "value": 20.9
+     },
+     {
+      "week": 5,
+      "state": "after",
+      "player": {
+       "sleeper_id": "5844",
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE"
+      },
+      "value": 8.68
+     },
+     {
+      "week": 7,
+      "state": "before",
+      "player": {
+       "sleeper_id": "CAR",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers",
+       "position": "DEF"
+      },
+      "value": 8.2
+     },
+     {
+      "week": 7,
+      "state": "after",
+      "player": {
+       "sleeper_id": "CAR",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers",
+       "position": "DEF"
+      },
+      "value": 8.2
+     },
+     {
+      "week": 11,
+      "state": "before",
+      "player": {
+       "sleeper_id": "8259",
+       "gsis_id": "00-0037224",
+       "player_name": "Cameron Dicker",
+       "position": "K"
+      },
+      "value": 9.67
+     },
+     {
+      "week": 11,
+      "state": "after",
+      "player": {
+       "sleeper_id": "8259",
+       "gsis_id": "00-0037224",
+       "player_name": "Cameron Dicker",
+       "position": "K"
+      },
+      "value": 9.67
+     }
+    ],
+    "words": "Assumed pickups for your empty slots: without the trade, Jacoby Brissett (QB, week 5), T.J. Hockenson (TE, week 5), Carolina Panthers (DEF, week 7) and Cameron Dicker (K, week 11); with it, Jacoby Brissett (QB, week 5), T.J. Hockenson (TE, week 5), Carolina Panthers (DEF, week 7) and Cameron Dicker (K, week 11). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   },
+   "theirs": {
+    "rows": [
+     {
+      "week": 5,
+      "state": "before",
+      "player": {
+       "sleeper_id": "3451",
+       "gsis_id": "00-0032726",
+       "player_name": "Ka'imi Fairbairn",
+       "position": "K"
+      },
+      "value": 9.42
+     },
+     {
+      "week": 5,
+      "state": "after",
+      "player": {
+       "sleeper_id": "3451",
+       "gsis_id": "00-0032726",
+       "player_name": "Ka'imi Fairbairn",
+       "position": "K"
+      },
+      "value": 9.42
+     },
+     {
+      "week": 10,
+      "state": "before",
+      "player": {
+       "sleeper_id": "8161",
+       "gsis_id": "00-0038128",
+       "player_name": "Malik Willis",
+       "position": "QB"
+      },
+      "value": 18.02
+     },
+     {
+      "week": 10,
+      "state": "before",
+      "player": {
+       "sleeper_id": "CAR",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers",
+       "position": "DEF"
+      },
+      "value": 8.86
+     },
+     {
+      "week": 10,
+      "state": "after",
+      "player": {
+       "sleeper_id": "8161",
+       "gsis_id": "00-0038128",
+       "player_name": "Malik Willis",
+       "position": "QB"
+      },
+      "value": 18.02
+     },
+     {
+      "week": 10,
+      "state": "after",
+      "player": {
+       "sleeper_id": "CAR",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers",
+       "position": "DEF"
+      },
+      "value": 8.86
+     }
+    ],
+    "words": "Assumed pickups for Daejon Loves PR team's empty slots: without the trade, Ka'imi Fairbairn (K, week 5), Malik Willis (QB, week 10) and Carolina Panthers (DEF, week 10); with it, Ka'imi Fairbairn (K, week 5), Malik Willis (QB, week 10) and Carolina Panthers (DEF, week 10). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   }
+  },
+  "unfilled": {
+   "label": "If empty slots were left empty",
+   "words": "With nobody added for an empty slot (it counts 0): your starters -1.4 this week, +33.3 over weeks 5–16; Daejon Loves PR team's -0.1 and -51.0. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "mine": {
+    "gain_week": -1.35,
+    "gain_window": 33.34,
+    "by_week": [
+     -1.35,
+     2.8,
+     9.34,
+     -6.55,
+     3.59,
+     2.86,
+     9.93,
+     1.66,
+     3.1,
+     2.56,
+     2.4,
+     3.0
+    ],
+    "before": {
+     "this_week": 97.54,
+     "window": 1402.84
+    },
+    "after": {
+     "this_week": 96.19,
+     "window": 1436.18
+    }
+   },
+   "theirs": {
+    "gain_week": -0.09,
+    "gain_window": -50.98,
+    "by_week": [
+     -0.09,
+     -4.29,
+     -4.84,
+     7.36,
+     -6.24,
+     -6.3,
+     -13.75,
+     -3.6,
+     -4.67,
+     -5.11,
+     -4.88,
+     -4.57
+    ],
+    "before": {
+     "this_week": 99.9,
+     "window": 1264.45
+    },
+    "after": {
+     "this_week": 99.81,
+     "window": 1213.47
+    }
+   }
+  },
+  "out_indefinitely": null
+ },
+ "provenance": {
+  "model_version": "v3.0",
+  "kd_model_version": null,
+  "published_at": "2026-10-05T12:21:31.576222+00:00",
+  "horizon": {
+   "first": 5,
+   "last": 16,
+   "market_week": 5,
+   "words": "weeks 5–16"
+  },
+  "checks": [
+   {
+    "span": "next",
+    "position": "RB",
+    "status": "graded",
+    "mae": 4.52,
+    "order": 0.686,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Running backs next week: graded (order 0.69)"
+   },
+   {
+    "span": "later",
+    "position": "RB",
+    "status": "graded",
+    "mae": 4.73,
+    "order": 0.636,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Running backs two to eight weeks ahead: graded (order 0.64)"
+   },
+   {
+    "span": "trade_gap",
+    "position": null,
+    "status": "not_graded",
+    "mae": null,
+    "order": null,
+    "ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+    "words": "The trade's range: not graded"
+   }
+  ],
+  "status": "not_graded",
+  "beta": true,
+  "words": "Beta · Model v3.0, data published 5 Oct, 8:21 am ET · weeks 5–16 · checked on 2021–2025: next week graded; two to eight weeks ahead graded; the trade's range not graded."
+ },
+ "caveats": [],
+ "caveat_effect": null,
+ "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+}

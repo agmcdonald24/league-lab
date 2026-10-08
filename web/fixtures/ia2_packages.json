@@ -24,27 +24,25 @@
   }
  },
  "1389709692405551104": {
-  "partner": 9,
+  "partner": 1,
   "from": {
    "give": [
-    "12490"
+    "8150"
    ],
    "get": [
-    "7021",
-    "11624"
+    "4034"
    ],
-   "label": "Hard to say no"
+   "label": "Improves it a lot"
   },
   "to": {
    "give": [
-    "12490"
+    "8150"
    ],
    "get": [
-    "7021",
-    "11624",
-    "4984"
+    "4034",
+    "12481"
    ],
-   "label": "Likely"
+   "label": "Makes their lineup weaker"
   }
  },
  "9000000000000000001": {
