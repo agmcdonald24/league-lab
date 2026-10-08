@@ -177,6 +177,7 @@ override_pick as (
       on o.season = p.season and o.team = p.team and p.week >= o.from_week
      and (o.through_week is null or p.week <= o.through_week)
     where not p.is_played and o.in_force
+      and coalesce(o.on_roster, false)           -- PO (Wave I-Q): a row whose quarterback is not on the team's roster is ignored (and warned), never a stop
       and {{ var('starter_overrides', true) }}   -- the kill switch: --vars '{starter_overrides: false}' = the schedule as before
     order by p.game_id, p.team, o.added_on desc, o.from_week desc, o.gsis_id
 )

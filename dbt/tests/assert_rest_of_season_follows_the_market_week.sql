@@ -4,7 +4,9 @@
 -- projection and the player's mean over the later live weeks. A row per position below its floor. The floors come from
 -- the horizon study (`iq1_horizon.py stability`: 2021-2025 as of weeks 3 / 5 / 7 / 9, 20 cells a position): with v3.5's
 -- inputs QB mean 0.79, lowest 0.59 (v3.4's: 0.67, lowest 0.44); RB / WR / TE lowest 0.69 / 0.79 / 0.77. Floors below
--- every v3.5 cell: QB 0.55, the others 0.65. A warning, never a stop for the nightly.
+-- every v3.5 cell: QB 0.55, the others 0.65. v3.6 (IQ-3's hb1.0 blends a later week with the quarterback's own per-game
+-- line, which is not this week's opponent and line): QB floor 0.45, below every v3.6 cell of the study (lowest 0.47 Half
+-- PPR; the PO, Wave I-Q). A warning, never a stop for the nightly.
 {{ config(severity='warn') }}
 with ref as (
     select league_id from {{ ref('dim_league_season') }} where is_reference_league and is_current_season
@@ -54,7 +56,7 @@ corr as (
 )
 
 select position, players, round(rank_corr::numeric, 3) as rank_corr,
-       case when position = 'QB' then {{ var('ros_corr_floor_qb', 0.55) }} else {{ var('ros_corr_floor', 0.65) }} end as floor
+       case when position = 'QB' then {{ var('ros_corr_floor_qb', 0.45) }} else {{ var('ros_corr_floor', 0.65) }} end as floor
 from corr
 where players >= 12
-  and rank_corr < case when position = 'QB' then {{ var('ros_corr_floor_qb', 0.55) }} else {{ var('ros_corr_floor', 0.65) }} end
+  and rank_corr < case when position = 'QB' then {{ var('ros_corr_floor_qb', 0.45) }} else {{ var('ros_corr_floor', 0.65) }} end

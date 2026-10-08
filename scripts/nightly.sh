@@ -161,6 +161,9 @@ summary() {
       for i in "${!STEP_NAMES[@]}"; do echo "| ${STEP_NAMES[$i]} | $(fmt "${STEP_SECS[$i]}") | ${STEP_RESULTS[$i]} |"; done
       while IFS= read -r line; do printf '\n`Done. %s`\n' "${line#*Done. }"; done < <(grep -h "Done. PASS=" logs/nightly.log 2>/dev/null | tail -2)
       while IFS= read -r line; do printf '\n`%s`\n' "$line"; done < <(grep -h "^verified: all" logs/sync.log 2>/dev/null | tail -1)
+      # ---- IQ-4 (Wave I-Q): the list audit, whole (about 100 lines of markdown), when it ran
+      if [ -s logs/list_audit.md ]; then echo; echo "<details><summary>List audit (the trust guard)</summary>"; echo; cat logs/list_audit.md; echo; echo "</details>"; fi
+      # ---- end IQ-4
     } >> "$GITHUB_STEP_SUMMARY"
   fi
 }
@@ -536,6 +539,11 @@ soft drift drift_if_unscored
 # ---- V-1 (Wave I-G): the decision record graded (the marts /api/record's `decisions` and the console's Record page read)
 SOFT_WHY="the hosted copy keeps last night's grade; the record itself is saved" soft decision-marts dbt_step decision-marts build --select mart_decision_record mart_decision_calls
 # ---- end V-1
+# ---- IQ-4 (Wave I-Q): the trust guard — every list a visitor opens without a league is audited against what the
+# players have scored, the starters and the bye teams (src/league_lab/audit.py; logs/list_audit.md; exit 0 always:
+# never a stop). The report's head and counts go in the run's summary: the PO reads them every morning.
+SOFT_WHY="the lists go out unaudited tonight" soft audit-lists uv run league-lab audit-lists
+# ---- end IQ-4
 
 # 4. Keep and publish.
 if [ "${NIGHTLY_BACKUP:-}" = 1 ]; then
