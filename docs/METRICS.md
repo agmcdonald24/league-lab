@@ -5129,3 +5129,88 @@ for Seattle the weeks 3–4 "starts" still belong to Lock: Darnold's and his rec
 `assert_frozen_projections_precede_kickoff`, `assert_frozen_nfl_wide_precede_kickoff`: PASS; the nightly's
 projection-marts selection 145 PASS (the 146th, the registry's unique metric, fixed and re-run: PASS).
 <!-- ---- end IQ-2 -->
+<!-- ---- IR-4 -->
+## What each number has been checked against (IR-4, Wave I-R, 2026-10-08; `api/league_lab_api/provenance.py`)
+
+The dependability review (P1 3) asked that every analysis say its model version, the data's publication time, the
+horizon it covers and the validation status of that horizon and position; that uncertain starters reach the verdict;
+that the trade calculator's horizons be graded separately against simple baselines; and that the "useful decision" be
+graded. This section holds the definitions; the numbers below are the studies' (no new model run unless named).
+
+### The status of a number (written 10:28 ET 2026-10-08 — after the studies' numbers were published, so it labels and decides nothing)
+
+Per horizon and position, from the studies: **next week** = horizon 1 (the market week, with its line), **two to eight
+weeks ahead** = horizons 2–8 pooled (`iq1_horizon.py` as of weeks 3 / 5 / 7 / 9 of 2021–2025, both house scorings; QB
+from `iq3_qb.py`, v3.6 = hb1.0; K / DEF from `iq4_kd_horizon.py`). **graded**: the order (Spearman with what happened)
+≥ 0.50; **graded, weak**: below 0.50; **no better than chance**: IQ-4's rule found the order no better than chance (K
+and DEF two to eight weeks ahead); **not graded**: nothing has measured it (the ranges around a season total and around
+a trade's gap, which add weekly ranges as if the weeks were independent).
+
+| | QB | RB | WR | TE | K | DEF |
+|---|---|---|---|---|---|---|
+| next week: order / miss (points per game) | 0.587 / 6.44 graded | 0.686 / 4.52 graded | 0.618 / 4.44 graded | 0.599 / 3.25 graded | 0.095 / 3.77 weak | 0.257 / 4.32 weak |
+| two to eight weeks ahead | 0.495 / 7.41 weak | 0.633 / 4.70 graded | 0.568 / 4.59 graded | 0.540 / 3.41 graded | 0.028 / 3.75 chance | 0.040 / 4.78 chance |
+
+(The QB 2–8 miss is v3.6's 7.406; `ros_grade.py`'s sentence said 7.6, v3.5's 7.56, and now says 7.4.)
+
+### The trade calculator's windows, by position (the horizons a trade uses)
+
+Each week's projection in the window scored against what the player did that week, pooled over the window's weeks
+(the mean over season × as-of week × target week × league cells, then over the 5 seasons) — **not** the window's total
+(the study keeps no player-level rows; a total is what the "useful decision" grade below measures). **Next four
+weeks** = horizons 1–4; **rest of season** = horizons 1–8 (the study's reach; a rest of season at week 5 is 14 weeks).
+RB / WR / TE: `iq1_horizon.py`'s cells (variant *ad* = v3.5, unchanged by v3.6 at these positions; pooled at 10:21 ET
+from the IQ-1 run's parquet). QB: v3.6 (hb1.0) and the naive baseline **B2** (his own per-game record with his listed
+role, the opponent and the line where there is one) from § "v3.6" by horizon (both scorings, seasons averaged).
+
+| window | QB v3.6 order / miss | QB baseline B2 | RB | WR | TE |
+|---|---|---|---|---|---|
+| next four weeks (h 1–4) | 0.538 / 6.93 | 0.537 / 7.00 | 0.660 / 4.63 | 0.594 / 4.48 | 0.564 / 3.35 |
+| rest of season (h 1–8) | 0.509 / 7.28 | 0.510 / 7.33 | 0.640 / 4.68 | 0.574 / 4.57 | 0.547 / 3.39 |
+
+Reading: at QB the model is level with its own per-game record on order over both windows and a little ahead on miss;
+RB / WR / TE have **no simple baseline measured** at these horizons yet (only the model). K / DEF: not pooled by window;
+two to eight weeks ahead no better than chance (above). These rows are written to the record as `ops.context_grade`
+kind `horizon` (`context_record.horizon_grade_rows`, constants with this section as their source) so the site reads
+them from one place; they are a study's numbers, not a prospective record: the nightly rewrites the later weeks' rows
+every night, so no week-W projection of week W+3 is kept to grade later (a prospective horizon record needs the
+rest-of-season board frozen at each kickoff — the PO's call, a new table).
+
+### Starter uncertainty in a decision (the rule; `provenance.caveats_for` / `apply`)
+
+A trade, start / sit call, waiver or lineup that depends on a quarterback whose team's starter is **unclear**
+(`starters.unclear`: U1, the listing is not the depth chart's first available QB, nobody corrected it) — or on an MFL
+team-QB unit of that team — is **withheld**: the numbers stay, the recommendation does not. Why: U1's flag turned out
+stale 12 times in 27 (2025 – 2026 week 4, § "Who starts"), and a starter's week against his backup's is about 10 points
+(Seattle week 5: 15.0 against 4.3), more than the 10-point "about even" band over a four-week window. A decision that
+depends on a quarterback set **by hand** (`starters.corrected`) is **softened**: the verdict stands as a lean with the
+sentence saying whom it assumes (the correction rests on evidence — he led the dropbacks — but a person made it). A
+receiver, back or tight end of such a team carries nothing: their projections do not read the QB inputs. The flag is
+the decision's first week's (the market week); later weeks of a window are assumed to follow it.
+
+### The "useful decision" grade (ud1.0) — definition written at 10:29 ET 2026-10-08, before any of its numbers was read
+
+**The question**: when the calculator favours one side, does that side score more over the next four weeks? Measured
+on single players (the one-for-one version of a trade), past seasons, information as of the decision.
+
+* **Decisions**: seasons 2021–2025; as of weeks W = 3, 5, 7, 9 (the decision is made before week W+1's games); the
+  rows `iq1_horizon.future_rows` builds (week W+1 as the mart builds it, W+2 … W+4 as the nightly builds a future
+  week), variant *ad* (v3.5; at QB v3.6 adds hb1.0, not applied in this run, so the QB rows grade v3.5); one fit per
+  season and position on 2016..S−1 (the production inputs); Half PPR scoring (League of Scrubs).
+* **The calculator's number**: each player's projected points summed over weeks W+1 … W+4 (a week without a row —
+  a bye, off the board — is 0).
+* **The outcome**: what he scored in those four weeks (a week he did not play is 0: what a manager gets).
+* **Players**: at each position the top players by the calculator's number — QB 24, RB 36, WR 36, TE 24 — among those
+  with a market-week row.
+* **Pairs**: every pair at the same position whose projected totals differ by **at most 20 %** of the larger (the
+  close calls a trade asks about); also reported: the pairs that differ by more than 10 % (where the calculator would
+  not call it about even).
+* **Useful**: the favoured player's four-week total is higher than the other's (a tie counts half). The **rate** is
+  the share of pairs; 50 % is a coin flip.
+* **Baseline**: the side favoured by his own per-game record — his points per game this season through week W
+  (played games) times his games in weeks W+1 … W+4 by the schedule; with no game this season, last season's points
+  per game; a pair where either has neither is left out of both.
+* **Reported**: rate by season and position, model and baseline, pairs counted; pooled = the mean over seasons. No
+  keep rule: a grade. The calculator is "useful" where its rate is above 50 % and above the baseline's in at least 4 of
+  the 5 seasons; "no better than his own record" otherwise.
+<!-- ---- end IR-4 -->

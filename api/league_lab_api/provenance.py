@@ -65,7 +65,7 @@ EXISTS_SQL = "select to_regclass('ops.projections') is not null as ok"
 # ---- what has been checked (docs/METRICS.md § "What each number has been checked against (IR-4)"): the horizon study
 # (iq1_horizon.py, as of weeks 3 / 5 / 7 / 9 of 2021–2025, both house scorings; v3.5 = candidate ad, unchanged for RB /
 # WR / TE by v3.6), the QB study (iq3_qb.py, v3.6 = hb1.0, against the naive baseline B2) and the K / DEF study
-# (iq4_kd_horizon.py). "order" = Spearman, "mae" = points per game. Status rule (written 10:45 ET 2026-10-08, after
+# (iq4_kd_horizon.py). "order" = Spearman, "mae" = points per game. Status rule (written 10:28 ET 2026-10-08, after
 # these published numbers were known — it decides nothing, it labels): graded = order ≥ 0.50; graded_weak = order below
 # 0.50, or no better than a simple baseline; chance = IQ-4's rule found the order no better than chance; not_graded =
 # nothing has measured it.
