@@ -750,3 +750,15 @@ def ingest_sleeper_projections_cmd(
     if not results:
         console.print("sleeper projections: nothing to load (no archived snapshot to replay)")
     raise typer.Exit(1 if _print_results(results) else 0)
+
+
+# ---- IQ-4 (Wave I-Q): the trust guard — every public list audited (league_lab.audit); exit 0 always
+@app.command("audit-lists")
+def audit_lists_cmd():
+    """Print the rows of every list a visitor can open without a league (Half PPR, PPR, Standard; this week, rest of
+    season, the free calculator's values) that a knowledgeable reader would laugh at, each with its reason; the same
+    markdown goes to logs/list_audit.md. Read only; exit code 0 always (the nightly's soft step)."""
+    from .audit import run
+
+    print(run(), end="")
+# ---- end IQ-4
