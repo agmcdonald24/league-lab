@@ -35,6 +35,7 @@ indefinitely").
 | `player.py` (the league card: status line, projection) | the old field + the older overlay's own codes; projection from the mart | the block: "⚠️ **IR (knee - acl) · Sleeper, Sep 28**. On injured reserve: …"; a player who sits gets no projection ("unavailable: …", `proj_points` 0.0) and no "Why this number" (it read the mart's 11.4) | **59 of 291 rostered skill players' lines change**: 34 lose last week's word ("Out" — Breece Hall, Justin Jefferson, Jayden Daniels, Kyler Murray …; "Questionable" — Burrow, Olave …) → "No injury designation"; 17 gain one (Achane, A.J. Brown, Etienne, Jordan Mason, Dart … "IR (…) · Sleeper, <date>"); 8 change word (Alec Pierce "Out" → "IR (heel) · Sleeper, Oct 2", Charbonnet "Out" → "PUP (knee - acl) · Sleeper, Oct 2" …). Achane's card: projection 11.44 (the mart, not yet rebuilt after `project`) → "unavailable: IR …", 0.0 |
 | `src/league_lab/lineup.py` `_proposed_player` (the nightly lineup, skill positions) | nflverse `report_status` Out / Doubtful → sits | the stored record (`ops.projections.availability`) → `sits`; reason = the block's label ("Out", "IR" …); nflverse `RES` kept | 0 of 393 rostered skill players change in week 5 (30 sit before and after: `RES` + recorded; this copy has no week-5 report rows) |
 | `roster_value.py` | no status read of its own (lineup roles / reasons) | inherits `lineup.py` | — |
+| `src/league_lab/reports.py` `team_brief` (the nightly's markdown pack: the roster tables and the free-agent tables) | the old field (`injury_status`, or the baseline rankings' `report_status`) printed; two target lists drop `Out` | the block's label printed; the target lists and the free agents' projections drop who `sits` (fetched wider, trimmed to the same 15 / 20 / 20) | Scrubs team 2's roster table: Coleman "IR", Charbonnet "PUP" (were blank) |
 | My Week (`myweek.lineup`), Team (`decisions.team`) — item 2 | a bare 0.00 (or "IR slot") | the row carries `sits` and the block's `why` beside his 0 | Scrubs team 2: Charbonnet "PUP (knee - acl) · Sleeper, Oct 2", Coleman "IR (ankle) · Sleeper, Sep 26"; Dynasty team 12: Adam Randall, Coleman |
 
 **Face validity** (the API on `league_lab_im4`, overlay off — the stored record decides; week 5):
@@ -58,18 +59,20 @@ tested (`test_waiver_browse_without_any_record_answers`).
 
 #### Tests
 
-* `api/tests/test_is2.py` 6 passed; `tests/test_is2_league_status.py` 8 passed. **On the old readers 10 of the 14
+* `api/tests/test_is2.py` 7 passed; `tests/test_is2_league_status.py` 9 passed. **On the old readers 10 of the 14
   fail** (the 4 that pass are the helpers' own tests): Waivers browse keeps Achane (old field empty, block IR), the
   trade fill marks him playable, the on-demand list gets no blocks, the lineup sits on `report_status` and not on the
   record, `REPLACEMENT_SQL` reads `injury_status`, the browse 500s without a record.
 * `tests/test_lineup.py::test_build_proposed_realised_locks_byes_and_flags` asserted the old rule (nflverse "Out" →
   sits): its player now carries the gate's record (`AG.record_text`), the same expected reason "Out". 265 passed.
-* Root suite (`check_root.sh`, on `league_lab_im4`): 11 failed / 1669 passed / 3 skipped; new against the known list:
+* Root suite (`check_root.sh`, on `league_lab_im4`), **last run on the final code: 5 failed / 1676 passed / 3 skipped,
+  one new by name — `test_ros.py::test_mart_matches_the_trade_engines_sum_on_the_same_weeks`, which fails the same on
+  `main`'s code on this database.** The first run (before the `test_lineup` update): 11 failed / 1669 passed; new:
   `test_lineup.py::test_build_proposed_realised_locks_byes_and_flags` (fixed above),
   `test_ros.py::test_mart_matches_the_trade_engines_sum_on_the_same_weeks` (fails on `main`'s code on this database
   too: data state), `test_v1.py::test_close_calls_are_the_cards_decisions[2,3,4,9,10]` — failed in that run and in one
-  targeted run right after it, then **passed 3 times in a row on the same code** (and on `main`'s code); I did not find
-  the cause; the PO's merge run will say.
+  targeted run right after it, then **passed 3 times in a row on the same code**, on `main`'s code, and in the last full
+  run; I did not find the cause (a transient state of this database during the first run is my best guess).
 * API test files of the modules I edited (`test_myweek`, `test_player`, `test_decisions`, `test_i0a`, `test_ib0`,
   `test_il4`, `test_anyleague`, `test_ip5`, `test_ig3`, `test_ir4`, `test_ia3`, `test_ir0`, `test_is2`, on
   `league_lab_im4`): 27 failed / 184 passed / 1 skipped; 24 of the 27 are in the known list; the other 3
@@ -99,10 +102,10 @@ tested (`test_waiver_browse_without_any_record_answers`).
   needs its own words. **Not done**: no screen shows them yet
   (no `ProvenanceLine` on Waivers / My Week), and start/sit does not soften for a hand-set quarterback (the "Who should
   I start?" handler is IS-1's file tonight).
-* `src/league_lab/reports.py` (the nightly's markdown report packs, five queries print or filter the old field),
-  `anyleague.UNIT_SKIP_STATUS` (MFL's team-QB unit skips a QB by nflverse's Out / Doubtful), and
+* `anyleague.UNIT_SKIP_STATUS` (MFL's team-QB unit skips a QB by nflverse's Out / Doubtful), and
   `mart_player_role_alerts.sql` (`trigger_ended` from the old field; read by `research.py`'s alerts and the card's role
-  block) are **not moved**; no request-time gate on the role alerts yet.
+  block) are **not moved**; no request-time gate on the role alerts yet. (`reports.py`'s league recap is not a league
+  screen and has no status column; only `team_brief` read the old field.)
 * The trade rosters' status cells (`Trades.svelte`, `TradeCard.svelte`: IS-3's files tonight) are not changed.
 * `lineup.py` still sits a **kicker** on nflverse's report status (kickers are IS-1's item 5); `RES` (nflverse's weekly
   roster) is kept in `lineup.py`, `FA_SQL`, `FA_POOL_SQL` and the free-agent SQL as an "active NFL roster" filter.
@@ -141,6 +144,6 @@ None needed in PO-owned files.
 
 #### Next
 
-`reports.py`, `UNIT_SKIP_STATUS` and the role alerts on the one definition (the alerts at request time); the trade
+`UNIT_SKIP_STATUS` and the role alerts on the one definition (the alerts at request time); the trade
 rosters' status cells once IS-3's files settle; `project`'s record for every player `sits()` leaves out (so the nightly
 lineup and the replacement level follow IS-1's Doubtful rule); item 3.

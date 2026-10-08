@@ -39,7 +39,8 @@ def _gated(cols: list[str], rows: list[tuple], bl: dict, *, drop: bool = False, 
            ) -> tuple[list[str], list[tuple]]:
     if "_gsis" not in cols:
         return cols, rows
-    gi, si = cols.index("_gsis"), (cols.index("injury_status") if "injury_status" in cols else None)
+    st = next((c for c in ("injury_status", "report_status") if c in cols), None)
+    gi, si = cols.index("_gsis"), (cols.index(st) if st else None)
     out = []
     for r in rows:
         b = bl.get(r[gi])
@@ -257,21 +258,24 @@ def team_brief(conn: psycopg.Connection, league_id: str, roster_id: int, out_dir
 
     c, r = _rows(conn, """
         select k.position, k.rank_pos as pos_rank, k.player_name, k.team, k.opponent, k.report_status, k.proj_points, k.c_form, k.c_usage, k.c_matchup, k.c_vegas,
-               k.implied_team_total, k.xppg_l5, k.ppg_std, a.is_current_starter as starter
+               k.implied_team_total, k.xppg_l5, k.ppg_std, a.is_current_starter as starter, k.gsis_id as _gsis
         from analytics.mart_player_week_rankings k
         join analytics.mart_player_availability a on a.gsis_id = k.gsis_id and a.league_id = %s
         where k.season = %s and k.week = %s and a.rostered_by_roster_id = %s
         order by array_position(array['QB','RB','WR','TE'], k.position), k.proj_points desc nulls last""", (league_id, season, next_wk, roster_id))
+    c, r = _gated(c, r, gate)                                                       # ---- IS-2
     pack.add(f"Week {next_wk} projections for your roster (baseline)", c, r,
              note="proj = form + usage + matchup + Vegas + home (+ intercept), in the reference league's scoring (projection v2 in this league's scoring is on the Rankings page); pos_rank among all rankable players at the position. See the Rankings page backtest before trusting a single rank",
              limit=None, csv_name="projections")
 
     c, r = _rows(conn, """
-        select k.position, k.rank_pos as pos_rank, k.player_name, k.team, k.opponent, k.report_status, k.proj_points, k.c_form, k.c_matchup, k.c_vegas, k.xppg_l5, k.ppg_std
+        select k.position, k.rank_pos as pos_rank, k.player_name, k.team, k.opponent, k.report_status, k.proj_points, k.c_form, k.c_matchup, k.c_vegas, k.xppg_l5, k.ppg_std,
+               k.gsis_id as _gsis
         from analytics.mart_player_week_rankings k
         join analytics.mart_player_availability a on a.gsis_id = k.gsis_id and a.league_id = %s
         where k.season = %s and k.week = %s and a.is_free_agent and k.is_rankable and k.position in ('QB','RB','WR','TE')
-        order by k.proj_points desc nulls last limit 20""", (league_id, season, next_wk))
+        order by k.proj_points desc nulls last limit 50""", (league_id, season, next_wk))
+    c, r = _gated(c, r, gate, drop=True, limit=20)                                  # ---- IS-2: who sits is no pickup
     pack.add(f"Best projected free agents for week {next_wk}", c, r, note="baseline formula, reference league's scoring", csv_name="projections_free_agents")
 
     c, r = _rows(conn, """
