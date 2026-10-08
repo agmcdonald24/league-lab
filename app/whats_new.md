@@ -3,6 +3,22 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 8 · the right starters, a better quarterback list, bye-week players back, and what we cut
+
+- **Bye-week players were missing from every rest-of-season list.** This is the first bye week, and Patrick
+  Mahomes, Travis Kelce, Kenneth Walker and every other Chief and Panther had no rest-of-season number, so the
+  trade calculator had no value for them. Fixed, for every bye week to come.
+- **Seattle's quarterback is Sam Darnold.** Our data source still lists Drew Lock, so we set Darnold by hand, and
+  the Rankings row says so. We tested four ways to pick starters automatically from depth charts and injury
+  reports; none was accurate enough to trust, so for now we check the disagreements ourselves every week.
+- **Rest-of-season quarterbacks, second round.** For weeks beyond the next one, a quarterback's projection now
+  leans partly on what he has actually done this season and last. Tested on five past seasons: closer in all five.
+  It is better, not solved: the remaining error is mostly not knowing who will still be starting weeks from now.
+- **Kickers and defenses have no rest-of-season ranking any more.** We graded ours for the first time: beyond next
+  week their order was no better than chance. This week's kicker and defense rankings stay.
+- **Every list is now checked every night** against what players have actually scored, so we find the odd ones
+  before you do. Rest-of-season screens also say plainly how far off those projections have been.
+
 ## Oct 7 (evening) · rest-of-season quarterbacks, fixed
 
 - **A reader caught us, and he was right.** Our rest-of-season quarterback list had Kyler Murray and Malik Willis

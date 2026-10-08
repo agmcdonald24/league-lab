@@ -598,6 +598,23 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 27 — Wave I-Q, trust (2026-10-07/08, Wednesday evening – Thursday morning)
+
+After the first outside traffic and the first public criticism (hotfix v3.5: the rest-of-season QB list). Andrew:
+"correct it but lets get a fix going as well. Same for full cure on the qb modeling. The model still isn't dependable
+enough to share too much." Three devs: **IQ-2** who starts (a hand-kept override list — Seattle: Darnold; four
+automatic sources measured, none passed; `mart_starter_check` for a weekly check; "Starter unclear" from the depth
+chart); **IQ-3** the quarterback model (baselines first; **v3.6 = v3.5 + hb1.0**, a later week blended with the
+quarterback's own per-game line: 2–8 weeks ahead MAE 7.56 → 7.41 in 5 of 5 seasons, Spearman 0.473 → 0.495; not
+cured — the ceiling analysis says what is left is mostly not knowing who still starts); **IQ-4** the bye-week bug
+(every player on a bye had no rest-of-season number: fixed at the roster file's cause), `league-lab audit-lists`
+(every public list against what players have scored, in the nightly's summary), kickers and defenses graded beyond
+next week (no better than chance: their rest-of-season list is off the public screen), one honest sentence on the
+rest-of-season screens, the usage counter fixed (views without a league were refused by the table; per-session
+depth). Acceptance and evidence: `docs/STATUS.md` § "Wave I-Q". **Next**: the role forecast for later weeks; the
+market week's read of the individual quarterback (Murray, Herbert, Shough flagged by the audit); "listing unless
+ruled out" through the board; a quarterback input for the receivers' models; the 2–8 week ranges.
+
 ### Iteration 26 — Wave I-P (2026-10-06/07, Tuesday 22:05 – Wednesday morning ET; the overnight build)
 
 Andrew: "ok. good lets keep this moving with an overnight push please." — the content the PO's. Five devs: **IP-1**

@@ -4,6 +4,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-08 — Wave I-Q
 
+- **PO — the merge, the nightly's audit step, the roster rule.** `scripts/nightly.sh` runs `league-lab audit-lists`
+  as a soft step and folds the report into the run's summary. An override row whose quarterback is not on the team's
+  roster is ignored and warned (it was a hard stop). Chicago's row ends at week 5 (the source corrected itself). The
+  guard's QB floor is 0.45 under v3.6. `api/RELEASE`: the last commit of a delivery now touches a path Render's
+  build filter watches (Wednesday night's push did not deploy). docs/STATUS.md § "Wave I-Q" has the findings, the
+  decisions, the rehearsal of the nightly on the merged tree and the audit's first report.
 <!-- ---- IQ-4 -->
 - **IQ-4 — the trust guard.** The bye-week bug: nflverse's weekly roster file lists only the teams that play, and
   the projection universe, the kickers and the personnel status read "the newest roster week" across all teams, so

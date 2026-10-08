@@ -386,6 +386,25 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-Q (2026-10-07/08; STATUS § "Wave I-Q (Iteration 27) — trust", the PO section first)**: **after any gap,
+  read the sandbox before answering** (`git branch --sort=-committerdate`, `git worktree list`, the newest
+  `/home/claude/wave*/BRIEF.md`): this wave sat finished overnight after a usage limit and the PO started it twice.
+  **A week freezes at its first kickoff (Thursday 20:15 ET) and is never rewritten** — anything wrong then is on the
+  site until Tuesday; starters must be right by Thursday afternoon. **Who starts**: `dbt/seeds/starter_overrides.csv`
+  (hand-kept; unplayed games only; a row expires once its quarterback does not lead a game; an off-roster row is
+  ignored and warned) and `analytics.mart_starter_check` — **every Tuesday and Thursday morning**: `select team,
+  listed_name, depth_available_name, last_name, listed_report, override_name, projected_name from
+  analytics.mart_starter_check where not agree` (on the hosted copy through the audit in the nightly's summary),
+  check the disagreements against public reports, add / re-date / delete rows. No automatic source passed the
+  identification rule (METRICS § "Who starts"). **The audit**: `league-lab audit-lists` runs in the nightly (soft)
+  and its whole report is in the run's summary on GitHub — read it every morning before telling Andrew a number
+  is fine; its first rule is coverage (every team in every list: the bye-week bug). **Model v3.6** = v3.5 + hb1.0
+  (`calibration.horizon_blend_lines`, `LEAGUE_LAB_QB_HORIZON_BLEND`): a QB's weeks after the market week blend with
+  his own per-game line; the market week is untouched and is where the open QB error now is (the audit flags it
+  weekly). K / DEF rest-of-season rankings are off the public screen (`LEAGUE_LAB_KD_ROS`). **Deliveries**: the last
+  commit of every bundle touches `api/RELEASE` (Render's `buildFilter` skipped a push whose last commit was
+  documents); **a PO edit to a dbt model or test gets a full `dbt build` on a real copy before delivery**
+  (`/home/claude/waveIQ/iq_chain.sh`: build, project, projection marts, audit).
 * **Hotfix v3.5 (2026-10-07 evening; STATUS § "PO — hotfix v3.5")**: a reader caught the rest-of-season QB list
   (Murray and Willis ahead of Allen). **A projection more than one week ahead had never been graded.** Now:
   `scripts/analysis/iq1_horizon.py` (as of week W, project 1–8 weeks ahead, 2021–2025) is the harness for anything

@@ -14400,3 +14400,687 @@ Stability (top 24, 20 cells): QB 0.67 → 0.79 (lowest 0.44 → 0.59). K not run
   once and recomputes the importance once — as for v3.4.
 * Decide: whether the rest-of-season QB numbers on the site should say they are made without a betting line beyond the
   next week (WORDS has no such sentence today; nothing user-facing changed here).
+
+## Wave I-Q (Iteration 27) — trust
+
+### PO merge — Wave I-Q, 2026-10-07/08 (Wednesday 19:19 – Thursday 09:20 ET; starters, the quarterback model, the bye-week bug, an audit of every public list)
+
+* **Why**: the first outside traffic (Wednesday: 102 sessions, 539 screen views, 50 league keys) and the first public
+  criticism, which was right (hotfix v3.5 above). Andrew, Wednesday 19:19: "I guess correct it but lets get a fix
+  going as well. Same for full cure on the qb modeling. The model still isn't dependable enough to share too much,
+  less we lose the public trust." The brief is `/home/claude/waveIQ/BRIEF.md` in the sandbox (not in the repo).
+* **How it ran, and where the PO dropped it**: three Opus devs in one message at 19:30 from `main` `6a76100`; all
+  three handed back by 22:20; **the PO's session hit its usage limit at 22:22 with nothing merged**. Andrew's message
+  was delivered again at 07:58 Thursday, and the PO answered it as new: it sent him a second plan and started a
+  duplicate of IQ-2 (`hotfix/IQ2`, a good half-hour of a dev, discarded) before a dev's hand-back mentioned the
+  branches already there. **Rule: after any gap, read the sandbox first — `git branch --sort=-committerdate`,
+  `git worktree list`, the newest `wave*/BRIEF.md` — before answering or planning. The state lives in the repo, not
+  in the PO's memory.** Merged Thursday morning on `integ/IQW`: IQ-4, IQ-2, IQ-3 (CHANGELOG / METRICS / WORDS / the
+  registry kept both; `lib/api.ts` = main with IQ-2's one-word type change + both appended blocks).
+* **A deadline the PO only saw on Thursday**: a week's rows freeze at its first kickoff and are never rewritten
+  (`freeze_plan`), so a wrong starter on Thursday at 20:15 ET is on the site until Tuesday. Seattle had to be right
+  and refreshed before then.
+* **Render did not deploy Wednesday night's push** (`6a76100`): the Blueprint's `buildFilter` looked at the push's
+  last commit, which was the PO's documents. The nightly ran v3.5 while the site's code stayed `97099c7`. Every
+  delivery's last commit now touches `api/RELEASE` (inside the filter's `api/**`).
+* **What the devs found** (their hand-backs below; every table is in docs/METRICS.md):
+  * **A second real bug, live since Tuesday night's roster file: every player on a team with a bye this week had no
+    rest-of-season number anywhere** (IQ-4, found by the PO's face-validity pass at 19:30). nflverse's weekly roster
+    file lists only the teams that play that week, and three dbt models read "the newest roster week" across all
+    teams: Kansas City and Carolina had no projection universe for weeks 6–18. Mahomes, Kelce, Kenneth Walker,
+    Hubbard and McMillan were missing from Rankings "Rest of season", `/ros`, the free trade calculator ("no
+    rest-of-season projection for him"), the card's value and every league's trade prices; it would have hit other
+    teams every bye week to week 14. Fixed at the cause (a team missing from the newest file reads its own newest
+    file); a dbt unit test fails on the old SQL; the audit's first rule is now "every team is in every list".
+  * **Who starts** (IQ-2): the hand-kept list ships (`dbt/seeds/starter_overrides.csv` → `int_starter_override` →
+    unplayed games only in `int_pn_team_game`; a row expires by itself once the named quarterback does not lead a
+    game). Seattle: Darnold 4.2 → 15.0 this week and 52 → 178 over weeks 6–18; Lock 14.1 → 4.3. **No automatic
+    source passed**: on 2025 – 2026 week 4 (670 team-games, 12 stale listings) the depth chart's QB1 is worse than
+    the listing (0.891 against 0.951), "first available on the depth chart" fixes all 12 and breaks 14, "listing
+    unless ruled out" breaks none but fixes 5 of 12 (10 of 49 over 2021–2026). So the honest product is the list
+    plus **`analytics.mart_starter_check`** (the listing, the depth chart, the last game's leader, the reports, per
+    team) read by the PO every Tuesday, and "Starter unclear" now flags listing-against-depth-chart (27 flags
+    catching 12 of 12, against 42 catching 7).
+  * **The quarterback model** (IQ-3, v3.6 = v3.5 + hb1.0): baselines first — one week ahead the model beats every
+    naive line in every season; **two to eight weeks ahead a naive line (his points per game this season and last,
+    with his role) beat v3.5** (MAE 7.44 against 7.56). hb1.0 blends a later week's stat line with that line, the
+    weight by horizon fitted on earlier seasons: pooled 2–8 weeks MAE 7.56 → **7.41**, lower in 5 of 5 seasons,
+    Spearman 0.473 → **0.495**; the market week unchanged (0 cells). Three other candidates dropped, including the
+    per-dropback record as inputs (worse). **Not cured**: the target was 0.53, and IQ-3's ceiling split says an
+    oracle that knew every quarterback's true season level scores 0.533 — what is left is mostly not knowing who
+    still starts in six weeks (17 % of later-week rows change role; worth 0.47 of MAE). On IQ-3's copy the list
+    reads Allen, Mahomes, Prescott, Purdy, Goff, Stafford, Lawrence, Lamar, Burrow, Hurts; Murray 4th → 23rd.
+  * **Kickers and defenses beyond next week are no better than chance** (IQ-4, graded for the first time: pooled
+    2–8 weeks Spearman K 0.028, DEF 0.040; a naive line 0.016 / 0.033).
+* **The PO's decisions**: K / DEF "Rest of season" comes off the public Rankings screen (`LEAGUE_LAB_KD_ROS` unset;
+  `/ros` and the calculator keep the numbers with "read as a rough guide"); the three rest-of-season screens carry
+  one sentence of what was graded (`ros_grade.py`); an override row whose quarterback is not on the roster is
+  **ignored and warned**, not an error (IQ-2 built it as a hard stop: a typo must not stop the night); Chicago's row
+  ends at week 5 (the source corrected itself to Bagent on Wednesday night; the row documents the week and cannot
+  mislead week 6); the guard's QB floor 0.55 → 0.45 under v3.6 (a later week is now partly the quarterback's own
+  level, not this week's opponent and line; below every cell of the study); IQ-3's reading of its rule accepted (a
+  candidate that leaves the market week alone passes the one-week clause); "listing unless ruled out" (no breaks in
+  2,844 team-games, 10 fixes) is not shipped today — it failed the rule written first, and the board was not run.
+* **The PO's lines**: `scripts/nightly.sh` — `league-lab audit-lists` as a soft step after the decision marts and
+  the whole report folded into the run's summary; `api/RELEASE`; the roster rule above (`int_pn_team_game`, the
+  test's severity); the seed's Chicago row; the guard's floor.
+* **Verified**: the merged tree `integ/IQW`. API suite **1,255 passed**, 89 failed — all known by name, 0 new; root
+  suite **1,619 passed**, 4 known; e2e on fixtures, the whole set, **575 passed**, 17 skipped, 0 failed; ruff, the copy standard, `npm run lint` (205 files, 0 warnings) and the
+  build clean; the fresh-database check clean (20 state tables); `hosted_relations.py` lists
+  `analytics.mart_starter_check` by itself. **A rehearsal of the nightly's middle on the merged tree**
+  (`/home/claude/waveIQ/iq_chain.sh` on IQ-4's database, which has the real week-5 roster file): the full `dbt build`
+  **PASS 730, WARN 5, ERROR 0**; `project` under v3.6 (fi1.0 7,229 rows, pt1.0 463 lines, hb1.0 1,039 QB lines; weeks
+  1–4 kept frozen); the projection marts PASS 143; `mart_starter_check`; the audit in 4 seconds. **The first
+  rehearsal failed, and it was the PO's edit**: making an off-roster override "ignored" without giving IQ-2's unit
+  test the new column failed that test, and dbt skipped 122 nodes behind it — on the nightly that is a hard
+  `dbt-build` stop on the day of the freeze. Fixed (the unit test has the column and a typo row) and rehearsed
+  again. **Rule: a PO edit to a dbt model gets a full `dbt build` on a real copy before delivery, like a dev's.**
+* **The audit's first report on the merged board** (the PO's face-validity pass before delivery): coverage — every team in all 54 lists (Mahomes QB2 with 250 over 13 games). **QB rest of
+  season: no flag** — Allen 271, Mahomes 250, Prescott 249, Purdy 248, Goff 235, Lamar 228, Burrow 227, Lawrence 227,
+  Stafford 226, Hurts 220; Murray 22nd, Willis 23rd; Darnold 26th (15.3 this week), Lock 40th; Bagent 15.2 this
+  week. **QB this week still flags three** (v3.6 does not touch the market week): Kyler Murray 9th with 7.8 points
+  per game, Justin Herbert 12th with 12.4, Tyler Shough 17th with 24.1 — the model's weak read of the individual
+  quarterback, the next package. Tight ends: Gesicki and Juwan Johnson ranked well below what they have scored.
+  K / DEF flags as their grade predicts (the public list is off). Starters: Seattle and Chicago corrected; Tampa Bay's
+  listing (Jalon Daniels) disagrees with the depth chart (Mayfield) — the live injury feed has Mayfield Out, so the
+  listing stands; Washington's listing and depth chart both say Jayden Daniels (back from a missed week 4). Top-24
+  agreement this week against later weeks: QB 0.57, RB 0.94, WR 0.97, TE 0.87 (Half PPR).
+* **Not done / next**: the role forecast for later weeks (IQ-3's "next": the chance this week's starter still
+  starts in h weeks) — the largest known piece of QB error left; "listing unless ruled out" through the board; the
+  receivers' models read no quarterback input at all (Darnold for Lock moves no Seattle receiver); the 2–8 week
+  ranges are narrow (72–73 % for the 80 % range); a bye-week case on the nightly's own fresh database; the weekly
+  starters check is a PO habit (Tuesday: `mart_starter_check where not agree`); still open from Wave I-P: one
+  rounding on every screen, the nightly's self-healing list, the blog's media build (Andrew has not said yes).
+
+### IQ-2 — who starts (Wave I-Q, 2026-10-07, branch `dev/IQ2` from `main` `6a76100`, database `league_lab_im4`)
+
+#### Task
+
+The brief's package "IQ-2 — who starts": (1) a hand-kept override list that ships tonight regardless; (2) candidate
+sources for the market week's starter, measured on identification with the rule written first; (3) "Starters to check"
+(`analytics.mart_starter_check`) and a better `starters.unclear` trigger if one measures better; (4) tests.
+
+#### What shipped
+
+* **The override list** — seed `dbt/seeds/starter_overrides.csv` (`season, team, from_week, through_week, gsis_id,
+  reason, source, added_on`), `int_starter_override` (its state: `in_force`, `expired_in_week`, `on_roster`,
+  `led_since_week`, the listing it corrects), applied in `int_pn_team_game` to **unplayed games only**
+  (`starter_source` 'override' | 'schedule'; dbt var `starter_overrides`, default true). It expires by itself once the
+  team plays a game at or after `from_week` that the named QB does not lead in dropbacks; a QB not on the team's newest
+  weekly roster (ACT / INA / DEV) is a dbt **error**; a row in force older than 21 days (by `added_on`) **warns**.
+  Rows (PO-checked; each name resolved to exactly one QB of that team in `dim_player` and on the week-4 roster):
+
+  | season | team | from_week | through_week | gsis_id | name | listed (corrected) |
+  |---|---|---|---|---|---|---|
+  | 2026 | SEA | 5 | (until removed) | `00-0034869` | Sam Darnold | Drew Lock `00-0035704` |
+  | 2026 | CHI | 5 | (until removed) | `00-0038416` | Tyson Bagent | Case Keenum `00-0028986` |
+
+* **The screens** — `starters.corrected(season, week)`; Rankings (week and rest-of-season views) and "Who should I
+  start?" show the chip **Starter corrected** and one sentence on the corrected QB's row and the listed QB's row:
+  "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold as the
+  starter. Set by hand on 7 Oct." / "Chicago's listing says Case Keenum; Tyson Bagent led the team's dropbacks in week 4,
+  so we project Bagent as the starter. Set by hand on 7 Oct." Tiers and start / sit calls as anyone's; a corrected team
+  is never "Starter unclear".
+* **`analytics.mart_starter_check`** — one row per team for its next unplayed game: `listed_*`, `depth_*` (newest
+  depth-chart snapshot's QB1), `depth_available_*` (the first not Out / Doubtful / on a reserve list), `last_*` (the last
+  game's dropback leader), `*_report` / `*_roster` for each, `report_published`, `override_*` (+ `override_added_on`,
+  `override_led_since_week`, `override_reason`), `projected_qb_id` / `projected_name` / `starter_source`, `agree` (listing
+  = depth QB1 = last leader), `listing_disputed` (U1). 32 rows, 16 kB.
+* **`starters.unclear` reads U1** (the listing is not the depth chart's first available QB) wherever the mart is built,
+  minus corrected teams; without the mart (a deploy before the nightly) it is su1.0 exactly as before.
+* **No starter source ships** (none passes the rule; table below).
+
+#### Evidence
+
+**The rule** (METRICS § "Who starts", written 19:36 ET, committed `3c19084` before any candidate number was read; the
+study ran 19:55 ET). Before the rule I had looked only at data coverage (depth charts exist for 2025–2026 only) and at
+today's depth chart for CHI / SEA / WAS.
+
+**The as-of**: all 670 played team-games of 2025 – 2026 wk 4 have a depth-chart snapshot before kickoff (median 10.8 h
+before, max 18.7 h: daily captures); QB1 before vs the first snapshot after a game differs in 2 of 670 (a chart rebuilt
+after the fact would always name the game's QB). Injury report: `date_modified` before kickoff for ≥ 99.9% of Out /
+Doubtful rows 2021–2024 (2025–26 carry no stamp). INA (game-day inactive) is never read. **The historical listing is
+nflverse's post-game value** (one schedule snapshot), so the base is better in history than live: the bias favours
+the listing.
+
+**Identification** (`scripts/analysis/iq2_starter_source.py study`; truth = the dropback leader; stale = listed QB took
+no dropback):
+
+| Window | Candidate | Accuracy listing → cand. | On stale listings | Fixed | Newly broken | (a) acc | (b) ≥60% | (c) ≤1/6 | Board ΔMAE |
+|---|---|---|---|---|---|---|---|---|---|
+| 2025–26 wk 4 (670) | S1 depth QB1 | 0.951 → 0.891 | 6/12 (50%) | 7 | 47 | fail | fail | fail | not run |
+| 2025–26 wk 4 | S2 depth, first available | 0.951 → 0.949 | 12/12 (100%) | 13 | 14 | fail | pass | fail | not run |
+| 2025–26 wk 4 | S3 listing unless ruled out | 0.951 → 0.958 | 5/12 (42%) | 5 | 0 | pass | fail | pass | not run |
+| 2025–26 wk 4 | S4 two sources agree (own) | 0.951 → 0.957 | 10/12 (83%) | 10 | 6 | pass | pass | **fail** | not run |
+| 2021–26 wk 4 (2,844) | S3 listing unless ruled out | 0.955 → 0.958 | 10/49 (20%) | 10 | 0 | pass | fail | pass | not run |
+
+The board (d) is run only for a candidate passing (a)–(c): none did, so it was not run. S2's breaks: a hurt starter the
+chart kept on top who was Questionable and then inactive on game day (Murray ARI 2025 wks 6/7/9, McCarthy MIN 7–8,
+Purdy SF 3/9) and week-18 rests (BUF, GB, LAC, PHI). S4's six: ARI 2025 wk 6, ATL wk 8, BUF / LAC / PHI wk 18, PIT
+wk 12. Only 12 stale listings exist in the depth-chart window (2024's 33 have no chart).
+
+**The unclear trigger** (2025–26 wk 4, 12 stale listings): U0 su1.0 42 flags / 7 caught / 35 not stale; **U1 27 / 12 /
+15**; U2 (either) 57 / 12 / 45; U3 (both) 12 / 7 / 5. U1 catches more with fewer flags → by the rule it replaces U0.
+(U0 on 2022–26 wk 4 reproduces su1.0 exactly: 169 flags, 32 of 49.)
+
+**2026 week 5 on this database**: su1.0 flagged CHI, SEA, WAS. Now: CHI and SEA corrected (not flagged); U1 flags
+**Tampa Bay** only (listed Jalon Daniels, who led week 4; the depth chart puts Baker Mayfield first, INA in week 4; no
+week-5 report yet); WAS is no longer flagged (listed Jayden Daniels = depth chart QB1; Kaliakmanis led week 4). The
+mart's `agree = false`: CHI, SEA (corrected), TB, WAS, and the bye teams CAR / KC (week 6 not listed yet).
+
+**Before / after** (`project` twice on `league_lab_im4`, v3.5 both — list off, then on; reference league (League of
+Scrubs) scoring; weeks 1–4 frozen and untouched: "kept frozen weeks [1, 2, 3, 4]" both runs): 76 of 7,917 rows moved,
+six players, all SEA / CHI quarterbacks.
+
+| Player | Week 5 | Weeks 6–18 (12 games) | QB rank wk 5 | QB rank wks 5–18 |
+|---|---|---|---|---|
+| Sam Darnold | 4.2 → **15.0** | 52.5 → **177.9** | #41 → #25 | #42 → #25 |
+| Drew Lock | 14.1 → 4.3 | 154.9 → 47.8 | #28 → #41 | #32 → #43 |
+| Tyson Bagent | 3.0 → **15.3** | 32.9 → **159.0** | #67 → #24 | #75 → #32 |
+| Case Keenum | 16.2 → 5.2 | 190.3 → 59.2 | #15 → #37 | #19 → #38 |
+| Caleb Williams | 7.4 → 8.1 | 93.7 → 101.2 | #32 → #31 | #34 → #33 |
+| Smith-Njigba, Wilson, Price, Barner (SEA); Swift, Monangai, Burden, Odunze (CHI) | unchanged (e.g. JSN 14.7) | unchanged (JSN 176.9) | | |
+
+The receivers do not move: their `pn_qb_*` inputs change (JSN wk 5 `pn_qb_changed` 1, `pn_qb_prev_ppg_diff` −0.96), but
+the RB / WR / TE models do not read QB inputs (`projections.FEATURES_BY_POSITION`). Half PPR via the API after: Darnold
+15.0 wk 5, rest of season 178 (weeks 6–18) on Compare; Rankings week 5 Bagent #24 (15.27, tier 5), Darnold #25 (15.03,
+tier 5), Keenum #37, Lock #41.
+
+**Face validity**: QB top 24 by week 5, rank correlation with the later weeks' mean 0.60 → 0.64 (RB / WR / TE 0.94 /
+0.95 / 0.85 unchanged); with 2026 points per game (2+ games) 0.11 → 0.22 (still weak: IQ-3's subject). Darnold 15.0
+against 29.7 and 14.3 in his two starts; Bagent 15.3 against 9.8 in his one game as the leader.
+
+**dbt** (`league_lab_im4`): the chain + seed + override + mart build PASS 55 (2 unit tests, 3 new data tests, the
+edited `assert_personnel_is_asof` and `assert_starter_from_play`); the nightly's projection-marts selection PASS 145 + the
+registry re-run PASS 3; the guard, the pricing and both freeze tests PASS 4.
+
+**Tests**: `api/tests/test_iq2.py` 8 passed (incl. the database at week 5 and the routes at week 5, and without the
+mart); `api/tests/test_ip1_starters.py` 5 passed; `api/tests/test_ip2.py` 47 passed; root
+`tests/test_iq2_starter_source.py` 4 passed (+ `tests/test_ip1_starter.py` 3 passed); ruff clean; copy standard clean;
+`npm run lint` 0 errors / 0 warnings; `npm run build` ok; e2e `web/e2e/iq2` 4 passed (phone 375, desktop 1300; recorded
+live from the fixture API at week 5, replayed), `web/e2e/ip2` 8 passed. No `src/` edit, so `check_root.sh` not run.
+Existing tests changed on purpose: `test_ip2.py::test_search_and_paging` (the rankings cache key has one more element:
+the corrected QBs), `test_ip1_starters.py` (the su1.0 tests pin su1.0 with a fixture; the cache test counts the mart's
+read).
+
+#### Files
+
+New: `dbt/seeds/starter_overrides.csv`, `dbt/models/intermediate/features/int_starter_override.sql` + `.yml` (seed and
+model docs, 2 unit tests), `dbt/models/marts/nfl/mart_starter_check.sql`, `dbt/tests/assert_starter_override_on_roster.sql`,
+`assert_starter_override_is_fresh.sql`, `assert_starter_override_unplayed_only.sql`, `scripts/analysis/iq2_starter_source.py`,
+`api/tests/test_iq2.py`, `tests/test_iq2_starter_source.py`, `web/e2e/iq2/fixtures.spec.ts`, `web/fixtures/iq2/api_iq2.json`
+(62 kB), `docs/handbacks/iq2/*.jpg` (4), this file.
+Edited (mine): `dbt/models/intermediate/features/int_pn_team_game.sql`, `api/league_lab_api/starters.py`,
+`dbt/tests/assert_starter_from_play.sql`, `dbt/tests/assert_personnel_is_asof.sql` (override-aware, marked),
+`api/tests/test_ip1_starters.py`.
+**Edits outside my files** (marked blocks / smallest edits): `dbt/dbt_project.yml` (the seed's column types),
+`dbt/models/intermediate/features/int_player_week_personnel.yml` (`starter_source` doc + accepted values),
+`api/league_lab_api/rankings_api.py` (the starter part: `_starters_corrected`, the cache key, the row / start field,
+`UNCLEAR_TIER`'s words), `web/src/routes/Rankings.svelte` and `web/src/components/rankings/StartAnswer.svelte` (the
+chip and sentence), `web/src/lib/api.ts` (types at the end; `StarterUnclear.role` gains "depth"), `api/tests/test_ip2.py`
+(cache key length), `docs/METRICS.md`, `docs/WORDS.md`, `CHANGELOG.md` (new heading `## 2026-10-08 — Wave I-Q`),
+`dbt/seeds/metric_registry.csv` (3 rows: `starter_override` so1.0, `starter_source_study` 1.0,
+`starter_unclear_depth_chart` su1.1 — a CSV cannot carry a marker).
+
+#### Schema in / out
+
+In: `raw.nfl_schedules` (via `dim_game`), `fct_player_game.dropbacks`, `fct_team_game`, `stg_nflverse__rosters_weekly`,
+`stg_nflverse__injuries`, `int_depth_chart_current`, `stg_nflverse__depth_charts` (study only), `dim_player`.
+Out: `analytics_seeds.starter_overrides`, `intermediate.int_starter_override`, `intermediate.int_pn_team_game.starter_source`
+(new column), `analytics.mart_starter_check`; API rows `starter_corrected` {team, listed, set, role, words} on
+`/api/rankings` (both views, QB) and `/api/rankings/start` players. No state table, nothing `db migrate` must create.
+
+#### Commands
+
+`uv run league-lab dbt build --select starter_overrides int_starter_override int_pn_team_game`;
+`uv run league-lab dbt run --select "int_pn_team_game+,+mart_player_week_features" --vars '{starter_overrides: false}'`
++ `uv run league-lab project` (before); `uv run league-lab dbt build --select "int_pn_team_game+,+mart_player_week_features"
+starter_overrides int_starter_override mart_starter_check` + `project` (after); the nightly's projection-marts
+selection; `uv run python scripts/analysis/iq2_starter_source.py asof|study`; the tests above.
+
+#### Limitations
+
+* No source fixes the listing automatically; the list is by hand and the weekly check is the PO's.
+* The study's depth-chart window is 2025 – 2026 wk 4 (12 stale listings); older charts are not in the database.
+* An override row stays in force for the week after a returning starter's comeback until that game is played (it
+  expires on evidence) — e.g. if Caleb Williams returns in week 6, CHI keeps Bagent for week 6 unless the row is given a
+  `through_week` or removed. The mart shows the disagreement (`depth_available` vs `projected`); the screens do not.
+* History is not corrected (by design): Seattle's weeks 3–4 still list Lock as the starter, so Darnold's and his
+  receivers' `pn_qb_changed` read 1 and Darnold's start count misses two starts.
+* The receivers' projections do not read the quarterback at all (RB / WR / TE models have no QB input).
+* If a nightly built `int_pn_team_game` but failed before `mart_starter_check`, the screens would fall back to su1.0 and
+  could call a corrected team "unclear" while the numbers use the override (both are in the same `dbt build`).
+* U1 still flags mostly non-stale listings (15 of 27): the words stay "unclear".
+
+#### For the PO
+
+* `scripts/nightly.sh`: **no line**. The full `dbt build` builds the seed, `int_starter_override`, the new column, the
+  mart and runs the new tests; `project` reads the corrected starters. The hosted sync picks up
+  `analytics.mart_starter_check` from `starters.py` by itself (`scripts/hosted_relations.py` lists it; 16 kB).
+* **Decide**: `assert_starter_override_on_roster` is `error` as the brief says — a typo'd or departed QB stops the
+  nightly's hard `dbt-build` step (the children are skipped). Acceptable, or warn + skip the row?
+* **Decide**: CHI's row has no `through_week`; set `through_week: 5` if you prefer to re-confirm Bagent each week.
+* **Decide**: S3 (listing unless the report / reserve list rules him out) never broke a listing (0 in 2,844 team-games,
+  10 fixed) but fails (b); it is not shipped. It could ship as a no-regret rule under a looser rule, your call.
+* The weekly check (Tuesday): `select team, week, listed_name, depth_name, depth_available_name, last_name,
+  listed_report, override_name, projected_name, agree, listing_disputed from analytics.mart_starter_check where not agree
+  order by team;` — add a row to the seed for a stale listing (with `added_on`), re-date a row to re-confirm it, delete
+  a row to end it (the kill switch for all: `--vars '{starter_overrides: false}'`, or empty the CSV).
+* STATUS / What's new line (suggested): "Seattle and Chicago now have the right starting quarterback: we set Sam Darnold
+  and Tyson Bagent by hand while the data source still lists Drew Lock and Case Keenum, and the rankings say so."
+* `docs/DEPLOY.md` § Memory: the `starters` region now holds two entries per week (flags and corrections), still ≤ 32.
+
+#### What the first nightly does differently
+
+`dbt build` seeds `starter_overrides`, builds `int_starter_override` and `mart_starter_check` (seconds), rebuilds
+`int_pn_team_game` with `starter_source`, runs 2 more unit tests and 3 more data tests (+ 6 generic). `project`
+then projects Darnold and Bagent as their teams' starters for weeks 5–18 (≈ 76 rows per league move: the six SEA / CHI
+quarterbacks; no other player; frozen weeks untouched), and the projection marts, the decision record for week 5 and
+the hosted copy carry it. On the site: the two QBs' rows say "Starter corrected"; "Starter unclear" switches from su1.0
+(CHI, SEA, WAS this week) to U1 (TB this week).
+
+#### Next task
+
+A weekly habit, not code: the Tuesday check above. Code: carry a corrected starter into the *history* inputs only when
+the play data confirms it (st1.0 measured that and failed on returning starters — a narrower version, for teams with an
+override in force, is the next thing to try); and, for IQ-3, give the receivers a QB input (their models have none).
+
+### IQ-3 — the quarterback model reads the quarterback (Wave I-Q, 2026-10-07)
+
+**Task**: IQ-3 of `/home/claude/waveIQ/BRIEF.md`. **Branch**: `dev/IQ3` from `main` `6a76100`. **Database**:
+`league_lab_im1` (the only writer). **Result**: v3.6 ships one candidate, **hb1.0** (a QB's weeks after the market week
+blend the model's stat line with his own per-game line), kept by a rule written before any candidate number. Not
+"cured": the 2–8 weeks Spearman goes from 0.473 to 0.495; the target was 0.53.
+
+#### Order of work (commits)
+
+1. `39030c9` 20:40 ET — the baselines, the ceiling and **the keep rule** (docs/METRICS.md § "v3.6: the quarterback
+   model reads the quarterback (IQ-3)"), before any candidate number.
+2. `16d57d4` — the candidates' code (hb1.0, hb1.1, pe1.0, pe1.0 + hb1.0), defined before the run.
+3. `bac49fa` — v3.6 in production (`calibration.horizon_blend_lines`), tests, the `_matrix` fix, CHANGELOG, registry.
+4. `592374b` — METRICS results and this hand-back.
+5. `d0259d7` — db1.0 (the per-dropback record as inputs), defined and committed before its run; then its result and the
+   ceiling split (the last commit).
+
+#### Baselines (2021–2025, both house scorings averaged; season = the mean of its weeks)
+
+B0 = v3.5; B1 = his points per game this season and last, shrunk by games toward the starters' mean; B1r = B1 with the
+prior of his listed role (starter / not); B2 = B1r + the opponent and the real implied total.
+
+| season | 1 wk B0 MAE / ρ | B1 | B1r | B2 | 2–8 wks B0 MAE / ρ | B1 | B1r | B2 |
+|---|---|---|---|---|---|---|---|---|
+| 2021 | 6.499 / 0.605 | 7.861 / 0.473 | 6.636 / 0.581 | 6.557 / 0.597 | 7.718 / 0.440 | 8.059 / 0.466 | 7.355 / 0.515 | 7.370 / 0.520 |
+| 2022 | 6.168 / 0.593 | 7.105 / 0.470 | 6.520 / 0.537 | 6.260 / 0.583 | 7.202 / 0.510 | 7.247 / 0.429 | 6.966 / 0.527 | 6.999 / 0.535 |
+| 2023 | 6.264 / 0.608 | 7.522 / 0.474 | 6.527 / 0.567 | 6.401 / 0.598 | 7.404 / 0.519 | 7.641 / 0.460 | 7.382 / 0.517 | 7.388 / 0.522 |
+| 2024 | 6.779 / 0.573 | 7.731 / 0.454 | 6.908 / 0.538 | 6.858 / 0.554 | 7.624 / 0.479 | 8.177 / 0.368 | 7.640 / 0.470 | 7.678 / 0.477 |
+| 2025 | 6.394 / 0.602 | 8.110 / 0.400 | 6.992 / 0.523 | 6.909 / 0.542 | 7.850 / 0.417 | 8.623 / 0.354 | 7.869 / 0.425 | 7.821 / 0.432 |
+| mean | **6.421 / 0.596** | 7.666 / 0.454 | 6.717 / 0.549 | 6.597 / 0.575 | **7.560 / 0.473** | 7.949 / 0.416 | 7.442 / 0.491 | 7.451 / 0.497 |
+
+Finding: one week ahead the model beats every naive baseline in every season; two to eight weeks ahead the naive line
+with the role prior beats v3.5 (MAE 7.442 vs 7.560, Spearman 0.491 vs 0.473). The ceiling: an oracle that knew each
+QB's season mean in the week's role (the week left out) scores 6.605 / 0.545 one week out — the model (6.466 / 0.578 on
+those rows) already beats it — and 6.605 / 0.552 two to eight weeks out (B0 7.609 / 0.456, B2 7.494 / 0.482 there).
+
+#### The rule (written 20:40 ET, committed `39030c9` before any candidate number)
+
+Kept when: (1) 1 week — the market week unchanged (0 cells), or MAE lower than B0 in ≥ 4 of 5 seasons and mean
+Spearman higher (decide reported, "hurts" fails); (2) 2–8 weeks pooled — MAE lower in ≥ 4 of 5 and mean Spearman
+higher; (3) QB 80 % range coverage on the production path within 77–83 % in each house scoring at 1 week, 2–8 reported;
+(4) RB / WR / TE untouched or not worse by > 0.01. Largest pooled 2–8 Spearman gain ships. "Cured" = pooled 2–8
+Spearman ≥ 0.53 with the 1-week 0.596 kept. One reading to flag: the PO's suggested rule asked the 1-week board to
+improve too; I wrote clause 1 so that a candidate which does not touch the market week passes it by construction (the
+PO's own "cheapest fix", a horizon-dependent blend, could not pass otherwise). hb1.1 (the blend with a market-week
+weight) was judged by the full clause and failed.
+
+#### Candidates (Δ against B0)
+
+| candidate | 1 wk | 2–8 wks Δ MAE by season | 2–8: seasons lower / Δ ρ | decision |
+|---|---|---|---|---|
+| **hb1.0** horizon blend, h ≥ 2 | 0 cells | −0.391 / −0.308 / −0.006 / −0.004 / −0.060 | 5 of 5 / +0.0216 | **kept, ships** |
+| hb1.1 + a market-week weight | Δ MAE −0.017 / +0.010 / +0.012 / −0.016 / +0.066 (2 of 5), Δ ρ +0.0023 | as hb1.0 | 5 / +0.0216 | drop (clause 1) |
+| pe1.0 player effect (shrunk past residuals) | Δ MAE −0.067 / +0.005 / −0.037 / −0.022 / +0.019 (3 of 5), Δ ρ +0.0010 | −0.106 / +0.056 / −0.060 / +0.030 / +0.036 | 2 / +0.0102 | drop (1, 2) |
+| pe1.0 + hb1.0 | as pe1.0 | −0.393 / −0.310 / −0.007 / +0.000 / −0.043 | 4 / +0.0209 | drop (clause 1) |
+
+db1.0 (run after the ship, defined and committed before its run): the per-dropback record as QB inputs (EPA, TD, INT,
+sack, scramble rates per dropback, empirical-Bayes shrunk; designed runs per game) — 1 week Δ MAE +0.049 (lower in 1 of
+5), 2–8 weeks Δ MAE +0.051 (0 of 5), Δ Spearman −0.0075: drop.
+
+hb1.0: pooled 2–8 MAE 7.560 → 7.406, Spearman 0.473 → 0.495 (by season 0.519 / 0.533 / 0.518 / 0.478 / 0.426; 2023
+and 2024 −0.001). Ranges (production path, 80 % coverage): 1 week 78.4 % Half PPR / 78.5 % dynasty (unchanged: holds);
+2–8 weeks 71.9 / 71.2 % → 73.4 / 72.3 %. The production weight fit reproduces the study's 2024 and 2025 weights exactly;
+2026's (fitted on 2023–2025), h 2…8: 0.0 / 0.5 / 0.2 / 0.35 / 0.55 / 0.95 / 0.75 (λ 0.25, k 6).
+
+#### What shipped (v3.6)
+
+* `src/league_lab/calibration.py` (block `# ---- IQ-3`): `HORIZON_BLEND_FLAG = LEAGUE_LAB_QB_HORIZON_BLEND` (unset = on,
+  `0` = v3.5), `fit_naive`, `naive_line`, `horizon_rows`, `fit_horizon_weights`, `horizon_blend_lines`,
+  `walk_forward_models` (memoised; `pass_td_fit_rows` now uses it — same models, pt1.0's 2026 fit unchanged: a 0.035,
+  b 0.0637 on 2,021 rows).
+* `src/league_lab/projections.py`: `MODEL_VERSION = "v3.6"`; `project` calls `horizon_blend_lines` after pt1.0
+  (marked block); `_matrix` keeps NaN (the all-NULL-column trap; the fits zero such a column themselves).
+* `scripts/analysis/iq3_qb.py` (cache / baselines / candidates / ranges), `tests/test_iq3_horizon_blend.py`; version
+  pins v3.5 → v3.6 in `tests/test_il3_v33.py`, `test_personnel.py`, `test_ip1_pass_td.py`, `test_iq1_future_inputs.py`.
+* Docs: docs/METRICS.md § v3.6, `dbt/seeds/metric_registry.csv` (`qb_horizon_blend` hb1.0, `qb_naive_baseline`),
+  CHANGELOG (`## 2026-10-08 — Wave I-Q`). No new table, no schema change, no API or screen change.
+
+#### Evidence on `league_lab_im1` (a full `project`, v3.5 → v3.6)
+
+* Frozen weeks 1–4: 0 cells changed (projections 4,856 rows, lines 2,396, ranges 11,980). Week 5 (market): 0 cells.
+  Weeks 6–18 RB / WR / TE / K / DEF: 0 cells. QB weeks 7–18: 1,061 lines moved (week 6 has weight 0).
+* dbt projection-marts selection + the freeze, house-row and ranges-price-the-lines tests + the guard: PASS 147,
+  **WARN 1** — the guard (`assert_rest_of_season_follows_the_market_week`): QB in the reference league 0.53 < 0.55.
+* Top 24 by week 5 vs the weeks 6–18 mean (Pearson / rank): Half PPR QB 0.60 / 0.60 → 0.60 / 0.53; dynasty QB 0.57 /
+  0.58 → 0.52 / 0.46; RB 0.93 / 0.94, WR 0.97 / 0.95, TE 0.92 / 0.85 (Half PPR) unchanged; K / DEF unchanged.
+* QB this week (week 5): unchanged in both leagues (hb1.0 does not touch the market week). Rest of season (weeks
+  5–18), Half PPR, top 20 after (before rank): 1 Allen 267.9 (#3), 2 Mahomes 251.5 (#2), 3 Prescott 247.6 (#1), 4 Purdy
+  245.1 (#9), 5 Goff 236.0 (#5), 6 Stafford 232.1 (#6), 7 Lawrence 227.5 (#11), 8 L. Jackson 226.9 (#8), 9 Burrow 226.4
+  (#10), 10 Hurts 221.8 (#17), 10 Maye 221.8 (#12), 12 Shough 220.2 (#22), 13 Keenum 219.8 (#19), 14 Brissett 217.8
+  (#14), 14 Stroud 217.8 (#7), 16 Watson 216.0 (#15), 17 Nix 213.6 (#16), 18 Cousins 211.5 (#18), 19 Daniels 210.3
+  (#21), 20 B. Young 210.0 (#31); Murray #4 → #23. Dynasty: 1 Allen 323.6 (#6), 2 Mahomes 322.2 (#2), 3 Prescott 321.1
+  (#1), 4 Purdy 313.3 (#12), 5 Goff 311.5 (#4), 6 Stafford 307.6 (#3), 7 Burrow 292.6 (#8), 8 Lawrence 291.3 (#11), 9
+  L. Jackson 287.8 (#10), 10 Brissett 282.6 (#9), 11 Keenum 280.2 (#17), 12 Stroud 279.0 (#7), 13 Maye 277.6 (#13), 14
+  Shough 277.2 (#24), 15 Hurts 277.0 (#20), 16 Cousins 275.7 (#14), 17 Nix 269.8 (#15), 18 Watson 268.7 (#19), 19 B.
+  Young 268.6 (#31), 20 Love 266.0 (#22). Evidence, not the criterion.
+
+#### Tests
+
+* New: `tests/test_iq3_horizon_blend.py` — 9 passed (the naive line, only later QB weeks move by the horizon weight,
+  the house rows price the NFL-wide line bit for bit flat and at the odds with the switch on and off, off / zero weights
+  = identity, `horizon_rows`, the `_matrix` trap).
+* Version-pinned and neighbouring files (`test_ip1_pass_td`, `test_iq1_future_inputs`, `test_il3_v33`,
+  `test_personnel`, `test_metric_registry`): 39 passed.
+* Root suite (`/home/claude/waveIP/check_root.sh`): 1,604 passed, 3 skipped, 4 failed — all four in the known list, no
+  new failure.
+* API: `api/tests/test_if3.py` (the one API file importing `projections`): 7 passed, 3 failed — all three in the known
+  list. The full API suite not run (rule 7).
+* `ruff check src app tests api`: clean. `scripts/copy_standard.py --check`: clean. No `web/` change (no lint / build /
+  e2e needed).
+
+#### What the first nightly does once because of the version bump
+
+`backtests` runs `backtest-v2` once (no rows for v3.6; it measures the market week, which v3.6 does not change);
+`calibration-oof` rebuilds `ops.calibration_oof` once (2–3 CPU-minutes); `project` recomputes the importance once (about
+2 minutes here). hb1.0 itself adds about 2 s to `project` (it reuses pt1.0's walk-forward fits). No new table, no new
+step, no `scripts/nightly.sh` line.
+
+#### Limitations
+
+* Not cured: 0.495 against the 0.53 target, about two fifths of the way. The ceiling, split (2–8 weeks, rows where both
+  oracles exist): B0 0.477, B2 0.502, an oracle that knew each QB's season level in the market week's role **0.533**,
+  in the target week's role 0.565. 0.53 is what perfect level knowledge gives: out of reach for a level model. 17 % of
+  the scored later-week QB rows change listed role; knowing it is worth 0.47 points of MAE.
+* The 2–8 weeks ranges stay narrow (about 72–73 % for the 80 % range): they are calibrated one week ahead.
+* The guard warns on this week's board (0.53 against its 0.55 floor); its floor was set on a footing without pt1.0.
+* The naive line uses the frame's per-game rates over games played (a game left early counts as a game).
+* History's market-week listing is mostly the real starter (nflverse corrects played games), a little better than live.
+
+#### For the PO to decide
+
+1. The guard's QB floor: keep 0.55 (the nightly will show WARN 1 on this board) or lower it to 0.45, below every v3.6
+   cell of the study (Half PPR lowest 0.47, dynasty 0.42). One line in
+   `dbt/tests/assert_rest_of_season_follows_the_market_week.sql`; I did not change it.
+2. Clause 1's reading (a candidate that leaves the market week alone passes it): accept, or ask for the stricter rule.
+
+#### Next
+
+The one thing I would try next: forecast the role for later weeks — the probability that the market week's starter
+still starts h weeks out (and that a backup does), from history by h — and project a later week as that mixture of his
+starter line and his backup line, judged on the same two boards by the same rule. The ceiling split says the role is
+the larger part of what is left (0.47 points of MAE); the per-dropback record as tree inputs (db1.0) did not help.
+
+### IQ-4 hand-back — the trust guard (Wave I-Q, 2026-10-07, 21:17–22:35 ET)
+
+Branch `dev/IQ4` (from `main` `6a76100`), worktree `/home/claude/wt-iq4`, database `league_lab_iq4` (its only writer).
+
+#### Task
+
+The PO's IQ-4 brief: (0) the bye-week bug first; (1) `league-lab audit-lists` with today's report; (2) grade kickers
+and defenses 2–8 weeks ahead and recommend; (3) one sentence of what we know on the three rest-of-season screens;
+(4) the site's usage counter.
+
+#### 0. The bye-week bug — fixed at its cause, every path tested
+
+**The cause.** Not the API: every reader (`/api/ros`, `anyleague.ros_table`, Rankings' season view,
+`refleague.value_of`, the card, the trade engine's market) sums the stored weeks correctly and skips a bye. The rows
+were missing. nflverse's weekly roster file lists **only the teams that play that week**; three dbt models read "the
+newest roster week on or before W" **across all teams**:
+
+* `dbt/models/intermediate/int_player_week_universe.sql` (the projection universe: every player-week `project` projects),
+* `dbt/models/marts/nfl/mart_kd_week.sql` (the kickers),
+* `dbt/models/intermediate/features/int_pn_player_week_status.sql` (the personnel inputs' roster status).
+
+Once week 5's file was out (30 teams: no KC, no CAR — checked on the real file from nflverse's GitHub release), every
+Chiefs and Panthers player had no universe row for weeks 6–18, so `project` wrote no projection for them, and every
+list, value and price built from the stored weeks lost them. **The fix**: a team missing from the newest file reads its
+own newest file for the weeks after it (`team_fallback`), unless the player is on a newer file elsewhere (a move during
+the bye). Only weeks past the newest file can change; a played week always has its own file for every team that plays,
+so history and every training row are unchanged (checked: 0 of 109,409 universe rows read an older file in a played
+week; 0 played team-weeks 2016–2026 without a file).
+
+**How the case was made real**: `league-lab ingest nfl --seasons 2026 --datasets rosters_weekly` loaded nflverse's real
+2026 file into `league_lab_iq4` (GitHub; 13,028 rows, week 5 = 30 teams). Then the whole chain twice, old models then
+new (`dbt run` of the 15 feature models → `league-lab project` → the nightly's projection-marts selection), API on my
+database with `LEAGUE_LAB_NOW=2026-10-07T23:30:00Z` (week 5, before Thursday's kickoff):
+
+| | before (main's models) | after (IQ-4) |
+|---|---|---|
+| universe rows of KC + CAR, each of weeks 6–18 | 0 | 41 |
+| kickers in `mart_kd_week`, week 6 (teams) | 26 | 28 (all 28 that play) |
+| `project` rows | 20,390 | 21,482 |
+| `/api/ros?league=ref:half&position=QB` | **87 QBs from 30 teams**, no KC / CAR | 93 from 32 |
+| `/api/ros?league=1389709692405551104&position=QB` | **87 from 30** | 93 from 32 |
+| free calculator, Mahomes | `no_projection: true`, value null | value 58.6, QB2 |
+| `api/tests/test_iq4.py` (bye paths) | **8 of 8 fail** | 8 of 8 pass |
+| projection-marts dbt selection (incl. the guard) | PASS 148 | PASS 148 |
+
+The before reproduces the PO's 19:30 report exactly (87 quarterbacks from 30 teams). The five players after (Half PPR
+reference key / League of Scrubs; before: absent from every list, "no rest-of-season projection" in the calculator):
+
+| | rest of season (pos. rank, points) | Rankings season rank | free calculator value (Half PPR) |
+|---|---|---|---|
+| Patrick Mahomes (KC) | QB2, 236.3 / QB2, 216.5 | 2 / 2, "Bye this week" | 58.6 (QB2) |
+| Travis Kelce (KC) | TE6, 103.8 / TE6, 95.4 | 6 / 6 | 31.0 (TE6) |
+| Kenneth Walker III (KC) | RB9, 184.8 / RB9, 169.5 | 9 / 9 | 122.2 (RB9) |
+| Chuba Hubbard (CAR) | RB10, 164.0 / RB10, 150.6 | 10 / 10 | 99.2 (RB10) |
+| Tetairoa McMillan (CAR) | WR11, 149.2 / WR11, 136.8 | 11 / 11 | 74.7 (WR11) |
+
+(Mahomes' 236.3 is weeks 6–17 of `ref:half`'s window, 12 games; the calculator runs to week 18, 13 games: 256.1.)
+
+**Which screens were wrong for bye teams, and since when.** Every screen that reads a stored week after this one:
+Rankings "Rest of season", `/ros` (all four views), the free trade calculator, the player card's `ros` / `ref_value`,
+and with a league: Trades (the market price: no rows → no price), the partner search and Team's season outlook (KC / CAR
+players worth nothing in weeks 6–8 of the horizon), Waivers' rest of season, the League page's roster values. My Week's
+own week was right (a bye is a bye). Since the first nightly that loaded week 5's roster file (it was not in IQ-1's copy
+nor in `league_lab`, both loaded Mon 5 Oct — which is why they were whole); weeks 1–4 have no byes, so never before
+this week. **It would recur every bye week** (week 6 has 4 teams on a bye, and so on to week 14): each time the
+bye teams vanish from every later week until their next file. Kickers of bye teams too (`mart_kd_week`); defenses are
+built from the schedule and were never affected.
+
+**Tests**: dbt unit tests `dbt/models/intermediate/iq4_bye_week.yml` (the universe and the personnel status on a
+four-team fixture with a bye and a player who moves during it; both FAIL on main's SQL, PASS now);
+`api/tests/test_iq4.py` (clock pinned in week 5 of the real schedule: `/api/ros` reference and house, the coverage rule
+"every team with a game in the window has a QB in the list", Rankings' season view (rank, `bye_this_week`, no game),
+the free calculator, the card (reference and house), the trade market SQL). On `league_lab` (no week-5 file) these
+pass too: they guard the readers; the dbt tests guard the cause. Rankings' season rows carry `bye_this_week` and the
+row says **"Bye this week"** (was "no game this week").
+
+#### 1. `league-lab audit-lists` — today's report
+
+`src/league_lab/audit.py` + the command at the end of `cli.py`. Reads every list a visitor opens without a league
+(Half PPR, PPR, Standard × this week / rest of season / the free calculator's values × QB RB WR TE K DEF = 54 lists)
+the way the site builds them (`anyleague.price_week`, `anyleague.ros_table`, the reference scorings, the typical
+league's slots and `ros_window`); read only; **exit 0 always**; markdown on stdout and in `logs/list_audit.md`
+(logs/ is git-ignored). Rules (constants at the top): coverage first; a top-12 (QB TE K DEF) / top-24 (RB WR)
+projection whose points per game (3+ games, this scoring) rank beyond twice that cut; a top-5 scorer outside the top
+15 / 30 unless Out / reserve / a bye explains it (the row says so); Out / Doubtful / reserve above 3.0 this week; a
+team with no QB above 10 or two; the projected starter vs the newest game's dropbacks both ways (IQ-2's
+`analytics.mart_starter_check` printed when it exists — it does not here, the section says so); the guard's top-24
+agreement per position and scoring (floors QB 0.55, RB / WR / TE 0.65); rank moves > 10 places since the previous run
+with no game and no status change — **yesterday's board is not kept in the database** (no state table added): the run
+saves its ranks in `logs/list_audit_ranks.json` and compares when the previous run's file is there (on Actions' fresh
+runner it never is). 11 unit tests on hand-built boards (`tests/test_iq4_audit.py`). ~4 s on my database.
+
+Today's report (`league_lab_iq4`, built 02:17 UTC = 22:17 ET, week 5, after the fix; full text in `logs/list_audit.md`,
+95 lines — the K / DEF and calculator sections repeat the rest-of-season ones):
+
+```
+#### Coverage — every team in every list
+- Every team with a game in a list's window has players in it (all 54 lists).
+#### Projected against what they have scored (3+ games this season)   [flags in all three scorings unless named]
+QB this week: Kyler Murray (MIN) #9 here, #30 in points per game (7.8 in 3 games); Tyler Shough (NO) #3 in points
+  per game (24.1 in 3) but #20 here; explained: Bryce Young (a bye this week)
+RB this week: explained: Kenneth Walker III (a bye this week)
+WR: George Pickens (DAL) #11 this week / #19 rest of season, #50 in points per game (5.6 in 4) [Standard]
+TE: Mike Gesicki (CIN) #4 in points per game (13.0) but #24 / #26; Juwan Johnson (NO) #2 (13.6) but #20 / #18;
+  AJ Barner (SEA) #11 this week, #27 in ppg [Standard]; Cade Otton (TB) #12 rest of season, #28 [Standard];
+  explained: Travis Kelce (a bye this week)
+QB rest of season (and the calculator's values): Kyler Murray (MIN) #4 here, #30 in points per game (7.8 in 3);
+  Tyler Shough (NO) #3 in points per game (24.1) but #22
+K this week: Dicker (LAC) #2 (ppg #28), Mevis (LA) #7 (#26), Lutz (DEN) #9 (#30), Borregales (NE) #11 (#29);
+  Shrader (IND) ppg #1 but #22, Gay (LV) #4 but #24, McLaughlin (TB) #5 but #21
+K rest of season: Dicker #1 (ppg #28); McPherson (CIN) ppg #3 but #27; Shrader ppg #1 but #23
+DEF this week: WAS #3 (ppg #25), DAL #4 (#30); LV ppg #2 but #23
+DEF rest of season: WAS #2 (#25), ATL #11 (#26), PHI #12 (#29); CIN ppg #5 but #19; LV ppg #2 but #32
+#### Status this week
+- 0 players carry an injury-report status (the week's report is not out yet); 91 are on a reserve list.
+- No player ruled out or on a reserve list is projected above a backup.
+- Every team playing this week has exactly one quarterback above 10.
+#### Who starts   (mart_starter_check not on this database: our own check)
+- CHI: projected starter Case Keenum (16.2) took no dropback in week 4; Tyson Bagent led them (36)
+- SEA: projected starter Drew Lock (14.1) took no dropback in week 4; Sam Darnold led them (26)
+- WAS: projected starter Jayden Daniels (18.0) took no dropback in week 4; Athan Kaliakmanis led them (36)
+#### This week against the later weeks (top 24, rank correlation)
+| list | QB | RB | WR | TE | K | DEF |
+| Half PPR | 0.58 | 0.94 | 0.95 | 0.85 | 0.30 | 0.33 |
+| PPR | 0.58 | 0.96 | 0.97 | 0.91 | 0.30 | 0.33 |
+| Standard | 0.58 | 0.93 | 0.91 | 0.76 | 0.30 | 0.33 |
+#### Rest-of-season rank moves: yesterday's board is not kept anywhere: nothing to compare (ranks saved for the next run)
+#### Counts: coverage 0, against_scored 43, out_projected 0, qbs_per_team 0, starter_vs_last_game 3, agreement_below_floor 0
+```
+
+Reading it: SEA and CHI are IQ-2's two (the override list fixes them); **WAS / Daniels** is the third team to check (he
+missed week 4; the listing has him back for week 5 — right if he plays). Murray and Shough are the QB model's weak read
+of the individual quarterback (IQ-3's subject). K / DEF flags are what item 2's grade predicts. Before the fix the
+first line would have read "missing CAR, KC" for every rest-of-season and value list (the rule's unit test).
+
+#### 2. Kickers and defenses 2–8 weeks ahead (METRICS § "Kickers and defenses beyond next week")
+
+Keep rule committed `db1b640` (21:50 ET) before the study ran (`scripts/analysis/iq4_kd_horizon.py`; 2021–2025, one
+kd1.0 fit per season, as of W = 3/5/7/9, rows rebuilt as the nightly builds a future week: no line from h = 2, as-of
+inputs frozen after W; naive = this season's points per game through W; League of Scrubs, the one house league that
+starts K / DEF; 20 cells a horizon). Pooled 2–8: **K Spearman 0.028 (model) / 0.016 (naive), MAE 3.75 / 4.14; DEF
+0.040 / 0.033, MAE 4.78 / 5.30** (one week out: K 0.095, DEF 0.257). Model Spearman higher in 3 of 5 seasons, MAE lower
+in 5 of 5 → neither "keep" nor "replace" passes → "no different", and the better Spearman is far below the 0.15 floor →
+**recommendation: take the K / DEF "Rest of season" list off the public screen.** Context that decides nothing: each
+unit's points per game over W+2…W+8 ranked: K 0.023 / 0.087, DEF −0.019 / 0.158. **Built behind a switch**:
+`LEAGUE_LAB_KD_ROS` (unset / `off` = Rankings' season view of K and DEF shows the sentence and no rows; `on` = as
+before). `/ros` and the free calculator keep K / DEF numbers with the caveat (league tools and trade values need a
+number). kd1.0 itself unchanged; the week view untouched.
+
+#### 3. The sentence on the three screens
+
+`api/league_lab_api/ros_grade.py` — the one place (constants with the METRICS reference and the date), read by
+Rankings' season view, `/api/ros` and the free calculator (`ros_grade` in each answer):
+
+> Beyond next week there is no betting line yet. Graded on 2021–2025, a quarterback projection two to eight weeks ahead
+> misses by about 7.6 points per game (6.4 for next week); running backs, receivers and tight ends miss by about 0.2
+> more than next week.
+
+K / DEF: Rankings: "Kickers and defenses: graded on 2021–2025, their order two to eight weeks ahead is no better than
+chance, so they have no rest-of-season ranking here." `/ros` and the calculator: "… no better than chance; read their
+numbers as a rough guide." WORDS.md § "What we know about the rest of the season". e2e `web/e2e/iq4/fixtures.spec.ts`
+(recorded from my API on the real bye week; phone 375 and desktop 1300, no sideways scroll; 8 of 8), screenshots in
+`docs/handbacks/iq4/`.
+
+#### 4. The site's own counter (`usage.py`)
+
+* **The failed writes, found**: a view while browsing sends `league: "ref:half"`; `platforms.check_key` accepts a
+  reference key, so the row went in with `league_key = 'ref:half'`, `platform = 'reference'` — and `usage.events`'
+  checks (`events_league_key_id`, `events_platform_name`) refuse both: a `CheckViolation`, swallowed and counted as
+  `failed`. Every rest-of-season, calculator, Rankings, Players… view without a league was lost (30 of 323 on 7 Oct is
+  the share of views made with a reference key; not proven on the live table — I cannot reach it — but reproduced
+  here: before the fix the insert fails, after it is counted). A reference key is now counted as a view with no league.
+* `rankings` and `write` (the editor) added to `SCREENS` (the existing test that every router name is a screen was
+  failing on main for exactly this).
+* A connection error (`OperationalError`, `InterfaceError`) is tried once more after 0.5 s on the writer thread (never a
+  request's time; `db.write_one` already re-connects once at once); `process` gains `retried` and `failed_kinds`
+  (by exception class, at most 20 names).
+* `/api/usage/summary` gains `depth`: per day, sessions with 1, 2–3 and 4+ screen views.
+* Tests: `api/tests/test_iq4_usage.py` (7). Two lines of `test_u1.py` updated on purpose: they were stale since IK-3
+  widened the table's checks (`'espn'` is a platform now; IK-3's `drop constraint if exists` tripped "no 'drop '") —
+  both failed on main against a table with IK-3's checks.
+
+#### Files
+
+* dbt: `int_player_week_universe.sql`, `mart_kd_week.sql`, `features/int_pn_player_week_status.sql` (IQ-4 blocks),
+  new `dbt/models/intermediate/iq4_bye_week.yml` (2 unit tests).
+* src: new `audit.py`; `cli.py` (`audit-lists`, IQ-4 block at the end).
+* api: new `ros_grade.py`; `rankings_api.py` (season view: `ros_grade`, the K / DEF switch, `bye_this_week`; IQ-4 blocks;
+  nothing in the starter part), `ondemand.py` (`ros_grade` on `/api/ros`), `freetrade.py` (`ros_grade`), `usage.py`.
+* web: `routes/Rankings.svelte` (season words, "Bye this week"), `routes/Ros.svelte`, `components/scoring/FreeTrade.svelte`,
+  `lib/api.ts` (types at the end).
+* tests: `api/tests/test_iq4.py` (11), `api/tests/test_iq4_usage.py` (7), `tests/test_iq4_audit.py` (11),
+  `api/tests/test_u1.py` (2 lines), `web/e2e/iq4/fixtures.spec.ts` + `web/fixtures/iq4/api_iq4.json` (76 KB).
+* scripts: `scripts/analysis/iq4_kd_horizon.py`. docs: METRICS § IQ-4 (keep rule, result, the sentence, the bug),
+  WORDS § IQ-4, this file, `docs/handbacks/iq4/*.jpg` (8), CHANGELOG.
+* Edits outside my files (smallest, marked): the three dbt models (no owner named; IQ-2 owns `int_pn_team_game.sql`,
+  untouched), `ondemand.py` (two keys + one helper), `test_u1.py`.
+
+#### Schema in / out
+
+No new relation, column or state table; nothing for `db migrate`. The API answers on a database without anything new
+(`ros_grade` is constants; `mart_starter_check` is read only when it exists). Answers gain: `/api/rankings` (season)
+`ros_grade`, `kd_hidden`, rows' `bye_this_week`; `/api/ros` and `/api/trade-calc/free` `ros_grade`;
+`/api/usage/summary` `depth`, `process.retried`, `process.failed_kinds`.
+
+#### Commands
+
+```
+uv run league-lab ingest nfl --seasons 2026 --datasets rosters_weekly         # the real week-5 file (GitHub)
+uv run league-lab dbt run --select <the 15 feature models>; uv run league-lab project
+uv run league-lab dbt build --select <the nightly's projection-marts selection> mart_player_availability
+uv run league-lab dbt test --select "int_player_week_universe,test_type:unit" "int_pn_player_week_status,test_type:unit"
+uv run league-lab audit-lists
+uv run python scripts/analysis/iq4_kd_horizon.py --out <csv>
+```
+
+#### Evidence — tests
+
+* Mine: `api/tests/test_iq4.py` 11 passed; `api/tests/test_iq4_usage.py` 7 passed; `tests/test_iq4_audit.py` 11 passed;
+  dbt unit tests 2 PASS (FAIL on main's SQL); dbt tests of the 3 models PASS 15; projection marts PASS 148, WARN 0.
+* Edited modules' files: `test_ip2.py test_in2.py test_f3.py` 106 passed, 6 failed (all in `known_api_failures.txt`);
+  `test_i0a test_i0b test_ia3 test_ib3 test_ic2 test_ic4 test_ie0 test_ii4 test_il4` 109 passed, 5 failed (all known);
+  `test_u1.py test_im3.py` + mine 90 passed.
+* ruff clean; copy standard clean; `npm run lint` 0 errors / 0 warnings; `npm run build` ok; e2e iq4 8 passed;
+  `check_root.sh`: 4 failed (all in `known_root_failures.txt`), 1,606 passed, 3 skipped — no new failure.
+
+#### Limitations
+
+* The live usage table was not read: the cause of the failed writes is found in the code and reproduced here, the
+  count (30 of 323) is consistent with it but not proven against the live rows.
+* K / DEF: one house league starts them (20 cells a horizon); the study scores units that played and kickers known by
+  W+1 (a slight look-ahead on who kicks, as IQ-1's d).
+* The audit's rank-move rule has no yesterday on a fresh runner (nothing stored in the database by design).
+* `league_lab_iq4` now carries the real week-5 roster file and a fresh `project` (my database; nobody else's touched).
+
+#### For the PO
+
+* **Deploy and nightly**: the bug is in rows the nightly builds. After the merge, the next nightly's `dbt build` +
+  `project` + projection marts restore the bye teams (no new step). Until then the live lists keep missing KC / CAR
+  (and, once week 6's file is out, week 6's four bye teams). Worth a manual run (or an early nightly) tonight.
+* `scripts/nightly.sh` — the soft step, after the projection marts (and after IQ-2's starter mart if it lands):
+  ```
+  # ---- IQ-4 (Wave I-Q): the trust guard — every public list audited; never a stop (exit 0 always)
+  SOFT_WHY="the lists go out unaudited tonight" soft audit-lists uv run league-lab audit-lists
+  # ---- end IQ-4
+  ```
+  and in the run's summary the report's head and counts, e.g. `sed -n '/^## Coverage/,/^$/p;/^## Counts/,$p'
+  logs/list_audit.md`.
+* Decide `LEAGUE_LAB_KD_ROS` (render.yaml): unset = K / DEF rest-of-season list off Rankings (the grade's
+  recommendation); `on` = as before.
+* STATUS: the bug, its cause and dates as above; WAS / Daniels on the weekly check list beside SEA and CHI.
+
+#### Next task
+
+The audit's flags as a weekly check list (with IQ-2's mart); a bye-week test on the nightly's own fresh database
+(load a bye week's file, project, assert the coverage rule); the rest-of-season ranges (still ungraded; no tiers).
