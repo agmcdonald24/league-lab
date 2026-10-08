@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-S (dependability, second round)
+
+- **IS-2 — inside a league, the same "can he play" check as the public lists, with the reason beside the zero.**
+  Waivers (the browse, the nightly's free agents and stashes, any league's on-demand free agents), the trade fill's
+  free agents, the replacement level, the rest-of-season lineup values, the league card, the scenario expiry and the
+  nightly lineup no longer read `mart_player_availability.injury_status` / nflverse's `report_status` (last week's
+  game status midweek) or a set of codes of their own: they ask `availability.statuses` + `sits` (API) or
+  `availability_gate` through `league_lab.league_status` (src). My Week, Team, Waivers and the league card show the
+  status, its source and date ("IR (knee - acl) · Sleeper, Sep 28") beside a player who sits; the card withholds a
+  projection the stored mart still holds for him. Kyler Murray (last week's "Out") is a free agent to add again in
+  League of Scrubs, as the Rankings rank him. `docs/handbacks/IS-2.md`.
+
 ## 2026-10-08 — hotfix: /api/ready through the hosted pooler; the release gate enforced
 
 - **`/api/ready` answered 503 on the live site while every screen worked.** The probe opened its connection with

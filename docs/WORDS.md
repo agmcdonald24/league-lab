@@ -845,3 +845,19 @@ no warning, never "accurate" or "reliable".
 | About, **What each number has been checked against** | the head ("… The order is the rank correlation (1 = perfect, 0 = no better than chance); the miss is in points per game."), one card per position: "Next week: graded · order 0.59 · miss 6.4", "Two to eight weeks ahead: graded, weak · …", "Next four weeks: order 0.54 · miss 6.9 (his own record: 0.54 · 7.0)", "Rest of season: …"; under them "Next four weeks and rest of season: each week's projection in the window scored against that week (pooled over the window's weeks, not the window's total), against a simple baseline in brackets: his own points per game so far (for quarterbacks with his role, the opponent and the betting line)."; the useful-decision sentence ("Is the trade calculator right? On a close one-for-one … 50 would be a coin flip."); "Not graded yet:" the ranges around a season total and a trade's gap, a trade of several players or across positions and the lineup effect, kickers and defenses over a window, quarterbacks' useful-decision grade on the current version | "validated" |
 | the record (`ops.context_grade` kind `horizon`) | "Quarterbacks, the next four weeks: order 0.54, miss 6.9 points per game (his own record: 0.54, 7.0)." · "Running backs, the rest of the season (up to eight weeks ahead): order 0.64, miss 4.7 points per game (his own record: 0.60, 4.9)." · a cell without a baseline ends "(no simple baseline measured yet)." | |
 <!-- ---- end IR-4 -->
+<!-- ---- IS-2 -->
+## Inside a league: the same check, and the reason beside the zero (IS-2, Wave I-S, 2026-10-08; My Week, Team, Waivers, the league card)
+
+The words are the one definition's (`availability_gate.classify`: `why`, `week_words`, `ros_words`); IS-2 adds no
+sentence of its own, only where they appear.
+
+| Where | Words |
+|---|---|
+| My Week, under the name of a player who sits (every table, not only the full list) | IR (ankle) · Sleeper, Sep 26 |
+| Team, the roster row's line (his place first: "IR" = his IR slot, "Bench", "RB1" …) | IR · PUP (knee - acl) · Sleeper, Oct 2 · Draft 2026 · 13.10 |
+| Waivers, "Browse every free agent", a player out this week (listed at 0) | Out (ankle) · Sleeper, Oct 7. Ruled out this week: he will not play this week, so he is not ranked. · rest of season 54 |
+| Waivers, a player with a flag only (Questionable) | Questionable (hamstring) · ESPN, Oct 8 · … |
+| The league card, "Availability" | ⚠️ **IR (knee - acl) · Sleeper, Sep 28**. On injured reserve: no return date, so no rest-of-season value. |
+| The league card, "Projection", a player who sits | unavailable: IR (knee - acl) · Sleeper, Sep 28 — On injured reserve: no return date, so no rest-of-season value. |
+| The league card, no word from the one definition | No injury designation. (last week's injury report no longer speaks for this week) |
+<!-- ---- end IS-2 -->
