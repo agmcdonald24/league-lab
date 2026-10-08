@@ -270,7 +270,8 @@ Playwright e2e. Proof (2026-10-08): a scratch commit letting a QB into FLEX turn
 * **`/api/ready`** — readiness: 200 only when the published numbers can be served — the database answers; the
   published tables are there; projections exist; the week of the next kickoff has projections on the boards and in
   the lists; the rest-of-season list is not empty. Otherwise 503 and the reason in words (`code`: `database`,
-  `publishing`, `missing_tables`, `no_projections`, `week_missing`, `lists_empty`). It also names the publication
+  `publishing`, `missing_tables`, `no_projections`, `week_missing`, `lists_empty`; `query` / `error` when the check
+  itself fails — never a 500). It also names the publication
   (`checks.publication`) and its age (an old publication is still "ready": a missed nightly is health's `stale`).
   Kept 60 s after a success, 15 s after a failure; no password; never the request pool.
 * **Keep Render's health check on `/api/health`.** Pointed at `/api/ready`, a Neon wake-up or a nightly publish

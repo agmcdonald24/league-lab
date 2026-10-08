@@ -769,6 +769,8 @@ Read by the operator (the PO, Andrew, a monitor), never shown on a screen. `/api
 |---|---|
 | `ready` | The published numbers can be served. |
 | `database` | The database does not answer (`<error class>`). |
+| `query` | A readiness query failed (`<error class>`). |
+| `error` | The readiness check failed (`<error class>`). |
 | `publishing` | The numbers are being replaced: a new publication started at `<time>` and is not in place yet. |
 | `missing_tables` | The published tables are missing: `<relations>`. |
 | `no_projections` | No projections have been published. |

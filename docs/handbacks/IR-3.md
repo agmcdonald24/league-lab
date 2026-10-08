@@ -53,8 +53,10 @@ condition). In CI add `uv sync` × 2 and `npm ci` (cached): about 4–5 minutes.
 `analytics.mart_player_ros_projection` exist; `max(ops.projections.fitted_at)` is not null; the week of the next
 regular-season kickoff after now (`league_lab.clock`) has rows in `ops.projections` (the boards) and in
 `mart_player_week_projections` (the lists) — "season over" passes; `mart_player_ros_projection` is not empty.
-Else 503 with `code` and `reason` (docs/WORDS.md § IR-3). The publication's age is reported, never a 503 (a missed
-nightly is `/api/health`'s `stale`). Kept 60 s after a success, 15 s after a failure, one probe at a time.
+Else 503 with `code` and `reason` (docs/WORDS.md § IR-3); a failing query is `query`, anything unexpected `error`
+(503 in words, never a 500, the class name only). The publication's age is reported, never a 503 (a missed
+nightly is `/api/health`'s `stale`). Kept 60 s after a success, 15 s after a failure, one probe at a time (before the first answer concurrent callers
+wait for that one probe — tested with 6 threads, 1 probe).
 
 Local answer (fixture API, im1, pinned clock):
 
@@ -240,7 +242,7 @@ from the nightly as above.
 
 #### Files
 
-Mine: `api/league_lab_api/ready.py` (new), `api/tests/test_ir3.py` (new, 15), `scripts/post_deploy_check.py` (new),
+Mine: `api/league_lab_api/ready.py` (new), `api/tests/test_ir3.py` (new, 17), `scripts/post_deploy_check.py` (new),
 `tests/test_ir3_post_deploy.py` (new, 11), `tests/test_ir3_gate.py` (new, 4), `scripts/gate.sh` (new), this file.
 Handed to me: `.github/workflows/image.yml` (the `gate` job, `needs: gate`, a header line), `scripts/sync_to_hosted.sh`
 (+ IR-3 blocks; two lines extended: the mode list, the one-writer rule now also covers `--rollback`),
@@ -255,7 +257,7 @@ a local target). New dependencies: none (the gate job uses `actions/setup-node@v
 
 #### Checks
 
-`api/tests/test_ir3.py` 15 passed; `tests/test_ir3_post_deploy.py` 11, `tests/test_ir3_gate.py` 4 passed. Edited
+`api/tests/test_ir3.py` 17 passed; `tests/test_ir3_post_deploy.py` 11, `tests/test_ir3_gate.py` 4 passed. Edited
 modules' tests: `test_h0`, `test_im3`, `test_ih1`, `test_static` (+ test_ir3) 98 passed; every test naming
 `bucket_for` (`-k "bucket or limit or ratelimit"` over 13 files) 24 passed. `scripts/gate.sh` (everything) passed:
 `GATE PASSED` (above). ruff clean; the copy standard clean; `bash -n` clean on `gate.sh` and `sync_to_hosted.sh`;

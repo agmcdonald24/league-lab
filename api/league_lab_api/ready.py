@@ -134,28 +134,44 @@ def probe(conn: psycopg.Connection, now: datetime | None = None, wall: datetime 
 
 
 def check(dsn: str | None = None) -> tuple[bool, dict]:
-    """Probe on a short connection of its own; any database error is "does not answer" (the class name, never text
-    that could carry a host or a user)."""
+    """Probe on a short connection of its own. A connection that fails is "does not answer"; a query that fails (a
+    table dropped between two statements, a timeout) is "query"; anything else is "error" — the class name only, never
+    text that could carry a host or a user, and never a 500."""
     try:
         with psycopg.connect(dsn or app_dsn(), connect_timeout=CONNECT_TIMEOUT_S, autocommit=True,
                              options=f"-c statement_timeout={STATEMENT_TIMEOUT_MS}",
                              application_name="league-lab-ready") as conn:
             return probe(conn)
-    except psycopg.Error as exc:
+    except psycopg.OperationalError as exc:
         return False, {"ready": False, "code": "database", "checks": {"database": f"unreachable: {exc.__class__.__name__}"},
                        "reason": f"The database does not answer ({exc.__class__.__name__})."}
+    except psycopg.Error as exc:
+        return False, {"ready": False, "code": "query", "checks": {"database": "ok"},
+                       "reason": f"A readiness query failed ({exc.__class__.__name__})."}
+    except Exception as exc:  # noqa: BLE001 - readiness answers in words, never a 500
+        return False, {"ready": False, "code": "error", "checks": {},
+                       "reason": f"The readiness check failed ({exc.__class__.__name__})."}
+
+
+def _fresh() -> bool:
+    return _state["answer"] is not None and time.monotonic() < _state["next"]
 
 
 def cached() -> tuple[bool, dict]:
-    """The last answer while it is fresh (60 s after a success, 15 s after a failure); one probe at a time."""
-    ans = _state["answer"]
-    if (ans is None or time.monotonic() >= _state["next"]) and _lock.acquire(blocking=ans is None):
-        try:
+    """The last answer while it is fresh (60 s after a success, 15 s after a failure). One probe at a time: while one
+    runs the others get the last answer; before the first answer they wait for it (and never probe again)."""
+    if _fresh():
+        return _state["answer"]
+    first = _state["answer"] is None
+    if not _lock.acquire(blocking=first):
+        return _state["answer"]
+    try:
+        if not _fresh() and not (first and _state["answer"] is not None):
             ok, body = check()
             body["checked_at"] = _iso(datetime.now(UTC))
             _state.update(answer=(ok, body), next=time.monotonic() + (OK_TTL_S if ok else FAIL_TTL_S))
-        finally:
-            _lock.release()
+    finally:
+        _lock.release()
     return _state["answer"]
 
 

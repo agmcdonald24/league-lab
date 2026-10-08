@@ -6,6 +6,7 @@ cache, the bucket, and one answer from the real database (needs_db)."""
 from __future__ import annotations
 
 import json
+import time
 from datetime import UTC, datetime
 
 import pytest
@@ -139,6 +140,47 @@ def test_the_answer_is_kept_a_minute_after_a_success_and_15_seconds_after_a_fail
     assert client.get("/api/ready").status_code == 503 and len(calls) == 2    # re-probed after 60 s
     clock[0] += 14
     assert client.get("/api/ready").status_code == 503 and len(calls) == 2
+    ready.reset()
+
+
+def test_a_failing_query_or_a_surprise_is_a_503_in_words_never_a_500(client, monkeypatch):
+    import psycopg
+
+    class Boom:
+        def __init__(self, exc):
+            self.exc = exc
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def execute(self, *a, **k):
+            raise self.exc
+    for exc, code in ((psycopg.errors.UndefinedTable("gone"), "query"), (ValueError("odd"), "error")):
+        ready.reset()
+        monkeypatch.setattr(ready.psycopg, "connect", lambda *a, exc=exc, **k: Boom(exc))
+        r = client.get("/api/ready")
+        assert r.status_code == 503 and r.json()["code"] == code and "gone" not in r.text and "odd" not in r.text
+    ready.reset()
+
+
+def test_before_the_first_answer_concurrent_callers_share_one_probe(monkeypatch):
+    import threading
+    calls = []
+
+    def slow_check():
+        calls.append(1)
+        time.sleep(0.2)
+        return True, {"ready": True}
+    ready.reset()
+    monkeypatch.setattr(ready, "check", slow_check)
+    out = []
+    threads = [threading.Thread(target=lambda: out.append(ready.cached()[0])) for _ in range(6)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert out == [True] * 6 and len(calls) == 1
     ready.reset()
 
 
