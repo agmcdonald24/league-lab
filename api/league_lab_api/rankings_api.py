@@ -591,6 +591,9 @@ def rankings(league: str, *, position: str | None = None, view: str | None = Non
         if vw == "season":
             row.update(ros_games=r.get("ros_games"), ros_points_per_game=r.get("ros_points_per_game"),
                        bye_weeks=[int(w) for w in (r.get("bye_weeks") or []) if WP._num(w) is not None])
+            # ---- IQ-4: a player on a bye this week is ranked by his remaining games; his row says so
+            row["bye_this_week"] = bool(ctx.week is not None and int(ctx.week) in row["bye_weeks"])
+            # ---- end IQ-4
         if own is not None:
             o = own.loc[r["gsis_id"]] if r.get("gsis_id") in own.index else None
             row["rostered_by_roster_id"] = (None if o is None or pd.isna(o["rostered_by_roster_id"])
