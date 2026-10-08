@@ -85,7 +85,7 @@ def test_an_old_publication_is_ready_with_its_age_never_a_503():
 @pytest.mark.parametrize("facts, code, words", [
     ({"tables": set()}, "missing_tables", "The published tables are missing: ops.projections, analytics.dim_game"),
     ({"tables": set(), "db_comment": json.dumps({"publishing_since": "2026-10-03T11:55:00+00:00", "mode": "drop"})},
-     "publishing", "A new publication of the numbers is being restored (started 2026-10-03T11:55:00+00:00)"),
+     "publishing", "The numbers are being replaced: a new publication started at 2026-10-03T11:55:00+00:00"),
     ({"fitted": None}, "no_projections", "No projections have been published."),
     ({"board": False}, "week_missing", "Week 4 of 2026 has no projections in the boards."),
     ({"lists": False}, "week_missing", "Week 4 of 2026 has no projections in the lists."),

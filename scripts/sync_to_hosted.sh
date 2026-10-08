@@ -24,12 +24,33 @@
 #         scripts/sync_to_hosted.sh --dry-run    (dump only, print the relations and the size)
 #         scripts/sync_to_hosted.sh --relations  (the audit: what each reader names and what would be published;
 #                                                 reads the local database only, needs no hosted settings)
+#         scripts/sync_to_hosted.sh --rollback   (IR-3: put the previous publication back - only after a swap that kept
+#                                                 it as analytics_prev / analytics_seeds_prev / ops_prev; docs/HOSTING.md)
 # Exit codes: 0 published · 4 the target is the local cluster · 5 a relation a reader names is missing on the
 # hosted copy after the restore · 6 over the size budget (nothing touched) · 7 not the writer (nothing touched)
+# · 8 (IR-3) LEAGUE_LAB_HOSTED_PUBLISH=swap and old + new do not fit under LEAGUE_LAB_HOSTED_CAP_MB (nothing published)
+# · 9 (IR-3) --rollback with no previous publication kept (nothing touched)
+#
+# ---- IR-3 (Wave I-R): how a publication replaces the last one - LEAGUE_LAB_HOSTED_PUBLISH (docs/HOSTING.md § "Publishing
+# without the gap"):
+#   drop  (the default, unchanged)  the previous marts are dropped, then the new copy restored: for the restore's length
+#         the tables are away. New and always on: a marker on the database while they are away ({"publishing_since"}:
+#         /api/ready answers 503 "publishing" with it, the screens say the numbers are not ready yet) and the
+#         publication's id and time as the comment of the analytics schema ({"publication", "published_at", "code"}).
+#         Both are their own statements and never fail the publish.
+#   swap  the new copy is restored under the live names while the live schemas are renamed aside (`_prev`) - in ONE
+#         transaction with the validation (every relation a reader names, each table's rows = the local copy's, the
+#         readiness rule: projections, the current week on the boards and the lists, the rest-of-season list). Readers
+#         see the old publication until the commit and the new one after it; a failed or interrupted restore or a
+#         failed check rolls everything back and the old publication stays. Needs room for two copies: refused (exit 8,
+#         nothing published) when the hosted database's size + this copy > LEAGUE_LAB_HOSTED_CAP_MB (default 500).
+#         The old copy is kept as `_prev` (the app role's grants revoked) for --rollback until the next run, or
+#         dropped at once when keeping it would leave the database over the cap (or LEAGUE_LAB_HOSTED_KEEP_PREV=0).
+#   auto  swap when it fits under the cap, otherwise drop (and the log says which and why).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MODE="${1:-publish}"
-case "$MODE" in publish|--dry-run|--relations) ;; *) echo "sync_to_hosted.sh: unknown argument: $MODE" >&2; exit 64 ;; esac
+case "$MODE" in publish|--dry-run|--relations|--rollback) ;; *) echo "sync_to_hosted.sh: unknown argument: $MODE" >&2; exit 64 ;; esac  # IR-3: --rollback
 mkdir -p logs
 exec > >(tee -a logs/sync.log) 2>&1
 echo "=== $(date '+%F %T') sync start (code $(git rev-parse --short HEAD 2>/dev/null || echo '?')$([ "$MODE" = publish ] || echo ", $MODE")) ==="
@@ -59,7 +80,7 @@ if [ "$MODE" != --relations ]; then
       fi ;;
   esac
   # --- one writer (Wave H) ----------------------------------------------------------------------
-  if [ "$MODE" = publish ] && [ "${GITHUB_ACTIONS:-}" != true ] && [ "${LEAGUE_LAB_MAC_WRITES_HOSTED:-}" != 1 ] && [ "$target_local" != 1 ]; then
+  if { [ "$MODE" = publish ] || [ "$MODE" = --rollback ]; } && [ "${GITHUB_ACTIONS:-}" != true ] && [ "${LEAGUE_LAB_MAC_WRITES_HOSTED:-}" != 1 ] && [ "$target_local" != 1 ]; then
     echo "refusing: GitHub Actions is the one writer of the hosted copy (docs/HOSTING.md § 5). Publishing from here" >&2
     echo "  would replace the decision record it keeps there with this machine's. Publish from GitHub instead:" >&2
     echo "  Actions → nightly → Run workflow. When Actions is down: LEAGUE_LAB_MAC_WRITES_HOSTED=1 make sync-hosted" >&2
@@ -67,6 +88,59 @@ if [ "$MODE" != --relations ]; then
     exit 7
   fi
 fi
+
+# ---- IR-3 (Wave I-R): the publication mode (the header), the swap's room, and --rollback ---------------------------
+PUBLISH_MODE="${LEAGUE_LAB_HOSTED_PUBLISH:-drop}"
+case "$PUBLISH_MODE" in drop|swap|auto) ;; *) echo "LEAGUE_LAB_HOSTED_PUBLISH is drop, swap or auto (got: $PUBLISH_MODE)" >&2; exit 64 ;; esac
+CAP_MB="${LEAGUE_LAB_HOSTED_CAP_MB:-500}"     # the most the hosted database may hold at once (Neon free: 512 MB)
+KEEP_PREV="${LEAGUE_LAB_HOSTED_KEEP_PREV:-1}"
+# a simulation on the local cluster (target_local=1 only) may skip the role step: roles are cluster-wide, and the
+# local league_lab_app role belongs to every developer's database (never honoured against a hosted database)
+SKIP_ROLE=0
+[ "${target_local:-0}" = 1 ] && [ "${LEAGUE_LAB_HOSTED_SKIP_ROLE:-}" = 1 ] && SKIP_ROLE=1
+PREV_SCHEMAS="analytics_prev analytics_seeds_prev ops_prev"
+hosted_q() { psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -At -c "$1"; }
+hosted_mb() { hosted_q "select round(pg_database_size(current_database()) / 1048576.0)::int"; }
+revoke_prev_sql() {  # the app role never reads a kept copy; the revoke also makes every cached plan on the old tables re-plan
+  cat <<'SQL'
+do $$ declare s text; begin
+  foreach s in array array['analytics_prev', 'analytics_seeds_prev', 'ops_prev'] loop
+    if exists (select 1 from pg_namespace where nspname = s) and exists (select 1 from pg_roles where rolname = 'league_lab_app') then
+      execute format('revoke all on all tables in schema %I from league_lab_app', s);
+      execute format('revoke usage on schema %I from league_lab_app', s);
+    end if;
+  end loop;
+end $$;
+SQL
+}
+if [ "$MODE" = --rollback ]; then
+  have_prev="$(hosted_q "select count(*) from pg_namespace where nspname in ('analytics_prev', 'analytics_seeds_prev', 'ops_prev')")"
+  if [ "$have_prev" != 3 ]; then
+    echo "rollback: no previous publication is kept ($have_prev of 3 _prev schemas): nothing was touched" >&2
+    exit 9
+  fi
+  echo "rollback: putting the previous publication back ($(hosted_q "select coalesce(obj_description(to_regnamespace('analytics_prev'), 'pg_namespace'), 'not recorded')") replaces $(hosted_q "select coalesce(obj_description(to_regnamespace('analytics'), 'pg_namespace'), 'not recorded')")) ..."
+  { echo "set client_min_messages = warning; drop schema if exists analytics_bad cascade; drop schema if exists analytics_seeds_bad cascade; drop schema if exists ops_bad cascade;"
+    for sch in analytics analytics_seeds ops; do
+      echo "alter schema ${sch} rename to ${sch}_bad; alter schema ${sch}_prev rename to ${sch};"
+    done
+    cat <<'SQL'
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'league_lab_app') then
+    grant usage on schema analytics, analytics_seeds, ops to league_lab_app;
+    grant select on all tables in schema analytics to league_lab_app;
+    grant select on all tables in schema analytics_seeds to league_lab_app;
+    grant select on all tables in schema ops to league_lab_app;
+    revoke all on all tables in schema analytics_bad, analytics_seeds_bad, ops_bad from league_lab_app;
+  end if;
+end $$;
+SQL
+  } | psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction
+  psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "set client_min_messages = warning; drop schema analytics_bad cascade; drop schema analytics_seeds_bad cascade; drop schema ops_bad cascade;"
+  echo "rollback done: the previous publication is live ($(hosted_q "select coalesce(obj_description(to_regnamespace('analytics'), 'pg_namespace'), 'not recorded')")); the replaced one is dropped. The next nightly publishes anew."
+  exit 0
+fi
+# ---- end IR-3
 
 # --- what to publish: the relation closure ------------------------------------------------------
 # Derived from the code in ONE place, scripts/hosted_relations.py (its docstring has the rule): the readers are the
@@ -207,6 +281,49 @@ fi
 echo "dump: $(du -h "$DUMP" | cut -f1) + $(du -h "$SLIM_DUMP" | cut -f1) compressed"
 [ "$MODE" = --dry-run ] && exit 0
 
+# ---- IR-3: the publication's id (its time, the code that built it) and, for a swap, the room it needs
+PUB_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+PUB_CODE="$(git rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+PUB_ID="$(date -u +%Y%m%dT%H%MZ)-${PUB_CODE}"
+pub_json() { printf '{"publication": "%s", "published_at": "%s", "code": "%s", "mode": "%s", "seasons_from": %s}' "$PUB_ID" "$PUB_TIME" "$PUB_CODE" "$1" "$first_season"; }
+use_swap=0
+if [ "$PUBLISH_MODE" != drop ]; then
+  # a kept previous publication goes first (it would not fit beside the current one and the new one)
+  psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "set client_min_messages = warning; drop schema if exists analytics_prev cascade; drop schema if exists analytics_seeds_prev cascade; drop schema if exists ops_prev cascade;"
+  now_mb="$(hosted_mb)"
+  need_mb="$(awk -v a="$now_mb" -v b="$total_mb" 'BEGIN { printf "%d", a + b + 0.5 }')"
+  if [ "$need_mb" -le "$CAP_MB" ]; then
+    use_swap=1
+    echo "publication mode: swap (the hosted database holds ${now_mb} MB; + this copy ~${total_mb} MB = ${need_mb} MB <= the ${CAP_MB} MB cap)"
+  elif [ "$PUBLISH_MODE" = swap ]; then
+    echo "ERROR: LEAGUE_LAB_HOSTED_PUBLISH=swap, but the hosted database (${now_mb} MB) + this copy (~${total_mb} MB) = ${need_mb} MB is over the ${CAP_MB} MB cap: nothing was published (the hosted copy keeps the last publication). Raise LEAGUE_LAB_HOSTED_CAP_MB on a larger plan, or publish with auto / drop." >&2
+    exit 8
+  else
+    echo "publication mode: drop (auto: the hosted database ${now_mb} MB + this copy ~${total_mb} MB = ${need_mb} MB is over the ${CAP_MB} MB cap - two copies do not fit)"
+  fi
+fi
+if [ "$use_swap" = 1 ]; then
+  # the validation the swap commits only after: every relation a reader names, and each table's rows as the local copy
+  need_pre="$( { for t in $closure; do echo "analytics.$t"; done; printf '%s\n%s\n' "$api_list" "$console_list"; } | sed '/^$/d' | sort -u)"
+  slim_in="$(echo "${slim[*]:-}" | tr ' ' ',')"
+  counts_sql="$(psql "$LOCAL_DSN" -At -v ON_ERROR_STOP=1 <<SQL
+select string_agg(format('select %L as name, %s::bigint as want', n.nspname || '.' || c.relname,
+         (xpath('/row/c/text()', query_to_xml(format('select count(*) as c from %I.%I',
+            case when n.nspname = 'analytics' and c.relname = any(string_to_array('$slim_in', ',')) then 'hosted_slim' else n.nspname end,
+            c.relname), false, true, '')))[1]::text), ' union all ' order by 1)
+from pg_class c join pg_namespace n on n.oid = c.relnamespace
+where c.relkind in ('r', 'p') and (
+      (n.nspname = 'analytics' and c.relname = any(string_to_array('$(echo "$closure" | csv)', ',')))
+   or n.nspname = 'analytics_seeds'
+   or (n.nspname = 'ops' and not (n.nspname || '.' || c.relname) = any(string_to_array('$excl_csv', ','))))
+SQL
+)"
+  echo "the swap checks $(echo "$need_pre" | wc -l | tr -d ' ') relations and the rows of $(echo "$counts_sql" | grep -o ' as name' | wc -l | tr -d ' ') tables before it commits"
+fi
+
+if [ "$SKIP_ROLE" = 1 ]; then
+  echo "a local simulation (LEAGUE_LAB_HOSTED_SKIP_ROLE=1): the cluster-wide read-only role is left as it is"
+else
 echo "ensuring the read-only role exists on the hosted database ..."
 # (the password goes in as a psql variable, quoted by psql: a quote in it cannot break the SQL or
 # echo the line, and this log is uploaded as a CI artifact)
@@ -220,6 +337,7 @@ alter role league_lab_app with login password :'app_pw';
 alter role league_lab_app set default_transaction_read_only = on;
 alter role league_lab_app set statement_timeout = '30s';
 SQL
+fi   # ---- IR-3: SKIP_ROLE
 
 # Free tiers cap the project at ~0.5 GB, and a drop inside the same transaction as the restore
 # does not free space until commit - so the old copy of the marts (analytics, analytics_seeds:
@@ -229,8 +347,88 @@ SQL
 # Actions publishes (ops.projections: each week's board frozen at kickoff; the nightly restores it
 # from here), so it is dropped INSIDE the restore transaction: a restore that dies midway rolls
 # back and the previous ops survives.
+if [ "$use_swap" = 1 ]; then
+# ---- IR-3: the swap - the live schemas renamed aside and the new copy restored under their names, validated, in ONE
+# transaction (--single-transaction): until the commit every reader sees the previous publication; any failure (the
+# restore, a lost connection, a check below) rolls all of it back and the previous publication stays as it was.
+echo "publishing: restoring beside the live publication, checking, then switching in one transaction (pages keep the previous numbers until the commit) ..."
+t0=$(date +%s)
+{
+  cat <<'SQL'
+drop schema if exists hosted_slim cascade;
+do $$ declare s text; begin
+  foreach s in array array['analytics', 'analytics_seeds', 'ops'] loop
+    if exists (select 1 from pg_namespace where nspname = s) then
+      execute format('alter schema %I rename to %I', s, s || '_prev');
+    end if;
+  end loop;
+end $$;
+create schema analytics; create schema analytics_seeds; create schema ops; create schema hosted_slim;
+SQL
+  gunzip -c "$SLIM_DUMP"
+  for t in "${slim[@]:-}"; do [ -n "$t" ] && echo "alter table hosted_slim.$t set schema analytics;"; done
+  echo "drop schema hosted_slim;"
+  gunzip -c "$DUMP"
+  cat <<'SQL'
+do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'league_lab_app') then
+    grant usage on schema analytics, analytics_seeds, ops to league_lab_app;
+    grant select on all tables in schema analytics to league_lab_app;
+    grant select on all tables in schema analytics_seeds to league_lab_app;
+    grant select on all tables in schema ops to league_lab_app;
+  end if;
+end $$;
+SQL
+  revoke_prev_sql
+  # the publication's id, in the same transaction as its tables (/api/ready reads it)
+  echo "comment on schema analytics is \$pub\$$(pub_json swap)\$pub\$;"
+  # the checks: a failure raises, and the transaction - the whole publication - rolls back
+  echo "do \$chk\$ declare missing text; begin
+  select string_agg(n, ' ') into missing from unnest(string_to_array('$(echo "$need_pre" | csv)', ',')) n where to_regclass(n) is null;
+  if missing is not null then raise exception 'publication refused (the previous one stays): missing relations: %', missing; end if;
+end \$chk\$;"
+  if [ -n "$counts_sql" ]; then
+    echo "do \$chk\$ declare r record; got bigint; bad text := ''; begin
+  for r in $counts_sql loop
+    execute 'select count(*) from ' || r.name into got;
+    if got <> r.want then bad := bad || format(' %s %s of %s;', r.name, got, r.want); end if;
+  end loop;
+  if bad <> '' then raise exception 'publication refused (the previous one stays): rows differ from the local copy:%', bad; end if;
+end \$chk\$;"
+  fi
+  cat <<'SQL'
+do $chk$ declare s int; w int; begin
+  if (select max(fitted_at) from ops.projections) is null then
+    raise exception 'publication refused (the previous one stays): no projections';
+  end if;
+  select season, week into s, w from analytics.dim_game where season_type = 'REG' and kickoff_at > now() order by kickoff_at limit 1;
+  if found and not exists (select 1 from ops.projections where season = s and week = w) then
+    raise exception 'publication refused (the previous one stays): week % of % has no projections on the boards', w, s;
+  end if;
+  if found and not exists (select 1 from analytics.mart_player_week_projections where season = s and week = w) then
+    raise exception 'publication refused (the previous one stays): week % of % has no projections in the lists', w, s;
+  end if;
+  if not exists (select 1 from analytics.mart_player_ros_projection) then
+    raise exception 'publication refused (the previous one stays): the rest-of-season list is empty';
+  end if;
+end $chk$;
+SQL
+} | psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction
+echo "switched in $(( $(date +%s) - t0 )) s: publication ${PUB_ID} is live"
+after_mb="$(hosted_mb)"
+if [ "$KEEP_PREV" = 1 ] && [ "$after_mb" -le "$CAP_MB" ]; then
+  echo "the previous publication is kept as analytics_prev / analytics_seeds_prev / ops_prev until the next run (${after_mb} MB in all; scripts/sync_to_hosted.sh --rollback puts it back)"
+else
+  psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "set client_min_messages = warning; drop schema if exists analytics_prev cascade; drop schema if exists analytics_seeds_prev cascade; drop schema if exists ops_prev cascade;"
+  echo "the previous publication is dropped (${after_mb} MB with it; cap ${CAP_MB} MB, LEAGUE_LAB_HOSTED_KEEP_PREV=${KEEP_PREV}): $(hosted_mb) MB now"
+fi
+else
+# ---- end IR-3 (the drop path below is the pre-IR-3 path, unchanged but for the marker and the stamp around it)
 echo "publishing: dropping the previous marts, then restoring (pages show 'not built yet' meanwhile; ops swaps atomically) ..."
 t0=$(date +%s)
+# ---- IR-3: the marker while the tables are away (/api/ready: 503 "publishing"); its own statement, never fatal
+psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -q -c "do \$m\$ begin execute format('comment on database %I is %L', current_database(), '{\"publishing_since\": \"$PUB_TIME\", \"mode\": \"drop\"}'); end \$m\$;" \
+  || echo "WARNING: could not mark the database as publishing (the publish goes on; /api/ready says 'missing tables' meanwhile)" >&2
 psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "drop schema if exists analytics cascade; drop schema if exists analytics_seeds cascade;"
 {
   echo "drop schema if exists ops cascade; create schema if not exists analytics; create schema if not exists analytics_seeds; create schema ops; drop schema if exists hosted_slim cascade; create schema hosted_slim;"
@@ -247,6 +445,12 @@ grant select on all tables in schema ops to league_lab_app;
 SQL
 } | psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction
 echo "restored in $(( $(date +%s) - t0 )) s"
+# ---- IR-3: the publication's id, and the marker cleared (each its own statement, never fatal)
+psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -q -c "comment on schema analytics is \$pub\$$(pub_json drop)\$pub\$;" \
+  || echo "WARNING: could not record the publication's id (the publish itself is fine)" >&2
+psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -q -c "do \$m\$ begin execute format('comment on database %I is null', current_database()); end \$m\$;" \
+  || echo "WARNING: could not clear the publishing marker (/api/ready ignores it while the tables are there)" >&2
+fi   # ---- IR-3: swap / drop
 
 # ---- U-1 (Wave I-F): usage tracking — docs/HOSTING.md § "Usage". The `usage` schema is never dropped above (only
 # analytics, analytics_seeds and ops are); scripts/hosted_usage.sql creates usage.events if missing and grants the

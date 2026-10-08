@@ -98,8 +98,8 @@ def probe(conn: psycopg.Connection, now: datetime | None = None, wall: datetime 
         if since:
             checks["publishing_since"] = since
             return False, {"ready": False, "code": "publishing", "checks": checks,
-                           "reason": "A new publication of the numbers is being restored (started "
-                                     f"{since}); the numbers are back when it finishes, usually in a few minutes."}
+                           "reason": "The numbers are being replaced: a new publication started at "
+                                     f"{since} and is not in place yet."}
         return False, {"ready": False, "code": "missing_tables", "checks": checks,
                        "reason": "The published tables are missing: " + ", ".join(missing) + "."}
     checks["publication"] = publication_of(conn)
