@@ -3804,6 +3804,87 @@ model on the market week, which v3.5 does not change: v3.0's numbers again), `ca
 table, no new step, no `scripts/nightly.sh` line.
 
 
+### v3.6: the quarterback model reads the quarterback (IQ-3, Wave I-Q, 2026-10-07; `scripts/analysis/iq3_qb.py`)
+
+**The scope.** The 1-week QB board: seasons 2021–2025, every week, every QB row that played with its 12 outcomes known
+(weeks with ≥ 8), scored per league × season × week, the season the mean of its weeks, both house scorings (Half PPR
+"League of Scrubs" and the dynasty) averaged unless a table says "reference". The horizon study: `iq1_horizon.py`'s
+rows (as of W = 3, 5, 7, 9; later weeks built as the nightly builds them, with v3.5's inputs), pooled over horizons
+2–8. Every model is the production QB component models fitted on 2016..S−1 (`iq3_qb.py cache`, 9 fits, 2017–2025);
+every weight below is fitted on the 3 seasons before the scored one.
+
+**The baselines** (`iq3_qb.py baselines`). **B0** = v3.5 (the component lines; pt1.0's passing TDs where the week has a
+real line). **M** = the same model without pt1.0. **B1** = a naive player baseline: his points per game this season and
+last (the per-game stat lines priced in the scoring), shrunk by games toward the starters' mean — (g·this + λ·g_prev·last
++ k·prior) / (g + λ·g_prev + k), λ and k fitted. **B1r** = B1 with the prior of his listed role (the starters' mean for
+the week's listed starter, the other QBs' who played for the rest: without it a backup with two relief games is priced
+as a starter). **B2** = B1r with the opponent (points allowed to QBs against the league average) and the implied total
+where there is a real one (least squares).
+
+| season | B0 1 wk MAE | ρ | M MAE | ρ | B1 MAE | ρ | B1r MAE | ρ | B2 MAE | ρ |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 2021 | 6.499 | 0.605 | 6.625 | 0.579 | 7.861 | 0.473 | 6.636 | 0.581 | 6.557 | 0.597 |
+| 2022 | 6.168 | 0.593 | 6.228 | 0.575 | 7.105 | 0.470 | 6.520 | 0.537 | 6.260 | 0.583 |
+| 2023 | 6.264 | 0.608 | 6.345 | 0.597 | 7.522 | 0.474 | 6.527 | 0.567 | 6.401 | 0.598 |
+| 2024 | 6.779 | 0.573 | 6.844 | 0.565 | 7.731 | 0.454 | 6.908 | 0.538 | 6.858 | 0.554 |
+| 2025 | 6.394 | 0.602 | 6.441 | 0.592 | 8.110 | 0.400 | 6.992 | 0.523 | 6.909 | 0.542 |
+| **mean** | **6.421** | **0.596** | 6.497 | 0.582 | 7.666 | 0.454 | 6.717 | 0.549 | 6.597 | 0.575 |
+
+| season | B0 2–8 wks MAE | ρ | B1 MAE | ρ | B1r MAE | ρ | B2 MAE | ρ |
+|---|---|---|---|---|---|---|---|---|
+| 2021 | 7.718 | 0.440 | 8.059 | 0.466 | 7.355 | 0.515 | 7.370 | 0.520 |
+| 2022 | 7.202 | 0.510 | 7.247 | 0.429 | 6.966 | 0.527 | 6.999 | 0.535 |
+| 2023 | 7.404 | 0.519 | 7.641 | 0.460 | 7.382 | 0.517 | 7.388 | 0.522 |
+| 2024 | 7.624 | 0.479 | 8.177 | 0.368 | 7.640 | 0.470 | 7.678 | 0.477 |
+| 2025 | 7.850 | 0.417 | 8.623 | 0.354 | 7.869 | 0.425 | 7.821 | 0.432 |
+| **mean** | **7.560** | **0.473** | 7.949 | 0.416 | 7.442 | 0.491 | 7.451 | 0.497 |
+
+Reference league alone: 1 week B0 5.350 / 0.598 (B2 5.485 / 0.578); 2–8 weeks B0 6.356 / 0.480, B1r 6.266 / 0.496, B2
+6.279 / 0.502. By horizon (both scorings, seasons averaged), B0 → B2: h1 6.36 / 0.611 → 6.50 / 0.596; h2 7.21 / 0.536 →
+7.21 / 0.546; h3 6.89 / 0.492 → 6.80 / 0.528; h4 7.44 / 0.478 → 7.48 / 0.476; h5 7.59 / 0.489 → 7.43 / 0.524; h6 7.89 /
+0.442 → 7.73 / 0.479; h7 7.84 / 0.437 → 7.58 / 0.470; h8 8.07 / 0.440 → 7.93 / 0.458.
+
+**The first finding**: one week ahead the model beats every naive baseline in every season (B2, the best, is 0.18
+points and 0.021 of Spearman behind). **Two to eight weeks ahead the naive baseline with the role prior beats v3.5**:
+B1r MAE 7.442 against 7.560 (lower in 3 of 5 seasons: 2021–2023; 2024 +0.016, 2025 +0.019), Spearman 0.491 against
+0.473 (higher in 3 of 5); B2 0.497. From h3 on the naive line is ahead at every horizon but h4: the trees know the
+player's level about as well as his own per-game record a week out, and lose it further out.
+
+**The ceiling** (an oracle that knew each QB's season mean in the scoring, in the week's listed role, the week itself
+left out; on the rows where it exists). 1 week: B0 6.466 / 0.578, the oracle **6.605 / 0.545** — the model already
+beats knowing his season level; the oracle that also knows the week itself reaches 6.215 / 0.622. 2–8 weeks: B0 7.609 /
+0.456, B2 7.494 / 0.482, the oracle 6.605 / 0.552 (it knows the target week's listed role, which a forecast weeks out
+cannot), with the week 6.217 / 0.626. Among listed starters only (the order inside the starters' band, the live
+symptom), 1 week: B0 Spearman 0.360, B2 0.334, the role oracle 0.313; 2–8 weeks: B0 0.237, B2 0.289. Reading: a QB's
+week is mostly noise around his level; one week out the model is at the ceiling of what his level can tell; two to
+eight weeks out the gap to the oracle (1.0 point, 0.10 of Spearman) mixes the role (who starts in week T, which the
+oracle knows) and the level, and of the level the naive record holds more than the trees do.
+
+**The keep rule, written at 20:40 ET on 2026-10-07, after the baselines and before any candidate's number was read.**
+B0 (v3.5) is the base. A candidate is **kept** when all four hold:
+1. *1 week*: either the candidate does not change the market week (0 cells of the 1-week board change), or on the
+   1-week QB board (2021–2025, every week, both house scorings, the season the paired unit) its MAE is lower than B0's
+   in at least 4 of the 5 seasons **and** its mean Spearman is higher; `experiments.decide` is run and reported, and a
+   "hurts" fails.
+2. *2–8 weeks*: on the horizon study pooled 2–8 (both house scorings), its MAE is lower than B0's in at least 4 of the
+   5 seasons **and** its mean Spearman is higher.
+3. *Ranges*: the QB 80 % range's coverage on the production path (`fit_position`, the candidate's line through
+   `predict_position(..., lines=)`), 2021–2025, is within 77–83 % in each house scoring at 1 week; at 2–8 weeks it is
+   reported.
+4. *Other positions*: RB, WR and TE untouched (0 cells), or their MAE and Spearman not worse by more than 0.01.
+
+The candidates, each defined in `iq3_qb.py` before the run, all QB-only and all on the stat line before anything is
+priced (so lines, projections and ranges stay one number); every weight fitted on the 3 seasons before, pooled over the
+two house scorings (one stat line): **hb1.0** — weeks after the market week (h ≥ 2) blend the model's line with the
+player's naive per-game line (B1r per component), weight w_h per horizon (h > 8 takes w_8), grid 0–1 by 0.05; **hb1.1**
+— hb1.0 with a weight for the market week too (judged by clause 1 in full); **pe1.0** — a player effect: the line plus
+his shrunk mean residual per component (his scored games this season to date at weight 1 and last season's at 0.5, the
+residuals of the walk-forward lines, n / (n + k), k fitted), every horizon; **pe1.0 + hb1.0**. If more than one passes,
+the one with the largest mean pooled 2–8 Spearman gain ships. Not run unless time allows (and then judged by the same
+rule): the per-dropback record as inputs (db1.0), rushing as its own input. **"Cured"** would be: pooled 2–8 Spearman at
+least **0.53** (half-way from 0.473 to the 1-week 0.596) with the 1-week Spearman not below 0.596. The oracle above
+(0.552 with knowledge of the target week's role) says that is near the ceiling.
+
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
 **Why.** A projected line is a set of means. A linear rule (points per yard, per catch, per TD) prices a mean
