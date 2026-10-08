@@ -157,6 +157,7 @@
             </li>
           {/if}
           {@const unclear = x.starter_unclear ?? null}
+          {@const fixed = x.starter_corrected ?? null}
           <li
             class="flex items-stretch border-t border-line first:border-t-0 {picked ? 'bg-accent-soft' : ''}"
             style={unclear ? "border-left:3px dashed var(--ll-ink-3)" : ""}
@@ -164,6 +165,7 @@
             data-key={x.key}
             data-tier={x.tier ?? ""}
             data-unclear={unclear ? "1" : null}
+            data-corrected={fixed ? "1" : null}
           >
             <button
               type="button"
@@ -192,6 +194,7 @@
                   <span class="flex min-w-0 items-center gap-1.5">
                     <span class="truncate font-semibold text-ink" data-testid="rankings-name">{x.player_name}</span>
                     {#if unclear}<span class="hidden shrink-0 rounded-sm bg-raised px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:inline" data-testid="rankings-unclear-chip">Starter unclear</span>{/if}
+                    {#if fixed}<span class="hidden shrink-0 rounded-sm bg-accent-soft px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:inline" data-testid="rankings-corrected-chip">Starter corrected</span>{/if}
                   </span>
                   <span class="block truncate text-xs text-ink-3">
                     {x.position} · {teamLabel(x.team) ?? "—"}{#if statusOf(x)} · <span class="font-semibold text-warn">{statusOf(x)}</span>{/if}<span class="wide:hidden">
@@ -234,6 +237,12 @@
                 <!-- fix round: the sentence under the row (no tier: he is left out of them) -->
                 <span class="mt-1 block pl-[4.25rem] text-xs leading-snug text-ink-2 wide:col-span-full wide:pl-[2.75rem]" data-testid="rankings-unclear-words"
                   ><span class="mr-1 rounded-sm bg-raised px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:hidden" data-testid="rankings-unclear-chip-phone">Starter unclear</span>{unclear.words} No tier.</span
+                >
+              {/if}
+              {#if fixed}
+                <!-- ---- IQ-2: who starts, set by hand: one sentence under the row -->
+                <span class="mt-1 block pl-[4.25rem] text-xs leading-snug text-ink-2 wide:col-span-full wide:pl-[2.75rem]" data-testid="rankings-corrected-words"
+                  ><span class="mr-1 rounded-sm bg-accent-soft px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:hidden" data-testid="rankings-corrected-chip-phone">Starter corrected</span>{fixed.words}</span
                 >
               {/if}
             </button>

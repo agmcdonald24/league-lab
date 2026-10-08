@@ -100,9 +100,10 @@ START_MULTI = "The chance of being the highest of three or four is not graded ye
 # quarterback whose team's listed starter did not play its newest game is left out of the tiers and gets no call
 SEASON_NO_TIERS = "No tiers for the rest of the season: the season ranges have not been graded yet."
 UNCLEAR_CALL = "Starter unclear — no call."
-UNCLEAR_TIER = ("Starter unclear (the dashed edge): the schedule lists one quarterback and another took the snaps in the "
-                "team's last game, so a projection may be on the wrong man. Those two keep their place by projection and "
-                "are left out of the tiers.")
+# ---- IQ-2: the trigger is U1 where mart_starter_check is built (the depth chart), su1.0 without it (the last game)
+UNCLEAR_TIER = ("Starter unclear (the dashed edge): the schedule lists one quarterback and the depth chart or the team's "
+                "last game says another, so a projection may be on the wrong man. Those two keep their place by "
+                "projection and are left out of the tiers.")
 # the floor's coverage, read from the record (About's grades: mart_projection_drift for the reference league, pooled over
 # the positions by player-weeks; else /api/status's odds_grades); the stamped sentence only when neither answers
 FLOOR_WITH = ("How sure this is: the ranges are built to hold 8 weeks in 10 ({held}); graded on 4,895 start-or-sit pairs "
@@ -439,13 +440,33 @@ def _starters_unclear(season: int, week: int) -> dict[str, dict]:
             if isinstance(g, str) and GSIS.match(g) and isinstance(v, dict) and isinstance(v.get("words"), str)}
 
 
+# ---- IQ-2 (Wave I-Q): who starts, set by hand (starters.corrected; docs/METRICS.md § "Who starts")
+def _starters_corrected(season: int, week: int) -> dict[str, dict]:
+    """IQ-2's ``starters.corrected`` (gsis -> {team, listed, set, role, words}): the quarterback a hand-kept row sets as
+    his team's starter and the listed one; {} without the module, without the mart (a deploy before the nightly) or on
+    any failure. A label: the projection already reads the corrected starter, and he keeps his tier and his calls."""
+    try:
+        from . import starters  # type: ignore[attr-defined]
+        u = starters.corrected(int(season), int(week))
+    except Exception:  # noqa: BLE001 - absent, broken or slow: never load-bearing
+        return {}
+    if not isinstance(u, dict):
+        return {}
+    keep = ("team", "listed", "set", "role", "words")
+    return {str(g): {k: v.get(k) for k in keep} for g, v in u.items()
+            if isinstance(g, str) and GSIS.match(g) and isinstance(v, dict) and isinstance(v.get("words"), str)}
+# ---- end IQ-2
+
+
 def ranked(ctx: R.Ctx, view: str, pos: str) -> tuple[pd.DataFrame | None, dict]:
     """The ranked frame (rank, tier, tier_p, starter_unclear) of one position and view, cached per canonical scoring
     key, where the tone comes from, season, week, view, position and the quarterbacks flagged "starter unclear" (a set
     the database decides, never the request) — never by the search or the page."""
     season, week = int(ctx.season), ctx.week
     flagged = _starters_unclear(season, int(week)) if view == "week" and pos == "QB" and week is not None else {}
-    key = ("rk", R._ctx_key(ctx), _defense_source(ctx), season, week, view, pos, tuple(sorted(flagged)))
+    fixed = _starters_corrected(season, int(week)) if pos == "QB" and week is not None else {}   # ---- IQ-2
+    key = ("rk", R._ctx_key(ctx), _defense_source(ctx), season, week, view, pos, tuple(sorted(flagged)),
+           tuple(sorted(fixed)))
     hit = _cache.get(key)
     if hit is not None:
         return hit
@@ -461,6 +482,7 @@ def ranked(ctx: R.Ctx, view: str, pos: str) -> tuple[pd.DataFrame | None, dict]:
     d = d.sort_values(["proj_points", "key"], ascending=[False, True]).reset_index(drop=True)
     d["rank"] = np.arange(1, len(d) + 1)
     d["starter_unclear"] = [flagged.get(g) if isinstance(g, str) else None for g in d["gsis_id"]]
+    d["starter_corrected"] = [fixed.get(g) if isinstance(g, str) else None for g in d["gsis_id"]]   # ---- IQ-2
     if view == "week":
         # a flagged quarterback keeps his place by projection and stays out of the tiers (no distribution: no tier, and
         # he never opens one) — his projection may belong to the other quarterback
@@ -595,6 +617,7 @@ def rankings(league: str, *, position: str | None = None, view: str | None = Non
         row["matchup"] = _matchup(r)
         if vw == "week":
             row["starter_unclear"] = r.get("starter_unclear") or None
+        row["starter_corrected"] = r.get("starter_corrected") or None   # ---- IQ-2: both views (the label only)
         if vw == "season":
             row.update(ros_games=r.get("ros_games"), ros_points_per_game=r.get("ros_points_per_game"),
                        bye_weeks=[int(w) for w in (r.get("bye_weeks") or []) if WP._num(w) is not None])
@@ -631,7 +654,7 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
                       for g in want if g not in have]
     out["players"] = [{k: r.get(k) for k in ("gsis_id", "player_name", "position", "team", "headshot_url", "opponent",
                                              "is_home", "kickoff_at", "proj_points", "p10", "p25", "p50", "p75", "p90",
-                                             "rank", "tier", "starter_unclear")} for r in found]
+                                             "rank", "tier", "starter_unclear", "starter_corrected")} for r in found]
     if len(found) < H2H_MIN:
         return {**out, "notice": "Pick at least two players with a game this week."}
     unclear = [r for r in found if r.get("starter_unclear")]

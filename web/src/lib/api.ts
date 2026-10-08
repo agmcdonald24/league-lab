@@ -2583,7 +2583,7 @@ export interface StarterUnclear {
   team: string | null;
   listed: string | null;
   played: string | null;
-  role: "listed" | "played" | null;
+  role: "listed" | "played" | "depth" | null; // IQ-2: "depth" -- the depth chart's first available quarterback
   words: string;
 }
 export interface Rankings {
@@ -2757,3 +2757,20 @@ export interface FreeTrade {
   ros_grade?: RosGrade;
 }
 // ---- end IQ-4
+
+// ---- IQ-2 (Wave I-Q): who starts, set by hand (starters.corrected): the quarterback a hand-kept row sets as his team's
+// starter and the listed one carry one sentence; both keep their tiers and their start / sit calls
+export interface StarterCorrected {
+  team: string | null;
+  listed: string | null;
+  set: string | null;
+  role: "set" | "listed" | null;
+  words: string;
+}
+export interface RankRow {
+  starter_corrected?: StarterCorrected | null;
+}
+export interface StartPlayer {
+  starter_corrected?: StarterCorrected | null;
+}
+// ---- end IQ-2

@@ -288,8 +288,9 @@ def test_search_and_paging(client):
     for bad in ({"limit": 201}, {"offset": 1001}, {"q": "a"}, {"position": "XX"}, {"view": "year"}):
         assert client.get(ROUTE, params={"league": "ref:half", **bad}).status_code == 400, bad
     # the cache is keyed by the scoring, the week, the view and the position — never by the search or the page
-    keys = [k for k in RK._cache.keys() if k[0] == "rk"]      # rk, scoring, tone source, season, week, view, position, flagged
-    assert all(len(k) == 8 for k in keys) and len({k for k in keys if k[-2] == "WR"}) == 1
+    # rk, scoring, tone source, season, week, view, position, flagged, corrected (IQ-2: the starters set by hand)
+    keys = [k for k in RK._cache.keys() if k[0] == "rk"]
+    assert all(len(k) == 9 for k in keys) and len({k for k in keys if k[6] == "WR"}) == 1
 
 
 @needs_db

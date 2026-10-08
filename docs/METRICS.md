@@ -4823,3 +4823,147 @@ teams): the universe's KC / CAR rows for weeks 6–18 0 → 41 a week; `project`
 PPR and League of Scrubs) 87 quarterbacks from 30 teams → 93 from 32; the guard (`assert_rest_of_season_follows_the_
 market_week`) passes on both boards.
 <!-- ---- end IQ-4 -->
+<!-- ---- IQ-2 -->
+## Who starts (IQ-2, Wave I-Q, 2026-10-07; seed `starter_overrides`, `int_starter_override`, `int_pn_team_game`, `mart_starter_check`, `api/league_lab_api/starters.py`, `scripts/analysis/iq2_starter_source.py`)
+
+### The keep rule for a starter source — written at 19:36 ET on 2026-10-07, before any candidate's number was read
+
+**What is judged.** Which quarterback the projection treats as a team's starter for a game not played yet (the
+`int_pn_team_game.starting_qb_id` of an unplayed game, which feeds every `pn_qb_*` input of the QB and of his
+receivers). A data rule, judged on **identification** (st1.1's kind), then checked for harm on the board.
+
+**Truth.** The quarterback with the most dropbacks for the team in the game itself (`fct_player_game.dropbacks`:
+pass attempts, sacks, scrambles; ties by id). Team-games: every played regular-season team-game 2021–2025 and 2026
+weeks 1–4 with a dropback leader. A **stale listing**: the listed QB took no dropback in the game. A listing whose QB
+dropped back but lost the lead is an **in-game change** (no rule before kickoff can see it; counted in "all", reported
+apart).
+
+**The as-of** (each input as it stood before the game's kickoff):
+* the listing: the schedule's `home_qb_id` / `away_qb_id` for the game. For a played game this is nflverse's value
+  today, which is usually updated to the real starter after the game — so the base is *better* in history than it is
+  live (only one schedule snapshot is stored). The bias favours the listing: a candidate is judged against a base
+  that has partly seen the answer.
+* the depth chart: the team's newest snapshot (`stg_nflverse__depth_charts.snapshot_at`, nflverse's daily capture
+  time `dt`) taken **before** the game's `kickoff_at`; its quarterbacks by `pos_rank`. Stored for **2025 and 2026 only**
+  (221 and 217 daily snapshots); nflverse's older weekly depth charts are not in the database and cannot be fetched
+  here, so every depth-chart candidate is judged on **2025 – 2026 week 4** only.
+* the injury report: week W's `report_status` (Out / Doubtful rule a player out). 2021–2024: the entry's
+  `date_modified` is before kickoff for ≥ 99.9% of Out / Doubtful rows (checked); 2025–2026 carry no stamp — the game
+  status is by definition issued before the game.
+* the reserve lists: week W's weekly-roster `roster_status` outside ACT / INA / DEV (RES, PUP, SUS, EXE, NON, E01, E14,
+  CUT, RET, TRD …) rules a player out; INA (game-day inactive, announced 90 minutes before kickoff) is **not** read.
+* the team's newest played game this season before W: its dropback leader (as `starters.unclear` reads it).
+
+**Candidates** (defined here, before the run):
+* **S0 listing** (the base).
+* **S1 depth QB1**: the snapshot's first quarterback.
+* **S2 depth, first available**: the snapshot's first quarterback not ruled out (report or reserve list); none → the
+  listing.
+* **S3 listing unless ruled out**: the listing, unless the report or a reserve list rules him out; then S2's pick where
+  a depth chart exists, else (2021–2024) the available quarterback who led the team's newest played game's dropbacks,
+  else the listing. Judged on 2025 – 2026 week 4 like the others, and also reported on 2021 – 2026 week 4.
+* **S4 two sources agree (own)**: the listing, unless (i) he is ruled out — then S2's pick — or (ii) S2's pick and the
+  newest played game's dropback leader are the same quarterback and he is not the listing — then him.
+
+**To ship, a candidate must on its window**: (a) be at least as accurate as the listing on all team-games; (b) fix ≥ 60%
+of the stale listings; (c) break at most one right listing for every six it fixes (newly broken ≤ fixed / 6); then
+(d) the QB board through `experiments.decide`: the test rows' features rebuilt with the candidate's starter for the
+games it changes (training rows untouched: the source only sets unplayed games), QB, RB, WR and TE not "hurts". (d)
+is run only for a candidate that passes (a)–(c). Of several passing, the most accurate ships; ties → the fewest
+broken. If none passes: the table, and the override list plus `mart_starter_check` is the answer. The override list
+(below) ships regardless and wins over any source. Names (Darnold, Bagent …) are evidence, never the criterion.
+
+**`starters.unclear`'s trigger** (the flag a screen shows). U0 = su1.0 (the listed QB took no dropback in the team's
+newest played game while another led it); U1 = the listing differs from S2's pick; U2 = U0 or U1; U3 = U0 and U1.
+Counted on 2025 – 2026 week 4 (the window where all exist): team-weeks flagged and stale listings caught. A variant
+replaces U0 only if it catches **more** stale listings than U0 **and** flags no more team-weeks; of several, the most
+catches (ties: fewer flags). Otherwise U0 stays and the disagreement is shown in `mart_starter_check` only.
+
+### The result (`iq2_starter_source.py asof` / `study`, run at 19:55 ET, after the rule above was committed `3c19084`)
+
+**The as-of.** Every played team-game of 2025 – 2026 week 4 (670) has a depth-chart snapshot before kickoff; the newest
+one is taken a median 10.8 hours before kickoff (90th percentile 17.1, at most 18.7: one capture a day, about 06:00
+UTC). The snapshot before a game names a different first quarterback from the first snapshot after it in 2 of 670
+team-games — a chart rebuilt after the fact would always name the game's quarterback; this one changes on its own
+days. So the stored daily snapshots are read as of their capture time. Before 2025 there is no chart in the database.
+
+**Identification** (played team-games; truth = the dropback leader; stale = the listed QB took no dropback):
+
+| Window | Candidate | Team-games | Accuracy (listing → candidate) | Stale listings fixed | Fixed | Newly broken | Still wrong | (a) | (b) | (c) | Board (d) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2025 – 2026 wk 4 | S1 depth QB1 | 670 | 0.951 → 0.891 | 6 of 12 (50%) | 7 | 47 | 26 | fail | fail | fail | not run |
+| 2025 – 2026 wk 4 | S2 depth, first available | 670 | 0.951 → 0.949 | **12 of 12 (100%)** | 13 | 14 | 20 | fail | pass | fail | not run |
+| 2025 – 2026 wk 4 | S3 listing unless ruled out | 670 | 0.951 → **0.958** | 5 of 12 (42%) | 5 | **0** | 28 | pass | fail | pass | not run |
+| 2025 – 2026 wk 4 | S4 two sources agree (own) | 670 | 0.951 → 0.957 | 10 of 12 (83%) | 10 | 6 | 23 | pass | pass | **fail** (6 > 10 / 6) | not run |
+| 2021 – 2026 wk 4 | S3 listing unless ruled out | 2,844 | 0.955 → 0.958 | 10 of 49 (20%) | 10 | 0 | 119 | pass | fail | pass | not run |
+
+(21 in-game changes in 2025 – 2026 week 4, 80 in 2021 – 2026 week 4: no rule before kickoff can see them; they are in
+"still wrong". Stale listings by season: 0 / 4 / 0 / 33 / 7 / 5 for 2021–2025 and 2026 weeks 1–4.)
+
+**No candidate passes; none ships.** The depth chart alone is worse than the listing (S1: it keeps a hurt starter on
+top). The depth chart's first available quarterback finds every stale listing (S2: 12 of 12) but breaks as many right
+listings as it fixes (14 against 13): mostly a hurt starter the chart kept on top who was Questionable on the report
+and then inactive on game day (Murray ARI 2025 weeks 6, 7, 9; McCarthy MIN weeks 7–8; Purdy SF weeks 3 and 9 — INA is
+announced 90 minutes before kickoff, after any board), and the week-18 rests (BUF, GB, LAC, PHI). The listing unless the report rules him out (S3) never breaks a listing
+and fixes 10 in five seasons — but only 20–42% of the stale ones, because a stale listing is almost never a ruled-out
+player: it is a healthy starter who lost the job (SEA 2026, NYJ 2025). The closest is S4 (83% of the stale listings,
+more accurate overall), which fails (c) on six breaks — three of them week-18 rests (BUF, LAC, PHI 2025), one ARI
+2025 week 6, ATL 2025 week 8, PIT 2025 week 12. The window is small (12 stale listings) and the base has partly seen the
+answer (the historical listing is nflverse's post-game value), so S4's six breaks may include listings that were wrong
+before kickoff too — but the rule was written before the run and is not moved. (d) was not run (it is for a
+candidate that passes (a)–(c)). **The answer for now: the override list, plus `mart_starter_check` read weekly.**
+
+**`starters.unclear`'s trigger** (2025 – 2026 week 4, 670 played team-weeks, 12 stale listings):
+
+| Trigger | Flags | Stale caught | Flags not stale |
+|---|---|---|---|
+| U0 su1.0 (listing vs the newest game's dropbacks) | 42 | 7 | 35 |
+| **U1 listing vs the depth chart's first available QB** | **27** | **12** | **15** |
+| U2 either | 57 | 12 | 45 |
+| U3 both | 12 | 7 | 5 |
+
+(U0 on su1.0's own window, 2022 – 2026 week 4: 169 flags, 32 of 49 caught — this script reproduces su1.0's numbers
+exactly.) **U1 catches more (12 against 7) with fewer flags (27 against 42): by the rule it replaces U0** wherever
+`mart_starter_check` is built (`listing_disputed`); without the mart (a deploy before the nightly) the screens keep U0.
+About 1.2 flags a week instead of 1.9, and 15 of 27 flags (56%) still turn out not stale — so the words stay "unclear".
+
+### The override list (so1.0) and what it moves (`league_lab_im4`, two full `project` runs, v3.5 both: the list off with `--vars '{starter_overrides: false}'`, then on)
+
+**The seed** (`dbt/seeds/starter_overrides.csv`): `season, team, from_week, through_week, gsis_id, reason, source,
+added_on`. `int_starter_override` gives each row its state; `int_pn_team_game` applies a row in force to the team's
+**unplayed** games of its weeks (`starter_source` 'override'); the switch `--vars '{starter_overrides: false}'` turns it
+off. Tests: two dbt unit tests on hand-built rows (the expiry, the roster, the run of led games; unplayed games only,
+an expired row, a window's end, two rows on one game) and three data tests (`assert_starter_override_on_roster`, error;
+`assert_starter_override_is_fresh`, warn after 21 days; `assert_starter_override_unplayed_only`, error). Tonight's rows,
+resolved in `dim_player` and on the week-4 roster (exactly one QB of that name on each team): **SEA from week 5, Sam
+Darnold `00-0034869`** (listed Drew Lock `00-0035704`); **CHI from week 5, Tyson Bagent `00-0038416`** (listed Case Keenum
+`00-0028986`). Both in force, both on the roster; Darnold has led Seattle's dropbacks since week 3, Bagent Chicago's in
+week 4.
+
+**What moved** (reference league, League of Scrubs; weeks 1–4 frozen and untouched): 76 of 7,917 rows, six players,
+all Seattle and Chicago quarterbacks — week 5 / the sum of weeks 6–18 (12 games):
+
+| Player | Week 5 before → after | Weeks 6–18 before → after | QB rank week 5 | QB rank weeks 5–18 |
+|---|---|---|---|---|
+| Sam Darnold (SEA) | 4.2 → **15.0** | 52.5 → **177.9** | #41 → #25 | #42 → #25 |
+| Drew Lock (SEA) | 14.1 → 4.3 | 154.9 → 47.8 | #28 → #41 | #32 → #43 |
+| Tyson Bagent (CHI) | 3.0 → **15.3** | 32.9 → **159.0** | #67 → #24 | #75 → #32 |
+| Case Keenum (CHI) | 16.2 → 5.2 | 190.3 → 59.2 | #15 → #37 | #19 → #38 |
+| Caleb Williams (CHI, out) | 7.4 → 8.1 | 93.7 → 101.2 | #32 → #31 | #34 → #33 |
+
+**The receivers do not move** (Smith-Njigba 14.7 / 176.9, Swift, Odunze, Burden, Barner … identical to the decimal):
+their `pn_qb_*` inputs do change (Smith-Njigba week 5: `pn_qb_changed` 1, `pn_qb_prev_ppg_diff` −0.96), but the RB / WR
+/ TE models do not read the QB inputs (`projections.FEATURES_BY_POSITION`: QB only; D5 kept the teammate inputs for
+the others). A receiver's projection does not know who throws to him — for IQ-3, not a defect of the list.
+
+**Face validity** (the PO's check): among the top 24 QBs by week 5, the rank correlation with the later weeks' mean
+0.60 → **0.64** (Pearson 0.60 → 0.61; RB / WR / TE unchanged 0.94 / 0.95 / 0.85); with the points per game they have
+actually scored in 2026 (2+ games) 0.11 → 0.22 (n 23 → 24) — still weak: the QB model's read of the individual (IQ-3).
+Against their own games: Darnold 15.0 against 29.7 and 14.3 in his two starts; Bagent 15.3 against 9.8 in his one
+(the model's view of a starter, not of him). History is not corrected (by design: played games keep the listing), so
+for Seattle the weeks 3–4 "starts" still belong to Lock: Darnold's and his receivers' `pn_qb_changed` read 1.
+
+**The guard and the freeze**: `assert_rest_of_season_follows_the_market_week`, `assert_projection_ranges_price_the_lines`,
+`assert_frozen_projections_precede_kickoff`, `assert_frozen_nfl_wide_precede_kickoff`: PASS; the nightly's
+projection-marts selection 145 PASS (the 146th, the registry's unique metric, fixed and re-run: PASS).
+<!-- ---- end IQ-2 -->

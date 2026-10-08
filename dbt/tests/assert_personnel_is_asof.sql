@@ -20,9 +20,14 @@ sched as (
     from {{ ref('int_pn_team_game') }} as t
     -- ---- end IP-1
     {%- else %}
-    select s.season, s.week, {{ kd_team('t.team') }} as team, nullif(t.qb, '') as qb, s.home_score is not null as played
+    select s.season, s.week, {{ kd_team('t.team') }} as team,
+           coalesce(o.starting_qb_id, nullif(t.qb, '')) as qb, s.home_score is not null as played
     from {{ source('raw', 'nfl_schedules') }} as s
     cross join lateral (values (s.home_team, s.home_qb_id), (s.away_team, s.away_qb_id)) as t(team, qb)
+    -- ---- IQ-2 (Wave I-Q): a hand-kept override sets an unplayed game's starter (assert_starter_override_unplayed_only)
+    left join {{ ref('int_pn_team_game') }} as o
+      on o.season = s.season and o.week = s.week and o.team = {{ kd_team('t.team') }} and o.starter_source = 'override'
+    -- ---- end IQ-2
     where s.game_type = 'REG' and s.season >= {{ var('seasons_start') }}
     {%- endif %}
 ),

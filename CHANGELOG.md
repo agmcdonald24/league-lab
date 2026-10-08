@@ -16,6 +16,16 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   (`ros_grade.py`). Usage: a view while browsing (a `ref:` key) failed the table's checks — now counted; `rankings`
   is a screen; one retry on a connection error; failures by kind; sessions' depth. docs/handbacks/IQ-4.md.
 <!-- ---- end IQ-4 -->
+<!-- ---- IQ-2 -->
+- **IQ-2 — who starts.** A hand-kept override list (seed `starter_overrides`: Seattle → Sam Darnold, Chicago → Tyson
+  Bagent from week 5) sets the starter of unplayed games only, expires by itself once the team plays a game he does not
+  lead, is checked against the team's roster (dbt, error) and warns after three weeks; the corrected quarterback's row
+  says so in one sentence ("Set by hand on 7 Oct.") and keeps his tier and calls. Four sources for the starter were
+  measured against who led the dropbacks (rule written first): none passes (the closest fixes 10 of 12 stale listings
+  and breaks 6), so none ships; `analytics.mart_starter_check` lists every team's listing, depth chart, last game and
+  injury status for a weekly check, and "Starter unclear" now reads the depth chart (12 of 12 stale listings caught
+  with 27 flags, against 7 with 42).
+<!-- ---- end IQ-2 -->
 
 ## 2026-10-07 — hotfix: rest-of-season quarterbacks
 

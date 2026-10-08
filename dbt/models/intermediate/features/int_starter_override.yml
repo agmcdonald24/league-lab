@@ -1,0 +1,134 @@
+version: 2
+
+# ---- IQ-2 (Wave I-Q, 2026-10-07): who starts, set by hand (docs/METRICS.md § "Who starts"). The seed's semantics
+# are tested here on hand-built rows (unit tests) and on the warehouse (dbt/tests/assert_starter_override_*.sql).
+seeds:
+  - name: starter_overrides
+    description: "The hand-kept starter corrections, one row per correction: season, team (the schedule's code; LAR is read as LA), from_week, through_week (empty = until removed), gsis_id (the quarterback to project as the starter), reason, source, added_on (re-date it to re-confirm a row). It sets the starter of unplayed games only and expires by itself (int_starter_override)."
+    columns:
+      - name: season
+        tests: [not_null]
+      - name: team
+        tests: [not_null]
+      - name: from_week
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+                quote: false
+      - name: gsis_id
+        tests: [not_null]
+      - name: added_on
+        tests: [not_null]
+
+models:
+  - name: int_starter_override
+    description: "One row per row of the seed starter_overrides with its state: in_force (false once the team has played a game at or after from_week in which this quarterback did not lead the team's dropbacks: it expires by itself), expired_in_week, on_roster (a QB on the team's newest weekly roster of the season; tested, error, for the rows in force), led_since_week (the first week of his current run of led games), the schedule's listing it corrects (listed_qb_id) for the team's next unplayed game in its window (next_week). int_pn_team_game applies the rows in force to unplayed games only."
+    columns:
+      - name: override_id
+        tests: [unique, not_null]
+      - name: in_force
+        tests: [not_null]
+
+unit_tests:
+  # The expiry, the roster and the run. 2026; AAA (SEA-like): weeks 3 and 4 led by darnold, week 5 not played; the row
+  # from week 5 is in force, he leads since week 3, he is on the newest roster (week 4) -> in force, on the roster.
+  # BBB (CHI-like): the row from week 4 names bagent, but keenum led week 4 -> expired in week 4. CCC: a typo ('nobody',
+  # not on the roster) -> in force and not on the roster (assert_starter_override_on_roster stops the build).
+  # DDD: the row from week 4 names x, and x led week 4 -> still in force (he did lead). EEE ('lar' lower-case, LAR):
+  # read as LA. A played game without dropback data (FFF week 4) never expires a row.
+  - name: starter_override_expires_by_itself_and_checks_the_roster
+    model: int_starter_override
+    given:
+      - input: ref('starter_overrides')
+        rows:
+          - {season: 2026, team: AAA, from_week: 5, through_week: null, gsis_id: darnold, reason: r, source: s, added_on: '2026-10-07'}
+          - {season: 2026, team: BBB, from_week: 4, through_week: null, gsis_id: bagent, reason: r, source: s, added_on: '2026-10-01'}
+          - {season: 2026, team: CCC, from_week: 5, through_week: 6, gsis_id: nobody, reason: r, source: s, added_on: '2026-10-07'}
+          - {season: 2026, team: DDD, from_week: 4, through_week: null, gsis_id: x, reason: r, source: s, added_on: '2026-10-01'}
+          - {season: 2026, team: lar, from_week: 5, through_week: null, gsis_id: stafford, reason: r, source: s, added_on: '2026-10-07'}
+          - {season: 2026, team: FFF, from_week: 4, through_week: null, gsis_id: f1, reason: r, source: s, added_on: '2026-10-01'}
+      - input: ref('fct_player_game')
+        rows:
+          - {season: 2026, week: 2, game_id: g2a, team: AAA, season_type: REG, gsis_id: lock, dropbacks: 30}
+          - {season: 2026, week: 3, game_id: g3a, team: AAA, season_type: REG, gsis_id: darnold, dropbacks: 45}
+          - {season: 2026, week: 4, game_id: g4a, team: AAA, season_type: REG, gsis_id: darnold, dropbacks: 26}
+          - {season: 2026, week: 4, game_id: g4a, team: AAA, season_type: REG, gsis_id: rb1, dropbacks: 1}
+          - {season: 2026, week: 4, game_id: g4b, team: BBB, season_type: REG, gsis_id: keenum, dropbacks: 31}
+          - {season: 2026, week: 4, game_id: g4b, team: BBB, season_type: REG, gsis_id: bagent, dropbacks: 2}
+          - {season: 2026, week: 4, game_id: g4d, team: DDD, season_type: REG, gsis_id: x, dropbacks: 40}
+          - {season: 2026, week: 4, game_id: g4f, team: FFF, season_type: REG, gsis_id: f2, dropbacks: 0}
+      - input: ref('stg_nflverse__rosters_weekly')
+        rows:
+          - {season: 2026, week: 3, team: CCC, gsis_id: nobody, position: QB, roster_status: ACT}
+          - {season: 2026, week: 4, team: AAA, gsis_id: darnold, position: QB, roster_status: ACT}
+          - {season: 2026, week: 4, team: AAA, gsis_id: lock, position: QB, roster_status: ACT}
+          - {season: 2026, week: 4, team: BBB, gsis_id: bagent, position: QB, roster_status: ACT}
+          - {season: 2026, week: 4, team: DDD, gsis_id: x, position: QB, roster_status: ACT}
+          - {season: 2026, week: 4, team: LA, gsis_id: stafford, position: QB, roster_status: ACT}
+          - {season: 2026, week: 4, team: FFF, gsis_id: f1, position: QB, roster_status: INA}
+      - input: ref('dim_game')
+        rows:
+          - {season: 2026, week: 5, season_type: REG, game_id: g5a, home_team: AAA, away_team: ZZZ, home_qb_id: lock, away_qb_id: z}
+          - {season: 2026, week: 6, season_type: REG, game_id: g6a, home_team: ZZZ, away_team: AAA, home_qb_id: z, away_qb_id: ''}
+      - input: ref('dim_player')
+        rows: []
+    expect:
+      rows:
+        - {team: AAA, gsis_id: darnold, in_force: true, expired_in_week: null, on_roster: true, led_since_week: 3, last_played_week: 4, listed_qb_id: lock, next_week: 5}
+        - {team: BBB, gsis_id: bagent, in_force: false, expired_in_week: 4, on_roster: true, led_since_week: null, last_played_week: 4, listed_qb_id: null, next_week: null}
+        - {team: CCC, gsis_id: nobody, in_force: true, expired_in_week: null, on_roster: false, led_since_week: null, last_played_week: null, listed_qb_id: null, next_week: null}
+        - {team: DDD, gsis_id: x, in_force: true, expired_in_week: null, on_roster: true, led_since_week: 4, last_played_week: 4, listed_qb_id: null, next_week: null}
+        - {team: LA, gsis_id: stafford, in_force: true, expired_in_week: null, on_roster: true, led_since_week: null, last_played_week: null, listed_qb_id: null, next_week: null}
+        - {team: FFF, gsis_id: f1, in_force: true, expired_in_week: null, on_roster: true, led_since_week: null, last_played_week: null, listed_qb_id: null, next_week: null}
+
+  # The override sets unplayed games only. AAA: weeks 3-4 played (listed lock, never touched), weeks 5-6 unplayed (5
+  # listed lock, 6 not listed yet) -> darnold from the row in force. BBB's row is not in force (expired) -> the schedule.
+  # CCC's row runs through week 5 -> week 6 keeps the schedule. DDD has two rows in force: the newer added_on wins.
+  - name: starter_override_sets_unplayed_games_only
+    model: int_pn_team_game
+    given:
+      - input: ref('dim_game')
+        rows:
+          - {game_id: g3, season: 2026, week: 3, season_type: REG, home_team: AAA, away_team: BBB, home_qb_id: lock, away_qb_id: keenum}
+          - {game_id: g4, season: 2026, week: 4, season_type: REG, home_team: BBB, away_team: AAA, home_qb_id: keenum, away_qb_id: lock}
+          - {game_id: g5, season: 2026, week: 5, season_type: REG, home_team: AAA, away_team: CCC, home_qb_id: lock, away_qb_id: c1}
+          - {game_id: g6, season: 2026, week: 6, season_type: REG, home_team: CCC, away_team: AAA, home_qb_id: c1, away_qb_id: ''}
+          - {game_id: g5b, season: 2026, week: 5, season_type: REG, home_team: BBB, away_team: DDD, home_qb_id: keenum, away_qb_id: d1}
+      - input: ref('fct_team_game')
+        rows:
+          - {game_id: g3, team: AAA, season_type: REG, targets: 30, carries: 25}
+          - {game_id: g3, team: BBB, season_type: REG, targets: 30, carries: 25}
+          - {game_id: g4, team: AAA, season_type: REG, targets: 30, carries: 25}
+          - {game_id: g4, team: BBB, season_type: REG, targets: 30, carries: 25}
+      - input: ref('int_player_game_snaps')
+        rows: []
+      - input: ref('fct_player_game')
+        rows: []
+      - input: ref('fct_play')
+        rows: []
+      - input: ref('int_player_week_team')
+        rows: []
+      - input: ref('stg_nflverse__injuries')
+        rows: []
+      - input: ref('int_starter_override')
+        rows:
+          - {season: 2026, team: AAA, from_week: 3, through_week: null, gsis_id: darnold, in_force: true, added_on: '2026-10-07'}
+          - {season: 2026, team: BBB, from_week: 4, through_week: null, gsis_id: bagent, in_force: false, added_on: '2026-10-01'}
+          - {season: 2026, team: CCC, from_week: 5, through_week: 5, gsis_id: c2, in_force: true, added_on: '2026-10-07'}
+          - {season: 2026, team: DDD, from_week: 5, through_week: null, gsis_id: d_old, in_force: true, added_on: '2026-09-20'}
+          - {season: 2026, team: DDD, from_week: 5, through_week: null, gsis_id: d_new, in_force: true, added_on: '2026-10-06'}
+    expect:
+      rows:
+        - {team: AAA, week: 3, starting_qb_id: lock, listed_qb_id: lock, is_played: true, starter_source: schedule}
+        - {team: BBB, week: 3, starting_qb_id: keenum, listed_qb_id: keenum, is_played: true, starter_source: schedule}
+        - {team: AAA, week: 4, starting_qb_id: lock, listed_qb_id: lock, is_played: true, starter_source: schedule}
+        - {team: BBB, week: 4, starting_qb_id: keenum, listed_qb_id: keenum, is_played: true, starter_source: schedule}
+        - {team: AAA, week: 5, starting_qb_id: darnold, listed_qb_id: lock, is_played: false, starter_source: override}
+        - {team: CCC, week: 5, starting_qb_id: c2, listed_qb_id: c1, is_played: false, starter_source: override}
+        - {team: CCC, week: 6, starting_qb_id: c1, listed_qb_id: c1, is_played: false, starter_source: schedule}
+        - {team: AAA, week: 6, starting_qb_id: darnold, listed_qb_id: null, is_played: false, starter_source: override}
+        - {team: BBB, week: 5, starting_qb_id: keenum, listed_qb_id: keenum, is_played: false, starter_source: schedule}
+        - {team: DDD, week: 5, starting_qb_id: d_new, listed_qb_id: d1, is_played: false, starter_source: override}
+# ---- end IQ-2

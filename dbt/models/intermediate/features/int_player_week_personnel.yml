@@ -28,6 +28,14 @@ models:
         description: "The game's offensive snaps: the snap leader's snaps / his snap share (int_player_game_snaps). NULL without snap counts."
       - name: game_no
         description: "The team's n-th regular-season game of the season (byes skipped)."
+      # ---- IQ-2 (Wave I-Q)
+      - name: starter_source
+        description: "IQ-2: 'override' when a hand-kept row in force (seed starter_overrides -> int_starter_override) set an unplayed game's starting_qb_id, else 'schedule'. Never 'override' on a played game (assert_starter_override_unplayed_only)."
+        tests:
+          - accepted_values:
+              arguments:
+                values: [schedule, override]
+      # ---- end IQ-2
 
   - name: int_pn_player_game
     description: "What each QB / RB / WR / TE / offensive lineman did in each of his team's PLAYED regular-season games (2016 on): the team's weekly roster that week plus anyone with a snap or stat row for the team (call-ups). status 'played' / 'missed_injured' (did not play and was Out, Doubtful or Questionable that week, or on a reserve list - the C6 rule) / 'missed_other'; snap share (0 when the team has snap counts and he has none, NULL without); targets, carries, reference-scoring points; the game's starting QB. One code per franchise, so the Raiders 2016-19 and the Chargers 2016 are here (int_player_game_role loses them)."

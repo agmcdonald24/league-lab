@@ -10,6 +10,7 @@
 {{ config(severity='error') }}
 with t as (
     select * from {{ ref('int_pn_team_game') }}
+    where starter_source = 'schedule'     -- ---- IQ-2: a hand-kept override (unplayed games only) is checked by assert_starter_override_*
 ),
 
 passes as (
