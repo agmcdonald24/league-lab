@@ -172,6 +172,7 @@
         {/each}
       </div>
       <p class="text-sm leading-snug text-ink-3" data-testid="about-checked-windows">{c.windows_words}</p>
+      {#if c.useful}<p class="text-base leading-snug" data-testid="about-useful">{c.useful.words}</p>{/if}
       <div class="text-sm leading-snug text-ink-2" data-testid="about-not-graded">
         <p class="font-semibold">Not graded yet:</p>
         <ul class="list-disc pl-5">{#each c.not_graded as n, ix (ix)}<li>{n}</li>{/each}</ul>
@@ -240,6 +241,8 @@
         <div class="space-y-2.5" data-testid="record-decisions">
           <h3 class="ll-label">Our lineups against the ones started</h3>
           {#if dec.sentences?.edge}<p class="text-base leading-snug" data-testid="decisions-edge">{dec.sentences.edge}</p>{/if}
+          <!-- ---- IR-4: the qualifier right under the claim it qualifies (was at the foot of the block) -->
+          {#if dec.note}<p class="text-sm leading-snug text-ink-3" data-testid="decisions-note">* {dec.note}</p>{/if}
           <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <StatTile label="Our lineups would have added" value={signed(tot.edge)} unit="pts" caption={`${signed(tot.edge / tot.roster_weeks)} per team per week`} size="sm" testid="decisions-tile-edge" />
             <StatTile label="Best lineup in hindsight" value={`+${tot.regret.toFixed(1)}`} unit="pts" caption={`${(tot.regret / tot.roster_weeks).toFixed(1)} per team per week over the one started`} size="sm" testid="decisions-tile-regret" />
@@ -280,7 +283,6 @@
             <p class="text-base"><a class="ll-link" href={withContext("/team", { league, team })} data-testid="decisions-team-link">Your team's calls this season ›</a></p>
           {/if}
           <!-- ---- end V-2 -->
-          {#if dec.note}<p class="text-sm leading-snug text-ink-3" data-testid="decisions-note">* {dec.note}</p>{/if}
           <Expander title="How to read our lineups' record" testid="decisions-howto"><Md text={DECISIONS_HOWTO} block class="text-base leading-snug" /></Expander>
         </div>
       {:else if dec && !dec.available}

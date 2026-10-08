@@ -2,6 +2,20 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-R (dependability)
+
+- **IR-4 — say what is verified, and carry starter uncertainty into the verdict** (the review's P1 3). Every analysis
+  carries `provenance` (`api/league_lab_api/provenance.py`): the stored board's model version, the data's publication
+  time, the weeks it covers and what has been checked for that horizon and position (graded / graded, weak / no better
+  than chance / not graded, each with its docs/METRICS.md section) — on `/api/rankings`, `/api/ros`, the free trade
+  calculator, the trade evaluation and the player card, and one quiet line on those screens ("Beta · " on the trade
+  answers). A decision on a quarterback whose team's starter is unclear is withheld, one on a starter set by hand is a
+  lean (`caveats` as data; the free calculator's verdict follows the rule; the league trade verdict's one call is
+  `provenance.apply`). About lists the model's versions with their dates (the "recipe stays the same all season"
+  sentence was false) and what each number has been checked against; "Beta" on the home. The trade calculator's
+  horizons by position go to the record (`ops.context_grade` kind `horizon`); the useful-decision grade (ud1.0) on
+  2021–2025. `ros_grade`'s quarterback sentence now says v3.6's 7.4 (was v3.5's 7.6).
+
 ## 2026-10-08 — Wave I-Q
 
 - **PO — the merge, the nightly's audit step, the roster rule.** `scripts/nightly.sh` runs `league-lab audit-lists`

@@ -854,6 +854,7 @@ def grade_rows(h: pd.DataFrame, graded_at: datetime | None = None) -> list[dict]
                         "grp": f"{r['corner_certainty']}/{r['corner_tier']}", "span": lspan, "scoring": SCORING_WORDS,
                         "words": tier_sentence(r), "graded_at": graded_at})
     out += trend_grade_rows(h, graded_at)             # ---- IP-3: Trends' tag and the role trend, graded
+    out += horizon_grade_rows(graded_at)              # ---- IR-4: the trade calculator's horizons, by position
     return out
 
 
@@ -1616,3 +1617,71 @@ if __name__ == "__main__":  # pragma: no cover - the reproducible study (prints 
     if sys.argv[1:2] == ["study"]:
         print(json.dumps(study(), indent=1, default=str))
 # ---- end IP-3
+
+
+# ================================================================================================ IR-4: the horizons
+# ---- IR-4 (Wave I-R, 2026-10-08): the horizons the trade calculator uses, graded by position, as rows of
+# ``ops.context_grade`` (kind ``horizon``; no new table). docs/METRICS.md § "What each number has been checked against
+# (IR-4)": each week's projection in the window scored against that week, pooled over the window's weeks, 2021–2025 as
+# of weeks 3 / 5 / 7 / 9, both house scorings (iq1_horizon.py's cells for RB / WR / TE, variant ad = v3.5 = v3.6 there;
+# iq3_qb.py for QB, v3.6 = hb1.0, against the naive baseline B2). A study's numbers kept as constants with their source,
+# rewritten with the grade every night (``graded_at``); not a prospective record (the nightly rewrites later weeks, so no
+# week-W projection of week W+3 is kept). Columns: ``mean_miss`` = the miss (points per game), ``beat_share`` = the order
+# (Spearman with what happened), ``vs_rest`` = the miss minus the baseline's (negative: the model misses less), ``rest_
+# beat_share`` = the baseline's order; grp = "<position>/<window>" with window next1 / later / next4 / ros.
+HORIZON_SPAN = "2021–2025"
+HORIZON_SCORING = "Half PPR and the house dynasty"
+HORIZON_GRADES: dict[tuple[str, str], tuple[float, float, float | None, float | None]] = {
+    # (position, window): (miss, order, baseline miss, baseline order)
+    ("QB", "next1"): (6.44, 0.587, 6.60, 0.575), ("RB", "next1"): (4.52, 0.686, None, None),
+    ("WR", "next1"): (4.44, 0.618, None, None), ("TE", "next1"): (3.25, 0.599, None, None),
+    ("K", "next1"): (3.77, 0.095, 4.18, -0.004), ("DEF", "next1"): (4.32, 0.257, 5.04, 0.037),
+    ("QB", "later"): (7.41, 0.495, 7.45, 0.497), ("RB", "later"): (4.70, 0.633, None, None),
+    ("WR", "later"): (4.59, 0.568, None, None), ("TE", "later"): (3.41, 0.540, None, None),
+    ("K", "later"): (3.75, 0.028, 4.14, 0.016), ("DEF", "later"): (4.78, 0.040, 5.30, 0.033),
+    ("QB", "next4"): (6.93, 0.538, 7.00, 0.537), ("RB", "next4"): (4.63, 0.660, None, None),
+    ("WR", "next4"): (4.48, 0.594, None, None), ("TE", "next4"): (3.35, 0.564, None, None),
+    ("QB", "ros"): (7.28, 0.509, 7.33, 0.510), ("RB", "ros"): (4.68, 0.640, None, None),
+    ("WR", "ros"): (4.57, 0.574, None, None), ("TE", "ros"): (3.39, 0.547, None, None),
+}
+HORIZON_WINDOW_WORDS = {"next1": "next week", "later": "two to eight weeks ahead", "next4": "the next four weeks",
+                        "ros": "the rest of the season (up to eight weeks ahead)"}
+HORIZON_POS_WORDS = {"QB": "Quarterbacks", "RB": "Running backs", "WR": "Receivers", "TE": "Tight ends", "K": "Kickers",
+                     "DEF": "Defenses"}
+
+
+def horizon_sentence(pos: str, window: str, miss: float, order: float, bmiss: float | None, border: float | None) -> str:
+    """"Quarterbacks, the next four weeks: order 0.54, miss 6.9 points per game (his own record: 0.54, 7.0)."."""
+    base = "his own record" if pos in ("QB", "RB", "WR", "TE") else "points per game so far"
+    tail = f" ({base}: {border:.2f}, {bmiss:.1f})" if bmiss is not None and border is not None else " (no simple baseline measured yet)"
+    return (f"{HORIZON_POS_WORDS[pos]}, {HORIZON_WINDOW_WORDS[window]}: order {order:.2f}, miss {miss:.1f} points per "
+            f"game{tail}.")
+
+
+# ud1.0 (docs/METRICS.md § "The useful decision grade"; scripts/analysis/ir4_useful.py): close one-for-ones, the share
+# where the calculator's side scored more over four weeks (``beat_share``) against his own per-game record's side
+# (``rest_beat_share``), ``n`` = pairs, ``beat`` = seasons (of 5) above both 50 % and the baseline. kind ``useful``.
+USEFUL_GRADES: dict[str, tuple[int, float, float, int]] = {
+    "QB": (3680, 0.594, 0.615, 0), "RB": (6320, 0.575, 0.552, 4), "WR": (8643, 0.584, 0.539, 4), "TE": (2939, 0.555, 0.524, 4)}
+
+
+def horizon_grade_rows(graded_at: datetime | None = None) -> list[dict]:
+    """``ops.context_grade`` rows of kind ``horizon`` and ``useful`` (see the block's comments)."""
+    out = []
+    for pos, (n, rate, base, seasons) in USEFUL_GRADES.items():
+        out.append({"kind": "useful", "grp": f"{pos}/next4", "corner_certainty": None, "corner_tier": None, "n": n,
+                    "games": None, "mean_miss": None, "lo": None, "hi": None, "beat": seasons, "beat_share": rate,
+                    "vs_rest": round(rate - base, 3), "vs_rest_lo": None, "vs_rest_hi": None, "rest_n": n,
+                    "rest_beat_share": base, "span": HORIZON_SPAN, "scoring": "Half PPR",
+                    "words": (f"{HORIZON_POS_WORDS[pos]}: on a close one-for-one the calculator's side scored more over "
+                              f"the next four weeks {rate * 100:.0f} times in 100 (his own per-game record's side "
+                              f"{base * 100:.0f}), {pos} pairs {n:,}."), "graded_at": graded_at})
+    for (pos, window), (miss, order, bmiss, border) in HORIZON_GRADES.items():
+        out.append({"kind": "horizon", "grp": f"{pos}/{window}", "corner_certainty": None, "corner_tier": None,
+                    "n": None, "games": None, "mean_miss": miss, "lo": None, "hi": None, "beat": None,
+                    "beat_share": order, "vs_rest": None if bmiss is None else round(miss - bmiss, 3),
+                    "vs_rest_lo": None, "vs_rest_hi": None, "rest_n": None, "rest_beat_share": border,
+                    "span": HORIZON_SPAN, "scoring": HORIZON_SCORING,
+                    "words": horizon_sentence(pos, window, miss, order, bmiss, border), "graded_at": graded_at})
+    return out
+# ---- end IR-4

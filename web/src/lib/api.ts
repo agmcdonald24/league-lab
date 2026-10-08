@@ -2862,6 +2862,14 @@ export interface AboutAnswer {
     by_week: string | null; // "weeks 1–3: v2.0; week 4: v3.0; weeks 5–18: v3.6"
     words: string;
   };
-  checked?: { head: string; graded_on: string; rows: AboutCheckedRow[]; not_graded: string[]; windows_words: string; rule: string };
+  checked?: {
+    head: string;
+    graded_on: string;
+    rows: AboutCheckedRow[];
+    not_graded: string[];
+    windows_words: string;
+    rule: string;
+    useful?: { words: string; by_position: Record<string, { pairs: number; rate: number; base: number; seasons: number; useful: boolean }> };
+  };
 }
 // ---- end IR-4

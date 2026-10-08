@@ -5168,7 +5168,9 @@ role, the opponent and the line where there is one) from § "v3.6" by horizon (b
 | next four weeks (h 1–4) | 0.538 / 6.93 | 0.537 / 7.00 | 0.660 / 4.63 | 0.594 / 4.48 | 0.564 / 3.35 |
 | rest of season (h 1–8) | 0.509 / 7.28 | 0.510 / 7.33 | 0.640 / 4.68 | 0.574 / 4.57 | 0.547 / 3.39 |
 
-Reading: at QB the model is level with its own per-game record on order over both windows and a little ahead on miss;
+The record's `QB/next1` row carries IQ-3's one-week baseline (B2 6.60 / 0.575, every week of 2021–2025: § "v3.6") beside
+IQ-1's model numbers (as of weeks 3 / 5 / 7 / 9): the same question on slightly different rows. Reading: at QB the model
+is level with its own per-game record on order over both windows and a little ahead on miss;
 RB / WR / TE have **no simple baseline measured** at these horizons yet (only the model). K / DEF: not pooled by window;
 two to eight weeks ahead no better than chance (above). These rows are written to the record as `ops.context_grade`
 kind `horizon` (`context_record.horizon_grade_rows`, constants with this section as their source) so the site reads
@@ -5213,4 +5215,29 @@ on single players (the one-for-one version of a trade), past seasons, informatio
 * **Reported**: rate by season and position, model and baseline, pairs counted; pooled = the mean over seasons. No
   keep rule: a grade. The calculator is "useful" where its rate is above 50 % and above the baseline's in at least 4 of
   the 5 seasons; "no better than his own record" otherwise.
+
+**The result** (`scripts/analysis/ir4_useful.py`, run 10:30–10:37 ET after the definition above was committed in
+`b03ccac`; 20 fits, about 20 s each; rate = share of close pairs where the favoured player scored more over the four
+weeks; pairs pair-weighted within a season, then the mean over seasons):
+
+| position | close pairs | calculator | his own record | not about even (> 10 %): pairs | calculator | his own record | seasons above both 50 % and the baseline | reading |
+|---|---|---|---|---|---|---|---|---|
+| QB (v3.5 rows) | 3,680 | 0.594 | **0.615** | 1,694 | 0.640 | 0.640 | 0 of 5 | no better than his own record |
+| RB | 6,320 | **0.575** | 0.552 | 3,156 | 0.611 | 0.572 | 4 of 5 | useful |
+| WR | 8,643 | **0.584** | 0.539 | 3,847 | 0.629 | 0.569 | 4 of 5 | useful |
+| TE | 2,939 | **0.555** | 0.524 | 1,463 | 0.601 | 0.523 | 4 of 5 | useful |
+
+By season (calculator / his own record): QB 0.580 / 0.647, 0.578 / 0.590, 0.632 / 0.643, 0.593 / 0.594, 0.586 / 0.603;
+RB 0.554 / 0.586, 0.572 / 0.513, 0.578 / 0.554, 0.603 / 0.582, 0.569 / 0.524; WR 0.604 / 0.613, 0.615 / 0.558, 0.553 /
+0.526, 0.566 / 0.498, 0.583 / 0.500; TE 0.544 / 0.535, 0.547 / 0.474, 0.572 / 0.545, 0.562 / 0.500, 0.550 / 0.565 (2021
+… 2025). All positions, pair-weighted: 0.577 / 0.600, 0.587 / 0.539, 0.577 / 0.558, 0.580 / 0.538, 0.575 / 0.534.
+
+**Reading.** On a close one-for-one at running back, receiver or tight end, the side the calculator favours scores more
+over the next four weeks about 56–58 times in 100 (60–63 when it does not call it about even), and more often than the
+side the player's own per-game record favours in 4 of 5 seasons. At quarterback it is right about 59 times in 100 but
+**no better than his own per-game record** (0.594 against 0.615; level when it does not call it even) — the same
+finding as § "v3.6" (a QB's later weeks are about his level, which his record holds), measured here on v3.5's rows;
+v3.6's blend moves QB later weeks toward that record and is not in this run. What this is not: a package of several
+players, a cross-position trade, the league's lineup effect (the connected calculator's number) or whether the other
+manager accepts. The trade verdict's "about even" band is not graded by this either.
 <!-- ---- end IR-4 -->

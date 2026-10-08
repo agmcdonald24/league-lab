@@ -759,3 +759,28 @@ beyond next week", as of 2026-10-07), on every screen that shows a rest-of-seaso
 | Who should I start? with a corrected quarterback | the same sentence under his name; the call and the chances as for anyone | "no call" |
 | starter unclear, U1 (where `mart_starter_check` is built) | "Starter unclear: Tampa Bay lists Jalon Daniels as the starter, but the depth chart puts Baker Mayfield first. Our projections assume the listing: Daniels as the starter, Mayfield as his backup." | "wrong", "benched" (15 of 27 such flags were not stale) |
 <!-- ---- end IQ-2 -->
+<!-- ---- IR-4 -->
+## What is verified (IR-4, Wave I-R, 2026-10-08; `api/league_lab_api/provenance.py`, `ProvenanceLine.svelte`)
+
+One quiet line with every analysis: what the numbers are (the model's version, when the data was published), the weeks
+they cover, and what has been checked (docs/METRICS.md § "What each number has been checked against (IR-4)"). No colour,
+no warning, never "accurate" or "reliable".
+
+| Where | The words we use | Never |
+|---|---|---|
+| Rankings, this week (under the list) | "Model v3.6, data published 7 Oct, 8:05 pm ET · week 5 · checked on 2021–2025: next week graded." | "stale", "out of date", a warning colour |
+| Rankings, rest of season; `/ros` (in "how to read") | "Model v3.6, data published 7 Oct, 8:05 pm ET · weeks 5–18 · checked on 2021–2025: next week graded; two to eight weeks ahead graded, weak; the season total's range not graded." (all positions: "… next week graded, kickers and defenses weak; two to eight weeks ahead graded, quarterbacks weak, kickers and defenses no better than chance; …") | a number without "checked on" |
+| the free trade calculator, the trade evaluation (under the verdict) | "Beta · Model v3.6, data published 7 Oct, 8:05 pm ET · weeks 5–8 · checked on 2021–2025: next week graded; two to eight weeks ahead graded …; the trade's range not graded." | "proven", "guaranteed", a likelihood the other manager accepts |
+| the player card (under "How to read this") | the same line for his position, this week and the rest of the season | |
+| no publication time known | the line without ", data published …" (never a guessed time) | "unknown time" |
+| a decision on a quarterback whose team's starter is unclear (withheld) | "No verdict while Tampa Bay's starter is unclear: Jalon Daniels is listed, the depth chart puts Baker Mayfield first, and this depends on Jalon Daniels. The numbers assume the listing." | a firm verdict beside it |
+| a decision on a starter set by hand (softened) | "Seattle's starter was set by hand (Sam Darnold, not the listed Drew Lock); this depends on Sam Darnold, so read the verdict as a lean that assumes Darnold starts." | |
+| the free calculator's verdict, withheld (no lean, no colour; the numbers stay) | "No verdict: it depends on who starts for Tampa Bay." | "You get more" beside it |
+| the free calculator's verdict, softened | "You get more: 103 points of season value (likely +53 to +153) (a lean: it assumes Darnold starts)." | |
+| the rule (`caveat_rule`, About) | "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call." | |
+| the home, under the sentence | "Beta. What each number has been checked against, and what has not, is on About the numbers." (the link: `/about#checked`) | "No league" |
+| About, "What it does not know" | "… It is refreshed every morning with the newest games, and the model itself has changed during the season: every version and its date is under "What changed and when" below." (was "its recipe stays the same all season": false since week 4) | "the recipe stays the same" |
+| About, **What changed and when** | "The model changes during the season, and every change is dated here. A week's projections are kept as they stood at its first kickoff, so earlier weeks keep the version they were made with. Now: v3.6 (kickers and defenses kd1.0), data published …" · one line per version: "26 Sep · v2.0 · Stat-line projections with a range: …" … "7 Oct · v3.6 · A quarterback's weeks after next week blend the model with his own per-game record." · "This season's weeks, by the version they were made with: weeks 1–3: v2.0; week 4: v3.0; weeks 5–18: v3.6." | |
+| About, **What each number has been checked against** | the head ("… The order is the rank correlation (1 = perfect, 0 = no better than chance); the miss is in points per game."), one card per position: "Next week: graded · order 0.59 · miss 6.4", "Two to eight weeks ahead: graded, weak · …", "Next four weeks: order 0.54 · miss 6.9 (his own record: 0.54 · 7.0)", "Rest of season: …"; "Not graded yet:" the ranges around a season total and a trade's gap, whether the side the calculator favours scores more, kickers and defenses over a window | "validated" |
+| the record (`ops.context_grade` kind `horizon`) | "Quarterbacks, the next four weeks: order 0.54, miss 6.9 points per game (his own record: 0.54, 7.0)." · "Running backs, the rest of the season (up to eight weeks ahead): order 0.64, miss 4.7 points per game (no simple baseline measured yet)." | |
+<!-- ---- end IR-4 -->

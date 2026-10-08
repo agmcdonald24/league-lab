@@ -367,9 +367,29 @@ def for_free_trade(ans: Mapping) -> dict:
     ps = _players(ans)
     first = w.get("first")
     cvs = caveats_for(ps, _season_now(), first)
-    return {"provenance": block([p.get("position") for p in ps], first, w.get("last"), first, season_range=True,
-                                trade_gap=True, beta=True),
-            "caveats": cvs, "caveat_effect": effect(cvs), "caveat_rule": RULE_WORDS}
+    out = {"provenance": block([p.get("position") for p in ps], first, w.get("last"), first, season_range=True,
+                               trade_gap=True, beta=True),
+           "caveats": cvs, "caveat_effect": effect(cvs), "caveat_rule": RULE_WORDS}
+    v = ans.get("verdict")
+    if cvs and isinstance(v, Mapping) and v.get("gap") is not None:     # the rule, applied to this calculator's verdict
+        out["verdict"] = free_verdict(dict(v), cvs)
+    return out
+
+
+def free_verdict(v: dict, cvs: list[dict]) -> dict:
+    """The free calculator's verdict under the rule: withheld — no lean (no colour), "No verdict: it depends on who
+    starts for Tampa Bay."; softened — the words kept with "(a lean: it assumes Darnold starts)". The original words
+    stay in ``words_unqualified``."""
+    e = effect(cvs)
+    out = {**v, "words_unqualified": v.get("words"), "caveat_effect": e}
+    if e == WITHHOLD:
+        teams = " and ".join(dict.fromkeys(starters.team_name(str(c["team"])) for c in cvs if c["effect"] == WITHHOLD))
+        out.update(lean=None, even=None, words=f"No verdict: it depends on who starts for {teams}.")
+    elif e == SOFTEN:
+        who = " and ".join(dict.fromkeys(_last(str(c.get("set"))) for c in cvs if c["effect"] == SOFTEN))
+        verb = "start" if " and " in who else "starts"
+        out["words"] = f"{str(v.get('words') or '').rstrip('.')} (a lean: it assumes {who} {verb})."
+    return out
 
 
 def for_trade(ans: Mapping) -> dict:
@@ -474,10 +494,25 @@ WINDOWS = {
 NOT_GRADED = (
     "the ranges around a season total and around a trade's gap (they add weekly ranges as if the weeks were independent; "
     "the weekly ranges are graded one week ahead only)",
-    "whether the side the trade calculator favours goes on to score more over the next four weeks",
+    "a trade of several players or across positions, and the lineup effect in your league (the useful-decision grade "
+    "below is one-for-one, same position)",
     "kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their "
     "order is no better than chance)",
 )
+# The useful-decision grade (ud1.0, docs/METRICS.md § "The useful decision grade"; scripts/analysis/ir4_useful.py,
+# 2021–2025): on a close one-for-one (projected four-week totals within 20 %), how often the side the calculator favours
+# scored more over those four weeks, against the side his own per-game record favours. QB rows are v3.5's.
+USEFUL = {"QB": {"pairs": 3680, "rate": 0.594, "base": 0.615, "seasons": 0, "useful": False},
+          "RB": {"pairs": 6320, "rate": 0.575, "base": 0.552, "seasons": 4, "useful": True},
+          "WR": {"pairs": 8643, "rate": 0.584, "base": 0.539, "seasons": 4, "useful": True},
+          "TE": {"pairs": 2939, "rate": 0.555, "base": 0.524, "seasons": 4, "useful": True}}
+USEFUL_WORDS = ("Is the trade calculator right? On a close one-for-one between two players of the same position, graded "
+                f"on {GRADED_ON}, the side it favours scored more over the next four weeks "
+                f"{USEFUL['WR']['rate'] * 100:.0f} times in 100 at receiver, {USEFUL['RB']['rate'] * 100:.0f} at running "
+                f"back and {USEFUL['TE']['rate'] * 100:.0f} at tight end — more often than the side his own per-game "
+                f"record favours ({USEFUL['WR']['base'] * 100:.0f}, {USEFUL['RB']['base'] * 100:.0f} and "
+                f"{USEFUL['TE']['base'] * 100:.0f}). At quarterback {USEFUL['QB']['rate'] * 100:.0f} in 100, but the side his own "
+                f"per-game record favours did better ({USEFUL['QB']['base'] * 100:.0f}). 50 would be a coin flip.")
 CHECKED_HEAD = ("What each number has been checked against: every projection below was scored on 2021–2025 seasons it "
                 "never saw, against what happened that week. The order is the rank correlation (1 = perfect, 0 = no "
                 "better than chance); the miss is in points per game.")
@@ -518,4 +553,4 @@ def about_block() -> dict:
                                           "scored against that week (pooled over the window's weeks, not the window's "
                                           "total); quarterbacks also against a simple baseline, his own per-game "
                                           "record."),
-                        "rule": RULE_WORDS}}
+                        "rule": RULE_WORDS, "useful": {"words": USEFUL_WORDS, "by_position": USEFUL}}}

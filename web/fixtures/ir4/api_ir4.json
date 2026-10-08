@@ -1,0 +1,7352 @@
+{
+"/api/rankings?league=ref%3Ahalf&limit=50&offset=0&position=QB&view=season": {
+"status": 200,
+"body": {
+"season": 2026,
+"week": 5,
+"view": "season",
+"position": "QB",
+"scoring": "Half PPR",
+"positions": [
+"QB",
+"RB",
+"WR",
+"TE",
+"FLEX",
+"K",
+"DEF"
+],
+"limit": 50,
+"offset": 0,
+"q": null,
+"tier_words": "No tiers for the rest of the season: the season ranges have not been graded yet.",
+"tier_rule": null,
+"tier_p": null,
+"league_name": null,
+"rows": [
+{
+"key": "00-0033077",
+"gsis_id": "00-0033077",
+"player_name": "Dak Prescott",
+"position": "QB",
+"team": "DAL",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yvscmqq1qki8zfsemmcd",
+"rank": 1,
+"tier": null,
+"tier_p": null,
+"proj_points": 239.5,
+"p10": 208.3,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 270.7,
+"opponent": "TB",
+"is_home": true,
+"kickoff_at": "2026-10-09T00:15:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 19.96,
+"bye_weeks": [
+14
+],
+"bye_this_week": false
+},
+{
+"key": "00-0033873",
+"gsis_id": "00-0033873",
+"player_name": "Patrick Mahomes",
+"position": "QB",
+"team": "KC",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+"rank": 2,
+"tier": null,
+"tier_p": null,
+"proj_points": 236.33,
+"p10": 205.1,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 267.6,
+"opponent": null,
+"is_home": null,
+"kickoff_at": null,
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 19.69,
+"bye_weeks": [
+5
+],
+"bye_this_week": true
+},
+{
+"key": "00-0034857",
+"gsis_id": "00-0034857",
+"player_name": "Josh Allen",
+"position": "QB",
+"team": "BUF",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mjwbioajzldkq1vzoz2d",
+"rank": 3,
+"tier": null,
+"tier_p": null,
+"proj_points": 223.45,
+"p10": 187.6,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 259.3,
+"opponent": "LA",
+"is_home": false,
+"kickoff_at": "2026-10-13T00:15:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 18.62,
+"bye_weeks": [
+7
+],
+"bye_this_week": false
+},
+{
+"key": "00-0035228",
+"gsis_id": "00-0035228",
+"player_name": "Kyler Murray",
+"position": "QB",
+"team": "MIN",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/btfruyf33adgnjzpcuen",
+"rank": 4,
+"tier": null,
+"tier_p": null,
+"proj_points": 220.99,
+"p10": 186.3,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 255.6,
+"opponent": "NO",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 18.42,
+"bye_weeks": [
+6
+],
+"bye_this_week": false
+},
+{
+"key": "00-0033106",
+"gsis_id": "00-0033106",
+"player_name": "Jared Goff",
+"position": "QB",
+"team": "DET",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kaicbot8qhzrvddilbtp",
+"rank": 5,
+"tier": null,
+"tier_p": null,
+"proj_points": 210.92,
+"p10": 178.2,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 243.6,
+"opponent": "ARI",
+"is_home": false,
+"kickoff_at": "2026-10-11T20:25:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 17.58,
+"bye_weeks": [
+6
+],
+"bye_this_week": false
+},
+{
+"key": "00-0026498",
+"gsis_id": "00-0026498",
+"player_name": "Matthew Stafford",
+"position": "QB",
+"team": "LA",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+"rank": 6,
+"tier": null,
+"tier_p": null,
+"proj_points": 210.33,
+"p10": 178.8,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 241.9,
+"opponent": "BUF",
+"is_home": true,
+"kickoff_at": "2026-10-13T00:15:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 17.53,
+"bye_weeks": [
+11
+],
+"bye_this_week": false
+},
+{
+"key": "00-0039163",
+"gsis_id": "00-0039163",
+"player_name": "C.J. Stroud",
+"position": "QB",
+"team": "HOU",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tt4zrtxlhifaljhj0rn7",
+"rank": 7,
+"tier": null,
+"tier_p": null,
+"proj_points": 209.01,
+"p10": 175.8,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 242.2,
+"opponent": "TEN",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 17.42,
+"bye_weeks": [
+8
+],
+"bye_this_week": false
+},
+{
+"key": "00-0034796",
+"gsis_id": "00-0034796",
+"player_name": "Lamar Jackson",
+"position": "QB",
+"team": "BAL",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/eno6s5qzl9grbfbfwhoa",
+"rank": 8,
+"tier": null,
+"tier_p": null,
+"proj_points": 206.84,
+"p10": 171.2,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 242.4,
+"opponent": "ATL",
+"is_home": false,
+"kickoff_at": "2026-10-12T00:20:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 17.24,
+"bye_weeks": [
+13
+],
+"bye_this_week": false
+},
+{
+"key": "00-0037834",
+"gsis_id": "00-0037834",
+"player_name": "Brock Purdy",
+"position": "QB",
+"team": "SF",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
+"rank": 9,
+"tier": null,
+"tier_p": null,
+"proj_points": 205.29,
+"p10": 168.5,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 242.1,
+"opponent": "SEA",
+"is_home": false,
+"kickoff_at": "2026-10-11T20:25:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 17.11,
+"bye_weeks": [
+8
+],
+"bye_this_week": false
+},
+{
+"key": "00-0036442",
+"gsis_id": "00-0036442",
+"player_name": "Joe Burrow",
+"position": "QB",
+"team": "CIN",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gnnvcgui1cijybukk2w7",
+"rank": 10,
+"tier": null,
+"tier_p": null,
+"proj_points": 204.28,
+"p10": 170.3,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 238.3,
+"opponent": "MIA",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 17.02,
+"bye_weeks": [
+6
+],
+"bye_this_week": false
+},
+{
+"key": "00-0036971",
+"gsis_id": "00-0036971",
+"player_name": "Trevor Lawrence",
+"position": "QB",
+"team": "JAX",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/k9uzdernqkx7oquy7dkg",
+"rank": 11,
+"tier": null,
+"tier_p": null,
+"proj_points": 204.09,
+"p10": 171.9,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 236.3,
+"opponent": "PHI",
+"is_home": true,
+"kickoff_at": "2026-10-11T13:30:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 17.01,
+"bye_weeks": [
+7
+],
+"bye_this_week": false
+},
+{
+"key": "00-0039851",
+"gsis_id": "00-0039851",
+"player_name": "Drake Maye",
+"position": "QB",
+"team": "NE",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/s1nmoon2xnrc3bnyulv4",
+"rank": 12,
+"tier": null,
+"tier_p": null,
+"proj_points": 203.44,
+"p10": 171.7,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 235.1,
+"opponent": "LV",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 16.95,
+"bye_weeks": [
+11
+],
+"bye_this_week": false
+},
+{
+"key": "00-0038128",
+"gsis_id": "00-0038128",
+"player_name": "Malik Willis",
+"position": "QB",
+"team": "MIA",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/txvgdbwbryzyyqq6gfet",
+"rank": 13,
+"tier": null,
+"tier_p": null,
+"proj_points": 202.9,
+"p10": 168.1,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 237.7,
+"opponent": "CIN",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 16.91,
+"bye_weeks": [
+6
+],
+"bye_this_week": false
+},
+{
+"key": "00-0033119",
+"gsis_id": "00-0033119",
+"player_name": "Jacoby Brissett",
+"position": "QB",
+"team": "ARI",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qjswiunczrn5xmdiqhlz",
+"rank": 14,
+"tier": null,
+"tier_p": null,
+"proj_points": 202.43,
+"p10": 167.3,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 237.6,
+"opponent": "DET",
+"is_home": true,
+"kickoff_at": "2026-10-11T20:25:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 16.87,
+"bye_weeks": [
+14
+],
+"bye_this_week": false
+},
+{
+"key": "00-0033537",
+"gsis_id": "00-0033537",
+"player_name": "Deshaun Watson",
+"position": "QB",
+"team": "CLE",
+"headshot_url": "https://static.www.nfl.com/image/private/f_auto,q_auto/league/otfs2docj6eahaebo5xn",
+"rank": 15,
+"tier": null,
+"tier_p": null,
+"proj_points": 199.84,
+"p10": 166.8,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 232.9,
+"opponent": "NYJ",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 16.65,
+"bye_weeks": [
+11
+],
+"bye_this_week": false
+},
+{
+"key": "00-0039732",
+"gsis_id": "00-0039732",
+"player_name": "Bo Nix",
+"position": "QB",
+"team": "DEN",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+"rank": 16,
+"tier": null,
+"tier_p": null,
+"proj_points": 197.54,
+"p10": 165.2,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 229.9,
+"opponent": "LAC",
+"is_home": false,
+"kickoff_at": "2026-10-11T20:05:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 16.46,
+"bye_weeks": [
+10
+],
+"bye_this_week": false
+},
+{
+"key": "00-0036389",
+"gsis_id": "00-0036389",
+"player_name": "Jalen Hurts",
+"position": "QB",
+"team": "PHI",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+"rank": 17,
+"tier": null,
+"tier_p": null,
+"proj_points": 195.52,
+"p10": 162.0,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 229.1,
+"opponent": "JAX",
+"is_home": false,
+"kickoff_at": "2026-10-11T13:30:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 16.29,
+"bye_weeks": [
+10
+],
+"bye_this_week": false
+},
+{
+"key": "00-0029604",
+"gsis_id": "00-0029604",
+"player_name": "Kirk Cousins",
+"position": "QB",
+"team": "LV",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/za7cynvpwlsro1tsaijk",
+"rank": 18,
+"tier": null,
+"tier_p": null,
+"proj_points": 191.45,
+"p10": 155.2,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 227.7,
+"opponent": "NE",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 15.95,
+"bye_weeks": [
+13
+],
+"bye_this_week": false
+},
+{
+"key": "00-0035710",
+"gsis_id": "00-0035710",
+"player_name": "Daniel Jones",
+"position": "QB",
+"team": "IND",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ohvvctuykzwrpqer7xgl",
+"rank": 19,
+"tier": null,
+"tier_p": null,
+"proj_points": 189.39,
+"p10": 157.5,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 221.3,
+"opponent": "PIT",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 15.78,
+"bye_weeks": [
+13
+],
+"bye_this_week": false
+},
+{
+"key": "00-0040743",
+"gsis_id": "00-0040743",
+"player_name": "Tyler Shough",
+"position": "QB",
+"team": "NO",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+"rank": 20,
+"tier": null,
+"tier_p": null,
+"proj_points": 185.01,
+"p10": 151.7,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 218.3,
+"opponent": "MIN",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 15.42,
+"bye_weeks": [
+8
+],
+"bye_this_week": false
+},
+{
+"key": "00-0036355",
+"gsis_id": "00-0036355",
+"player_name": "Justin Herbert",
+"position": "QB",
+"team": "LAC",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jnkspnntgebegzp4ghve",
+"rank": 21,
+"tier": null,
+"tier_p": null,
+"proj_points": 184.23,
+"p10": 152.7,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 215.8,
+"opponent": "DEN",
+"is_home": true,
+"kickoff_at": "2026-10-11T20:05:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 15.35,
+"bye_weeks": [
+7
+],
+"bye_this_week": false
+},
+{
+"key": "00-0041251",
+"gsis_id": "00-0041251",
+"player_name": "Jalon Daniels",
+"position": "QB",
+"team": "TB",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hwhfl6i5drktwjvslfpn",
+"rank": 22,
+"tier": null,
+"tier_p": null,
+"proj_points": 182.88,
+"p10": 146.2,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 219.6,
+"opponent": "DAL",
+"is_home": false,
+"kickoff_at": "2026-10-09T00:15:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 15.24,
+"bye_weeks": [
+10
+],
+"bye_this_week": false
+},
+{
+"key": "00-0036264",
+"gsis_id": "00-0036264",
+"player_name": "Jordan Love",
+"position": "QB",
+"team": "GB",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/thz8stjkbjwddxqnozi5",
+"rank": 23,
+"tier": null,
+"tier_p": null,
+"proj_points": 180.98,
+"p10": 145.2,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 216.8,
+"opponent": "CHI",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 15.08,
+"bye_weeks": [
+11
+],
+"bye_this_week": false
+},
+{
+"key": "00-0034869",
+"gsis_id": "00-0034869",
+"player_name": "Sam Darnold",
+"position": "QB",
+"team": "SEA",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fyay8vruj0cqmhopufzk",
+"rank": 24,
+"tier": null,
+"tier_p": null,
+"proj_points": 178.37,
+"p10": 145.8,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 210.9,
+"opponent": "SF",
+"is_home": true,
+"kickoff_at": "2026-10-11T20:25:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": {
+"team": "SEA",
+"listed": "Drew Lock",
+"set": "Sam Darnold",
+"role": "set",
+"words": "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold as the starter. Set by hand on 7 Oct."
+},
+"ros_games": 12,
+"ros_points_per_game": 14.86,
+"bye_weeks": [
+11
+],
+"bye_this_week": false
+},
+{
+"key": "00-0030565",
+"gsis_id": "00-0030565",
+"player_name": "Geno Smith",
+"position": "QB",
+"team": "NYJ",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zppfqqcyjfma14jjif3a",
+"rank": 25,
+"tier": null,
+"tier_p": null,
+"proj_points": 178.3,
+"p10": 144.0,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 212.6,
+"opponent": "CLE",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 14.86,
+"bye_weeks": [
+13
+],
+"bye_this_week": false
+},
+{
+"key": "00-0023459",
+"gsis_id": "00-0023459",
+"player_name": "Aaron Rodgers",
+"position": "QB",
+"team": "PIT",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dypvakakxhccxs67tb0y",
+"rank": 26,
+"tier": null,
+"tier_p": null,
+"proj_points": 177.4,
+"p10": 144.5,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 210.3,
+"opponent": "IND",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 14.78,
+"bye_weeks": [
+9
+],
+"bye_this_week": false
+},
+{
+"key": "00-0039917",
+"gsis_id": "00-0039917",
+"player_name": "Michael Penix Jr.",
+"position": "QB",
+"team": "ATL",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
+"rank": 27,
+"tier": null,
+"tier_p": null,
+"proj_points": 173.26,
+"p10": 140.5,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 206.0,
+"opponent": "BAL",
+"is_home": true,
+"kickoff_at": "2026-10-12T00:20:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 14.44,
+"bye_weeks": [
+11
+],
+"bye_this_week": false
+},
+{
+"key": "00-0040676",
+"gsis_id": "00-0040676",
+"player_name": "Cam Ward",
+"position": "QB",
+"team": "TEN",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/l7switu6stlwd2irm8yo",
+"rank": 28,
+"tier": null,
+"tier_p": null,
+"proj_points": 171.6,
+"p10": 138.3,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 204.9,
+"opponent": "HOU",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 14.3,
+"bye_weeks": [
+9
+],
+"bye_this_week": false
+},
+{
+"key": "00-0031503",
+"gsis_id": "00-0031503",
+"player_name": "Jameis Winston",
+"position": "QB",
+"team": "NYG",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/e5qyxnibbyawi0pvfpjl",
+"rank": 29,
+"tier": null,
+"tier_p": null,
+"proj_points": 169.55,
+"p10": 136.5,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 202.6,
+"opponent": "WAS",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 14.13,
+"bye_weeks": [
+8
+],
+"bye_this_week": false
+},
+{
+"key": "00-0039150",
+"gsis_id": "00-0039150",
+"player_name": "Bryce Young",
+"position": "QB",
+"team": "CAR",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+"rank": 30,
+"tier": null,
+"tier_p": null,
+"proj_points": 165.51,
+"p10": 131.2,
+"p25": null,
+"p50": null,
+"p75": null,
+"p90": 199.8,
+"opponent": null,
+"is_home": null,
+"kickoff_at": null,
+"report_status": null,
+"game_state": null,
+"matchup": null,
+"starter_corrected": null,
+"ros_games": 12,
+"ros_points_per_game": 13.79,
+"bye_weeks": [
+5
+],
+"bye_this_week": true
+}
+],
+"total": 69,
+"tiers": 0,
+"ros_grade": {
+"words": "Beyond next week there is no betting line yet. Graded on 2021–2025, a quarterback projection two to eight weeks ahead misses by about 7.4 points per game (6.4 for next week); running backs, receivers and tight ends miss by about 0.2 more than next week.",
+"kd_words": null,
+"graded_on": "2021–2025",
+"as_of": "2026-10-07",
+"source": "docs/METRICS.md § v3.5: rest-of-season quarterbacks (IQ-1); § Kickers and defenses beyond next week (IQ-4)",
+"qb_next_week_mae": 6.44,
+"qb_later_mae": 7.41,
+"other_extra_mae": 0.2,
+"kd_shown": false
+},
+"from_week": 5,
+"last_week": 17,
+"assumes": "Projected points over the weeks left (weeks 5–17) in Half PPR scoring, whoever rosters him: no roster, no lineup and no cost considered. The range is 8 seasons in 10, the weeks read as independent.",
+"provenance": {
+"model_version": "v3.5",
+"kd_model_version": null,
+"published_at": "2026-10-08T00:05:49.207666+00:00",
+"horizon": {
+"first": 5,
+"last": 17,
+"market_week": 5,
+"words": "weeks 5–17"
+},
+"checks": [
+{
+"span": "next",
+"position": "QB",
+"status": "graded",
+"mae": 6.44,
+"order": 0.587,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Quarterbacks next week: graded (order 0.59)"
+},
+{
+"span": "later",
+"position": "QB",
+"status": "graded_weak",
+"mae": 7.41,
+"order": 0.495,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Quarterbacks two to eight weeks ahead: graded, weak (order 0.49)"
+},
+{
+"span": "season_range",
+"position": null,
+"status": "not_graded",
+"mae": null,
+"order": null,
+"ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+"words": "The season total's range: not graded"
+}
+],
+"status": "not_graded",
+"beta": false,
+"words": "Model v3.5, data published 7 Oct, 8:05 pm ET · weeks 5–17 · checked on 2021–2025: next week graded; two to eight weeks ahead graded, weak; the season total's range not graded."
+}
+}
+},
+"/api/rankings?league=ref%3Ahalf&limit=50&offset=0&position=QB&view=week": {
+"status": 200,
+"body": {
+"season": 2026,
+"week": 5,
+"view": "week",
+"position": "QB",
+"scoring": "Half PPR",
+"positions": [
+"QB",
+"RB",
+"WR",
+"TE",
+"FLEX",
+"K",
+"DEF"
+],
+"limit": 50,
+"offset": 0,
+"q": null,
+"tier_words": "A tier is a run of players the first of them outscores in fewer than 55 weeks in 100: their order is a coin flip, so start whichever you like inside one.",
+"tier_rule": "A new tier starts at the first player the tier's first player outscores in 55 weeks in 100 or more (each from his range, centred on his projection).",
+"tier_p": 0.55,
+"league_name": null,
+"rows": [
+{
+"key": "00-0034857",
+"gsis_id": "00-0034857",
+"player_name": "Josh Allen",
+"position": "QB",
+"team": "BUF",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mjwbioajzldkq1vzoz2d",
+"rank": 1,
+"tier": 1.0,
+"tier_p": null,
+"proj_points": 21.87,
+"p10": 10.98,
+"p25": 16.85,
+"p50": 21.15,
+"p75": 26.91,
+"p90": 31.4,
+"opponent": "LA",
+"is_home": false,
+"kickoff_at": "2026-10-13T00:15:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "Los Angeles gives up the 13th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0033077",
+"gsis_id": "00-0033077",
+"player_name": "Dak Prescott",
+"position": "QB",
+"team": "DAL",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yvscmqq1qki8zfsemmcd",
+"rank": 2,
+"tier": 1.0,
+"tier_p": 0.545,
+"proj_points": 20.95,
+"p10": 13.16,
+"p25": 15.59,
+"p50": 19.46,
+"p75": 25.45,
+"p90": 29.81,
+"opponent": "TB",
+"is_home": true,
+"kickoff_at": "2026-10-09T00:15:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "difficult",
+"words": "Tampa Bay gives up the 9th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0033119",
+"gsis_id": "00-0033119",
+"player_name": "Jacoby Brissett",
+"position": "QB",
+"team": "ARI",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qjswiunczrn5xmdiqhlz",
+"rank": 3,
+"tier": 2.0,
+"tier_p": null,
+"proj_points": 20.36,
+"p10": 9.74,
+"p25": 16.23,
+"p50": 19.13,
+"p75": 24.47,
+"p90": 31.64,
+"opponent": "DET",
+"is_home": true,
+"kickoff_at": "2026-10-11T20:25:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "favorable",
+"words": "Detroit gives up the most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0033106",
+"gsis_id": "00-0033106",
+"player_name": "Jared Goff",
+"position": "QB",
+"team": "DET",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kaicbot8qhzrvddilbtp",
+"rank": 4,
+"tier": 2.0,
+"tier_p": 0.487,
+"proj_points": 20.24,
+"p10": 11.17,
+"p25": 15.32,
+"p50": 20.85,
+"p75": 24.1,
+"p90": 28.55,
+"opponent": "ARI",
+"is_home": false,
+"kickoff_at": "2026-10-11T20:25:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "favorable",
+"words": "Arizona gives up the 5th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0026498",
+"gsis_id": "00-0026498",
+"player_name": "Matthew Stafford",
+"position": "QB",
+"team": "LA",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+"rank": 5,
+"tier": 2.0,
+"tier_p": 0.496,
+"proj_points": 20.07,
+"p10": 10.5,
+"p25": 15.09,
+"p50": 18.86,
+"p75": 22.5,
+"p90": 27.41,
+"opponent": "BUF",
+"is_home": true,
+"kickoff_at": "2026-10-13T00:15:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "favorable",
+"words": "Buffalo gives up the 4th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0039851",
+"gsis_id": "00-0039851",
+"player_name": "Drake Maye",
+"position": "QB",
+"team": "NE",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/s1nmoon2xnrc3bnyulv4",
+"rank": 6,
+"tier": 3.0,
+"tier_p": null,
+"proj_points": 18.99,
+"p10": 10.69,
+"p25": 14.21,
+"p50": 17.56,
+"p75": 23.08,
+"p90": 27.52,
+"opponent": "LV",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "Las Vegas gives up the 16th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0039910",
+"gsis_id": "00-0039910",
+"player_name": "Jayden Daniels",
+"position": "QB",
+"team": "WAS",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gfz8k5onuqjrche9ogqc",
+"rank": 7,
+"tier": 4.0,
+"tier_p": null,
+"proj_points": 17.97,
+"p10": 8.52,
+"p25": 13.13,
+"p50": 17.73,
+"p75": 24.52,
+"p90": 31.03,
+"opponent": "NYG",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "New York gives up the 15th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0039732",
+"gsis_id": "00-0039732",
+"player_name": "Bo Nix",
+"position": "QB",
+"team": "DEN",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+"rank": 8,
+"tier": 4.0,
+"tier_p": 0.487,
+"proj_points": 17.96,
+"p10": 9.93,
+"p25": 12.41,
+"p50": 17.13,
+"p75": 22.44,
+"p90": 26.97,
+"opponent": "LAC",
+"is_home": false,
+"kickoff_at": "2026-10-11T20:05:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "Los Angeles gives up the 15th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0035228",
+"gsis_id": "00-0035228",
+"player_name": "Kyler Murray",
+"position": "QB",
+"team": "MIN",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/btfruyf33adgnjzpcuen",
+"rank": 9,
+"tier": 4.0,
+"tier_p": 0.502,
+"proj_points": 17.44,
+"p10": 5.88,
+"p25": 11.38,
+"p50": 16.75,
+"p75": 22.03,
+"p90": 26.13,
+"opponent": "NO",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "New Orleans gives up the 12th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0036971",
+"gsis_id": "00-0036971",
+"player_name": "Trevor Lawrence",
+"position": "QB",
+"team": "JAX",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/k9uzdernqkx7oquy7dkg",
+"rank": 10,
+"tier": 4.0,
+"tier_p": 0.514,
+"proj_points": 17.22,
+"p10": 8.26,
+"p25": 11.25,
+"p50": 17.98,
+"p75": 23.58,
+"p90": 27.37,
+"opponent": "PHI",
+"is_home": true,
+"kickoff_at": "2026-10-11T13:30:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "Philadelphia gives up the 11th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0034796",
+"gsis_id": "00-0034796",
+"player_name": "Lamar Jackson",
+"position": "QB",
+"team": "BAL",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/eno6s5qzl9grbfbfwhoa",
+"rank": 11,
+"tier": 4.0,
+"tier_p": 0.539,
+"proj_points": 16.57,
+"p10": 7.56,
+"p25": 10.73,
+"p50": 17.88,
+"p75": 22.61,
+"p90": 27.69,
+"opponent": "ATL",
+"is_home": false,
+"kickoff_at": "2026-10-12T00:20:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "favorable",
+"words": "Atlanta gives up the 10th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0036389",
+"gsis_id": "00-0036389",
+"player_name": "Jalen Hurts",
+"position": "QB",
+"team": "PHI",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+"rank": 12,
+"tier": 4.0,
+"tier_p": 0.539,
+"proj_points": 16.57,
+"p10": 7.52,
+"p25": 10.4,
+"p50": 16.11,
+"p75": 22.15,
+"p90": 26.41,
+"opponent": "JAX",
+"is_home": false,
+"kickoff_at": "2026-10-11T13:30:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "Jacksonville gives up the 11th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0037834",
+"gsis_id": "00-0037834",
+"player_name": "Brock Purdy",
+"position": "QB",
+"team": "SF",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
+"rank": 13,
+"tier": 4.0,
+"tier_p": 0.549,
+"proj_points": 16.34,
+"p10": 8.52,
+"p25": 13.8,
+"p50": 18.04,
+"p75": 25.09,
+"p90": 29.99,
+"opponent": "SEA",
+"is_home": false,
+"kickoff_at": "2026-10-11T20:25:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "difficult",
+"words": "Seattle gives up the 2nd-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0033537",
+"gsis_id": "00-0033537",
+"player_name": "Deshaun Watson",
+"position": "QB",
+"team": "CLE",
+"headshot_url": "https://static.www.nfl.com/image/private/f_auto,q_auto/league/otfs2docj6eahaebo5xn",
+"rank": 14,
+"tier": 4.0,
+"tier_p": 0.547,
+"proj_points": 16.31,
+"p10": 7.48,
+"p25": 10.36,
+"p50": 16.42,
+"p75": 21.26,
+"p90": 25.88,
+"opponent": "NYJ",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "difficult",
+"words": "New York gives up the 5th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0039163",
+"gsis_id": "00-0039163",
+"player_name": "C.J. Stroud",
+"position": "QB",
+"team": "HOU",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tt4zrtxlhifaljhj0rn7",
+"rank": 15,
+"tier": 5.0,
+"tier_p": null,
+"proj_points": 16.19,
+"p10": 7.46,
+"p25": 11.33,
+"p50": 15.59,
+"p75": 21.08,
+"p90": 25.96,
+"opponent": "TEN",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "difficult",
+"words": "Tennessee gives up the 6th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0036355",
+"gsis_id": "00-0036355",
+"player_name": "Justin Herbert",
+"position": "QB",
+"team": "LAC",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jnkspnntgebegzp4ghve",
+"rank": 16,
+"tier": 5.0,
+"tier_p": 0.495,
+"proj_points": 16.17,
+"p10": 7.02,
+"p25": 10.84,
+"p50": 16.18,
+"p75": 20.95,
+"p90": 25.02,
+"opponent": "DEN",
+"is_home": true,
+"kickoff_at": "2026-10-11T20:05:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "Denver gives up the 14th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0038128",
+"gsis_id": "00-0038128",
+"player_name": "Malik Willis",
+"position": "QB",
+"team": "MIA",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/txvgdbwbryzyyqq6gfet",
+"rank": 17,
+"tier": 5.0,
+"tier_p": 0.513,
+"proj_points": 15.96,
+"p10": 5.43,
+"p25": 7.43,
+"p50": 15.37,
+"p75": 20.54,
+"p90": 25.58,
+"opponent": "CIN",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "Cincinnati gives up the 14th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0036442",
+"gsis_id": "00-0036442",
+"player_name": "Joe Burrow",
+"position": "QB",
+"team": "CIN",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gnnvcgui1cijybukk2w7",
+"rank": 18,
+"tier": 5.0,
+"tier_p": 0.509,
+"proj_points": 15.91,
+"p10": 7.45,
+"p25": 11.64,
+"p50": 15.4,
+"p75": 21.75,
+"p90": 25.69,
+"opponent": "MIA",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "Miami gives up the 13th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0040743",
+"gsis_id": "00-0040743",
+"player_name": "Tyler Shough",
+"position": "QB",
+"team": "NO",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+"rank": 19,
+"tier": 5.0,
+"tier_p": 0.519,
+"proj_points": 15.91,
+"p10": 6.6,
+"p25": 10.26,
+"p50": 13.81,
+"p75": 20.07,
+"p90": 25.71,
+"opponent": "MIN",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "difficult",
+"words": "Minnesota gives up the fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0023459",
+"gsis_id": "00-0023459",
+"player_name": "Aaron Rodgers",
+"position": "QB",
+"team": "PIT",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dypvakakxhccxs67tb0y",
+"rank": 20,
+"tier": 5.0,
+"tier_p": 0.52,
+"proj_points": 15.86,
+"p10": 7.53,
+"p25": 9.62,
+"p50": 15.73,
+"p75": 20.61,
+"p90": 26.56,
+"opponent": "IND",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "favorable",
+"words": "Indianapolis gives up the 6th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0036264",
+"gsis_id": "00-0036264",
+"player_name": "Jordan Love",
+"position": "QB",
+"team": "GB",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/thz8stjkbjwddxqnozi5",
+"rank": 21,
+"tier": 5.0,
+"tier_p": 0.515,
+"proj_points": 15.59,
+"p10": 5.52,
+"p25": 10.45,
+"p50": 16.02,
+"p75": 21.79,
+"p90": 25.29,
+"opponent": "CHI",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "difficult",
+"words": "Chicago gives up the 10th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0029604",
+"gsis_id": "00-0029604",
+"player_name": "Kirk Cousins",
+"position": "QB",
+"team": "LV",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/za7cynvpwlsro1tsaijk",
+"rank": 22,
+"tier": 5.0,
+"tier_p": 0.53,
+"proj_points": 15.51,
+"p10": 6.25,
+"p25": 10.07,
+"p50": 16.27,
+"p75": 21.68,
+"p90": 27.2,
+"opponent": "NE",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "difficult",
+"words": "New England gives up the 8th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0035710",
+"gsis_id": "00-0035710",
+"player_name": "Daniel Jones",
+"position": "QB",
+"team": "IND",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ohvvctuykzwrpqer7xgl",
+"rank": 23,
+"tier": 5.0,
+"tier_p": 0.53,
+"proj_points": 15.48,
+"p10": 6.04,
+"p25": 10.04,
+"p50": 14.09,
+"p75": 19.59,
+"p90": 24.63,
+"opponent": "PIT",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "difficult",
+"words": "Pittsburgh gives up the 3rd-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0038416",
+"gsis_id": "00-0038416",
+"player_name": "Tyson Bagent",
+"position": "QB",
+"team": "CHI",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ymimvligfyrucu0v3p6a",
+"rank": 24,
+"tier": 5.0,
+"tier_p": 0.536,
+"proj_points": 15.27,
+"p10": 5.47,
+"p25": 9.72,
+"p50": 14.44,
+"p75": 20.34,
+"p90": 24.88,
+"opponent": "GB",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "Green Bay gives up the 12th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": {
+"team": "CHI",
+"listed": "Case Keenum",
+"set": "Tyson Bagent",
+"role": "set",
+"words": "Chicago's listing says Case Keenum; Tyson Bagent led the team's dropbacks in week 4, so we project Bagent as the starter. Set by hand on 7 Oct."
+}
+},
+{
+"key": "00-0034869",
+"gsis_id": "00-0034869",
+"player_name": "Sam Darnold",
+"position": "QB",
+"team": "SEA",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fyay8vruj0cqmhopufzk",
+"rank": 25,
+"tier": 5.0,
+"tier_p": 0.543,
+"proj_points": 15.03,
+"p10": 6.01,
+"p25": 9.46,
+"p50": 14.85,
+"p75": 21.68,
+"p90": 24.29,
+"opponent": "SF",
+"is_home": true,
+"kickoff_at": "2026-10-11T20:25:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "difficult",
+"words": "San Francisco gives up the 7th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": {
+"team": "SEA",
+"listed": "Drew Lock",
+"set": "Sam Darnold",
+"role": "set",
+"words": "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold as the starter. Set by hand on 7 Oct."
+}
+},
+{
+"key": "00-0039917",
+"gsis_id": "00-0039917",
+"player_name": "Michael Penix Jr.",
+"position": "QB",
+"team": "ATL",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
+"rank": 26,
+"tier": 5.0,
+"tier_p": 0.549,
+"proj_points": 14.86,
+"p10": 5.5,
+"p25": 9.44,
+"p50": 14.73,
+"p75": 20.92,
+"p90": 24.53,
+"opponent": "BAL",
+"is_home": true,
+"kickoff_at": "2026-10-12T00:20:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "neutral",
+"words": "Baltimore gives up the 16th-fewest points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0041251",
+"gsis_id": "00-0041251",
+"player_name": "Jalon Daniels",
+"position": "QB",
+"team": "TB",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hwhfl6i5drktwjvslfpn",
+"rank": 27,
+"tier": null,
+"tier_p": null,
+"proj_points": 14.75,
+"p10": 2.8,
+"p25": 7.09,
+"p50": 13.07,
+"p75": 20.61,
+"p90": 25.82,
+"opponent": "DAL",
+"is_home": false,
+"kickoff_at": "2026-10-09T00:15:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "favorable",
+"words": "Dallas gives up the 2nd-most points to quarterbacks."
+},
+"starter_unclear": {
+"team": "TB",
+"listed": "Jalon Daniels",
+"played": "Baker Mayfield",
+"role": "listed",
+"words": "Starter unclear: Tampa Bay lists Jalon Daniels as the starter, but the depth chart puts Baker Mayfield first. Our projections assume the listing: Daniels as the starter, Mayfield as his backup."
+},
+"starter_corrected": null
+},
+{
+"key": "00-0030565",
+"gsis_id": "00-0030565",
+"player_name": "Geno Smith",
+"position": "QB",
+"team": "NYJ",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zppfqqcyjfma14jjif3a",
+"rank": 28,
+"tier": 6.0,
+"tier_p": null,
+"proj_points": 14.53,
+"p10": 5.58,
+"p25": 8.48,
+"p50": 14.23,
+"p75": 21.54,
+"p90": 25.27,
+"opponent": "CLE",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "favorable",
+"words": "Cleveland gives up the 9th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0031503",
+"gsis_id": "00-0031503",
+"player_name": "Jameis Winston",
+"position": "QB",
+"team": "NYG",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/e5qyxnibbyawi0pvfpjl",
+"rank": 29,
+"tier": 6.0,
+"tier_p": 0.523,
+"proj_points": 13.86,
+"p10": 5.42,
+"p25": 9.21,
+"p50": 14.9,
+"p75": 19.15,
+"p90": 24.02,
+"opponent": "WAS",
+"is_home": false,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "favorable",
+"words": "Washington gives up the 3rd-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+},
+{
+"key": "00-0040676",
+"gsis_id": "00-0040676",
+"player_name": "Cam Ward",
+"position": "QB",
+"team": "TEN",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/l7switu6stlwd2irm8yo",
+"rank": 30,
+"tier": 7.0,
+"tier_p": null,
+"proj_points": 12.13,
+"p10": 3.62,
+"p25": 7.54,
+"p50": 12.02,
+"p75": 18.26,
+"p90": 22.94,
+"opponent": "HOU",
+"is_home": true,
+"kickoff_at": "2026-10-11T17:00:00+00:00",
+"report_status": null,
+"game_state": null,
+"matchup": {
+"tone": "favorable",
+"words": "Houston gives up the 8th-most points to quarterbacks."
+},
+"starter_unclear": null,
+"starter_corrected": null
+}
+],
+"total": 89,
+"tiers": 13,
+"assumes": "Projected points this week in Half PPR scoring, with the range 8 weeks in 10 land in. The matchup is the defense against his position (it is in the projection); who plays cornerback is not, and is not shown here.",
+"unclear_words": "Starter unclear (the dashed edge): the schedule lists one quarterback and the depth chart or the team's last game says another, so a projection may be on the wrong man. Those two keep their place by projection and are left out of the tiers.",
+"provenance": {
+"model_version": "v3.5",
+"kd_model_version": null,
+"published_at": "2026-10-08T00:05:49.207666+00:00",
+"horizon": {
+"first": 5,
+"last": 5,
+"market_week": 5,
+"words": "week 5"
+},
+"checks": [
+{
+"span": "next",
+"position": "QB",
+"status": "graded",
+"mae": 6.44,
+"order": 0.587,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Quarterbacks next week: graded (order 0.59)"
+}
+],
+"status": "graded",
+"beta": false,
+"words": "Model v3.5, data published 7 Oct, 8:05 pm ET · week 5 · checked on 2021–2025: next week graded."
+}
+}
+},
+"/api/ros?league=ref%3Ahalf&limit=50&position=QB": {
+"status": 200,
+"body": {
+"league_id": "ref:half",
+"source": "sleeper",
+"position": "QB",
+"ros_grade": {
+"words": "Beyond next week there is no betting line yet. Graded on 2021–2025, a quarterback projection two to eight weeks ahead misses by about 7.4 points per game (6.4 for next week); running backs, receivers and tight ends miss by about 0.2 more than next week.",
+"kd_words": null,
+"graded_on": "2021–2025",
+"as_of": "2026-10-07",
+"source": "docs/METRICS.md § v3.5: rest-of-season quarterbacks (IQ-1); § Kickers and defenses beyond next week (IQ-4)",
+"qb_next_week_mae": 6.44,
+"qb_later_mae": 7.41,
+"other_extra_mae": 0.2,
+"kd_shown": false
+},
+"from_week": 5,
+"last_week": 17,
+"playoff_week_start": 15,
+"lines_note": "Only week 5 has betting lines yet: the later weeks lean on usage and the schedule.",
+"pos_rank_note": "pos_rank is the player's rank at his position among every projected player on an active NFL roster in this league's scoring, rostered or not (mart_player_ros_projection's population); priced on request from the NFL-wide board (the same population as the mart's for a house league: tested)",
+"piece_columns": {
+"QB": [
+"attempts",
+"passing_yards",
+"passing_tds",
+"passing_interceptions"
+],
+"RB": [
+"carries",
+"rushing_yards",
+"targets",
+"receptions",
+"receiving_yards",
+"tds"
+],
+"WR": [
+"targets",
+"receptions",
+"receiving_yards",
+"tds"
+],
+"TE": [
+"targets",
+"receptions",
+"receiving_yards",
+"tds"
+]
+},
+"howto_rankings": "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are down reads lower than his name; a quarterback who starts and throws 35 times per game counts like any starter while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is far from it, open his card and read why before you trade on it.",
+"leans_on": {
+"QB": {
+"features": [
+"is he the projected starter?",
+"points Vegas expects his team to score",
+"pass attempts per game, last 3 games"
+],
+"words": "For QBs the model leans most on **is he the projected starter?**. Next: points Vegas expects his team to score · pass attempts per game, last 3 games.",
+"scored_in": "League of Scrubs"
+},
+"RB": {
+"features": [
+"share of his team's carries, last 3 games",
+"rushing yards per game, season",
+"share of his team's targets, season"
+],
+"words": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: rushing yards per game, season · share of his team's targets, season.",
+"scored_in": "League of Scrubs"
+},
+"WR": {
+"features": [
+"snap share, last 3 games",
+"expected points per game (what his touches are worth), season",
+"receiving yards per game, last season"
+],
+"words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+"scored_in": "League of Scrubs"
+},
+"TE": {
+"features": [
+"share of his team's targets, season",
+"receiving yards per game, last season",
+"snap share, last 3 games"
+],
+"words": "For TEs the model leans most on **share of his team's targets, season**. Next: receiving yards per game, last season · snap share, last 3 games.",
+"scored_in": "League of Scrubs"
+}
+},
+"market_week": 5,
+"market_note": null,
+"players": [
+{
+"gsis_id": "00-0033077",
+"player_key": "00-0033077",
+"player_name": "Dak Prescott",
+"position": "QB",
+"team": "DAL",
+"ros_points": 239.5,
+"ros_games": 12,
+"playoff_points": 59.52,
+"p10": 208.3,
+"p90": 270.7,
+"pos_rank": 1,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yvscmqq1qki8zfsemmcd",
+"bye_weeks": [
+14
+],
+"ros_points_per_game": 19.96,
+"per_game": {
+"attempts": 35.48,
+"passing_yards": 265.47,
+"passing_tds": 2.0,
+"passing_interceptions": 0.69
+},
+"why": {
+"per": "game",
+"points": 19.96,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 35.48,
+"each": 0.0,
+"points": 0.0,
+"words": "35 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 265.47,
+"each": 0.04,
+"points": 10.62,
+"words": "265 passing yards × 0.04 = +10.6"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 2.0,
+"each": 4.0,
+"points": 7.98,
+"words": "2.0 passing TDs × 4 = +8.0"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.69,
+"each": -1.0,
+"points": -0.69,
+"words": "0.69 interceptions × -1 = -0.7"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 3.55,
+"each": 0.0,
+"points": 0.0,
+"words": "3.6 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 16.58,
+"each": 0.1,
+"points": 1.66,
+"words": "16.6 rushing yards × 0.1 = +1.7"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.11,
+"each": 6.0,
+"points": 0.69,
+"words": "0.11 rushing TDs × 6 = +0.7"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.15,
+"each": -2.0,
+"points": -0.3,
+"words": "0.15 fumbles lost × -2 = -0.3"
+}
+],
+"sentence": "35 passes → 265 pass yards → 2.0 pass TDs → 0.69 INTs → 20.0 points per game × 12 games = 240",
+"games": 12,
+"total": 239.5
+},
+"market_points": null,
+"week_points": 20.95,
+"market_words": null
+},
+{
+"gsis_id": "00-0033873",
+"player_key": "00-0033873",
+"player_name": "Patrick Mahomes",
+"position": "QB",
+"team": "KC",
+"ros_points": 236.33,
+"ros_games": 12,
+"playoff_points": 59.27,
+"p10": 205.1,
+"p90": 267.6,
+"pos_rank": 2,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+"bye_weeks": [
+5
+],
+"ros_points_per_game": 19.69,
+"per_game": {
+"attempts": 34.24,
+"passing_yards": 267.23,
+"passing_tds": 1.85,
+"passing_interceptions": 0.6
+},
+"why": {
+"per": "game",
+"points": 19.69,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 34.24,
+"each": 0.0,
+"points": 0.0,
+"words": "34 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 267.23,
+"each": 0.04,
+"points": 10.69,
+"words": "267 passing yards × 0.04 = +10.7"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.85,
+"each": 4.0,
+"points": 7.42,
+"words": "1.9 passing TDs × 4 = +7.4"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.6,
+"each": -1.0,
+"points": -0.6,
+"words": "0.60 interceptions × -1 = -0.6"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 3.74,
+"each": 0.0,
+"points": 0.0,
+"words": "3.7 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 16.93,
+"each": 0.1,
+"points": 1.69,
+"words": "16.9 rushing yards × 0.1 = +1.7"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.13,
+"each": 6.0,
+"points": 0.77,
+"words": "0.13 rushing TDs × 6 = +0.8"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.14,
+"each": -2.0,
+"points": -0.28,
+"words": "0.14 fumbles lost × -2 = -0.3"
+}
+],
+"sentence": "34 passes → 267 pass yards → 1.9 pass TDs → 0.60 INTs → 19.7 points per game × 12 games = 236",
+"games": 12,
+"total": 236.33
+},
+"market_points": null,
+"week_points": null,
+"market_words": null
+},
+{
+"gsis_id": "00-0034857",
+"player_key": "00-0034857",
+"player_name": "Josh Allen",
+"position": "QB",
+"team": "BUF",
+"ros_points": 223.45,
+"ros_games": 12,
+"playoff_points": 54.54,
+"p10": 187.6,
+"p90": 259.3,
+"pos_rank": 3,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mjwbioajzldkq1vzoz2d",
+"bye_weeks": [
+7
+],
+"ros_points_per_game": 18.62,
+"per_game": {
+"attempts": 27.26,
+"passing_yards": 222.66,
+"passing_tds": 1.1,
+"passing_interceptions": 0.75
+},
+"why": {
+"per": "game",
+"points": 18.62,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 27.26,
+"each": 0.0,
+"points": 0.0,
+"words": "27 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 222.66,
+"each": 0.04,
+"points": 8.91,
+"words": "223 passing yards × 0.04 = +8.9"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.1,
+"each": 4.0,
+"points": 4.41,
+"words": "1.1 passing TDs × 4 = +4.4"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.75,
+"each": -1.0,
+"points": -0.75,
+"words": "0.75 interceptions × -1 = -0.7"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 7.39,
+"each": 0.0,
+"points": 0.0,
+"words": "7.4 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 30.46,
+"each": 0.1,
+"points": 3.05,
+"words": "30 rushing yards × 0.1 = +3.0"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.52,
+"each": 6.0,
+"points": 3.15,
+"words": "0.52 rushing TDs × 6 = +3.1"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.07,
+"each": -2.0,
+"points": -0.14,
+"words": "0.07 fumbles lost × -2 = -0.1"
+}
+],
+"sentence": "27 passes → 223 pass yards → 1.1 pass TDs → 0.75 INTs → 18.6 points per game × 12 games = 223",
+"games": 12,
+"total": 223.45
+},
+"market_points": null,
+"week_points": 21.87,
+"market_words": null
+},
+{
+"gsis_id": "00-0035228",
+"player_key": "00-0035228",
+"player_name": "Kyler Murray",
+"position": "QB",
+"team": "MIN",
+"ros_points": 220.99,
+"ros_games": 12,
+"playoff_points": 56.3,
+"p10": 186.3,
+"p90": 255.6,
+"pos_rank": 4,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/btfruyf33adgnjzpcuen",
+"bye_weeks": [
+6
+],
+"ros_points_per_game": 18.42,
+"per_game": {
+"attempts": 31.31,
+"passing_yards": 207.23,
+"passing_tds": 1.44,
+"passing_interceptions": 0.45
+},
+"why": {
+"per": "game",
+"points": 18.42,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 31.31,
+"each": 0.0,
+"points": 0.0,
+"words": "31 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 207.23,
+"each": 0.04,
+"points": 8.29,
+"words": "207 passing yards × 0.04 = +8.3"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.44,
+"each": 4.0,
+"points": 5.76,
+"words": "1.4 passing TDs × 4 = +5.8"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.45,
+"each": -1.0,
+"points": -0.45,
+"words": "0.45 interceptions × -1 = -0.4"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 4.47,
+"each": 0.0,
+"points": 0.0,
+"words": "4.5 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 28.42,
+"each": 0.1,
+"points": 2.84,
+"words": "28 rushing yards × 0.1 = +2.8"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.37,
+"each": 6.0,
+"points": 2.2,
+"words": "0.37 rushing TDs × 6 = +2.2"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.11,
+"each": -2.0,
+"points": -0.22,
+"words": "0.11 fumbles lost × -2 = -0.2"
+}
+],
+"sentence": "31 passes → 207 pass yards → 1.4 pass TDs → 0.45 INTs → 18.4 points per game × 12 games = 221",
+"games": 12,
+"total": 220.99
+},
+"market_points": null,
+"week_points": 17.44,
+"market_words": null
+},
+{
+"gsis_id": "00-0033106",
+"player_key": "00-0033106",
+"player_name": "Jared Goff",
+"position": "QB",
+"team": "DET",
+"ros_points": 210.92,
+"ros_games": 12,
+"playoff_points": 51.78,
+"p10": 178.2,
+"p90": 243.6,
+"pos_rank": 5,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kaicbot8qhzrvddilbtp",
+"bye_weeks": [
+6
+],
+"ros_points_per_game": 17.58,
+"per_game": {
+"attempts": 37.14,
+"passing_yards": 268.79,
+"passing_tds": 1.9,
+"passing_interceptions": 0.81
+},
+"why": {
+"per": "game",
+"points": 17.58,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 37.14,
+"each": 0.0,
+"points": 0.0,
+"words": "37 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 268.79,
+"each": 0.04,
+"points": 10.75,
+"words": "269 passing yards × 0.04 = +10.8"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.9,
+"each": 4.0,
+"points": 7.61,
+"words": "1.9 passing TDs × 4 = +7.6"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.81,
+"each": -1.0,
+"points": -0.81,
+"words": "0.81 interceptions × -1 = -0.8"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 1.6,
+"each": 0.0,
+"points": 0.0,
+"words": "1.6 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 1.67,
+"each": 0.1,
+"points": 0.17,
+"words": "1.7 rushing yards × 0.1 = +0.2"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.02,
+"each": 6.0,
+"points": 0.13,
+"words": "0.02 rushing TDs × 6 = +0.1"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.13,
+"each": -2.0,
+"points": -0.26,
+"words": "0.13 fumbles lost × -2 = -0.3"
+}
+],
+"sentence": "37 passes → 269 pass yards → 1.9 pass TDs → 0.81 INTs → 17.6 points per game × 12 games = 211",
+"games": 12,
+"total": 210.92
+},
+"market_points": null,
+"week_points": 20.24,
+"market_words": null
+},
+{
+"gsis_id": "00-0026498",
+"player_key": "00-0026498",
+"player_name": "Matthew Stafford",
+"position": "QB",
+"team": "LA",
+"ros_points": 210.33,
+"ros_games": 12,
+"playoff_points": 51.73,
+"p10": 178.8,
+"p90": 241.9,
+"pos_rank": 6,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+"bye_weeks": [
+11
+],
+"ros_points_per_game": 17.53,
+"per_game": {
+"attempts": 34.38,
+"passing_yards": 267.53,
+"passing_tds": 1.78,
+"passing_interceptions": 0.54
+},
+"why": {
+"per": "game",
+"points": 17.53,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 34.38,
+"each": 0.0,
+"points": 0.0,
+"words": "34 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 267.53,
+"each": 0.04,
+"points": 10.7,
+"words": "268 passing yards × 0.04 = +10.7"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.78,
+"each": 4.0,
+"points": 7.14,
+"words": "1.8 passing TDs × 4 = +7.1"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.54,
+"each": -1.0,
+"points": -0.54,
+"words": "0.54 interceptions × -1 = -0.5"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 1.79,
+"each": 0.0,
+"points": 0.0,
+"words": "1.8 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 3.51,
+"each": 0.1,
+"points": 0.35,
+"words": "3.5 rushing yards × 0.1 = +0.4"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.03,
+"each": 6.0,
+"points": 0.21,
+"words": "0.03 rushing TDs × 6 = +0.2"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.17,
+"each": -2.0,
+"points": -0.33,
+"words": "0.17 fumbles lost × -2 = -0.3"
+}
+],
+"sentence": "34 passes → 268 pass yards → 1.8 pass TDs → 0.54 INTs → 17.5 points per game × 12 games = 210",
+"games": 12,
+"total": 210.33
+},
+"market_points": null,
+"week_points": 20.07,
+"market_words": null
+},
+{
+"gsis_id": "00-0039163",
+"player_key": "00-0039163",
+"player_name": "C.J. Stroud",
+"position": "QB",
+"team": "HOU",
+"ros_points": 209.01,
+"ros_games": 12,
+"playoff_points": 53.22,
+"p10": 175.8,
+"p90": 242.2,
+"pos_rank": 7,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tt4zrtxlhifaljhj0rn7",
+"bye_weeks": [
+8
+],
+"ros_points_per_game": 17.42,
+"per_game": {
+"attempts": 31.69,
+"passing_yards": 247.72,
+"passing_tds": 1.56,
+"passing_interceptions": 0.79
+},
+"why": {
+"per": "game",
+"points": 17.42,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 31.69,
+"each": 0.0,
+"points": 0.0,
+"words": "32 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 247.72,
+"each": 0.04,
+"points": 9.91,
+"words": "248 passing yards × 0.04 = +9.9"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.56,
+"each": 4.0,
+"points": 6.24,
+"words": "1.6 passing TDs × 4 = +6.2"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.79,
+"each": -1.0,
+"points": -0.79,
+"words": "0.79 interceptions × -1 = -0.8"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 3.43,
+"each": 0.0,
+"points": 0.0,
+"words": "3.4 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 13.88,
+"each": 0.1,
+"points": 1.39,
+"words": "13.9 rushing yards × 0.1 = +1.4"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.19,
+"each": 6.0,
+"points": 1.14,
+"words": "0.19 rushing TDs × 6 = +1.1"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.23,
+"each": -2.0,
+"points": -0.47,
+"words": "0.23 fumbles lost × -2 = -0.5"
+}
+],
+"sentence": "32 passes → 248 pass yards → 1.6 pass TDs → 0.79 INTs → 17.4 points per game × 12 games = 209",
+"games": 12,
+"total": 209.01
+},
+"market_points": null,
+"week_points": 16.19,
+"market_words": null
+},
+{
+"gsis_id": "00-0034796",
+"player_key": "00-0034796",
+"player_name": "Lamar Jackson",
+"position": "QB",
+"team": "BAL",
+"ros_points": 206.84,
+"ros_games": 12,
+"playoff_points": 50.88,
+"p10": 171.2,
+"p90": 242.4,
+"pos_rank": 8,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/eno6s5qzl9grbfbfwhoa",
+"bye_weeks": [
+13
+],
+"ros_points_per_game": 17.24,
+"per_game": {
+"attempts": 28.99,
+"passing_yards": 209.38,
+"passing_tds": 1.59,
+"passing_interceptions": 0.59
+},
+"why": {
+"per": "game",
+"points": 17.24,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 28.99,
+"each": 0.0,
+"points": 0.0,
+"words": "29 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 209.38,
+"each": 0.04,
+"points": 8.38,
+"words": "209 passing yards × 0.04 = +8.4"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.59,
+"each": 4.0,
+"points": 6.35,
+"words": "1.6 passing TDs × 4 = +6.4"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.59,
+"each": -1.0,
+"points": -0.59,
+"words": "0.59 interceptions × -1 = -0.6"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 4.99,
+"each": 0.0,
+"points": 0.0,
+"words": "5.0 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 24.87,
+"each": 0.1,
+"points": 2.49,
+"words": "25 rushing yards × 0.1 = +2.5"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.15,
+"each": 6.0,
+"points": 0.91,
+"words": "0.15 rushing TDs × 6 = +0.9"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.14,
+"each": -2.0,
+"points": -0.29,
+"words": "0.14 fumbles lost × -2 = -0.3"
+}
+],
+"sentence": "29 passes → 209 pass yards → 1.6 pass TDs → 0.59 INTs → 17.2 points per game × 12 games = 207",
+"games": 12,
+"total": 206.84
+},
+"market_points": null,
+"week_points": 16.57,
+"market_words": null
+},
+{
+"gsis_id": "00-0037834",
+"player_key": "00-0037834",
+"player_name": "Brock Purdy",
+"position": "QB",
+"team": "SF",
+"ros_points": 205.29,
+"ros_games": 12,
+"playoff_points": 51.29,
+"p10": 168.5,
+"p90": 242.1,
+"pos_rank": 9,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
+"bye_weeks": [
+8
+],
+"ros_points_per_game": 17.11,
+"per_game": {
+"attempts": 30.49,
+"passing_yards": 230.56,
+"passing_tds": 1.5,
+"passing_interceptions": 0.75
+},
+"why": {
+"per": "game",
+"points": 17.11,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 30.49,
+"each": 0.0,
+"points": 0.0,
+"words": "30 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 230.56,
+"each": 0.04,
+"points": 9.22,
+"words": "231 passing yards × 0.04 = +9.2"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.5,
+"each": 4.0,
+"points": 5.99,
+"words": "1.5 passing TDs × 4 = +6.0"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.75,
+"each": -1.0,
+"points": -0.75,
+"words": "0.75 interceptions × -1 = -0.7"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 4.13,
+"each": 0.0,
+"points": 0.0,
+"words": "4.1 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 21.81,
+"each": 0.1,
+"points": 2.18,
+"words": "22 rushing yards × 0.1 = +2.2"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.14,
+"each": 6.0,
+"points": 0.83,
+"words": "0.14 rushing TDs × 6 = +0.8"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.19,
+"each": -2.0,
+"points": -0.37,
+"words": "0.19 fumbles lost × -2 = -0.4"
+}
+],
+"sentence": "30 passes → 231 pass yards → 1.5 pass TDs → 0.75 INTs → 17.1 points per game × 12 games = 205",
+"games": 12,
+"total": 205.29
+},
+"market_points": null,
+"week_points": 16.34,
+"market_words": null
+},
+{
+"gsis_id": "00-0036442",
+"player_key": "00-0036442",
+"player_name": "Joe Burrow",
+"position": "QB",
+"team": "CIN",
+"ros_points": 204.28,
+"ros_games": 12,
+"playoff_points": 51.23,
+"p10": 170.3,
+"p90": 238.3,
+"pos_rank": 10,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gnnvcgui1cijybukk2w7",
+"bye_weeks": [
+6
+],
+"ros_points_per_game": 17.02,
+"per_game": {
+"attempts": 35.01,
+"passing_yards": 244.45,
+"passing_tds": 1.77,
+"passing_interceptions": 0.81
+},
+"why": {
+"per": "game",
+"points": 17.02,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 35.01,
+"each": 0.0,
+"points": 0.0,
+"words": "35 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 244.45,
+"each": 0.04,
+"points": 9.78,
+"words": "244 passing yards × 0.04 = +9.8"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.77,
+"each": 4.0,
+"points": 7.08,
+"words": "1.8 passing TDs × 4 = +7.1"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.81,
+"each": -1.0,
+"points": -0.81,
+"words": "0.81 interceptions × -1 = -0.8"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 2.26,
+"each": 0.0,
+"points": 0.0,
+"words": "2.3 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 7.26,
+"each": 0.1,
+"points": 0.73,
+"words": "7.3 rushing yards × 0.1 = +0.7"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.1,
+"each": 6.0,
+"points": 0.63,
+"words": "0.10 rushing TDs × 6 = +0.6"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.19,
+"each": -2.0,
+"points": -0.38,
+"words": "0.19 fumbles lost × -2 = -0.4"
+}
+],
+"sentence": "35 passes → 244 pass yards → 1.8 pass TDs → 0.81 INTs → 17.0 points per game × 12 games = 204",
+"games": 12,
+"total": 204.28
+},
+"market_points": null,
+"week_points": 15.91,
+"market_words": null
+},
+{
+"gsis_id": "00-0036971",
+"player_key": "00-0036971",
+"player_name": "Trevor Lawrence",
+"position": "QB",
+"team": "JAX",
+"ros_points": 204.09,
+"ros_games": 12,
+"playoff_points": 51.64,
+"p10": 171.9,
+"p90": 236.3,
+"pos_rank": 11,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/k9uzdernqkx7oquy7dkg",
+"bye_weeks": [
+7
+],
+"ros_points_per_game": 17.01,
+"per_game": {
+"attempts": 31.73,
+"passing_yards": 233.82,
+"passing_tds": 1.54,
+"passing_interceptions": 0.61
+},
+"why": {
+"per": "game",
+"points": 17.01,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 31.73,
+"each": 0.0,
+"points": 0.0,
+"words": "32 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 233.82,
+"each": 0.04,
+"points": 9.35,
+"words": "234 passing yards × 0.04 = +9.4"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.54,
+"each": 4.0,
+"points": 6.17,
+"words": "1.5 passing TDs × 4 = +6.2"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.61,
+"each": -1.0,
+"points": -0.61,
+"words": "0.61 interceptions × -1 = -0.6"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 3.65,
+"each": 0.0,
+"points": 0.0,
+"words": "3.6 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 15.51,
+"each": 0.1,
+"points": 1.55,
+"words": "15.5 rushing yards × 0.1 = +1.6"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.15,
+"each": 6.0,
+"points": 0.9,
+"words": "0.15 rushing TDs × 6 = +0.9"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.18,
+"each": -2.0,
+"points": -0.35,
+"words": "0.18 fumbles lost × -2 = -0.4"
+}
+],
+"sentence": "32 passes → 234 pass yards → 1.5 pass TDs → 0.61 INTs → 17.0 points per game × 12 games = 204",
+"games": 12,
+"total": 204.09
+},
+"market_points": null,
+"week_points": 17.22,
+"market_words": null
+},
+{
+"gsis_id": "00-0039851",
+"player_key": "00-0039851",
+"player_name": "Drake Maye",
+"position": "QB",
+"team": "NE",
+"ros_points": 203.44,
+"ros_games": 12,
+"playoff_points": 48.27,
+"p10": 171.7,
+"p90": 235.1,
+"pos_rank": 12,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/s1nmoon2xnrc3bnyulv4",
+"bye_weeks": [
+11
+],
+"ros_points_per_game": 16.95,
+"per_game": {
+"attempts": 29.9,
+"passing_yards": 212.86,
+"passing_tds": 1.37,
+"passing_interceptions": 0.58
+},
+"why": {
+"per": "game",
+"points": 16.95,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 29.9,
+"each": 0.0,
+"points": 0.0,
+"words": "30 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 212.86,
+"each": 0.04,
+"points": 8.51,
+"words": "213 passing yards × 0.04 = +8.5"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.37,
+"each": 4.0,
+"points": 5.46,
+"words": "1.4 passing TDs × 4 = +5.5"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.58,
+"each": -1.0,
+"points": -0.58,
+"words": "0.58 interceptions × -1 = -0.6"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 5.75,
+"each": 0.0,
+"points": 0.0,
+"words": "5.8 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 23.96,
+"each": 0.1,
+"points": 2.4,
+"words": "24 rushing yards × 0.1 = +2.4"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.25,
+"each": 6.0,
+"points": 1.47,
+"words": "0.25 rushing TDs × 6 = +1.5"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.16,
+"each": -2.0,
+"points": -0.31,
+"words": "0.16 fumbles lost × -2 = -0.3"
+}
+],
+"sentence": "30 passes → 213 pass yards → 1.4 pass TDs → 0.58 INTs → 17.0 points per game × 12 games = 203",
+"games": 12,
+"total": 203.44
+},
+"market_points": null,
+"week_points": 18.99,
+"market_words": null
+},
+{
+"gsis_id": "00-0038128",
+"player_key": "00-0038128",
+"player_name": "Malik Willis",
+"position": "QB",
+"team": "MIA",
+"ros_points": 202.9,
+"ros_games": 12,
+"playoff_points": 51.26,
+"p10": 168.1,
+"p90": 237.7,
+"pos_rank": 13,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/txvgdbwbryzyyqq6gfet",
+"bye_weeks": [
+6
+],
+"ros_points_per_game": 16.91,
+"per_game": {
+"attempts": 29.46,
+"passing_yards": 216.38,
+"passing_tds": 1.07,
+"passing_interceptions": 0.55
+},
+"why": {
+"per": "game",
+"points": 16.91,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 29.46,
+"each": 0.0,
+"points": 0.0,
+"words": "29 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 216.38,
+"each": 0.04,
+"points": 8.66,
+"words": "216 passing yards × 0.04 = +8.7"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.07,
+"each": 4.0,
+"points": 4.3,
+"words": "1.1 passing TDs × 4 = +4.3"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.55,
+"each": -1.0,
+"points": -0.55,
+"words": "0.55 interceptions × -1 = -0.6"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 5.67,
+"each": 0.0,
+"points": 0.0,
+"words": "5.7 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 31.89,
+"each": 0.1,
+"points": 3.19,
+"words": "32 rushing yards × 0.1 = +3.2"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.29,
+"each": 6.0,
+"points": 1.75,
+"words": "0.29 rushing TDs × 6 = +1.7"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.21,
+"each": -2.0,
+"points": -0.43,
+"words": "0.21 fumbles lost × -2 = -0.4"
+}
+],
+"sentence": "29 passes → 216 pass yards → 1.1 pass TDs → 0.55 INTs → 16.9 points per game × 12 games = 203",
+"games": 12,
+"total": 202.9
+},
+"market_points": null,
+"week_points": 15.96,
+"market_words": null
+},
+{
+"gsis_id": "00-0033119",
+"player_key": "00-0033119",
+"player_name": "Jacoby Brissett",
+"position": "QB",
+"team": "ARI",
+"ros_points": 202.43,
+"ros_games": 12,
+"playoff_points": 48.69,
+"p10": 167.3,
+"p90": 237.6,
+"pos_rank": 14,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qjswiunczrn5xmdiqhlz",
+"bye_weeks": [
+14
+],
+"ros_points_per_game": 16.87,
+"per_game": {
+"attempts": 34.84,
+"passing_yards": 252.54,
+"passing_tds": 1.55,
+"passing_interceptions": 0.71
+},
+"why": {
+"per": "game",
+"points": 16.87,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 34.84,
+"each": 0.0,
+"points": 0.0,
+"words": "35 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 252.54,
+"each": 0.04,
+"points": 10.1,
+"words": "253 passing yards × 0.04 = +10.1"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.55,
+"each": 4.0,
+"points": 6.21,
+"words": "1.6 passing TDs × 4 = +6.2"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.71,
+"each": -1.0,
+"points": -0.71,
+"words": "0.71 interceptions × -1 = -0.7"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 3.01,
+"each": 0.0,
+"points": 0.0,
+"words": "3.0 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 13.08,
+"each": 0.1,
+"points": 1.31,
+"words": "13.1 rushing yards × 0.1 = +1.3"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.09,
+"each": 6.0,
+"points": 0.53,
+"words": "0.09 rushing TDs × 6 = +0.5"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.29,
+"each": -2.0,
+"points": -0.58,
+"words": "0.29 fumbles lost × -2 = -0.6"
+}
+],
+"sentence": "35 passes → 253 pass yards → 1.6 pass TDs → 0.71 INTs → 16.9 points per game × 12 games = 202",
+"games": 12,
+"total": 202.43
+},
+"market_points": null,
+"week_points": 20.36,
+"market_words": null
+},
+{
+"gsis_id": "00-0033537",
+"player_key": "00-0033537",
+"player_name": "Deshaun Watson",
+"position": "QB",
+"team": "CLE",
+"ros_points": 199.84,
+"ros_games": 12,
+"playoff_points": 49.62,
+"p10": 166.8,
+"p90": 232.9,
+"pos_rank": 15,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/private/f_auto,q_auto/league/otfs2docj6eahaebo5xn",
+"bye_weeks": [
+11
+],
+"ros_points_per_game": 16.65,
+"per_game": {
+"attempts": 29.28,
+"passing_yards": 191.39,
+"passing_tds": 1.18,
+"passing_interceptions": 0.72
+},
+"why": {
+"per": "game",
+"points": 16.65,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 29.28,
+"each": 0.0,
+"points": 0.0,
+"words": "29 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 191.39,
+"each": 0.04,
+"points": 7.66,
+"words": "191 passing yards × 0.04 = +7.7"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.18,
+"each": 4.0,
+"points": 4.73,
+"words": "1.2 passing TDs × 4 = +4.7"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.72,
+"each": -1.0,
+"points": -0.72,
+"words": "0.72 interceptions × -1 = -0.7"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 5.85,
+"each": 0.0,
+"points": 0.0,
+"words": "5.9 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 26.6,
+"each": 0.1,
+"points": 2.66,
+"words": "27 rushing yards × 0.1 = +2.7"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.46,
+"each": 6.0,
+"points": 2.77,
+"words": "0.46 rushing TDs × 6 = +2.8"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.22,
+"each": -2.0,
+"points": -0.45,
+"words": "0.22 fumbles lost × -2 = -0.4"
+}
+],
+"sentence": "29 passes → 191 pass yards → 1.2 pass TDs → 0.72 INTs → 16.7 points per game × 12 games = 200",
+"games": 12,
+"total": 199.84
+},
+"market_points": null,
+"week_points": 16.31,
+"market_words": null
+},
+{
+"gsis_id": "00-0039732",
+"player_key": "00-0039732",
+"player_name": "Bo Nix",
+"position": "QB",
+"team": "DEN",
+"ros_points": 197.54,
+"ros_games": 12,
+"playoff_points": 49.56,
+"p10": 165.2,
+"p90": 229.9,
+"pos_rank": 16,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+"bye_weeks": [
+10
+],
+"ros_points_per_game": 16.46,
+"per_game": {
+"attempts": 32.95,
+"passing_yards": 235.05,
+"passing_tds": 1.31,
+"passing_interceptions": 0.68
+},
+"why": {
+"per": "game",
+"points": 16.46,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 32.95,
+"each": 0.0,
+"points": 0.0,
+"words": "33 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 235.05,
+"each": 0.04,
+"points": 9.4,
+"words": "235 passing yards × 0.04 = +9.4"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.31,
+"each": 4.0,
+"points": 5.25,
+"words": "1.3 passing TDs × 4 = +5.3"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.68,
+"each": -1.0,
+"points": -0.68,
+"words": "0.68 interceptions × -1 = -0.7"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 3.61,
+"each": 0.0,
+"points": 0.0,
+"words": "3.6 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 18.64,
+"each": 0.1,
+"points": 1.86,
+"words": "18.6 rushing yards × 0.1 = +1.9"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.17,
+"each": 6.0,
+"points": 0.99,
+"words": "0.17 rushing TDs × 6 = +1.0"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.19,
+"each": -2.0,
+"points": -0.37,
+"words": "0.19 fumbles lost × -2 = -0.4"
+}
+],
+"sentence": "33 passes → 235 pass yards → 1.3 pass TDs → 0.68 INTs → 16.5 points per game × 12 games = 198",
+"games": 12,
+"total": 197.54
+},
+"market_points": null,
+"week_points": 17.96,
+"market_words": null
+},
+{
+"gsis_id": "00-0036389",
+"player_key": "00-0036389",
+"player_name": "Jalen Hurts",
+"position": "QB",
+"team": "PHI",
+"ros_points": 195.52,
+"ros_games": 12,
+"playoff_points": 46.39,
+"p10": 162.0,
+"p90": 229.1,
+"pos_rank": 17,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+"bye_weeks": [
+10
+],
+"ros_points_per_game": 16.29,
+"per_game": {
+"attempts": 28.5,
+"passing_yards": 208.22,
+"passing_tds": 1.16,
+"passing_interceptions": 0.6
+},
+"why": {
+"per": "game",
+"points": 16.29,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 28.5,
+"each": 0.0,
+"points": 0.0,
+"words": "29 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 208.22,
+"each": 0.04,
+"points": 8.33,
+"words": "208 passing yards × 0.04 = +8.3"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.16,
+"each": 4.0,
+"points": 4.65,
+"words": "1.2 passing TDs × 4 = +4.7"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.6,
+"each": -1.0,
+"points": -0.6,
+"words": "0.60 interceptions × -1 = -0.6"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 5.97,
+"each": 0.0,
+"points": 0.0,
+"words": "6.0 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 26.99,
+"each": 0.1,
+"points": 2.7,
+"words": "27 rushing yards × 0.1 = +2.7"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.28,
+"each": 6.0,
+"points": 1.66,
+"words": "0.28 rushing TDs × 6 = +1.7"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.22,
+"each": -2.0,
+"points": -0.45,
+"words": "0.22 fumbles lost × -2 = -0.4"
+}
+],
+"sentence": "29 passes → 208 pass yards → 1.2 pass TDs → 0.60 INTs → 16.3 points per game × 12 games = 196",
+"games": 12,
+"total": 195.52
+},
+"market_points": null,
+"week_points": 16.57,
+"market_words": null
+},
+{
+"gsis_id": "00-0029604",
+"player_key": "00-0029604",
+"player_name": "Kirk Cousins",
+"position": "QB",
+"team": "LV",
+"ros_points": 191.45,
+"ros_games": 12,
+"playoff_points": 48.14,
+"p10": 155.2,
+"p90": 227.7,
+"pos_rank": 18,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/za7cynvpwlsro1tsaijk",
+"bye_weeks": [
+13
+],
+"ros_points_per_game": 15.95,
+"per_game": {
+"attempts": 33.62,
+"passing_yards": 264.16,
+"passing_tds": 1.59,
+"passing_interceptions": 0.95
+},
+"why": {
+"per": "game",
+"points": 15.95,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 33.62,
+"each": 0.0,
+"points": 0.0,
+"words": "34 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 264.16,
+"each": 0.04,
+"points": 10.57,
+"words": "264 passing yards × 0.04 = +10.6"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.59,
+"each": 4.0,
+"points": 6.36,
+"words": "1.6 passing TDs × 4 = +6.4"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.95,
+"each": -1.0,
+"points": -0.95,
+"words": "0.95 interceptions × -1 = -1.0"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 2.25,
+"each": 0.0,
+"points": 0.0,
+"words": "2.2 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 3.11,
+"each": 0.1,
+"points": 0.31,
+"words": "3.1 rushing yards × 0.1 = +0.3"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.07,
+"each": 6.0,
+"points": 0.41,
+"words": "0.07 rushing TDs × 6 = +0.4"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.37,
+"each": -2.0,
+"points": -0.74,
+"words": "0.37 fumbles lost × -2 = -0.7"
+}
+],
+"sentence": "34 passes → 264 pass yards → 1.6 pass TDs → 0.95 INTs → 16.0 points per game × 12 games = 191",
+"games": 12,
+"total": 191.45
+},
+"market_points": null,
+"week_points": 15.51,
+"market_words": null
+},
+{
+"gsis_id": "00-0035710",
+"player_key": "00-0035710",
+"player_name": "Daniel Jones",
+"position": "QB",
+"team": "IND",
+"ros_points": 189.39,
+"ros_games": 12,
+"playoff_points": 46.66,
+"p10": 157.5,
+"p90": 221.3,
+"pos_rank": 19,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ohvvctuykzwrpqer7xgl",
+"bye_weeks": [
+13
+],
+"ros_points_per_game": 15.78,
+"per_game": {
+"attempts": 31.38,
+"passing_yards": 234.04,
+"passing_tds": 1.38,
+"passing_interceptions": 0.54
+},
+"why": {
+"per": "game",
+"points": 15.78,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 31.38,
+"each": 0.0,
+"points": 0.0,
+"words": "31 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 234.04,
+"each": 0.04,
+"points": 9.36,
+"words": "234 passing yards × 0.04 = +9.4"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.38,
+"each": 4.0,
+"points": 5.52,
+"words": "1.4 passing TDs × 4 = +5.5"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.54,
+"each": -1.0,
+"points": -0.54,
+"words": "0.54 interceptions × -1 = -0.5"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 3.13,
+"each": 0.0,
+"points": 0.0,
+"words": "3.1 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 11.74,
+"each": 0.1,
+"points": 1.17,
+"words": "11.7 rushing yards × 0.1 = +1.2"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.11,
+"each": 6.0,
+"points": 0.65,
+"words": "0.11 rushing TDs × 6 = +0.7"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.19,
+"each": -2.0,
+"points": -0.38,
+"words": "0.19 fumbles lost × -2 = -0.4"
+}
+],
+"sentence": "31 passes → 234 pass yards → 1.4 pass TDs → 0.54 INTs → 15.8 points per game × 12 games = 189",
+"games": 12,
+"total": 189.39
+},
+"market_points": null,
+"week_points": 15.48,
+"market_words": null
+},
+{
+"gsis_id": "00-0039910",
+"player_key": "00-0039910",
+"player_name": "Jayden Daniels",
+"position": "QB",
+"team": "WAS",
+"ros_points": 187.04,
+"ros_games": 12,
+"playoff_points": 45.09,
+"p10": 147.2,
+"p90": 226.9,
+"pos_rank": null,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gfz8k5onuqjrche9ogqc",
+"bye_weeks": [
+7
+],
+"ros_points_per_game": 15.59,
+"per_game": {
+"attempts": 29.92,
+"passing_yards": 184.79,
+"passing_tds": 1.08,
+"passing_interceptions": 0.61
+},
+"why": {
+"per": "game",
+"points": 15.59,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 29.92,
+"each": 0.0,
+"points": 0.0,
+"words": "30 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 184.79,
+"each": 0.04,
+"points": 7.39,
+"words": "185 passing yards × 0.04 = +7.4"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.08,
+"each": 4.0,
+"points": 4.33,
+"words": "1.1 passing TDs × 4 = +4.3"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.61,
+"each": -1.0,
+"points": -0.61,
+"words": "0.61 interceptions × -1 = -0.6"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 5.81,
+"each": 0.0,
+"points": 0.0,
+"words": "5.8 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 31.5,
+"each": 0.1,
+"points": 3.15,
+"words": "31 rushing yards × 0.1 = +3.1"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.28,
+"each": 6.0,
+"points": 1.7,
+"words": "0.28 rushing TDs × 6 = +1.7"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.19,
+"each": -2.0,
+"points": -0.38,
+"words": "0.19 fumbles lost × -2 = -0.4"
+}
+],
+"sentence": "30 passes → 185 pass yards → 1.1 pass TDs → 0.61 INTs → 15.6 points per game × 12 games = 187",
+"games": 12,
+"total": 187.04
+},
+"market_points": null,
+"week_points": 17.97,
+"market_words": null
+},
+{
+"gsis_id": "00-0040743",
+"player_key": "00-0040743",
+"player_name": "Tyler Shough",
+"position": "QB",
+"team": "NO",
+"ros_points": 185.01,
+"ros_games": 12,
+"playoff_points": 46.06,
+"p10": 151.7,
+"p90": 218.3,
+"pos_rank": 20,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+"bye_weeks": [
+8
+],
+"ros_points_per_game": 15.42,
+"per_game": {
+"attempts": 32.36,
+"passing_yards": 211.53,
+"passing_tds": 1.19,
+"passing_interceptions": 0.9
+},
+"why": {
+"per": "game",
+"points": 15.42,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 32.36,
+"each": 0.0,
+"points": 0.0,
+"words": "32 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 211.53,
+"each": 0.04,
+"points": 8.46,
+"words": "212 passing yards × 0.04 = +8.5"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.19,
+"each": 4.0,
+"points": 4.75,
+"words": "1.2 passing TDs × 4 = +4.7"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.9,
+"each": -1.0,
+"points": -0.9,
+"words": "0.90 interceptions × -1 = -0.9"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 4.25,
+"each": 0.0,
+"points": 0.0,
+"words": "4.2 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 18.12,
+"each": 0.1,
+"points": 1.81,
+"words": "18.1 rushing yards × 0.1 = +1.8"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.26,
+"each": 6.0,
+"points": 1.56,
+"words": "0.26 rushing TDs × 6 = +1.6"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.13,
+"each": -2.0,
+"points": -0.25,
+"words": "0.13 fumbles lost × -2 = -0.3"
+}
+],
+"sentence": "32 passes → 212 pass yards → 1.2 pass TDs → 0.90 INTs → 15.4 points per game × 12 games = 185",
+"games": 12,
+"total": 185.01
+},
+"market_points": null,
+"week_points": 15.91,
+"market_words": null
+},
+{
+"gsis_id": "00-0036355",
+"player_key": "00-0036355",
+"player_name": "Justin Herbert",
+"position": "QB",
+"team": "LAC",
+"ros_points": 184.23,
+"ros_games": 12,
+"playoff_points": 45.55,
+"p10": 152.7,
+"p90": 215.8,
+"pos_rank": 21,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jnkspnntgebegzp4ghve",
+"bye_weeks": [
+7
+],
+"ros_points_per_game": 15.35,
+"per_game": {
+"attempts": 29.65,
+"passing_yards": 209.27,
+"passing_tds": 1.07,
+"passing_interceptions": 0.7
+},
+"why": {
+"per": "game",
+"points": 15.35,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 29.65,
+"each": 0.0,
+"points": 0.0,
+"words": "30 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 209.27,
+"each": 0.04,
+"points": 8.37,
+"words": "209 passing yards × 0.04 = +8.4"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.07,
+"each": 4.0,
+"points": 4.28,
+"words": "1.1 passing TDs × 4 = +4.3"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.7,
+"each": -1.0,
+"points": -0.7,
+"words": "0.70 interceptions × -1 = -0.7"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 5.5,
+"each": 0.0,
+"points": 0.0,
+"words": "5.5 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 22.2,
+"each": 0.1,
+"points": 2.22,
+"words": "22 rushing yards × 0.1 = +2.2"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.22,
+"each": 6.0,
+"points": 1.29,
+"words": "0.22 rushing TDs × 6 = +1.3"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.06,
+"each": -2.0,
+"points": -0.11,
+"words": "0.06 fumbles lost × -2 = -0.1"
+}
+],
+"sentence": "30 passes → 209 pass yards → 1.1 pass TDs → 0.70 INTs → 15.4 points per game × 12 games = 184",
+"games": 12,
+"total": 184.23
+},
+"market_points": null,
+"week_points": 16.17,
+"market_words": null
+},
+{
+"gsis_id": "00-0041251",
+"player_key": "00-0041251",
+"player_name": "Jalon Daniels",
+"position": "QB",
+"team": "TB",
+"ros_points": 182.88,
+"ros_games": 12,
+"playoff_points": 45.37,
+"p10": 146.2,
+"p90": 219.6,
+"pos_rank": 22,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hwhfl6i5drktwjvslfpn",
+"bye_weeks": [
+10
+],
+"ros_points_per_game": 15.24,
+"per_game": {
+"attempts": 29.28,
+"passing_yards": 196.66,
+"passing_tds": 1.04,
+"passing_interceptions": 0.63
+},
+"why": {
+"per": "game",
+"points": 15.24,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 29.28,
+"each": 0.0,
+"points": 0.0,
+"words": "29 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 196.66,
+"each": 0.04,
+"points": 7.87,
+"words": "197 passing yards × 0.04 = +7.9"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.04,
+"each": 4.0,
+"points": 4.15,
+"words": "1.0 passing TDs × 4 = +4.1"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.63,
+"each": -1.0,
+"points": -0.63,
+"words": "0.63 interceptions × -1 = -0.6"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 6.41,
+"each": 0.0,
+"points": 0.0,
+"words": "6.4 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 29.19,
+"each": 0.1,
+"points": 2.92,
+"words": "29 rushing yards × 0.1 = +2.9"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.22,
+"each": 6.0,
+"points": 1.3,
+"words": "0.22 rushing TDs × 6 = +1.3"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.18,
+"each": -2.0,
+"points": -0.36,
+"words": "0.18 fumbles lost × -2 = -0.4"
+}
+],
+"sentence": "29 passes → 197 pass yards → 1.0 pass TDs → 0.63 INTs → 15.2 points per game × 12 games = 183",
+"games": 12,
+"total": 182.88
+},
+"market_points": null,
+"week_points": 14.75,
+"market_words": null
+},
+{
+"gsis_id": "00-0036264",
+"player_key": "00-0036264",
+"player_name": "Jordan Love",
+"position": "QB",
+"team": "GB",
+"ros_points": 180.98,
+"ros_games": 12,
+"playoff_points": 44.76,
+"p10": 145.2,
+"p90": 216.8,
+"pos_rank": 23,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/thz8stjkbjwddxqnozi5",
+"bye_weeks": [
+11
+],
+"ros_points_per_game": 15.08,
+"per_game": {
+"attempts": 34.51,
+"passing_yards": 244.43,
+"passing_tds": 1.31,
+"passing_interceptions": 0.81
+},
+"why": {
+"per": "game",
+"points": 15.08,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 34.51,
+"each": 0.0,
+"points": 0.0,
+"words": "35 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 244.43,
+"each": 0.04,
+"points": 9.78,
+"words": "244 passing yards × 0.04 = +9.8"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.31,
+"each": 4.0,
+"points": 5.23,
+"words": "1.3 passing TDs × 4 = +5.2"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.81,
+"each": -1.0,
+"points": -0.81,
+"words": "0.81 interceptions × -1 = -0.8"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 2.45,
+"each": 0.0,
+"points": 0.0,
+"words": "2.4 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 6.33,
+"each": 0.1,
+"points": 0.63,
+"words": "6.3 rushing yards × 0.1 = +0.6"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.08,
+"each": 6.0,
+"points": 0.46,
+"words": "0.08 rushing TDs × 6 = +0.5"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.1,
+"each": -2.0,
+"points": -0.21,
+"words": "0.10 fumbles lost × -2 = -0.2"
+}
+],
+"sentence": "35 passes → 244 pass yards → 1.3 pass TDs → 0.81 INTs → 15.1 points per game × 12 games = 181",
+"games": 12,
+"total": 180.98
+},
+"market_points": null,
+"week_points": 15.59,
+"market_words": null
+},
+{
+"gsis_id": "00-0034869",
+"player_key": "00-0034869",
+"player_name": "Sam Darnold",
+"position": "QB",
+"team": "SEA",
+"ros_points": 178.37,
+"ros_games": 12,
+"playoff_points": 44.04,
+"p10": 145.8,
+"p90": 210.9,
+"pos_rank": 24,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fyay8vruj0cqmhopufzk",
+"bye_weeks": [
+11
+],
+"ros_points_per_game": 14.86,
+"per_game": {
+"attempts": 30.08,
+"passing_yards": 219.05,
+"passing_tds": 1.54,
+"passing_interceptions": 0.79
+},
+"why": {
+"per": "game",
+"points": 14.86,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 30.08,
+"each": 0.0,
+"points": 0.0,
+"words": "30 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 219.05,
+"each": 0.04,
+"points": 8.76,
+"words": "219 passing yards × 0.04 = +8.8"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.54,
+"each": 4.0,
+"points": 6.14,
+"words": "1.5 passing TDs × 4 = +6.1"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.79,
+"each": -1.0,
+"points": -0.79,
+"words": "0.79 interceptions × -1 = -0.8"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 2.02,
+"each": 0.0,
+"points": 0.0,
+"words": "2.0 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 7.26,
+"each": 0.1,
+"points": 0.73,
+"words": "7.3 rushing yards × 0.1 = +0.7"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.04,
+"each": 6.0,
+"points": 0.22,
+"words": "0.04 rushing TDs × 6 = +0.2"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.1,
+"each": -2.0,
+"points": -0.2,
+"words": "0.10 fumbles lost × -2 = -0.2"
+}
+],
+"sentence": "30 passes → 219 pass yards → 1.5 pass TDs → 0.79 INTs → 14.9 points per game × 12 games = 178",
+"games": 12,
+"total": 178.37
+},
+"market_points": null,
+"week_points": 15.03,
+"market_words": null
+},
+{
+"gsis_id": "00-0030565",
+"player_key": "00-0030565",
+"player_name": "Geno Smith",
+"position": "QB",
+"team": "NYJ",
+"ros_points": 178.3,
+"ros_games": 12,
+"playoff_points": 44.35,
+"p10": 144.0,
+"p90": 212.6,
+"pos_rank": 25,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zppfqqcyjfma14jjif3a",
+"bye_weeks": [
+13
+],
+"ros_points_per_game": 14.86,
+"per_game": {
+"attempts": 33.19,
+"passing_yards": 233.67,
+"passing_tds": 1.35,
+"passing_interceptions": 0.9
+},
+"why": {
+"per": "game",
+"points": 14.86,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 33.19,
+"each": 0.0,
+"points": 0.0,
+"words": "33 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 233.67,
+"each": 0.04,
+"points": 9.35,
+"words": "234 passing yards × 0.04 = +9.3"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.35,
+"each": 4.0,
+"points": 5.42,
+"words": "1.4 passing TDs × 4 = +5.4"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.9,
+"each": -1.0,
+"points": -0.9,
+"words": "0.90 interceptions × -1 = -0.9"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 3.16,
+"each": 0.0,
+"points": 0.0,
+"words": "3.2 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 9.31,
+"each": 0.1,
+"points": 0.93,
+"words": "9.3 rushing yards × 0.1 = +0.9"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.1,
+"each": 6.0,
+"points": 0.58,
+"words": "0.10 rushing TDs × 6 = +0.6"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.26,
+"each": -2.0,
+"points": -0.52,
+"words": "0.26 fumbles lost × -2 = -0.5"
+}
+],
+"sentence": "33 passes → 234 pass yards → 1.4 pass TDs → 0.90 INTs → 14.9 points per game × 12 games = 178",
+"games": 12,
+"total": 178.3
+},
+"market_points": null,
+"week_points": 14.53,
+"market_words": null
+},
+{
+"gsis_id": "00-0023459",
+"player_key": "00-0023459",
+"player_name": "Aaron Rodgers",
+"position": "QB",
+"team": "PIT",
+"ros_points": 177.4,
+"ros_games": 12,
+"playoff_points": 44.08,
+"p10": 144.5,
+"p90": 210.3,
+"pos_rank": 26,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dypvakakxhccxs67tb0y",
+"bye_weeks": [
+9
+],
+"ros_points_per_game": 14.78,
+"per_game": {
+"attempts": 33.09,
+"passing_yards": 229.0,
+"passing_tds": 1.37,
+"passing_interceptions": 0.43
+},
+"why": {
+"per": "game",
+"points": 14.78,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 33.09,
+"each": 0.0,
+"points": 0.0,
+"words": "33 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 229.0,
+"each": 0.04,
+"points": 9.16,
+"words": "229 passing yards × 0.04 = +9.2"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.37,
+"each": 4.0,
+"points": 5.47,
+"words": "1.4 passing TDs × 4 = +5.5"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.43,
+"each": -1.0,
+"points": -0.43,
+"words": "0.43 interceptions × -1 = -0.4"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 1.54,
+"each": 0.0,
+"points": 0.0,
+"words": "1.5 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 3.48,
+"each": 0.1,
+"points": 0.35,
+"words": "3.5 rushing yards × 0.1 = +0.3"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.09,
+"each": 6.0,
+"points": 0.54,
+"words": "0.09 rushing TDs × 6 = +0.5"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.16,
+"each": -2.0,
+"points": -0.31,
+"words": "0.16 fumbles lost × -2 = -0.3"
+}
+],
+"sentence": "33 passes → 229 pass yards → 1.4 pass TDs → 0.43 INTs → 14.8 points per game × 12 games = 177",
+"games": 12,
+"total": 177.4
+},
+"market_points": null,
+"week_points": 15.86,
+"market_words": null
+},
+{
+"gsis_id": "00-0039917",
+"player_key": "00-0039917",
+"player_name": "Michael Penix Jr.",
+"position": "QB",
+"team": "ATL",
+"ros_points": 173.26,
+"ros_games": 12,
+"playoff_points": 43.44,
+"p10": 140.5,
+"p90": 206.0,
+"pos_rank": 27,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
+"bye_weeks": [
+11
+],
+"ros_points_per_game": 14.44,
+"per_game": {
+"attempts": 32.79,
+"passing_yards": 253.0,
+"passing_tds": 1.3,
+"passing_interceptions": 1.2
+},
+"why": {
+"per": "game",
+"points": 14.44,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 32.79,
+"each": 0.0,
+"points": 0.0,
+"words": "33 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 253.0,
+"each": 0.04,
+"points": 10.12,
+"words": "253 passing yards × 0.04 = +10.1"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.3,
+"each": 4.0,
+"points": 5.19,
+"words": "1.3 passing TDs × 4 = +5.2"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 1.2,
+"each": -1.0,
+"points": -1.2,
+"words": "1.2 interceptions × -1 = -1.2"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 1.81,
+"each": 0.0,
+"points": 0.0,
+"words": "1.8 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 4.12,
+"each": 0.1,
+"points": 0.41,
+"words": "4.1 rushing yards × 0.1 = +0.4"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.03,
+"each": 6.0,
+"points": 0.21,
+"words": "0.03 rushing TDs × 6 = +0.2"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.14,
+"each": -2.0,
+"points": -0.29,
+"words": "0.14 fumbles lost × -2 = -0.3"
+}
+],
+"sentence": "33 passes → 253 pass yards → 1.3 pass TDs → 1.2 INTs → 14.4 points per game × 12 games = 173",
+"games": 12,
+"total": 173.26
+},
+"market_points": null,
+"week_points": 14.86,
+"market_words": null
+},
+{
+"gsis_id": "00-0040676",
+"player_key": "00-0040676",
+"player_name": "Cam Ward",
+"position": "QB",
+"team": "TEN",
+"ros_points": 171.6,
+"ros_games": 12,
+"playoff_points": 42.8,
+"p10": 138.3,
+"p90": 204.9,
+"pos_rank": 28,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/l7switu6stlwd2irm8yo",
+"bye_weeks": [
+9
+],
+"ros_points_per_game": 14.3,
+"per_game": {
+"attempts": 30.9,
+"passing_yards": 215.31,
+"passing_tds": 1.21,
+"passing_interceptions": 0.73
+},
+"why": {
+"per": "game",
+"points": 14.3,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 30.9,
+"each": 0.0,
+"points": 0.0,
+"words": "31 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 215.31,
+"each": 0.04,
+"points": 8.61,
+"words": "215 passing yards × 0.04 = +8.6"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.21,
+"each": 4.0,
+"points": 4.86,
+"words": "1.2 passing TDs × 4 = +4.9"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.73,
+"each": -1.0,
+"points": -0.73,
+"words": "0.73 interceptions × -1 = -0.7"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 3.16,
+"each": 0.0,
+"points": 0.0,
+"words": "3.2 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 14.43,
+"each": 0.1,
+"points": 1.44,
+"words": "14.4 rushing yards × 0.1 = +1.4"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.12,
+"each": 6.0,
+"points": 0.72,
+"words": "0.12 rushing TDs × 6 = +0.7"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.3,
+"each": -2.0,
+"points": -0.6,
+"words": "0.30 fumbles lost × -2 = -0.6"
+}
+],
+"sentence": "31 passes → 215 pass yards → 1.2 pass TDs → 0.73 INTs → 14.3 points per game × 12 games = 172",
+"games": 12,
+"total": 171.6
+},
+"market_points": null,
+"week_points": 12.13,
+"market_words": null
+},
+{
+"gsis_id": "00-0031503",
+"player_key": "00-0031503",
+"player_name": "Jameis Winston",
+"position": "QB",
+"team": "NYG",
+"ros_points": 169.55,
+"ros_games": 12,
+"playoff_points": 42.32,
+"p10": 136.5,
+"p90": 202.6,
+"pos_rank": 29,
+"unit": false,
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/e5qyxnibbyawi0pvfpjl",
+"bye_weeks": [
+8
+],
+"ros_points_per_game": 14.13,
+"per_game": {
+"attempts": 28.94,
+"passing_yards": 229.02,
+"passing_tds": 1.27,
+"passing_interceptions": 0.79
+},
+"why": {
+"per": "game",
+"points": 14.13,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 28.94,
+"each": 0.0,
+"points": 0.0,
+"words": "29 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 229.02,
+"each": 0.04,
+"points": 9.16,
+"words": "229 passing yards × 0.04 = +9.2"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.27,
+"each": 4.0,
+"points": 5.07,
+"words": "1.3 passing TDs × 4 = +5.1"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.79,
+"each": -1.0,
+"points": -0.79,
+"words": "0.79 interceptions × -1 = -0.8"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 2.47,
+"each": 0.0,
+"points": 0.0,
+"words": "2.5 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 7.23,
+"each": 0.1,
+"points": 0.72,
+"words": "7.2 rushing yards × 0.1 = +0.7"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.07,
+"each": 6.0,
+"points": 0.44,
+"words": "0.07 rushing TDs × 6 = +0.4"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.24,
+"each": -2.0,
+"points": -0.47,
+"words": "0.24 fumbles lost × -2 = -0.5"
+}
+],
+"sentence": "29 passes → 229 pass yards → 1.3 pass TDs → 0.79 INTs → 14.1 points per game × 12 games = 170",
+"games": 12,
+"total": 169.55
+},
+"market_points": null,
+"week_points": 13.86,
+"market_words": null
+}
+],
+"provenance": {
+"model_version": "v3.5",
+"kd_model_version": null,
+"published_at": "2026-10-08T00:05:49.207666+00:00",
+"horizon": {
+"first": 5,
+"last": 17,
+"market_week": 5,
+"words": "weeks 5–17"
+},
+"checks": [
+{
+"span": "next",
+"position": "QB",
+"status": "graded",
+"mae": 6.44,
+"order": 0.587,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Quarterbacks next week: graded (order 0.59)"
+},
+{
+"span": "later",
+"position": "QB",
+"status": "graded_weak",
+"mae": 7.41,
+"order": 0.495,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Quarterbacks two to eight weeks ahead: graded, weak (order 0.49)"
+},
+{
+"span": "season_range",
+"position": null,
+"status": "not_graded",
+"mae": null,
+"order": null,
+"ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+"words": "The season total's range: not graded"
+}
+],
+"status": "not_graded",
+"beta": false,
+"words": "Model v3.5, data published 7 Oct, 8:05 pm ET · weeks 5–17 · checked on 2021–2025: next week graded; two to eight weeks ahead graded, weak; the season total's range not graded."
+}
+}
+},
+"/api/trade-calc/free?get=00-0036555&give=00-0034869&league=ref%3Ahalf": {
+"status": 200,
+"body": {
+"league_id": "ref:half",
+"league_name": "Half PPR",
+"scoring_label": "Half PPR",
+"assumes": "Value in a 12-team Half PPR league, one quarterback",
+"value_words": "Value in a 12-team Half PPR league, one quarterback: his projected points over weeks 5–18 (this week to the end of the regular season) above the best player at his position that such a league leaves free. The league is typical, not real: each team starts QB, 2 RB, 2 WR, TE, FLEX, K and DEF, and keeps 6 on the bench (quarterbacks, backs, receivers and tight ends, in proportion to the starting spots).",
+"pricing": {
+"fitted": true,
+"reference": "scrubs",
+"words": "Priced in Half PPR: the ranges are fitted for this scoring every night."
+},
+"window": {
+"first": 5,
+"last": 18,
+"words": "weeks 5–18"
+},
+"give": {
+"players": [
+{
+"gsis_id": "00-0034869",
+"player_name": "Sam Darnold",
+"position": "QB",
+"team": "SEA",
+"value": 0.0,
+"ros_points": 192.9,
+"ros_p10": 159.1,
+"ros_p90": 226.7,
+"value_rank_pos": 25,
+"pos_rank": 24,
+"replacement": 192.9,
+"outlook": {
+"week": 5,
+"points": 15.03,
+"p10": 6.01,
+"p90": 24.29,
+"bye": false,
+"per_game": 14.8,
+"games": 13
+},
+"no_projection": false
+}
+],
+"n": 1,
+"value": 0.0,
+"ros_points": 192.9,
+"low": 159.1,
+"high": 226.7,
+"sd": 26.37,
+"unknown": []
+},
+"get": {
+"players": [
+{
+"gsis_id": "00-0036555",
+"player_name": "Chuba Hubbard",
+"position": "RB",
+"team": "CAR",
+"value": 102.8,
+"ros_points": 177.25,
+"ros_p10": 140.5,
+"ros_p90": 214.0,
+"value_rank_pos": 10,
+"pos_rank": 10,
+"replacement": 74.5,
+"outlook": {
+"week": 5,
+"points": null,
+"p10": null,
+"p90": null,
+"bye": true,
+"per_game": 13.6,
+"games": 13
+},
+"no_projection": false
+}
+],
+"n": 1,
+"value": 102.8,
+"ros_points": 177.2,
+"low": 140.4,
+"high": 213.9,
+"sd": 28.68,
+"unknown": []
+},
+"verdict": {
+"even": false,
+"lean": "get",
+"gap": 102.8,
+"low": 52.9,
+"high": 152.7,
+"one_player": {
+"gsis_id": "00-0036555",
+"player_name": "Chuba Hubbard",
+"value": 102.8,
+"share": 1.0,
+"words": "Chuba Hubbard alone is worth more than the gap (103 points)."
+},
+"words": "You get more: 103 points of season value (likely +53 to +153) (a lean: it assumes Darnold starts).",
+"words_unqualified": "You get more: 103 points of season value (likely +53 to +153).",
+"caveat_effect": "soften"
+},
+"roster_spots": null,
+"league_words": "Open your league to see what this does to your lineup.",
+"max_side": 6,
+"ros_grade": {
+"words": "Beyond next week there is no betting line yet. Graded on 2021–2025, a quarterback projection two to eight weeks ahead misses by about 7.4 points per game (6.4 for next week); running backs, receivers and tight ends miss by about 0.2 more than next week.",
+"kd_words": null,
+"graded_on": "2021–2025",
+"as_of": "2026-10-07",
+"source": "docs/METRICS.md § v3.5: rest-of-season quarterbacks (IQ-1); § Kickers and defenses beyond next week (IQ-4)",
+"qb_next_week_mae": 6.44,
+"qb_later_mae": 7.41,
+"other_extra_mae": 0.2,
+"kd_shown": false
+},
+"provenance": {
+"model_version": "v3.5",
+"kd_model_version": null,
+"published_at": "2026-10-08T00:05:49.207666+00:00",
+"horizon": {
+"first": 5,
+"last": 18,
+"market_week": 5,
+"words": "weeks 5–18"
+},
+"checks": [
+{
+"span": "next",
+"position": "QB",
+"status": "graded",
+"mae": 6.44,
+"order": 0.587,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Quarterbacks next week: graded (order 0.59)"
+},
+{
+"span": "next",
+"position": "RB",
+"status": "graded",
+"mae": 4.52,
+"order": 0.686,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Running backs next week: graded (order 0.69)"
+},
+{
+"span": "later",
+"position": "QB",
+"status": "graded_weak",
+"mae": 7.41,
+"order": 0.495,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Quarterbacks two to eight weeks ahead: graded, weak (order 0.49)"
+},
+{
+"span": "later",
+"position": "RB",
+"status": "graded",
+"mae": 4.7,
+"order": 0.633,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Running backs two to eight weeks ahead: graded (order 0.63)"
+},
+{
+"span": "season_range",
+"position": null,
+"status": "not_graded",
+"mae": null,
+"order": null,
+"ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+"words": "The season total's range: not graded"
+},
+{
+"span": "trade_gap",
+"position": null,
+"status": "not_graded",
+"mae": null,
+"order": null,
+"ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+"words": "The trade's range: not graded"
+}
+],
+"status": "not_graded",
+"beta": true,
+"words": "Beta · Model v3.5, data published 7 Oct, 8:05 pm ET · weeks 5–18 · checked on 2021–2025: next week graded; two to eight weeks ahead graded, quarterbacks weak; the season total's range not graded; the trade's range not graded."
+},
+"caveats": [
+{
+"kind": "starter_set_by_hand",
+"effect": "soften",
+"team": "SEA",
+"players": [
+"Sam Darnold"
+],
+"listed": "Drew Lock",
+"set": "Sam Darnold",
+"words": "Seattle's starter was set by hand (Sam Darnold, not the listed Drew Lock); this depends on Sam Darnold, so read the verdict as a lean that assumes Darnold starts."
+}
+],
+"caveat_effect": "soften",
+"caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+}
+},
+"/api/about?league=ref%3Ahalf": {
+"status": 200,
+"body": {
+"league_id": "ref:half",
+"league_name": "Half PPR",
+"source": "sleeper",
+"model": {
+"answer": "**isuckatfantasy trains its own model**: these are not Sleeper's or ESPN's projections. It predicts each player's stat line from what was known before kickoff, then your league's scoring turns the line into points.",
+"sections": [
+{
+"key": "learned",
+"title": "What it learned from",
+"text": "The regular-season games QBs, RBs, WRs and TEs played from 2016 to last season (over 50,000 of them), each with only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against his position, the Vegas line, home or away, the injury report, who starts at quarterback and whether his team's top target is out."
+},
+{
+"key": "predicts",
+"title": "What it predicts",
+"text": "The stat line, not points. For each position there is one small model per stat: targets, catches, receiving yards and touchdowns, carries, rushing yards and touchdowns, and for quarterbacks pass attempts, passing yards, touchdowns and interceptions. Each is a gradient-boosted model: a few hundred small decision trees, each one fixing the mistakes of the ones before it. Then **Half PPR**'s scoring turns the stat line into points, which is why the same player projects differently in each league."
+},
+{
+"key": "ranges",
+"title": "The ranges",
+"text": "The **typical range** (the middle 50% of outcomes) and the **low-end** and **high-end outcomes** come from separate models that learned how far off the projection usually is for a player like this one, then widened or narrowed until they held on seasons they had never seen: half his weeks land in the typical range (a quarter below it, a quarter above), 8 in 10 between the low-end outcome (1 week in 10 lands below it) and the high-end outcome (1 week in 10 lands above it)."
+},
+{
+"key": "graded",
+"title": "How it was graded",
+"text": "Trained on the past, graded on seasons it never saw: each season from 2021 to 2025 was predicted by a model trained only on the seasons before it. The grade is the **order score** (Spearman: how well the projected order of players matched the order they really finished in, 1 = perfect, 0 = no better than random) and the **average miss** in points."
+},
+{
+"key": "unknown",
+"title": "What it does not know",
+"text": "Injury news after the morning refresh, the weather, how the game actually goes (a blowout sends starters to the bench early), and coaching decisions made during the week. Check the news before kickoff."
+}
+]
+},
+"importance": {
+"model_version": "v3.5",
+"eval_season": 2025,
+"fit_seasons": "2016-2024",
+"scored_in": "League of Scrubs",
+"scored_in_league_id": "1389709692405551104",
+"how_measured": "How we measured it: a copy of the model trained on 2016 to 2024 projected the 2025 season, which it had never seen. Then we scrambled one input at a time (shuffled it between players, so it tells the model nothing) and counted how much bigger the average miss got, in points per player per game (League of Scrubs scoring). Bigger = the model leans on it more. Inputs that move together (targets and catches, a season and its last 3 games) share the credit, so each looks a little smaller than it is.",
+"unit": "Points of error added per player per game when that input is scrambled.",
+"positions": [
+{
+"position": "QB",
+"baseline_mae": 5.460417450188236,
+"top": "Is he the projected starter?",
+"lead": "For QBs the model leans most on **is he the projected starter?**. Next: *points Vegas expects his team to score* · *pass attempts per game, last 3 games*. It misses a QB by 5.5 points per game on average; scrambling the top input adds 1.84 to that.",
+"features": [
+{
+"rank": 1,
+"feature_label": "Is he the projected starter?",
+"importance": 1.8376165879190878
+},
+{
+"rank": 2,
+"feature_label": "Points Vegas expects his team to score",
+"importance": 0.16986644220309532
+},
+{
+"rank": 3,
+"feature_label": "Pass attempts per game, last 3 games",
+"importance": 0.10968942016968856
+},
+{
+"rank": 4,
+"feature_label": "Rushing yards per game, season",
+"importance": 0.08664096172266281
+},
+{
+"rank": 5,
+"feature_label": "Passing yards per game, last 3 games",
+"importance": 0.06695420398494215
+},
+{
+"rank": 6,
+"feature_label": "Games he has played with this week's QB",
+"importance": 0.06638469041506241
+},
+{
+"rank": 7,
+"feature_label": "Snap share, season",
+"importance": 0.038531061184197316
+},
+{
+"rank": 8,
+"feature_label": "Snap share, last 3 games",
+"importance": 0.03453264685797493
+},
+{
+"rank": 9,
+"feature_label": "Pass attempts per game, season",
+"importance": 0.034056725634535746
+},
+{
+"rank": 10,
+"feature_label": "Carries per game, last season",
+"importance": 0.03192640022846529
+}
+]
+},
+{
+"position": "RB",
+"baseline_mae": 4.243507235264065,
+"top": "Share of his team's carries, last 3 games",
+"lead": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: *rushing yards per game, season* · *share of his team's targets, season*. It misses a RB by 4.2 points per game on average; scrambling the top input adds 0.35 to that.",
+"features": [
+{
+"rank": 1,
+"feature_label": "Share of his team's carries, last 3 games",
+"importance": 0.3530271582930039
+},
+{
+"rank": 2,
+"feature_label": "Rushing yards per game, season",
+"importance": 0.12059893637371495
+},
+{
+"rank": 3,
+"feature_label": "Share of his team's targets, season",
+"importance": 0.05826168279506074
+},
+{
+"rank": 4,
+"feature_label": "Top ball carrier on his team out this week",
+"importance": 0.05583591067756899
+},
+{
+"rank": 5,
+"feature_label": "Rushing yards per game, last season",
+"importance": 0.0504962397229086
+},
+{
+"rank": 6,
+"feature_label": "Carries per game, last season",
+"importance": 0.04712686566167399
+},
+{
+"rank": 7,
+"feature_label": "Snap share, last 3 games",
+"importance": 0.04664315579864233
+},
+{
+"rank": 8,
+"feature_label": "Points Vegas expects his team to score",
+"importance": 0.040153900597761985
+},
+{
+"rank": 9,
+"feature_label": "Points per game, last season",
+"importance": 0.03416102825702918
+},
+{
+"rank": 10,
+"feature_label": "Receiving yards per game, season",
+"importance": 0.02120663041220574
+}
+]
+},
+{
+"position": "WR",
+"baseline_mae": 3.880460732833056,
+"top": "Snap share, last 3 games",
+"lead": "For WRs the model leans most on **snap share, last 3 games**. Next: *expected points per game (what his touches are worth), season* · *receiving yards per game, last season*. It misses a WR by 3.9 points per game on average; scrambling the top input adds 0.12 to that.",
+"features": [
+{
+"rank": 1,
+"feature_label": "Snap share, last 3 games",
+"importance": 0.12060030564875265
+},
+{
+"rank": 2,
+"feature_label": "Expected points per game (what his touches are worth), season",
+"importance": 0.03830624406013276
+},
+{
+"rank": 3,
+"feature_label": "Receiving yards per game, last season",
+"importance": 0.03684576340085819
+},
+{
+"rank": 4,
+"feature_label": "Points per game, last season",
+"importance": 0.034904721947040154
+},
+{
+"rank": 5,
+"feature_label": "Share of the team's targets out this week",
+"importance": 0.024139275363369704
+},
+{
+"rank": 6,
+"feature_label": "Receiving yards per game, season",
+"importance": 0.02154869694697732
+},
+{
+"rank": 7,
+"feature_label": "Points per game, last 5 games",
+"importance": 0.01868638625742509
+},
+{
+"rank": 8,
+"feature_label": "Points per game, season",
+"importance": 0.018606748517955206
+},
+{
+"rank": 9,
+"feature_label": "Catches per game, season",
+"importance": 0.017844336631100254
+},
+{
+"rank": 10,
+"feature_label": "Points Vegas expects his team to score",
+"importance": 0.016019038351060732
+}
+]
+},
+{
+"position": "TE",
+"baseline_mae": 2.9565502140988573,
+"top": "Share of his team's targets, season",
+"lead": "For TEs the model leans most on **share of his team's targets, season**. Next: *receiving yards per game, last season* · *snap share, last 3 games*. It misses a TE by 3.0 points per game on average; scrambling the top input adds 0.19 to that.",
+"features": [
+{
+"rank": 1,
+"feature_label": "Share of his team's targets, season",
+"importance": 0.19146565676270333
+},
+{
+"rank": 2,
+"feature_label": "Receiving yards per game, last season",
+"importance": 0.09925910404724325
+},
+{
+"rank": 3,
+"feature_label": "Snap share, last 3 games",
+"importance": 0.0964078253000463
+},
+{
+"rank": 4,
+"feature_label": "Targets per game, season",
+"importance": 0.03760768180822662
+},
+{
+"rank": 5,
+"feature_label": "Share of his team's air yards (throws downfield), last 3 games",
+"importance": 0.030855753900141104
+},
+{
+"rank": 6,
+"feature_label": "Points Vegas expects his team to score",
+"importance": 0.029720114344895875
+},
+{
+"rank": 7,
+"feature_label": "Snap share, season",
+"importance": 0.02519871654358319
+},
+{
+"rank": 8,
+"feature_label": "Catches per game, season",
+"importance": 0.024845156718532647
+},
+{
+"rank": 9,
+"feature_label": "Expected points per game (what his touches are worth), season",
+"importance": 0.02173599883840227
+},
+{
+"rank": 10,
+"feature_label": "Expected points per game, last season",
+"importance": 0.016692261873307235
+}
+]
+}
+],
+"source": "app/pages/4_Rankings.py (What it leans on most)"
+},
+"grades": {
+"scored_in": "League of Scrubs",
+"scored_in_league_id": "1389709692405551104",
+"season": 2026,
+"weeks": "weeks 1–3",
+"backtest_seasons": "2021–2025",
+"season_model_version": "v3.0",
+"backtest_model_version": "v3.0",
+"answer": "The board scored like the backtest on NFL 2026's complete weeks 1–3 (League of Scrubs scoring, players who played), next to the walk-forward backtest (2021–2025). Week 4 is still being played; it counts once its last game is in.",
+"positions": [
+{
+"position": "QB",
+"season": {
+"weeks_scored": 3,
+"spearman": 0.39,
+"mae": 6.52,
+"coverage_80": 0.788
+},
+"backtest": {
+"spearman": 0.541,
+"mae": 5.86,
+"coverage_80": 0.777
+},
+"by_season": [
+{
+"season": 2021,
+"weeks": 18,
+"spearman": 0.585,
+"mae": 5.42,
+"coverage_80": 0.825
+},
+{
+"season": 2022,
+"weeks": 18,
+"spearman": 0.576,
+"mae": 5.2,
+"coverage_80": 0.804
+},
+{
+"season": 2023,
+"weeks": 18,
+"spearman": 0.607,
+"mae": 5.27,
+"coverage_80": 0.747
+},
+{
+"season": 2024,
+"weeks": 18,
+"spearman": 0.575,
+"mae": 5.73,
+"coverage_80": 0.759
+},
+{
+"season": 2025,
+"weeks": 18,
+"spearman": 0.596,
+"mae": 5.41,
+"coverage_80": 0.788
+}
+]
+},
+{
+"position": "RB",
+"season": {
+"weeks_scored": 3,
+"spearman": 0.678,
+"mae": 4.18,
+"coverage_80": 0.823
+},
+"backtest": {
+"spearman": 0.66,
+"mae": 4.28,
+"coverage_80": 0.798
+},
+"by_season": [
+{
+"season": 2021,
+"weeks": 18,
+"spearman": 0.623,
+"mae": 4.47,
+"coverage_80": 0.789
+},
+{
+"season": 2022,
+"weeks": 18,
+"spearman": 0.659,
+"mae": 4.25,
+"coverage_80": 0.812
+},
+{
+"season": 2023,
+"weeks": 18,
+"spearman": 0.678,
+"mae": 4.1,
+"coverage_80": 0.836
+},
+{
+"season": 2024,
+"weeks": 18,
+"spearman": 0.683,
+"mae": 4.2,
+"coverage_80": 0.809
+},
+{
+"season": 2025,
+"weeks": 18,
+"spearman": 0.7,
+"mae": 4.23,
+"coverage_80": 0.792
+}
+]
+},
+{
+"position": "WR",
+"season": {
+"weeks_scored": 3,
+"spearman": 0.567,
+"mae": 4.15,
+"coverage_80": 0.794
+},
+"backtest": {
+"spearman": 0.609,
+"mae": 4.07,
+"coverage_80": 0.808
+},
+"by_season": [
+{
+"season": 2021,
+"weeks": 18,
+"spearman": 0.611,
+"mae": 4.21,
+"coverage_80": 0.83
+},
+{
+"season": 2022,
+"weeks": 18,
+"spearman": 0.594,
+"mae": 4.11,
+"coverage_80": 0.794
+},
+{
+"season": 2023,
+"weeks": 18,
+"spearman": 0.626,
+"mae": 4.03,
+"coverage_80": 0.821
+},
+{
+"season": 2024,
+"weeks": 18,
+"spearman": 0.631,
+"mae": 4.1,
+"coverage_80": 0.807
+},
+{
+"season": 2025,
+"weeks": 18,
+"spearman": 0.609,
+"mae": 3.87,
+"coverage_80": 0.819
+}
+]
+},
+{
+"position": "TE",
+"season": {
+"weeks_scored": 3,
+"spearman": 0.535,
+"mae": 3.51,
+"coverage_80": 0.79
+},
+"backtest": {
+"spearman": 0.554,
+"mae": 3.01,
+"coverage_80": 0.814
+},
+"by_season": [
+{
+"season": 2021,
+"weeks": 18,
+"spearman": 0.551,
+"mae": 3.14,
+"coverage_80": 0.833
+},
+{
+"season": 2022,
+"weeks": 18,
+"spearman": 0.484,
+"mae": 3.12,
+"coverage_80": 0.77
+},
+{
+"season": 2023,
+"weeks": 18,
+"spearman": 0.558,
+"mae": 2.85,
+"coverage_80": 0.828
+},
+{
+"season": 2024,
+"weeks": 18,
+"spearman": 0.565,
+"mae": 2.99,
+"coverage_80": 0.804
+},
+{
+"season": 2025,
+"weeks": 18,
+"spearman": 0.616,
+"mae": 2.98,
+"coverage_80": 0.84
+}
+]
+}
+],
+"howto": [
+"**Order score** (Spearman): how well the projected order of players matched the order they really finished in, 1 = perfect, 0 = no better than random. Around 0.5–0.6 is good for one week of fantasy football.",
+"**Average miss** (MAE): how many points the projection missed by, on average, per player per game.",
+"**Inside the range** (coverage): how often the real score landed between the floor and the ceiling. The aim is 8 weeks in 10.",
+"**This season** scores the weeks already played on the board as it stood before kickoff; **backtest** is the same score on 2021 to 2025, each season predicted by a model trained only on the seasons before it. A few weeks are a small sample: one odd Sunday moves them a lot."
+],
+"source": "app/pages/4_Rankings.py (How the model is doing this season; Backtest)"
+},
+"rankings_howto": "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are down reads lower than his name; a quarterback who starts and throws 35 times per game counts like any starter while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is far from it, open his card and read why before you trade on it.",
+"grade_note": "These grades use League of Scrubs's scoring, not Half PPR's, and isuckatfantasy keeps no projection record for Half PPR yet: read them as how the model does in general.",
+"why": "The importance and the grades are measured once per house league's scoring each night. Half PPR reads League of Scrubs's: the closest scoring isuckatfantasy measures.",
+"versions": {
+"current": "v3.5",
+"kd": "kd1.0",
+"published_at": "2026-10-08T00:05:49.207666+00:00",
+"published_words": "7 Oct, 8:05 pm ET",
+"list": [
+{
+"version": "v2.0",
+"date": "2026-09-26",
+"words": "Stat-line projections with a range: one small model per stat, and your league's scoring turns the line into points.",
+"date_words": "26 Sep"
+},
+{
+"version": "kd1.0",
+"date": "2026-09-30",
+"words": "Kickers and defenses get a model of their own.",
+"date_words": "30 Sep"
+},
+{
+"version": "v3.0",
+"date": "2026-10-01",
+"words": "Who plays next to him: the starting quarterback, and whether his team's top target or top ball carrier is out.",
+"date_words": "1 Oct"
+},
+{
+"version": "v3.0 (cold starts)",
+"date": "2026-10-04",
+"words": "Rookies and players with few games start from what players like them usually do.",
+"date_words": "4 Oct"
+},
+{
+"version": "v3.3",
+"date": "2026-10-05",
+"words": "A receiver on a new team is scaled by how such moves have usually gone.",
+"date_words": "5 Oct"
+},
+{
+"version": "v3.4",
+"date": "2026-10-07",
+"words": "A quarterback's passing touchdowns read the betting line.",
+"date_words": "7 Oct"
+},
+{
+"version": "v3.5",
+"date": "2026-10-07",
+"words": "Weeks after next week, which have no betting line yet, use the team's own scoring so far and next week's starters.",
+"date_words": "7 Oct"
+},
+{
+"version": "v3.6",
+"date": "2026-10-07",
+"words": "A quarterback's weeks after next week blend the model with his own per-game record.",
+"date_words": "7 Oct"
+}
+],
+"by_week": "weeks 1–3: v2.0; week 4: v3.0; weeks 5–18: v3.5",
+"words": "The model changes during the season, and every change is dated here. A week's projections are kept as they stood at its first kickoff, so earlier weeks keep the version they were made with."
+},
+"checked": {
+"head": "What each number has been checked against: every projection below was scored on 2021–2025 seasons it never saw, against what happened that week. The order is the rank correlation (1 = perfect, 0 = no better than chance); the miss is in points per game.",
+"graded_on": "2021–2025",
+"rows": [
+{
+"position": "QB",
+"next": {
+"status": "graded",
+"words": "graded",
+"mae": 6.44,
+"order": 0.587
+},
+"later": {
+"status": "graded_weak",
+"words": "graded, weak",
+"mae": 7.41,
+"order": 0.495
+},
+"next4": {
+"mae": 6.93,
+"order": 0.538,
+"base_mae": 7.0,
+"base_order": 0.537
+},
+"ros": {
+"mae": 7.28,
+"order": 0.509,
+"base_mae": 7.33,
+"base_order": 0.51
+}
+},
+{
+"position": "RB",
+"next": {
+"status": "graded",
+"words": "graded",
+"mae": 4.52,
+"order": 0.686
+},
+"later": {
+"status": "graded",
+"words": "graded",
+"mae": 4.7,
+"order": 0.633
+},
+"next4": {
+"mae": 4.63,
+"order": 0.66,
+"base_mae": null,
+"base_order": null
+},
+"ros": {
+"mae": 4.68,
+"order": 0.64,
+"base_mae": null,
+"base_order": null
+}
+},
+{
+"position": "WR",
+"next": {
+"status": "graded",
+"words": "graded",
+"mae": 4.44,
+"order": 0.618
+},
+"later": {
+"status": "graded",
+"words": "graded",
+"mae": 4.59,
+"order": 0.568
+},
+"next4": {
+"mae": 4.48,
+"order": 0.594,
+"base_mae": null,
+"base_order": null
+},
+"ros": {
+"mae": 4.57,
+"order": 0.574,
+"base_mae": null,
+"base_order": null
+}
+},
+{
+"position": "TE",
+"next": {
+"status": "graded",
+"words": "graded",
+"mae": 3.25,
+"order": 0.599
+},
+"later": {
+"status": "graded",
+"words": "graded",
+"mae": 3.41,
+"order": 0.54
+},
+"next4": {
+"mae": 3.35,
+"order": 0.564,
+"base_mae": null,
+"base_order": null
+},
+"ros": {
+"mae": 3.39,
+"order": 0.547,
+"base_mae": null,
+"base_order": null
+}
+},
+{
+"position": "K",
+"next": {
+"status": "graded_weak",
+"words": "graded, weak",
+"mae": 3.77,
+"order": 0.095
+},
+"later": {
+"status": "chance",
+"words": "no better than chance",
+"mae": 3.75,
+"order": 0.028
+},
+"next4": null,
+"ros": null
+},
+{
+"position": "DEF",
+"next": {
+"status": "graded_weak",
+"words": "graded, weak",
+"mae": 4.32,
+"order": 0.257
+},
+"later": {
+"status": "chance",
+"words": "no better than chance",
+"mae": 4.78,
+"order": 0.04
+},
+"next4": null,
+"ros": null
+}
+],
+"not_graded": [
+"the ranges around a season total and around a trade's gap (they add weekly ranges as if the weeks were independent; the weekly ranges are graded one week ahead only)",
+"a trade of several players or across positions, and the lineup effect in your league (the useful-decision grade below is one-for-one, same position)",
+"kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their order is no better than chance)"
+],
+"windows_words": "Next four weeks and rest of season: each week's projection in the window scored against that week (pooled over the window's weeks, not the window's total); quarterbacks also against a simple baseline, his own per-game record.",
+"rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call.",
+"useful": {
+"words": "Is the trade calculator right? On a close one-for-one between two players of the same position, graded on 2021–2025, the side it favours scored more over the next four weeks 58 times in 100 at receiver, 57 at running back and 56 at tight end — more often than the side his own per-game record favours (54, 55 and 52). At quarterback 59 in 100, but the side his own per-game record favours did better (62). 50 would be a coin flip.",
+"by_position": {
+"QB": {
+"pairs": 3680,
+"rate": 0.594,
+"base": 0.615,
+"seasons": 0,
+"useful": false
+},
+"RB": {
+"pairs": 6320,
+"rate": 0.575,
+"base": 0.552,
+"seasons": 4,
+"useful": true
+},
+"WR": {
+"pairs": 8643,
+"rate": 0.584,
+"base": 0.539,
+"seasons": 4,
+"useful": true
+},
+"TE": {
+"pairs": 2939,
+"rate": 0.555,
+"base": 0.524,
+"seasons": 4,
+"useful": true
+}
+}
+}
+},
+"timings_ms": {
+"request_total": 43.3
+}
+}
+},
+"/api/about?league=1389709692405551104": {
+"status": 200,
+"body": {
+"league_id": "1389709692405551104",
+"league_name": "League of Scrubs",
+"source": "database",
+"model": {
+"answer": "**isuckatfantasy trains its own model**: these are not Sleeper's or ESPN's projections. It predicts each player's stat line from what was known before kickoff, then your league's scoring turns the line into points.",
+"sections": [
+{
+"key": "learned",
+"title": "What it learned from",
+"text": "The regular-season games QBs, RBs, WRs and TEs played from 2016 to last season (over 50,000 of them), each with only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against his position, the Vegas line, home or away, the injury report, who starts at quarterback and whether his team's top target is out."
+},
+{
+"key": "predicts",
+"title": "What it predicts",
+"text": "The stat line, not points. For each position there is one small model per stat: targets, catches, receiving yards and touchdowns, carries, rushing yards and touchdowns, and for quarterbacks pass attempts, passing yards, touchdowns and interceptions. Each is a gradient-boosted model: a few hundred small decision trees, each one fixing the mistakes of the ones before it. Then **League of Scrubs**'s scoring turns the stat line into points, which is why the same player projects differently in each league."
+},
+{
+"key": "ranges",
+"title": "The ranges",
+"text": "The **typical range** (the middle 50% of outcomes) and the **low-end** and **high-end outcomes** come from separate models that learned how far off the projection usually is for a player like this one, then widened or narrowed until they held on seasons they had never seen: half his weeks land in the typical range (a quarter below it, a quarter above), 8 in 10 between the low-end outcome (1 week in 10 lands below it) and the high-end outcome (1 week in 10 lands above it)."
+},
+{
+"key": "graded",
+"title": "How it was graded",
+"text": "Trained on the past, graded on seasons it never saw: each season from 2021 to 2025 was predicted by a model trained only on the seasons before it. The grade is the **order score** (Spearman: how well the projected order of players matched the order they really finished in, 1 = perfect, 0 = no better than random) and the **average miss** in points."
+},
+{
+"key": "unknown",
+"title": "What it does not know",
+"text": "Injury news after the morning refresh, the weather, how the game actually goes (a blowout sends starters to the bench early), and coaching decisions made during the week. Check the news before kickoff."
+}
+]
+},
+"importance": {
+"model_version": "v3.5",
+"eval_season": 2025,
+"fit_seasons": "2016-2024",
+"scored_in": "League of Scrubs",
+"scored_in_league_id": "1389709692405551104",
+"how_measured": "How we measured it: a copy of the model trained on 2016 to 2024 projected the 2025 season, which it had never seen. Then we scrambled one input at a time (shuffled it between players, so it tells the model nothing) and counted how much bigger the average miss got, in points per player per game (League of Scrubs scoring). Bigger = the model leans on it more. Inputs that move together (targets and catches, a season and its last 3 games) share the credit, so each looks a little smaller than it is.",
+"unit": "Points of error added per player per game when that input is scrambled.",
+"positions": [
+{
+"position": "QB",
+"baseline_mae": 5.460417450188236,
+"top": "Is he the projected starter?",
+"lead": "For QBs the model leans most on **is he the projected starter?**. Next: *points Vegas expects his team to score* · *pass attempts per game, last 3 games*. It misses a QB by 5.5 points per game on average; scrambling the top input adds 1.84 to that.",
+"features": [
+{
+"rank": 1,
+"feature_label": "Is he the projected starter?",
+"importance": 1.8376165879190878
+},
+{
+"rank": 2,
+"feature_label": "Points Vegas expects his team to score",
+"importance": 0.16986644220309532
+},
+{
+"rank": 3,
+"feature_label": "Pass attempts per game, last 3 games",
+"importance": 0.10968942016968856
+},
+{
+"rank": 4,
+"feature_label": "Rushing yards per game, season",
+"importance": 0.08664096172266281
+},
+{
+"rank": 5,
+"feature_label": "Passing yards per game, last 3 games",
+"importance": 0.06695420398494215
+},
+{
+"rank": 6,
+"feature_label": "Games he has played with this week's QB",
+"importance": 0.06638469041506241
+},
+{
+"rank": 7,
+"feature_label": "Snap share, season",
+"importance": 0.038531061184197316
+},
+{
+"rank": 8,
+"feature_label": "Snap share, last 3 games",
+"importance": 0.03453264685797493
+},
+{
+"rank": 9,
+"feature_label": "Pass attempts per game, season",
+"importance": 0.034056725634535746
+},
+{
+"rank": 10,
+"feature_label": "Carries per game, last season",
+"importance": 0.03192640022846529
+}
+]
+},
+{
+"position": "RB",
+"baseline_mae": 4.243507235264065,
+"top": "Share of his team's carries, last 3 games",
+"lead": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: *rushing yards per game, season* · *share of his team's targets, season*. It misses a RB by 4.2 points per game on average; scrambling the top input adds 0.35 to that.",
+"features": [
+{
+"rank": 1,
+"feature_label": "Share of his team's carries, last 3 games",
+"importance": 0.3530271582930039
+},
+{
+"rank": 2,
+"feature_label": "Rushing yards per game, season",
+"importance": 0.12059893637371495
+},
+{
+"rank": 3,
+"feature_label": "Share of his team's targets, season",
+"importance": 0.05826168279506074
+},
+{
+"rank": 4,
+"feature_label": "Top ball carrier on his team out this week",
+"importance": 0.05583591067756899
+},
+{
+"rank": 5,
+"feature_label": "Rushing yards per game, last season",
+"importance": 0.0504962397229086
+},
+{
+"rank": 6,
+"feature_label": "Carries per game, last season",
+"importance": 0.04712686566167399
+},
+{
+"rank": 7,
+"feature_label": "Snap share, last 3 games",
+"importance": 0.04664315579864233
+},
+{
+"rank": 8,
+"feature_label": "Points Vegas expects his team to score",
+"importance": 0.040153900597761985
+},
+{
+"rank": 9,
+"feature_label": "Points per game, last season",
+"importance": 0.03416102825702918
+},
+{
+"rank": 10,
+"feature_label": "Receiving yards per game, season",
+"importance": 0.02120663041220574
+}
+]
+},
+{
+"position": "WR",
+"baseline_mae": 3.880460732833056,
+"top": "Snap share, last 3 games",
+"lead": "For WRs the model leans most on **snap share, last 3 games**. Next: *expected points per game (what his touches are worth), season* · *receiving yards per game, last season*. It misses a WR by 3.9 points per game on average; scrambling the top input adds 0.12 to that.",
+"features": [
+{
+"rank": 1,
+"feature_label": "Snap share, last 3 games",
+"importance": 0.12060030564875265
+},
+{
+"rank": 2,
+"feature_label": "Expected points per game (what his touches are worth), season",
+"importance": 0.03830624406013276
+},
+{
+"rank": 3,
+"feature_label": "Receiving yards per game, last season",
+"importance": 0.03684576340085819
+},
+{
+"rank": 4,
+"feature_label": "Points per game, last season",
+"importance": 0.034904721947040154
+},
+{
+"rank": 5,
+"feature_label": "Share of the team's targets out this week",
+"importance": 0.024139275363369704
+},
+{
+"rank": 6,
+"feature_label": "Receiving yards per game, season",
+"importance": 0.02154869694697732
+},
+{
+"rank": 7,
+"feature_label": "Points per game, last 5 games",
+"importance": 0.01868638625742509
+},
+{
+"rank": 8,
+"feature_label": "Points per game, season",
+"importance": 0.018606748517955206
+},
+{
+"rank": 9,
+"feature_label": "Catches per game, season",
+"importance": 0.017844336631100254
+},
+{
+"rank": 10,
+"feature_label": "Points Vegas expects his team to score",
+"importance": 0.016019038351060732
+}
+]
+},
+{
+"position": "TE",
+"baseline_mae": 2.9565502140988573,
+"top": "Share of his team's targets, season",
+"lead": "For TEs the model leans most on **share of his team's targets, season**. Next: *receiving yards per game, last season* · *snap share, last 3 games*. It misses a TE by 3.0 points per game on average; scrambling the top input adds 0.19 to that.",
+"features": [
+{
+"rank": 1,
+"feature_label": "Share of his team's targets, season",
+"importance": 0.19146565676270333
+},
+{
+"rank": 2,
+"feature_label": "Receiving yards per game, last season",
+"importance": 0.09925910404724325
+},
+{
+"rank": 3,
+"feature_label": "Snap share, last 3 games",
+"importance": 0.0964078253000463
+},
+{
+"rank": 4,
+"feature_label": "Targets per game, season",
+"importance": 0.03760768180822662
+},
+{
+"rank": 5,
+"feature_label": "Share of his team's air yards (throws downfield), last 3 games",
+"importance": 0.030855753900141104
+},
+{
+"rank": 6,
+"feature_label": "Points Vegas expects his team to score",
+"importance": 0.029720114344895875
+},
+{
+"rank": 7,
+"feature_label": "Snap share, season",
+"importance": 0.02519871654358319
+},
+{
+"rank": 8,
+"feature_label": "Catches per game, season",
+"importance": 0.024845156718532647
+},
+{
+"rank": 9,
+"feature_label": "Expected points per game (what his touches are worth), season",
+"importance": 0.02173599883840227
+},
+{
+"rank": 10,
+"feature_label": "Expected points per game, last season",
+"importance": 0.016692261873307235
+}
+]
+}
+],
+"source": "app/pages/4_Rankings.py (What it leans on most)"
+},
+"grades": {
+"scored_in": "League of Scrubs",
+"scored_in_league_id": "1389709692405551104",
+"season": 2026,
+"weeks": "weeks 1–3",
+"backtest_seasons": "2021–2025",
+"season_model_version": "v3.0",
+"backtest_model_version": "v3.0",
+"answer": "The board scored like the backtest on NFL 2026's complete weeks 1–3 (League of Scrubs scoring, players who played), next to the walk-forward backtest (2021–2025). Week 4 is still being played; it counts once its last game is in.",
+"positions": [
+{
+"position": "QB",
+"season": {
+"weeks_scored": 3,
+"spearman": 0.39,
+"mae": 6.52,
+"coverage_80": 0.788
+},
+"backtest": {
+"spearman": 0.541,
+"mae": 5.86,
+"coverage_80": 0.777
+},
+"by_season": [
+{
+"season": 2021,
+"weeks": 18,
+"spearman": 0.585,
+"mae": 5.42,
+"coverage_80": 0.825
+},
+{
+"season": 2022,
+"weeks": 18,
+"spearman": 0.576,
+"mae": 5.2,
+"coverage_80": 0.804
+},
+{
+"season": 2023,
+"weeks": 18,
+"spearman": 0.607,
+"mae": 5.27,
+"coverage_80": 0.747
+},
+{
+"season": 2024,
+"weeks": 18,
+"spearman": 0.575,
+"mae": 5.73,
+"coverage_80": 0.759
+},
+{
+"season": 2025,
+"weeks": 18,
+"spearman": 0.596,
+"mae": 5.41,
+"coverage_80": 0.788
+}
+]
+},
+{
+"position": "RB",
+"season": {
+"weeks_scored": 3,
+"spearman": 0.678,
+"mae": 4.18,
+"coverage_80": 0.823
+},
+"backtest": {
+"spearman": 0.66,
+"mae": 4.28,
+"coverage_80": 0.798
+},
+"by_season": [
+{
+"season": 2021,
+"weeks": 18,
+"spearman": 0.623,
+"mae": 4.47,
+"coverage_80": 0.789
+},
+{
+"season": 2022,
+"weeks": 18,
+"spearman": 0.659,
+"mae": 4.25,
+"coverage_80": 0.812
+},
+{
+"season": 2023,
+"weeks": 18,
+"spearman": 0.678,
+"mae": 4.1,
+"coverage_80": 0.836
+},
+{
+"season": 2024,
+"weeks": 18,
+"spearman": 0.683,
+"mae": 4.2,
+"coverage_80": 0.809
+},
+{
+"season": 2025,
+"weeks": 18,
+"spearman": 0.7,
+"mae": 4.23,
+"coverage_80": 0.792
+}
+]
+},
+{
+"position": "WR",
+"season": {
+"weeks_scored": 3,
+"spearman": 0.567,
+"mae": 4.15,
+"coverage_80": 0.794
+},
+"backtest": {
+"spearman": 0.609,
+"mae": 4.07,
+"coverage_80": 0.808
+},
+"by_season": [
+{
+"season": 2021,
+"weeks": 18,
+"spearman": 0.611,
+"mae": 4.21,
+"coverage_80": 0.83
+},
+{
+"season": 2022,
+"weeks": 18,
+"spearman": 0.594,
+"mae": 4.11,
+"coverage_80": 0.794
+},
+{
+"season": 2023,
+"weeks": 18,
+"spearman": 0.626,
+"mae": 4.03,
+"coverage_80": 0.821
+},
+{
+"season": 2024,
+"weeks": 18,
+"spearman": 0.631,
+"mae": 4.1,
+"coverage_80": 0.807
+},
+{
+"season": 2025,
+"weeks": 18,
+"spearman": 0.609,
+"mae": 3.87,
+"coverage_80": 0.819
+}
+]
+},
+{
+"position": "TE",
+"season": {
+"weeks_scored": 3,
+"spearman": 0.535,
+"mae": 3.51,
+"coverage_80": 0.79
+},
+"backtest": {
+"spearman": 0.554,
+"mae": 3.01,
+"coverage_80": 0.814
+},
+"by_season": [
+{
+"season": 2021,
+"weeks": 18,
+"spearman": 0.551,
+"mae": 3.14,
+"coverage_80": 0.833
+},
+{
+"season": 2022,
+"weeks": 18,
+"spearman": 0.484,
+"mae": 3.12,
+"coverage_80": 0.77
+},
+{
+"season": 2023,
+"weeks": 18,
+"spearman": 0.558,
+"mae": 2.85,
+"coverage_80": 0.828
+},
+{
+"season": 2024,
+"weeks": 18,
+"spearman": 0.565,
+"mae": 2.99,
+"coverage_80": 0.804
+},
+{
+"season": 2025,
+"weeks": 18,
+"spearman": 0.616,
+"mae": 2.98,
+"coverage_80": 0.84
+}
+]
+}
+],
+"howto": [
+"**Order score** (Spearman): how well the projected order of players matched the order they really finished in, 1 = perfect, 0 = no better than random. Around 0.5–0.6 is good for one week of fantasy football.",
+"**Average miss** (MAE): how many points the projection missed by, on average, per player per game.",
+"**Inside the range** (coverage): how often the real score landed between the floor and the ceiling. The aim is 8 weeks in 10.",
+"**This season** scores the weeks already played on the board as it stood before kickoff; **backtest** is the same score on 2021 to 2025, each season predicted by a model trained only on the seasons before it. A few weeks are a small sample: one odd Sunday moves them a lot."
+],
+"source": "app/pages/4_Rankings.py (How the model is doing this season; Backtest)"
+},
+"rankings_howto": "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are down reads lower than his name; a quarterback who starts and throws 35 times per game counts like any starter while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is far from it, open his card and read why before you trade on it.",
+"grade_note": null,
+"versions": {
+"current": "v3.5",
+"kd": "kd1.0",
+"published_at": "2026-10-08T00:05:49.207666+00:00",
+"published_words": "7 Oct, 8:05 pm ET",
+"list": [
+{
+"version": "v2.0",
+"date": "2026-09-26",
+"words": "Stat-line projections with a range: one small model per stat, and your league's scoring turns the line into points.",
+"date_words": "26 Sep"
+},
+{
+"version": "kd1.0",
+"date": "2026-09-30",
+"words": "Kickers and defenses get a model of their own.",
+"date_words": "30 Sep"
+},
+{
+"version": "v3.0",
+"date": "2026-10-01",
+"words": "Who plays next to him: the starting quarterback, and whether his team's top target or top ball carrier is out.",
+"date_words": "1 Oct"
+},
+{
+"version": "v3.0 (cold starts)",
+"date": "2026-10-04",
+"words": "Rookies and players with few games start from what players like them usually do.",
+"date_words": "4 Oct"
+},
+{
+"version": "v3.3",
+"date": "2026-10-05",
+"words": "A receiver on a new team is scaled by how such moves have usually gone.",
+"date_words": "5 Oct"
+},
+{
+"version": "v3.4",
+"date": "2026-10-07",
+"words": "A quarterback's passing touchdowns read the betting line.",
+"date_words": "7 Oct"
+},
+{
+"version": "v3.5",
+"date": "2026-10-07",
+"words": "Weeks after next week, which have no betting line yet, use the team's own scoring so far and next week's starters.",
+"date_words": "7 Oct"
+},
+{
+"version": "v3.6",
+"date": "2026-10-07",
+"words": "A quarterback's weeks after next week blend the model with his own per-game record.",
+"date_words": "7 Oct"
+}
+],
+"by_week": "weeks 1–3: v2.0; week 4: v3.0; weeks 5–18: v3.5",
+"words": "The model changes during the season, and every change is dated here. A week's projections are kept as they stood at its first kickoff, so earlier weeks keep the version they were made with."
+},
+"checked": {
+"head": "What each number has been checked against: every projection below was scored on 2021–2025 seasons it never saw, against what happened that week. The order is the rank correlation (1 = perfect, 0 = no better than chance); the miss is in points per game.",
+"graded_on": "2021–2025",
+"rows": [
+{
+"position": "QB",
+"next": {
+"status": "graded",
+"words": "graded",
+"mae": 6.44,
+"order": 0.587
+},
+"later": {
+"status": "graded_weak",
+"words": "graded, weak",
+"mae": 7.41,
+"order": 0.495
+},
+"next4": {
+"mae": 6.93,
+"order": 0.538,
+"base_mae": 7.0,
+"base_order": 0.537
+},
+"ros": {
+"mae": 7.28,
+"order": 0.509,
+"base_mae": 7.33,
+"base_order": 0.51
+}
+},
+{
+"position": "RB",
+"next": {
+"status": "graded",
+"words": "graded",
+"mae": 4.52,
+"order": 0.686
+},
+"later": {
+"status": "graded",
+"words": "graded",
+"mae": 4.7,
+"order": 0.633
+},
+"next4": {
+"mae": 4.63,
+"order": 0.66,
+"base_mae": null,
+"base_order": null
+},
+"ros": {
+"mae": 4.68,
+"order": 0.64,
+"base_mae": null,
+"base_order": null
+}
+},
+{
+"position": "WR",
+"next": {
+"status": "graded",
+"words": "graded",
+"mae": 4.44,
+"order": 0.618
+},
+"later": {
+"status": "graded",
+"words": "graded",
+"mae": 4.59,
+"order": 0.568
+},
+"next4": {
+"mae": 4.48,
+"order": 0.594,
+"base_mae": null,
+"base_order": null
+},
+"ros": {
+"mae": 4.57,
+"order": 0.574,
+"base_mae": null,
+"base_order": null
+}
+},
+{
+"position": "TE",
+"next": {
+"status": "graded",
+"words": "graded",
+"mae": 3.25,
+"order": 0.599
+},
+"later": {
+"status": "graded",
+"words": "graded",
+"mae": 3.41,
+"order": 0.54
+},
+"next4": {
+"mae": 3.35,
+"order": 0.564,
+"base_mae": null,
+"base_order": null
+},
+"ros": {
+"mae": 3.39,
+"order": 0.547,
+"base_mae": null,
+"base_order": null
+}
+},
+{
+"position": "K",
+"next": {
+"status": "graded_weak",
+"words": "graded, weak",
+"mae": 3.77,
+"order": 0.095
+},
+"later": {
+"status": "chance",
+"words": "no better than chance",
+"mae": 3.75,
+"order": 0.028
+},
+"next4": null,
+"ros": null
+},
+{
+"position": "DEF",
+"next": {
+"status": "graded_weak",
+"words": "graded, weak",
+"mae": 4.32,
+"order": 0.257
+},
+"later": {
+"status": "chance",
+"words": "no better than chance",
+"mae": 4.78,
+"order": 0.04
+},
+"next4": null,
+"ros": null
+}
+],
+"not_graded": [
+"the ranges around a season total and around a trade's gap (they add weekly ranges as if the weeks were independent; the weekly ranges are graded one week ahead only)",
+"a trade of several players or across positions, and the lineup effect in your league (the useful-decision grade below is one-for-one, same position)",
+"kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their order is no better than chance)"
+],
+"windows_words": "Next four weeks and rest of season: each week's projection in the window scored against that week (pooled over the window's weeks, not the window's total); quarterbacks also against a simple baseline, his own per-game record.",
+"rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call.",
+"useful": {
+"words": "Is the trade calculator right? On a close one-for-one between two players of the same position, graded on 2021–2025, the side it favours scored more over the next four weeks 58 times in 100 at receiver, 57 at running back and 56 at tight end — more often than the side his own per-game record favours (54, 55 and 52). At quarterback 59 in 100, but the side his own per-game record favours did better (62). 50 would be a coin flip.",
+"by_position": {
+"QB": {
+"pairs": 3680,
+"rate": 0.594,
+"base": 0.615,
+"seasons": 0,
+"useful": false
+},
+"RB": {
+"pairs": 6320,
+"rate": 0.575,
+"base": 0.552,
+"seasons": 4,
+"useful": true
+},
+"WR": {
+"pairs": 8643,
+"rate": 0.584,
+"base": 0.539,
+"seasons": 4,
+"useful": true
+},
+"TE": {
+"pairs": 2939,
+"rate": 0.555,
+"base": 0.524,
+"seasons": 4,
+"useful": true
+}
+}
+}
+},
+"timings_ms": {
+"request_total": 16.4
+}
+}
+},
+"/api/player/00-0034869?league=ref%3Ahalf": {
+"status": 200,
+"body": {
+"why": {
+"per": "week",
+"points": 15.03,
+"pieces": [
+{
+"stat": "attempts",
+"label": "passes",
+"value": 30.28,
+"each": 0.0,
+"points": 0.0,
+"words": "30 passes (no points on their own)"
+},
+{
+"stat": "passing_yards",
+"label": "passing yards",
+"value": 227.67,
+"each": 0.04,
+"points": 9.11,
+"words": "228 passing yards × 0.04 = +9.1"
+},
+{
+"stat": "passing_tds",
+"label": "passing TDs",
+"value": 1.49,
+"each": 4.0,
+"points": 5.95,
+"words": "1.5 passing TDs × 4 = +5.9"
+},
+{
+"stat": "passing_interceptions",
+"label": "interceptions",
+"value": 0.81,
+"each": -1.0,
+"points": -0.81,
+"words": "0.81 interceptions × -1 = -0.8"
+},
+{
+"stat": "carries",
+"label": "carries",
+"value": 1.86,
+"each": 0.0,
+"points": 0.0,
+"words": "1.9 carries (no points on their own)"
+},
+{
+"stat": "rushing_yards",
+"label": "rushing yards",
+"value": 7.42,
+"each": 0.1,
+"points": 0.74,
+"words": "7.4 rushing yards × 0.1 = +0.7"
+},
+{
+"stat": "rushing_tds",
+"label": "rushing TDs",
+"value": 0.04,
+"each": 6.0,
+"points": 0.24,
+"words": "0.04 rushing TDs × 6 = +0.2"
+},
+{
+"stat": "fumbles_lost_total",
+"label": "fumbles lost",
+"value": 0.1,
+"each": -2.0,
+"points": -0.2,
+"words": "0.10 fumbles lost × -2 = -0.2"
+}
+],
+"sentence": "30 passes → 228 pass yards → 1.5 pass TDs → 0.81 INTs → 15.0 points this week",
+"games": null,
+"total": null
+},
+"market": null,
+"leans_on": {
+"features": [
+"is he the projected starter?",
+"points Vegas expects his team to score",
+"pass attempts per game, last 3 games"
+],
+"words": "For QBs the model leans most on **is he the projected starter?**. Next: points Vegas expects his team to score · pass attempts per game, last 3 games.",
+"scored_in": null
+},
+"gsis_id": "00-0034869",
+"player_name": "Sam Darnold",
+"position": "QB",
+"team": "SEA",
+"headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fyay8vruj0cqmhopufzk",
+"header": "QB · SEA · QB1 on the depth chart",
+"league_id": "ref:half",
+"league_name": "Half PPR",
+"season": 2026,
+"week": 5,
+"injury_status": null,
+"locked": false,
+"proj_points": 15.03,
+"sections": {
+"usage": {
+"title": "**Usage** — his share of the team's opportunities",
+"blocks": [
+{
+"kind": "metrics",
+"metrics": [
+{
+"label": "Passes / game",
+"value": "23.0",
+"delta": null,
+"trend": null,
+"help": null
+},
+{
+"label": "Carry share",
+"value": "5.5%",
+"delta": null,
+"trend": null,
+"help": null
+},
+{
+"label": "Snap share",
+"value": "70.0%",
+"delta": null,
+"trend": null,
+"help": null
+},
+{
+"label": "Red-zone share",
+"value": "16.7%",
+"delta": null,
+"trend": null,
+"help": null
+}
+]
+},
+{
+"kind": "caption",
+"text": "Season to date, 3 games. Trend: not enough games yet. Trends are called from a player's fourth game."
+}
+]
+},
+"projection": {
+"title": "**Projection** — week 5, Half PPR scoring",
+"blocks": [
+{
+"kind": "metrics",
+"metrics": [
+{
+"label": "Projected",
+"value": "15.0",
+"delta": null,
+"trend": null,
+"help": null
+},
+{
+"label": "Most weeks",
+"value": "9–22",
+"delta": null,
+"trend": null,
+"help": "Half his weeks land in this range: a quarter below it, a quarter above"
+},
+{
+"label": "Floor",
+"value": "6.0",
+"delta": null,
+"trend": null,
+"help": "One week in ten he scores less"
+},
+{
+"label": "Ceiling",
+"value": "24.3",
+"delta": null,
+"trend": null,
+"help": "One week in ten he scores more"
+}
+]
+},
+{
+"kind": "markdown",
+"text": "Stat line: 30 passes for 228 yds, 1.5 TD, 0.8 INT · 1.9 carries for 7 yds, 0.04 TD"
+},
+{
+"kind": "markdown",
+"text": "Rest of season: **178 points** over 12 games (likely 146–211), **QB24** in Half PPR · playoffs (weeks 15–17): 44"
+},
+{
+"kind": "caption",
+"text": "Week by week (weeks 5–17, through a typical league's final): wk 5 15.0 · 6 15.3 · 7 14.7 · 8 15.4 · 9 15.0 · 10 14.9 · 11 bye · 12 14.5 · 13 14.7 · 14 14.6 · 15 14.5 · 16 14.9 · 17 14.6. Only week 5 has betting lines yet: the later weeks lean on his usage and the schedule."
+},
+{
+"kind": "markdown",
+"text": "Next: week 5 vs SF — SF ranks **#26** of 32 vs QB (1 = gives up the most)"
+},
+{
+"kind": "caption",
+"text": "Next 4: wk 5 vs SF (#26) · wk 6 @ DEN (#14) · wk 7 vs KC (#29) · wk 8 vs CHI (#23)"
+}
+]
+},
+"availability": {
+"title": "**Availability**",
+"blocks": [
+{
+"kind": "markdown",
+"text": "No injury designation.  \nBye: week 11.  \nWeek 5 kickoff Sun Oct 11, 4:25 PM ET — not locked yet."
+}
+]
+},
+"value": {
+"title": "**Value** — in a 12-team Half PPR league, one quarterback",
+"blocks": [
+{
+"kind": "metrics",
+"metrics": [
+{
+"label": "Value",
+"value": "0",
+"delta": null,
+"trend": null,
+"help": "Season points above the best free QB in a typical league of this shape"
+},
+{
+"label": "Points, wk 5–18",
+"value": "193",
+"delta": null,
+"trend": null,
+"help": "Projected points from this week to the end of the regular season, Half PPR"
+},
+{
+"label": "Rank",
+"value": "QB25",
+"delta": null,
+"trend": null,
+"help": "By value among every QB"
+}
+]
+},
+{
+"kind": "markdown",
+"text": "**Value 0** — QB25 by value: 193 projected points over weeks 5–18, against 193 for the best free QB (Sam Darnold)."
+},
+{
+"kind": "caption",
+"text": "Value in a 12-team Half PPR league, one quarterback: a typical league of that shape, not a real one."
+},
+{
+"kind": "metrics",
+"metrics": [
+{
+"label": "Points / game",
+"value": "14.8",
+"delta": null,
+"trend": null,
+"help": "This season, 3 games: counted in Half PPR scoring from his stat lines"
+}
+]
+},
+{
+"kind": "caption",
+"text": "Points per game: 14.8 over 3 games, counted in Half PPR scoring from his stat lines."
+}
+]
+},
+"signals": {
+"title": "**Signals** — has his role changed lately?",
+"blocks": [
+{
+"kind": "markdown",
+"text": "Role: **no role change detected** in his last three games: his share of the snaps, targets and carries is where it has been.  \nUpside: no additional modeled upside scenario available."
+},
+{
+"kind": "caption",
+"text": "A role alert needs his share of the snaps, targets or carries to jump (or fall) well past his usual swing, in every one of his last one to three games."
+}
+]
+},
+"role": {
+"title": "**Role** — his recent role, his share of the work, games without a teammate",
+"blocks": [
+{
+"kind": "markdown",
+"text": "**Too early to say: 3 games with a snap so far this season; a change is called from his last 2 games against at least 3 before them (5 games).**"
+},
+{
+"kind": "markdown",
+"text": "Opportunity vs production: **in line** — 75% of the pass attempts, targets and carries of his team's QBs, 78% of their fantasy points in Half PPR scoring (weeks 1–4, 3 games). Of the whole team: 2% of its targets + carries, 17% of its red-zone carries."
+},
+{
+"kind": "markdown",
+"text": "Contingent upside: in the 16 games without Drew Lock (2025–26), 30.2 pass attempts and 15.5 points per game, against 15.5 and 11.6 in the 4 games with him (2025–26). Same team only, 2024 on, Half PPR scoring; games Drew Lock missed while on the roster. What happened, not a forecast: the rest of the lineup and the opponents were not the same."
+},
+{
+"kind": "caption",
+"text": "Recent role = his last 2 games with a snap; earlier = his games before them this season (3 or more). A change is named only when it is larger than his usual game-to-game swing (one standard deviation of the earlier games). What happened, not a forecast: this block does not move the projection."
+}
+]
+}
+},
+"howto": "- **Usage** is the work he gets: his share of his team's targets or carries, of its plays, of the quarterback's first looks and of the red-zone chances. The arrow is the last 3 games: up means a growing role.\n- **Projection** is this week's projected points in Half PPR scoring. **Most weeks** is the range half his weeks land in (a quarter below, a quarter above); the **floor** and **ceiling** are a bad week and a good week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. The opponent's rank is 1 for the defense that gives up the most to his position.\n- **Rest of season** adds up his projection for every week left in the season, up to its final: use it for trades and waivers, where the next four weeks are not the whole story. His bye is a week with no game, not a low score. *Likely* is the range 8 seasons in 10 would land in if every week were its own roll of the dice; a role change or an injury moves the weeks together, so the real range is wider. The rank is among every player at his position in Half PPR, rostered or not. Only this week has betting lines yet: the later weeks lean on his usage and the schedule.\n- **Availability** says his injury status, his bye and whether his game has started.\n- **Value** is his projected points from this week to the end of the regular season above the best player at his position that a typical league of this shape leaves free (the size and superflex you picked, a bench of six); points per game is what he has scored, priced in this scoring.",
+"ros": {
+"points": 178.37,
+"games": 12,
+"p10": 145.8,
+"p90": 210.9,
+"pos_rank": 24,
+"playoff_points": 44.04,
+"from_week": 5,
+"last_week": 17
+},
+"missing": [],
+"missing_keys": [],
+"source": "sleeper",
+"platform": "reference",
+"on_demand": {
+"range_method": "ratio",
+"range_reference": "scrubs",
+"profile_league": "1389709692405551104",
+"scoring_label": "12-team redraft · half PPR · 4‑pt pass TD"
+},
+"news": [],
+"matchup_evidence": {
+"gsis_id": "00-0034869",
+"player_name": "Sam Darnold",
+"position": "QB",
+"season": 2026,
+"week": 5,
+"opponent": "SF",
+"opponent_name": "San Francisco",
+"is_home": true,
+"history": {
+"defense": "SF",
+"position": "QB",
+"rank_most": 26,
+"tough_rank": 7,
+"n": 32,
+"words": "gives up the 7th-fewest points to quarterbacks",
+"games": 4,
+"through_week": 4,
+"period": "2026, weeks 1–4",
+"points_allowed_pg": 14.54,
+"scoring": "Half PPR scoring",
+"adjusted": false,
+"adjusted_words": "not adjusted for the offenses it faced",
+"adjusted_rank": {
+"rank_most": 23,
+"n": 32,
+"words": "gives up the 10th-fewest",
+"scoring": "Half PPR scoring"
+}
+},
+"changed": {
+"kind": "not_checked",
+"depth_chart_at": null,
+"regulars": [],
+"listed": [],
+"missing": [],
+"expected": [],
+"words": null,
+"events": []
+},
+"implication": {
+"kind": "unchecked",
+"words": "the historical rank, without a personnel check: corners are checked for receivers only"
+},
+"forecast_treatment": {
+"kind": "contextual",
+"words": "contextual only; not in the forecast",
+"detail": "The projection's opponent inputs are the points this defense has allowed to the position (the season, the last 4 games, its rank) and the betting lines; none of them says who plays corner.",
+"features": [
+"opp_allowed_std",
+"opp_allowed_l4",
+"opp_rank_std",
+"f_opp_allowed_diff",
+"league_allowed_avg",
+"implied_team_total",
+"spread_line",
+"total_line"
+]
+},
+"matchup_uncertain": false,
+"caveat": null,
+"sentences": [
+"San Francisco gives up the 7th-fewest points to quarterbacks (weeks 1–4, 4 games, Half PPR scoring, not adjusted for the offenses it faced).",
+"Who plays for San Francisco's defense is checked for receivers (the corners) only; the projection counts the points it has allowed."
+]
+},
+"schedule": [
+{
+"week": 5,
+"opponent": "SF",
+"is_home": true,
+"opp_rank": 26,
+"proj": 15.03
+},
+{
+"week": 6,
+"opponent": "DEN",
+"is_home": false,
+"opp_rank": 14,
+"proj": 15.33
+},
+{
+"week": 7,
+"opponent": "KC",
+"is_home": true,
+"opp_rank": 29,
+"proj": 14.74
+},
+{
+"week": 8,
+"opponent": "CHI",
+"is_home": true,
+"opp_rank": 23,
+"proj": 15.45
+},
+{
+"week": 9,
+"opponent": "ARI",
+"is_home": true,
+"opp_rank": 5,
+"proj": 15.0
+},
+{
+"week": 10,
+"opponent": "LV",
+"is_home": false,
+"opp_rank": 16,
+"proj": 14.92
+},
+{
+"week": 11,
+"opponent": null,
+"is_home": null,
+"opp_rank": null,
+"proj": null
+},
+{
+"week": 12,
+"opponent": "SF",
+"is_home": false,
+"opp_rank": 26,
+"proj": 14.52
+},
+{
+"week": 13,
+"opponent": "DAL",
+"is_home": true,
+"opp_rank": 2,
+"proj": 14.71
+},
+{
+"week": 14,
+"opponent": "NYG",
+"is_home": true,
+"opp_rank": 18,
+"proj": 14.63
+},
+{
+"week": 15,
+"opponent": "PHI",
+"is_home": false,
+"opp_rank": 11,
+"proj": 14.5
+},
+{
+"week": 16,
+"opponent": "LA",
+"is_home": true,
+"opp_rank": 20,
+"proj": 14.9
+},
+{
+"week": 17,
+"opponent": "CAR",
+"is_home": false,
+"opp_rank": 7,
+"proj": 14.64
+}
+],
+"games_played": 3,
+"ref_value": {
+"value": 0.0,
+"ros_points": 192.9,
+"replacement": 192.9,
+"replacement_name": "Sam Darnold",
+"position": "QB",
+"value_rank_pos": 25,
+"pos_rank": 24,
+"from_week": 5,
+"last_week": 18,
+"teams": 12,
+"superflex": false,
+"bench": 6,
+"assumes": "Value in a 12-team Half PPR league, one quarterback",
+"words": "Value in a 12-team Half PPR league, one quarterback: his projected points over weeks 5–18 (this week to the end of the regular season) above the best player at his position that such a league leaves free. The league is typical, not real: each team starts QB, 2 RB, 2 WR, TE, FLEX, K and DEF, and keeps 6 on the bench (quarterbacks, backs, receivers and tight ends, in proportion to the starting spots).",
+"pricing": {
+"fitted": true,
+"reference": "scrubs",
+"words": "Priced in Half PPR: the ranges are fitted for this scoring every night."
+}
+},
+"foot": "Open your league to see who has him and what he is worth to your team.",
+"scoring": {
+"key": "ref:half",
+"label": "Half PPR",
+"pricing": {
+"fitted": true,
+"reference": "scrubs",
+"words": "Priced in Half PPR: the ranges are fitted for this scoring every night."
+}
+},
+"provenance": {
+"model_version": "v3.5",
+"kd_model_version": null,
+"published_at": "2026-10-08T00:05:49.207666+00:00",
+"horizon": {
+"first": 5,
+"last": 17,
+"market_week": 5,
+"words": "weeks 5–17"
+},
+"checks": [
+{
+"span": "next",
+"position": "QB",
+"status": "graded",
+"mae": 6.44,
+"order": 0.587,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Quarterbacks next week: graded (order 0.59)"
+},
+{
+"span": "later",
+"position": "QB",
+"status": "graded_weak",
+"mae": 7.41,
+"order": 0.495,
+"ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+"words": "Quarterbacks two to eight weeks ahead: graded, weak (order 0.49)"
+},
+{
+"span": "season_range",
+"position": null,
+"status": "not_graded",
+"mae": null,
+"order": null,
+"ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+"words": "The season total's range: not graded"
+}
+],
+"status": "not_graded",
+"beta": false,
+"words": "Model v3.5, data published 7 Oct, 8:05 pm ET · weeks 5–17 · checked on 2021–2025: next week graded; two to eight weeks ahead graded, weak; the season total's range not graded."
+}
+}
+}
+}

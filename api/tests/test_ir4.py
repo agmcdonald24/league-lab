@@ -159,7 +159,8 @@ def test_about_block_lists_versions_and_checks(board):
     rows = {r["position"]: r for r in a["checked"]["rows"]}
     assert rows["QB"]["later"]["status"] == "graded_weak" and rows["QB"]["next4"]["base_order"] is not None
     assert rows["K"]["later"]["words"] == "no better than chance" and rows["K"]["next4"] is None
-    assert any("favours" in n for n in a["checked"]["not_graded"])
+    assert any("several players" in n for n in a["checked"]["not_graded"])
+    assert a["checked"]["useful"]["by_position"]["QB"]["useful"] is False
 
 
 # ------------------------------------------------------------------------------------------------ the routes (database)
@@ -190,3 +191,44 @@ def test_ros_free_trade_card_and_about_carry_it(client):
     a = client.get("/api/about?league=ref:half")
     assert a.status_code == 200
     assert a.json()["versions"]["list"] and a.json()["checked"]["rows"]
+
+
+def test_the_record_rows_hold_the_same_numbers():
+    from league_lab import context_record as CR
+    allrows = CR.horizon_grade_rows()
+    rows = {r["grp"]: r for r in allrows if r["kind"] == "horizon"}
+    assert len(rows) == len(CR.HORIZON_GRADES)
+    useful = {r["grp"].split("/")[0]: r for r in allrows if r["kind"] == "useful"}
+    for pos, u in P.USEFUL.items():
+        assert (useful[pos]["n"], useful[pos]["beat_share"], useful[pos]["rest_beat_share"], useful[pos]["beat"]) == (
+            u["pairs"], u["rate"], u["base"], u["seasons"])
+        assert u["useful"] == (u["seasons"] >= 4)              # the rule: above 50 % and the baseline in 4 of 5
+    for (sp, pos), c in P.CHECKS.items():
+        r = rows[f"{pos}/{'next1' if sp == 'next' else 'later'}"]
+        assert (r["mean_miss"], r["beat_share"]) == (c["mae"], c["order"]), (sp, pos)
+    for (w, pos), c in P.WINDOWS.items():
+        r = rows[f"{pos}/{w}"]
+        assert (r["mean_miss"], r["beat_share"], r["rest_beat_share"]) == (c["mae"], c["order"], c["base_order"])
+    assert rows["QB/next4"]["words"] == ("Quarterbacks, the next four weeks: order 0.54, miss 6.9 points per game (his own "
+                                         "record: 0.54, 7.0).")
+    assert rows["RB/ros"]["words"].endswith("(no simple baseline measured yet).") and rows["RB/ros"]["vs_rest"] is None
+    # the stored grade carries them (a record with one graded row is enough to write the grade)
+    assert all(k in CR.GRADE_COLUMNS for k in rows["QB/ros"])
+
+
+def test_the_free_calculator_verdict_follows_the_rule(board, flags, monkeypatch):
+    monkeypatch.setattr(P, "_season_now", lambda: 2026)
+    v = {"even": False, "lean": "get", "gap": 103.0, "low": 53.0, "high": 153.0, "one_player": None,
+         "words": "You get more: 103 points of season value (likely +53 to +153)."}
+    soft = P.with_free_trade({"window": {"first": 5, "last": 18}, "verdict": dict(v),
+                              "give": {"players": [{"gsis_id": DARNOLD, "position": "QB", "player_name": "Sam Darnold", "team": "SEA"}]},
+                              "get": {"players": [{"gsis_id": "00-0036555", "position": "RB", "player_name": "Chuba Hubbard", "team": "CAR"}]}})
+    assert soft["verdict"]["words"] == "You get more: 103 points of season value (likely +53 to +153) (a lean: it assumes Darnold starts)."
+    assert soft["verdict"]["lean"] == "get" and soft["verdict"]["words_unqualified"] == v["words"]
+    held = P.with_free_trade({"window": {"first": 5, "last": 18}, "verdict": dict(v),
+                              "give": {"players": [{"gsis_id": MAYFIELD, "position": "QB", "player_name": "Baker Mayfield", "team": "TB"}]},
+                              "get": {"players": []}})
+    assert held["verdict"]["words"] == "No verdict: it depends on who starts for Tampa Bay."
+    assert held["verdict"]["lean"] is None and held["verdict"]["gap"] == 103.0          # the numbers stay
+    plain = P.with_free_trade({"window": {"first": 5, "last": 18}, "verdict": dict(v), "give": {"players": []}, "get": {"players": []}})
+    assert plain["verdict"] == v
