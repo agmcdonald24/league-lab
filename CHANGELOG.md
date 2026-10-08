@@ -2,6 +2,12 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-S (dependability, second round)
+
+- **IS-3 — the trade tests whole again.** The three trade-calculator browser tests parked this afternoon run again on
+  trades that are legal on today's test data (a League of Scrubs package whose extra player changes the dial's label;
+  a kicker for a starting quarterback, labelled implausible), re-saved from the API. docs/handbacks/IS-3.md.
+
 ## 2026-10-08 — hotfix: /api/ready through the hosted pooler; the release gate enforced
 
 - **`/api/ready` answered 503 on the live site while every screen worked.** The probe opened its connection with
