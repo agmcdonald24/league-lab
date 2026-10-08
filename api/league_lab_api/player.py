@@ -499,6 +499,8 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
                               f"games at the new level, in {league_name} scoring." if od is None else ""))
 
     extra = why_block(league_id, gsis, pos, season, week, proj, od, league_name)        # ---- IA-3
+    if sits_now:          # ---- IS-2: no "why this number" (the mart's 11.4) under a 0 he gets because he sits
+        extra = {**extra, "why": None, "market": None, "leans_on": None}
     role_sec = role_section(league_id, gsis, pos, team, season, week, league_name)        # ---- IL-1
     return {
         **extra,                                                                           # ---- IA-3
