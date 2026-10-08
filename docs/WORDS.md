@@ -759,3 +759,23 @@ beyond next week", as of 2026-10-07), on every screen that shows a rest-of-seaso
 | Who should I start? with a corrected quarterback | the same sentence under his name; the call and the chances as for anyone | "no call" |
 | starter unclear, U1 (where `mart_starter_check` is built) | "Starter unclear: Tampa Bay lists Jalon Daniels as the starter, but the depth chart puts Baker Mayfield first. Our projections assume the listing: Daniels as the starter, Mayfield as his backup." | "wrong", "benched" (15 of 27 such flags were not stale) |
 <!-- ---- end IQ-2 -->
+
+<!-- ---- IR-3 -->
+## Readiness and the post-deploy check (Wave I-R, IR-3; `api/league_lab_api/ready.py`, `scripts/post_deploy_check.py`)
+
+Read by the operator (the PO, Andrew, a monitor), never shown on a screen. `/api/ready`'s `reason`:
+
+| code | Words |
+|---|---|
+| `ready` | The published numbers can be served. |
+| `database` | The database does not answer (`<error class>`). |
+| `publishing` | The numbers are being replaced: a new publication started at `<time>` and is not in place yet. |
+| `missing_tables` | The published tables are missing: `<relations>`. |
+| `no_projections` | No projections have been published. |
+| `week_missing` | Week `<n>` of `<season>` has no projections in the boards. / … in the lists. |
+| `lists_empty` | The rest-of-season list is empty. |
+
+The post-deploy check prints one line per check (`ok` / `FAIL`, the check, the status, the seconds, what it found),
+then `All checks passed.` or `FAILED: <n> check(s).` A ranked player who cannot play reads "ranked though they cannot
+play: #18 Breece Hall (OUT)"; a trade whose numbers do not reconcile names the side, the span and both numbers.
+<!-- ---- end IR-3 -->

@@ -235,13 +235,60 @@ with the password gate on, `LEAGUE_LAB_API_TOKEN` from `/api/login`) are set.
 ## How a new version reaches the server
 
 1. A change is merged to `main` on GitHub.
-2. GitHub Actions runs **image** (about 4 minutes): it builds the server, starts it once, checks it answers, and saves
-   the image as `ghcr.io/<your GitHub name>/league-lab:<commit>` and `:main`.
+2. GitHub Actions runs **image**: first its **gate** (about 3–5 minutes: the decision suite, ruff, the web app's lint,
+   type check and build — below), then the image (about 4 minutes): it builds the server, starts it once, checks it
+   answers, and saves the image as `ghcr.io/<your GitHub name>/league-lab:<commit>` and `:main`. A red gate builds
+   nothing.
 3. When that check is green, Render builds the same commit and puts it live (about 5 minutes). If the check is red,
    Render does not deploy that commit and the server keeps running the last good one.
 
 A change that touches nothing the server runs (the docs, dbt, the Streamlit pages) does not rebuild it. New numbers
 need no deploy at all: the nightly publishes them to Neon and the server picks them up within 10 minutes.
+
+## The release gate (Wave I-R, IR-3)
+
+`scripts/gate.sh` is what the image workflow's `gate` job runs, and what you run before a merge:
+
+```bash
+scripts/gate.sh            # everything (3–4 minutes here)
+scripts/gate.sh python     # the decision suite + ruff (about 1.5 minutes)
+```
+
+It needs **no database** (every database address points at a closed port), and a test that skips fails it — a
+skipped test needed something the gate does not have. It runs 798 tests: trade math on hand-built frames, lineup
+legality and slot assignment (FLEX cascades, locks, byes, one-QB versus superflex), the replacement chain's words,
+league scoring, K / DEF and MFL team units, waivers and required drops, the decision odds, the card words, the
+frozen record, the memory budget, `/api/ready`'s rule, the post-deploy check's judgements and the image's build
+context; then ruff, `npm run lint` (eslint, svelte-check, tsc) and `npm run build`. Outside it, because they read the
+warehouse: the API's route suites (the PO runs them at every merge), dbt's build and tests (the nightly), the
+Playwright e2e. Proof (2026-10-08): a scratch commit letting a QB into FLEX turned 21 tests red and the gate printed
+`GATE FAILED: decision suite (src, no database) - this commit must not be published`.
+
+## Readiness and the post-deploy check (Wave I-R, IR-3)
+
+* **`/api/health`** — liveness: 200 while the process runs, the database's state in the body. Render's health check.
+* **`/api/ready`** — readiness: 200 only when the published numbers can be served — the database answers; the
+  published tables are there; projections exist; the week of the next kickoff has projections on the boards and in
+  the lists; the rest-of-season list is not empty. Otherwise 503 and the reason in words (`code`: `database`,
+  `publishing`, `missing_tables`, `no_projections`, `week_missing`, `lists_empty`). It also names the publication
+  (`checks.publication`) and its age (an old publication is still "ready": a missed nightly is health's `stale`).
+  Kept 60 s after a success, 15 s after a failure; no password; never the request pool.
+* **Keep Render's health check on `/api/health`.** Pointed at `/api/ready`, a Neon wake-up or a nightly publish
+  (the 503 `publishing` window on the free tier) would fail Render's checks and restart a healthy process — which
+  fixes nothing and drops every cache and Sleeper's directory. Use `/api/ready` from the post-deploy check and from
+  any outside monitor that alerts a person.
+* **After a deploy** (or any time, from anywhere with python3):
+
+  ```bash
+  python3 scripts/post_deploy_check.py https://isuckatfantasy.io
+  python3 scripts/post_deploy_check.py https://isuckatfantasy.io --expect-version <commit>   # after a deploy
+  ```
+
+  One line per check — health, ready, the web app, a reference Rankings top (at least 10 ranked, in order, sane
+  projections, **nobody who cannot play**), the review's house-league trade (League of Scrubs: Nick Folk for Matthew
+  Stafford and Will Reichard) whose before, after, weekly and verdict numbers must reconcile, and the same trade from
+  the other side (each team's change the same). Exit 0 / 1. Reads only. When those players move, pass a current
+  trade with `--trade <league>:<team>:<partner>:<give ids>:<get ids>`.
 
 ## When it breaks
 
@@ -256,6 +303,8 @@ need no deploy at all: the nightly publishes them to Neon and the server picks t
 | **busy, try again in a minute** | The server's Sleeper allowance (300 calls a minute) is spent. It refills within a minute. |
 | The site does not load at all | Render → the service: **Live**? If not, **Manual Deploy** → **Deploy latest commit**. Still not: **Manual Deploy** → **Clear build cache & deploy**. |
 | A push is green on GitHub but Render shows **no deploy at all** for it (not failed — nothing started) | Seen 2026-10-04 for `c47c5ea` and `786c2f5`, the first two pushes after the Blueprint sync that added the domain (`dc8d668` before it auto-deployed fine). **Manual Deploy** → **Deploy latest commit** (36 s) is the remedy; the PO does it after every push and says so until the cause is known (the Blueprint / webhook path is the suspect — Render's Events list has nothing to explain it). |
+| GitHub shows a red **gate** in the **image** run | The step names it (`gate FAIL decision suite …` with the failing tests above it, or ruff / lint / build). Nothing was built or deployed. Run `scripts/gate.sh` locally on that commit. |
+| `/api/ready` answers 503 | `reason` says why in words: `publishing` — the nightly is replacing the tables (minutes); `missing_tables` / `week_missing` / `lists_empty` — the publication is incomplete: run the nightly again; `database` — as `"database": "unreachable"` above. |
 | The smoke test prints `FAIL` | The line says which check and what the server answered. `health` → the rows above; `gate` → the password you typed; `my week` → a missing table on Neon (run the nightly). |
 | The Blueprint page rejects a line of `render.yaml` | Render renames a setting now and then. The message names the line; send it to the PO. (If it is `autoDeployTrigger`, replacing that line with `autoDeploy: true` works: Render then deploys every commit without waiting for the check.) |
 
