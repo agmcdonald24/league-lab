@@ -151,9 +151,15 @@
     "- **Upside stash**: a free agent whose role grew in his last one to three games (more snaps, targets or carries: a teammate out, a new starter) before his points caught up. **If it holds** is his projection with the bigger role: a what-if, not a forecast. **Lineup gain if it holds** adds up this week and the next three; most stashes add nothing yet, which is why they are stashes, not starters. A stash says **claim** only when, if the role holds, he is worth the roster spot after what the cheapest drop costs; otherwise **watch**.\n" +
     "- **Players scoring below or above their work** are on the Trades screen, next to the trades to ask about."; // ---- IP-3 fix round
 
+  // ---- IS-2: the status block the API sends beside each free agent (null: no word)
+  type GateNote = { status: string | null; why: string; sits: boolean; out_indefinitely: boolean; words: string | null };
+  const gateNote = (f: FreeAgent): GateNote | null => (f as FreeAgent & { availability?: GateNote | null }).availability ?? null;
   function faContext(f: FreeAgent): string {
     const bits = [rangeWords(f.p25, f.p75, f.p10, f.p90), f.ros_points != null ? `rest of season ${fmt.whole(f.ros_points)}` : null];
-    if (f.injury_status) bits.unshift(f.injury_status);
+    // ---- IS-2: the one definition's status with its source and date ("Out (ankle) · Sleeper, Oct 7"), and why his week is 0
+    const gate = gateNote(f);
+    if (gate) bits.unshift(gate.sits && gate.words ? `${gate.why}. ${gate.words}` : gate.why);
+    else if (f.injury_status) bits.unshift(f.injury_status);
     return bits.filter(Boolean).join(" · ");
   }
 </script>
@@ -321,7 +327,7 @@
                   player={{ ...fa, player_name: fa.player_name ?? "" }}
                   number={f1(fa.projection)}
                   numberLabel={`Week ${wk}`}
-                  context={fa.injury_status}
+                  context={gateNote(fa)?.why ?? fa.injury_status}
                   line={[
                     fa.p25 != null && fa.p75 != null ? `Typical range ${Math.round(fa.p25)}–${Math.round(fa.p75)} (the middle 50% of outcomes).` : null,
                     fa.p10 != null && fa.p90 != null ? `A bad week to a good week: ${Math.round(fa.p10)}–${Math.round(fa.p90)} (8 weeks in 10).` : null,

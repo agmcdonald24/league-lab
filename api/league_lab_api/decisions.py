@@ -3268,6 +3268,11 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
                       "is_locked": _bool(r["is_locked"]), "report_status": _str(r["report_status"]), "reason": _str(r["reason"]),
                       "acquired": _str(r["acquired_label"]), "acquired_how": _str(r["acquired_how_by_manager"])}
                      for _, r in rows.iterrows()]
+    # ---- IS-2: each roster row carries the one definition's status and its reason (league_gate), beside his number
+    gate = LG.blocks([x.get("gsis_id") for x in out["roster"]])
+    for x in out["roster"]:
+        x["availability"] = LG.note(gate.get(x["gsis_id"])) if isinstance(x.get("gsis_id"), str) else None
+    # ---- end IS-2
     # ---- II-0: strength by slot, one metric over one population (every roster's starter at each slot this week)
     out["strength_by_slot"] = strength_by_slot(int(team_id), _slot_population(league_id, is_house, None if is_house else hf,
                                                                               moved, int(team_id), rows), value, b)
