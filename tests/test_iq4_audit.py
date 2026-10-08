@@ -48,7 +48,7 @@ def test_ppg_ranks_need_three_games():
 
 
 def test_projected_high_scoring_low_is_flagged():
-    # 30 quarterbacks with 3 games each; "low" scores 2 a game (the 30th) but is projected 3rd
+    # 30 quarterbacks with 3 games each; "low" scores 2 points per game (the 30th) but is projected 3rd
     per = {f"q{i}": ("QB", [40 - i] * 3) for i in range(29)}
     per["low"] = ("QB", [2, 2, 2])
     rows = [{"player_key": f"q{i}", "player_name": f"Q{i}", "team": f"T{i}", "proj": 30 - i} for i in range(29)]
