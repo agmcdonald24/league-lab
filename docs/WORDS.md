@@ -759,3 +759,22 @@ beyond next week", as of 2026-10-07), on every screen that shows a rest-of-seaso
 | Who should I start? with a corrected quarterback | the same sentence under his name; the call and the chances as for anyone | "no call" |
 | starter unclear, U1 (where `mart_starter_check` is built) | "Starter unclear: Tampa Bay lists Jalon Daniels as the starter, but the depth chart puts Baker Mayfield first. Our projections assume the listing: Daniels as the starter, Mayfield as his backup." | "wrong", "benched" (15 of 27 such flags were not stale) |
 <!-- ---- end IQ-2 -->
+
+## Who cannot play (IR-1, Wave I-R, 2026-10-08; Rankings, "Who should I start?", rest of season, the calculator, Compare, the board)
+
+| Where | Words |
+|---|---|
+| A list's group | **Not playing** · N |
+| Rankings, this week (and the board) | Not playing this week: not ranked, not tiered. / Not playing this week: not on the board. |
+| Rankings, rest of season; `/ros` | Out with no return date: no rest-of-season value until his status changes. |
+| His reason, this week | On injured reserve: he will not play this week, so he is not ranked. (On the PUP list / On the non-football injury list / Suspended / Ruled out this week / Not on an NFL team) |
+| His reason, the season | On injured reserve: no return date, so no rest-of-season value. |
+| His status line | IR (knee - acl) · Sleeper, Sep 28 |
+| His number | — (no projection: he cannot play) |
+| Cleared since last night's 0 | No number yet — His status changed since last night's projection (…); his number this week comes with the next update. |
+| "Who should I start?" | Achane is out — on injured reserve (IR (knee - acl) · Sleeper, Sep 28). Start Hall. / … Of the others: … |
+| "Who should I start?", under the players | A player who cannot play gets no chance and no call: there is nothing to compare. / Start him |
+| The free calculator, the verdict | Not priced: Achane — On injured reserve: no return date, so no rest-of-season value. (IR (knee - acl) · Sleeper, Sep 28). The calculator does not price a trade on a player who cannot play as if he were healthy — take him out, or try again when his status changes. |
+| The free calculator, out this week only | week 5: out — Out (ankle) · ESPN, Oct 8 |
+| Compare | Achane: IR (knee - acl) · Sleeper, Sep 28 — On injured reserve: no return date, so no rest-of-season value. |
+| The audit's first rule | Players who cannot play and are still ranked or valued: N |

@@ -1693,6 +1693,39 @@ def personnel_verdict(verdict: str, evs: list[dict | None]) -> str:
 # ---- end IF-3
 
 
+# ---- IR-1 (Wave I-R): Compare knows who cannot play (availability.statuses: the nightly's record + Sleeper + ESPN)
+def cards_last(side: dict) -> str:
+    """His last name (the verdict's way: "Achane")."""
+    from .applib import cards
+    n = str(side.get("player_name") or "")
+    return (cards.last_name(n) or n) if n else "the other"
+
+
+def _compare_gate(ctx: Ctx, *pairs: tuple[dict, dict]) -> list[str]:
+    """Each side who cannot play this week: no projection (a dash, with his status and why), no rest-of-season block
+    when he is out indefinitely; returns the sentences ("Achane is out — on injured reserve (…)")."""
+    from league_lab import availability_gate as AG
+
+    from . import availability as AV
+    ids = [side.get("gsis_id") for side, _c in pairs if isinstance(side.get("gsis_id"), str)]
+    st = AV.statuses(ids, ctx.season, ctx.week) if ctx.week is not None else {}
+    out = []
+    for side, c in pairs:
+        x = st.get(side.get("gsis_id"))
+        if not x:
+            continue
+        side["availability"] = {k: x.get(k) for k in ("status", "code", "why", "source", "as_of", "cannot_play",
+                                                      "out_indefinitely", "week_words", "ros_words")}
+        if x.get("cannot_play"):
+            side["projection"] = None
+            c.update(proj_points=None, p10=None, p90=None)
+            if x.get("out_indefinitely"):
+                side["ros"] = None
+            out.append(AG.out_sentence(cards_last(side), x))
+    return out
+# ---- end IR-1
+
+
 def compare(league_id: str, a: str, b: str, *, source: str | None = None) -> dict:
     if not a or not b:
         raise BadRequest("compare needs a=<gsis_id> and b=<gsis_id>")
@@ -1704,6 +1737,7 @@ def compare(league_id: str, a: str, b: str, *, source: str | None = None) -> dic
         pc = PlayerContext(ctx.league_id)
     sa, sb = _side(ctx, a, dvp, pc), _side(ctx, b, dvp, pc)
     ca, cb = sa.pop("_cmp"), sb.pop("_cmp")
+    outs = _compare_gate(ctx, (sa, ca), (sb, cb))                                           # ---- IR-1
     table = M.comparison_rows(ca, cb)
     rows = [{"what": r["What"], "a": r.iloc[1], "b": r.iloc[2]} for _, r in table.iterrows()]
     # ---- IF-3: the matchup evidence on both sides; a less representative rank never leans the verdict
@@ -1711,6 +1745,9 @@ def compare(league_id: str, a: str, b: str, *, source: str | None = None) -> dic
         s["matchup_evidence"] = matchup_evidence(ctx, s["gsis_id"], dvp=dvp, head=s) if ctx.week is not None else None
     verdict = personnel_verdict(M.comparison_verdict(ca, cb), [sa["matchup_evidence"], sb["matchup_evidence"]])
     # ---- end IF-3
+    if outs:                                    # ---- IR-1: "He is out" — never a call on a player who cannot play
+        other = [x for x in (sa, sb) if not x.get("availability", {}).get("cannot_play")]
+        verdict = " ".join(outs) + (f" Start {cards_last(other[0])}." if len(other) == 1 else "")
     return {**ctx.meta(), "a": sa, "b": sb, "verdict": verdict, "table": rows,
             "caption": (f"Week {ctx.week}. The projection decides: it already counts the opponent. The defense rows are "
                         "context: what each opponent allowed to the position in its games before this week, one scale for "

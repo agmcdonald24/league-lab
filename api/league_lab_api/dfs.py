@@ -164,12 +164,16 @@ def _ranks() -> dict[tuple[str, str], int]:
     return {(r.defense, r.position): int(r.rank_std) for r in df.itertuples() if pd.notna(r.rank_std)}
 
 
-def _statuses(df: pd.DataFrame) -> pd.DataFrame:
+def _statuses(df: pd.DataFrame, season: int | None = None, week: int | None = None) -> pd.DataFrame:
     """``status`` (words), ``out`` (cannot play: left out of lineups by default and off the lists) and ``status_source``
-    — the availability overlay first (ESPN / Sleeper, fresher), then the nightly's injury report, then the site's own
+    — who cannot play by the site's one definition first (IR-1: ``availability.statuses``, the nightly's record +
+    Sleeper + ESPN, freshest wins; Doubtful is flagged, not out), then the nightly's injury report, then the site's own
     flag (FanDuel's injury indicator)."""
     ids = [g for g in df.get("gsis_id", pd.Series(dtype=object)).dropna().astype(str) if g]
-    live = availability.now(ids) if ids else {}
+    # ---- IR-1 (Wave I-R): the one definition (was the overlay's own, which sat Doubtful and missed the stored record)
+    live = {g: {**a, "flagged": a.get("code") in ("DOUBTFUL", "QUESTIONABLE")}
+            for g, a in availability.statuses(ids, season, week).items()} if ids else {}
+    # ---- end IR-1
     status, out, src = [], [], []
     for r in df.itertuples():
         a = live.get(str(getattr(r, "gsis_id", "") or ""))
@@ -269,7 +273,7 @@ def projections(site: str = "dk", week: int | None = None, position: str | None 
         season, w = _season_week(week)
     except Bad as exc:
         return _err(exc)
-    df = _statuses(priced(s, season, w).copy())
+    df = _statuses(priced(s, season, w).copy(), season, w)          # ---- IR-1: the week's statuses
     opp = _opponents(season, w)
     ranks = _ranks()
     df["opponent"] = df["team"].map(opp)
@@ -404,7 +408,7 @@ def build_slate(sl: D.Slate, season: int, w: int, *, week_from_file: bool) -> di
                 "cap": D.CONTESTS[contest].cap, "counts": {"on_file": len(sl.players), "matched": 0,
                                                           "unmatched": len(unmatched), "skipped": len(sl.skipped)},
                 "worth_a_look": {}, "context_meta": None, "published": False, "slate_id": None}
-    df = _statuses(df)
+    df = _statuses(df, season, w)                                   # ---- IR-1: the week's statuses
     ranks = _ranks()
     df["opp_rank"] = [ranks.get((o, p)) for o, p in zip(df["opponent"], df["position"], strict=True)]
     df, fits = D.value(df, contest)

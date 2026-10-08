@@ -235,6 +235,12 @@
           ><strong>{A.player_name} projects {fmt.pts(A.proj_points)}, {B.player_name} {fmt.pts(B.proj_points)}</strong> in week {A.week}{#if A.ros && B.ros}; rest
             of season {fmt.whole(A.ros.points)} vs {fmt.whole(B.ros.points)}{/if}, in {leagueName} scoring.</span
         >
+        <!-- ---- IR-1 (Wave I-R): a player who cannot play: his status, its source and time, and why there is no number -->
+        {#each [A, B] as S (S.gsis_id)}
+          {#if S.availability?.cannot_play}<span class="mt-1 block text-sm font-semibold text-warn" data-testid="compare-out"
+              >{S.player_name}: {S.availability.why} — {S.availability.out_indefinitely ? S.availability.ros_words : S.availability.week_words}</span
+            >{/if}
+        {/each}
       {:else if !a || !b}
         Pick two players.
       {/if}

@@ -170,8 +170,7 @@ select coalesce(nullif(p.gsis_id, ''), m.gsis_id) as gsis_id, p.player_id as sle
        p.payload ->> 'injury_body_part' as body_part, p.fetched_at
 from raw.sleeper_player as p
 left join analytics.player_id_map as m on m.sleeper_id = p.player_id
-where p.position in ('QB', 'RB', 'WR', 'TE', 'K')
-"""
+"""   # every position: Sleeper lists some ball carriers at another one (Scott Matlock, LAC: "DT", on IR, an RB here)
 PREV_WEEK_END_SQL = """select max(kickoff_at) as t from analytics.dim_game
                        where season = %s and week = %s and season_type = 'REG'"""
 

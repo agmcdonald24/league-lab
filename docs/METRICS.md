@@ -5129,3 +5129,32 @@ for Seattle the weeks 3–4 "starts" still belong to Lock: Darnold's and his rec
 `assert_frozen_projections_precede_kickoff`, `assert_frozen_nfl_wide_precede_kickoff`: PASS; the nightly's
 projection-marts selection 145 PASS (the 146th, the registry's unique metric, fixed and re-run: PASS).
 <!-- ---- end IQ-2 -->
+
+## Who cannot play (av1.0, IR-1, Wave I-R, 2026-10-08; `src/league_lab/availability_gate.py`, `api/league_lab_api/availability.py` § IR-1)
+
+Andrew, 2026-10-08: De'Von Achane (IR, torn ACL) was the 21st running back on Rankings at 10.93 while his card said
+"IR (knee - acl) · Sleeper, Sep 28". One definition now, read by `project`, every list and the audit.
+
+* **Cannot play this week**: injured reserve, PUP, non-football injury, suspended, ruled Out, or on no NFL team
+  (released, retired, unsigned). **Out indefinitely**: injured reserve, PUP, NFI, suspended (no return in sight).
+  **Doubtful**: flagged, never removed. **Questionable**: untouched.
+* **Sources and which one wins**: Sleeper's player directory (`injury_status` first; else a reserve list its `status`
+  names; else no team; dated by `news_updated`) and ESPN's injuries feed (the API's overlay). The freshest dated word
+  wins (ESPN before Sleeper on an equal time; an undated word loses to a dated one). A game status (Out / Doubtful /
+  Questionable) dated before the previous week's last kickoff is that week's and rules nothing. nflverse's weekly
+  injury report is never a source here (midweek its newest row is last week's game status); nflverse's weekly roster
+  status of the projected week (`RES`, `SUS`) only when no Sleeper directory copy exists at all.
+* **The stored board** (`project`, before anything is written; the live week = the first regular-season week whose
+  first game has not kicked off): a player who cannot play keeps his row of the live week with every number 0 (he
+  scores nothing if he does not play: a known 0, so lineups, waiver gains, trade weeks and the outlook sum the same
+  rows; a missing row would read "no value yet" and the lineup solver could still seat him as a filler) and
+  `availability` = the reason as JSON (frozen with the week: the record says why); a player out indefinitely has no
+  row in any later week (no rest-of-season number, no return date guessed). Frozen weeks are never touched (B5). The
+  copy is the Sleeper directory the nightly has just loaded (`raw.sleeper_player`); when tonight's fetch failed the
+  table still holds the last good copy and `project` prints its date.
+* **Every list, at request time** (`availability.statuses`): the stored record (`ops.projection_lines.availability`,
+  read through `to_jsonb` so a database without the column answers) and the overlay's Sleeper and ESPN words,
+  freshest first. With the overlay off or Sleeper / ESPN unreachable the stored record still applies. A player the
+  record set to 0 and the overlay has cleared since is listed as "no number until the next update" (never ranked at 0).
+* **Graded**: not a forecast — a rule. The check: `dbt/tests/assert_nobody_who_cannot_play_is_projected.sql` (the
+  stored board against the directory, the live week and later) and the audit's first rule.

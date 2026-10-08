@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-08 — Wave I-R (dependability)
+
+- **IR-1 — nobody who cannot play is ranked, valued or projected.** De'Von Achane (IR, torn ACL) was the 21st running
+  back on Rankings. One definition (`src/league_lab/availability_gate.py`: cannot play = IR, PUP, NFI, suspended, Out,
+  no team; out indefinitely = the reserve lists; Doubtful flagged; the freshest word of Sleeper's directory and ESPN
+  wins, last week's game status rules nothing). `project` gives a player who cannot play 0 in the live week with the
+  reason recorded (`ops.projections.availability`, `ops.projection_lines.availability`) and no later week when he is
+  out indefinitely; Rankings (week and season), "Who should I start?" ("He is out"), `/api/ros`, the free calculator
+  (refuses to price him), Compare, DFS and the matchup board apply it at request time and list him under "Not
+  playing" with his status, its source and time. The audit's first rule counts who cannot play and is still ranked;
+  `assert_nobody_who_cannot_play_is_projected` checks the stored board.
+
 ## 2026-10-08 — Wave I-Q
 
 - **PO — the merge, the nightly's audit step, the roster rule.** `scripts/nightly.sh` runs `league-lab audit-lists`

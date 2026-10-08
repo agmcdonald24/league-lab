@@ -2793,20 +2793,26 @@ export interface NotPlaying {
   out_indefinitely: boolean;
   words: string | null;
 }
-export interface Availability {
+export interface PlayAvailability {
   status: string | null;
   code: string | null;
   why: string | null;
   source?: string | null;
   as_of?: string | null;
   cannot_play?: boolean;
+  out_indefinitely?: boolean;
+  week_words?: string | null;
+  ros_words?: string | null;
 }
 export interface Rankings {
   not_playing?: NotPlaying[];
   not_playing_words?: string;
 }
 export interface RankRow {
-  availability?: Availability | null;
+  availability?: PlayAvailability | null;
+}
+export interface CompareSide {
+  availability?: PlayAvailability | null;
 }
 export interface StartAnswer {
   out?: (NotPlaying & { words: string })[];
@@ -2819,6 +2825,9 @@ export interface FreeTradeOutlook {
   why?: string | null;
 }
 export interface RosList {
+  not_playing?: NotPlaying[];
+}
+export interface MatchupBoard {
   not_playing?: NotPlaying[];
 }
 // ---- end IR-1
