@@ -1166,6 +1166,9 @@ def _week_end(season: int | None, week: int | None):
     return t
 
 
+sits = AG.sits  # PO (Wave I-S): "is he left out this week?" — the one question; never a caller's own set of codes
+
+
 def statuses(gsis_ids: Iterable[str] | None, season: int | None, week: int | None, *,
              overlay: bool | None = None, stored: Mapping[str, dict] | None = None,
              live: Mapping[str, list[dict]] | None = None) -> dict[str, dict]:

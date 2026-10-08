@@ -143,18 +143,27 @@ def classify(e: dict | None) -> dict:
     season's for an out-indefinitely player)."""
     if e is None:
         return {"status": None, "code": None, "cannot_play": False, "out_indefinitely": False, "doubtful": False,
-                "source": None, "as_of": None, "why": None, "reason": None, "week_words": None, "ros_words": None}
+                "unlikely": False, "p_play": None, "source": None, "as_of": None, "why": None, "reason": None, "week_words": None, "ros_words": None}
     code = e["code"]
     label = LABEL.get(code) or code.title()
     note = f" ({e['note']})" if e.get("note") else ""
     stamp = f" · {e['source']}" + (f", {when(e.get('as_of'))}" if e.get("as_of") else "")
     reason = REASON.get(code)
     return {"status": LABEL.get(code), "code": code, "cannot_play": cannot_play(code),
-            "out_indefinitely": out_indefinitely(code), "doubtful": code in FLAGGED, "source": e.get("source"),
+            "out_indefinitely": out_indefinitely(code), "doubtful": code in FLAGGED,
+            "unlikely": False, "p_play": None,  # PO (Wave I-S): IS-1 fills these (a status that rarely plays); see sits()
+            "source": e.get("source"),
             "as_of": iso(e.get("as_of")), "fetched_at": iso(e.get("fetched_at")), "note": e.get("note"),
             "why": f"{label}{note}{stamp}", "reason": reason,
             "week_words": WEEK_WORDS.format(reason=reason[0].upper() + reason[1:]) if cannot_play(code) and reason else None,
             "ros_words": ROS_WORDS.format(reason=reason[0].upper() + reason[1:]) if out_indefinitely(code) and reason else None}
+
+
+def sits(block: dict | None) -> bool:
+    """PO (Wave I-S): THE question every list, lineup, value and verdict asks of a status block — is he left out this
+    week? True when he cannot play, or (IS-1) when his status rarely plays (``unlikely``). One function so that no
+    caller keeps its own set of codes."""
+    return bool(block) and bool(block.get("cannot_play") or block.get("unlikely"))
 
 
 def out_sentence(name: str, st: dict) -> str:
