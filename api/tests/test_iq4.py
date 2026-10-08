@@ -113,3 +113,37 @@ def test_trade_market_counts_a_bye_players_remaining_weeks(sql, week5):
     pts = {r["player_key"]: float(r["season_points"]) for r in rows}
     for g in (MAHOMES, KELCE, HUBBARD):
         assert pts.get(g, 0) > 0, f"{g} has no rest-of-season market value in the house league"
+
+
+# ---- what we know about the rest of season (ros_grade: one place for the numbers, three screens)
+@needs_db
+def test_the_rest_of_season_sentence_is_on_all_three_answers(client):
+    from league_lab_api import ros_grade as G
+    assert "7.6 points per game (6.4 for next week)" in G.WORDS and "Graded on 2021–2025" in G.WORDS
+    season = client.get("/api/rankings?league=ref:half&view=season&position=QB").json()
+    assert season["ros_grade"]["words"] == G.WORDS and season["ros_grade"]["kd_words"] is None
+    week = client.get("/api/rankings?league=ref:half&view=week&position=QB").json()
+    assert "ros_grade" not in week
+    for league in ("ref:half", SCRUBS):
+        ros = client.get(f"/api/ros?league={league}&position=QB&limit=5").json()
+        assert ros["ros_grade"]["words"] == G.WORDS
+    ros_all = client.get("/api/ros?league=ref:half&position=ALL&limit=5").json()
+    assert ros_all["ros_grade"]["kd_words"] == G.KD_CALC_WORDS
+    calc = client.get(f"/api/trade-calc/free?league=ref:half&give={MAHOMES}&get={HUBBARD}").json()
+    assert calc["ros_grade"]["words"] == G.WORDS and calc["ros_grade"]["kd_words"] is None
+    assert G.QB_LATER_MAE == 7.56 and G.QB_NEXT_WEEK_MAE == 6.44     # METRICS § v3.5 (IQ-1's horizon study)
+
+
+@needs_db
+@pytest.mark.parametrize("pos", ["K", "DEF"])
+def test_kicker_and_defense_rest_of_season_is_off_unless_switched_on(client, monkeypatch, pos):
+    from league_lab_api import ros_grade as G
+    monkeypatch.delenv(G.KD_ROS_ENV, raising=False)
+    r = client.get(f"/api/rankings?league=ref:half&view=season&position={pos}")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["rows"] == [] and d["notice"] == G.KD_WORDS and d["kd_hidden"] is True
+    assert client.get(f"/api/rankings?league=ref:half&view=week&position={pos}").json()["rows"]   # the week stays
+    monkeypatch.setenv(G.KD_ROS_ENV, "on")
+    d = client.get(f"/api/rankings?league=ref:half&view=season&position={pos}").json()
+    assert d["rows"] and not d.get("notice") and d["ros_grade"]["kd_shown"] is True

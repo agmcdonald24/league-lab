@@ -308,6 +308,13 @@ def ros_on_demand(league_id: str, *, exclude_reference: str | None = None) -> tu
     return league, A.ros_table(query, league_id, league, first, last_week, pws, exclude_reference=exclude_reference)
 
 
+# ---- IQ-4 (Wave I-Q): what we know about the rest of season, from the one place (ros_grade)
+def ros_grade_block(position: str | None) -> dict:
+    from . import ros_grade
+    return ros_grade.block([(position or "ALL").upper()], calc=True)      # the list stays: the caveat
+# ---- end IQ-4
+
+
 def ros(league_id: str, position: str = "ALL", limit: int = 50, *, view: str = "points", team: int | None = None,
         who: str = "all") -> dict:
     from .applib import ros as ROS
@@ -327,6 +334,7 @@ def ros(league_id: str, position: str = "ALL", limit: int = 50, *, view: str = "
         df = query(ROS_MART_SQL.format(cols=cols), (league_id, position, position, limit))
         head = df.iloc[0] if not df.empty else None
         return {"league_id": league_id, "source": "database", "position": position,
+                "ros_grade": ros_grade_block(position),                                           # ---- IQ-4
                 "from_week": None if head is None else int(head["from_week"]),
                 "last_week": None if head is None else int(head["last_week"]),
                 "playoff_week_start": None if head is None or _num(head["playoff_week_start"]) is None else int(head["playoff_week_start"]),
@@ -350,6 +358,7 @@ def ros(league_id: str, position: str = "ALL", limit: int = 50, *, view: str = "
         df = df[df["position"] == position]
     df = df.sort_values(["ros_points", "player_key"], ascending=[False, True]).head(limit) if not df.empty else df
     return {"league_id": str(league["league_id"]), "source": "sleeper", "position": position,
+            "ros_grade": ros_grade_block(position),                                               # ---- IQ-4
             "from_week": None if df.empty else int(df["from_week"].iloc[0]),
             "last_week": None if df.empty else int(df["last_week"].iloc[0]),
             "playoff_week_start": None if df.empty or df["playoff_week_start"].iloc[0] is None else int(df["playoff_week_start"].iloc[0]),

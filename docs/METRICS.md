@@ -4776,3 +4776,50 @@ h = 2 … 8, per season, both house leagues together. Per position (K, DEF), the
   has a pooled 2–8 Spearman (mean over the seasons) below **0.15** — an order that weak is not a ranking.
 
 The market week (h = 1) is reported beside it and decides nothing. Names are not a criterion.
+
+**The result** (`iq4_kd_horizon.py`, run at 21:52 ET after the rule above was committed in `db1b640`; one house league
+starts K and DEF — League of Scrubs — so 20 cells a horizon: 5 seasons × 4 as-of weeks; ≥ 8 units a cell):
+
+| | K MAE model | K MAE naive | K Spearman model | K Spearman naive | DEF MAE model | DEF MAE naive | DEF Spearman model | DEF Spearman naive |
+|---|---|---|---|---|---|---|---|---|
+| horizon 1 (the market week) | 3.77 | 4.18 | 0.095 | −0.004 | 4.32 | 5.04 | 0.257 | 0.037 |
+| **pooled 2–8** | **3.75** | **4.14** | **0.028** | **0.016** | **4.78** | **5.30** | **0.040** | **0.033** |
+
+By season (pooled 2–8, Spearman model / naive): K 2021 0.011 / 0.057, 2022 0.038 / 0.008, 2023 0.025 / 0.028, 2024
+−0.006 / −0.016, 2025 0.073 / 0.005; DEF 2021 0.070 / 0.044, 2022 −0.016 / −0.002, 2023 0.011 / −0.026, 2024 0.031 /
+0.083, 2025 0.105 / 0.066. The model's MAE is lower in 5 of 5 seasons at both positions (its level is right: the
+naive number of three to nine games overshoots), its Spearman higher in 3 of 5 — **neither keep nor replace passes:
+"no different"**; and the better pooled Spearman is **0.028 (K) and 0.040 (DEF), far below the 0.15 floor**. Context
+that decides nothing: ranking each unit's points per game over weeks W+2 … W+8 (5+ played) — the list's own claim —
+gives K 0.023 (model) / 0.087 (naive), DEF −0.019 / 0.158. One week out the defense model does order defenses (0.26);
+two weeks out and beyond neither the model nor the naive number orders kickers or defenses.
+
+**Decision (by the rule): take the K / DEF "Rest of season" list off the public screen.** Built behind a switch
+(`api/league_lab_api/ros_grade.py`, `LEAGUE_LAB_KD_ROS`: unset / `off` = Rankings' season view of K and DEF answers
+the sentence "Kickers and defenses: graded on 2021–2025, their order two to eight weeks ahead is no better than
+chance, so they have no rest-of-season ranking here." with no rows; `on` = the list as before). `/ros` and the free
+trade calculator keep their K / DEF numbers (league tools and a trade's value need a number) with the caveat "read
+their numbers as a rough guide". The PO decides the switch's default; nothing in kd1.0 changed. The week view is
+untouched (one week out kd1.0 is graded: METRICS § "Kicker and defense projections").
+
+### What the rest-of-season screens say (IQ-4)
+
+One sentence on Rankings' "Rest of season", `/ros` and the free trade calculator, its numbers in one place
+(`ros_grade.py`, from § "v3.5" above, as of 2026-10-07): "Beyond next week there is no betting line yet. Graded on
+2021–2025, a quarterback projection two to eight weeks ahead misses by about 7.6 points per game (6.4 for next week);
+running backs, receivers and tight ends miss by about 0.2 more than next week." (7.56 and 6.44 are the QB pooled 2–8
+and horizon-1 MAE of v3.5; 0.2 rounds RB 4.70 − 4.52, WR 4.60 − 4.44, TE 3.41 − 3.25.)
+
+### The bye-week bug (IQ-4, 2026-10-07)
+
+nflverse's weekly roster file lists only the teams that play that week. `int_player_week_universe`, `mart_kd_week`
+and `int_pn_player_week_status` read "the newest roster week on or before W" across all teams, so once a bye week's
+file was out (2026 week 5: no KC, no CAR) every player of the teams on a bye dropped out of every later week: no
+projection rows for weeks 6–18, and so no rest of season, no value and no trade price anywhere. Now a team missing
+from the newest file reads its own newest file for the weeks after it (unless the player is on a newer file
+elsewhere); played weeks always have their own file, so history and every training row are unchanged (0 of 109,409
+universe rows read an older file in a played week). On `league_lab_iq4` with nflverse's real 2026 file (week 5: 30
+teams): the universe's KC / CAR rows for weeks 6–18 0 → 41 a week; `project` 20,390 → 21,482 rows; `/api/ros` QB (Half
+PPR and League of Scrubs) 87 quarterbacks from 30 teams → 93 from 32; the guard (`assert_rest_of_season_follows_the_
+market_week`) passes on both boards.
+<!-- ---- end IQ-4 -->
