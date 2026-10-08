@@ -341,6 +341,235 @@ def run_baselines(cache_path: Path, out: Path | None) -> pd.DataFrame:
     return r
 
 
+# ------------------------------------------------------------------------------ the candidates (rule: METRICS § v3.6)
+W_GRID = tuple(round(0.05 * i, 2) for i in range(21))
+PE_KS = (1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0, 256.0)
+PE_LAST = 0.5          # a last-season game's weight in the player effect
+H_CAP = 8              # a week further out than the study takes the 8-week weight
+
+
+def horizon_of(d: pd.DataFrame) -> np.ndarray:
+    """1 for the 1-week board's rows (each week is its own market week), the study's h for the horizon rows."""
+    return np.where(d["kind"].to_numpy() == "board", 1, np.minimum(d["h"].fillna(1).to_numpy(), H_CAP)).astype(int)
+
+
+def naive_lines(d: pd.DataFrame, leagues: dict) -> pd.DataFrame:
+    """``n_<c>``: B1r per component (his per-game line this season and last, shrunk toward his listed role's mean line by
+    games); per S the role means, lambda and k from the scored board rows of the 3 seasons before (lambda and k by the
+    MAE of the priced line, summed over the house scorings)."""
+    out = d.copy()
+    ok = scored(d)
+    board = (d["kind"] == "board").to_numpy()
+    starter = d["pn_qb_starting"].fillna(0).to_numpy(dtype=float) > 0.5
+    g = d["games_to_date"].fillna(0).to_numpy(dtype=float)
+    gp = d["prev_games"].fillna(0).to_numpy(dtype=float)
+    parts = {lid: naive_parts(d, sc) for lid, (_, sc) in leagues.items()}
+    ys = {lid: actual(d, sc) for lid, (_, sc) in leagues.items()}
+    for c in COMPS:
+        out[f"n_{c}"] = np.nan
+    out["naive_lambda"], out["naive_k"] = np.nan, np.nan
+    for s in sorted(d["season"].unique()):
+        if s - 1 < FIRST_CACHE:
+            continue
+        # the 3 seasons before (fewer for 2018-2019, the first seasons after the cache's first: still walk-forward)
+        fit_sel = board & ok & (d["season"] >= max(FIRST_CACHE, s - WINDOW)).to_numpy() & (d["season"] < s).to_numpy()
+        prior = {c: (float(d.loc[fit_sel & starter, f"out_{c}"].mean()), float(d.loc[fit_sel & ~starter, f"out_{c}"].mean())) for c in COMPS}
+        pr_pts = {lid: (float(np.mean(ys[lid][fit_sel & starter])), float(np.mean(ys[lid][fit_sel & ~starter]))) for lid in leagues}
+        best = None
+        for lam in LAMBDAS:
+            for k in KS:
+                e = 0.0
+                for lid in leagues:
+                    pp = parts[lid][fit_sel]
+                    pr = np.where(pp["starter"], *pr_pts[lid])
+                    e += float(np.mean(np.abs(shrunk(pp, pr, lam, k) - ys[lid][fit_sel])))
+                if best is None or e < best[0]:
+                    best = (e, lam, k)
+        _, lam, k = best
+        sel = (d["season"] == s).to_numpy()
+        for c in COMPS:
+            this = d.loc[sel, f"{c}_pg_std"].fillna(0).to_numpy(dtype=float)
+            last = d.loc[sel, f"prev_{c}_pg"].fillna(0).to_numpy(dtype=float)
+            pr = np.where(starter[sel], *prior[c])
+            out.loc[sel, f"n_{c}"] = (g[sel] * this + lam * gp[sel] * last + k * pr) / (g[sel] + lam * gp[sel] + k)
+        out.loc[sel, "naive_lambda"], out.loc[sel, "naive_k"] = lam, k
+    return out
+
+
+def residual_history(d: pd.DataFrame, line: str, leagues: dict) -> pd.DataFrame:
+    """Per row: the sums of his residuals (actual - ``<line>_<c>``, and in points per house scoring) and their weight
+    over his scored board rows of this season before the row's market week and of last season (weight ``PE_LAST``)."""
+    ok = scored(d)
+    b = d[(d["kind"] == "board").to_numpy() & ok].copy()
+    cols = [f"r_{c}" for c in COMPS]
+    for c in COMPS:
+        b[f"r_{c}"] = b[f"out_{c}"].to_numpy(dtype=float) - b[f"{line}_{c}"].to_numpy(dtype=float)
+    for lid, (_, sc) in leagues.items():
+        b[f"rp_{lid}"] = actual(b, sc) - price_cols(b, {c: f"{line}_{c}" for c in COMPS}, sc)
+        cols.append(f"rp_{lid}")
+    b["one"] = 1.0
+    cols.append("one")
+    b["season"], b["week"] = b["season"].astype(int), b["week"].astype(int)
+    per = b.groupby(["gsis_id", "season", "week"])[cols].sum()
+    weeks = list(range(1, 24))
+    cum = {}
+    for c in cols:
+        w = per[c].unstack("week").reindex(columns=weeks).fillna(0.0).cumsum(axis=1).shift(1, axis=1).fillna(0.0)
+        cum[c] = w.stack()
+    cum = pd.DataFrame(cum)
+    cum.index.names = ["gsis_id", "season", "week"]
+    tot = b.groupby(["gsis_id", "season"])[cols].sum()
+    # the market week the row was projected in: its own week (board) or W + 1 (horizon)
+    mw = np.where(d["kind"].to_numpy() == "board", d["week"].to_numpy(dtype=float), d["as_of"].to_numpy(dtype=float) + 1).astype(int)
+    idx = pd.MultiIndex.from_arrays([d["gsis_id"].to_numpy(), d["season"].astype(int).to_numpy(), mw])
+    this = cum.reindex(idx).fillna(0.0).to_numpy()
+    last = tot.reindex(pd.MultiIndex.from_arrays([d["gsis_id"].to_numpy(), d["season"].astype(int).to_numpy() - 1])).fillna(0.0).to_numpy()
+    return pd.DataFrame(this + PE_LAST * last, columns=cols, index=d.index)
+
+
+def player_effect(d: pd.DataFrame, line: str, leagues: dict, out_prefix: str) -> pd.DataFrame:
+    """pe1.0: ``<out_prefix>_<c>`` = max(0, ``<line>_<c>`` + residual sum / (weight + k)); k per S from the scored board rows
+    of the 3 seasons before (the points residual, MAE summed over the house scorings)."""
+    out = d.copy()
+    hist = residual_history(d, line, leagues)
+    ok = scored(d)
+    board = (d["kind"] == "board").to_numpy()
+    base_pts = {lid: price_cols(d, {c: f"{line}_{c}" for c in COMPS}, sc) for lid, (_, sc) in leagues.items()}
+    ys = {lid: actual(d, sc) for lid, (_, sc) in leagues.items()}
+    n = hist["one"].to_numpy()
+    out["pe_k"] = np.nan
+    for c in COMPS:
+        out[f"{out_prefix}_{c}"] = out[f"{line}_{c}"]
+    for s in range(FIRST_HORIZON, max(TESTS) + 1):
+        fit_sel = board & ok & (d["season"] >= max(FIRST_CACHE, s - WINDOW)).to_numpy() & (d["season"] < s).to_numpy()
+        best = None
+        for k in PE_KS:
+            e = sum(float(np.mean(np.abs(base_pts[lid][fit_sel] + hist[f"rp_{lid}"].to_numpy()[fit_sel] / (n[fit_sel] + k)
+                                         - ys[lid][fit_sel]))) for lid in leagues)
+            if best is None or e < best[0]:
+                best = (e, k)
+        k = best[1]
+        sel = (d["season"] == s).to_numpy()
+        for c in COMPS:
+            out.loc[sel, f"{out_prefix}_{c}"] = np.clip(d.loc[sel, f"{line}_{c}"].to_numpy(dtype=float)
+                                                       + hist.loc[sel, f"r_{c}"].to_numpy() / (n[sel] + k), 0, None)
+        out.loc[sel, "pe_k"] = k
+        log.info("pe1.0 %s (%s): k %.0f", s, line, k)
+    return out
+
+
+def horizon_blend(d: pd.DataFrame, line: str, leagues: dict, out_prefix: str, market_week: bool) -> pd.DataFrame:
+    """hb1.0 / hb1.1: ``<out_prefix>_<c>`` = (1 - w_h) ``<line>_<c>`` + w_h ``n_<c>``; w_h per S and horizon from the scored
+    rows of the 3 seasons before (h >= 2: the horizon rows; h = 1, hb1.1 only: the board rows), grid 0-1 by 0.05, the
+    MAE of the priced line summed over the house scorings. hb1.0 leaves h = 1 (the board, the market week) as it is."""
+    out = d.copy()
+    ok = scored(d)
+    h = horizon_of(d)
+    board = (d["kind"] == "board").to_numpy()
+    lp = {lid: price_cols(d, {c: f"{line}_{c}" for c in COMPS}, sc) for lid, (_, sc) in leagues.items()}
+    npx = {lid: price_cols(d, {c: f"n_{c}" for c in COMPS}, sc) for lid, (_, sc) in leagues.items()}
+    ys = {lid: actual(d, sc) for lid, (_, sc) in leagues.items()}
+    for c in COMPS:
+        out[f"{out_prefix}_{c}"] = out[f"{line}_{c}"]
+    weights = {}
+    for s in TESTS:
+        ws = {}
+        for hh in range(1 if market_week else 2, H_CAP + 1):
+            src = board if hh == 1 else (~board & (h == hh))
+            fit_sel = src & ok & (d["season"] >= s - WINDOW).to_numpy() & (d["season"] < s).to_numpy()
+            best = None
+            for w in W_GRID:
+                e = sum(float(np.mean(np.abs((1 - w) * lp[lid][fit_sel] + w * npx[lid][fit_sel] - ys[lid][fit_sel]))) for lid in leagues)
+                if best is None or e < best[0]:
+                    best = (e, w)
+            ws[hh] = best[1]
+        weights[s] = ws
+        for hh, w in ws.items():
+            sel = (d["season"] == s).to_numpy() & (h == hh)
+            if hh == 1:
+                sel &= board | (d["h"].fillna(0).to_numpy() == 1)
+            for c in COMPS:
+                out.loc[sel, f"{out_prefix}_{c}"] = (1 - w) * d.loc[sel, f"{line}_{c}"].to_numpy(dtype=float) + w * d.loc[sel, f"n_{c}"].to_numpy(dtype=float)
+        log.info("%s %s weights by horizon: %s", out_prefix, s, ws)
+    out.attrs[f"{out_prefix}_weights"] = weights
+    return out
+
+
+def judge(r: pd.DataFrame, cand: str, base: str = "B0") -> dict:
+    """The rule's clauses 1, 2 and 4 (clause 3, the ranges, is ``ranges``)."""
+    res = {}
+    bb, bc = board_seasons(r, base), board_seasons(r, cand)
+    changed = int((r.loc[r["kind"] == "board", cand] - r.loc[r["kind"] == "board", base]).abs().gt(1e-9).sum())
+    dm, ds = bc["mae"] - bb["mae"], bc["spearman"] - bb["spearman"]
+    per = pd.DataFrame({"position": "QB", "season": bb.index, "delta_mae": dm.to_numpy(), "delta_spearman": ds.to_numpy()})
+    dec = E.decide(per).iloc[0]
+    c1 = changed == 0 or (int((dm < 0).sum()) >= 4 and ds.mean() > 0 and not dec["hurts"])
+    hb, hc = horizon_seasons(r, base), horizon_seasons(r, cand)
+    hm, hs = hc["mae"] - hb["mae"], hc["spearman"] - hb["spearman"]
+    c2 = int((hm < 0).sum()) >= 4 and hs.mean() > 0
+    res.update({"cand": cand, "board_cells_changed": changed, "board_dmae": dm, "board_dsp": ds, "decide": dec["decision"],
+                "decide_hurts": bool(dec["hurts"]), "c1": bool(c1), "hz_dmae": hm, "hz_dsp": hs, "c2": bool(c2),
+                "board": bc, "hz": hc})
+    return res
+
+
+def print_judgement(j: dict) -> None:
+    print(f"\n### {j['cand']}\n")
+    print("| season | 1 wk MAE | Δ | ρ | Δ | 2–8 MAE | Δ | ρ | Δ |\n|---|---|---|---|---|---|---|---|---|")
+    for s in j["board"].index:
+        print(f"| {s} | {j['board'].loc[s, 'mae']:.3f} | {j['board_dmae'].loc[s]:+.3f} | {j['board'].loc[s, 'spearman']:.3f} | "
+              f"{j['board_dsp'].loc[s]:+.4f} | {j['hz'].loc[s, 'mae']:.3f} | {j['hz_dmae'].loc[s]:+.3f} | "
+              f"{j['hz'].loc[s, 'spearman']:.3f} | {j['hz_dsp'].loc[s]:+.4f} |")
+    print(f"| mean | {j['board']['mae'].mean():.3f} | {j['board_dmae'].mean():+.3f} | {j['board']['spearman'].mean():.3f} | "
+          f"{j['board_dsp'].mean():+.4f} | {j['hz']['mae'].mean():.3f} | {j['hz_dmae'].mean():+.3f} | {j['hz']['spearman'].mean():.3f} | "
+          f"{j['hz_dsp'].mean():+.4f} |")
+    print(f"\n1 week: {j['board_cells_changed']} board cells changed; MAE lower in {int((j['board_dmae'] < 0).sum())} of 5, "
+          f"Spearman higher in {int((j['board_dsp'] > 0).sum())} of 5; decide: {j['decide']} (hurts {j['decide_hurts']}) "
+          f"-> clause 1 {'passes' if j['c1'] else 'fails'}")
+    print(f"2-8 weeks: MAE lower in {int((j['hz_dmae'] < 0).sum())} of 5, Spearman higher in {int((j['hz_dsp'] > 0).sum())} of 5, "
+          f"mean Δ Spearman {j['hz_dsp'].mean():+.4f} -> clause 2 {'passes' if j['c2'] else 'fails'}")
+
+
+def run_candidates(cache_path: Path, out: Path | None) -> None:
+    d = pd.read_parquet(cache_path)
+    with psycopg.connect(get_settings().pipeline_dsn()) as conn:
+        leagues = P.league_scorings(conn)
+    d = b0_lines(d, pt_fits(d))
+    d = naive_lines(d, leagues)
+    d = player_effect(d, "v", leagues, "pe")          # the residual history reads the 2017 rows too
+    d = d[d["season"] >= FIRST_HORIZON].reset_index(drop=True)      # rows with a naive line and a player effect (2018 on)
+    d = horizon_blend(d, "v", leagues, "hb0", market_week=False)
+    d = horizon_blend(d, "v", leagues, "hb1", market_week=True)
+    d = horizon_blend(d, "pe", leagues, "pehb", market_week=False)
+    names = {"hb0": "hb1.0", "hb1": "hb1.1", "pe": "pe1.0", "pehb": "pe1.0 + hb1.0"}
+    parts = []
+    for lid, (_, sc) in leagues.items():
+        r = d[["gsis_id", "player_name", "season", "week", "kind", "as_of", "h", "target_week", "played", "pn_qb_starting"]].copy()
+        r["league_id"], r["actual"], r["ok"] = lid, actual(d, sc), scored(d)
+        r["B0"] = price_cols(d, {c: f"v_{c}" for c in COMPS}, sc)
+        for k, name in names.items():
+            r[name] = price_cols(d, {c: f"{k}_{c}" for c in COMPS}, sc)
+        parts.append(r)
+    r = pd.concat(parts, ignore_index=True)
+    if out is not None:
+        r.to_parquet(out)
+        d[["gsis_id", "season", "week", "kind", "as_of", "h", *[f"{k}_{c}" for k in ("v", "n", *names) for c in COMPS]]].to_parquet(
+            out.with_name(out.stem + "_lines.parquet"))
+    print("\n### B0 (v3.5) on these rows\n")
+    print(table({"B0 1 wk": board_seasons(r, "B0"), "B0 2-8": horizon_seasons(r, "B0")}))
+    verdicts = {}
+    for name in names.values():
+        j = judge(r, name)
+        print_judgement(j)
+        verdicts[name] = j
+    print("\n### By horizon (seasons averaged, both scorings)\n")
+    print(pd.concat({c: by_h(r, c) for c in ["B0", *names.values()]}, axis=1).round(3).to_string())
+    print("\n### Listed starters only, 2-8 weeks (information)\n")
+    st = r[r["pn_qb_starting"].fillna(0).gt(0.5)]
+    print(table({c: horizon_seasons(st, c) for c in ["B0", *names.values()]}))
+    print("\nverdicts (clauses 1 and 2; 3 = ranges, 4 = QB only):", {k: (v["c1"], v["c2"]) for k, v in verdicts.items()})
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("mode", choices=["cache", "baselines", "candidates"])
@@ -353,7 +582,7 @@ def main() -> None:
     elif args.mode == "baselines":
         run_baselines(args.cache, args.out)
     else:
-        raise SystemExit("candidates: added after the keep rule is committed")
+        run_candidates(args.cache, args.out)
 
 
 if __name__ == "__main__":
