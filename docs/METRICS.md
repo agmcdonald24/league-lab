@@ -3885,6 +3885,73 @@ rule): the per-dropback record as inputs (db1.0), rushing as its own input. **"C
 least **0.53** (half-way from 0.473 to the 1-week 0.596) with the 1-week Spearman not below 0.596. The oracle above
 (0.552 with knowledge of the target week's role) says that is near the ceiling.
 
+**The candidates against the rule** (`iq3_qb.py candidates`, then `ranges`; Δ = candidate − B0, both house scorings):
+
+| candidate | 1 wk: cells changed; Δ MAE by season | 1 wk: lower / Δ ρ mean (higher) | 2–8 wks: Δ MAE by season | 2–8: lower / Δ ρ mean (higher) | decision |
+|---|---|---|---|---|---|
+| **hb1.0** | **0 cells** | — (nothing moved: decide reads drop, hurts False) | **−0.391 / −0.308 / −0.006 / −0.004 / −0.060** | **5 of 5 / +0.0216 (3 of 5)** | **kept, ships** |
+| hb1.1 | 14,977; −0.017 / +0.010 / +0.012 / −0.016 / +0.066 | 2 of 5 / +0.0023 (4 of 5) | as hb1.0 | 5 of 5 / +0.0216 | drop (clause 1) |
+| pe1.0 | 19,811; −0.067 / +0.005 / −0.037 / −0.022 / +0.019 | 3 of 5 / +0.0010 (2 of 5) | −0.106 / +0.056 / −0.060 / +0.030 / +0.036 | 2 of 5 / +0.0102 | drop (clauses 1, 2) |
+| pe1.0 + hb1.0 | as pe1.0 | 3 of 5 / +0.0010 | −0.393 / −0.310 / −0.007 / +0.000 / −0.043 | 4 of 5 / +0.0209 | drop (clause 1) |
+
+hb1.0 pooled 2–8: MAE 7.560 → **7.406**, Spearman 0.473 → **0.495** (by season 0.519 / 0.533 / 0.518 / 0.478 / 0.426;
+2023 −0.0008 and 2024 −0.0011, the other three higher). By horizon (B0 → hb1.0): h2 7.21 / 0.536 → 7.18 / 0.544; h3
+6.89 / 0.492 → 6.77 / 0.527; h4 7.44 / 0.478 → 7.39 / 0.471; h5 7.59 / 0.489 → 7.40 / 0.523; h6 7.89 / 0.442 → 7.71 /
+0.466; h7 7.84 / 0.437 → 7.54 / 0.471; h8 8.07 / 0.440 → 7.87 / 0.462. Listed starters only (information), 2–8 weeks:
+Spearman 0.237 → 0.286. The weights it fitted (per season, h 2 … 8): 2021 1.0 / 1.0 / 1.0 / 1.0 / 0.95 / 0.85 / 0.9;
+2025 0.45 / 0.65 / 0.55 / 0.8 / 0.75 / 1.0 / 1.0; for 2026 (fitted on 2023–2025): **0.0 / 0.5 / 0.2 / 0.35 / 0.55 /
+0.95 / 0.75** (λ 0.25, k 6) — the week right after the market week keeps the model's line. The ranges (clause 3,
+production path, coverage of the 80 % range, 2021–2025): 1 week 78.4 % (Half PPR) / 78.5 % (dynasty), unchanged by
+hb1.0 (it does not touch the market week): **holds**; 2–8 weeks (reported) 71.9 % / 71.2 % → 73.4 % / 72.3 %, the 50 %
+range 44.7 % / 44.5 % → 45.5 % / 45.6 % — the ranges are too narrow further out with or without hb1.0 (they are
+calibrated a week ahead). Clause 4: QB only (RB / WR / TE 0 cells, below). The production function
+(`calibration.fit_horizon_weights`) reproduces the study's weights exactly for 2024 and 2025.
+
+**How far it got.** "Cured" (pooled 2–8 Spearman ≥ 0.53 with the 1-week 0.596 kept): **not reached** — 0.495, about two
+fifths of the way (0.473 → 0.495 of 0.473 → 0.53). The ceiling says why: an oracle that knew each QB's season mean in the
+target week's own role reaches 0.552 two to eight weeks out (on its rows, where B0 reads 0.456 and B2 0.482); one week
+out the model is already past that oracle. What is left between 0.495 and the oracle is what the oracle knows and a
+forecast cannot: who starts in week T (injuries, benchings) and the season's level, which the early weeks only hint at
+(not split here).
+
+**In production** (`calibration.horizon_blend_lines`, called by `projections.project` after pt1.0 and before the
+cold-start blend; `LEAGUE_LAB_QB_HORIZON_BLEND`, unset = on, `0` = v3.5's later weeks; `MODEL_VERSION` **v3.6**,
+hb1.0): the naive line's λ, k and role means from the scored QB rows of the 3 seasons before; the weights from those
+seasons' horizon rows (`calibration.horizon_rows`, the same construction as the study's: the market-week row, the
+future opponent as of W, the team's own line shrunk by 3 games), with the walk-forward QB component models pt1.0 already
+fits (`walk_forward_models`, shared: no extra fit, about 2 s). A QB row of a week after the market week moves to
+(1 − w_h) × its line + w_h × his naive line, then is priced and ranged from the new line by the same models (the
+frozen-line path), so `ops.projection_lines`, `ops.projections`, `ops.projection_ranges` and every request price one
+number. The market week and played weeks are never touched; nor is any other position. Also in v3.6 (no number moves on
+a season's batch): `projections._matrix` keeps NaN (it turned a column unknown in the whole batch into 0 for
+prediction too, so a batch of later weeks alone read "implied total 0"); the fits zero such a column themselves.
+
+**The 2026 board** (`league_lab_im1`, a full `project`, v3.5 → v3.6): weeks 1–4 frozen **0 cells changed**
+(`ops.projections` 4,856 rows, `projection_lines` 2,396, `projection_ranges` 11,980); week 5, the market week, **0
+cells**; weeks 6–18 RB / WR / TE / K / DEF 0 cells; QB weeks 7–18 moved (1,061 lines; week 6, h = 2, has weight 0).
+Top 24 by week 5, correlation (Pearson / rank) with the weeks 6–18 mean: Half PPR QB 0.60 / 0.60 → **0.60 / 0.53**,
+dynasty QB 0.57 / 0.58 → 0.52 / 0.46; RB / WR / TE / K / DEF unchanged. Rest of season (weeks 5–18), Half PPR: Allen #3
+→ #1 (241.6 → 267.9), Purdy #9 → #4, Hurts #17 → #10, Bryce Young #31 → #20, Tyler Shough #22 → #12, C.J. Stroud #7 →
+#14, Kyler Murray #4 → #23 (238.3 → 204.1: his later weeks 17–20 → 14–16; 7.8 points per game in his three 2026 games,
+16.2 in five last season).
+These are evidence, not the criterion. The nightly's projection-marts selection with the guard: **PASS 147, WARN 1**:
+
+**The guard warns** (`assert_rest_of_season_follows_the_market_week`, QB floor 0.55): the reference league's QB reads
+0.53. The floor came from IQ-1's stability run, whose market week had no pt1.0 (the live one has it). On the live
+footing (the market week with pt1.0, 20 season × W cells 2021–2025, `iq3_qb.py` lines): Half PPR v3.5 mean 0.69,
+lowest 0.29, 1 cell below 0.55; v3.6 mean 0.66, lowest 0.47, 2 below; dynasty v3.5 0.62 / 0.26 / 6 below, v3.6 0.66 /
+0.42 / 2 below. v3.6 lowers the agreement on this week's board and raises the floor of the study's; the guard's
+floor is the PO's call (a QB floor of 0.45 sits below every v3.6 cell); it is left at 0.55 here.
+
+**What the first nightly does once because of v3.6**: `backtests` runs `backtest-v2` (no rows for v3.6; it measures
+the market week, which v3.6 does not change), `calibration-oof` rebuilds `ops.calibration_oof` (about 2–3 CPU-minutes),
+`project` recomputes the importance once (2 minutes here). No new table, no new step, no `scripts/nightly.sh` line.
+
+**Not run** (left for the next package): the per-dropback record as inputs (EPA, pass-TD, sack and interception rates
+per dropback, empirical-Bayes shrunk), rushing as its own input (designed runs and scrambles), a model class with a
+player effect (pe1.0, a residual player effect on the trees, was the light version: it did not pass), the team's pass
+rate and pace for weeks without a line.
+
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
 **Why.** A projected line is a set of means. A linear rule (points per yard, per catch, per TD) prices a mean
