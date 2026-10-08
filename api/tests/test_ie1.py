@@ -232,13 +232,15 @@ def test_the_dial_is_the_effect_on_their_starters(client):
     assert i["title"] == "Effect on their starters" and i["label"] in EFFECT
     assert i["label"] == decisions.effect_label(e["fit"]["window"]["theirs"]) and i["their_gain"] == e["fit"]["window"]["theirs"]
     assert "interest" not in i["caption"] and "say no" not in i["label"].lower()
-    assert i["need"] is None                 # the Bears QB does not start for them (the Panthers QB does): no need claimed
+    # IR-2: the line pairs the players of each slot that changes for them (their team QB leaves: the Panthers QB comes
+    # off their bench into it; Rice leaves: his WR/TE goes to the next man) — never the Bears QB, who does not start
+    assert i["need"] and "Bears QB" not in i["need"] and "at their team QB in place of" in i["need"]
     # Madeyes Revenge's Rice to Knight Train for the Bengals QB (the Finder's lead for team 12): the need Rice fills there
     e = client.post("/api/trades/evaluate", json={"league": KEY, "team": 12, "partner": 1, "give": ["10229"],
                                                   "get": ["mfl:0656"]}).json()
     print("need:", e["interest"])
-    assert e["interest"]["need"] and e["interest"]["need"].startswith(("starts at their WR/TE", "fills their", "takes over their"))
-    assert "Rice" not in e["interest"]["need"]
+    assert e["interest"]["need"] and e["interest"]["need"].startswith("puts ") and " at their " in e["interest"]["need"]  # IR-2
+    assert "Rice at their WR/TE in place of Egbuka" in e["interest"]["need"]     # IR-2: the slot's two players
     p = client.get(f"/api/trades/partners?league={KEY}&team=8").json()
     assert {r["interest"]["label"] for r in p["partners"]} <= set(EFFECT)
 

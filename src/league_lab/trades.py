@@ -966,6 +966,14 @@ def fill_empty(pool: Sequence[Player], slots: Sequence[str], free: Sequence[Play
     """(the best lineup's total with each EMPTY starting slot filled from ``free`` — one week's free agents, best first —,
     the ids of the free agents used). Only empty slots are filled: a free agent better than a rostered starter is a
     waiver move (the alternatives), not coverage. An empty slot no free agent can fill stays empty (0)."""
+    lu, used = fill_lineup(pool, slots, free, exclude)
+    return lu.total, used
+
+
+def fill_lineup(pool: Sequence[Player], slots: Sequence[str], free: Sequence[Player],
+                exclude: Iterable[str] = ()) -> tuple[Lineup, tuple[str, ...]]:
+    """``fill_empty``'s lineup itself (IR-2: the explanations read its slots): (the best lineup with the empty starting
+    slots filled from ``free``, the ids of the free agents in it)."""
     lu = solve(list(pool), slots, margins=False)
     gone = {str(x) for x in exclude} | {p.id for p in pool}
     used: list[str] = []
@@ -986,7 +994,7 @@ def fill_empty(pool: Sequence[Player], slots: Sequence[str], free: Sequence[Play
             used.pop()
             break
         lu = nxt
-    return lu.total, tuple(used)
+    return lu, tuple(used)
 
 
 @dataclass(frozen=True)
@@ -1002,6 +1010,8 @@ class Covered:
     starting: tuple[tuple[str, ...], ...] = ()    # per week: the incoming players who start after the trade
     empty_after: tuple[tuple[str, ...], ...] = ()  # per week: starting slots no rostered player fills after (uncovered)
     empty_before: tuple[tuple[str, ...], ...] = ()
+    lineup_before: Lineup | None = None            # ---- IR-2: the first week's lineups, free-agent fills included
+    lineup_after: Lineup | None = None
 
     @property
     def by_week(self) -> tuple[float, ...]:
@@ -1017,24 +1027,95 @@ class Covered:
 
 
 def covered_side(board: RosterBoard, roster: int, out: Sequence[str], inc: Sequence[str], weeks: Sequence[int],
-                 free: Mapping[int, Sequence[Player]], market: Mapping[str, float] | None = None) -> Covered:
-    """Before / after per week for one roster (``evaluate``'s pools and cuts) with the empty slots covered."""
+                 free: Mapping[int, Sequence[Player]], market: Mapping[str, float] | None = None, *,
+                 taken_before: Sequence[Iterable[str]] | None = None,
+                 taken_after: Sequence[Iterable[str]] | None = None) -> Covered:
+    """Before / after per week for one roster (``evaluate``'s pools and cuts) with the empty slots covered.
+    IR-2: ``taken_before`` / ``taken_after`` (per week) are free agents another roster already uses in the same state
+    of the league (``covered_pair``): one free agent is never counted for two teams in the same week."""
     pools, lineups, cuts, _ = _after(board, roster, out, inc, weeks, market)
     before, after, fb, fa, st, em, eb = [], [], [], [], [], [], []
+    lus: list[Lineup | None] = [None, None]
     incs = set(inc)
     for h, w in enumerate(weeks):
         fw = free.get(int(w), ())
-        b, ub = fill_empty(board.pool(roster, w), board.slots, fw)
-        a, ua = fill_empty(pools[h], board.slots, fw)
-        before.append(b)
-        after.append(a)
+        lb, ub = fill_lineup(board.pool(roster, w), board.slots, fw, taken_before[h] if taken_before else ())
+        la, ua = fill_lineup(pools[h], board.slots, fw, taken_after[h] if taken_after else ())
+        if h == 0:
+            lus = [lb, la]
+        before.append(lb.total)
+        after.append(la.total)
         fb.append(ub)
         fa.append(ua)
         st.append(tuple(p for p in lineups[h].starter_ids if p in incs))
         em.append(tuple(lineups[h].empty_slots))
         eb.append(tuple(solve(board.pool(roster, w), board.slots, margins=False).empty_slots))
     return Covered(int(roster), tuple(int(w) for w in weeks), tuple(before), tuple(after), tuple(fb), tuple(fa), tuple(cuts),
-                   tuple(st), tuple(em), tuple(eb))
+                   tuple(st), tuple(em), tuple(eb), lus[0], lus[1])
+
+
+# ---- IR-2 (Wave I-R, the dependability review's P0 1 and 2): one basis for the whole verdict, and explanations from the
+# slots themselves. `covered_pair` prices both rosters of a package on the replacement frame with one free agent never
+# counted for both teams in the same week (the roster earlier in the league's order fills first, in every state of the
+# league, so the answer does not depend on whose side the calculator is read from); `slot_changes` lists, slot by slot,
+# who starts there before and after (the after lineup re-seated to keep every player where he was when it can:
+# `lineup._reseat`), so a sentence pairs the players of the same slot — and a FLEX cascade is a chain of slots — never
+# the first incoming starter with the first outgoing one.
+def covered_pair(board: RosterBoard, me: int, give: Sequence[str], get: Sequence[str], weeks: Sequence[int],
+                 free: Mapping[int, Sequence[Player]], market: Mapping[str, float] | None = None) -> tuple[Covered, Covered]:
+    """(my side, their side) on the replacement frame; ``give`` is ``me``'s, ``get`` the other roster's."""
+    me = int(me)
+    them = _owner(board, _ids(get), "get")
+    order = sorted((me, them))
+    sides: dict[int, Covered] = {}
+    first = order[0]
+    out1, in1 = (give, get) if first == me else (get, give)
+    sides[first] = covered_side(board, first, out1, in1, weeks, free, market)
+    c1 = sides[first]
+    second = order[1]
+    out2, in2 = (give, get) if second == me else (get, give)
+    sides[second] = covered_side(board, second, out2, in2, weeks, free, market,
+                                 taken_before=c1.fills_before, taken_after=c1.fills_after)
+    return sides[me], sides[them]
+
+
+def slot_changes(before: Lineup | None, after: Lineup | None, slots: Sequence[str]) -> list[dict]:
+    """The starting slots whose player changes from ``before`` to ``after`` (one week's lineups of one roster), in chain
+    order: [{slot, slot_type, in, out, in_from, out_to}] — ``in`` / ``out`` the player ids (None: the slot is empty
+    after / was empty before), ``in_from`` the slot label the incoming player held before (None: he was not starting),
+    ``out_to`` the slot the outgoing player holds after (None: he no longer starts). A chain starts where a player enters
+    the lineup and follows the player he displaces from slot to slot."""
+    from .lineup import _reseat, parse_slots
+    if before is None or after is None:
+        return []
+    slot_list, _ = parse_slots(slots)
+    by_label = {s.label: s for s in slot_list}
+    seat_b = {s.player.id: s.slot.label for s in before.starts if s.player is not None}
+    fixed = {s.player.id: s.slot.label for s in after.starts if s.player is not None and s.locked}
+    seat_a = _reseat([s.player for s in after.starts if s.player is not None], slot_list, fixed, seat_b)
+    occ_b = {lab: pid for pid, lab in seat_b.items()}
+    occ_a = {lab: pid for pid, lab in seat_a.items()}
+    changed = {}
+    for s in slot_list:
+        x, y = occ_a.get(s.label), occ_b.get(s.label)
+        if x == y:
+            continue
+        changed[s.label] = {"slot": s.label, "slot_type": s.type, "in": x, "out": y,
+                            "in_from": seat_b.get(x) if x is not None else None,
+                            "out_to": seat_a.get(y) if y is not None else None}
+    out: list[dict] = []
+    seen: set[str] = set()
+    heads = [lab for lab, c in changed.items() if c["in_from"] is None]
+    for lab in [*heads, *[k for k in changed if k not in heads]]:
+        cur = lab
+        while cur is not None and cur in changed and cur not in seen:
+            seen.add(cur)
+            out.append(changed[cur])
+            cur = changed[cur]["out_to"]
+    for c in out:
+        c["order"] = by_label[c["slot"]].order
+    return out
+# ---- end IR-2
 
 
 def covered_move(board: RosterBoard, roster: int, add: Mapping[int, Player | None] | None, drop: str | None,
@@ -1251,3 +1332,5 @@ def week_story(weeks, by_week, span: str | None, *, this_week: int | None = None
 
 __all__ += ["week_story"]
 # ---- end II-0
+
+__all__ += ["covered_pair", "fill_lineup", "slot_changes"]          # ---- IR-2

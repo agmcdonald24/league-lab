@@ -5158,3 +5158,37 @@ Andrew, 2026-10-08: De'Von Achane (IR, torn ACL) was the 21st running back on Ra
   record set to 0 and the overlay has cleared since is listed as "no number until the next update" (never ranked at 0).
 * **Graded**: not a forecast — a rule. The check: `dbt/tests/assert_nobody_who_cannot_play_is_projected.sql` (the
   stored board against the directory, the live week and later) and the audit's first rule.
+<!-- ---- IR-2 -->
+### One trade verdict (ct1.1, IR-2, Wave I-R, 2026-10-08; `decisions.ir2_decision`, `trades.covered_pair`, `trades.slot_changes`)
+
+The dependability review (2026-10-07/08, P0 1 and 2) found the calculator's dial, tiles and headline on the roster's own
+lineup (an empty slot counted 0) and its "Worth proposing?" card on the covered frame (ct1.0): on the Folk package the
+top said "Improves it a lot" and the card that their starters lose. **One basis now feeds every primary number**: the
+replacement basis (the covered frame of ct1.0) against each team's best waiver move.
+
+* **The decision** (`decision` on `POST /api/trades/evaluate`): both sides' before / after per week and in total, the
+  gains (this week, the window, by week), the dial (their window gain, its label from that number), the verdict and the
+  headline (`trades.verdict` read on these gains), the week strip and the story, the alternative (the claim re-priced on
+  the same basis: `covered_move`, never below standing pat), the recommendation (`credible`: both sides beyond their own
+  alternative by `CREDIBLE_MARGIN`, plausible, legal — and the alternative line beaten), the slot changes, the depth, the
+  assumed pickups. The legacy top-level fields (`fit`, `before`, `after`, `interest`, `verdict`, `headline`, `strip`,
+  `story`, `effect_words`, `alternative_words`, `beats_alternative`, `starters_in` / `_out`, `backup_words`,
+  `hold_words`, `lineups.*.total`) are **copies** of it (`ir2_apply`). This-week numbers in the playoffs window: the
+  this-week frame (`ii1_frame(…, "week")`).
+* **One free agent, one team** (`covered_pair`): in each state of the league (before, after) the roster earlier in the
+  league's order fills its empty slots first and the other team's fills exclude those players, week by week — so the
+  answer is the same whichever side asks. Other teams of the league are not modelled: the pickups are said to be
+  assumed, not sure (another team can add him first; on waivers a claim can be lost), and the bench spot a pickup takes
+  on a full roster is not charged (said).
+* **The roster-only result** (`decision.unfilled`: empty slots counted 0) is a separately labelled explanation, never
+  the verdict. The other screens' lineup totals (My Week, Waivers, Team) are that number; the calculator's basis total is
+  it plus the named pickups' projections (`api/tests/test_ib0.py`).
+* **Explanations by slot** (`slot_changes`): the after lineup is re-seated to keep every player where he was
+  (`lineup._reseat`); each changed slot pairs its two players, a chain starts where a player enters the lineup and
+  follows the player he displaces (the FLEX cascade). Never the first incoming starter with the first outgoing one.
+* **Depth, one definition** (`ir2_depth`, read by the backup line and the card): for each player a side loses who does
+  not start this week, the players left at his position on the bench after the trade who can play that week, and —
+  named separately — those who cannot (a bye, injured reserve, the IR slot, the taxi squad). Players a side gets who do
+  not start join its bench (the backup line).
+* Not graded: the verdict's accuracy (IR-4's grade of the useful decision is the number that answers it).
+<!-- ---- end IR-2 -->

@@ -22,6 +22,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   (refuses to price him), Compare, DFS and the matchup board apply it at request time and list him under "Not
   playing" with his status, its source and time. The audit's first rule counts who cannot play and is still ranked;
   `assert_nobody_who_cannot_play_is_projected` checks the stored board.
+- **IR-2 — one trade verdict.** The trade calculator's dial, tiles, week table, headline, alternative and
+  recommendation now read one answer on one basis — against realistic replacements: an empty starting slot is filled
+  with the best free agent for that week, for both teams, never the same free agent for both — and say so; the
+  roster-only result is a labelled explanation ("If empty slots were left empty"). Sentences pair the two players of the
+  same slot ("puts Folk at their K in place of Reichard"), a FLEX move is a chain, and depth has one definition (who can
+  play that week; who cannot, named). docs/METRICS.md § "One trade verdict", docs/handbacks/IR-2.md.
 
 ## 2026-10-08 — Wave I-Q
 

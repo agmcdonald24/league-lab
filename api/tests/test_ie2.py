@@ -144,7 +144,7 @@ def test_the_full_package_names_both_assets_in_the_lineup_story(client):
     assert {x["player_name"] for x in d["give"]} == {"Houston Texans QB", "Bhayshul Tuten"}
     out = {x["player"]["player_name"]: x["why"] for x in d["starters_out"]}
     assert out.get("Houston Texans QB") == "traded"
-    assert "Texans QB goes to Madeyes Revenge" in d["lineup_words"]
+    assert "in place of Houston Texans QB (traded)" in d["lineup_words"]          # IR-2: slot by slot
     lu = d["lineups"]["mine"]
     assert round(sum(r["change"] or 0 for r in lu["slots"]) + sum(r["change"] for r in lu["out"]), 2) == d["fit"]["this_week"]["mine"]
     print(f"\n70587 8<->12 Houston QB + Tuten for Rice: this week {d['fit']['this_week']}, window {d['fit']['window']}; "
