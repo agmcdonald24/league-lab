@@ -127,6 +127,7 @@ def test_mfl_team_qb_unit_of_a_flagged_team(flags):
     kick = {"gsis_id": None, "position": "TMPK", "player_name": "Seattle Seahawks K", "team": "SEA"}
     cv = P.caveats_for([unit, kick], 2026, 5)
     assert len(cv) == 1 and cv[0]["kind"] == "starter_unclear" and cv[0]["players"] == ["Tampa Bay Buccaneers QB"]
+    assert P._team("LAR") == "LA" and P._team(" tb ") == "TB"           # the Rams: the schedule's "LA", MFL's "LAR"
 
 
 def test_flags_failing_never_cost_the_decision(monkeypatch):

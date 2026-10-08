@@ -85,7 +85,7 @@ def test_without_the_table_every_key_is_quiet(rec):
     from league_lab_api import context_record as CR
     rec["exists"] = False
     s = CR.summary()
-    assert set(s) == {"corner", "worth", "trend", "role"}
+    assert set(s) == {"corner", "worth", "trend", "role", "horizon"}   # IR-4: + horizon
     assert not any(s[k]["graded"] for k in s) and s["trend"]["head"] is None
     CR.clear()
     rec["exists"], rec["boom"] = True, True

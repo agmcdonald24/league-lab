@@ -252,6 +252,15 @@ def _last(name: str) -> str:
     return starters.last_name(name)
 
 
+TEAM_ALIASES = {"LAR": "LA", "JAC": "JAX", "WSH": "WAS", "LVR": "LV", "OAK": "LV", "SD": "LAC", "STL": "LA"}
+
+
+def _team(t) -> str:
+    """One spelling of a team code (the schedule writes the Rams "LA"; MFL and Sleeper write "LAR")."""
+    s = str(t or "").strip().upper()
+    return TEAM_ALIASES.get(s, s)
+
+
 def _who(p: Mapping) -> str:
     return str(p.get("player_name") or p.get("name") or p.get("gsis_id") or "this player")
 
@@ -268,13 +277,13 @@ def caveats_for(players: Iterable[Mapping], season, week) -> list[dict]:
         return []
     if not unc and not cor:
         return []
-    by_team_unc = {str(v.get("team")): v for v in unc.values()}
-    by_team_cor = {str(v.get("team")): v for v in cor.values()}
+    by_team_unc = {_team(v.get("team")): v for v in unc.values()}
+    by_team_cor = {_team(v.get("team")): v for v in cor.values()}
     out: dict[tuple[str, str], dict] = {}
     for p in players or []:
         pos = str(p.get("position") or "").upper()
         gid = p.get("gsis_id")
-        team = str(p.get("team") or "")
+        team = _team(p.get("team"))
         if pos == "QB" and gid:
             u, c = unc.get(str(gid)), cor.get(str(gid))
         elif pos in UNIT_POSITIONS and team:
