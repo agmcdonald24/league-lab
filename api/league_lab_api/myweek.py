@@ -166,6 +166,18 @@ def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
         if not x["gsis_id"] and x["player_name"]:
             x["team"] = team_no_id.get(x["player_name"])
     # ---- end IC-2
+    # ---- IS-2 (Wave I-S): the reason beside the zero — a player the one definition leaves out this week (the stored
+    # board already carries his 0) shows his status, its source and date ("IR (knee - acl) · Sleeper, Sep 28"),
+    # never a bare 0; the overlay's own chip and reason, when it set one, stay
+    from . import league_gate as LG
+    gate = LG.blocks([x["gsis_id"] for x in full if x.get("gsis_id")])
+    for x in full:
+        n = LG.note(gate.get(x["gsis_id"])) if x.get("gsis_id") else None
+        x["sits"] = bool(n and n["sits"])
+        if n and n["sits"]:
+            x["reason"] = x.get("reason") or n["why"]
+            x["flag"] = x["flag"] or (n["status"] or "")
+    # ---- end IS-2
     return short, full
 
 

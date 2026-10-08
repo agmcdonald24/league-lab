@@ -43,6 +43,7 @@ from league_lab import (
     clock,  # ---- INF-1: the league's now
     provider_trouble,  # ---- IP-5: a refused read is never kept
 )
+from league_lab import league_status as LS  # ---- IS-2
 from league_lab import memo as budget  # ---- INF-2: the memory budget
 from league_lab import trades as T
 from league_lab import waivers as W
@@ -50,6 +51,7 @@ from league_lab.lineup import UNVALUED, Player
 from league_lab.roster_value import RosterBoard
 
 from . import availability
+from . import league_gate as LG  # ---- IS-2: the league readers' one status read
 from .applib import _StreamlitStandIn, blocks, capture, cards, links, ui
 from .applib import ros as ROS
 from .db import query
@@ -240,8 +242,7 @@ FA_SQL = """select a.sleeper_id, a.gsis_id, a.player_name, a.position, a.nfl_tea
             left join analytics.mart_player_week_projections pr
                    on pr.league_id = a.league_id and pr.gsis_id = a.gsis_id and pr.season = %s and pr.week = %s
             where a.league_id = %s and a.is_free_agent and a.position = any(%s)
-              and a.injury_status is distinct from 'Out' and a.injury_status is distinct from 'IR'
-              and a.roster_status is distinct from 'RES'"""
+              and a.roster_status is distinct from 'RES'"""   # ---- IS-2: who sits is league_gate's (was injury_status)
 # a house league's K / DEF values this week: its own priced rows (the nightly's ops.projections, what the lineups use)
 KD_WEEK_SQL = """select gsis_id as unit_id, round(proj_points::numeric, 2)::double precision as proj_points,
                         round(p10::numeric, 2)::double precision as p10, round(p90::numeric, 2)::double precision as p90
@@ -653,6 +654,19 @@ def _free_agents(league_id: str, season: int, week: int, position: str, limit: i
             # ---- end IC-2
     if df.empty:
         return []
+    # ---- IS-2: the one definition and its reason (was: the mart's injury_status, last week's report midweek): out
+    # indefinitely -> not a free agent to browse for this week; sits this week -> listed at 0 with the block's why
+    bl = LG.blocks([g for g in df["gsis_id"] if isinstance(g, str)], season, week)
+    df = df.assign(_blk=[bl.get(g) if isinstance(g, str) else None for g in df["gsis_id"]])
+    df = df[[not (LG.sits(b) and LS.out_indefinitely(b)) for b in df["_blk"]]].copy()
+    if df.empty:
+        return []
+    sit = [LG.sits(b) for b in df["_blk"]]
+    for c in ("proj_points", "p10", "p25", "p75", "p90"):
+        if c in df:
+            df.loc[sit, c] = 0.0
+    df["injury_status"] = [(b or {}).get("status") for b in df["_blk"]]
+    # ---- end IS-2
     df = df.assign(_p=pd.to_numeric(df["proj_points"], errors="coerce")).sort_values(["_p", "player_name"], ascending=[False, True],
                                                                                     na_position="last").head(limit)
     b = bio(df["gsis_id"])
@@ -663,7 +677,8 @@ def _free_agents(league_id: str, season: int, week: int, position: str, limit: i
         p.update({"projection": _num(r.get("proj_points")), "p10": _num(r.get("p10")), "p25": _num(r.get("p25")),
                   "p75": _num(r.get("p75")), "p90": _num(r.get("p90")), "injury_status": _str(r.get("injury_status")),
                   "games_played": _int(r.get("games_played")), "ros_points": (ros.get(k) or {}).get("ros_points"),
-                  "ros_rank_pos": (ros.get(k) or {}).get("ros_rank_pos")})
+                  "ros_rank_pos": (ros.get(k) or {}).get("ros_rank_pos"),
+                  "availability": LG.note(r.get("_blk"))})                                           # ---- IS-2
         for c in ("ppg_std", "expected_per_game", "diff_per_game", "target_share_l3", "snap_pct_l3"):
             if c in r:
                 p[c] = _num(r.get(c))
@@ -685,8 +700,8 @@ FA_POOL_SQL = """select a.sleeper_id, a.gsis_id, a.player_name, a.position, p.we
            join ops.projections p
              on p.league_id = a.league_id and p.season = %s and p.week = any(%s) and p.gsis_id = coalesce(a.gsis_id, a.sleeper_id)
            left join analytics.mart_player_week_features f on f.gsis_id = a.gsis_id and f.season = p.season and f.week = p.week
-           where a.league_id = %s and a.is_free_agent and a.roster_status = 'ACT' and a.sleeper_id is not null
-             and a.injury_status is distinct from 'Out' and a.injury_status is distinct from 'IR'"""
+           where a.league_id = %s and a.is_free_agent and a.roster_status = 'ACT' and a.sleeper_id is not null"""
+# ---- IS-2: FA_POOL_SQL no longer reads injury_status; _house_fa_pool asks league_gate (the one definition)
 
 
 class TradeContext:
@@ -928,10 +943,16 @@ def _house_fa_pool(league_id: str, season: int, weeks: tuple[int, ...]) -> tuple
     now = pd.Timestamp(clock.now())  # ---- INF-1
     pool: dict[str, dict[int, Player]] = {}
     meta: dict[str, dict] = {}
+    # ---- IS-2: who sits is the one definition's (was nflverse's report_status, Out or Doubtful): this week for
+    # a player who sits, every week for one out indefinitely; the reason is the block's why
+    bl = LG.blocks(fa["gsis_id"].dropna().unique().tolist() if not fa.empty else [], season, weeks[0])
     for r in fa.itertuples():
         t = {"LAR": "LA"}.get(r.team, r.team)
-        why = ("Out" if r.report_status in ("Out", "Doubtful") else "NFL injured reserve" if r.roster_status == "RES"
+        blk = bl.get(r.gsis_id) if isinstance(r.gsis_id, str) else None
+        out_ = LG.sits(blk) and (int(r.week) == weeks[0] or LS.out_indefinitely(blk))
+        why = (blk["why"] if out_ else "NFL injured reserve" if r.roster_status == "RES"
                else "game started" if int(r.week) == weeks[0] and t in kick and kick[t] <= now else None)
+        # ---- end IS-2
         pool.setdefault(r.sleeper_id, {})[int(r.week)] = Player(
             id=r.sleeper_id, position=r.position, value=r.value, value_source="proj_points", playable=why is None, reason=why)
         meta[r.sleeper_id] = {"player_name": r.player_name, "position": r.position, "gsis_id": r.gsis_id}
@@ -2136,7 +2157,7 @@ def il4_free_agents(league: dict, rosters: list[dict], players, slots) -> pd.Dat
            len(players))
     fa = _memo_cache.get(key, _MISS) if hit is not None else _MISS
     if fa is _MISS:
-        fa = A.free_agents(query, league["league_id"], rosters, players, slots)
+        fa = A.free_agents(query, league["league_id"], rosters, players, slots, blocks=LG.blocks(None))  # ---- IS-2
         if hit is not None:
             _memo_cache.put(key, fa, ttl=MEMO_TTL_S["sleeper"])
     return fa.copy(deep=False)
