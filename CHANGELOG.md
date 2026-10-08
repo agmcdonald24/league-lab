@@ -26,6 +26,17 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   injury status for a weekly check, and "Starter unclear" now reads the depth chart (12 of 12 stale listings caught
   with 27 flags, against 7 with 42).
 <!-- ---- end IQ-2 -->
+<!-- ---- IQ-3 -->
+- **IQ-3 — v3.6: a quarterback's later weeks lean on his own record.** Baselines first: two to eight weeks ahead a
+  naive line (his points per game this season and last, shrunk toward his role's mean) beat the model (MAE 7.44
+  against 7.56, Spearman 0.491 against 0.473, 2021–2025); one week ahead the model beats every baseline and even an
+  oracle that knew each QB's season level. Now a QB's weeks after the market week blend the model's line with that
+  naive line, the weight by how far out the week is, fitted on the 3 seasons before (`calibration.horizon_blend_lines`,
+  `LEAGUE_LAB_QB_HORIZON_BLEND`, on); the market week and played weeks are untouched. Judged by a rule written first:
+  pooled 2–8 weeks MAE −0.154 in 5 of 5 seasons, Spearman 0.473 → 0.495; the ranges hold; RB / WR / TE untouched.
+  Not "cured" (the target was 0.53; an oracle that knew each QB's season level and his role in the week reaches 0.55).
+  Also: `projections._matrix` no longer turns a column unknown in the whole batch into 0 (no change on a season's batch).
+<!-- ---- end IQ-3 -->
 
 ## 2026-10-07 — hotfix: rest-of-season quarterbacks
 

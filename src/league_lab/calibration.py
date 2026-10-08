@@ -1278,17 +1278,14 @@ def pass_td_fit_rows(train: pd.DataFrame, season: int, window: int = WINDOW) -> 
     """The fitting rows for ``season``: for each of the ``window`` seasons s before it, the production QB component
     models fitted on the frame's seasons before s (``fit_position``'s training filter and inputs) applied to s --
     passing TDs and attempts -- with the implied total and the outcome (the harness's rows, ``ip1_qb_candidates``)."""
-    first = int(train["season"].min())
     feats = list(P.FEATURES_BY_POSITION["QB"])
     out = []
     for s in range(season - window, season):
-        tr, te = train[(train["season"] >= first) & (train["season"] < s)], train[train["season"] == s]
-        d = tr[(tr["position"] == "QB") & tr["played"] & ~tr["no_history"]]
-        d = d.dropna(subset=[f"out_{c}" for c in P.COMPONENTS["QB"]]).reset_index(drop=True)
+        te = train[train["season"] == s]
         rows = te[(te["position"] == "QB")].reset_index(drop=True)
-        if len(d) < 100 or rows.empty:
+        models = walk_forward_models(train, s, "QB")     # ---- IQ-3: the same fit, shared with hb1.0 (memoised)
+        if models is None or rows.empty:
             continue
-        models = P._fit_components(P._matrix(d, feats), d, "QB")
         x = P._matrix(rows, feats)
         out.append(pd.DataFrame({"season": s, "played": rows["played"].to_numpy(),
                                  "implied_team_total": rows["implied_team_total"].to_numpy(dtype=float),
@@ -1437,3 +1434,260 @@ def future_inputs(target: pd.DataFrame, k: float = FUTURE_LINE_SHRINK) -> pd.Dat
              "of the market week (%s rows moved)", FUTURE_INPUTS_VERSION, mw, int(no_line.sum()), k, moved_pn)
     return out
 # ---- end IQ-1
+
+
+# ---- IQ-3 (Wave I-Q, 2026-10-07): v3.6 -- hb1.0, the weeks after the market week blend the QB model's stat line with
+# the player's own per-game line (docs/METRICS.md § "v3.6: the quarterback model reads the quarterback (IQ-3)"). The
+# baselines first: two to eight weeks ahead a naive line -- his points per game this season and last, shrunk by games
+# toward his listed role's mean -- beat v3.5 (MAE 7.44 against 7.56, Spearman 0.491 against 0.473, 2021-2025); one week
+# ahead the model beats it in every season. Kept by the IQ-3 rule (written before any candidate number): the market
+# week unchanged (0 cells), pooled 2-8 MAE -0.154 lower in 5 of 5 seasons, Spearman +0.022 (0.473 -> 0.495).
+#   n_c = (g x this season's c per game + lambda x g_prev x last season's + k x the role's mean c) / (g + lambda g_prev + k)
+#   (g, g_prev: his games this season / last; the role: the week's listed starter or not -- for a later week the market
+#   week's listing, fi1.0's d), lambda and k by the MAE of the priced line on the scored QB rows of the 3 seasons before;
+#   a week h weeks after the market week (h = 2 .. 8; further out takes 8): (1 - w_h) x the model's line + w_h x n,
+#   w_h on a 0-1 grid by 0.05 from the 3 seasons before as the horizon study builds them (as of weeks 3, 5, 7, 9: the
+#   walk-forward QB component models fitted on the seasons before each, the later weeks with fi1.0's inputs), the MAE
+#   of the priced line summed over the house scorings. On the stat line before pricing (``predict_position(...,
+# lines=)``, like pt1.0), QB only. The market week and played weeks are never touched. Switch: LEAGUE_LAB_QB_HORIZON_BLEND
+# (unset = on; 0 = v3.5's later weeks).
+HORIZON_BLEND_FLAG = "LEAGUE_LAB_QB_HORIZON_BLEND"
+HORIZON_BLEND_DEFAULT = True
+HORIZON_BLEND_VERSION = "hb1.0"
+HORIZON_BLEND_POSITIONS: tuple[str, ...] = ("QB",)
+HB_AS_OF = (3, 5, 7, 9)
+HB_H_MAX = 8
+HB_LAMBDAS = (0.25, 0.5, 0.75, 1.0)
+HB_KS = (1.0, 2.0, 4.0, 6.0, 8.0, 12.0, 16.0)
+HB_GRID = tuple(round(0.05 * i, 2) for i in range(21))
+HB_MIN_ROWS = 200                 # fewer fitting rows at a horizon: weight 0 (the model's line)
+HB_OPP = ["opp_allowed_std", "opp_allowed_l4", "opp_rank_std", "league_allowed_avg", "f_opp_allowed_diff"]
+LAST_HORIZON_BLEND: dict[str, object] = {}
+_WF_MODELS: dict[tuple, dict] = {}     # walk-forward QB component models, shared by pt1.0 and hb1.0 within a run
+
+
+def horizon_blend_enabled() -> bool:
+    v = os.environ.get(HORIZON_BLEND_FLAG)
+    if v is None or not v.strip():
+        return HORIZON_BLEND_DEFAULT
+    return _flag(HORIZON_BLEND_FLAG)
+
+
+def walk_forward_models(train: pd.DataFrame, s: int, position: str = "QB") -> dict | None:
+    """The production component models of ``position`` fitted on ``train``'s seasons before ``s`` (``fit_position``'s
+    training filter and inputs); None with under 100 rows. Memoised for the run (pt1.0 and hb1.0 fit the same ones)."""
+    first = int(train["season"].min())
+    tr = train[(train["season"] >= first) & (train["season"] < s)]
+    d = tr[(tr["position"] == position) & tr["played"] & ~tr["no_history"]]
+    d = d.dropna(subset=[f"out_{c}" for c in P.COMPONENTS[position]]).reset_index(drop=True)
+    if len(d) < 100:
+        return None
+    key = (position, s, first, len(d), float(d[f"out_{P.COMPONENTS[position][0]}"].sum()))
+    if key not in _WF_MODELS:
+        _WF_MODELS.clear() if len(_WF_MODELS) > 12 else None
+        _WF_MODELS[key] = P._fit_components(P._matrix(d, list(P.FEATURES_BY_POSITION[position])), d, position)
+    return _WF_MODELS[key]
+
+
+def _scored(d: pd.DataFrame) -> np.ndarray:
+    return (d["played"].fillna(False).astype(bool) & d[[f"out_{c}" for c in P.ALL_COMPONENTS]].notna().all(axis=1)).to_numpy()
+
+
+def _actual(d: pd.DataFrame, scoring: dict[str, float]) -> np.ndarray:
+    ok = d[[f"out_{c}" for c in P.ALL_COMPONENTS]].notna().all(axis=1).to_numpy()
+    a = np.full(len(d), np.nan)
+    if ok.any():
+        a[ok] = P.price(d[ok], scoring, "out_").to_numpy(dtype=float)
+    return a
+
+
+def _priced(d: pd.DataFrame, prefix: str, scoring: dict[str, float], suffix: str = "") -> np.ndarray:
+    """Points of the stat line in ``<prefix><component><suffix>`` (projection pricing)."""
+    line = pd.DataFrame({f"proj_{c}": pd.to_numeric(d[f"{prefix}{c}{suffix}"], errors="coerce").fillna(0.0).to_numpy(dtype=float)
+                         for c in P.ALL_COMPONENTS})
+    line["position"] = d["position"].to_numpy()
+    return P.price(line, scoring, "proj_").to_numpy(dtype=float)
+
+
+@dataclass
+class NaiveParams:
+    lam: float
+    k: float
+    role_means: dict[str, tuple[float, float]]     # component -> (listed starter, the rest)
+
+
+def fit_naive(rows: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]]) -> NaiveParams | None:
+    """The naive line's parameters from ``rows`` (QB board rows of the fitting seasons): the role means of each component
+    over the scored rows, lambda and k by the MAE of the priced line summed over ``scorings``."""
+    d = rows[_scored(rows)].reset_index(drop=True)
+    if len(d) < HB_MIN_ROWS:
+        return None
+    starter = d["pn_qb_starting"].fillna(0).to_numpy(dtype=float) > 0.5
+    if starter.sum() == 0 or (~starter).sum() == 0:
+        return None
+    means = {c: (float(d.loc[starter, f"out_{c}"].mean()), float(d.loc[~starter, f"out_{c}"].mean())) for c in P.ALL_COMPONENTS}
+    g = d["games_to_date"].fillna(0).to_numpy(dtype=float)
+    gp = d["prev_games"].fillna(0).to_numpy(dtype=float)
+    parts = []
+    for _, sc in scorings.values():
+        this = _priced(d, "", sc, "_pg_std")
+        last = _priced(d, "prev_", sc, "_pg")
+        y = _actual(d, sc)
+        pr = np.where(starter, float(np.mean(y[starter])), float(np.mean(y[~starter])))
+        parts.append((np.where(g > 0, this, 0.0), np.where(gp > 0, last, 0.0), pr, y))
+    best = None
+    for lam in HB_LAMBDAS:
+        for k in HB_KS:
+            e = sum(float(np.mean(np.abs((g * t + lam * gp * la + k * pr) / (g + lam * gp + k) - y))) for t, la, pr, y in parts)
+            if best is None or e < best[0]:
+                best = (e, lam, k)
+    return NaiveParams(lam=best[1], k=best[2], role_means=means)
+
+
+def naive_line(rows: pd.DataFrame, p: NaiveParams) -> pd.DataFrame:
+    """``n_<c>`` for every row: his per-game line this season and last, shrunk toward his listed role's mean by games."""
+    g = rows["games_to_date"].fillna(0).to_numpy(dtype=float)
+    gp = rows["prev_games"].fillna(0).to_numpy(dtype=float)
+    starter = rows["pn_qb_starting"].fillna(0).to_numpy(dtype=float) > 0.5
+    out = {}
+    for c in P.ALL_COMPONENTS:
+        this = np.where(g > 0, rows[f"{c}_pg_std"].fillna(0).to_numpy(dtype=float), 0.0)
+        last = np.where(gp > 0, rows[f"prev_{c}_pg"].fillna(0).to_numpy(dtype=float), 0.0)
+        pr = np.where(starter, *p.role_means[c])
+        out[f"n_{c}"] = (g * this + p.lam * gp * last + p.k * pr) / (g + p.lam * gp + p.k)
+    return pd.DataFrame(out, index=rows.index)
+
+
+def horizon_rows(season_rows: pd.DataFrame, w: int, h_max: int = HB_H_MAX, k: float = FUTURE_LINE_SHRINK) -> pd.DataFrame:
+    """One position's rows of one past season as the nightly would have built its later weeks as of week ``w``: for
+    T = w+2 .. w+h_max a copy of the player's market-week (w+1) row (his history as of w, the market week's personnel:
+    fi1.0's d) with T's opponent (its points allowed as of w), home / away, the week number, no injury report, and the
+    team's own line so far shrunk by ``k`` games (fi1.0's a); T's outcome. ``h`` = T - w."""
+    s = season_rows
+    mkt = s[s["week"] == w + 1].drop_duplicates("gsis_id").set_index("gsis_id")
+    if mkt.empty:
+        return s.iloc[0:0].assign(h=pd.Series(dtype=float))
+    opp = s[s["week"] <= w + 1].sort_values("week").drop_duplicates(["position", "opponent"], keep="last").set_index(
+        ["position", "opponent"])[HB_OPP]
+    lines = team_lines(s, w)
+    lg_imp, lg_tot = (float(lines["imp"].mean()), float(lines["tot"].mean())) if len(lines) else (np.nan, np.nan)
+    out = []
+    for t in range(w + 2, w + h_max + 1):
+        fut = s[(s["week"] == t) & s["gsis_id"].isin(mkt.index)].drop_duplicates("gsis_id")
+        if fut.empty:
+            continue
+        base = mkt.loc[fut["gsis_id"]].reset_index()
+        base["week"] = float(t)
+        base["opponent"], base["f_home"] = fut["opponent"].to_numpy(), fut["f_home"].to_numpy()
+        o = opp.reindex(pd.MultiIndex.from_arrays([base["position"], base["opponent"]]))
+        for c in HB_OPP:
+            base[c] = np.where(o[c].notna(), o[c].to_numpy(dtype=float), fut[c].to_numpy(dtype=float))
+        tl = lines.reindex(base["team"])
+        n = tl["n"].fillna(0).to_numpy(dtype=float)
+        imp = (n * tl["imp"].fillna(lg_imp).to_numpy(dtype=float) + k * lg_imp) / (n + k)
+        tot = (n * tl["tot"].fillna(lg_tot).to_numpy(dtype=float) + k * lg_tot) / (n + k)
+        home = base["f_home"].fillna(0).to_numpy(dtype=float) > 0
+        base["implied_team_total"], base["total_line"] = imp, tot
+        base["spread_line"] = np.where(home, 2 * imp - tot, tot - 2 * imp)
+        base["questionable"] = 0.0
+        base[[f"out_{c}" for c in P.ALL_COMPONENTS]] = fut[[f"out_{c}" for c in P.ALL_COMPONENTS]].to_numpy()
+        base["played"] = fut["played"].to_numpy()
+        out.append(base.assign(h=float(t - w)))
+    return pd.concat(out, ignore_index=True) if out else s.iloc[0:0].assign(h=pd.Series(dtype=float))
+
+
+def fit_horizon_weights(train: pd.DataFrame, season: int, scorings: dict[str, tuple[str, dict[str, float]]],
+                        position: str = "QB", window: int = WINDOW) -> dict[int, float]:
+    """w_h (h = 2 .. HB_H_MAX) for ``season`` from the ``window`` seasons before it (``horizon_rows`` as of HB_AS_OF, the
+    walk-forward models' line against the naive line with that season's own parameters); {} when nothing can be fitted."""
+    feats = list(P.FEATURES_BY_POSITION[position])
+    first = int(train["season"].min())
+    pos_rows = train[train["position"] == position]
+    parts = []
+    for s in range(season - window, season):
+        models = walk_forward_models(train, s, position)
+        params = fit_naive(pos_rows[(pos_rows["season"] >= max(first, s - window)) & (pos_rows["season"] < s)], scorings)
+        if models is None or params is None:
+            continue
+        srows = pos_rows[pos_rows["season"] == s]
+        for w in HB_AS_OF:
+            r = horizon_rows(srows, w)
+            r = r[_scored(r)].reset_index(drop=True) if len(r) else r
+            if r.empty:
+                continue
+            x = r[feats].to_numpy(dtype=float)        # NaN stays NaN
+            m = pd.DataFrame({f"m_{c}": (np.clip(models[c].predict(x), 0, None) if c in models else np.zeros(len(r)))
+                              for c in P.ALL_COMPONENTS}, index=r.index)
+            r = pd.concat([r, m, naive_line(r, params)], axis=1)
+            parts.append(r)
+    if not parts:
+        return {}
+    d = pd.concat(parts, ignore_index=True)
+    priced = [(_priced(d, "m_", sc), _priced(d, "n_", sc), _actual(d, sc)) for _, sc in scorings.values()]
+    h = d["h"].to_numpy(dtype=float)
+    weights = {}
+    for hh in range(2, HB_H_MAX + 1):
+        sel = h == hh
+        if sel.sum() < HB_MIN_ROWS:
+            weights[hh] = 0.0
+            continue
+        best = None
+        for w in HB_GRID:
+            e = sum(float(np.mean(np.abs((1 - w) * m[sel] + w * n[sel] - y[sel]))) for m, n, y in priced)
+            if best is None or e < best[0]:
+                best = (e, w)
+        weights[hh] = best[1]
+    return weights
+
+
+def horizon_blend_lines(season: int, every: pd.DataFrame, models: dict, target: pd.DataFrame, train: pd.DataFrame,
+                        fit: dict[str, tuple[str, dict[str, float]]],
+                        scorings: dict[str, tuple[str, dict[str, float]]]) -> pd.DataFrame:
+    """``projections.project``'s hook (after pt1.0, before ``blend_lines``): every QB line of a week after the market week
+    blended with the player's naive line, weight w_h by the week's distance from the market week; those rows priced and
+    ranged again from the new line (``predict_position(..., lines=)``). ``scorings``: the house leagues' (what the
+    weights are fitted on). Switch off, no market week, nothing after it or no weight above 0: ``every`` itself."""
+    LAST_HORIZON_BLEND.clear()
+    positions = [p for p in HORIZON_BLEND_POSITIONS if p in models]
+    mw = market_week(target)
+    if not horizon_blend_enabled() or every.empty or not positions or mw is None or not (target["week"] > mw).any():
+        return every
+    comps = [f"proj_{c}" for c in P.ALL_COMPONENTS]
+    keys = ["gsis_id", "week"]
+    first = every["league_id"].iloc[0]
+    new = []
+    for pos in positions:
+        weights = fit_horizon_weights(train, season, scorings, pos)
+        pos_train = train[train["position"] == pos]
+        params = fit_naive(pos_train[pos_train["season"] >= season - WINDOW], scorings)
+        LAST_HORIZON_BLEND.update({"position": pos, "market_week": mw, "weights": weights,
+                                   "lambda": params.lam if params else None, "k": params.k if params else None, "moved": 0})
+        if params is None or not any(v > 0 for v in weights.values()):
+            continue
+        tgt = target[(target["position"] == pos) & (target["week"] > mw)].drop_duplicates(keys)
+        line = every[(every["league_id"] == first) & (every["position"] == pos)].merge(tgt[keys], on=keys, how="inner")
+        if line.empty:
+            continue
+        rows = line[keys].merge(tgt, on=keys, how="left", validate="one_to_one")
+        n = naive_line(rows, params)
+        h = np.minimum(rows["week"].to_numpy(dtype=float) - mw + 1, HB_H_MAX).astype(int)
+        w = np.array([weights.get(int(x), 0.0) for x in h])
+        ln = line[[*keys, *comps]].copy()
+        for c in P.ALL_COMPONENTS:
+            ln[f"proj_{c}"] = (1 - w) * ln[f"proj_{c}"].to_numpy(dtype=float) + w * n[f"n_{c}"].to_numpy(dtype=float)
+        new.append(P.predict_position(models[pos], rows, fit, lines=ln))
+        LAST_HORIZON_BLEND["moved"] = int((w > 0).sum())
+    if not new:
+        return every
+    moved_rows = pd.concat(new, ignore_index=True)
+    for c in ("model_version", "fitted_at", "train_seasons"):
+        if c in every:
+            moved_rows[c] = every[c].iloc[0]
+    hit = every.set_index(keys).index.isin(moved_rows.set_index(keys).index) & every["position"].isin(positions).to_numpy()
+    out = pd.concat([every[~hit], moved_rows[every.columns]], ignore_index=True)
+    out.attrs = every.attrs
+    log.info("%s: market week %s; QB weeks after it blended with the naive line, weight by horizon %s (lambda %s, k %s); "
+             "%s QB lines moved", HORIZON_BLEND_VERSION, mw, LAST_HORIZON_BLEND.get("weights"), LAST_HORIZON_BLEND.get("lambda"),
+             LAST_HORIZON_BLEND.get("k"), LAST_HORIZON_BLEND["moved"])
+    return out
+# ---- end IQ-3

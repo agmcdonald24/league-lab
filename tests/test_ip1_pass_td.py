@@ -160,7 +160,7 @@ def test_the_switch_defaults_to_the_harness_verdict_and_the_version(monkeypatch)
     for v, on in (("", True), ("0", False), ("off", False), ("1", True), ("on", True)):
         monkeypatch.setenv(C.PASS_TD_FLAG, v)
         assert C.pass_td_enabled() is on
-    assert P.MODEL_VERSION == "v3.5" and C.PASS_TD_POSITIONS == ("QB",)   # IQ-1: v3.5 keeps pt1.0
+    assert P.MODEL_VERSION == "v3.6" and C.PASS_TD_POSITIONS == ("QB",)   # IQ-1: v3.5 keeps pt1.0; IQ-3: v3.6 too
 
 
 def test_a_scenario_larger_role_follows_the_new_passing_tds():

@@ -70,7 +70,7 @@ from .waivers import waivers_after_project
 
 log = logging.getLogger(__name__)
 
-MODEL_VERSION = "v3.5"   # ---- IL-3: v3.3 = v3.0 + cs1.1 (cold starts, M6) + nt1.0 (the WR new-team scale); IP-1: v3.4 = + pt1.0 (QB passing TDs); IQ-1: v3.5 = + fi1.0 (later weeks' line and personnel)
+MODEL_VERSION = "v3.6"   # ---- IL-3: v3.3 = v3.0 + cs1.1 (cold starts, M6) + nt1.0 (the WR new-team scale); IP-1: v3.4 = + pt1.0 (QB passing TDs); IQ-1: v3.5 = + fi1.0 (later weeks' line and personnel); IQ-3: v3.6 = + hb1.0 (QB later weeks blended with his own per-game line)
 POSITIONS = ("QB", "RB", "WR", "TE")
 QUANTILES = (0.1, 0.5, 0.9)
 # Plan D6 (Wave D): the 50% range ("most weeks"), fitted and calibrated with the same machinery as the
@@ -375,8 +375,12 @@ def _binnable(x: np.ndarray) -> np.ndarray:
 
 
 def _matrix(d: pd.DataFrame, features: list[str] | None = None) -> np.ndarray:
-    """Feature matrix (NaN = not known yet). ``features`` (plan D1 harness): default FEATURES."""
-    return _binnable(d[FEATURES if features is None else features].to_numpy(dtype=float))
+    """Feature matrix (NaN = not known yet). ``features`` (plan D1 harness): default FEATURES.
+    ---- IQ-3: NaN stays NaN. A column unknown in the whole batch used to become 0 here, for prediction too: a batch of
+    later weeks alone (no betting line, no teammate report) then read "implied total 0" instead of "not known". The
+    fits zero such a column themselves (``_fit_components``, the quantile fits: ``_binnable``), and a model never splits
+    on a column that was constant in its fit, so a full season's batch predicts exactly as before."""
+    return d[FEATURES if features is None else features].to_numpy(dtype=float)
 
 
 def _fit_components(x: np.ndarray, d: pd.DataFrame, position: str) -> dict[str, object]:
@@ -953,6 +957,11 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     # on; calibration.pass_td_lines), on the line before anything is priced; QB only, so it never meets the blend below
     every = _cal_m6.pass_td_lines(season, every, models, target, train, fit)
     # ---- end IP-1
+    # ---- IQ-3 (Wave I-Q): v3.6 -- hb1.0, a QB's weeks after the market week blend the model's line with his own per-game
+    # line, weight by the distance from the market week (LEAGUE_LAB_QB_HORIZON_BLEND, on; calibration.horizon_blend_lines);
+    # on the line before anything is priced, QB only; the market week and played weeks untouched
+    every = _cal_m6.horizon_blend_lines(season, every, models, target, train, fit, leagues)
+    # ---- end IQ-3
     every = _cal_m6.blend_lines(conn, season, every, models, target, fit, leagues)
     # ---- /M6
     lines = nfl_lines(every)
