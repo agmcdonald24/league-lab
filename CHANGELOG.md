@@ -2,6 +2,13 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-09 — Wave I-U
+
+- **IU-4 — the gap-free publish on the free plan.** `scripts/sync_to_hosted.sh`'s `auto` swaps when two copies fit
+  the plan's 1 GB (cap 800 MB, the copy's estimate × 1.2) and, when the swap stops before its commit for any reason,
+  publishes by the drop path in the same run; the previous copy is kept only when the next swap still fits beside it;
+  `/api/ready` asks again the moment a request finds the tables away, so a drop-path publish shows as `publishing`.
+
 ## 2026-10-09 — Wave I-T
 
 - **PO — the merge and what the devs left for each other.** `decisions.best_waiver_move` and the kicker branch of

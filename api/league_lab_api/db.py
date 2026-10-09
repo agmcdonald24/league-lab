@@ -41,6 +41,9 @@ ANALYTICS = "analytics"
 CACHE_TTL_SECONDS = 600
 
 
+on_tables_away: list = []      # ---- IU-4: callables run when a published table is missing (a drop-path publish)
+
+
 class DataNotReady(RuntimeError):
     """A mart the endpoint needs is not on this database right now."""
 
@@ -121,6 +124,11 @@ def _run(sql: str, params: tuple) -> pd.DataFrame:
         try:
             cur.execute(sql, params)
         except psycopg.errors.UndefinedTable as exc:
+            for fn in list(on_tables_away):        # ---- IU-4: /api/ready asks again at once (it may say `publishing`)
+                try:
+                    fn()
+                except Exception:  # noqa: BLE001
+                    pass
             raise DataNotReady(str(exc).splitlines()[0]) from exc
         cols = [d.name for d in cur.description]
         rows = cur.fetchall()
