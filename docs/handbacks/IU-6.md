@@ -145,6 +145,10 @@ All on `league_lab_im4` (`LEAGUE_LAB_DB_NAME=league_lab_im4`); `league_lab` not 
 - **Nothing in a PO-owned file.** The nightly's sync already runs `scripts/hosted_blog.sql` as the owner; the first
   nightly after the merge adds the column (a sub-second `alter` on a table of a few rows; the foreign key takes a
   short lock on `blog.posts` and `blog.images`). Until then the site works as today (§ 4).
+- `sync_to_hosted.sh` runs the file with `--single-transaction` and a failure there never fails the publish: if the
+  `alter` cannot take its lock, the file rolls back whole and the site stays as today until the next night.
+- A file post's `image:` (front matter) is now shown too — as its banner and thumbnail, not only in the preview. The
+  repository's one post has none.
 - If a cover is wanted before the nightly: run the one `alter` line above on Neon as the owner role, by hand.
 - `test_io3::test_the_script_is_idempotent_…` now allows exactly that `alter` (a deliberate change in a blog test).
 
