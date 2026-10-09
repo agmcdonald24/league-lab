@@ -5228,7 +5228,9 @@ def best_waiver_move(league_id: str, team: int, *, source: str | None = None, as
     best = mv[mv["is_best_drop"].fillna(False).astype(bool) & (mv["list_kind"] != "nothing")
               & mv["is_worthwhile"].fillna(False).astype(bool)] if "is_worthwhile" in mv else mv.iloc[0:0]
     gs = {g for g in best["add_gsis_id"] if isinstance(g, str)}
-    blocked = set(availability.cannot_play(gs)) if gs else set()
+    # ---- PO (Wave I-T): the one definition here too (IT-3 moved waiver_views and left this call for IT-1, IT-1 left
+    # it for IT-3): league_gate — the stored record, Sleeper, ESPN and the week's report, stale words dropped
+    blocked = {g for g, b in LG.blocks(gs).items() if LG.sits(b)} if gs else set()
     best = best[~best["add_gsis_id"].map(lambda g: isinstance(g, str) and g in blocked)]
     if best.empty:
         return stand

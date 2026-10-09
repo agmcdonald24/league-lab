@@ -877,8 +877,11 @@ def _proposed_player(inp: LineupInputs, league_id: str, week: int, row: dict, cu
         if "K" in positions and base.value_source == "proj_points" and kp is not None:
             if kp["roster_status"] == "RES":
                 return out("NFL injured reserve")
-            if kp["report_status"] in ("Out", "Doubtful"):
-                return out(kp["report_status"])
+            # ---- PO (Wave I-T): the week's own report through the gate, as for a skill player above (was this
+            # branch's own ("Out", "Doubtful") test — the last status code tested in a reader)
+            krep = AG.report_block(kp["report_status"])
+            if AG.sits(krep):
+                return out(krep.get("status"))
         return base if base.value is not None else unvalued
     if positions & UNITS:            # IC-2: a unit can't play only on a bye (above); no line this week: unvalued
         return base if base.value is not None else unvalued

@@ -99,7 +99,7 @@ DRIFT = 0.03                   # the per-week random walk of a team's level, as 
 PATH = "/api/league/outlook"
 TTL_S = {"house": 600.0, "sleeper": 120.0}
 # one small answer per league (~10 KB); IO-2: 96 (was 48) — a league holds its power part (~7 KB) and its whole answer
-_cache = memo.region("outlook", ttl=TTL_S["house"], max_entries=96)
+_cache = memo.region("outlook", ttl=TTL_S["house"], max_entries=96, published=True)
 # future pairings do not change: a league's remaining schedule is kept for hours ({week: [(a, b)]}, ~2 KB a league)
 SCHEDULE_TTL_S = 6 * 3600.0
 _schedules = memo.region("outlook_schedule", ttl=SCHEDULE_TTL_S, max_entries=256)

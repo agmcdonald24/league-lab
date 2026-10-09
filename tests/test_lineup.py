@@ -528,3 +528,17 @@ def test_the_weeks_own_injury_report_sits_a_player_who_has_no_stored_record():
     assert w3["4"]["reason"] == "Out" and not w3["4"]["slot"]
     assert w3["5"]["reason"] == "Doubtful" and not w3["5"]["slot"]
     assert w3["1"]["slot"] and not w3["1"]["reason"]
+
+
+def test_a_rostered_kicker_sits_through_the_gate():
+    """PO (Wave I-T): the kicker branch asked its own ("Out", "Doubtful") — the last status code tested in a reader.
+    Same answer today, through availability_gate, so it follows the one definition without an edit."""
+    from league_lab import availability_gate as AG
+    assert AG.sits(AG.report_block("Out")) and AG.sits(AG.report_block("Doubtful"))
+    assert not AG.sits(AG.report_block("Questionable")) and AG.report_block(None) is None
+    import inspect
+
+    from league_lab import lineup as LU
+    src = inspect.getsource(LU._proposed_player)
+    assert '("Out", "Doubtful")' not in src.replace("was nflverse's report_status in (\"Out\", \"Doubtful\")", "").replace(
+        "own (\"Out\", \"Doubtful\") test", "")

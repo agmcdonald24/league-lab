@@ -590,7 +590,10 @@ elif in_ci || [ "${LEAGUE_LAB_MAC_WRITES_HOSTED:-}" = 1 ] || [ "${LEAGUE_LAB_HOS
   # lines go in the run's summary and a failure never fails the night (the publication is already live; the PO reads
   # the summary every morning).
   if in_ci; then
-    python3 scripts/post_deploy_check.py https://isuckatfantasy.io > logs/post_publish_check.txt 2>&1 \
+    # PO (Wave I-T): the check waits (bounded: 150 s) until the live site names THIS publication, so it reads the new
+    # numbers and not a cached answer about the old ones; without an id in the sync's log it runs as before.
+    pub_id="$(grep -ao 'publication id: [^ ]*' logs/sync.log 2>/dev/null | tail -1 | cut -d' ' -f3 || true)"
+    python3 scripts/post_deploy_check.py https://isuckatfantasy.io ${pub_id:+--expect-publication "$pub_id"} --wait 150 > logs/post_publish_check.txt 2>&1 \
       || echo "note: the post-publish check reported a failure (logs/post_publish_check.txt, in the run's summary)" >&2
     cat logs/post_publish_check.txt 2>/dev/null || true
   fi

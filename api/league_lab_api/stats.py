@@ -797,7 +797,7 @@ def _cents(v) -> pd.Series:
     return (pd.to_numeric(v, errors="coerce") * 100).round()
 
 
-_frames = memo.region("stats", ttl=TTL_S)   # INF-2 (Wave I-J): in the memory budget (was cleared past 8 seasons)
+_frames = memo.region("stats", ttl=TTL_S, published=True)   # INF-2 (Wave I-J): in the memory budget (was cleared past 8 seasons)
 
 
 def season_rows(season: int, season_type: str) -> pd.DataFrame:
@@ -909,7 +909,7 @@ def clear() -> None:
 # ---- IM-1 (Wave I-M): the window's aggregate is NFL-wide (no league in it: the league's points merge after), so it is
 # kept per window — every league and every position preset of the same window reuses it (101 columns made the
 # aggregate the request's largest cost). Keyed by the season frame's identity, so a reloaded season starts afresh.
-_aggs = memo.region("stats_agg", ttl=TTL_S, max_entries=8)   # ≤ 8 windows x ~0.6–0.8 MB
+_aggs = memo.region("stats_agg", ttl=TTL_S, max_entries=8, published=True)   # ≤ 8 windows x ~0.6–0.8 MB
 
 
 def aggregate_window(mine: pd.DataFrame, key: tuple) -> pd.DataFrame:

@@ -309,6 +309,7 @@ echo "dump: $(du -h "$DUMP" | cut -f1) + $(du -h "$SLIM_DUMP" | cut -f1) compres
 PUB_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 PUB_CODE="$(git rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
 PUB_ID="$(date -u +%Y%m%dT%H%MZ)-${PUB_CODE}"
+echo "publication id: ${PUB_ID}"      # PO (Wave I-T): the nightly's post-publish check waits for this id on the live site
 pub_json() { printf '{"publication": "%s", "published_at": "%s", "code": "%s", "mode": "%s", "seasons_from": %s}' "$PUB_ID" "$PUB_TIME" "$PUB_CODE" "$1" "$first_season"; }
 use_swap=0
 if [ "$PUBLISH_MODE" != drop ]; then
