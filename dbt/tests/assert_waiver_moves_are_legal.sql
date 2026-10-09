@@ -1,6 +1,14 @@
 -- Plan B3: every move the waiver engine stored is legal on the rosters it was computed on.
---   * the add is a free agent in this league on an active NFL roster, not Out / IR
---     (mart_player_availability: is_free_agent, roster_status = 'ACT', injury_status not Out / IR);
+--   * the add is a free agent in this league on an active NFL roster (mart_player_availability: is_free_agent,
+--     roster_status = 'ACT').
+--     PO (Wave I-S): this also required `injury_status not in ('Out', 'IR')` — nflverse's newest report row, which
+--     midweek is LAST week's game status. IS-2 moved the engine to the one definition (availability_gate: a stale
+--     game status rules nothing) and this guard then failed 385 legal adds on the PO's rehearsal (Kyler Murray, Jayden
+--     Daniels, Baker Mayfield ... "Out" from week 4): it would have stopped the nightly. Who sits is now checked by
+--     assert_waiver_adds_do_not_sit (Sleeper's directory itself; a warning inside the builds, an error in the
+--     nightly's soft availability step after `project`) — not here, because this test is a hard stop that runs
+--     BEFORE `project` on the moves the previous night stored, and a status that changed overnight must not lock
+--     the nightly out of ever recomputing them.
 --   * the drop is on this roster, not in its IR slot, not on its taxi squad, and his game this week has
 --     not kicked off (ops.lineups: not locked, not "game started (bench)");
 --   * roster size: "no drop" only with an open spot (active players < starting + bench slots); a move
@@ -44,13 +52,12 @@ locked as (
     where not is_realised and (is_locked or reason = 'game started (bench)')
 )
 
-select 'add is not a free agent on an active NFL roster (or is Out / IR)' as problem,
+select 'add is not a free agent on an active NFL roster' as problem,
        m.league_id, m.roster_id, m.week, m.add_sleeper_id, m.drop_sleeper_id
 from m
 left join avail as a on a.league_id = m.league_id and a.sleeper_id = m.add_sleeper_id
 where m.list_kind <> 'nothing'
-  and (a.sleeper_id is null or not a.is_free_agent or a.roster_status is distinct from 'ACT'
-       or a.injury_status in ('Out', 'IR'))
+  and (a.sleeper_id is null or not a.is_free_agent or a.roster_status is distinct from 'ACT')
 
 union all
 

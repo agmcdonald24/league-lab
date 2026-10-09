@@ -386,6 +386,17 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-S (2026-10-08 evening; STATUS § "Wave I-S (Iteration 29) — dependability, second round")**: **one
+  question, `availability_gate.sits(block)`** ("is he left out this week?" = cannot play, or a status that rarely
+  plays: Doubtful, 6 of 520 since 2016). No reader tests a status code or string: API code calls
+  `availability.statuses()` / `league_gate`, `src/` code `league_status` (it cannot import the API). **Two sources
+  can be older than the news**: a week's stored record is frozen at its first kickoff, so a nightly solve also asks
+  the week's own injury report through the gate (`availability_gate.report_block`), and the screens ask Sleeper and
+  ESPN at request time. **Before a merge that touches a connection, a cache or the publish: `scripts/pooler_check.sh`**
+  (a local transaction-mode PgBouncer; it reproduces the afternoon's `/api/ready` 503). A cache that holds published
+  numbers is created with `memo.region(..., published=True)` so a new publication drops it within 30 s. A package
+  that would change every saved answer of a screen (the Finder) needs its own evening: IS-3's items 1, 2 and 5 are
+  the next build's first package. Resuming the morning's developers on their own packages worked (three of four).
 * **Wave I-R (2026-10-08; STATUS § "Wave I-R (Iteration 28) — dependability", the PO section first)**: a player on
   injured reserve was ranked RB21 on the public screen and Andrew found it. **One definition of "cannot play"**
   (`src/league_lab/availability_gate.py`; the API's `availability.statuses`): any new list, value or verdict calls

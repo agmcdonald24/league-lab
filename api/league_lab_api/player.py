@@ -11,6 +11,7 @@ Streamlit's AppTest and compares every metric and sentence, so a change to the p
 from __future__ import annotations
 
 import pandas as pd
+from league_lab import availability_gate as AGATE  # ---- PO (Wave I-S): the week's own report through the gate
 from league_lab import clock
 
 from . import availability as AV
@@ -91,6 +92,7 @@ PROFILE_SQL = """select dp.gsis_id, coalesce(a.player_name, dp.player_name) as p
               coalesce(a.nfl_team, dp.latest_team) as team, a.gsis_id is not null as in_pool, a.roster_status,
               a.rostered_by_roster_id, a.rostered_by_team, a.rostered_by_manager, a.is_free_agent, a.is_current_starter, a.is_on_ir,
               a.injury_status, a.injury, a.practice_status, a.depth_rank, a.depth_pos,
+              nmx.injury_week, nmx.next_week as report_for_week,
               a.games_played, a.attempts, a.target_share, a.target_share_l3, a.carry_share, a.carry_share_l3,
               a.avg_offense_snap_pct, a.snap_pct_l3, a.first_read_share_std, a.first_read_share_l3,
               s.red_zone_target_share, s.red_zone_carry_share, s.fg_made, s.fg_att, s.fg_long, s.pat_made, s.pat_att,
@@ -99,11 +101,28 @@ PROFILE_SQL = """select dp.gsis_id, coalesce(a.player_name, dp.player_name) as p
               pv.ppg as prev_ppg, pv.position_rank_ppg as prev_rank, pv.games_played as prev_games
        from analytics.dim_player dp
        left join analytics.mart_player_availability a on a.gsis_id = dp.gsis_id and a.league_id = %s
+       left join analytics.mart_player_next_matchup nmx on nmx.gsis_id = dp.gsis_id
        left join analytics.mart_player_season s on s.gsis_id = dp.gsis_id and s.season = %s and s.season_type = 'REG'
        left join analytics.mart_player_trend_tags t on t.gsis_id = dp.gsis_id and t.season = %s
        left join analytics.mart_league_player_season v on v.gsis_id = dp.gsis_id and v.league_id = %s and v.season = %s
        left join analytics.mart_league_player_season pv on pv.gsis_id = dp.gsis_id and pv.league_id = %s and pv.season = %s - 1
        where dp.gsis_id = %s"""
+
+def status_note(p, gsis, season, week) -> tuple[dict | None, bool]:
+    """(the note a screen reads — ``league_gate.note`` — or None, whether it came from the week's own injury report).
+    IS-2: the one definition's block (the stored record + Sleeper + ESPN). PO (Wave I-S): when those say nothing, THIS
+    week's own injury report still counts — the mart's row only when it is the report for the coming week
+    (``injury_week = next_week``; the newest row of another week is last week's game status, which is what IS-2
+    removed) — asked through the same gate. The card and the watchlist's lean row both call this."""
+    blk = LG.blocks([gsis], season, week).get(gsis) if isinstance(gsis, str) and week is not None else None
+    from_report = False
+    if blk is None and isinstance(p.get("injury_status"), str) and p.get("injury_status") \
+            and pd.notna(p.get("injury_week")) and pd.notna(p.get("report_for_week")) \
+            and int(p["injury_week"]) == int(p["report_for_week"]):
+        blk = AGATE.report_block(p["injury_status"])
+        from_report = blk is not None
+    return LG.note(blk), from_report
+
 
 PROJ_SQL = """select proj_points, p10, p25, p75, p90, proj_targets, proj_receptions, proj_receiving_yards, proj_receiving_tds,
               proj_carries, proj_rushing_yards, proj_rushing_tds, proj_attempts, proj_passing_yards, proj_passing_tds,
@@ -183,8 +202,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
             else od.projection(gsis, pos, week))
     # ---- IS-2: the one definition's block, read before the projection: a player who sits this week is not shown a
     # projection the stored mart may still hold (the marts are rebuilt after project; the deploy lands before it)
-    blk = LG.blocks([gsis], season, week).get(gsis) if isinstance(gsis, str) and week is not None else None
-    gate_note = LG.note(blk)
+    gate_note, from_report = status_note(p, gsis, season, week)      # ---- IS-2 + PO: one definition, two sources
     sits_now = bool(gate_note and gate_note["sits"])
     # ---- end IS-2
     sched = query(SCHED_SQL, (team, team, team, pos, season, team)) if isinstance(team, str) and team else pd.DataFrame()   # 4
@@ -348,7 +366,12 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
     # its source and date and, when he sits, the reason — was the mart's injury_status (nflverse's newest report row:
     # midweek, last week's game status) and the older overlay's own set of codes
     inj = gate_note["status"] if gate_note else None
-    if gate_note:
+    if gate_note and from_report:      # ---- PO: the report's own line, with the injury and the practice status
+        detail = f" ({p['injury']})" if isinstance(p["injury"], str) and p["injury"] else ""
+        prac = f"; practice: {p['practice_status']}" if isinstance(p["practice_status"], str) and p["practice_status"] else ""
+        words = f" {gate_note['words']}" if gate_note.get("sits") and gate_note.get("words") else ""
+        lines.append(f"⚠️ **{gate_note['status']}**{detail}{prac}.{words}")
+    elif gate_note:
         words = f" {gate_note['words']}" if gate_note.get("sits") and gate_note.get("words") else ""
         lines.append(f"⚠️ **{gate_note['why']}**.{words}")
     elif yes(p["in_pool"]):

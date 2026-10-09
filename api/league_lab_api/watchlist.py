@@ -106,15 +106,16 @@ class Lean:
         pos, team = p["position"], p["team"]
         proj = (query(player.PROJ_SQL, (self.league, key, season, week if week is not None else -1)) if self.house
                 else self.od().projection(key, pos, week))
-        inj = p["injury_status"] if isinstance(p["injury_status"], str) and p["injury_status"] else None
-        ov = player.overlay_status(key, inj)
-        if ov is not None:
-            inj = ov["status"]
+        # ---- PO (Wave I-S): the card's own status (player.status_note: the one definition, then the week's own report)
+        note, _from_report = player.status_note(p, key, season, week)
+        inj = note["status"] if note else None
+        sits = bool(note and note["sits"])
+        # ---- end PO
         rostered = player.is_num(p["rostered_by_roster_id"])
         rteam = p.get("rostered_by_team")
         return {"player_name": p["player_name"], "position": pos, "team": team if isinstance(team, str) else None,
                 "injury_status": inj, "week": week, "league_name": league_name,
-                "proj_points": float(proj.iloc[0]["proj_points"]) if not proj.empty else None,
+                "proj_points": 0.0 if sits else (float(proj.iloc[0]["proj_points"]) if not proj.empty else None),
                 "rostered_by_roster_id": int(p["rostered_by_roster_id"]) if rostered else None,
                 "is_free_agent": player.yes(p["is_free_agent"]),
                 "header": f"on **{rteam}**" if rostered and isinstance(rteam, str) and rteam else ""}

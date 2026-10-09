@@ -96,9 +96,15 @@ def test_lineup_sits_a_player_the_stored_record_leaves_out():
     assert p.playable is False and p.reason == "IR" and p.status == "IR"
 
 
-def test_lineup_no_longer_sits_on_nflverse_report_status():
-    p = LU._proposed_player(_inputs(None, "Doubtful"), "L", 5, _row(), None, {}, True, datetime(2026, 10, 8, tzinfo=UTC))
-    assert p.playable is True and p.status == "Doubtful"           # flagged, as the Rankings flag him
+def test_lineup_asks_the_weeks_own_report_through_the_gate():
+    # PO (Wave I-S): was "the lineup no longer sits on nflverse's report status" (Doubtful played, flagged). Two things
+    # changed at the merge: IS-1 made Doubtful a status that sits (6 of 520 played), and the stored record is frozen at
+    # the week's first kickoff, so the week's own report stays a source — asked through the gate, not by a code test.
+    at = datetime(2026, 10, 8, tzinfo=UTC)
+    p = LU._proposed_player(_inputs(None, "Doubtful"), "L", 5, _row(), None, {}, True, at)
+    assert p.playable is False and p.status == "Doubtful" and p.reason == "Doubtful"
+    q = LU._proposed_player(_inputs(None, "Questionable"), "L", 5, _row(), None, {}, True, at)
+    assert q.playable is True                                       # flagged, plays: as the Rankings rank him
 
 
 def test_replacement_sql_reads_the_record_not_the_report():

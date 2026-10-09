@@ -4,6 +4,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-08 — Wave I-S (dependability, second round)
 
+- **PO — the merge, the lineup's second source, the caches, the workflow lines.** `availability_gate.sits` /
+  `report_block`: the one question, and one week's own injury-report status asked through the gate — the lineup
+  solver keeps it beside the stored record (frozen at the week's first kickoff). The caches that hold published
+  numbers register as `published` (dropped at a new publication). `image.yml` runs on `tests/**`, `scripts/gate.sh`
+  and `scripts/post_deploy_check.py`; `nightly.yml`'s "already published today" is New York's morning. Questionable
+  is not scaled (docs/STATUS.md § "Wave I-S": the decisions, the rehearsal, what is not done).
 - **IS-4 — what only the hosted setup can break.** `scripts/pooler_check.sh` runs the readiness probe, the API's pool,
   the usage writer, the sync's checks and the post-deploy check through a local transaction-mode PgBouncer (it fails on
   `748ff76`'s probe, passes now); a statement timeout is "query" on `/api/ready`; a new publication drops the API's
@@ -24,10 +30,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `availability_gate` through `league_lab.league_status` (src). My Week, Team, Waivers and the league card show the
   status, its source and date ("IR (knee - acl) · Sleeper, Sep 28") beside a player who sits; the card withholds a
   projection the stored mart still holds for him. Kyler Murray (last week's "Out") is a free agent to add again in
-  League of Scrubs, as the Rankings rank him. `docs/handbacks/IS-2.md`.
+  League of Scrubs, as the Rankings rank him. docs/STATUS.md § "Wave I-S" (IS-2).
 - **IS-3 — the trade tests whole again.** The three trade-calculator browser tests parked this afternoon run again on
   trades that are legal on today's test data (a League of Scrubs package whose extra player changes the dial's label;
-  a kicker for a starting quarterback, labelled implausible), re-saved from the API. docs/handbacks/IS-3.md.
+  a kicker for a starting quarterback, labelled implausible), re-saved from the API. docs/STATUS.md § "Wave I-S" (IS-3).
 
 ## 2026-10-08 — hotfix: /api/ready through the hosted pooler; the release gate enforced
 

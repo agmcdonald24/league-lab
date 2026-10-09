@@ -24,8 +24,10 @@ from lib.db import missing_relations, query, require_relations
 from lib.signals import alert_headline, alert_lines, scenario_phrase
 from lib.ui import current_leagues, freshness_banner, pct, perspective, player_link, setup
 
+from league_lab import availability_gate as AGATE  # ---- PO (Wave I-S)
 from league_lab import clock as league_clock  # ---- INF-1
 from league_lab import decisions as D
+from league_lab import league_status as LS  # ---- PO (Wave I-S)
 
 setup("Player")
 freshness_banner()
@@ -88,6 +90,7 @@ prof = query(                                                                   
               coalesce(a.nfl_team, dp.latest_team) as team, a.gsis_id is not null as in_pool, a.roster_status,
               a.rostered_by_roster_id, a.rostered_by_team, a.rostered_by_manager, a.is_free_agent, a.is_current_starter, a.is_on_ir,
               a.injury_status, a.injury, a.practice_status, a.depth_rank, a.depth_pos,
+              nmx.injury_week, nmx.next_week as report_for_week,
               a.games_played, a.attempts, a.target_share, a.target_share_l3, a.carry_share, a.carry_share_l3,
               a.avg_offense_snap_pct, a.snap_pct_l3, a.first_read_share_std, a.first_read_share_l3,
               s.red_zone_target_share, s.red_zone_carry_share, s.fg_made, s.fg_att, s.fg_long, s.pat_made, s.pat_att,
@@ -96,6 +99,7 @@ prof = query(                                                                   
               pv.ppg as prev_ppg, pv.position_rank_ppg as prev_rank, pv.games_played as prev_games
        from analytics.dim_player dp
        left join analytics.mart_player_availability a on a.gsis_id = dp.gsis_id and a.league_id = %s
+       left join analytics.mart_player_next_matchup nmx on nmx.gsis_id = dp.gsis_id
        left join analytics.mart_player_season s on s.gsis_id = dp.gsis_id and s.season = %s and s.season_type = 'REG'
        left join analytics.mart_player_trend_tags t on t.gsis_id = dp.gsis_id and t.season = %s
        left join analytics.mart_league_player_season v on v.gsis_id = dp.gsis_id and v.league_id = %s and v.season = %s
@@ -108,6 +112,22 @@ if prof.empty:
     st.stop()
 p = prof.iloc[0]
 pos, team = p["position"], p["team"]
+# ---- PO (Wave I-S): who sits is the one definition here too (the API card: league_gate.blocks) — the nightly's stored
+# record for the week, else THIS week's own injury report (the mart's row only when `injury_week = next_week`: the
+# newest row of another week is last week's game status), both asked through availability_gate. Parity with
+# /api/player is api/tests/test_parity.py.
+_rec = query("select to_jsonb(p) ->> 'availability' as availability from ops.projections as p "
+             "where p.league_id = %s and p.gsis_id = %s and p.season = %s and p.week = %s limit 1",
+             (league_id, gsis, season, week if week is not None else -1))
+_blk = LS.record_block(_rec.iloc[0]["availability"]) if not _rec.empty else None
+from_report = False
+if _blk is None and isinstance(p["injury_status"], str) and p["injury_status"] and pd.notna(p["injury_week"]) \
+        and pd.notna(p["report_for_week"]) and int(p["injury_week"]) == int(p["report_for_week"]):
+    _blk = AGATE.report_block(p["injury_status"])
+    from_report = _blk is not None
+gate_note = LS.note(_blk)
+sits_now = bool(gate_note and gate_note["sits"])
+# ---- end PO
 proj = query(                                                                         # 3: projection
     """select proj_points, p10, p25, p75, p90, proj_targets, proj_receptions, proj_receiving_yards, proj_receiving_tds,
               proj_carries, proj_rushing_yards, proj_rushing_tds, proj_attempts, proj_passing_yards, proj_passing_tds,
@@ -185,6 +205,8 @@ with st.container(border=True):
     st.markdown(f"**Projection** — week {week}, {league_name} scoring" if week else "**Projection**")
     if week is None:
         unavailable("the regular season is over.")
+    elif sits_now:                                                                         # ---- PO (Wave I-S)
+        unavailable(f"{gate_note['why']} — {gate_note['words'] or 'he is left out this week'}")
     elif not proj.empty:
         r = proj.iloc[0]
         with st.container(horizontal=True, wrap=True, gap="medium"):
@@ -259,11 +281,15 @@ with st.container(border=True):
         lines.append("**Free agent** — nobody in this league has him.")
     else:
         lines.append("Not in this season's player pool for this league.")
-    inj = p["injury_status"] if isinstance(p["injury_status"], str) and p["injury_status"] else None
-    if inj:
+    # ---- PO (Wave I-S): the status line is the one definition's (was the mart's newest report row, any week)
+    inj = gate_note["status"] if gate_note else None
+    _words = f" {gate_note['words']}" if gate_note and gate_note.get("sits") and gate_note.get("words") else ""
+    if gate_note and from_report:
         detail = f" ({p['injury']})" if isinstance(p["injury"], str) and p["injury"] else ""
         prac = f"; practice: {p['practice_status']}" if isinstance(p["practice_status"], str) and p["practice_status"] else ""
-        lines.append(f"⚠️ **{inj}**{detail}{prac}.")
+        lines.append(f"⚠️ **{gate_note['status']}**{detail}{prac}.{_words}")
+    elif gate_note:
+        lines.append(f"⚠️ **{gate_note['why']}**.{_words}")
     elif yes(p["in_pool"]):
         lines.append("No injury designation.")
     if not sched.empty:

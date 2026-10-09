@@ -598,6 +598,22 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 29 — Wave I-S, dependability, second round (2026-10-08, Thursday 17:46 – late evening ET)
+
+Andrew, to the PO's roadmap: "cool. carry on building please." Four devs (three of the morning's, resumed): **IS-1**
+Doubtful sits — measured first (6 of 520 Doubtful skill players have played since 2016; Questionable 66.6 %), the
+25 % rule written before the numbers; 0 from `project`, not ranked, "Unlikely to play" with the rate in words; one
+source for the code sets; the "Not playing" group led by the players a visitor looks for; **IS-2** every league
+reader asks the one question and the league screens show the reason beside the zero (Kyler Murray was hidden from
+a league's free agents by last week's "Out" while the Rankings ranked him QB9); **IS-3** the three switched-off
+trade tests on legal trades (full e2e 595 / 0), `evaluate` profiled — its three larger items not done; **IS-4**
+`scripts/pooler_check.sh` (a local transaction-mode pooler: it reproduces the afternoon's `/api/ready` 503 and
+passes on the fix), published caches dropped within 30 s of a publication. The PO's glue: the lineup solver keeps
+the week's own injury report as a second source through the gate (the stored record freezes on Thursday); the
+caches registered; workflow lines. The PO's decision: Questionable is not scaled. Acceptance and evidence:
+`docs/STATUS.md` § "Wave I-S". **Next**: the Finder's rows and the best waiver move on the verdict's basis; the
+remaining readers; "plays about 2 in 3" on a Questionable row; then the quarterback model (the role forecast).
+
 ### Iteration 28 — Wave I-R, dependability (2026-10-08, Thursday 10:00 – early afternoon ET)
 
 Andrew, with an outside dependability review attached: "You can't have injured people in the rankings who aren't

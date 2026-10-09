@@ -3,6 +3,18 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 8 (evening) · doubtful players, and the same injury check inside your league
+
+- **Doubtful players are no longer ranked for the week.** We counted first: since 2016, 520 quarterbacks, running
+  backs, receivers and tight ends were listed doubtful on the final injury report, and 6 of them played. A doubtful
+  player now gets no projection this week and is listed under "Unlikely to play" with that rate. His rest-of-season
+  value stays.
+- **Questionable players stay ranked.** About 2 in 3 play. Their number is what we project if they do.
+- **Inside your league, the same check.** Lineups, waivers, trade values and the player card now use the injury
+  check the rankings use, and a player who sits shows why beside his zero, with the source and date. One example
+  it fixed: a quarterback hidden from a league's free agents by last week's "Out" while the rankings had him 9th.
+- **"Not playing" leads with the players you are looking for**, not with the alphabet.
+
 ## Oct 8 (afternoon) · nobody who cannot play is ranked, and one trade verdict
 
 - **We ranked a player on injured reserve, and that was wrong.** De'Von Achane is out for the season and was our

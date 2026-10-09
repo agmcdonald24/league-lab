@@ -557,7 +557,7 @@ SOFT_WHY="the hosted copy keeps last night's grade; the record itself is saved" 
 # (dbt/tests/assert_nobody_who_cannot_play_is_projected, run as an error). Soft, on purpose (the PO): a name the gate
 # missed must not keep tonight's numbers from the site — the screens hide players who cannot play at request time
 # from the same definition — but the run ends red with the names, and the PO fixes the gate that day.
-SOFT_WHY="the screens hide players who cannot play at request time; the stored board still carries a number for the names this check lists" soft availability-gate dbt_step availability-gate test --select assert_nobody_who_cannot_play_is_projected --vars '{availability_gate_severity: error}'
+SOFT_WHY="the screens hide players who cannot play at request time; the stored board still carries a number for the names this check lists" soft availability-gate dbt_step availability-gate test --select assert_nobody_who_cannot_play_is_projected assert_waiver_adds_do_not_sit --vars '{availability_gate_severity: error}'
 # ---- end IR-1
 SOFT_WHY="the lists go out unaudited tonight" soft audit-lists uv run league-lab audit-lists
 # ---- end IQ-4
