@@ -5680,6 +5680,13 @@ scale him (by about 0.62, the played share × the when-played ratio) is the PO's
    `pn_top_rusher_out` / `pn_teammate_share_out` / `pn_absence_beneficiary` (RB / WR / TE) and `pn_qb_*` (QB) from
    week W's report, so a starter ruled Out on Friday moves his teammates' numbers in a Saturday re-projection, by
    as much as the model learned those inputs to be worth. The shadow names the teammate who sits when it can.
+   *Precised 12:42 ET (read in the SQL; a description, not a rule):* the **depth chart** does not
+   reach the projections (`int_depth_chart_current` feeds `mart_player_next_matchup` and `mart_starter_check`, not
+   `mart_player_week_features`); **who starts at QB** does — the schedule's projected starter or IQ-2's override
+   (`int_pn_team_game.starting_qb_id`) — through `pn_qb_*`, on the **QB rows only** (RB / WR / TE read no QB input:
+   a QB change reaches his receivers only through the market's implied total); the **roster file** through the
+   reserve lists (the gate's fallback, the personnel inputs' "gone"); the **report** through the gate,
+   `questionable` and the personnel inputs (RB / WR / TE teammates out, line starters out).
 6. **Housekeeping of the overlay** (precision of point 2, before the code): a run deletes and rewrites the live rows
    of the games that have not kicked off; a game that kicked off since the last run keeps the live rows it had (the
    number at its own kickoff) until the week is over; with no week under way, or with the switch `week`, the
@@ -5706,3 +5713,17 @@ Friday's designations. Study:
 * **Decision.** S is "better" if its MAE is lower in (a) in 2025 and in 2026 weeks 2–4 and its Spearman is not lower
   by more than 0.005 in either. Better → the hand-back recommends `game` after one weekend of the shadow; not better →
   the switch stays `week` and the shadow is the deliverable. Either way the number is the gate's part only.
+
+**Result (IU-2, numbers after the rule; a refit of today's v3.6 on the seasons before, ppr, players of the games after
+the week's first kickoff):** 2025 weeks 1–18, 9,594 player-weeks: MAE T 4.238 → S 3.249, Spearman 0.614 → 0.746 (72
+week × position cells); 2026 weeks 2–4, 1,699: MAE 4.248 → 3.444, Spearman 0.606 → 0.713 (12 cells). Status changed
+(Out / Doubtful on the final report, not on a reserve list): 2025 344 player-weeks, MAE 6.763 → 0.000 (none of them
+played — 25 were Doubtful); 2026 45, 7.113 → 0.000; Spearman not computable (no cell of 8). Sensitivity, not the
+decision — a Thursday board that already zeroed the reserve lists (as the gate does since IR-1): 2025 MAE 3.491 →
+3.249, Spearman 0.713 → 0.746; 2026 3.632 → 3.444, 0.689 → 0.713. 2026 week 4's real kickoff board exists only in the
+house scorings (ppr's week 4 ranges are refit values), so the rule's line for it is not computable as written; in
+those scorings (labelled extra): scrubs MAE 3.957 → 3.135, Spearman 0.581 → 0.708; dynasty 4.778 → 3.802, 0.585 →
+0.710 (554 players). **Verdict by the rule: S is better** in both seasons. What it means: the measured part is the
+gate's — which the screens already apply at request time with the switch `week` (a player who sits is hidden); what
+`game` adds beyond that (the stored number every solve and grade reads, his teammates' inputs, the market, the depth
+chart) is not measured here. The hand-back recommends `game` after one weekend of the shadow.

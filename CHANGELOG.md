@@ -2,6 +2,16 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-09 — Wave I-U
+
+- **IU-2 — the live week after its first kickoff (fr1.0, shadow).** The kickoff board stays the record, kept where it
+  is; a switch, `LEAGUE_LAB_FREEZE=week|game` (default `week`: today's rule bit for bit, 0 cells differ on a copy),
+  lets `project` re-project the started week's games that have not kicked off into an overlay,
+  `ops.projection_live` (created by `db migrate`; gated like the live week), which `mart_player_week_projections`
+  reads before the stored row. With `week`, `project` writes only the shadow — the house-league rows that would move
+  by 2 points or more, and why (`logs/freeze_shadow.json`, `league-lab freeze-shadow`; a nightly step that never
+  fails the night). Rule and readers: docs/METRICS.md § "The live week after its first kickoff".
+
 ## 2026-10-09 — Wave I-T
 
 - **PO — the merge and what the devs left for each other.** `decisions.best_waiver_move` and the kicker branch of

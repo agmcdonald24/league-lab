@@ -993,6 +993,11 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     pred.attrs["availability_gate"] = gate
     # ---- end IR-1
     _write_projections(conn, pred, season, now)   # B5: weeks whose first game has kicked off are kept, not rewritten
+    # ---- IU-2 (Wave I-U): fr1.0 -- the started week's games not kicked off: the shadow (switch week, the default: nothing
+    # written but logs/freeze_shadow.json) or the overlay ops.projection_live (LEAGUE_LAB_FREEZE=game). Never raises
+    live = live_after_project(conn, season, pred, target, now)
+    pred.attrs["live"] = {k: v for k, v in live.items() if k != "moves"} | {"moves": len(live["moves"])}
+    # ---- end IU-2
     log.info("projections computed: %s rows for %s (%s leagues; ranges fitted in %s scorings: %s)", len(pred), season,
              len(leagues), len(fit), ", ".join(fit))
 
@@ -1253,8 +1258,18 @@ NFL_DDL = {
         p90 double precision, off_p10 double precision, off_p50 double precision, off_p90 double precision,
         frozen_at timestamptz, frozen_source text);
         create index if not exists kd_ranges_idx on ops.kd_ranges (scoring_name, season, week, position, unit_id)""",
+    # ---- IU-2 (Wave I-U): fr1.0 -- the live overlay of the started week's games that have not kicked off (the shape of
+    # ops.projections plus the game's team and kickoff); empty unless LEAGUE_LAB_FREEZE=game. Never the record: no grade
+    # reads it, the freeze labels stay NULL (registered here so `league-lab db migrate` creates it)
+    "ops.projection_live": f"""create table if not exists ops.projection_live (
+        model_version text, fitted_at timestamptz, train_seasons text, league_id text, season integer, week integer,
+        gsis_id text, position text, {_PROJ_DDL}, proj_points double precision, p10 double precision,
+        p25 double precision, p50 double precision, p75 double precision, p90 double precision, pricing text,
+        availability text, team text, game_kickoff timestamptz, frozen_at timestamptz, frozen_source text);
+        create index if not exists projection_live_idx on ops.projection_live (league_id, season, week, gsis_id)""",
 }
 DDL.update(NFL_DDL)
+LIVE_TABLE = "ops.projection_live"                       # ---- IU-2: not state, not the record (see live_after_project)
 
 
 def _write(conn: psycopg.Connection, table: str, df: pd.DataFrame, where: str, params: tuple) -> None:
@@ -1374,6 +1389,214 @@ def _write_projections(conn: psycopg.Connection, pred: pd.DataFrame, season: int
              season, len(rows), summary["rewritten"] or "none", summary["kept"] or "none", summary["kickoff"] or "none",
              summary["refit"] or "none", summary["locked_now"] or "none")
     return plan
+
+
+# ------------------------------------------------------------------------------ IU-2 (Wave I-U): fr1.0, the live week after its first kickoff
+# docs/METRICS.md § "The live week after its first kickoff": the kickoff board stays the record, kept where it is
+# (freeze_plan, untouched); the started week's games that have not kicked off get tonight's number in an overlay
+# (ops.projection_live) only with LEAGUE_LAB_FREEZE=game. With the default (week) the overlay stays empty and the shadow
+# says who would move by SHADOW_MOVE points or more, and why (logs/freeze_shadow.json; `league-lab freeze-shadow`).
+FREEZE_FLAG = "LEAGUE_LAB_FREEZE"
+SHADOW_MOVE = 2.0
+SHADOW_PATH = PROJECT_ROOT / "logs" / "freeze_shadow.json"
+GAMES_SQL = """select week, home_team, away_team, kickoff_at from analytics.dim_game
+               where season = %s and season_type = 'REG' and kickoff_at is not null"""
+KD_TEAM_SQL = "select position, unit_id, team, player_name from analytics.mart_kd_week where season = %s and week = %s"
+STORED_WEEK_SQL = f"""select league_id, gsis_id, position, proj_points, availability, model_version, frozen_source,
+                     {', '.join(f'proj_{c}' for c in ALL_COMPONENTS)}
+                     from ops.projections where season = %s and week = %s"""
+
+
+def freeze_unit() -> str:
+    """``LEAGUE_LAB_FREEZE``: ``game`` re-projects the started week's games that have not kicked off (the overlay);
+    anything else — unset, ``week``, a typo — is ``week``: today's rule, bit for bit."""
+    import os
+
+    return "game" if os.environ.get(FREEZE_FLAG, "").strip().lower() == "game" else "week"
+
+
+def started_week(games: pd.DataFrame, now: datetime) -> tuple[int | None, pd.DataFrame]:
+    """(the week under way, its games not kicked off): the week whose first kickoff is at or before ``now`` and that
+    still has a game kicking off after ``now``; (None, empty) between weeks. ``games``: week, home_team, away_team,
+    kickoff_at. A game in progress has kicked off: it is not live."""
+    empty = pd.DataFrame(columns=["team", "game_kickoff"])
+    if games is None or games.empty:
+        return None, empty
+    g = games.assign(kickoff_at=pd.to_datetime(games["kickoff_at"], utc=True), week=games["week"].astype(int))
+    t = pd.Timestamp(now)
+    t = t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC")
+    span = g.groupby("week")["kickoff_at"].agg(["min", "max"])
+    under_way = span[(span["min"] <= t) & (span["max"] > t)]
+    if under_way.empty:
+        return None, empty
+    week = int(under_way.index.min())
+    left = g[(g["week"] == week) & (g["kickoff_at"] > t)]
+    teams = pd.concat([left[["home_team", "kickoff_at"]].rename(columns={"home_team": "team"}),
+                       left[["away_team", "kickoff_at"]].rename(columns={"away_team": "team"})], ignore_index=True)
+    return week, teams.rename(columns={"kickoff_at": "game_kickoff"}).reset_index(drop=True)
+
+
+def live_rows(pred: pd.DataFrame, week: int, teams: pd.DataFrame, player_team: pd.DataFrame,
+              statuses: dict[str, dict]) -> pd.DataFrame:
+    """Tonight's rows (``pred``, every league) of ``week`` for the players whose team's game has not kicked off
+    (``teams``: team, game_kickoff), gated like the live week (``availability_gate.gate_frame``: who sits is 0 with the
+    reason). ``player_team``: position, gsis_id, team (the week's team; K / DEF by their unit id)."""
+    from . import availability_gate as _ag
+
+    if pred is None or pred.empty or teams.empty:
+        return pd.DataFrame(columns=[*pred.columns, "team", "game_kickoff"]) if pred is not None else pd.DataFrame()
+    rows = pred[pred["week"].astype(int) == int(week)].copy()
+    pt = player_team.dropna(subset=["gsis_id", "team"]).drop_duplicates(["position", "gsis_id"])
+    rows = rows.merge(pt[["position", "gsis_id", "team"]], on=["position", "gsis_id"], how="inner")
+    rows = rows.merge(teams, on="team", how="inner")
+    rows, _ = _ag.gate_frame(rows, statuses, int(week))
+    rows["frozen_source"], rows["frozen_at"] = None, None
+    return rows.reset_index(drop=True)
+
+
+def shadow_moves(live: pd.DataFrame, stored: pd.DataFrame, names: dict[str, str], move: float = SHADOW_MOVE,
+                 leagues: dict[str, str] | None = None) -> list[dict]:
+    """The players whose number would move by ``move`` points or more if the overlay were on: tonight's gated row
+    (``live``) against the kickoff board (``stored``: ops.projections of the week), per house league, with the reason —
+    he sits now (the gate's why) / he is back / a teammate sits (projection v3 reads the week's report: the personnel
+    inputs) / the inputs moved (the model's version named when it changed)."""
+    if live is None or live.empty or stored is None or stored.empty:
+        return []
+    m = live.merge(stored, on=["league_id", "gsis_id", "position"], how="inner", suffixes=("", "_kickoff"))
+    m["delta"] = m["proj_points"].astype(float) - m["proj_points_kickoff"].astype(float)
+    sits_now = {g for g, a, b in zip(m["gsis_id"], m["availability"], m["availability_kickoff"], strict=True)
+                if isinstance(a, str) and not isinstance(b, str)}
+    team_of = dict(zip(m["gsis_id"], m["team"], strict=False))
+    pos_of = dict(zip(m["gsis_id"], m["position"], strict=False))
+    out = []
+    for r in m[m["delta"].abs() >= move].sort_values(["delta", "gsis_id", "league_id"]).itertuples(index=False):
+        now_a, then_a = r.availability if isinstance(r.availability, str) else None, \
+            r.availability_kickoff if isinstance(r.availability_kickoff, str) else None
+        if now_a and not then_a:
+            why = json.loads(now_a)
+            reason = f"sits: {why.get('why') or why.get('code')}"
+        elif then_a and not now_a:
+            reason = f"back: the kickoff board had him out ({json.loads(then_a).get('code')}); tonight's word does not"
+        else:
+            group = ("QB",) if r.position == "QB" else ("RB", "WR", "TE") if r.position in ("RB", "WR", "TE") else ()
+            mates = sorted(g for g in sits_now if g != r.gsis_id and team_of.get(g) == r.team and pos_of.get(g) in group)
+            if mates:
+                reason = "teammate sits: " + ", ".join(f"{names.get(g, g)} ({pos_of.get(g)})" for g in mates)
+            elif r.model_version != r.model_version_kickoff:
+                reason = f"the model changed since the kickoff board ({r.model_version_kickoff} -> {r.model_version})"
+            else:
+                reason = "the inputs moved since the kickoff board (report, market lines, depth chart / starter)"
+            line = _line_moves(r._asdict())
+            reason += f"; the line: {line}" if line and not reason.startswith(("sits", "back")) else ""
+        out.append({"league_id": r.league_id, "league": (leagues or {}).get(r.league_id, r.league_id), "gsis_id": r.gsis_id, "name": names.get(r.gsis_id, r.gsis_id),
+                    "position": r.position, "team": r.team, "kickoff_points": round(float(r.proj_points_kickoff), 2),
+                    "live_points": round(float(r.proj_points), 2), "delta": round(float(r.delta), 2), "reason": reason})
+    return out
+
+
+def _line_moves(row: dict, top: int = 3) -> str:
+    """The stat-line components that moved most between the kickoff board (``proj_<c>_kickoff``) and tonight's
+    (``proj_<c>``), in their own units: "passing_yards 251.0 -> 270.4, passing_tds 1.71 -> 1.95"."""
+    moved = []
+    for c in ALL_COMPONENTS:
+        a, b = row.get(f"proj_{c}_kickoff"), row.get(f"proj_{c}")
+        if a is None or b is None or pd.isna(a) or pd.isna(b) or abs(float(b) - float(a)) < 0.01:
+            continue
+        moved.append((abs(float(b) - float(a)) / max(abs(float(a)), 1.0), c, float(a), float(b)))
+    return ", ".join(f"{c} {a:.2f} -> {b:.2f}" for _, c, a, b in sorted(moved, reverse=True)[:top])
+
+
+def live_after_project(conn: psycopg.Connection, season: int, pred: pd.DataFrame, target: pd.DataFrame,
+                       now: datetime | None = None) -> dict:
+    """``project``'s fr1.0 step, after the B5 writer (which it never touches): the started week's rows of the games
+    not kicked off, gated with that week's word; the shadow (who would move, why) to ``SHADOW_PATH``; with
+    ``LEAGUE_LAB_FREEZE=game`` the overlay rewritten (the rows of the games not kicked off; a game that kicked off since
+    keeps its rows until the week is over), else emptied. Never raises: a failure is logged and the night goes on
+    (with ``week`` nothing a reader sees depends on this step)."""
+    import time
+
+    from . import availability_gate as _ag
+
+    t0, mode = time.perf_counter(), freeze_unit()
+    now = now or datetime.now(UTC)
+    summary: dict = {"mode": mode, "season": int(season), "week": None, "games_left": 0, "players_live": 0,
+                     "moves": [], "move_threshold": SHADOW_MOVE, "written": 0, "computed_at": now.isoformat()}
+    try:
+        with conn.cursor() as cur:
+            cur.execute(GAMES_SQL, (season,))
+            games = pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
+        week, teams = started_week(games, now)
+        summary["week"], summary["games_left"] = week, int(len(teams) // 2)
+        live = pd.DataFrame()
+        if week is not None:
+            tw = target[target["week"].astype(int) == week] if target is not None and not target.empty else pd.DataFrame()
+            pt = tw[["position", "gsis_id", "team"]] if not tw.empty else pd.DataFrame(columns=["position", "gsis_id", "team"])
+            names = dict(zip(tw["gsis_id"], tw["player_name"], strict=False)) if "player_name" in tw else {}
+            with conn.cursor() as cur:
+                cur.execute(KD_TEAM_SQL, (season, week))
+                kt = pd.DataFrame(cur.fetchall(), columns=["position", "gsis_id", "team", "player_name"])
+                names.update({g: n for g, n in zip(kt["gsis_id"], kt["player_name"], strict=False) if isinstance(n, str)})
+                cur.execute(STORED_WEEK_SQL, (season, week))
+                stored = pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
+            rs = dict(zip(tw["gsis_id"], tw["roster_status"], strict=False)) if "roster_status" in tw else {}
+            raw, meta = _ag.stored(conn, season, week, rs)
+            statuses = {g: s for g, s in ((g, _ag.classify(e)) for g, e in raw.items()) if _ag.sits(s)}
+            live = live_rows(pred, week, teams, pd.concat([pt, kt[["position", "gsis_id", "team"]]], ignore_index=True), statuses)
+            summary["players_live"] = int(live["gsis_id"].nunique()) if not live.empty else 0
+            summary["gate_source"], summary["gate_copy"] = meta.get("source"), meta.get("fetched_at")
+            with conn.cursor() as cur:
+                cur.execute("select distinct on (league_id) league_id, league_name from analytics.dim_league_season "
+                            "order by league_id, season desc")
+                leagues = {str(a): b for a, b in cur.fetchall() if isinstance(b, str)}
+            summary["moves"] = shadow_moves(live, stored, names, leagues=leagues)
+        conn.commit()   # the reads above leave no transaction open
+        if mode == "game":
+            summary["written"] = _write_live(conn, season, live, now)
+        else:
+            _clear_live(conn)
+    except Exception:  # noqa: BLE001 - the shadow / overlay never costs the night its projections
+        conn.rollback()
+        log.exception("fr1.0: the live-week step failed (the kickoff board and tonight's projections are written)")
+        summary["error"] = "failed; see the log"
+    summary["seconds"] = round(time.perf_counter() - t0, 2)
+    try:
+        SHADOW_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SHADOW_PATH.write_text(json.dumps(summary, indent=1, default=str))
+    except OSError:
+        log.warning("fr1.0: could not write %s", SHADOW_PATH)
+    log.info("fr1.0 (%s): week %s under way, %s games not kicked off, %s players re-projected; %s house-league rows would "
+             "move by %s points or more%s (%.1f s)", mode, summary["week"] or "none", summary["games_left"],
+             summary["players_live"], len(summary["moves"]), SHADOW_MOVE,
+             f"; overlay rows written: {summary['written']}" if mode == "game" else "; overlay off (LEAGUE_LAB_FREEZE=week)",
+             summary["seconds"])
+    return summary
+
+
+def _clear_live(conn: psycopg.Connection) -> None:
+    """With the switch ``week`` the overlay is empty: delete what an earlier ``game`` run left (none: nothing done)."""
+    with conn.cursor() as cur:
+        cur.execute("select to_regclass(%s) is not null", (LIVE_TABLE,))
+        if cur.fetchone()[0]:
+            cur.execute(f"select exists (select 1 from {LIVE_TABLE})")
+            if cur.fetchone()[0]:
+                cur.execute(f"delete from {LIVE_TABLE}")
+                log.info("fr1.0: switch is week: %s emptied (%s rows an earlier game run left)", LIVE_TABLE, cur.rowcount)
+    conn.commit()
+
+
+def _write_live(conn: psycopg.Connection, season: int, live: pd.DataFrame, now: datetime) -> int:
+    """The overlay (``LEAGUE_LAB_FREEZE=game``), in one transaction: rows of another week or season go, the rows of the
+    games that have not kicked off are replaced by ``live``; a game that kicked off since the last run keeps its rows."""
+    week = int(live["week"].iloc[0]) if live is not None and not live.empty else None
+    with conn.cursor() as cur:
+        cur.execute(NFL_DDL[LIVE_TABLE])
+        if week is None:
+            cur.execute(f"delete from {LIVE_TABLE}")
+            conn.commit()
+            return 0
+        cur.execute(f"delete from {LIVE_TABLE} where season <> %s or week <> %s or game_kickoff > %s", (season, week, now))
+    _write(conn, LIVE_TABLE, live, "season = %s and week = %s and game_kickoff > %s", (season, week, now))
+    return int(len(live))
 
 
 # ------------------------------------------------------------------------------ plan F1: the NFL-wide tables under the same freeze
