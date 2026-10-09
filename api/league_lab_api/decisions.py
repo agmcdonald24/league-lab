@@ -3044,6 +3044,16 @@ def it1_finder_alternative(ctx: TradeContext, board: RosterBoard, weeks: tuple[i
     return out
 
 
+IU1_SEARCH_ENV = "LEAGUE_LAB_FINDER_SEARCH"
+
+
+def iu1_search_on_basis() -> bool:
+    """IU-1: the Finder proposes on the replacement frame (default); ``LEAGUE_LAB_FINDER_SEARCH=roster`` restores the
+    roster-only search (the before / after comparison)."""
+    import os
+    return str(os.environ.get(IU1_SEARCH_ENV, "basis")).strip().lower() != "roster"
+
+
 def it1_row_notes(ctx: TradeContext, rows: list[dict]) -> None:
     """Each Finder row's players carry the league screens' one status note (`league_gate.note`: the reason, its source
     and date; `sits`): the same cell My Week and the Team Hub draw. One request-time read for every row."""
@@ -3134,12 +3144,15 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
         ros, ours, mkt = sanity_inputs(ctx)
         stats: dict = {}
         rejected: list = []
-        found = T.partners(board, int(team), weeks=weeks, stats=stats, want=want, rejected=rejected,
+        # ---- IU-1: the packages are proposed on the frame the verdict judges them on (the replacement frame)
+        free = ii1_frame(ctx, board, tuple(weeks), window)["free"] if iu1_search_on_basis() else None
+        stats["search_basis"] = "replacement" if free is not None else "roster"
+        found = T.partners(board, int(team), weeks=weeks, stats=stats, want=want, rejected=rejected, free=free,
                            allow=lambda pk: T.sanity(pk.give, pk.get, ros=ros, ours=ours, market=mkt, name=ctx.name,
                                                      values=ctx.prices))          # ---- IG-1: rule (a) on season value
         return ctx, found, stats, (board, weeks, span), rejected, (ros, mkt)
     ctx, found, stats, (board, weeks, span), rejected, (ros, mkt) = (
-        search() if as_of is not None else _memo(("partners", str(league_id), int(team), want, is_house, window), is_house, search))
+        search() if as_of is not None else _memo(("partners", str(league_id), int(team), want, is_house, window, iu1_search_on_basis()), is_house, search))
     starts_now = weeks[0] == ctx.this_week
     rows = []
     for p in found:

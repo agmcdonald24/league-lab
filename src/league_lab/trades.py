@@ -507,8 +507,12 @@ class _Bars:
     """One roster, per week, with some of its players taken off (those whose game has kicked off stay): its
     best total and, lazily, the entry bar per position set, so what a player adds is a lookup."""
 
-    def __init__(self, board: RosterBoard, roster: int, weeks: Sequence[int], remove: Sequence[str] = ()):
-        self.preps = [prepare(board.pool_with(roster, w, _moving(board, remove, w)), board.slots) for w in weeks]
+    def __init__(self, board: RosterBoard, roster: int, weeks: Sequence[int], remove: Sequence[str] = (),
+                 free: Mapping[int, Sequence[Player]] | None = None):
+        pools = [board.pool_with(roster, w, _moving(board, remove, w)) for w in weeks]
+        if free is not None:            # ---- IU-1: the replacement frame — each week's empty slots filled from the free pool
+            pools = [_covered_pool(ps, board.slots, free.get(int(w), ())) for ps, w in zip(pools, weeks, strict=True)]
+        self.preps = [prepare(ps, board.slots) for ps in pools]
         self.totals = [p.total for p in self.preps]
         self._bars: list[dict[frozenset, float | None]] = [{} for _ in weeks]
         self._adds: dict[str, float] = {}
@@ -547,6 +551,7 @@ class _Search:
     stats: dict = field(default_factory=dict)
     allow: Callable[[Package], str | None] | None = None     # IA-2: None = keep; a reason = the package is set aside
     rejected: list = field(default_factory=list)              # IA-2: (package, reason) set aside, in search order
+    free: Mapping[int, Sequence[Player]] | None = None        # IU-1: search on the replacement frame (None: roster-only)
 
     def __post_init__(self):
         self.incoming: dict[str, list[Player | None]] = {}
@@ -564,13 +569,13 @@ class _Search:
 
     def bars(self, roster: int) -> _Bars:
         if roster not in self.full:
-            self.full[roster] = _Bars(self.board, roster, self.weeks)
+            self.full[roster] = _Bars(self.board, roster, self.weeks, free=self.free)
         return self.full[roster]
 
     def bars_minus(self, roster: int, pid: str) -> _Bars:
         key = (roster, pid)
         if key not in self.minus:
-            self.minus[key] = _Bars(self.board, roster, self.weeks, [pid])
+            self.minus[key] = _Bars(self.board, roster, self.weeks, [pid], free=self.free)
             self.stats["bar_sets"] = self.stats.get("bar_sets", 0) + 1
         return self.minus[key]
 
@@ -594,6 +599,8 @@ class _Search:
 
     def evaluate(self, give: tuple[str, ...], get: tuple[str, ...]) -> Package:
         self.stats["evaluated"] = self.stats.get("evaluated", 0) + 1
+        if self.free is not None:                                                    # ---- IU-1
+            return package_gains_covered(self.board, give, get, self.weeks, self.free)
         return package_gains(self.board, give, get, self.weeks)
 
 
@@ -666,7 +673,8 @@ def partner(search: _Search, them: int, shapes: Sequence[str] = ("1-for-1", "2-f
 def partners(board: RosterBoard, me: int, *, weeks: Iterable[int] | None = None,
              shapes: Sequence[str] = ("1-for-1", "2-for-1", "1-for-2"), stats: dict | None = None,
              rosters: Iterable[int] | None = None, want: str | None = None,
-             allow: Callable[[Package], str | None] | None = None, rejected: list | None = None) -> list[Partner]:
+             allow: Callable[[Package], str | None] | None = None, rejected: list | None = None,
+             free: Mapping[int, Sequence[Player]] | None = None) -> list[Partner]:
     """Every other roster (or those in ``rosters``) with its best 1-for-1 and 2-for-1 (see the module
     docstring), best partner first; rosters with no trade that raises both lineups come last (``best`` None).
     ``want`` (Wave G, the API's partner finder): only packages in which every player I get plays that position
@@ -676,7 +684,7 @@ def partners(board: RosterBoard, me: int, *, weeks: Iterable[int] | None = None,
     t0 = time.perf_counter()
     weeks = tuple(int(w) for w in (weeks or board.weeks))
     search = _Search(board, int(me), weeks, stats if stats is not None else {}, allow=allow,
-                     rejected=rejected if rejected is not None else [])
+                     rejected=rejected if rejected is not None else [], free=free)
     only = None if rosters is None else {int(r) for r in rosters}
     out = [partner(search, r, shapes, want) for r in board.rosters if r != int(me) and (only is None or r in only)]
     out.sort(key=lambda p: (p.best is None, p.best.order() if p.best is not None else (), p.roster_id))
@@ -1405,3 +1413,31 @@ def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free:
 # ---- end IT-1
 
 __all__ += ["basis_best_move"]                                       # ---- IT-1
+
+
+# ---- IU-1 (Wave I-U): the partner search on the replacement frame. With ``free`` (week -> that week's free agents, best
+# first: `_free_by_week`), `partners` proposes and bounds every package on the frame the verdict judges it on: each
+# roster-week's pool carries the free agents that fill its empty starting slots (`_covered_pool`), so an entry bar, a
+# loss and a package's exact gains (`package_gains_covered`: `covered_pair`, one free agent never counted for both
+# teams) are the basis's. The bounds ignore that exclusivity (it only moves the second roster's fills); the exact gains
+# do not. Without ``free`` the search is the roster-only one, unchanged.
+def _covered_pool(pool: Sequence[Player], slots: Sequence[str], free_week: Sequence[Player]) -> list[Player]:
+    """The pool with the free agents `fill_lineup` puts in its empty starting slots."""
+    _, ids = fill_lineup(pool, slots, free_week)
+    if not ids:
+        return list(pool)
+    used = set(ids)
+    return [*pool, *[q for q in free_week if q.id in used]]
+
+
+def package_gains_covered(board: RosterBoard, give: Sequence[str], get: Sequence[str], weeks: Sequence[int],
+                          free: Mapping[int, Sequence[Player]]) -> Package:
+    """`package_gains` on the replacement frame (cuts included, no market)."""
+    give, get = _ids(give), _ids(get)
+    me = _owner(board, give, "give")
+    a, b = covered_pair(board, me, give, get, weeks, free)
+    return Package(_owner(board, get, "get"), give, get, a.gain_week, a.gain_window, b.gain_week, b.gain_window)
+
+
+__all__ += ["package_gains_covered"]                                         # ---- IU-1
+
