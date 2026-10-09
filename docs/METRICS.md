@@ -5617,3 +5617,61 @@ scale him (by about 0.62, the played share × the when-played ratio) is the PO's
 * **One minus sign**: `it1_minus` on every sentence of the decision, the card and the Finder's headline.
 * Not graded: whether the basis's pickups are available (another team can add the player first) — said on the card.
 <!-- ---- end IT-1 -->
+
+### The live week after its first kickoff (fr1.0, IU-2, Wave I-U, 2026-10-09) — the rule, written before the code
+
+**What reads the frozen rows today** (read first, `projections.py` / the record marts / the nightly):
+
+* The **decision record**: `ops.projections` (house leagues) and `ops.projection_lines` / `ops.projection_ranges` /
+  `ops.kd_lines` / `ops.kd_ranges` (NFL-wide) rows of a league-week (or week) whose first kickoff has passed —
+  `freeze_plan`'s `keep`, labelled `frozen_source = 'kickoff'` (written before the first kickoff: the board managers
+  saw) or `'refit'`. They are graded by: `drift` / `load_board` → `ops.projection_drift` → `mart_projection_drift`
+  (About's grades, the honest floor's coverage, `frozen_share`); `mart_projection_record` (only `frozen_source =
+  'kickoff'`: our board against Sleeper's last pre-kickoff snapshot); `context_record` (`PROJ_SQL`, the record's
+  source label); `signals` (no scenario for a kickoff week); `lineup.lineup_record` (the lineup recommended before the
+  first kickoff, reconstructed from frozen rows); `market_record`. Kept across nights by `restore_state` (hosted copy)
+  and the archive (`save-record` → `RECORD_DIR`, `restore_record_from_archive`); held to "written before the first
+  kickoff" by `assert_frozen_projections_precede_kickoff` / `assert_frozen_nfl_wide_precede_kickoff`.
+* The **live readers** of the same rows: `mart_player_week_projections` (every house screen, the card's chart,
+  `ratings`), the ROS mart's board ("a week held twice keeps the frozen row"), `anyleague`'s NFL-wide board
+  (`_FRESHEST`: frozen first — every reference key and any league on demand), `ratings` / `unitcard` (`frozen_source`
+  shown as the row's source), the lineup and waiver solves inside `project` (`lineup.lineups` reads `ops.projections`
+  for the week), My Week's realised rows (`ops.lineup_totals.is_realised`: played weeks, from Sleeper's points).
+* **Why the whole week freezes at once**: the unit of `freeze_plan` is (league, week) — one label, one `frozen_at`,
+  one `fitted_at` per unit, which the record's grades and both freeze tests assume (a week is "the board as
+  published"), and a partly rewritten week would mix two fits under one label.
+* **What a Saturday re-projection of a Sunday game would change** (the model's inputs for week W are as-of week W,
+  `assert_features_never_peek`): Thursday's game does **not** enter a Sunday player's season-to-date features (they
+  stop at week W−1). What does change between Thursday and Sunday: the week's **injury report** (`report_status`, the
+  `questionable` input; Friday's final), the **market** (`implied_team_total`, `spread_line` as lines move), the
+  **roster file / depth chart / starter overrides** (`int_depth_chart_current`, IQ-2's seed: who starts), the gate's
+  word (Sleeper / ESPN / the report: a player who sits is 0). And one thing that must **not** move: the fit itself
+  (tonight's models on the same training seasons — the coefficients of a re-run are the same up to the rows the
+  calibration reads; `calibration.future_inputs` / `horizon_blend_lines` act on weeks after the market week only).
+  So a re-projection of unplayed games is the same model on fresher inputs, not a peek at the week's results.
+
+**The rule.**
+
+1. **A game's rows are the record once that game kicks off.** Until then the nightly may re-project them with
+   today's inputs. The board managers saw at the week's first kickoff (`frozen_source = 'kickoff'`) stays **kept,
+   unchanged, where it is**, and every grade keeps reading it there (nothing above changes).
+2. **Where the live number lives**: a separate overlay table, `ops.projection_live` (the shape of `ops.projections`
+   plus `game_kickoff`), holding only the rows of the started week's games that have not kicked off, replaced on
+   every run (empty when no week is under way, or when the switch is `week`). `db migrate` creates it. Size: one row
+   per house league × player of an unplayed game, about 1,200 rows ≈ 0.3 MB on the hosted copy (it rides the `ops`
+   publish; no grade reads it).
+3. **The switch, `LEAGUE_LAB_FREEZE=week|game`, default `week`** — today's behaviour bit for bit: `freeze_plan`,
+   the writers and every reader are untouched; `ops.projection_live` stays empty. With `game`: `project` writes
+   `ops.projection_live` (the fresh rows of the unplayed games, through the same availability gate as the live week:
+   a player who sits is 0 with the reason); `mart_player_week_projections` takes the live row for a (league, week,
+   player) when one exists, else the stored one — so the house screens, the card and the lineup readers of the mart
+   read Sunday's number until that game kicks off. Played and in-progress games keep their stored rows.
+4. **Shadow first.** With the switch still `week`, `project` computes what `game` would write and saves the players
+   whose live-week number would move by 2 points or more, with the reason (who sits; whose teammate sits), to
+   `logs/freeze_shadow.json`; `league-lab freeze-shadow` prints it (a soft nightly step, seconds, never fails the
+   night).
+5. **What moves with `game` and what does not**: the injury report, the gate (Sleeper / ESPN / report), the market
+   lines, IQ-2's starter override and the depth chart move a re-projection to the extent the model reads them (the
+   override and the depth chart through who is the listed starter; the report through `questionable` and the gate);
+   a backup's bigger role moves only as far as those inputs encode it — the model has no "teammate out this week"
+   feature, so a starter's absence reaches his backup through the depth chart / override, not by itself.
