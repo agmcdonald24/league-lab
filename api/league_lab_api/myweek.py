@@ -509,12 +509,22 @@ def pair_moves(ins: list[str], outs: list[str], current: dict[str, str], pos_of)
     chain, memo = len(slot_list) <= MAX_CHAIN_SLOTS, {}
 
     def by_chain(o: str) -> str | None:
-        rest = [pos_of(k) or "*" for k in now_in if k != o]
+        # ---- IT-3: a starter whose position is unknown (he left the roster but is still in the submitted lineup —
+        # IO-4's case; or the stale fixture lineup on a later week's board) keeps HIS slot: he is not a wildcard the
+        # chain may slide into the out's slot. As a wildcard he "filled" the quarterback spot, so a receiver came out
+        # paired "in place of" Mahomes at WR2 while Mahomes was on a bye (the PO's QA, Wave I-S).
+        keep = [k for k in now_in if k != o]
+        rest = [pos_of(k) for k in keep if pos_of(k)]
+        slots = list(slot_list)
+        for k in keep:
+            if not pos_of(k) and (current or {}).get(k, "") in slots:
+                slots.remove((current or {}).get(k, ""))
+        # ---- end IT-3
         tried: dict[str, bool] = {}
         for i in ins:
             p = pos_of(i) or "*"
             if p not in tried:
-                tried[p] = fits_positions([*rest, p], slot_list, memo)
+                tried[p] = fits_positions([*rest, p], slots, memo)
             if tried[p]:
                 return i
         return None

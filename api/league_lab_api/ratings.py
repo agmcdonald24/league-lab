@@ -317,6 +317,21 @@ def player_projections(gsis: str, league: str, season: int | None = None, throug
         src = r.frozen_source if isinstance(r.frozen_source, str) else None
         weeks.append({"week": int(r.week), "proj_points": _num(r.proj_points), "p10": _num(r.p10), "p25": _num(r.p25),
                       "p75": _num(r.p75), "p90": _num(r.p90), "source": src})
+    # ---- IT-3 (Wave I-S follow-up): the card's points chart is gated like its head — a player the one definition
+    # leaves out of the card's week (league_gate: the stored record + Sleeper + ESPN) has 0 there, with the reason, not
+    # the mart's number (between a deploy and the refresh; all week for a week frozen before his news)
+    gate_why = None
+    try:
+        from . import league_gate as LG
+        n = LG.note(LG.blocks([gsis], season, int(week)).get(gsis))
+        gate_why = n["why"] if n and n["sits"] else None
+    except Exception:  # noqa: BLE001 - the chart keeps its rows; the head still says why
+        gate_why = None
+    for w in weeks:
+        if gate_why and w["week"] == int(week):
+            w.update({k: 0.0 for k in ("proj_points", "p10", "p25", "p75", "p90")})
+            w["sits"] = gate_why
+    # ---- end IT-3
     srcs = sorted({w["source"] or "live" for w in weeks})
     return {"gsis_id": gsis, "season": season, "through_week": int(week), "weeks": weeks, "why": why,
             "notes": [f"{_span([w['week'] for w in weeks if (w['source'] or 'live') == s])}: {SOURCE_WORDS[None if s == 'live' else s]}."

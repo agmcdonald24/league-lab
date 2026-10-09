@@ -433,9 +433,18 @@ def role_alerts(ctx: Ctx, season: int, gsis: list[str] | None = None) -> pd.Data
     if missing_relations(("mart_player_role_alerts",)):
         return pd.DataFrame()
     where, params = ("and gsis_id = any(%s)", (list(gsis),)) if gsis is not None else ("", ())
-    return query(f"select {ALERT_COLS} from analytics.mart_player_role_alerts where season = %s and is_live {where} "
-                 "order by direction = 'up' desc, kind in ('role_up', 'role_down'), abs(z) desc, player_name",
-                 (int(season), *params))
+    al = query(f"select {ALERT_COLS} from analytics.mart_player_role_alerts where season = %s and is_live {where} "
+               "order by direction = 'up' desc, kind in ('role_up', 'role_down'), abs(z) desc, player_name",
+               (int(season), *params))
+    # ---- IT-3: no role alert for a player the one definition leaves out this week (the mart is built from the
+    # nightly's game data and knows nothing of today's status: a role change of a player who sits is not a pickup or a
+    # start); league_gate at request time, the same path every league screen asks
+    if not al.empty and "gsis_id" in al:
+        from . import league_gate as LG
+        gate = LG.blocks([g for g in al["gsis_id"] if isinstance(g, str)])
+        al = al[[not LG.sits(gate.get(g)) for g in al["gsis_id"]]].reset_index(drop=True)
+    # ---- end IT-3
+    return al
 
 
 # ---- IA-1: Trends in plain words — the work per game per row, and the reason in a sentence (Wave I-A)

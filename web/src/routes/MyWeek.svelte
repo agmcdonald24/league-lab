@@ -15,6 +15,7 @@
   import { lineupPane } from "../lib/pane.svelte"; // ---- IB-1: a lineup name opens the research pane
   import Expander from "../components/Expander.svelte";
   import LineupTable from "../components/LineupTable.svelte";
+  import ProvenanceLine from "../components/provenance/ProvenanceLine.svelte"; // ---- IT-3
   import Md from "../components/Md.svelte";
   // ---- IH-1: the error card (the API down, a 500, still waiting) and the stale banner (/api/status `nightly`)
   import ErrorCard from "../components/ErrorCard.svelte";
@@ -24,7 +25,7 @@
   // feed (each line: the fact, why it matters here, the decision status, the forecast status, the next step), long
   // explanations collapsed, the three clocks apart (data built / injuries checked / news — stamps, never a warning)
   import { DECISION_CHIP, DECISION_MARK, NEWS_FEED, nextHref, splitLead, splitRecaps, stampET } from "../lib/feed"; // IN-5: NEWS_FEED
-  import type { ChangedLine } from "../lib/api";
+  import type { ChangedLine, DecisionCaveat, Provenance } from "../lib/api"; // IT-3: DecisionCaveat, Provenance
   // ---- end II-4
 
   let {
@@ -44,6 +45,8 @@
   } = $props();
 
   let data = $state<MyWeek | null>(null);
+  // ---- IT-3: provenance and the starter caveats the answer carries since IS-2
+  const prov = (d: MyWeek | null) => d as (MyWeek & { provenance?: Provenance | null; caveats?: DecisionCaveat[] | null }) | null;
   let error = $state<string | null>(null);
   let loading = $state(false);
   // ---- IH-1: the failure as a kind (null: none; `slow` while still waiting), a retry that asks the server again, and
@@ -468,6 +471,8 @@
               <LineupTable rows={data.lineup} {ctx} testid="lineup" margins pane={(row) => lineupPane(row, data!.lineup_full)} /><!-- IF-4: margins -->
               <!-- ---- IG-1: the total counts a starter with no projection as 0: say how many -->
               {#if data.unvalued_words}<p class="text-sm leading-snug text-ink-3" data-testid="unvalued-words">{data.unvalued_words}</p>{/if}
+              <!-- ---- IT-3: what the numbers are and what has been checked; a quarterback whose starter is unclear or set by hand says so in a lineup's words -->
+              <ProvenanceLine p={prov(data)?.provenance} caveats={prov(data)?.caveats} testid="myweek-provenance" />
             {:else}
               <p class="text-sm text-ink-3">No proposed lineup for this week yet.</p>
             {/if}

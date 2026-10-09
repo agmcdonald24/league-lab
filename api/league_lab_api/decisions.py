@@ -4601,7 +4601,10 @@ def waiver_views(league_id: str, team: int | None, season: int, week: int, mv: p
     byes, empty = _byes(h)
     stash = {(s.get("add") or {}).get("gsis_id"): s for s in stashes if (s.get("add") or {}).get("gsis_id")}
     gs = {g for g in mv["add_gsis_id"] if isinstance(g, str)}
-    blocked = set(availability.cannot_play(gs)) if gs else set()
+    # ---- IT-3: who sits is the one definition's (league_gate: the stored record + Sleeper + ESPN, stale words
+    # dropped) — was the older overlay's `availability.cannot_play` (its live snapshot alone, no stored record)
+    blocked = {g for g, b in LG.blocks(gs).items() if LG.sits(b)} if gs else set()
+    # ---- end IT-3
     best = mv[mv["is_best_drop"].fillna(False).astype(bool) & (mv["list_kind"] != "nothing")]
     best = best[~best["add_gsis_id"].map(lambda g: isinstance(g, str) and g in blocked)]
     # ---- IF-1: only a claim worth its roster spot is offered (net gain = lineup gain − what the drop costs beyond it)

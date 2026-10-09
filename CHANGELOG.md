@@ -11,6 +11,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   (the routes, the lineup solve and the audit read Friday's news at read time); the audit's first line is what a
   visitor can see (must be 0), the frozen stored rows a note with names; "Questionable: about 2 in 3 play" under the
   ranked row, by position.
+- **IT-3 — inside a league: the last readers, and the caveats on screen.** The waiver views, MFL's team-quarterback
+  unit and the role alerts ask the one definition (`league_gate` / `availability_gate.sits`); a role alert or a
+  role-up "upside" is not offered for a player who sits; the card's points chart draws 0 for the card's week of a
+  player who sits, like its head. My Week and Waivers show their provenance line and the starter caveats in a
+  lineup's words ("Tampa Bay's starter is unclear … check who starts before kickoff"). My Week no longer pairs a
+  receiver "in place of" a quarterback when the submitted lineup still holds a player who left the roster (the slot
+  chain kept him in no slot). `docs/handbacks/IT-3.md`.
 
 ## 2026-10-08 — Wave I-S (dependability, second round)
 

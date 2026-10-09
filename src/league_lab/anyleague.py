@@ -58,6 +58,7 @@ from typing import ClassVar
 import numpy as np
 import pandas as pd
 
+from . import availability_gate as AG  # ---- IT-3
 from . import clock, memo, provider_trouble  # ---- IP-5: provider_trouble
 from . import league_status as LS  # ---- IS-2: the one "can he play" question
 from . import lineup as LU
@@ -697,7 +698,7 @@ def price_board(b: Board, league_id: str, scoring: Mapping[str, float], starts: 
 
 # ---- IC-2 (Wave I-C): slots as eligibility sets, team units priced from their team's lines
 UNIT_COLUMNS = ["position", "team", "proj_points", *QUANTILES, "starter_gsis", "starter_name", "n_players"]
-UNIT_SKIP_STATUS = ("Out", "Doubtful")              # a quarterback who will not play is not part of his team's unit
+UNIT_SKIP_STATUS = ("Out", "Doubtful")              # IT-3: no longer read here (unit_lines asks availability_gate.sits)
 UNIT_QB_RULE = "starter"                            # TMQB = the starter's line ("sum": every playing QB's; unit_lines)
 
 
@@ -738,7 +739,10 @@ def unit_lines(b: Board, proj: pd.Series | None = None, rule: str | None = None)
     team = st["team"]
     out_ = pd.Series(False, index=qb.index)
     if "report_status" in st:
-        out_ |= st["report_status"].isin(UNIT_SKIP_STATUS)
+        # ---- IT-3: "will not play" is the gate's question over the week's own report row (availability_gate.
+        # report_block + sits: Out, and Doubtful while it measures unlikely) — was this module's UNIT_SKIP_STATUS codes
+        out_ |= st["report_status"].map(lambda s: AG.sits(AG.report_block(s))).astype(bool)
+        # ---- end IT-3
     if "roster_status" in st:
         out_ |= st["roster_status"].eq("RES")
     rank = (proj.reindex(qb.index) if proj is not None else qb["proj_passing_yards"]).astype(float).fillna(-1e9)
