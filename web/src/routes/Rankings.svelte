@@ -241,6 +241,12 @@
                   ><span class="mr-1 rounded-sm bg-raised px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:hidden" data-testid="rankings-unclear-chip-phone">Starter unclear</span>{unclear.words} No tier.</span
                 >
               {/if}
+              {#if x.availability?.short}
+                <!-- ---- IT-2 (Wave I-T): a flagged status says how often such players play, in full, under the row -->
+                <span class="mt-1 block pl-[4.25rem] text-xs leading-snug text-ink-2 wide:col-span-full wide:pl-[2.75rem]" data-testid="rankings-rate"
+                  >{x.availability.short}{x.availability.why ? ` · ${x.availability.why}` : ""}</span
+                >
+              {/if}
               {#if fixed}
                 <!-- ---- IQ-2: who starts, set by hand: one sentence under the row -->
                 <span class="mt-1 block pl-[4.25rem] text-xs leading-snug text-ink-2 wide:col-span-full wide:pl-[2.75rem]" data-testid="rankings-corrected-words"
