@@ -24,6 +24,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   every quarterback's probability of starting 1–8 weeks out, v3.6's line beside the mixture's — in
   `ops.horizon_record` (kept state, about 2 MB a season) and grades it on hg1.0 as 2026's weeks are played. Nothing on
   a screen changes.
+- **IU-3 — small things that made screens disagree or read oddly.** "Who should I start?" follows the trade verdict's
+  starter rule: a quarterback whose team's starter was set by hand gets the call as a lean that says whom it assumes
+  (unclear: no call, as before). The card says a Questionable player's measured rate ("Questionable: about 7 in 10
+  play"), and its points chart says why a week he sits is 0. Trends leaves out a player who sits this week (Doubtful
+  included) through the one definition, with his reason. About's saved answer re-recorded. My Week, Team and Waivers
+  print a projection and a margin to one decimal like the other screens. `docs/handbacks/IU-3.md`.
 
 ## 2026-10-09 — Wave I-T
 

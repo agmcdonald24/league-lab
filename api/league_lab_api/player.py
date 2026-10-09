@@ -108,6 +108,14 @@ PROFILE_SQL = """select dp.gsis_id, coalesce(a.player_name, dp.player_name) as p
        left join analytics.mart_league_player_season pv on pv.gsis_id = dp.gsis_id and pv.league_id = %s and pv.season = %s - 1
        where dp.gsis_id = %s"""
 
+def _status_words(n: dict) -> str:
+    """IU-3: after the status line, the reason when he sits, else the flag's measured rate ("Questionable: about 2 in 3
+    play.", his position's — the Rankings row's words); "" for neither."""
+    if n.get("sits") and n.get("words"):
+        return f" {n['words']}"
+    return f" {n['rate_words']}." if n.get("rate_words") else ""
+
+
 def status_note(p, gsis, season, week) -> tuple[dict | None, bool]:
     """(the note a screen reads — ``league_gate.note`` — or None, whether it came from the week's own injury report).
     IS-2: the one definition's block (the stored record + Sleeper + ESPN). PO (Wave I-S): when those say nothing, THIS
@@ -124,7 +132,7 @@ def status_note(p, gsis, season, week) -> tuple[dict | None, bool]:
             and int(p["injury_week"]) == int(p["report_for_week"]):
         blk = AGATE.report_block(p["injury_status"])
         from_report = blk is not None
-    return LG.note(blk), from_report
+    return LG.note(blk, position=p.get("position")), from_report          # ---- IU-3: the position's rate
 
 
 PROJ_SQL = """select proj_points, p10, p25, p75, p90, proj_targets, proj_receptions, proj_receiving_yards, proj_receiving_tds,
@@ -372,10 +380,10 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
     if gate_note and from_report:      # ---- PO: the report's own line, with the injury and the practice status
         detail = f" ({p['injury']})" if isinstance(p["injury"], str) and p["injury"] else ""
         prac = f"; practice: {p['practice_status']}" if isinstance(p["practice_status"], str) and p["practice_status"] else ""
-        words = f" {gate_note['words']}" if gate_note.get("sits") and gate_note.get("words") else ""
+        words = _status_words(gate_note)
         lines.append(f"⚠️ **{gate_note['status']}**{detail}{prac}.{words}")
     elif gate_note:
-        words = f" {gate_note['words']}" if gate_note.get("sits") and gate_note.get("words") else ""
+        words = _status_words(gate_note)
         lines.append(f"⚠️ **{gate_note['why']}**.{words}")
     elif yes(p["in_pool"]):
         lines.append("No injury designation.")

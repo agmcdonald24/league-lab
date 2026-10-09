@@ -592,8 +592,17 @@ def trends(league_id: str, *, position: str | None = None, limit: int | None = N
     elif view == "under":
         df = df[df["gap"] < 0]
     # ---- I0-A: nobody who cannot play this week in "due" or "hot" (Out / IR / PUP / suspended: the availability overlay)
-    out_now = availability.cannot_play(list(df["gsis_id"]), availability.NOT_IN_TRENDS) if not df.empty else {}
-    left_out = [{"gsis_id": g, "player_name": a.get("name"), "status": a["status"]} for g, a in out_now.items()]
+    # ---- IU-3 (the rule the Rankings imply): a player who sits this week — cannot play, or a status that rarely plays
+    # (Doubtful) — is not a "due" or "hot" call this week; he is listed under `left_out_players` with his reason, and
+    # his season trend is not touched. One question, `league_gate` (the stored record + Sleeper + ESPN + the week's
+    # report), not the older overlay's snapshot with its own code set (`NOT_IN_TRENDS`, which kept Doubtful listed)
+    from . import league_gate as LG
+    gate = LG.blocks([g for g in df["gsis_id"] if isinstance(g, str)]) if not df.empty else {}
+    out_now = {g: b for g, b in gate.items() if LG.sits(b)}
+    names = dict(zip(df["gsis_id"], df["player_name"], strict=False)) if "player_name" in df else {}
+    left_out = [{"gsis_id": g, "player_name": names.get(g), "status": b.get("status"), "why": b.get("why")}
+                for g, b in out_now.items()]
+    # ---- end IU-3
     df = df[~df["gsis_id"].isin(set(out_now))]
     # ---- end I0-A
     default_sort, default_dir = {"over": ("gap", "desc"), "under": ("gap", "asc"), "all": ("momentum", "desc")}[view]

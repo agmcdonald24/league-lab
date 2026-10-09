@@ -24,7 +24,8 @@
   const vsWords = (r: LineupRow) => r.margin_words ?? "";
   // ---- end IF-4
   // injury / lock / empty-slot flags: under the name (IA-1; was a column only when some row had one)
-  const num = (v: number | null) => (v === null || v === undefined ? "—" : v.toFixed(2));
+  // ---- IU-3: one rounding on every screen — a projection and a margin to one decimal, as Rankings, Waivers, Team and the card print them
+  const num = (v: number | null) => (v === null || v === undefined ? "—" : v.toFixed(1));
   // I0-A: the availability overlay's reason for an OUT / DOUBTFUL / IR chip ("Out (ankle) · ESPN, Oct 2 2:35 PM ET")
   const reason = (r: LineupRow) => (r as LineupRow & { reason?: string | null }).reason ?? "";
   const sitsNow = (r: LineupRow) => (r as LineupRow & { sits?: boolean }).sits === true; // ---- IS-2
@@ -80,7 +81,7 @@
               <!-- ---- IG-1: no projection row: the words under the name (a dash in the Proj column; never 0.00) -->
               {#if r.no_projection && !(r.flag ?? "").includes(NO_PROJECTION)}<div class="text-xs leading-snug text-ink-3" data-testid="no-projection">{NO_PROJECTION}</div>{/if}
               {#if showMargin && r.margin !== null}<div class="tabnum text-xs text-ink-3 sm:hidden" data-testid="margin-line"
-                  >{#if vsWords(r).startsWith("no eligible")}no eligible reserve{:else}margin {r.margin.toFixed(2)}{vsWords(r) ? ` ${vsWords(r)}` : ""}{/if}</div
+                  >{#if vsWords(r).startsWith("no eligible")}no eligible reserve{:else}margin {r.margin.toFixed(1)}{vsWords(r) ? ` ${vsWords(r)}` : ""}{/if}</div
                 >{/if}
               <!-- IS-2: a player who sits this week shows why beside his 0 in every table, not only the full list -->
               {#if (full || sitsNow(r)) && reason(r)}<div class="text-xs leading-snug text-ink-3" data-testid="avail-reason">{reason(r)}</div>{/if}
@@ -92,7 +93,7 @@
         ><!-- IG-1: the title says why there is no number -->
         {#if showMargin}<td class="tabnum hidden py-1.5 text-right text-ink-2 sm:table-cell" data-testid="margin-cell"
             >{#if r.margin !== null && vsWords(r).startsWith("no eligible")}<span class="text-xs text-ink-3">no eligible reserve</span>{:else if r.margin !== null}{r.margin.toFixed(
-                2,
+                1,
               )}{#if vsWords(r)}<span class="block text-xs text-ink-3">{vsWords(r)}</span>{/if}{/if}</td
           >{/if}
       </tr>

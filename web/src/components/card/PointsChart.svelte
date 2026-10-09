@@ -49,6 +49,7 @@
     lo: number | null;
     hi: number | null;
     source: string | null;
+    sits?: string | null; // ---- IU-3: the reason he sits that week (the answer's `sits`, since IT-3)
   }
   const rows = $derived.by((): Wk[] => {
     if (!games || !proj) return [];
@@ -62,7 +63,7 @@
     for (const w of proj.weeks) {
       const s = schedule.find((r) => r.week === w.week);
       const cur = by.get(w.week) ?? { week: w.week, opp: s?.opponent ? `${s.is_home ? "vs" : "at"} ${teamLabel(s.opponent)}` : null, played: false, points: null, p: null, lo: null, hi: null, source: null };
-      by.set(w.week, { ...cur, p: w.proj_points, lo: w.p10, hi: w.p90, source: w.source });
+      by.set(w.week, { ...cur, p: w.proj_points, lo: w.p10, hi: w.p90, source: w.source, sits: (w as typeof w & { sits?: string | null }).sits ?? null }); // IU-3: sits
     }
     return [...by.values()].sort((a, b) => a.week - b.week);
   });
@@ -77,6 +78,8 @@
     if (!r) return "";
     const head = `Week ${r.week}${r.opp ? ` ${r.opp}` : ""}: `;
     const pts = r.played ? `${pts1(r.points)} points` : r.source === null && r.p !== null ? "not played yet" : "did not play";
+    // ---- IU-3: a week he sits says why beside its 0, not a range of zeros
+    if (r.sits) return `${head}${r.played ? `${pts1(r.points)} points` : "not played yet"} · 0, he sits: ${r.sits}`;
     const pj = r.p === null ? "" : ` · projected ${pts1(r.p)}${r.lo !== null && r.hi !== null ? ` (${pts1(r.lo)}–${pts1(r.hi)})` : ""}${r.source ? `, ${SRC[r.source] ?? r.source}` : ""}`;
     return head + pts + pj;
   }

@@ -59,6 +59,7 @@ from league_lab import decisions as WP
 
 from . import availability as AV  # ---- IR-1
 from . import matchup_board as MB
+from . import provenance as PV  # ---- IU-3
 from . import refleague, ros_grade  # ---- IQ-4: ros_grade
 from . import research as R
 from .applib import cards
@@ -728,6 +729,35 @@ def rankings(league: str, *, position: str | None = None, view: str | None = Non
     return {**meta, "rows": rows, "total": total}
 
 
+# ---- IU-3: the starter caveats in a start/sit's words (the trade's sentence kept as ``verdict_words``)
+START_SET_WORDS = "Read it as a lean: {team}'s starter was set by hand ({set}{listed}), and this call assumes {last} starts."
+START_UNCLEAR_WORDS = ("{team}'s starter is unclear: {listed} is listed, the depth chart puts {other} first; no call on "
+                       "{who} until it is settled.")
+
+
+def start_caveats(found: list[dict], season, week) -> list[dict]:
+    """The starter caveats of the players compared ([] on any failure: a label never costs an answer)."""
+    try:
+        cvs = PV.caveats_for(found, season, week)
+    except Exception:  # noqa: BLE001
+        return []
+    out = []
+    for c in cvs:
+        from . import starters
+        team = starters.team_name(str(c.get("team")))
+        who = " and ".join(dict.fromkeys(str(x) for x in c.get("players") or [])) or "him"
+        if c.get("kind") == "starter_set_by_hand":
+            listed = f", not the listed {c['listed']}" if c.get("listed") else ""
+            w = START_SET_WORDS.format(team=team, set=c.get("set"), listed=listed, last=PV._last(str(c.get("set"))))
+        elif c.get("kind") == "starter_unclear":
+            w = START_UNCLEAR_WORDS.format(team=team, listed=c.get("listed"), other=c.get("other"), who=who)
+        else:
+            w = c.get("words")
+        out.append({**c, "words": w, "verdict_words": c.get("words")})
+    return out
+# ---- end IU-3
+
+
 def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
     want = _ids(ids)
     ctx = R.context(league, source)
@@ -776,6 +806,12 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
     # ---- end IR-1
     if len(found) < H2H_MIN:
         return {**out, "notice": "Pick at least two players with a game this week."}
+    # ---- IU-3: the starter rule the trade verdict follows (provenance.caveats_for / effect): unclear → no call (below,
+    # as before); set by hand → the call stands, read as a lean that says whom it assumes — in a start/sit's words
+    cvs = start_caveats(found, ctx.season, ctx.week)
+    out["caveats"] = cvs
+    out["caveat_effect"] = PV.effect(cvs) if cvs else None
+    # ---- end IU-3
     unclear = [r for r in found if r.get("starter_unclear")]
     if unclear:
         # the sentence first and no call: a flagged quarterback's projection may be the other quarterback's
@@ -794,6 +830,13 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
         p["vs"] = {o: round(v, 4) for o, v in res["pair"][g].items()}
     out["players"].sort(key=lambda p: -p["p_best"])
     out["answer"] = call(found, res)
+    # ---- IU-3: a quarterback whose team's starter was set by hand: the call stands, as a lean that says whom it assumes
+    if out["caveat_effect"] == PV.SOFTEN:
+        a = out["answer"]
+        a["verdict_unqualified"], a["words_unqualified"] = a.get("verdict"), a.get("words")
+        a["caveat"] = {"effect": PV.SOFTEN, "words": " ".join(c["words"] for c in cvs if c.get("effect") == PV.SOFTEN)}
+        a["words"] = f"{a['words']} {a['caveat']['words']}"
+    # ---- end IU-3
     if out["out"]:                                                                                    # ---- IR-1
         out["answer"]["words"] = " ".join(o["words"] for o in out["out"]) + " Of the others: " + out["answer"]["words"]
     out["draws"] = res["draws"]

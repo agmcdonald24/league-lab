@@ -908,3 +908,15 @@ sentence of its own, only where they appear.
 | Explore alternatives, when trades past the first three are also worth proposing | 3 more are worth proposing (after the first three, marked on their card). The others raise both starting lineups, but do not beat both teams' own best alternative by 1 point, or are not a plausible offer: ideas to look at, not trades to propose. |
 | The same sentence, when Waivers' first claim is another player (PO) | …; Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty) — Waivers leads with the player who fills an empty spot (+20.4 on your roster alone); the trade screens already fill that spot with him, so their best move is the next one, and the sentence says where he went. |
 <!-- ---- end IT-1 -->
+<!-- ---- IU-3 -->
+## Small things that read oddly (IU-3, Wave I-U, 2026-10-09; "Who should I start?", the card, Trends, My Week)
+
+| Where | Words |
+|---|---|
+| "Who should I start?", a quarterback whose team's starter was set by hand (the call stands, as a lean) | Start Goff: he outscores Darnold in 70 of 100 such weeks — a clear call, not a sure one. Read it as a lean: Seattle's starter was set by hand (Sam Darnold, not the listed Drew Lock), and this call assumes Darnold starts. |
+| "Who should I start?", a starter unclear (unchanged: no call) | Starter unclear: Tampa Bay lists Jalon Daniels as the starter, but the depth chart puts Baker Mayfield first. … Starter unclear — no call. |
+| The same, its caveat in the answer's data (`caveats[].words`) | Tampa Bay's starter is unclear: Jalon Daniels is listed, the depth chart puts Baker Mayfield first; no call on Baker Mayfield until it is settled. |
+| The card, Availability, a flagged (Questionable) player | ⚠️ **Questionable (hamstring) · ESPN, Oct 8**. Questionable: about 7 in 10 play. (his position's rate, the Rankings row's words) |
+| The card's points chart, a week he sits | Week 5 vs CIN: not played yet · 0, he sits: IR (knee - acl) · Sleeper, Sep 28 |
+| My Week, Team, Waivers: a projection and a margin | one decimal (19.3, "margin 10.3 over Croskey-Merritt"), as Rankings, the card and Waivers' projections print them |
+<!-- ---- end IU-3 -->

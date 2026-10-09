@@ -5316,7 +5316,7 @@
 ]
 },
 "importance": {
-"model_version": "v3.5",
+"model_version": "v3.6",
 "eval_season": 2025,
 "fit_seasons": "2016-2024",
 "scored_in": "League of Scrubs",
@@ -5786,10 +5786,10 @@
 "grade_note": "These grades use League of Scrubs's scoring, not Half PPR's, and isuckatfantasy keeps no projection record for Half PPR yet: read them as how the model does in general.",
 "why": "The importance and the grades are measured once per house league's scoring each night. Half PPR reads League of Scrubs's: the closest scoring isuckatfantasy measures.",
 "versions": {
-"current": "v3.5",
+"current": "v3.6",
 "kd": "kd1.0",
-"published_at": "2026-10-08T00:05:49.207666+00:00",
-"published_words": "7 Oct, 8:05 pm ET",
+"published_at": "2026-10-09T06:31:41.507802+00:00",
+"published_words": "9 Oct, 2:31 am ET",
 "list": [
 {
 "version": "v2.0",
@@ -5840,7 +5840,7 @@
 "date_words": "7 Oct"
 }
 ],
-"by_week": "weeks 1–3: v2.0; week 4: v3.0; weeks 5–18: v3.5",
+"by_week": "weeks 1–3: v2.0; week 4: v3.0; weeks 5–18: v3.6",
 "words": "The model changes during the season, and every change is dated here. A week's projections are kept as they stood at its first kickoff, so earlier weeks keep the version they were made with."
 },
 "checked": {
@@ -5993,20 +5993,19 @@
 "not_graded": [
 "the ranges around a season total and around a trade's gap (they add weekly ranges as if the weeks were independent; the weekly ranges are graded one week ahead only)",
 "a trade of several players or across positions, and the lineup effect in your league (the useful-decision grade below is one-for-one, same position)",
-"kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their order is no better than chance)",
-"quarterbacks' useful-decision grade on the current version (it was measured on the version before)"
+"kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their order is no better than chance)"
 ],
 "windows_words": "Next four weeks and rest of season: each week's projection in the window scored against that week (pooled over the window's weeks, not the window's total), against a simple baseline in brackets: his own points per game so far (for quarterbacks with his role, the opponent and the betting line).",
 "rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call.",
 "useful": {
-"words": "Is the trade calculator right? On a close one-for-one between two players of the same position, graded on 2021–2025, the side it favours scored more over the next four weeks 58 times in 100 at receiver, 57 at running back and 56 at tight end — more often than the side his own per-game record favours (54, 55 and 52). At quarterback 59 in 100, but the side his own per-game record favours did better (62). 50 would be a coin flip.",
+"words": "Is the trade calculator right? On a close one-for-one between two players of the same position, graded on 2021–2025, the side it favours scored more over the next four weeks 58 times in 100 at receiver, 57 at running back and 56 at tight end — more often than the side his own per-game record favours (54, 55 and 52). At quarterback 61 in 100 against 60 for his own record: the smallest margin of the four. 50 would be a coin flip.",
 "by_position": {
 "QB": {
-"pairs": 3680,
-"rate": 0.594,
-"base": 0.615,
-"seasons": 0,
-"useful": false
+"pairs": 3999,
+"rate": 0.613,
+"base": 0.595,
+"seasons": 4,
+"useful": true
 },
 "RB": {
 "pairs": 6320,
@@ -6033,7 +6032,7 @@
 }
 },
 "timings_ms": {
-"request_total": 43.6
+"request_total": 2666.1
 }
 }
 },
@@ -6074,7 +6073,7 @@
 ]
 },
 "importance": {
-"model_version": "v3.5",
+"model_version": "v3.6",
 "eval_season": 2025,
 "fit_seasons": "2016-2024",
 "scored_in": "League of Scrubs",
@@ -6543,10 +6542,10 @@
 "rankings_howto": "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are down reads lower than his name; a quarterback who starts and throws 35 times per game counts like any starter while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is far from it, open his card and read why before you trade on it.",
 "grade_note": null,
 "versions": {
-"current": "v3.5",
+"current": "v3.6",
 "kd": "kd1.0",
-"published_at": "2026-10-08T00:05:49.207666+00:00",
-"published_words": "7 Oct, 8:05 pm ET",
+"published_at": "2026-10-09T06:31:41.507802+00:00",
+"published_words": "9 Oct, 2:31 am ET",
 "list": [
 {
 "version": "v2.0",
@@ -6597,7 +6596,7 @@
 "date_words": "7 Oct"
 }
 ],
-"by_week": "weeks 1–3: v2.0; week 4: v3.0; weeks 5–18: v3.5",
+"by_week": "weeks 1–3: v2.0; week 4: v3.0; weeks 5–18: v3.6",
 "words": "The model changes during the season, and every change is dated here. A week's projections are kept as they stood at its first kickoff, so earlier weeks keep the version they were made with."
 },
 "checked": {
@@ -6750,20 +6749,19 @@
 "not_graded": [
 "the ranges around a season total and around a trade's gap (they add weekly ranges as if the weeks were independent; the weekly ranges are graded one week ahead only)",
 "a trade of several players or across positions, and the lineup effect in your league (the useful-decision grade below is one-for-one, same position)",
-"kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their order is no better than chance)",
-"quarterbacks' useful-decision grade on the current version (it was measured on the version before)"
+"kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their order is no better than chance)"
 ],
 "windows_words": "Next four weeks and rest of season: each week's projection in the window scored against that week (pooled over the window's weeks, not the window's total), against a simple baseline in brackets: his own points per game so far (for quarterbacks with his role, the opponent and the betting line).",
 "rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call.",
 "useful": {
-"words": "Is the trade calculator right? On a close one-for-one between two players of the same position, graded on 2021–2025, the side it favours scored more over the next four weeks 58 times in 100 at receiver, 57 at running back and 56 at tight end — more often than the side his own per-game record favours (54, 55 and 52). At quarterback 59 in 100, but the side his own per-game record favours did better (62). 50 would be a coin flip.",
+"words": "Is the trade calculator right? On a close one-for-one between two players of the same position, graded on 2021–2025, the side it favours scored more over the next four weeks 58 times in 100 at receiver, 57 at running back and 56 at tight end — more often than the side his own per-game record favours (54, 55 and 52). At quarterback 61 in 100 against 60 for his own record: the smallest margin of the four. 50 would be a coin flip.",
 "by_position": {
 "QB": {
-"pairs": 3680,
-"rate": 0.594,
-"base": 0.615,
-"seasons": 0,
-"useful": false
+"pairs": 3999,
+"rate": 0.613,
+"base": 0.595,
+"seasons": 4,
+"useful": true
 },
 "RB": {
 "pairs": 6320,
@@ -6790,7 +6788,7 @@
 }
 },
 "timings_ms": {
-"request_total": 18.1
+"request_total": 20.9
 }
 }
 },
