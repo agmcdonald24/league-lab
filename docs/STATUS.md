@@ -16890,3 +16890,29 @@ database).
 
 Register the gate's and `provenance`'s caches as `published=True`; the straddle guard; the measured switch on a
 scratch publication; run `scripts/pooler_check.sh` in the PO's merge routine.
+
+### After the push — Wave I-S on the live site (PO, 2026-10-08, 22:54–23:20 ET)
+
+* **Andrew pushed at about 22:50** (`edcbf53`; the bundle carried hotfix `6312313` too). **Image #30: the gate's first
+  blocking run was green** (2m 30s in all). Render served `edcbf53` by 22:55.
+* **Before the refresh** (request time): `/api/ready` **200** with the publication the sync recorded
+  (`20261008T1719Z-748ff76a315e`, mode drop) — the pooler diagnosis is confirmed on the real pooler, and the
+  publication comment exists on the hosted database, so the cache switch is live there. Rankings RB: Breece Hall is
+  not ranked and sits under "Unlikely to play" ("Doubtful (quadriceps) · Sleeper, Oct 8 … about 1 in 100 times");
+  "Not playing · 26" leads with Jordan Mason, Travis Etienne, De'Von Achane. League of Scrubs: My Week 200 with
+  "IR (ankle) · Sleeper, Sep 26" and "PUP (knee - acl) · Sleeper, Oct 8" beside the two zeros; Kyler Murray is in
+  the free agents.
+* **Nightly #26** (started by the PO at 22:57 on `edcbf53`): green, 16m 12s, 0 failed steps; `availability-gate`
+  ok (PASS 2: both guards); the projection marts PASS 14; `sync-hosted` 52 s, 242 MB. **The post-publish check: all
+  six lines ok** (ready 200 with publication `20261009T0309Z-edcbf5310bc0`; "nobody ranked who cannot play"; the
+  trade reconciles). **The screens switched at once**: `/api/health`'s `as_of` and the provenance line read 11:04 pm
+  within the same minute (it took ten minutes and an hour this afternoon).
+* **The audit's first line is 4, not 0, and it is right**: "Players who cannot play or are unlikely to play and
+  are still ranked or valued: 4" — Marcus Mariota, Breece Hall (rank 19, 12.5), Adonai Mitchell, Pat Bryant, all
+  Doubtful. Week 5 froze at 20:15, two and a half hours before this code ran, so its **stored** rows keep their
+  numbers until Tuesday; the audit reads the stored lists. **On the screens all four are under "Unlikely to play"
+  and not ranked** (checked: RB, WR, QB). What still reads the stored week-5 number of a Doubtful player: the
+  nightly's league solves until the week's own injury report lists him (Friday's report), and week 5's share of a
+  rest-of-season sum. **Next**: the audit says which of its rows are frozen-week rows the screens gate (so a 4 that
+  is expected does not train anyone to ignore the line), and `project` may write the `availability` record — not
+  the numbers — for a frozen week.
