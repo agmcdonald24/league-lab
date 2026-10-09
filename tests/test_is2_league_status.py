@@ -24,7 +24,7 @@ def test_note_and_sits_are_the_gates_and_tolerate_a_missing_block():
     ir = _block("IR", "knee - acl")
     n = LS.note(ir)
     assert n == {"status": "IR", "why": "IR (knee - acl) · Sleeper, Sep 28", "sits": True, "out_indefinitely": True,
-                 "words": "On injured reserve: no return date, so no rest-of-season value."}
+                 "words": "On injured reserve: no return date, so no rest-of-season value.", "rate_words": None}  # IU-3
     for nothing in (None, float("nan"), {}, "IR"):
         assert LS.sits(nothing) is False and LS.note(nothing) is None and LS.out_indefinitely(nothing) is False
     assert LS.sits(_block("QUESTIONABLE")) is False and LS.sits(_block("OUT")) is True
