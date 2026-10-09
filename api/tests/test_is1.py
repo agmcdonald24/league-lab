@@ -76,8 +76,9 @@ def test_rankings_a_doubtful_player_is_not_ranked_this_week_and_keeps_his_season
     assert hall["gsis_id"] not in ids and ir["gsis_id"] not in ids          # neither ranked nor tiered
     assert q["gsis_id"] in ids                                              # Questionable: ranked, flagged
     qrow = next(r for r in d["rows"] if r["gsis_id"] == q["gsis_id"])
-    assert qrow["report_status"] == "Questionable" and qrow["availability"]["p_play"] == 0.67
-    assert "67 in 100" in qrow["availability"]["words"]
+    # IT-2: the rate of his position (RB 0.64), the same number in the words
+    assert qrow["report_status"] == "Questionable" and qrow["availability"]["p_play"] == 0.64
+    assert "64 in 100" in qrow["availability"]["words"]
     np_ = {r["gsis_id"]: r for r in d["not_playing"]}
     assert np_[hall["gsis_id"]]["group"] == "unlikely" and np_[ir["gsis_id"]]["group"] == "out"
     assert np_[hall["gsis_id"]]["words"] == ("Doubtful: players listed doubtful have played about 1 in 100 times; not "

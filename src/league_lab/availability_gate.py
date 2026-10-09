@@ -197,6 +197,72 @@ def report_block(report_status: str | None, source: str = "NFL injury report") -
     return classify(entry(code, source)) if code else None
 
 
+# ---- IT-2 (Wave I-T): the week's own injury report is a third source of the gate. It has a week, not a time: it is an
+# undated word, so it rules only when no dated word says anything about him (the stored record, Sleeper's directory,
+# ESPN's feed); any dated word outranks it — even an older reserve-list one (IR from September stays IR, never "Out"),
+# while a dated game status from before the week has already been dropped as last week's. In practice: on a copy with
+# neither live source (the fixtures, a deploy before the refresh) the report decides; on the live site the feeds do.
+REPORT_SOURCE = "NFL injury report"
+
+
+def report_entry(report_status: str | None, source: str = REPORT_SOURCE) -> dict | None:
+    """One week's own injury-report status as an entry for ``pick`` (undated); None for no status."""
+    code = REPORT_CODE.get(report_status) if isinstance(report_status, str) else None
+    return entry(code, source) if code else None
+
+
+def merge(record: Mapping[str, dict] | None, live: Mapping[str, list[dict]] | None = None,
+          report: Mapping[str, dict] | None = None, prev_week_end: datetime | None = None,
+          want: Iterable[str] | None = None) -> dict[str, dict]:
+    """THE merge every reader of the gate shares (the API's ``availability.statuses``, the audit): {gsis: ``classify``
+    block} from the stored record ({gsis: entry}), the live words ({gsis: [entries]}) and the week's own report
+    ({gsis: entry}, undated) — the freshest dated word wins, the report only when nothing dated speaks; ACTIVE and an
+    unrecorded NO_TEAM (a free agent) drop out."""
+    rec, lv, rep = dict(record or {}), dict(live or {}), dict(report or {})
+    keys = set(rec) | set(lv) | set(rep)
+    if want is not None:
+        keys &= {str(g) for g in want if isinstance(g, str) and g}
+    out = {}
+    for g in keys:
+        best = pick([rec.get(g), *lv.get(g, []), rep.get(g)], prev_week_end)
+        if best is None or best["code"] == "ACTIVE":
+            continue
+        if best["code"] == "NO_TEAM" and g not in rec:
+            continue
+        out[g] = {"gsis_id": g, **classify(best)}
+    return out
+
+
+# ---- IT-2: "Questionable: about 2 in 3 play" — the rate in words, by position where the counts allow (2016-2025,
+# docs/METRICS.md § "A status that rarely plays"): QB 146 of 319, RB 708 of 1,115, WR 1,425 of 2,026, TE 581 of 834
+P_PLAY_POS = {"QUESTIONABLE": {"QB": 0.46, "RB": 0.64, "WR": 0.70, "TE": 0.70},
+              "DOUBTFUL": {"QB": 0.0, "RB": 0.01, "WR": 0.01, "TE": 0.01}}
+_FRACTIONS = ((1, 100), (1, 10), (1, 4), (1, 3), (1, 2), (3, 5), (2, 3), (7, 10), (3, 4), (9, 10))
+SHORT_WORDS = "{label}: about {n} in {m} play"
+
+
+def p_play_for(code: str | None, position: str | None = None) -> float | None:
+    """The measured rate for a status, by position when it has its own row (else every position)."""
+    by = P_PLAY_POS.get(str(code or ""), {})
+    return by.get(str(position or "")) if str(position or "") in by else P_PLAY.get(str(code or ""))
+
+
+def rate_words(p: float | None) -> tuple[int, int] | None:
+    """The plain fraction nearest a rate: 0.67 -> (2, 3), 0.46 -> (1, 2), 0.01 -> (1, 100)."""
+    if p is None:
+        return None
+    return min(_FRACTIONS, key=lambda f: (abs(f[0] / f[1] - float(p)), f[1]))
+
+
+def short_words(block: dict | None, position: str | None = None) -> str | None:
+    """"Questionable: about 2 in 3 play" — beside the label on a ranked row (a flagged status only)."""
+    if not block or block.get("code") not in FLAGGED:
+        return None
+    f = rate_words(p_play_for(block.get("code"), position))
+    return None if f is None else SHORT_WORDS.format(label=LABEL.get(block["code"]) or block["code"].title(), n=f[0], m=f[1])
+# ---- end IT-2
+
+
 def sits(block: dict | None) -> bool:
     """PO (Wave I-S): THE question every list, lineup, value and verdict asks of a status block — is he left out this
     week? True when he cannot play, or (IS-1) when his status rarely plays (``unlikely``). One function so that no
@@ -403,6 +469,53 @@ RECORD_SQL = """select gsis_id, availability from (
                     from ops.projection_lines as l where season = %s and week = %s
                     order by gsis_id, (frozen_source is not null) desc, fitted_at desc nulls last) as x
                 where availability is not null"""
+
+
+# ---- IT-2 (Wave I-T): the audit's two views, from the sources the database holds
+REPORT_WEEK_SQL = """select distinct on (gsis_id) gsis_id, report_status from analytics.mart_player_week_projections
+                     where season = %s and week = %s and gsis_id is not null and report_status is not null
+                     order by gsis_id, league_id"""
+
+
+def sources_from_query(query, season: int, week: int) -> dict:
+    """{directory: {gsis: entry}, record: {gsis: entry}, report: {gsis: entry}, pwe, meta}: Sleeper's directory (the
+    nightly's copy), the stored record of the week (``ops.projection_lines.availability``) and the week's own injury
+    report (``mart_player_week_projections.report_status`` of that week) — each read on its own, so the audit can
+    judge the screens' gate (all three, the directory standing for the live Sleeper overlay) against the directory."""
+    out: dict = {"directory": {}, "record": {}, "report": {}, "pwe": None,
+                 "meta": {"source": "Sleeper directory", "fetched_at": None, "rows": 0}}
+    try:
+        d = query(DIRECTORY_SQL, ())
+    except Exception:  # noqa: BLE001
+        d = pd.DataFrame()
+    try:
+        pw = query(PREV_WEEK_END_SQL, (int(season), int(week) - 1))
+        out["pwe"] = ts(pw["t"].iloc[0]) if not pw.empty else None
+    except Exception:  # noqa: BLE001
+        out["pwe"] = None
+    if not d.empty:
+        out["meta"]["rows"] = int(len(d))
+        out["meta"]["fetched_at"] = iso(ts(pd.to_datetime(d["fetched_at"], utc=True).max()))
+        out["directory"] = directory_statuses(d)
+    try:
+        rec = query(RECORD_SQL, (int(season), int(week)))
+        for g, a in zip(rec["gsis_id"], rec["availability"], strict=True):
+            j = json.loads(a) if isinstance(a, str) else None
+            if isinstance(g, str) and isinstance(j, dict) and j.get("code") in CODES:
+                out["record"][g] = entry(j["code"], str(j.get("source") or "Sleeper"), as_of=j.get("as_of"),
+                                         fetched_at=j.get("fetched_at"), note=j.get("note"))
+    except Exception:  # noqa: BLE001 - before the first gated nightly
+        pass
+    try:
+        rp = query(REPORT_WEEK_SQL, (int(season), int(week)))
+        for g, s in zip(rp["gsis_id"], rp["report_status"], strict=True):
+            e = report_entry(s)
+            if isinstance(g, str) and e is not None:
+                out["report"][g] = e
+    except Exception:  # noqa: BLE001
+        pass
+    return out
+# ---- end IT-2
 
 
 def statuses_from_query(query, season: int, week: int, *, with_record: bool = False) -> tuple[dict[str, dict], dict]:

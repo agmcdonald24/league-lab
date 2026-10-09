@@ -3019,3 +3019,9 @@ export interface PlayAvailability {
   words?: string | null;
 }
 // ---- end IS-1
+
+// ---- IT-2 (Wave I-T): the short rate words beside a flagged status on a ranked row
+export interface PlayAvailability {
+  short?: string | null;
+}
+// ---- end IT-2

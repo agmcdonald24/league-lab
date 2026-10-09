@@ -1178,7 +1178,7 @@ sits = AG.sits  # PO (Wave I-S): "is he left out this week?" — the one questio
 
 def statuses(gsis_ids: Iterable[str] | None, season: int | None, week: int | None, *,
              overlay: bool | None = None, stored: Mapping[str, dict] | None = None,
-             live: Mapping[str, list[dict]] | None = None) -> dict[str, dict]:
+             live: Mapping[str, list[dict]] | None = None, report: Mapping[str, dict] | None = None) -> dict[str, dict]:
     """{gsis: ``availability_gate.classify`` block} for the players asked (every player with a word when None), only
     those with a status (cannot play, out indefinitely, doubtful, questionable). ``stored`` / ``live`` ({gsis: [entries]})
     replace the record and the overlay (tests)."""
@@ -1200,18 +1200,39 @@ def statuses(gsis_ids: Iterable[str] | None, season: int | None, week: int | Non
                 if code is not None:
                     lv.setdefault(g, []).append(AG.entry(code, "Sleeper", as_of=e.get("as_of"),
                                                          fetched_at=e.get("fetched_at"), note=e.get("note"), name=e.get("name")))
-    want = None if gsis_ids is None else {str(g) for g in gsis_ids if isinstance(g, str) and g}
-    keys = (set(rec) | set(lv)) if want is None else want & (set(rec) | set(lv))
-    pwe = _week_end(season, week)
-    out = {}
-    for g in keys:
-        best = AG.pick([rec.get(g), *lv.get(g, [])], pwe)
-        if best is None or best["code"] == "ACTIVE":
-            continue
-        if best["code"] == "NO_TEAM" and g not in rec:
-            continue          # the overlay's directory without a team is a free agent: the stored gate decides that
-        out[g] = {"gsis_id": g, **AG.classify(best)}
+    # ---- IT-2 (Wave I-T): the week's own injury report is the third source (undated: it rules only when no dated word
+    # speaks — availability_gate.merge, shared with the audit)
+    rep = dict(week_report(season, week) if report is None else report)
+    return AG.merge(rec, lv, rep, _week_end(season, week), want=gsis_ids)
+
+
+# ---- IT-2: the week's own injury report, from the board the API already reads (the report row of THAT week, which the
+# nightly rebuilds every night — also for a frozen week, whose numbers it never touches)
+REPORT_SQL = """select distinct on (gsis_id) gsis_id, report_status from analytics.mart_player_week_projections
+                where season = %s and week = %s and gsis_id is not null and report_status is not null
+                order by gsis_id, league_id"""
+
+
+def week_report(season: int | None, week: int | None) -> dict[str, dict]:
+    """{gsis: undated entry} of the week's own injury report ({} on any failure: the other sources still answer)."""
+    if season is None or week is None:
+        return {}
+    key = ("report", int(season), int(week))
+    hit = _gate_cache.get(key)
+    if hit is not None:
+        return hit
+    out: dict[str, dict] = {}
+    try:
+        d = query(REPORT_SQL, (int(season), int(week)))
+        for g, s in zip(d["gsis_id"], d["report_status"], strict=True):
+            e = AG.report_entry(s)
+            if isinstance(g, str) and e is not None:
+                out[g] = e
+    except Exception:  # noqa: BLE001
+        out = {}
+    _gate_cache.put(key, out)
     return out
+# ---- end IT-2
 
 
 GROUPS = {"out": "Out", "unlikely": "Unlikely to play"}                    # ---- IS-1: the two labelled parts

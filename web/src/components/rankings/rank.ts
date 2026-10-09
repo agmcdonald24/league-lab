@@ -100,6 +100,8 @@ export const STATE_WORD: Record<string, string> = {
 
 /** His status when it says something (Questionable, Out …); Active says nothing. */
 export function statusOf(r: RankRow): string | null {
+  // ---- IT-2 (Wave I-T): a flagged status says how often such players play ("Questionable: about 2 in 3 play")
+  if (r.availability?.short) return r.availability.short;
   return r.report_status && r.report_status !== "Active" ? r.report_status : null;
 }
 
