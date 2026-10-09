@@ -863,6 +863,13 @@ def write_grade(conn, now: datetime) -> int:
     h = _df(conn, RECORD_GRADE_SQL)
     h = _num(h, ["proj_points", "miss", "actual_points", "trend_ppg", "trend_gap", "trend_games"])
     rows = grade_rows(h, now) if not h.empty else []
+    # ---- IU-5: the role record's grade (empty until a stored week T is played; never fails the grade)
+    try:
+        rows += horizon_record_grade_rows(conn, now)
+    except Exception as e:               # noqa: BLE001
+        conn.rollback()
+        log.warning("rr1.0: role record not graded (%s: %s)", type(e).__name__, e)
+    # ---- end IU-5
     with conn.cursor() as cur:
         cur.execute(GRADE_DDL)
         cur.execute("delete from ops.context_grade")
@@ -1026,6 +1033,14 @@ def run(season: int | None = None) -> tuple[list[RecordRun], int]:
     now = clock.now()
     with psycopg.connect(get_settings().pipeline_dsn(), autocommit=False) as conn:
         runs = write_record(conn, season, now=now)
+        # ---- IU-5: the role record (a recorded forecast; never fails the context record's own write)
+        try:
+            n_role = write_horizon_record(conn, now)
+            log.info("rr1.0: %s role-record rows written", n_role)
+        except Exception as e:           # noqa: BLE001
+            conn.rollback()
+            log.warning("rr1.0: role record not written (%s: %s)", type(e).__name__, e)
+        # ---- end IU-5
         return runs, write_grade(conn, now)
 
 
@@ -1686,3 +1701,154 @@ def horizon_grade_rows(graded_at: datetime | None = None) -> list[dict]:
                     "words": horizon_sentence(pos, window, miss, order, bmiss, border), "graded_at": graded_at})
     return out
 # ---- end IR-4
+
+
+# ================================================================================================ IU-5: the role record
+# ---- IU-5 (Wave I-U): a recorded forecast of who starts h weeks out (calibration rr1.0), written each night for the
+# live market week while it has not kicked off and never rewritten after, graded here as 2026's weeks are played on the
+# horizon grade that counts a missed week (hg1.0, docs/METRICS.md § "The horizon grade that counts a missed week").
+# Kept state like ops.context_record (not part of the publication); about 90 QBs x 8 weeks = 720 rows a market week.
+HORIZON_DDL = """create table if not exists ops.horizon_record (
+        run_at timestamptz, first_kickoff_at timestamptz, record_version text, model_version text, scoring text,
+        season integer, market_week integer, target_week integer, h integer, gsis_id text, player_name text, team text,
+        mkt_start boolean, p_start double precision, proj_v36 double precision, proj_mix double precision);
+        create index if not exists horizon_record_idx on ops.horizon_record (season, market_week, gsis_id)"""
+DDL = DDL + ";\n        " + HORIZON_DDL
+HORIZON_COLUMNS = ["run_at", "first_kickoff_at", "record_version", "model_version", "scoring", "season", "market_week",
+                   "target_week", "h", "gsis_id", "player_name", "team", "mkt_start", "p_start", "proj_v36", "proj_mix"]
+HORIZON_PROJ_SQL = """select gsis_id, week, proj_points, model_version from ops.projections
+                      where season = %s and league_id = %s and position = 'QB'"""
+HORIZON_STATUS_SQL = """select r.gsis_id, r.week, r.roster_status, i.report_status
+                        from staging.stg_nflverse__rosters_weekly r
+                        left join staging.stg_nflverse__injuries i
+                          on i.gsis_id = r.gsis_id and i.season = r.season and i.week = r.week and i.season_type = 'REG'
+                        where r.position = 'QB' and r.season_type = 'REG' and r.season = %s"""
+HG_INJURED_REPORT = ("Out", "Doubtful", "Questionable")
+HG_ZERO_ROSTER = ("ACT", "INA", "DEV", "CUT", "RET")
+
+
+def _qb_frame(conn, seasons: list[int]) -> pd.DataFrame:
+    from . import projections as P
+    f = P.load_frame(conn, seasons)
+    q = f[f["position"] == "QB"].copy()
+    q["season"], q["week"] = q["season"].astype(int), q["week"].astype(int)
+    return q.reset_index(drop=True)
+
+
+def _role_means(q: pd.DataFrame, season: int, scoring: dict[str, float]) -> tuple[float, float]:
+    """The starters' and the others' mean points over the scored QB weeks of the 3 seasons before (reference scoring)."""
+    from . import projections as P
+    outs = [f"out_{c}" for c in P.ALL_COMPONENTS]
+    f = q[(q["season"] >= season - 3) & (q["season"] < season) & q["played"].fillna(False).astype(bool)].dropna(subset=outs)
+    pts = P.price(f, scoring, "out_").to_numpy(dtype=float)
+    st = f["pn_qb_starting"].fillna(0).astype(float).to_numpy() > 0.5
+    return float(np.mean(pts[st])), float(np.mean(pts[~st]))
+
+
+def write_horizon_record(conn, now: datetime) -> int:
+    """Store rr1.0's rows for the live market week (the first week whose first kickoff is after ``now``); a market
+    week's rows are replaced while it has not kicked off and never touched after. Returns the rows written."""
+    from . import calibration as CAL
+    from . import projections as P
+    with conn.cursor() as cur:
+        cur.execute(HORIZON_DDL)
+    seasons = [s for s in P.available_seasons(conn) if s >= CAL.ROLE_RECORD_FIRST_SEASON]
+    if not seasons:
+        return 0
+    season = max(seasons)
+    games = _df(conn, GAMES_SQL, (season,))
+    kick = first_kickoffs(games)
+    upcoming = sorted(w for w, k in kick.items() if k > now)
+    if not upcoming:
+        return 0
+    mw = upcoming[0]
+    playing = {(t, int(w)) for w, h_, a_ in games[["week", "home_team", "away_team"]].itertuples(index=False) for t in (h_, a_)}
+    q = _qb_frame(conn, seasons)
+    models = CAL.fit_role_record(q, season)
+    sc = P.league_scorings(conn)[ANCHOR_LEAGUE][1]
+    proj = _num(_df(conn, HORIZON_PROJ_SQL, (season, ANCHOR_LEAGUE)), ["proj_points"])
+    rows = CAL.role_record_rows(q, season, mw, proj, playing, _role_means(q, season, sc), models)
+    if rows.empty:
+        return 0
+    mv = proj["model_version"].dropna().iloc[0] if not proj.empty else None
+    rows = rows.assign(run_at=now, first_kickoff_at=kick[mw], record_version=CAL.ROLE_RECORD_VERSION, model_version=mv,
+                       scoring=SCORING_WORDS, season=season, market_week=mw)
+    with conn.cursor() as cur:
+        cur.execute("delete from ops.horizon_record where season = %s and market_week = %s", (season, mw))
+        with cur.copy(f"copy ops.horizon_record ({', '.join(HORIZON_COLUMNS)}) from stdin") as cp:
+            for r in rows[HORIZON_COLUMNS].itertuples(index=False):
+                cp.write_row([None if (isinstance(v, float) and not math.isfinite(v)) else
+                              (bool(v) if isinstance(v, np.bool_) else (int(v) if isinstance(v, np.integer) else v)) for v in r])
+    conn.commit()
+    return len(rows)
+
+
+def hg_case(played: bool, roster: str | None, report: str | None) -> str:
+    """hg1.0's case of a stored row's week T: 'played', 'zero' (healthy and not playing, cut, retired) or 'excluded'."""
+    if played:
+        return "played"
+    if report in HG_INJURED_REPORT or roster == "RES":
+        return "excluded"
+    return "zero" if roster in HG_ZERO_ROSTER else "excluded"
+
+
+def horizon_record_grade_rows(conn, graded_at: datetime | None = None) -> list[dict]:
+    """``ops.context_grade`` rows of kind ``role_record`` (one per h 2-8 bucket and one pooled): the stored rows whose
+    week T is played, graded on hg1.0's cases -- the mixture's and v3.6's mean miss and the probability's Brier score
+    against the base rate. Empty until a stored week T is played."""
+    from . import projections as P
+    try:
+        h = _df(conn, "select season, market_week, target_week, h, gsis_id, mkt_start, p_start, proj_v36, proj_mix "
+                      "from ops.horizon_record where h >= 2")
+    except Exception:            # noqa: BLE001 -- no table yet (a database before IU-5): nothing to grade
+        conn.rollback()
+        return []
+    if h.empty:
+        return []
+    h = _num(h, ["p_start", "proj_v36", "proj_mix"])
+    out = []
+    for season in sorted(h["season"].astype(int).unique()):
+        q = _qb_frame(conn, [int(season)])
+        st = _df(conn, HORIZON_STATUS_SQL, (int(season),))
+        # a week T is graded once its last game kicked off 12 hours before and its played games are loaded
+        kick = _df(conn, GAMES_SQL, (int(season),)).dropna(subset=["kickoff_at"]).groupby("week")["kickoff_at"].max()
+        ended = {int(w) for w, k in kick.items() if graded_at is not None and k < graded_at - pd.Timedelta(hours=12)}
+        done = ended & set(q.loc[q["played"].fillna(False).astype(bool), "week"].astype(int))
+        x = h[(h["season"] == season) & h["target_week"].astype(int).isin(done)].copy()
+        if x.empty:
+            continue
+        sc = P.league_scorings(conn)[ANCHOR_LEAGUE][1]
+        outs = [f"out_{c}" for c in P.ALL_COMPONENTS]
+        qq = q.drop_duplicates(["gsis_id", "week"]).set_index(["gsis_id", "week"])
+        idx = pd.MultiIndex.from_arrays([x["gsis_id"], x["target_week"].astype(int)])
+        row = qq.reindex(idx)
+        played = row["played"].fillna(False).astype(bool).to_numpy()
+        pts = np.where(played & row[outs].notna().all(axis=1).to_numpy(),
+                       P.price(row.reset_index(drop=True).fillna({c: 0.0 for c in outs}), sc, "out_").to_numpy(dtype=float), np.nan)
+        s2 = st.drop_duplicates(["gsis_id", "week"]).set_index(["gsis_id", "week"]).reindex(idx)
+        cases = [hg_case(p, r if isinstance(r, str) else None, i if isinstance(i, str) else None)
+                 for p, r, i in zip(played, s2["roster_status"], s2["report_status"], strict=True)]
+        x["case"], x["y"] = cases, np.where(np.array(cases) == "zero", 0.0, pts)
+        x["started"] = row["pn_qb_starting"].fillna(0).astype(float).to_numpy() > 0.5
+        out.append(x)
+    if not out:
+        return []
+    g = pd.concat(out, ignore_index=True)
+    g = g[g["case"] != "excluded"].dropna(subset=["y", "proj_v36", "proj_mix"])
+    rows = []
+    for grp, sel in [("all", np.ones(len(g), dtype=bool)), ("h2-4", g["h"].between(2, 4).to_numpy()),
+                     ("h5-8", g["h"].between(5, 8).to_numpy())]:
+        y = g.loc[sel]
+        if y.empty:
+            continue
+        mv, mm = float((y["proj_v36"] - y["y"]).abs().mean()), float((y["proj_mix"] - y["y"]).abs().mean())
+        brier = float(((y["p_start"] - y["started"].astype(float)) ** 2).mean())
+        base = float(((y["started"].mean() - y["started"].astype(float)) ** 2).mean())
+        rows.append({"kind": "role_record", "grp": grp, "n": int(len(y)), "games": int(y["target_week"].nunique()),
+                     "mean_miss": round(mm, 3), "rest_beat_share": round(mv, 3), "beat_share": round(brier, 4),
+                     "vs_rest": round(mm - mv, 3), "lo": round(base, 4), "hi": None, "span": None, "scoring": SCORING_WORDS,
+                     "words": (f"rr1.0 on hg1.0, {grp}: {len(y)} QB weeks; miss {mm:.2f} (the mixture) against {mv:.2f} "
+                               f"(v3.6); the probability's Brier {brier:.3f} against {base:.3f} for the base rate."),
+                     "graded_at": graded_at})
+    return rows
+# ---- end IU-5
