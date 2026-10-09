@@ -386,6 +386,24 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-U (2026-10-09, Friday; STATUS § "Wave I-U (Iteration 31)")**: **the nightly publishes with `auto`** —
+  a swap with no gap when the hosted size + 1.2 × the copy fits 800 MB of Neon Free's 1 GB, and **a swap that stops
+  before its commit falls back to the drop path in the same run**; the run's summary says which way it went (read
+  it every morning; the cap is `LEAGUE_LAB_HOSTED_CAP_MB` in `nightly.yml`, rollback = delete the two lines). We
+  stay on the free plan (Andrew). **`LEAGUE_LAB_FREEZE` stays `week`**: the `freeze-shadow` step shows each night
+  who would move if a started week's unplayed games were re-projected (`ops.projection_live` is the overlay; not in
+  `STATE_TABLES` yet — a condition for `game`). **The Finder searches on the calculator's basis**
+  (`LEAGUE_LAB_FINDER_SEARCH=roster` is the way back). **hg1.0 is the horizon grade that counts a missed week**
+  (a healthy quarterback who sat = 0; injured and bye excluded) and **the role record** (`ops.horizon_record`,
+  rr1.0) is this season's own evidence: first graded rows about 28 October, readable as evidence after week 18,
+  never as a ship decision on one season. **The blog has covers, resized pictures and embeds from a closed list**:
+  the only outside frame the CSP allows is `https://www.youtube-nocookie.com`, no outside script is ever loaded,
+  and `blog.posts.cover` is added by `hosted_blog.sql` AFTER a deploy (the nightly's sync) — **code that reads a
+  new column of a schema the sync alters must work without it** (the API looks once a minute while it is absent).
+  **Agents spawned in one message run one after another**: the last package of six got 21 minutes before a shared
+  hard stop. Give each package its own clock (a stop "N minutes after you start"), or send the late ones back alone
+  as the PO did with IU-6; never count a wave's time as if the devs were side by side. While a dev works beside the
+  PO's suites, it gets its own database and ports and kills only its own process ids.
 * **Wave I-T (2026-10-09 overnight; STATUS § "Wave I-T (Iteration 30)")**: **the trade screens are one answer** — a
   Finder row is `ir2_decision` for its package and the best waiver move is searched on the same basis
   (`trades.basis_best_move`); a new sentence or number on Trades reads the decision, never its own arithmetic.

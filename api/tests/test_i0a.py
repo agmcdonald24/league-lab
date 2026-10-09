@@ -331,9 +331,13 @@ def test_trends_leave_out_players_who_cannot_play(client, monkeypatch):
     out = {p["gsis_id"] for p in d["availability"]["left_out_players"]}
     assert d["availability"]["left_out"] == len(out) > 0
     assert not out & {p["gsis_id"] for p in d["players"]}
-    assert {p["gsis_id"] for p in base["players"]} - {p["gsis_id"] for p in d["players"]} == out
+    # IU-3: Trends asks the one gate, which also rules from the stored record and the week's own report with the live
+    # sources off — so the base list leaves some out already, and the live sources add the rest
+    base_out = {p["gsis_id"] for p in base["availability"]["left_out_players"]}
+    assert base_out <= out
+    assert {p["gsis_id"] for p in base["players"]} - {p["gsis_id"] for p in d["players"]} == out - base_out
     statuses = {p["status"] for p in d["availability"]["left_out_players"]}
-    assert statuses <= {"Out", "IR", "PUP", "NFI", "Suspended", "Inactive"}
+    assert statuses <= {"Out", "IR", "PUP", "NFI", "Suspended", "Inactive", "Doubtful"}   # IU-3: unlikely to play sits too
     print("trends left out:", d["availability"]["left_out"], sorted(statuses))
     F.reset()
 

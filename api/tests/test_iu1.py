@@ -2,7 +2,7 @@
 
 (1) The Finder proposes packages on the replacement frame (`stats.search_basis`), and on the switch back to the
 roster-only search (`LEAGUE_LAB_FINDER_SEARCH=roster`) the worth-proposing list is never longer — the rule committed in
-docs/handbacks/IU-1.md before its numbers. (3) The best waiver move on the frame nets a drop the way the roster-only move
+docs/STATUS.md § "Wave I-U" (IU-1) before its numbers. (3) The best waiver move on the frame nets a drop the way the roster-only move
 does (`waivers.choose_drops`: the drop's cost beyond his lineup loss) and its sentence names the drop and the netting:
 the Folk case (tests/test_ii1.py's clone rosters). Meaning, never today's numbers beyond the case's own."""
 

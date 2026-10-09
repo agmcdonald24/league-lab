@@ -371,7 +371,7 @@ extend file …"), a lost connection, a failed check — nothing of it was kept 
 path**: one refresh never ends without a publication. An explicit `swap` still stops instead (it never drops). The
 previous copy is kept as `_prev` only when the next swap would still fit beside it; otherwise it is dropped at once and
 `--rollback` says there is nothing to roll back to. Both paths write the same restore (the same write-ahead log); the
-swap only adds the old copy, held until its commit. Drilled 2026-10-09 (docs/handbacks/IU-4.md): a swap that fits
+swap only adds the old copy, held until its commit. Drilled 2026-10-09 (docs/STATUS.md § "Wave I-U" (IU-4)): a swap that fits
 (172 reads every 0.25 s through a transaction pooler, 0 × 503, 0 × 500); a swap refused before its commit, then the
 drop path in the same run (the previous publication answering until the fallback's drop; then 4.6 s of 503 "not ready
 yet" in words and `/api/ready` `publishing`; 0 × 500).

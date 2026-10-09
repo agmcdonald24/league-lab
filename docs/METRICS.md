@@ -5852,7 +5852,7 @@ chart) is not measured here. The hand-back recommends `game` after one weekend o
   `search.search_basis` says which frame proposed ("replacement"; `LEAGUE_LAB_FINDER_SEARCH=roster` switches back to
   the roster-only search for a comparison). IF-2's roster-only ladder (`rank_partners`, `row_story`) is no longer
   computed: the rows' order is the decision's (`it1_rank`). IE-1's one-of-two is priced on the same frame.
-* **The rule that shipped it, committed before its numbers** (docs/handbacks/IU-1.md): the basis search is the default
+* **The rule that shipped it, committed before its numbers** (docs/STATUS.md § "Wave I-U" (IU-1)): the basis search is the default
   only if, on Scrubs roster 2, the Test League roster 3 and the Dynasty roster 12 at the pinned moment, its
   worth-proposing list is never shorter than the roster-only search's and every roster-only worth-proposing trade is
   found or replaced by one with the same partner and more gain; cold and warm within 1.5× of main's.

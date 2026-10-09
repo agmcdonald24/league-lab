@@ -748,7 +748,7 @@
           </div>
         {/if}
         <p class="mt-1 text-sm text-ink-3" data-testid="editor-embeds">
-          A YouTube or X link alone on its line shows as a video (it plays after a tap) or a post card.{#if coverOn} The cover: <strong>Picture</strong>, then <strong>Make it the cover</strong>.{/if}
+          A YouTube or X link alone on its line shows as a video (it plays after a tap) or a post card. {#if coverOn}The cover: <strong>Picture</strong>, then <strong>Make it the cover</strong>.{/if}
         </p>
         <p class="mt-1 text-sm text-ink-3" data-testid="editor-pictures">
           Pictures: <strong>Picture</strong> above uploads one (PNG, JPEG or WebP, 300 KB at most: a bigger one, like a phone photo, is made smaller in your browser first). A file in <code>blog/img/</code> in the repository works too:

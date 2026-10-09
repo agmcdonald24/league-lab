@@ -3,6 +3,25 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 9 (evening) · a blog with pictures and video, a wider trade search, and a smoother nightly update
+
+- **The blog can carry a cover picture, photos and video.** A post's cover is its banner, its thumbnail in the list
+  and the picture people see when the link is shared. A phone photo is made smaller for you before it is stored. A
+  YouTube link on its own line becomes a video that loads only when you tap it, and a link to a post on X becomes a
+  card that opens it. A post can now link to any website.
+- **Trade Finder looks for trades the way the calculator judges them.** It used to search one way and judge
+  another, and so missed some trades, two-for-ones among them. Each suggestion is still the calculator's own verdict.
+- **A waiver move named beside a trade now counts what you give up.** It names the player you would drop and takes
+  his value off the gain.
+- **"Who should I start?" tells you when a call leans on a starter we set by hand.** If a team's starting
+  quarterback was corrected by hand, the answer says to read it as a lean.
+- **A player's card says more when he is hurt.** Questionable shows how often such players play (about 2 in 3; closer
+  to half for quarterbacks). A week he will miss reads "0, he sits" with the reason, not a bare 0.0.
+- **Trends no longer calls a player "due" in a week he will not play.** He is listed apart, with the reason.
+- **The same number looks the same on every screen.** My Week, Team and Waivers print projections to one decimal.
+- **The nightly update can switch over with no pause.** When there is room, the new numbers are prepared beside the
+  old ones and swapped in at once. If there is not, it updates the old way, with a pause of a few seconds.
+
 ## Oct 9 · trade suggestions that agree with the calculator, and the injury clean-up finished
 
 - **Trade Finder and the trade calculator now give the same answer.** Each suggested trade is the calculator's own

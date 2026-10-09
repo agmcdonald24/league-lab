@@ -4,6 +4,11 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-09 — Wave I-U
 
+- **PO — the merge.** The nightly publishes with `LEAGUE_LAB_HOSTED_PUBLISH: auto` and `LEAGUE_LAB_HOSTED_CAP_MB:
+  "800"` (`nightly.yml`) and its summary says which way the publication went; `sync_to_hosted.sh` waits 20 s between
+  a refused swap and the fallback's restore on a hosted target; the `freeze-shadow` step runs after `project`
+  (recorded, never failing the night; its table in the summary); `ops.horizon_record` is in `STATE_TABLES` and
+  `RECORD_TABLES`; the editor's help line gets its lost space. docs/STATUS.md § "Wave I-U".
 - **IU-4 — the gap-free publish on the free plan.** `scripts/sync_to_hosted.sh`'s `auto` swaps when two copies fit
   the plan's 1 GB (cap 800 MB, the copy's estimate × 1.2) and, when the swap stops before its commit for any reason,
   publishes by the drop path in the same run; the previous copy is kept only when the next swap still fits beside it;
@@ -29,12 +34,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   (unclear: no call, as before). The card says a Questionable player's measured rate ("Questionable: about 7 in 10
   play"), and its points chart says why a week he sits is 0. Trends leaves out a player who sits this week (Doubtful
   included) through the one definition, with his reason. About's saved answer re-recorded. My Week, Team and Waivers
-  print a projection and a margin to one decimal like the other screens. `docs/handbacks/IU-3.md`.
+  print a projection and a margin to one decimal like the other screens. docs/STATUS.md § "Wave I-U" (IU-3).
 - **IU-1 — the Trade Finder searches on the basis; a waiver move says what it drops.** The partner search proposes and
   bounds every package on the replacement frame the verdict judges it on (`trades.partners(free=…)`; the roster-only
   ladder is no longer computed); the basis waiver move nets its drop the way the roster-only move does (season value,
   backup cover, lineup loss) and its sentence names the drop and the netting; a Finder row's reason reads the league
-  screens' one note. ct1.2 → ct1.3. docs/handbacks/IU-1.md.
+  screens' one note. ct1.2 → ct1.3. docs/STATUS.md § "Wave I-U" (IU-1).
 - IU-6: the blog can carry a cover, smaller pictures and embeds. A post's cover (one of the editor's own pictures, `blog.posts.cover`, added by `scripts/hosted_blog.sql`; the API works without the column until the nightly adds it) is its banner, its thumbnail in the list and on the home, and its link preview (`og:image` / `twitter:image` in the HTML a crawler gets). A picture over 300 KB is made smaller in the editor's browser (the server's checks unchanged). A YouTube link alone on its line is a Play button that loads the youtube-nocookie player only after the tap; a post on X is a plain link card (no script from X). A link in a post may go to any https site (`rel="noopener noreferrer nofollow ugc"`). The CSP gains `frame-src https://www.youtube-nocookie.com`.
 
 ## 2026-10-09 — Wave I-T

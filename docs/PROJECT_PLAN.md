@@ -598,6 +598,24 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 31 — Wave I-U (2026-10-09, Friday 10:37 – late afternoon ET)
+
+Andrew: "lets keep using the free neon if thats what we are on. and lets keep building this out." Six packages,
+five of them Wave I-T's developers on the next step of their own work: **IU-1** the Trade Finder searches, bounds and
+prices packages on the calculator's basis, and a waiver move nets its drop; **IU-2** the live week after its first
+kickoff — the design (the kickoff board stays the record; an overlay holds the live number), a switch that is off,
+and a nightly shadow that shows who would move; **IU-3** "Who should I start?" softens for a hand-set starter, the
+card's Questionable rate and "0, he sits" chart, Trends through the gate, one decimal everywhere a league screen
+prints a projection; **IU-4** the publish with no gap on the free plan (`auto`: swap when two copies fit, fall back
+to the drop path in the same run when the swap stops before its commit), drilled; **IU-5** the horizon grade that
+counts a missed week (hg1.0: the role forecast is still not better, five seasons of five) and this season's own
+role record (rr1.0), written and graded nightly; **IU-6** the blog's cover image (banner, thumbnail, link preview),
+pictures made smaller in the browser, YouTube behind a tap and X as a link card from a closed list, links to any
+https site. The PO's glue: the nightly's `auto` and its summary lines, the shadow step, the role record kept across
+nights, a wait before the fallback's restore. Acceptance and evidence: `docs/STATUS.md` § "Wave I-U". **Next**: a
+waiver claim that adds nothing said as standing pat; tonight's publish path and the cap; `LEAGUE_LAB_FREEZE=game`
+after the weekend's shadow; a play probability for backups, graded on 2026–27.
+
 ### Iteration 30 — Wave I-T, the overnight build (2026-10-09, Friday 00:02 – early morning ET)
 
 Andrew: "ok proceed then." Five packages, four of them Thursday's developers resumed: **IT-1** one basis on every

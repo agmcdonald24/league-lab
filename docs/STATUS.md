@@ -17935,3 +17935,1243 @@ tests; `ops.context_grade` kind `useful` is rewritten by `context-record` from `
    (2024's misses).
 3. A horizon grade that counts a week he did not play as 0 (as ud1.0 does), so a forecast of who plays can be
    rewarded — and production's later weeks would then need a play probability too.
+
+## Wave I-U (Iteration 31) — the Finder's search on the basis, the live week in shadow, a publish with no gap, a grade that counts a missed week, the blog's pictures and embeds
+
+### PO merge — Wave I-U, 2026-10-09 (Friday 10:37 – 15:45 ET)
+
+* **Why**: Andrew, Friday 10:37, after the PO told him the hosted database is on Neon's Free plan (1 GB a project;
+  the paid plan has no minimum fee): "well then lets keep using the free neon if thats what we are on. and lets keep
+  building this out." The brief is `/home/claude/waveIU/BRIEF.md` in the sandbox: six packages, five of them the next
+  step of Wave I-T's own "not done" list, the sixth his Wednesday ask about the blog ("can I customize the banner
+  image and thumbnail and sprinkle in images/videos/twitter vids").
+* **How it ran**: six Opus devs in one message from `main` `99fb216` (five of them Wave I-T's developers resumed on
+  their own work, IU-6 new), hard stop 14:30. Hand-backs at 12:00 (IU-1), 13:04 (IU-2), 13:33 (IU-3), 13:43
+  (IU-4), 14:09 (IU-5) and 14:18 (IU-6). **They ran one after another, not side by side** (the commit times say
+  so, as last night): IU-5 had 26 minutes and cut its item 4; IU-6 had 21 minutes and delivered only the resize.
+  **That was the PO's scheduling fault, not the devs'** — so IU-6 went back alone at 14:28 with its own database
+  (`league_lab_im4`) and finished the whole package by 14:49. Merged on `integ/IU` in the order IU-4, IU-2, IU-5,
+  IU-3, IU-1, IU-6 (CHANGELOG / WORDS / METRICS kept both; no code conflict).
+* **What was built** (the hand-backs below; the tables are in docs/METRICS.md):
+  * **IU-1 — the Finder searches where the calculator judges.** Packages are proposed, bounded and priced on the
+    replacement frame (`trades.partners(free=…)`; the answer says `search.search_basis = "replacement"`;
+    `LEAGUE_LAB_FINDER_SEARCH=roster` is the way back). The roster-only ladder IF-2 computed and threw away is gone.
+    The basis waiver move nets its drop the way the roster-only one does ("(drop X; netted: his season value above
+    replacement, 5.2)"). A Finder row's reason reads the one note. On the fixtures: worth proposing 0 → 0 (Scrubs,
+    rows 5 → 18), 0 → 1 (Test League: Swift for Adams + the Steelers defense), 18 → 19 (dynasty, the top nine
+    unchanged); packages dropped on the basis 13 / 3 / 3 → 0 / 0 / 0. Cold Finder 3.4 → 4.6 s on Scrubs (13 more
+    rows), warm 0.03 s. ct1.2 → ct1.3.
+  * **IU-2 — the live week after its first kickoff, in shadow (fr1.0).** The kickoff board stays the record and
+    every grade keeps reading it. A switch, `LEAGUE_LAB_FREEZE=week|game` (default `week`: 0 cells differ across 28
+    tables), lets `project` re-project the started week's games that have not kicked off into an overlay,
+    `ops.projection_live`, which `mart_player_week_projections` reads first. With `week` only the shadow is written:
+    the house-league rows that would move by 2 points or more, and why (`league-lab freeze-shadow`). Evidence, rule
+    first, the gate's part only (the one dated news in the warehouse is the final injury report): MAE 4.24 → 3.25
+    (2025), 4.25 → 3.44 (2026 weeks 2–4).
+  * **IU-3 — small things that made screens disagree.** "Who should I start?" applies the trade verdict's starter
+    rule (a hand-set starter: the call, read as a lean; an unclear one: no call, as before). The card says a
+    Questionable player's rate in the Rankings row's words, and a week he sits reads "0, he sits: IR (knee - acl) ·
+    Sleeper, Sep 28" on the chart. Trends asks the gate (20 injured-reserve players leave the list on the copy, with
+    reasons). One decimal for projections, gains and totals on My Week, Team and Waivers. About's saved answer
+    re-recorded. MFL's cold load profiled (1.15 s here; no large avoidable piece), nothing changed.
+  * **IU-4 — a publish with no gap, on the free plan.** `sync_to_hosted.sh`'s `auto` builds the new copy beside the
+    live one and switches in one transaction when the hosted size + 1.2 × the copy fits `LEAGUE_LAB_HOSTED_CAP_MB`
+    (now 800); **a swap that stops before its commit keeps nothing and the same run publishes by the drop path**;
+    the previous copy is kept only when the next swap would fit beside it; `--rollback` with nothing kept says so
+    (exit 9). `/api/ready` asks again the moment a request finds a published table away. Drilled on a scratch
+    database through a transaction pooler: the swap — 172 cards and 172 readiness answers, all 200; the refused
+    swap — fallback in the same run, 18 × 503 in words for 5 s, no 500.
+  * **IU-5 — a grade that counts a missed week (hg1.0), and this season's own record (rr1.0).** A healthy
+    quarterback who did not play counts 0; an injured one and a bye are excluded. On it (2021–2025, MAE / Spearman):
+    v3.6 6.590 / .6596, **rf1.0 6.899 / .6572 — worse in five of five seasons, so still nothing ships**, the oracle
+    5.709 / .7696. Half the rows are idle backups: a forecast for this grade needs a play probability for backups.
+    The role record is written each night for the live market week (`ops.horizon_record`, every quarterback 1–8
+    weeks out, never rewritten after that week's first kickoff) and graded by `context-record`; first graded rows
+    about Wednesday 28 October. Nothing on a screen reads it.
+  * **IU-6 — the blog's pictures and embeds (two rounds).** A picture over 300 KB is made smaller in the browser
+    (longest side 1600 px, WebP or JPEG; an 11.5 MB PNG stored as 73 KB); the server's checks are unchanged. A
+    post's **cover** (`blog.posts.cover`, one of the saving account's own pictures; another account's or a made-up
+    id is 400) is its banner, its thumbnail in the list and on the home, and its `og:image` / `twitter:image` in
+    the HTML a crawler gets without running script. **Embeds from a closed list**: a YouTube link alone on its line
+    is a Play button, and only after the tap an iframe to `youtube-nocookie.com` (sandboxed; the CSP gains exactly
+    `frame-src https://www.youtube-nocookie.com`); a link to a post on X is a plain link card — no script from
+    another origin, ever. A link to any https site in a post is a link (`rel="noopener noreferrer nofollow ugc"`).
+    The security table is in the hand-back.
+* **The PO's glue** (commit `9d55e11` and the docs commit):
+  * `nightly.yml`: `LEAGUE_LAB_HOSTED_PUBLISH: auto`, `LEAGUE_LAB_HOSTED_CAP_MB: "800"`. `nightly.sh`: the summary
+    says which way the publication went (the `publication mode:` line, `switched in N s`, or the refusal and the
+    fallback); the `freeze-shadow` step after `project` (recorded, never failing the night; its table in the
+    summary); `ops.horizon_record` in `STATE_TABLES` and `RECORD_TABLES`.
+  * `sync_to_hosted.sh`: 20 s between a refused swap and the fallback's restore on a hosted target
+    (`LEAGUE_LAB_HOSTED_FALLBACK_WAIT_S`): a hosted database counts its size a few seconds behind, and the drop path
+    must not meet the rolled-back copy still counted.
+  * The editor's help line had "card.The cover" (a space lost inside the `{#if}`); fixed.
+* **The PO's decisions**:
+  * **The swap goes live tonight with the fallback.** Our measure of a swap's peak is about 573 MB of the plan's
+    1,024; the console could not show the project's own limit, so the first live swap is the test and the fallback
+    is the protection. The run's summary says which way it went. The previous copy will probably be dropped after
+    the swap (keeping it, the next swap would not fit under 800): then there is nothing to roll back to, and the
+    way to replace a bad publication is to run the nightly again.
+  * **`LEAGUE_LAB_FREEZE` stays `week`.** The shadow runs every night; `game` is decided after this weekend's
+    shadow tables, and needs two things first: `ops.projection_live` kept across nights (it is not in
+    `STATE_TABLES`: on CI's fresh database a game already kicked off would lose its live rows), and the solves
+    inside `project`, the season mart and the NFL-wide board reading the overlay.
+  * **The cover reaches the hosted database with tonight's refresh** (`hosted_blog.sql` runs after the publish).
+    Until then the deployed API finds no column, offers no cover and saves as before (tested by dropping the
+    column); it notices the column within a minute, no restart.
+  * **Not fixed in this wave, on purpose** (it changes five sentence paths and every saved trade answer an hour
+    before delivery): a waiver move that adds nothing is still worded as a move ("your best waiver move (add
+    Michael Mayer, drop Jaylen Wright: +0.0 …)"). It was already so on `main`. First item of the next build.
+* **Verified**: on the merged tree (`integ/IU`, all six branches and both rounds of IU-6): ruff and the copy standard clean;
+  `scripts/gate.sh` GATE PASSED (783 + 36 tests, lint 0 errors, the build); `fresh_db_check.sh`: every state table
+  exists after `db migrate` (21 tables, `ops.horizon_record` among them). **The nightly's middle on the real copy**
+  (`chain.sh /home/claude/league-lab league_lab_iq4`, week 5 frozen, the live week 6): the full `dbt build` PASS 733
+  / WARN 5 / ERROR 0 of 738; `project` "kept frozen weeks [1, 2, 3, 4, 5]", 77 players gated; the projection marts
+  PASS 145 / ERROR 0; both availability guards as errors PASS 2; the audit "…ranked or valued on the screens: 0" and
+  "Note — stored rows the screens gate: 0". Then the two steps the chain does not run, by hand: `league-lab
+  context-record` (532 context rows; "rr1.0: 592 role-record rows written"; 24 s) and `league-lab freeze-shadow`
+  ("week under way: 5; 1 house-league rows move by 2.0 points or more; 14 games not kicked off, 580 players
+  re-projected": Stafford 26.19 → 29.77 in the dynasty league, across its 300-yard bonus). **The root suite**: 4
+  failed / 1,731 passed, 0 new by name. **The API suite**: 91 failed / 1,378 passed; by name, **two new — both from
+  IU-3, in files it did not run**: `test_ip2`'s start/sit test replaces the `starters` module with a stand-in, and
+  IU-3's `start_caveats` called `starters.team_name` outside its own "never costs an answer" guard (the guard now
+  covers the whole function; no production path was broken, the promise was); `test_i0a`'s Trends test assumed
+  nobody is left out with the live sources off, which the gate's stored record and the week's own report make
+  untrue by IU-3's own design (the test now compares what the live sources add, and allows Doubtful). Both files
+  pass; the rest is the known list. **The full fixtures e2e: 607 passed, 0 failed, 21 skipped** (13.7 minutes); the
+  blog, start/sit and editor specs again after the three small fixes (32 passed). **`scripts/pooler_check.sh`:
+  POOLER CHECK PASSED IN BOTH MODES** (the post-deploy check's seven lines ok through a transaction pooler). **QA
+  at 375 and 1300** on IU-3's copy with the merged API: Trades for League of Scrubs (a 2-for-1 the roster-only
+  search never proposed: Michael Wilson + the Bills defense for D'Andre Swift, +11.3 over weeks 5–8, the waiver
+  move named with its drop) and for the dynasty league (Bo Nix for Kyren Williams +26.7; the cards' numbers are the
+  headline's), My Week, Waivers, Team, Trends, a league card of a player on injured reserve, Rankings, the blog and
+  the home — no sideways scroll, no page errors but the sandbox's blocked headshots; "Who should I start?" for
+  Goff against Darnold answers "Start Goff: he outscores Darnold in 70 of 100 such weeks — a clear call, not a sure
+  one. Read it as a lean: Seattle's starter was set by hand (Sam Darnold, not the listed Drew Lock), and this call
+  assumes Darnold starts."; IU-6's own screenshots of the editor, the post and the list read at both widths (the
+  PO's API runs with accounts off, so the editor was not opened by hand). The PO read IU-6's diff line by line for
+  the three places a post's text reaches the page (`md.ts` links and embeds, `PostBody`'s click handler, the cover's
+  `src`) and the CSP. **Not verified here**: anything on the hosted database — the first live swap (Neon's own
+  limit and its wording of a refusal), the fallback's 20-second wait, `hosted_blog.sql`'s `alter table` as the Neon
+  owner, a real link preview fetched by X or iMessage, a real phone photo through the resize.
+* **Not done / next** (in the order the PO would take them):
+  1. **A claim that adds nothing is said as standing pat** on every trade sentence (the headline, the row, the
+     calculator's "Against your best waiver move", the ordering line, the partner's side) — one helper, the saved
+     answers re-saved. With it: Explore leads with kicker and defense giveaways on the basis (IU-1); the calculator's
+     cold evaluate is 1.5 s (was 0.7 s): cache the netted search per window.
+  2. **Read tonight's summary**: which publish path ran; raise or lower the cap; after a few green mornings make the
+     post-publish step a failing step.
+  3. **`LEAGUE_LAB_FREEZE=game`** after the weekend's shadow, with the two conditions above.
+  4. IU-5: an interval (players resampled) and a reliability table on the role record's grade; a play probability
+     for backups, defined now and graded on 2026–27 only; the same record for RB / WR / TE (its item 4, cut).
+  5. My Week's summary sentence prints two decimals (the API writes it and the console page mirrors it); the card's
+     rate words beside the status chip; the chart's reason without a tap; MFL's own calls timed on the live server.
+  6. The blog: the 50-picture cap is blog-wide (one editor can use it all; a cover spends one); a cover is not kept
+     in a post's revisions; a JPEG rendition for covers if a site that matters refuses WebP previews.
+  7. `chain.sh` does not run `context-record` (the PO ran it by hand); two full chains on one copy differ in the
+     live weeks 6–18 (hb1.0's horizon weights move between runs: find the unseeded draw); between a week's first
+     kickoff and its last game `project` and the role record name different market weeks (5 and 6).
+  8. Still open from Wave I-T: `one_publication` on rankings and the lineup; `--trade` built from the nightly's own
+     database; a fixture dump for a CI pooler job. Andrew's open decisions: a twice-weekly starters check, the trust
+     bar for sharing, a real salary file, the Worker's New-York-morning change.
+
+### IU-1 — the Finder's search on the basis (Wave I-U, 2026-10-09; continues IT-1)
+
+#### The rule, committed before the numbers
+
+The Finder proposes on the replacement frame (`LEAGUE_LAB_FINDER_SEARCH=basis`, the new default) **only if**, on League of
+Scrubs roster 2, the Test League roster 3 and Forever Unclean Dynasty roster 12 (next four weeks, the fixtures, the
+pinned clock):
+
+1. the list of trades worth proposing (the decision's recommendation `credible`) is never shorter than the roster-only
+   search's, and every trade the roster-only search finds worth proposing is either still found or replaced, with the
+   same partner, by one that gains you more on the basis;
+2. the Finder's cold time stays within 1.5× of the roster-only search's (measured in the same run), and warm within 1.5×.
+
+Otherwise the roster-only search stays the default (the switch keeps the basis search for the next wave) and this
+hand-back says so with the numbers.
+
+#### 1. Done / not / cut
+
+1. **The search itself — done; the rule holds, the basis search is the default.** `trades.partners(free=…)` proposes,
+   bounds and prices every package on the replacement frame (`_Bars` on covered pools, `_Search.covered_gains`;
+   `package_gains_covered` for the exclusive pricing); the API passes the frame's free agents (`decisions.partners`,
+   `search.search_basis = "replacement"`; `LEAGUE_LAB_FINDER_SEARCH=roster` switches back). IF-2's roster-only ladder
+   (`rank_partners` / `row_story`, computed and thrown away) is gone; IE-1's one-of-two is priced on the same frame.
+2. **`partnerReason` — done.** It reads the row player's note (`availability` = `league_gate.note`: `sits`, `why`), not
+   `cannot_play`; e2e/ii0 asserts the exact sentence from the saved note.
+3. **A pickup's roster cost — done.** `trades.basis_best_move` nets a drop by `waivers.choose_drops`' rule (cost = the
+   most of his lineup loss on the frame, his season value above replacement, his backup cover; net = gain − (cost −
+   lineup loss)); up to three bench drops tried, best net wins. The roster-only pick is netted the same way before the
+   two are compared (a pick the frame already uses as a fill — the partner's kicker covering a bye — is priced over the
+   next free agent, `covered_move`'s number, and netted). The sentence names the drop and the netting:
+   "(drop X; netted: his season value above replacement, 5.2)"; "(drop X)" when it costs nothing more.
+4. **Re-save + e2e — done.** `save_ir2_fixtures.py --finder` twice (118 answers), `api_70587_ie0.json` re-recorded on
+   the fixtures' API for the new "Try it" package (its non-trade keys restored to the saved ones). Trades / calculator
+   e2e 214 passed / 6 skipped / 0 failed on both projects; the full run below.
+5. **The nightly — see § 5 of the final message / below.**
+
+Cut: nothing. Not done: the two "+0.0" alternatives below (§ Found, not mine).
+
+#### Evidence
+
+##### Worth proposing, before (main 99fb216) / after (dev/IU1), next four weeks, pinned clock
+
+| League, roster | main: rows / worth | after: rows / worth | what changed in the worth list |
+|---|---|---|---|
+| League of Scrubs, 2 | 5 / 0 | 18 / 0 | — (13 → 0 rows dropped on the basis) |
+| Test League, 3 | 14 / 0 | 18 / 1 | new #3: Team 7, D'Andre Swift → Davante Adams + Pittsburgh Steelers (+12.51 / +13.08) |
+| Forever Unclean Dynasty, 12 | 20 / 18 | 22 / 19 | top 9 identical and in the same order (Taco Corp. Bo Nix → Jahmyr Gibbs +25.6; Ward of the Rings Bo Nix → Bucky Irving + Jeremiyah Love +24.18; The72Repeat Bo Nix → Breece Hall + Quinshon Judkins +20.87; …). Them GriDDy: Isaiah Likely + Emanuel Wilson → Tucker Kraft (+4.88) and Najee Harris → T.J. Hockenson (+2.92) replaced by Aaron Rodgers + Kenny Gainwell → Kyler Murray (+6.02 / +6.27); Emanuel Wilson → Kraft kept. New: Pitts n' Titts Rodgers + Jordan Addison → Josh Allen (+4.14 / +8.94), 2 da Moon Malik Washington + Caleb Douglas → Saquon Barkley (+1.43 / +2.85). |
+
+Packages evaluated: 207 → 192 / 112 → 66 / 622 → 375; dropped on the basis 13 / 3 / 3 → 0 / 0 / 0.
+
+##### Finder timings (TestClient, one process per league; seconds)
+
+| | main cold | after cold (×main) | roster-only, same run | main warm | after warm |
+|---|---|---|---|---|---|
+| Scrubs 2 | 3.415 | 4.581 (1.34×) | 3.797 | 0.056 | 0.025 |
+| Test League 3 | 5.004 | 5.137 (1.03×) | 5.286 | 0.070 | 0.025 |
+| Dynasty 12 | 5.103 | 4.765 (0.93×) | 4.988 | 0.082 | 0.027 |
+
+Scrubs' extra second is the 13 more rows it now shows (each is the calculator's decision); the search itself 0.67 →
+1.03 s. Within 1.5× of the brief's 3.0 / 4.2 s too (4.5 / 6.3).
+
+##### The Folk case (Scrubs roster 2, a full roster; also `api/tests/test_iu1.py::test_the_folk_case_nets_the_drop_on_the_basis` on the clone)
+
+| your best move | drop | gross | cost (piece) | netted |
+|---|---|---|---|---|
+| IT-1 (main): Washington Commanders defense | Jacory Croskey-Merritt | +6.71 | — (not netted) | — |
+| the same claim, netted | Jacory Croskey-Merritt | +6.71 | 5.19 (season value above replacement; backup cover 0.58) | +1.52 |
+| **IU-1**: Washington Commanders defense | **Bryce Young** | +6.71 | 0 (no starts, no season value, no backup cover) | **+6.71** |
+| (Travis Kelce, tried in the probe) | | +6.48 | 2.74 (season value) | +3.97 |
+
+Words: "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Bryce Young); Jacoby Brissett is
+already counted in every number here (he fills a starting spot that is empty)" — the roster-only pick Brissett (drop
+Young), netted on the frame: 0.0 (the PO's clause, still true). The partner (Run Bijan Run): its roster-only pick Cameron
+Dicker (drop Rhamondre Stevenson) was not netted on main (Dicker is the frame's fill for Reichard's bye, so the basis
+search could not price him: +2.0); now priced over the next free kicker and netted for Stevenson's season value (19.98):
+−17.97 → their best move is standing pat (0); the verdict: "Run Bijan Run's starters end 1.3 behind their own best move"
+(was 3.3). The calculator line: "add Cameron Dicker, drop Rhamondre Stevenson (netted: his season value above
+replacement, 20.0): +0.0 over weeks 5–8 on the same basis".
+
+#### 2. Commits (dev/IU1, from main 99fb216)
+
+- `89792cd` the partner search can propose on the replacement frame; the switch; the rule, before its numbers
+- `b23fae6` (wip) the roster-only ladder removed, IE-1 on the search's frame; the basis waiver move nets its drop; the
+  sentences say the drop and the netting
+- `e654237` the fill-used pick priced over the next free agent and netted; "(drop X; netted: …)" in one pair of
+  parentheses; `partnerReason` reads the note; tests; answers re-saved, ie0 re-recorded; ct1.3, WORDS, METRICS, CHANGELOG
+- `2a7713d` the PO's clause reads the gain before netting (`covered_gross_window`); answers re-saved again
+- this hand-back
+
+#### 4. Tests
+
+- `tests/test_iu1_trades.py` (new, 5): the bye cover is worth what it adds over the free QB (roster-only +15, frame +1);
+  the bounded search on the frame finds the exhaustive best 1-for-1 (and not the roster-only search's bye cover);
+  every proposed package is priced on the frame (= `package_gains_covered` when no free agent is shared); the drop is
+  netted (season value beyond lineup loss picks the other bench player); a pick the frame uses as a fill is priced
+  as `covered_move` prices him.
+- `api/tests/test_iu1.py` (new, 3): `search_basis` "replacement", the roster-only ladder gone, every row raises both
+  lineups, the worth list never shorter than the roster-only switch's (Scrubs); the sentence's drop / netting / the PO
+  clause against a cancelling net; the Folk case (drop Bryce Young, the partner's Dicker netted, no nested parentheses).
+- Root suite: 1,710 passed / 4 failed (all four in known_root_failures) / 3 skipped. `scripts/gate.sh python`: GATE
+  PASSED (783 root + 34 api). ruff clean; `copy_standard.py --check` clean; web lint 0 errors, build clean.
+- API trade files (test_it1 ir2 il4 ii1 if2 ia2 ie1 ie2 ie0 ii0 ib0 ig1 ir0 decisions in5 ih2 iu1): 160 passed /
+  45 failed / 3 skipped — every failure in /home/claude/waveIP/known_api_failures.txt (none new); test_iu1 + test_it1
+  re-run after the last change: 13 passed.
+- e2e (FIXTURES_PORT=8917): Trades / calculator specs (decisions h1 ia2 ib1 ib2 ie0 ie1 ie2 if2 ig1 ii0 ii1 ii6 in1 in2
+  inf1 ip3 iq4 ir1 ir2 ir4 il1 il2 il5) on phone + desktop: **214 passed, 6 skipped, 0 failed**; then **one full run:
+  599 passed, 17 skipped, 0 failed** (616, 13.5 min). The first trade run had ie0 "Finder → Try it" failing on both
+  projects (the new first team-QB package had no saved calculator answer): re-recorded, green.
+
+#### 5. Edits outside my files
+
+`dbt/seeds/metric_registry.csv` (the `credible_trade` row: ct1.2 → ct1.3 and its note), `docs/METRICS.md` (§ The
+Trade Finder searches on the basis), `docs/WORDS.md` (§ IU-1), `CHANGELOG.md` (new top heading "2026-10-09 — Wave I-U",
+one bullet). Readers of the changed words (`grep` of `scripts/` and `web/e2e/`): `post_deploy_check.py` reads the
+verdict / headline / fit words only (unchanged); e2e ii6 / if2 / ii1 read the alternative sentence from the saved
+answers (re-saved); nothing parses "(drop …)".
+
+#### 6. PO lines changed (as a diff)
+
+```diff
+ rop = alt.get("roster_only_pick") or {}
+ rname = (rop.get("player") or {}).get("player_name")
+-covered = rop.get("covered_window")
++covered = rop.get("covered_gross_window", rop.get("covered_window"))   # IU-1: before any netting of his drop
+```
+
+The roster-only pick's `covered_window` is now netted for his drop; the clause ("…is already counted in every number
+here (he fills a starting spot that is empty)") is about what he adds over the free fill, so it reads that number,
+kept beside it. Scrubs still says it (Brissett: 0.0 gross, 0.0 netted).
+
+#### 7. Found, not mine
+
+- A best move that adds nothing is still said as a move: Dynasty 12's "the Michael Mayer claim gives +0.0 over weeks
+  5–8 (drop Chris Godwin Jr.; netted: his backup cover, 0.1)" (main: "+0.0 … (drop Chris Godwin Jr.)"; IF-1's fill pick,
+  kept because nothing beats it on the frame); the Folk partner's "add Cameron Dicker, drop Rhamondre Stevenson
+  (netted: …, 20.0): +0.0 … on the same basis". `_alt_gain` already counts both as standing pat (0); the words do not.
+- On the basis, giving a kicker or a defense is worth what the free one adds back: those packages now lead "Explore"
+  (Scrubs: Michael Wilson + Buffalo Bills → Chuba Hubbard, +11.83; Nick Folk → MarShawn Lloyd, +8.7; Test League:
+  Baltimore Ravens → Tyler Warren, +15.82). None is worth proposing (the streamable guardrail), and none was proposed by
+  the roster-only search. A PO call: keep (the basis's honest number) or keep them out of the search (`allow`).
+- Test League: dropping Ladd McConkey costs 0 — his rest of season (127.9) is under the WR replacement (173.5) in
+  `price_by_player`. The model's rule; reads oddly.
+- `basis_best_move(only=…)` for a pick that drops a *starter* counts the free pool's refill of his slot (a second
+  pickup; the probe's Jaylen Wright: "lineup loss" −3.94). The search itself never drops a starter while anyone sits.
+- The calculator's cold evaluate is slower with the netting (measured mid-wave: the Folk package 0.7 → 1.5 s, a new
+  partner 0.2 → 0.5 s: three drops tried and the roster-only pick priced).
+
+#### 8. Next
+
+The "+0.0" moves said as standing pat (both teams; Waivers keeps its own pick); the K / DEF giveaways in Explore; a
+starter's drop in the `only` path priced without the refill; the evaluate's netted search cached per window.
+
+#### The nightly
+
+Nothing the nightly computes changes. `trades.partners` keeps its roster-only default (`free=None`); its one other
+caller, `reports.py` (`league-lab report`), is not in `nightly.sh`. `basis_best_move`, `package_gains_covered` and the
+decisions changes are read only by the API. The nightly's dbt build seeds `metric_registry.csv`, so the
+`credible_trade` row's new version and note land in that table (text). The post-publish check (in CI) calls the live
+`/api/trades/evaluate` and reads its verdict / headline / fit words, which this package does not change.
+
+### IU-2 — the live week after its first kickoff (Wave I-U, Friday 2026-10-09)
+
+Branch `dev/IU2` (from `main` 99fb216), worktree `/home/claude/wt-iq4`, database `league_lab_iq4` (week 5 under way:
+TB at DAL kicked off Thursday 20:15 ET, 14 games left; week 6 live). Commits: `4783398` (read-first + the rule, before
+any code), `5349814` (the evidence's rule before its numbers; the design corrected: v3 reads teammate-out inputs),
+then the code. The switch defaults to `week`; nothing a reader sees changes until it is set.
+
+#### 1. What reads the frozen rows, and what a Saturday re-projection would leak or shift
+
+Full text: docs/METRICS.md § "The live week after its first kickoff". In short:
+
+* **The decision record** = the rows `freeze_plan` keeps once a week's first game kicked off (`ops.projections`, and
+  NFL-wide `ops.projection_lines` / `projection_ranges` / `kd_lines` / `kd_ranges`), labelled `kickoff` (written
+  before the first kickoff) or `refit`. Graded by `drift` → `ops.projection_drift` → `mart_projection_drift` (About's
+  grades, `frozen_share`), `mart_projection_record` (`kickoff` only, against Sleeper's last pre-kickoff snapshot),
+  `context_record` (`PROJ_SQL`), `lineup_record` (the lineup recommended before the first kickoff), `market_record`;
+  `signals` skips kickoff weeks; kept across nights by `restore_state` and `save-record` / `restore_record_from_archive`;
+  held by `assert_frozen_projections_precede_kickoff` / `assert_frozen_nfl_wide_precede_kickoff`.
+* **Live readers of the same rows**: `mart_player_week_projections` (every house screen, the card, `ratings`), the ROS
+  mart ("a week held twice keeps the frozen row"), `anyleague`'s `_FRESHEST` board, `unitcard`, the lineup and waiver
+  solves inside `project` (`lineup.lineups` reads `ops.projections`), My Week's realised rows.
+* **Why the whole week freezes at once**: `freeze_plan`'s unit is (league, week): one label, one `frozen_at`, one
+  `fitted_at` per unit; the grades and both freeze tests assume "a week is the board as published". Rewriting part of
+  a week would mix two fits under one label.
+* **What a Saturday re-projection changes** (features are as-of week W, `assert_features_never_peek`): Thursday's
+  game does **not** enter a Sunday player's season-to-date inputs (they stop at W−1), so nothing leaks from the
+  played game. What shifts: the week's injury report (`questionable`; v3's personnel inputs — `pn_top_target_out`,
+  `pn_top_rusher_out`, `pn_teammate_share_out`, `pn_absence_beneficiary`, `pn_qb_*` — all read week W's report and
+  the reserve lists), the market (`implied_team_total`, `spread_line`), who starts at QB (the schedule's projected
+  starter or IQ-2's override), the roster file's reserve lists, and the gate's word. Not the depth chart (the model
+  does not read it). My first design text said the model has no teammate-out input; that was
+  wrong and was corrected in `5349814`, before any number.
+
+#### 2. The design (the rule, committed before code)
+
+1. A game's rows are the record once **that game** kicks off. The board managers saw at the week's first kickoff
+   stays **kept, unchanged, where it is**; every grade keeps reading it there.
+2. The live number lives in an overlay, **`ops.projection_live`** (the shape of `ops.projections` + `team`,
+   `game_kickoff`): the started week's rows of the games not kicked off. Why not a column: a column on
+   `ops.projections` means updating kept rows (the record's cells change, and `frozen_at`/`fitted_at` stop meaning
+   "this row as published"); the existing record tables are the record. `db migrate` creates it (registered in
+   `projections.NFL_DDL`, which migrate already runs; `db.py` untouched); the mart's pre-hook creates it too, so the
+   mart builds on a database that never ran migrate. Size: see § 4.
+3. `LEAGUE_LAB_FREEZE=week|game`, default **`week`** (unset, a typo, anything but `game`): `freeze_plan` and every
+   writer untouched, the overlay empty. With `game`: `project` writes the overlay (tonight's rows, through the same
+   gate: who sits is 0 with the reason) and `mart_player_week_projections` takes the overlay row for a (league, week,
+   player) when one exists, else the stored row.
+4. Shadow first (§ 5).
+5. Housekeeping: a run replaces the overlay rows of the games not kicked off; a game that kicked off since keeps the
+   rows it had (its number at its own kickoff) until the week is over; no week under way, or switch `week` → empty.
+
+Every other reader keeps reading what it reads today (lineup / waiver solves inside `project` still read
+`ops.projections`: with `game` they keep Thursday's numbers for the week — see "not done").
+
+#### 3. The switch with `week`: 0 cells differ
+
+Method: the same sequence twice on the same database — `league-lab project` then the nightly's projection-marts build
+(`--select` exactly as in `scripts/nightly.sh`) — once on `main`'s code (99fb216, before any `src/` edit; snapshot A),
+once on this branch with `LEAGUE_LAB_FREEZE` unset (snapshot B). Every table `project` writes (every `ops` table but the
+loaders' and the backtests') and the projection marts, each sorted on all its columns; run stamps left out (`fitted_at`,
+`run_at`, `as_of`, `built_at`, `graded_at`, `written_at`, `fetched_at`). Fits are deterministic (ordered `load_frame`).
+
+| | tables | rows | cells that differ |
+|---|---:|---:|---:|
+| A (main) vs B (branch, switch unset) | 28 (19 `ops`, 9 marts) | 212,607 | **0** |
+
+The one new thing: `ops.projection_live` exists (created by `db migrate`), **0 rows**. The kept weeks (1–5) are
+untouched in every table in every run of the day (A, B, the two chains). Scripts: `<scratchpad>/iu2/snap.sh`,
+`cmp.sh`; the unset chain's own comparison is in § 7.
+
+#### 4. What `game` moves on this copy (week 5)
+
+`LEAGUE_LAB_FREEZE=game` chain (§ 7): week 5 under way (TB at DAL played Thursday), 14 games not kicked off,
+580 players re-projected, **1,104 overlay rows** (2 house leagues × 552, K / DEF included), 150 of them gated (75
+players who sit: 0 with the reason — the same 75 the kickoff board gated; nobody's word changed: this copy's Sleeper
+directory is from 2026-10-05 and no week-5 injury report is loaded — the last load was 2026-10-08 01:35 UTC).
+`ops.projection_live`: 472 kB on this copy (≈ 1 MB on the hosted database during a publish, which holds two copies;
+0.02 % of the 1 GB plan; empty with `week`). The mart reads the overlay row for those 1,104 (league, player)s; the
+record (`ops.projections` weeks 1–5) is identical before and after.
+
+What `game` moves on a real Saturday, and what it does not (read in the SQL; docs/METRICS.md point 5):
+
+| input | reaches the live row? | how |
+|---|---|---|
+| injury report (Friday's final) | yes | the gate (Out / Doubtful → 0, with the reason), `questionable`, and for RB / WR / TE the teammates-out inputs (`pn_top_target_out`, `pn_top_rusher_out`, `pn_teammate_share_out`, `pn_absence_beneficiary`) and line starters out — "who replaces whom" is these, as far as the model learned them |
+| roster file (weekly rosters) | yes | reserve lists: the gate's fallback and the personnel inputs' "gone" |
+| IQ-2's starter override / the schedule's projected QB | yes, QB rows only | `pn_qb_*` (who starts); RB / WR / TE read no QB input — a QB change reaches his receivers only through the market's implied total |
+| market lines | yes | `implied_team_total`, `spread_line`, `total_line` when the schedule file's lines move |
+| Sleeper's word | yes | the gate only |
+| depth chart | **no** | `int_depth_chart_current` feeds the matchup card and the starter check, not the projections |
+| Thursday's played game | **no** | season-to-date inputs stop at week W−1 (`assert_features_never_peek`) |
+| the lineup / waiver solves inside `project`, the record, every grade | **no** | they read `ops.projections` (the kickoff board), not the mart |
+
+What moves against the kickoff board on this copy (Thursday 19:51 ET):
+
+| league | player | kickoff board | tonight | move | why |
+|---|---|---:|---:|---:|---|
+| Forever Unclean Dynasty | Puka Nacua (WR, LA, Monday) | 21.91 | 25.53 | **+3.62** | receiving yards 98.2 → 105.5: the line crosses the dynasty's 100-yard bonus (+3; this league prices flat, the bonus counts when the line is over 100) |
+| League of Scrubs | Puka Nacua | 18.06 | 18.67 | +0.61 | same line, no yardage bonus |
+| Forever Unclean Dynasty | Jaxon Smith-Njigba (WR, SEA) | 17.94 | 18.58 | +0.64 | receiving yards +5.8 |
+| Forever Unclean Dynasty | Davante Adams (WR, LA) | 17.58 | 17.08 | −0.50 | receiving yards −4.1 |
+
+1 row moves by 2 points or more, 5 by 0.5 or more, 1 by 1 or more; mean |move| 0.045 points over 1,104 rows. Why
+anything moves with no new data: tonight's warehouse build and code against Thursday's (the shadow's run before the
+chain's full dbt build listed Stafford +3.81 and Nacua
++3.47; after it, Nacua alone) — not news. Nacua's 2-point move is a 3-point flat bonus switching on for 7 yards
+(the unset chain's shadow shows Stafford's: passing yards 292.4 → 300.6, the dynasty's 300-yard bonus): the shadow
+names the stat line and the bonus crossed so the reader sees it. On a real Saturday
+the moves come from Friday's report through the gate, `questionable` and the personnel inputs, the market, and who
+starts at QB (§ 1). The 2-point list is short on purpose: it is what the PO reads.
+
+##### Face validity
+
+| case | Thursday board | live / Saturday | scored | reads right? |
+|---|---:|---:|---:|---|
+| CeeDee Lamb, DAL, 2025 week 5 (Out on Friday's report) — study | 20.35 | 0 | 0 | yes |
+| Jayden Daniels, WAS, 2025 week 4 (Out) — study | 19.86 | 0 | 0 | yes |
+| Puka Nacua, LA, 2025 week 7 (Out) — study | 17.50 | 0 | 0 | yes |
+| Puka Nacua, dynasty, 2026 week 5 (Monday) — copy | 21.91 | 25.53 | — | the line +5 to +7 yards switches the 100-yard bonus on (+3, flat): a pricing step, named in the reason |
+| Matthew Stafford, dynasty, 2026 week 5 — copy, unset shadow | 26.19 | 29.48 | — | passing 292 → 301 crosses the 300-yard bonus (+3): same |
+| the 75 players gated at kickoff — copy | 0 | 0 (the same 75) | — | yes: no new word on this copy (directory of 2026-10-05) |
+| TB / DAL (Thursday's game) — copy | kept | not in the overlay | — | yes; 13 of their rows changed `rank_pos` only (the live players around them moved) |
+| a backup whose starter sits | — | — | — | not on this copy (no week-5 report loaded); the shadow names "teammate sits: …" when it happens (tested) |
+
+#### 5. The shadow (switch `week`)
+
+With the switch unset, `project` computes what `game` would write (the same function, no write) in **0.26 s**
+(0.32 s in the `game` run); `league-lab freeze-shadow` prints it in 0.01 s (1–5 s with `uv`'s start): far under the 3 minutes. It never raises
+(a failure is logged, written into the JSON as `error`, and the night goes on; tested), and with `week` it writes no
+row (§ 3). The output on this copy (switch unset, after the unset chain):
+
+```
+$ league-lab freeze-shadow --md logs/freeze_shadow.md      # 1.2 s with uv's start
+fr1.0 shadow: week under way: 5; 2 house-league rows move by 2.0 points or more; 14 games not kicked off, 580 players re-projected (switch week; computed 2026-10-09T16:58:41.695432+00:00 in 0.25 s; gate: Sleeper directory copy of 2026-10-05T12:00:39.609393Z)
+  Forever Unclean Dynasty  Matthew Stafford         QB  LA    26.19 ->  29.48 (+3.29)  the inputs moved since the kickoff board (the week's report, market lines, who starts at QB); the line: passing_yards 292.42 -> 300.55, passing_interceptions 0.37 -> 0.44, fumbles_lost_total 0.13 -> 0.15; crosses the 300-yard passing bonus (+3)
+  Forever Unclean Dynasty  Puka Nacua               WR  LA    21.91 ->  24.75 (+2.84)  the inputs moved since the kickoff board (the week's report, market lines, who starts at QB); the line: receiving_tds 0.66 -> 0.58, receiving_yards 98.18 -> 101.87, receptions 7.69 -> 7.66; crosses the 100-yard receiving bonus (+3)
+fr1.0 shadow printed in 0.01 s
+```
+
+The nightly diff (PO's file; `freeze-shadow` right after `project`, recorded but never added to `FAILED`; its markdown
+goes into the run summary like the list audit):
+
+```diff
+--- a/scripts/nightly.sh	2026-10-09 12:15:38.085352461 -0400
++++ b/scripts/nightly.sh	2026-10-09 12:23:18.590893016 -0400
+@@ -164,6 +164,9 @@
+       # ---- IR-3 (Wave I-R): the post-publish check's lines, when it ran
+       if [ -s logs/post_publish_check.txt ]; then echo; echo "**Post-publish check (the live site)**"; echo; echo '```'; cat logs/post_publish_check.txt; echo '```'; fi
+       # ---- end IR-3
++      # ---- IU-2 (Wave I-U): fr1.0's shadow, when it ran (who would move if the started week's unplayed games were re-projected)
++      if [ -s logs/freeze_shadow.md ]; then echo; echo "<details><summary>Freeze shadow (fr1.0): the live week's games not kicked off</summary>"; echo; cat logs/freeze_shadow.md; echo; echo "</details>"; fi
++      # ---- end IU-2
+       # ---- IQ-4 (Wave I-Q): the list audit, whole (about 100 lines of markdown), when it ran
+       if [ -s logs/list_audit.md ]; then echo; echo "<details><summary>List audit (the trust guard)</summary>"; echo; cat logs/list_audit.md; echo; echo "</details>"; fi
+       # ---- end IQ-4
+@@ -519,6 +522,15 @@
+   FAILED+=(project)
+   finish
+ fi
++# ---- IU-2 (Wave I-U): fr1.0's shadow -- the house-league rows of the started week's games not kicked off that would move by
++# 2 points or more if they were re-projected (LEAGUE_LAB_FREEZE=game), and why; `project` computed it (logs/freeze_shadow.json),
++# this prints it and writes the run summary's part (logs/freeze_shadow.md). A report nothing reads: a failure is recorded,
++# never added to FAILED (the night is not failed by it).
++rm -f logs/freeze_shadow.md
++if run_step freeze-shadow uv run league-lab freeze-shadow --md logs/freeze_shadow.md; then
++  record freeze-shadow "$LAST_SECS" "ok: $(head -1 logs/freeze_shadow.md 2>/dev/null | sed 's/^fr1.0 shadow //' | cut -c1-160)"
++else record freeze-shadow "$LAST_SECS" "FAILED (a report nothing reads: the night goes on)"; fi
++# ---- end IU-2
+ # ---- V-1 (Wave I-G): `project` wrote the decision record (lineups() -> lineup.write_record, never fatal there);
+ # `league-lab validate` writes it again when that failed (same freeze rule: idempotent) and prints the grade. Soft:
+ # the weeks already kept are untouched, and a week not written tonight is rebuilt (labelled) the night after kickoff.
+```
+
+#### 6. Evidence on the past
+
+Rule committed first (`5349814`, docs/METRICS.md). The only dated news in the warehouse is the week's **final injury
+report** (nflverse; Friday's designations): no Thursday copy of the lines, the depth chart or the report exists, so a
+Thursday board T is the model's number (today's v3.6 refit on the seasons before), a Saturday board S is T with the
+final report's Out / Doubtful (and the reserve lists) at 0 — the gate's part. Players of the games after the week's
+first kickoff, ppr, actual 0 when he did not play; Spearman per week × position (≥ 8 players), averaged.
+
+| population | n | MAE T | MAE S | Spearman T | Spearman S |
+|---|---:|---:|---:|---:|---:|
+| 2025 weeks 1–18, all | 9,594 | 4.238 | **3.249** | 0.614 | **0.746** |
+| 2025, status changed (Out / Doubtful, not reserve) | 344 | 6.763 | **0.000** | — | — |
+| 2026 weeks 2–4, all | 1,699 | 4.248 | **3.444** | 0.606 | **0.713** |
+| 2026, status changed | 45 | 7.113 | **0.000** | — | — |
+| *sensitivity: T already zeroes the reserve lists* — 2025 | 9,594 | 3.491 | 3.249 | 0.713 | 0.746 |
+| *sensitivity* — 2026 weeks 2–4 | 1,699 | 3.632 | 3.444 | 0.689 | 0.713 |
+| *extra: 2026 week 4's real kickoff board (v3.0), scrubs* | 554 | 3.957 | 3.135 | 0.581 | 0.708 |
+| *extra: the same, dynasty* | 554 | 4.778 | 3.802 | 0.585 | 0.710 |
+
+None of the 344 + 45 status-changed players played (25 of the 344 were Doubtful). Spearman for them: no cell of 8. The rule's
+"2026 week 4 real kickoff board in ppr" is not computable as written (ppr's week-4 ranges are refit values; the
+kickoff board exists in the two house scorings) — shown as the labelled extra. **Verdict by the rule: S is better in
+both seasons → recommend `game` after one weekend of the shadow.** What it does and does not show: it measures the
+gate's part, which the screens already apply at request time with `week`; the part only `game` adds (the stored
+number the screens read without the request-time gate, the teammates' personnel inputs, the market, who starts at QB)
+has no dated data to measure. Script: `<scratchpad>/iu2/study/fr1_study.py` (302 s), `fr1_w4.py`.
+
+#### 7. The chains
+
+**Switch unset** (`/home/claude/waveIT/chain.sh /home/claude/wt-iq4 league_lab_iq4`, final code, 12:48–12:59, 693 s):
+ERROR 0 in every step.
+
+```
+== 12:48:16 db migrate
+schemas and ops tables are in place
+== 12:48:17 dbt build (full)
+16:53:44  Done. PASS=733 WARN=5 ERROR=0 SKIP=0 NO-OP=0 TOTAL=738
+== 12:53:44 project
+12:53:55 INFO league_lab.calibration: fi1.0: market week 5; later weeks' lines from the teams' own season (7229 rows, shrink 3.0 games), personnel of the market week (432 rows moved)
+12:58:29 INFO league_lab.calibration: hb1.0: market week 5; QB weeks after it blended with the naive line, weight by horizon {2: 0.0, 3: 0.45, 4: 0.25, 5: 0.4, 6: 0.55, 7: 0.95, 8: 0.75} (lambda 0.25, k 6.0); 1039 QB lines moved
+12:58:35 INFO league_lab.kdef: kd League of Scrubs (551104): D/ST keys not projected (price 0): def_st_ff, def_st_fum_rec, st_ff, st_fum_rec
+12:58:41 INFO league_lab.availability_gate: availability gate: week 6, Sleeper directory (copy of 2026-10-05T12:00:39.609393Z): 77 players who cannot play or are unlikely to play get 0 this week (77 of them out indefinitely: no later weeks)
+projected 19584 rows for 2026 (2 league(s), weeks 1-18); wrote 13332 (weeks [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]), kept frozen weeks [1, 2, 3, 4, 5]
+availability gate, week 6: Sleeper directory copy of 2026-10-05T12:00:39.609393Z; 77 players who cannot play or are unlikely to play get 0 this week, 77 of them
+== 12:59:21 projection marts
+16:59:34  Done. PASS=145 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=145
+== 12:59:35 availability guards (as errors)
+16:59:43  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=2
+== 12:59:44 audit
+# List audit — 2026, week 5
+_Built 2026-10-09 16:59 UTC; every list a visitor can open without a league (Half PPR, PPR, Standard; this week and rest of season; the free calculator's values)._
+
+## Players who cannot play or are unlikely to play and are ranked or valued on the screens: 0
+_Who cannot play: 236 players, unlikely to play (Doubtful): 0, by Sleeper's directory (copy of 2026-10-05T12:00:39.609393Z; the directory alone, never the stored record it checks); the screens' gate as the routes apply it at request time (the stored record, th
+- None: every player who cannot play or is unlikely to play is off this week's screens, and every player out indefinitely off the season lists and the calculator's values.
+- Note — stored rows the screens gate: 0 (week 5 froze at its first kickoff; its numbers are never rewritten).
+
+## Coverage — every team in every list
+- Every team with a game in a list's window has players in it (all 54 lists).
+
+## Projected against what they have scored (3+ games this season)
+### QB · this week
+- Kyler Murray (MIN): #9 here, #30 in points per game (7.8 in 3 games) [Half PPR, PPR, Standard]
+- Justin Herbert (LAC): #12 here, #25 in points per game (12.4 in 4 games) [Half PPR, PPR, Standard]
+- Tyler Shough (NO): #3 in points per game (24.1 in 3 games), #18 here [Half PPR, PPR, Standard]
+- explained by status: Bryce Young (a bye this week)
+### RB · this week
+- explained by status: Kenneth Walker III (a bye this week)
+### WR · this week
+- George Pickens (DAL): #11 here, #50 in points per game (5.6 in 4 games) [Standard]
+### TE · this week
+- Mike Gesicki (CIN): #4 in points per game (13.0 in 3 games), #24 here [Half PPR, PPR, Standard]
+- Juwan Johnson (NO): #2 in points per game (13.6 in 3 games), #20 here [Half PPR, PPR, Standard]
+- AJ Barner (SEA): #11 here, #27 in points per game (4.1 in 4 games) [Standard]
+- explained by status: Travis Kelce (a bye this week)
+### K · this week
+- Cameron Dicker (LAC): #2 here, #28 in points per game (6.0 in 4 games) [Half PPR, PPR, Standard]
+- Harrison Mevis (LA): #7 here, #26 in points per game (6.5 in 4 games) [Half PPR, PPR, Standard]
+- Wil Lutz (DEN): #9 here, #30 in points per game (5.5 in 4 games) [Half PPR, PPR, Standard]
+- Andy Borregales (NE): #11 here, #29 in points per game (5.8 in 4 games) [Half PPR, PPR, Standard]
+- Matt Gay (LV): #4 in points per game (11.5 in 4 games), #24 here [Half PPR, PPR, Standard]
+- Chase McLaughlin (TB): #5 in points per game (10.2 in 4 games), #21 here [Half PPR, PPR, Standard]
+- Spencer Shrader (IND): #1 in points per game (13.2 in 4 games), #22 here [Half PPR, PPR, Standard]
+### DEF · this week
+- Washington Commanders (WAS): #3 here, #25 in points per game (5.0 in 4 games) [Half PPR, PPR, Standard]
+- Dallas Cowboys (DAL): #4 here, #30 in points per game (3.0 in 4 games) [Half PPR, PPR, Standard]
+- Las Vegas Raiders (LV): #2 in points per game (12.0 in 4 games), #23 here [Half PPR, PPR, Standard]
+### QB · rest of season
+- explained by status: Bryce Young (a bye this week)
+== 12:59:49 done
+```
+
+(The project step's own fr1.0 line, which `chain.sh`'s filter does not show: `fr1.0 (week): week under way: 5, 14 games
+not kicked off, 580 players re-projected, 2 house-league rows would move by 2.0 points or more; overlay off (0.25 s)`.)
+
+**`LEAGUE_LAB_FREEZE=game`** (12:21–12:34, 725 s; code before the reasons named the line and the bonus — no cell
+depends on them): ERROR 0 in every step; the audit is word for word the unset chain's (the free lists read the
+NFL-wide board, which has no overlay).
+
+```
+== 12:21:53 db migrate
+schemas and ops tables are in place
+== 12:21:54 dbt build (full)
+16:27:35  Done. PASS=733 WARN=5 ERROR=0 SKIP=0 NO-OP=0 TOTAL=738
+== 12:27:36 project
+12:27:48 INFO league_lab.calibration: fi1.0: market week 5; later weeks' lines from the teams' own season (7229 rows, shrink 3.0 games), personnel of the market week (432 rows moved)
+12:32:32 INFO league_lab.calibration: hb1.0: market week 5; QB weeks after it blended with the naive line, weight by horizon {2: 0.0, 3: 0.5, 4: 0.2, 5: 0.2, 6: 0.5, 7: 0.95, 8: 0.75} (lambda 0.25, k 6.0); 1039 QB lines moved
+12:32:38 INFO league_lab.kdef: kd League of Scrubs (551104): D/ST keys not projected (price 0): def_st_ff, def_st_fum_rec, st_ff, st_fum_rec
+12:32:45 INFO league_lab.availability_gate: availability gate: week 6, Sleeper directory (copy of 2026-10-05T12:00:39.609393Z): 77 players who cannot play or are unlikely to play get 0 this week (77 of them out indefinitely: no later weeks)
+projected 19584 rows for 2026 (2 league(s), weeks 1-18); wrote 13332 (weeks [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]), kept frozen weeks [1, 2, 3, 4, 5]
+availability gate, week 6: Sleeper directory copy of 2026-10-05T12:00:39.609393Z; 77 players who cannot play or are unlikely to play get 0 this week, 77 of them
+== 12:33:26 projection marts
+16:33:43  Done. PASS=145 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=145
+== 12:33:43 availability guards (as errors)
+16:33:52  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=2
+== 12:33:52 audit
+(identical to the unset chain's audit above, but its timestamps)
+```
+`fr1.0 (game): … overlay rows written: 1104 (0.32 s)`.
+
+**What differs between the chains, and why it is not the switch** (snapshots of all 29 tables after each run):
+
+| pair | weeks 1–5 (the record, and the week under way) | weeks 6–18 |
+|---|---|---|
+| main `project`+marts (A) vs branch, unset (B) | 0 cells | 0 cells |
+| unset chain (C) vs unset chain again (C2), same code | 0 cells (but 4 `ops.lineups` rows of weeks 2 / 4) | differ (12,406 `ops.projections` rows) |
+| main (A) vs unset chain (C2) | 0 cells | differ (the same drift) |
+| `game` chain (G) vs unset chain (C) | **only** `mart_player_week_projections` week 5: 1,104 overlay rows + 13 `rank_pos` of Thursday's game; `ops.projection_live` 1,104 vs 0 | differ (the same drift) |
+
+So the switch unset changes 0 cells; every full chain on this copy re-projects the live weeks 6–18 a little
+differently from the one before, whatever the code (a full `dbt build` between two `project`s; hb1.0's fitted horizon
+weights differ run to run — IU-5's file, not touched). The 4 `ops.lineups` rows of played weeks 2 / 4 that differ
+between C and C2 (and not between A and C2) come from the lineup solve on identical projections — run-to-run
+variation there, not investigated today.
+
+#### Files, tests, not done
+
+* `src/league_lab/projections.py` — `freeze_unit` (the switch), `started_week`, `live_rows` (gated with
+  `availability_gate.gate_frame`), `shadow_moves` / `_line_moves` / `_bonus_crossings` (the reasons),
+  `live_after_project` (never raises; JSON; overlay write / clear), `_write_live` / `_clear_live`; `ops.projection_live`
+  in `NFL_DDL` (so `db migrate` creates it); one call in `project` after `_write_projections`. `freeze_plan`,
+  `_write_projections`, `write_nfl_wide` untouched (a test reads their source for the switch).
+* `src/league_lab/cli.py` — `project` prints the fr1.0 line; `league-lab freeze-shadow [--md FILE]`.
+* `dbt/models/marts/nfl/mart_player_week_projections.sql` — `p` = stored rows without an overlay row ∪ overlay rows
+  cast to `ops.projections`' own columns (`jsonb_populate_record`: round trip exact on all 19,364 rows); the pre-hook
+  creates the overlay (`like ops.projections`). `dbt/models/sources/sources.yml` — the source.
+* `dbt/seeds/metric_registry.csv` — `live_week_freeze, fr1.0` (experimental). `docs/METRICS.md` — § "The live week
+  after its first kickoff" (read-first, the rule, the corrections, the study's rule and result). `CHANGELOG.md` —
+  Wave I-U bullet. No screen, no user-read sentence (WORDS.md untouched), no screenshot.
+* Tests: `tests/test_iu2_freeze.py` (17: the switch, the week under way, the live rows gated and unlabelled, the
+  shadow's reasons and threshold, the step never raises, the CLI and its markdown, the DDL / mart / source wiring,
+  the writer untouched); `tests/test_nfl_wide.py` (the overlay is not state: kept out of the STATE_TABLES check).
+  `scripts/gate.sh python`: GATE PASSED (root 783, api 34, ruff). Copy standard: exit 0. Root suite
+  (`check_root.sh`): 1,722 passed, 4 failed — all 4 in the known list (`known_root_failures.txt`), 0 new.
+* PO's files, as diffs only: `scripts/nightly.sh` (§ 5). To turn `game` on later: `LEAGUE_LAB_FREEZE=game` in the
+  nightly's environment (the workflow / the Mac's env), nothing else.
+
+**Not done / open.** (1) With `game`, the lineup and waiver solves inside `project`, the ROS mart and `anyleague`'s
+NFL-wide board keep reading the stored rows (the overlay is house-league, `ops.projections`-shaped, read only by
+`mart_player_week_projections`); NFL-wide (`projection_lines` / `projection_ranges`) has no overlay. (2) The overlay is
+not in `STATE_TABLES`: on a fresh CI database a game that kicked off since the last night loses its live rows (the
+screen falls back to the kickoff board for that game); the Mac keeps them. (3) Every two full chains on this copy
+differ in the live weeks 6–18 (§ 7) whatever the switch — e.g. hb1.0's horizon weights printed {3: 0.5, 4: 0.2, …} in
+one run and {3: 0.45, 4: 0.25, …} in the next; IU-5's file, reported here, not touched. (4) The study measures the
+gate's part only (§ 6).
+
+### IU-3 — small things that make screens disagree or read oddly (Wave I-U, 2026-10-09)
+
+Task: `/home/claude/waveIU/BRIEF.md` § IU-3. Branch `dev/IU3` from `main` `99fb216`, worktree `/home/claude/wt-iq2`,
+database `league_lab_im4` (the real 2026 board; Sleeper directory copy of 2026-10-05 12:00 UTC; real clock: week 5).
+
+**Done**: 1 (start/sit), 2 (the card's rate words, the chart's reason), 3 (Trends), 4 (About's saved answer), 5 (the
+table, and the format strings on My Week / Team / Waivers). **6 (MFL's cold load): profiled, nothing changed** — the
+largest piece is not avoidable by a format or a cache I own; below. **Nothing the nightly reads changed** (no dbt
+model, no `project` input, no solve: `league_status.note` gained a `rate_words` key that only the API reads), so the
+chain was not run.
+
+#### 1. Start/sit for a quarterback whose starter was set by hand or is unclear
+
+`rankings_api.start` asks the trade verdict's rule (`provenance.caveats_for` / `effect`) through `start_caveats`, with
+the caveat in a start/sit's words (the trade's sentence kept as `verdict_words`); the answer carries `caveats` and
+`caveat_effect`. Set by hand → the call stands, as a lean that says whom it assumes (`answer.caveat`,
+`verdict_unqualified`, `words_unqualified` kept); unclear → no call (the rows' own `starter_unclear`, unchanged).
+
+| Ask (League of Scrubs, week 5) | Before | After |
+|---|---|---|
+| Darnold (SEA, set by hand) vs Goff | clear — "Start Goff: he outscores Darnold in 70 of 100 such weeks — a clear call, not a sure one." caveats: none | clear, softened — "… not a sure one. **Read it as a lean: Seattle's starter was set by hand (Sam Darnold, not the listed Drew Lock), and this call assumes Darnold starts.**" `caveat_effect` soften |
+| Bagent (CHI, set by hand) vs Goff | clear, 69 in 100, no caveat | the same call + "Read it as a lean: Chicago's starter was set by hand (Tyson Bagent, not the listed Case Keenum), and this call assumes Bagent starts." |
+| Jalon Daniels (TB, unclear) vs Goff | no call — "Starter unclear: Tampa Bay lists Jalon Daniels … Starter unclear — no call." | unchanged words; now `caveat_effect` withhold with its caveat |
+| Mayfield (TB, unclear) vs Goff | no call (as above) | unchanged; withhold |
+| Allen vs Goff (no flag) | a lean, 56 in 100 | unchanged, no caveat |
+
+Screenshots: `docs/handbacks/iu3/start-handset_{375,1300}.jpg`, `start-unclear_{375,1300}.jpg` (Compare's "Who should
+I start?", which draws `answer.words`: no web change).
+
+#### 2. The card
+
+* **Rate words**: `league_status.note(block, position=…)` carries `rate_words` (`availability_gate.short_words`, the
+  Rankings row's words, by position); the card's Availability line after a flag: "⚠️ **Questionable (hamstring) ·
+  ESPN, Oct 8**. Questionable: about 7 in 10 play." (WR; QB "about 1 in 2"). A player who sits keeps his reason, not
+  a rate. `player.status_note` passes the position (the watchlist row gets the key too, unused). No Questionable
+  player has a current word on this copy (its directory's game statuses are week 4's), so this is shown by
+  `test_iu3.py`, not on the database.
+* **The chart**: a week with `sits` (IT-3's field) is described "Week 5 vs CIN: not played yet · 0, he sits: IR (knee
+  - acl) · Sleeper, Sep 28" instead of "projected 0.0 (0.0–0.0)" (`PointsChart.svelte`).
+
+#### 3. Trends and a player who sits
+
+Rule (the Rankings'): a player who sits this week — cannot play, or a status that rarely plays (Doubtful) — is not a
+"due" or "hot" call this week; he is listed under `availability.left_out_players` with his reason; his season trend is
+not touched. Trends now asks `league_gate` (the stored record + Sleeper + ESPN + the week's report) instead of the older
+overlay's snapshot with `NOT_IN_TRENDS` (which kept Doubtful listed and, with the overlay off, nothing at all).
+
+On this copy (both house leagues, all positions, overlay off): **before** 453 players listed, 0 left out — 20 players on
+injured reserve were in the list (A.J. Brown, Jordan Mason, De'Von Achane, Travis Etienne, Jaxson Dart, David Njoku …);
+**after** 433 listed, those 20 left out with "IR (…) · Sleeper, <date>". The top five by momentum are unchanged (Cody
+White, Kyle Williams, Darren Waller, Jordan Addison, Matthew Stafford). No Doubtful player has a current word on this
+copy; on the live site a Doubtful player (unlikely) now leaves the list the same way.
+
+#### 4. About's saved answer
+
+`web/fixtures/ir4/api_ir4.json`: the two `/api/about` entries re-recorded from the app on `league_lab_im4` with the
+clock pinned in week 5 (`LEAGUE_LAB_NOW=2026-10-08T16:00:00Z`, IR-4's recipe), in the file's own shape (26 lines
+changed); the clause now reads "At quarterback 61 in 100 against 60 for his own record: the smallest margin of the
+four." The spec (`web/e2e/ir4/fixtures.spec.ts`, About test) reads the quarterback clause from the saved answer and
+asserts the screen shows it — no sentence is written in the spec.
+
+#### 5. One rounding on every screen
+
+Where a projection, a gain and a total are printed (web), and with how many decimals:
+
+| Screen | Projection | Gain / margin | Total |
+|---|---|---|---|
+| Rankings (week) | 1 (`fmt.pts`) | — | — |
+| The card (head, projection block) | 1 (`headNumber` / the "Projected" tile) | — | — |
+| Waivers (browse, cards) | 1 (`f1`) | 1 with a sign (`s1`: "+1.2", the true minus); the closest-call margin **2 → 1** | 1 (`f1`, lineup value) |
+| Team | 1 (`f1`) | the roster row's margin **2 → 1** | 1 (`f1`) |
+| My Week (`LineupTable`) | **2 → 1** | margin **2 → 1** | the summary sentence's total is the API's words ("Your best lineup projects 97.54 …"): left |
+| Trades / the calculator | IU-1's screens: not touched | | |
+
+Rule, the screens' own majority: **projections one decimal, gains one decimal with a sign, totals one decimal.**
+Applied where it is a format string (`LineupTable.svelte`'s `num` and margins, `Team.svelte`, `Waivers.svelte`); the
+`ig1` spec's "no bare 0.00" guard became "no bare 0.0". **Left** (contract or words, not format strings): My Week's
+summary sentence written by the API with two decimals ("Your best lineup projects 97.54 in week 5"),
+the trade screens (IU-1), `lineup_value` in the console pages (PO). `scripts/` reads none of these (grepped); the e2e
+specs that read a lineup number were checked (`ig1` updated; the full run below).
+
+#### 6. MFL's cold load (`mfl:70587`, team 1, My Week) — profiled, not changed
+
+In a process already warm from another league (as the live server is), MFL's first load is **1.15 s** here (warm
+0.17–0.32 s); in a cold process 2.4 s (imports and the pool's first connections). Of the 1.15 s: the two roster contexts
+0.63 s (of which pricing the NFL-wide board in MFL's scoring once, `price_board`, 0.28 s — then cached 10 minutes), the
+cards 0.22 s, the lineup rows 0.10 s, MFL's own calls 0.12 s (fixtures here: on the live site these are network calls
+to MFL, which is the likeliest part of the 4.2 s the sandbox cannot measure). Every NFL-wide query is under 40 ms
+(lines 37 ms, ranges 20 ms, status 19 ms). Nothing here is a large avoidable piece I own: cut. Next: time MFL's
+own calls on the live server (the API's timings already split `sleeper` / `priced` / `solve` / `frame`).
+
+#### Tests
+
+* New: `api/tests/test_iu3.py` 3 passed (start/sit's caveat words for both kinds and the withhold effect, a failing
+  flag source costs nothing; the card's rate words by position and the reason for a player who sits; Trends asks
+  `league_gate`). Nothing cached between tests. `tests/test_is2_league_status.py`: the note's expected dict gained
+  `rate_words` (updated on purpose) — 9 passed.
+* API files of the modules I edited (`test_iu3`, `test_it3`, `test_is2`, `test_parity`, `test_player`, `test_myweek`,
+  `test_research`, `test_ip2`, `test_iq2`, `test_ir1`, `test_ir4`, `test_it2`, on `league_lab_im4`): 3 failed / 162
+  passed — all 3 in the known list (`test_myweek::test_worked_example_dynasty_12`,
+  `test_research::test_trends_route[both leagues]`, which fails at "three games played → an early read": data state).
+  **`test_parity` passes**: no console diff is required.
+* Root suite (`check_root.sh`): 4 failed / 1705 passed / 3 skipped, **0 new** (the first run's one new failure was the
+  note test above, fixed).
+* `scripts/gate.sh python`: GATE PASSED (root 783, api 34, ruff). ruff and the copy standard clean; `npm run lint` 0
+  errors (207 files); the build.
+* **e2e, the whole fixtures suite** (My Week, Team, Waivers, the card, Compare and About are opened by most specs; both
+  projects): **599 passed, 17 skipped, 0 failed** (13.2 m). The rewritten handback screenshots were checked out again.
+
+Screenshots (`docs/handbacks/iu3/`, JPEG q70, 375 and 1300, the API on `league_lab_im4`): `start-handset_*`,
+`start-unclear_*`, `myweek-lineup_*` (one decimal: K. Williams 19.3, "margin 10.3 over Croskey-Merritt"). No sideways
+scroll, no page errors. No card screenshot: no Questionable word is current on this copy, and the chart's reason shows on
+a tap of the week.
+
+#### Edits outside my files
+
+* `api/league_lab_api/rankings_api.py` — the start handler (mine today): `start_caveats` and two marked `# ---- IU-3`
+  blocks in `start`.
+* `web/src/components/card/PointsChart.svelte` (the card), `web/e2e/ig1/fixtures.spec.ts` (the "no bare 0.00" guard at
+  one decimal), `web/e2e/ir4/fixtures.spec.ts` and `web/fixtures/ir4/api_ir4.json` (item 4), `CHANGELOG.md`,
+  `docs/WORDS.md`, `tests/test_is2_league_status.py`.
+
+#### The PO's lines
+
+None required. For the console's player page to say the rate as the API card does (`test_parity` passes today because
+no parity case has a current Questionable word), `app/pages/0_Player.py`:
+
+```diff
+-gate_note = LS.note(_blk)
++gate_note = LS.note(_blk, position=p["position"])                                    # IU-3: the position's rate
+@@
+-    _words = f" {gate_note['words']}" if gate_note and gate_note.get("sits") and gate_note.get("words") else ""
++    _words = (f" {gate_note['words']}" if gate_note and gate_note.get("sits") and gate_note.get("words")
++              else f" {gate_note['rate_words']}." if gate_note and gate_note.get("rate_words") else "")   # IU-3
+```
+
+#### Found, not mine
+
+* My Week's summary sentence prints its total with two decimals ("Your best lineup projects 97.54 in week 5") — it is
+  the API's words (`myweek.py`); one decimal there changes a sentence the console page mirrors (parity): a PO call.
+* Trades and the calculator print their own decimals (IU-1's screens).
+
+#### Next
+
+The card's chart could also say the reason without a tap (a line under it for the card's week); a Questionable player's
+rate beside the chip in the card's head (`CardHead.svelte`); MFL's own calls timed on the live server.
+
+### IU-4 — the gap-free publish on the free plan (continues IT-4)
+
+Branch `dev/IU4` from `main` `99fb216`; worktree `/home/claude/wt-ip3`; `league_lab` read only; the scratch database
+`league_lab_iu4_pub` (235 MB → 456 MB at a swap's peak) was created for the drills and dropped. The sync was pointed
+only at it, through a local transaction-mode PgBouncer, with `LEAGUE_LAB_HOSTED_SKIP_ROLE=1` and the worktree's
+existing app password (never a throwaway). **Read by the nightly:** `scripts/sync_to_hosted.sh` (it is the publish);
+`ready.py` / `db.py` are the API's.
+
+#### 1. Done, not done, cut
+
+* **Item 1 — done.** `auto` swaps when the hosted database's size + 1.2 × the copy's estimate ≤ `LEAGUE_LAB_HOSTED_CAP_MB`
+  (default **800**, was 500). **A swap that stops before its commit for any reason** (the database refusing the space,
+  a lost connection, a failed check) changed nothing — one transaction — and with `auto` **the same run publishes by
+  the drop path**. An explicit `swap` still stops (it never drops). The drop path's code is byte-for-byte unchanged
+  (diffed against `99fb216`). Proven on scratch: a swap that fits; a refused swap → the fallback in the same run.
+  **The refusal was injected**, not a real quota: `LEAGUE_LAB_HOSTED_DRILL_REFUSE=1` (honoured only for a local target)
+  raises SQLSTATE `53100 disk_full` "could not extend file: project size limit exceeded" after the whole restore, at
+  the end of the swap's transaction — where a real space refusal hurts most (the most written, nothing committed).
+* **Item 2 — done.** The previous copy is kept as `_prev` only when the next swap would still fit beside it
+  (`after + copy ≤ cap`); otherwise it is dropped at once ("nothing to roll back to until the next swap").
+  `--rollback` with nothing kept: exit 9, "nothing to roll back to - no previous publication is kept (… the last
+  publish used the drop path, or its previous copy did not fit beside the next swap and was dropped). Nothing was
+  touched; to replace a bad publication, run the nightly again."
+* **Item 3 — done** (drill A below): no 503, no 500 during a swap.
+* **Item 4 — done, differently from "15 s while publishing":** a request that finds a published table missing
+  (`UndefinedTable` → `DataNotReady`) now makes the next `/api/ready` probe at once (`db.on_tables_away` → `ready`), and
+  a failure is kept 15 s — so a drop-path gap shows `publishing` from its first affected request (drill B: at once).
+  A shorter success cache alone would still miss a 5 s gap. After the gap, `/api/ready` keeps saying `publishing` for
+  up to 15 s (its failure cache) while the screens already answer.
+* **Item 5 — the diffs below.** **Item 6 — cut** (the `--trade` from the nightly's database; the CI fixture dump).
+* **The 38 MB** (281 console − 243 ours): the repository's docs do not break it down. What I can say: an empty
+  Postgres database is 7.4 MB here (a Neon project has two: `neondb` and `postgres`), plus the `usage` / `events` /
+  `accounts` / `outlook` / `blog` state; the rest is the plan's own accounting. **Why 800**: today's peak during a swap
+  is about 281 + 1.2 × 243 ≈ 573 MB; 800 leaves 224 MB of the 1,024 for growth, the state and the plan's history.
+  Both paths write the same restore (the same write-ahead log); the swap adds only the old copy, held until its
+  commit. If the cap is wrong, the fallback publishes anyway.
+
+#### 2. Commits — `git log 99fb216..dev/IU4`.
+
+#### 3. Evidence
+
+**Drill A — the swap fits** (`LEAGUE_LAB_HOSTED_PUBLISH=auto`, default cap, seasons 2024+):
+
+```
+publication id: 20261009T1736Z-99fb216285fe
+publication mode: swap (the hosted database holds 350 MB; + this copy ~262 MB (218.7 × 1.2) = 612 MB <= the 800 MB cap)
+the swap checks 89 relations and the rows of 85 tables before it commits
+publishing: restoring beside the live publication, checking, then switching in one transaction (pages keep the previous numbers until the commit) ...
+switched in 6 s: publication 20261009T1736Z-99fb216285fe is live
+the previous publication is kept as analytics_prev / analytics_seeds_prev / ops_prev until the next run (455 MB in all; the next swap would need 717 MB <= 800; …)
+verified: all 89 relations the pages and the API read are on the hosted copy (the API's 77 included; 456 MB on the hosted database; …)
+```
+
+The reader (an uncached read — a different player's card — and `/api/ready`, every 0.25 s, the API on the pooled
+address, 13:36:04–13:37:19): **172 × card 200, 172 × ready 200; 0 × 503, 0 × 500.** The publication id the reader saw:
+`iu4-before` until 13:36:59.9, then `20261009T1736Z-…` (the swap committed about 13:36:27; `/api/ready` keeps a success
+60 s). No mixed answer is possible on the card: each of its statements reads one committed state, and the swap
+changes every table in one commit (the trade evaluation's two-publication guard, IT-4, covers multi-read decisions).
+
+**Drill B — the swap refused, the fallback publishes in the same run** (`auto` + the injected refusal; the run's own
+lines with their times):
+
+```
+13:37:58 publication id: 20261009T1737Z-99fb216285fe
+13:37:58 publication mode: swap (the hosted database holds 354 MB; + this copy ~262 MB (218.5 × 1.2) = 616 MB <= the 800 MB cap)
+13:37:58 publishing: restoring beside the live publication, checking, then switching in one transaction ...
+13:38:04 ERROR:  could not extend file: project size limit exceeded (a drill: LEAGUE_LAB_HOSTED_DRILL_REFUSE=1)
+13:38:04 the swap stopped before its commit (exit 3): nothing of it was kept, the previous publication is untouched; publishing by the drop path instead (fallback)
+13:38:04 publishing: dropping the previous marts, then restoring (pages show 'not built yet' meanwhile; ops swaps atomically) ...
+13:38:09 restored in 5 s
+13:38:10 verified: all 89 relations … (241 MB on the hosted database …)
+sync exit 0
+```
+
+The reader: 13:37:43–13:38:04 card 200 and ready 200 on the previous publication (`20261009T1736Z`) **through the
+whole refused swap**; 13:38:04.6–13:38:09.7 the fallback's drop gap: 18 × card 503 `{"error":"the numbers are not ready
+yet",…}`, ready 503 `publishing` from the first affected request; 13:38:09.7–13:38:24.5 card 200 on the new tables while
+ready still said `publishing` (its 15 s failure cache); from 13:38:24.6 ready 200 with `20261009T1737Z`. **0 × 500**, no
+traceback in the API's log. Totals: card 176 × 200 / 18 × 503; ready 140 × 200 / 54 × 503.
+
+`--rollback` after drill B (nothing kept): exit 9 with the sentence in item 2.
+
+#### 4. Tests
+
+`api/tests/test_iu4.py` 2 passed (a missing table makes the next ready probe at once and it says `publishing`; the hook
+registered once). With `test_it4`, `test_is4`, `test_ir3`, `test_ir0`: 33 passed. `scripts/gate.sh python`: GATE
+PASSED, 819 ran (783 + 36; `test_iu4` added). `scripts/pooler_check.sh`: **POOLER CHECK PASSED IN BOTH MODES** (every
+post-deploy check ok in both; its probe loader now also rewrites `from . import`, since `ready.py` imports `db` for the
+hook). ruff, copy standard, `bash -n` clean. No `src/` edit.
+
+#### 5. Edits outside my files — none (`CHANGELOG.md` one bullet).
+
+#### 6. The PO's lines
+
+`.github/workflows/nightly.yml` (the `Nightly pipeline` step's `env:`):
+
+```diff
+           LEAGUE_LAB_HOSTED_APP_PASSWORD: ${{ secrets.LEAGUE_LAB_HOSTED_APP_PASSWORD }}
++          # IU-4: publish by swapping when two copies fit the plan (Neon Free: 1 GB; cap 800 MB); if the swap stops before
++          # its commit, the same run publishes by the drop path. Rollback = delete these two lines (the drop path).
++          LEAGUE_LAB_HOSTED_PUBLISH: auto
++          LEAGUE_LAB_HOSTED_CAP_MB: "800"
+```
+
+`scripts/nightly.sh` (line 163, the summary — how tonight's publication replaced the last one):
+
+```diff
+       while IFS= read -r line; do printf '\n`%s`\n' "$line"; done < <(grep -h "^verified: all" logs/sync.log 2>/dev/null | tail -1)
++      # ---- IU-4: swap / refused → fallback / drop, from this run's part of the log
++      while IFS= read -r line; do printf '\n`%s`\n' "$line"; done < <(awk '/=== .* sync start/ { n = NR } { l[NR] = $0 } END { for (i = n; i <= NR; i++) print l[i] }' logs/sync.log 2>/dev/null | grep -E "^(publication mode:|switched in|the swap stopped|the previous publication is|ERROR: +could not extend)")
+```
+
+(tested on both drills' logs: it prints the lines quoted below.)
+
+**What tonight's summary will say**:
+
+* **The swap fits**: `publication mode: swap (the hosted database holds ~2xx MB; + this copy ~29x MB (24x × 1.2) = ~5xx MB
+  <= the 800 MB cap)` · `switched in N s: publication 20261010T…Z-<sha> is live` · and either `the previous publication
+  is kept as … (… the next swap would need N MB <= 800 …)` or — likelier on Neon (about 520 + 290 > 800) — `the previous
+  publication is dropped (kept, the next swap would need N MB of the 800 MB cap): … nothing to roll back to until the
+  next swap`.
+* **The swap is refused and the fallback publishes**: `publication mode: swap (…)` · `ERROR:  could not extend file
+  because project size limit (… MB) has been exceeded` (Neon's words; not seen here) · `the swap stopped before its
+  commit (exit 3): nothing of it was kept, the previous publication is untouched; publishing by the drop path instead
+  (fallback)` — then the usual `verified: all …` line. The run is green either way.
+* **The cap says no before trying**: `publication mode: drop (auto: … over the 800 MB cap - two copies do not fit)`.
+* In every case the post-publish check's `picked up … publication … is served` names tonight's id.
+
+#### 7. Found, not mine — none.
+
+#### 8. Next
+
+Tonight's summary decides the cap (raise it if Neon's measure stays near ours; lower it if the refusal fires); the
+`--trade` from the nightly's database; the CI pooler job's fixture dump.
+
+### IU-5 — a grade that can reward the right quarterback forecast, and this season's own record (Wave I-U, 2026-10-09, 13:43–14:30 ET)
+
+**Task**: IU-5 of `/home/claude/waveIU/BRIEF.md` (continues IT-5). **Branch**: `dev/IU5` from `main` `99fb216`.
+**Worktree**: `/home/claude/wt-ip1`. **Database**: `league_lab_im1` (the only writer). Started 13:43 ET (the package
+reached me then); hard stop 14:30.
+
+#### 1. Done / not done / cut
+
+* Done: (1) the grade hg1.0, its cases and "better", committed before any number on it; (2) v3.6, "the starter keeps
+  the job", rf1.0 and the oracle on hg1.0 (information); (3) **the recorded forecast rr1.0 in production**: each
+  nightly's `context-record` stores every QB's probability of starting in week M … M+7 with v3.6's line and the
+  mixture's line in `ops.horizon_record` (created by `db migrate`), and grades the stored rows on hg1.0 as weeks are
+  played (`ops.context_grade` kind `role_record`); (5) the chain on my copy.
+* **Cut for the clock: item 4** (the same record for RB / WR / TE 2–8 week lines). The design is the same table with
+  `p_start` NULL and the position's v3.6 line; about 1,600 rows a market week more (≈ 7 MB a season). Not built.
+* Not done: an interval on the record's grade (it stores n, the two misses, their difference and the Brier scores; a
+  player-resampled interval is the next step before anyone reads it as evidence).
+
+#### 2. Commits (the rule's first)
+
+1. `9cb8afb` 13:46:31 — **the rule**: docs/METRICS.md § "The horizon grade that counts a missed week (IU-5)" (hg1.0, the
+   cases, "better", the recorded forecast's definition) + `scripts/analysis/iu5_grade.py`. No number on hg1.0 existed.
+2. `723eed4` 13:47:27 — the four lines on hg1.0 (information) in METRICS; ruff's `zip(strict=)` in the harness (no
+   definition change).
+3. `63bf32a` 13:50:50 — rr1.0: `calibration.py` (block `# ---- IU-5`), `context_record.py` (the horizon part, and two
+   marked hooks in `run` / `write_grade`), `tests/test_iu5_role_record.py`.
+4. `c9517bc` 13:53:21 — METRICS (the record: where, size, publication, when), CHANGELOG.
+5. `5ac26af` 14:08:49 and the last — this hand-back.
+
+#### 3. Evidence
+
+**hg1.0** (the full definition in METRICS). A later-week QB row (h 2–8) counts his points if he played; **0** if he
+did not play and was healthy on a roster (`ACT`, `INA`, `DEV`) or cut / retired with a row; **excluded** on a bye (no
+row), when week T's report says Out / Doubtful / Questionable or his roster status is `RES`, or any other status.
+"Better": MAE lower pooled and in ≥ 4 of 5 seasons, Spearman pooled not lower. On 2021–2025's rows: played 4,542,
+healthy and not playing 4,463 (3,985 of them market-week backups), injured 1,065 excluded.
+
+**The four lines on hg1.0** (`iu5_grade.py`, 24 s; MAE / Spearman, both house scorings):
+
+| season | v3.6 | the starter keeps the job | rf1.0 | the oracle |
+|---|---|---|---|---|
+| 2021 | 6.395 / .672 | 6.395 / .672 | 6.575 / .680 | 5.260 / .796 |
+| 2022 | 6.371 / .660 | 6.371 / .660 | 6.565 / .666 | 5.230 / .789 |
+| 2023 | 6.611 / .631 | 6.611 / .631 | 6.864 / .633 | 5.551 / .783 |
+| 2024 | 6.845 / .653 | 6.845 / .653 | 7.411 / .627 | 6.460 / .702 |
+| 2025 | 6.730 / .682 | 6.730 / .682 | 7.078 / .681 | 6.044 / .778 |
+| pooled | **6.590 / .6596** | 6.590 / .6596 | **6.899 / .6572** | 5.709 / .7696 |
+
+**What hg1.0 would have decided**: rf1.0 not better (MAE higher in 5 of 5, Δ +0.181 … +0.567; Spearman lower); the
+oracle better by 0.88 of MAE. The grade rewards knowing **who plays at all**: half its rows are healthy QBs who did
+not play (mostly backups), and v3.6 and rf1.0 both give a backup his "if he plays" line. A forecast built for hg1.0
+needs a play probability for the market week's backups, not only a start probability.
+
+**The record in production (rr1.0)** on `league_lab_im1` (`write_horizon_record` alone, 13:49:40):
+
+* market week 6 (the first week whose first kickoff is after now), 606 rows (85 QBs at h = 1; byes leave fewer), 139 KB
+  with its index; 16.4 s to write, 1.3 s to grade (0 grade rows: no stored week T is played yet).
+* Mean p_start by h 0.33–0.35 (all QBs, backups included); h = 4 top by the mixture: Prescott p 0.925, 20.0 → 18.8;
+  Mahomes 0.937, 19.6 → 18.6; Allen 0.965, 18.3 → 17.7; Purdy 0.930; L. Jackson 0.901; Stafford 0.922; Lawrence
+  0.904; Jayden Daniels (listed non-starter in week 6) 0.259, 15.5 → 15.7; Maye 0.861; Watson 0.875; Stroud 0.843;
+  Keenum 0.883.
+* Size per season ≈ 8,000 rows, about 2 MB. **It rides the publication** (`sync_to_hosted.sh` dumps `ops.*`: two
+  copies during a swap, about 4 MB at a season's end) **and is kept state** (restored each night) once the PO adds it
+  to `STATE_TABLES` / `RECORD_TABLES` (diff below).
+* **First graded rows**: week 6's h = 2 rows are week 7 (last game Mon 26 Oct 20:15 ET); a week is graded 12 hours
+  after its last kickoff once its stats are loaded → the first nightly after Tue 27 Oct 08:15 ET (in practice Wed 28
+  Oct). **The 4-of-5 form can never be read on 2026 alone** (one season). What can be said: the probability's
+  calibration from about mid-season (target weeks 7–12 graded, early December; ~2,000 QB-weeks, but the same players
+  repeat across market weeks and horizons); the mixture against v3.6 on hg1.0 as one out-of-sample season with a
+  player-resampled interval after week 18 (mid-January 2027) — evidence, not a ship decision.
+
+**The chain** (`/home/claude/waveIT/chain.sh /home/claude/wt-ip1 league_lab_im1`):
+
+```
+== 13:51:05 db migrate
+schemas and ops tables are in place
+== 13:51:09 dbt build (full)
+17:56:45  Done. PASS=732 WARN=6 ERROR=0 SKIP=0 NO-OP=0 TOTAL=738
+== 13:56:46 project
+13:56:58 INFO league_lab.calibration: fi1.0: market week 5; later weeks' lines from the teams' own season (7349 rows, shrink 3.0 games), personnel of the market week (444 rows moved)
+14:01:33 INFO league_lab.calibration: hb1.0: market week 5; QB weeks after it blended with the naive line, weight by horizon {2: 0.0, 3: 0.5, 4: 0.25, 5: 0.35, 6: 0.75, 7: 0.95, 8: 0.75} (lambda 0.25, k 6.0); 1061 QB lines moved
+14:01:46 INFO league_lab.availability_gate: availability gate: week 6, Sleeper directory (copy of 2026-10-05T12:00:39.609393Z): 77 players who cannot play or are unlikely to play get 0 this week (77 of them out indefinitely: no later weeks)
+projected 19844 rows for 2026 (2 league(s), weeks 1-18); wrote 13572 (weeks [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]), kept frozen weeks [1, 2, 3, 4, 5]
+== 14:02:28 projection marts
+18:02:42  Done. PASS=145 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=145
+== 14:02:42 availability guards (as errors)
+18:02:51  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=2
+== 14:02:52 audit
+## Players who cannot play or are unlikely to play and are ranked or valued on the screens: 0
+== 14:02:57 done
+```
+
+ERROR 0 in every step; 11 min 52 s in all. `chain.sh` does not run `context-record`, so I ran the nightly's real step
+after it (`uv run league-lab context-record`, 14:07:30–14:07:56): **25 s in all, of which rr1.0 about 10 s** ("rr1.0:
+606 role-record rows written"), `ops.context_grade` 216 rows (0 of kind `role_record`: nothing to grade yet), no
+error. **Added: about 10 s a night and about 140 KB a market week (about 2 MB a season).** A plumbing check of the
+grader on real rows (a pretend run as of 2026-09-20, market week 3, then deleted): 82 graded QB-weeks in week 4 (h = 2;
+week 5 not yet graded — its last game is Monday), the `role_record` rows and sentence written. Not evidence: the stored
+"v3.6" line of week 4 is the frozen week-4 board, not a projection made three weeks earlier.
+
+#### 4. Tests
+
+* `tests/test_iu5_role_record.py` 4 passed (the target week's role in the training rows, v3.6 beside the mixture and a
+  bye with no row, hg1.0's cases, `db migrate`'s DDL).
+* The existing test files of the modules I edited: `test_io1_context_record`, `test_ip3_trend_record`,
+  `test_calibration`, `test_iq3_horizon_blend`, `test_iq1_future_inputs`, `test_it5_role_mix`: 60 passed.
+* `check_root.sh`: 1,709 passed, 3 skipped, 4 failed — all four in the known list, **no new failure** (94 s).
+* `ruff check src app tests api scripts` clean; `copy_standard.py --check` clean; `scripts/gate.sh python` GATE PASSED
+  (49 s). The API suite not run (rule). No `web/` change.
+
+**Run times**: `iu5_grade.py` 24 s; `write_horizon_record` alone 16.4 s (+ 1.3 s grade); the chain 11 min 52 s;
+`context-record` 25 s; `check_root` 94 s; gate 49 s.
+
+#### 5. Edits outside my files
+
+`CHANGELOG.md` (one bullet under `## 2026-10-09 — Wave I-U`). `context_record.py`'s `run` and `write_grade` (IO-1's)
+each gained one marked `# ---- IU-5` hook that catches its own failure. Not `projections.py`, not `db.py` (the table's
+DDL is appended to `context_record.DDL`, which `db migrate` already runs).
+
+#### 6. The PO's lines (needed for the record to persist from night to night)
+
+```diff
+--- scripts/nightly.sh
+ STATE_TABLES="$STATE_TABLES ops.context_record ops.context_grade"
+ RECORD_TABLES="$RECORD_TABLES ops.context_record"
+ # ---- end IO-1
++# ---- IU-5 (Wave I-U): the role record (rr1.0, a recorded forecast of who starts 1-8 weeks out; kept like the
++# context record; context-record writes and grades it)
++STATE_TABLES="$STATE_TABLES ops.horizon_record"
++RECORD_TABLES="$RECORD_TABLES ops.horizon_record"
++# ---- end IU-5
+```
+
+Without it the step still runs and never fails, but a fresh runner database starts the record again every night (the
+market week's rows are rewritten until its kickoff anyway; the earlier market weeks would be lost). `project` does not
+call my code: no line in `projections.py`.
+
+#### 7. Found, not mine
+
+* `chain.sh` does not run `context-record`, so the chain does not exercise a write that lives there; I ran the write
+  alone on my copy (above) and `db migrate` (in the chain) creates the table.
+* On this copy `project` treats week 5 as the market week (frozen at its first kickoff, games not all played) while the
+  record's market week is 6 (the first week not kicked off): between a week's first kickoff and its last game, the
+  record's h and hb1.0's own horizon differ by one. The record stores v3.6's line as the nightly wrote it, so the
+  comparison is what was on the board; the IU-2 game freeze (if switched on) would change which lines those are.
+* `ops.context_grade`'s columns are named for the corner grade; the `role_record` rows reuse `mean_miss` (the mixture),
+  `rest_beat_share` (v3.6), `vs_rest`, `beat_share` (Brier), `lo` (the base rate's Brier) — documented in METRICS.
+
+#### 8. Next
+
+1. A player-resampled interval on the `role_record` grade, and a reliability table by quintile, before anyone reads it.
+2. A play probability for backups (the piece hg1.0 says matters most), defined now and graded on 2026–2027 only.
+3. Item 4: the same record for RB / WR / TE.
+
+### IU-6 — the blog can carry pictures and embeds (Wave I-U) — hand-back, both rounds
+
+Branch `dev/IU6` from `main` `99fb216`. Round 1 (14:09–14:18 ET, 21 minutes): the resize, merged. Round 2 (14:24–
+15:40 ET, `league_lab_im4` as the only database written): the cover with its link preview, embeds, links, the security
+table, the editor's help line and the template, the e2e.
+
+#### 1. Done, not done, cut
+
+| item | state |
+| --- | --- |
+| 1 a cover per post + link preview | **done.** Column, owner check on save, banner / list thumbnail / home thumbnail, `og:image` + `twitter:image` in the no-script HTML, works without the column. |
+| 2 pictures resized in the browser | **done** (round 1, merged). |
+| 3 embeds: YouTube behind a tap, X as a link card | **done.** No third-party script anywhere; CSP `frame-src` gains exactly one host. |
+| 4 links to any https site | **done** (blog posts only; the site's sentences keep IM-3's nine hosts). |
+| 5 the security table | § 5. |
+| 6 the editor's help line, WORDS.md, `blog/_template.md` | **done.** |
+| 7 e2e at 375 and 1300, outside hosts answered by the test | **done** (`web/e2e/iu6`). Screenshots in `docs/handbacks/iu6/`. |
+| cut | a small thumbnail rendition (it would spend a second of the blog's 50 pictures); the cover in revisions; the X post's text (needs X's script). |
+
+#### 2. What a post can now hold, and how an editor writes it
+
+* **A cover.** **Picture** → upload (a phone photo is made smaller first) → **Make it the cover** under the picture.
+  The editor shows it above the body with **Remove** and at the top of the preview. Saved with the post (a draft
+  autosaves; a published post with **Save changes**). It is the post's banner, its thumbnail in the list and on the
+  home, and its link preview. Whose pictures: **only pictures the saving account uploaded** (`blog.images.account_id`);
+  the post being edited is the account's own (`_get` filters on it), so a cover is always the post owner's picture.
+* **A video.** A YouTube link alone on its line (`youtube.com/watch?v=…`, `youtu.be/…`, `youtube.com/shorts/…`) → a
+  **▶ Play the video** box with "Watch on YouTube"; the player loads only on the tap.
+* **A post on X.** An `x.com` / `twitter.com` `/<handle>/status/<number>` link alone on its line → a card: "A post on X ·
+  @handle · Open it on X ›".
+* **A link** to any https site: `[words](https://…)`.
+* The help line under the body says the first three in one sentence (WORDS.md § the blog editor).
+
+**Bytes.** One rendition per picture, ≤ 300 KB (the server's bound, unchanged); the cover is one of the post's pictures,
+not a copy. The e2e's 2400 × 1600 PNG (11.5 MB) was stored as **72,938 bytes** at 1600 × 1067 (a synthetic gradient;
+a detailed phone photo will be bigger, up to the 300 KB the steps stop at). 50 posts with one cover each = the blog's
+whole 50-picture cap, at most 14.6 MB of the 30 MB cap; **the count, not the bytes, is the limit** (the cap is
+blog-wide: `select count(*) from blog.images`). The cover column itself: 16 bytes a row.
+
+#### 3. Commits (on top of `d8535ac`)
+
+- `a8b59c5` the cover, server side: `hosted_blog.sql`'s column, `blog_store` (detection, save check, published
+  `image`, export), `blog.parse_post` accepts `/blog/img/db/<id>`, CSP `frame-src`; `api/tests/test_iu6.py`;
+  `test_io3`'s schema test allows the one additive `alter`
+- `cf0b130` the cover on the screens (post banner, list and home thumbnails, the editor's choice) and the help line
+- `328093e` embeds and post links in `md.ts`, the tap-to-play in `PostBody.svelte`, `web/e2e/iu6`, io3's inert check
+- (last) docs: this file, BLOG.md, WORDS.md, `blog/_template.md`, CHANGELOG, screenshots
+
+#### 4. Evidence
+
+**The column (exact line, `scripts/hosted_blog.sql`):**
+
+```sql
+alter table blog.posts add column if not exists cover uuid references blog.images (id) on delete set null;
+```
+
+Applied twice to `league_lab_im4` with the pipeline role (idempotent). **While it is absent** (the hosted database for
+some hours after the deploy): `blog_store.cover_on` asks `pg_attribute` once per process, then at most once a minute
+while absent (every ten minutes once present). Without it: `GET /api/blog/mine` → `limits.cover: false`, the editor
+offers no cover (the help line drops its cover sentence), a `cover` in a save is **quietly not stored** (200, the rest
+saved), every post's `image` is null (the list, the post, the home and the preview as today), the export has no image
+line. When the nightly adds the column the API sees it within a minute, no restart. `test_without_the_cover_column_…`
+drops the real column on `league_lab_im4` and runs the list, a post, the shell, `/`, `/blog`, RSS, the sitemap, the
+export, `mine`, a post's load and two saves (one with a cover) — all 200 — then re-runs the SQL file and shows the
+column noticed after the minute.
+
+**The link preview.** A crawler that runs no script gets `index.html` from the API's catch-all with the head block
+between `<!-- ll:seo -->` markers replaced by the post's own (`blog.shell` → `preview` → `seo_tags`, every value
+`html.escape`d, from the stored post only). Before: a database post's `image` was always null → `og:image` =
+`https://isuckatfantasy.io/og.png`. Now: `og:image` and `twitter:image` = `https://isuckatfantasy.io/blog/img/db/<id>`,
+`twitter:card` = `summary_large_image`. Proven twice: `test_a_cover_is_stored_…` (TestClient, a title with `<`, `&`,
+`"`: escaped) and the e2e (`fetch` of `/blog/<slug>` from the real server, no browser).
+
+**The CSP header, before (main `99fb216`):**
+
+```
+default-src 'self'; script-src 'self' 'sha256-8yOK4emASucVfrkU+4aINXAjtjcigTaSHC3JW5CqBuA=' https://*.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; font-src 'self' data:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+```
+
+**After:** the same, plus `; frame-src https://www.youtube-nocookie.com` at the end. Nothing else changed.
+
+**No request before the tap (e2e, both widths):** every non-localhost request is routed by the test; on the post page,
+after load and 1.5 s more, the list of outside requests is **empty**; after the tap it holds only
+`https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1` (answered by the test's stub page, which renders in the
+iframe). No `<script src>` from another origin on the page.
+
+#### 5. The security table
+
+Server answers are from `api/tests/test_iu6.py` / `test_io3.py` (TestClient on `league_lab_im4`); render answers from
+the md.ts tests in `web/e2e/iu6` (pure) and the e2e.
+
+| input | attack | answer |
+| --- | --- | --- |
+| cover (save) | `javascript:alert(1)`, `data:image/png;base64,…`, `/blog/img/db/x`, `../../etc/passwd`, `x`×64 | 400 `bad_cover` "A cover is one of your own pictures: upload it under Picture first."; nothing stored |
+| cover | a well-formed uuid with no picture | 400 `bad_cover` (same words) |
+| cover | an id with a quote (`…00000000000'`) or a slash (`…0000000000/0`); an upper-case uuid | 400 `bad_cover` |
+| cover | 65 characters; a number instead of a string | 422 (the model's bound / type) |
+| cover | another editor's picture | 400 `bad_cover` — the same answer as no picture (no telling whose ids exist) |
+| cover | signed out / a cross-site `Origin` | 401 `signed_out` / 403 (the same-site rule) |
+| cover | its picture deleted | the post keeps no cover (`on delete set null`), the published list's cache cleared, preview back to `og.png` |
+| cover | a file post naming `https://evil.example/x.png`, `javascript:…`, `/blog/img/db/../x.png`, an upper-case id | no picture (`image: null`) |
+| resized upload | an SVG with `onload` named `.png` (< 300 KB) | sent as it is; server 400 `bad_image` (io3 e2e) |
+| resized upload | an HTML file of ~400 KB with a `<script>`, named `.png`, chosen in the editor | the browser cannot decode it → "A picture is a PNG, JPEG or WebP file."; **no request sent**, the script never ran (iu6 e2e) |
+| resized upload | over the bound around the editor | 413 `too_big` (the server's check, unchanged; `test_io3`) |
+| resized upload | HTML / GIF / 4 bytes / empty | 400 `bad_image` (unchanged; `test_io3`) |
+| embed line | `https://www.youtube.com.evil.example/watch?v=…`, `https://youtu.be.evil.example/…`, `https://evilyoutube.com/…`, `https://evil.example/youtube.com/…` | not an embed: the line stays a paragraph of text |
+| embed line | an id of 10 or 12 characters, with `"`, `'`, `/`, `%22`, `"><script>`, `&x="onload=…` | not an embed (text) |
+| embed line | `http:`, a user (`user@`), a port, `javascript:…//https://youtu.be/…`, `data:text/html,https://youtu.be/…` | not an embed (text) |
+| embed line | an X handle with `-`, `%22`, `"`; 16 characters; a 21-digit or non-digit number; `x.com.evil.example`; `/photo/1` after the number | not an embed (text) |
+| embed line | the link inside a sentence, or two links on two lines of one paragraph | not an embed (text) |
+| embed render | — | the YouTube placeholder has no `<iframe>`, `<script>`, `<img>`, no `youtube-nocookie` or `ytimg` URL; the X card has no `<script>`, `<iframe>`, `<img>`, no `platform.twitter` / `widgets.js` |
+| the tap | a tampered `data-yt-play` | `PostBody` checks the id against `^[A-Za-z0-9_-]{11}$` again before making the iframe; the src is built from it, never read from the page |
+| link | `javascript:`, `JaVaScRiPt:`, `data:text/html,…`, `http:`, `//evil.example`, `https://user:pw@…`, `https://…:8443/`, `https://localhost/`, `https:\\evil.example`, `https://evil.example\@good.example/`, `vbscript:`, `ftp:` | the words as text, no `<a>` |
+| link | a quote in the target (`"onmouseover="…`) | escaped inside `href`; no attribute escapes |
+
+New routes: none. New lists: none (the cover is one column). `mine`'s pictures stay bounded by 50.
+
+#### 6. Tests
+
+All on `league_lab_im4` (`LEAGUE_LAB_DB_NAME=league_lab_im4`); `league_lab` not written in round 2.
+
+- API: `test_iu6.py` 12 · with `test_io3`, `test_io4`, `test_in1`, `test_in2`, `test_im3`: **193 passed, 0 failed** ·
+  `test_ip5.py` (reads the blog's sitemap) **35 passed**. The first run had one failure:
+  `test_io3::test_the_script_is_idempotent_…` forbade any `alter`. It now allows exactly the one additive line.
+- e2e, both projects (`FIXTURES_PORT=8967`, `IU6_API_PORT=8964`, `IO3_API_PORT=8968`):
+  - `e2e/iu6 e2e/io3 e2e/in1 e2e/ip0` together: **45 passed, 17 skipped (phone-only / desktop-only skips), 0 failed**.
+  - `e2e/in4 e2e/im3`: **15 passed, 1 skipped, 0 failed**.
+  - `e2e/iu6` alone again, with the added non-picture test: **6 passed, 4 skipped, 0 failed**.
+- Checks: `npm run lint` (eslint + svelte-check + tsc) 0 errors, 0 warnings; `npm run build` green;
+  `uv run ruff check src app tests api scripts` clean; `copy_standard.py --check` exit 0; `scripts/gate.sh python`
+  **GATE PASSED**.
+- Afterwards, `league_lab_im4` holds 0 blog posts, 0 pictures and 0 `@iu6.test` / `@io3.test` accounts, and keeps the
+  cover column. No server is left on ports 8960–8969. The in1 / in4 / io3 screenshots the e2e rewrote were restored.
+
+#### 7. Edits outside the blog's files
+
+- `api/league_lab_api/security.py`: one directive in `csp()` (`frame-src https://www.youtube-nocookie.com`), as the
+  PO asked.
+- `scripts/hosted_blog.sql` (the blog's schema file; run by `sync_to_hosted.sh`, which is unchanged).
+- `web/src/routes/Home.svelte`: the blog block's thumbnail (one `<img>` and an import).
+- `CHANGELOG.md`, `docs/WORDS.md`, `docs/BLOG.md`.
+
+#### 8. The PO's lines and by-hand steps
+
+- **Nothing in a PO-owned file.** The nightly's sync already runs `scripts/hosted_blog.sql` as the owner; the first
+  nightly after the merge adds the column (a sub-second `alter` on a table of a few rows; the foreign key takes a
+  short lock on `blog.posts` and `blog.images`). Until then the site works as today (§ 4).
+- `sync_to_hosted.sh` runs the file with `--single-transaction` and a failure there never fails the publish: if the
+  `alter` cannot take its lock, the file rolls back whole and the site stays as today until the next night.
+- A file post's `image:` (front matter) is now shown too — as its banner and thumbnail, not only in the preview. The
+  repository's one post has none.
+- If a cover is wanted before the nightly: run the one `alter` line above on Neon as the owner role, by hand.
+- `test_io3::test_the_script_is_idempotent_…` now allows exactly that `alter` (a deliberate change in a blog test).
+
+#### 9. Found, not mine / limitations
+
+- The 50-picture cap is blog-wide: one editor can use it all, and with covers it will be reached sooner.
+- A cover is not kept in a revision; **Earlier versions** brings back text, not the cover.
+- WebP covers preview on X and Facebook; some other sites prefer JPEG.
+- The X card cannot show the post's text without X's script (by design).
+
+#### 10. Next
+
+1. A per-editor or per-post picture cap if more than one editor writes.
+2. A JPEG for a picture chosen as cover (the resize can write JPEG on request) if previews elsewhere need it.

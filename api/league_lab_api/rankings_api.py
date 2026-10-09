@@ -737,24 +737,24 @@ START_UNCLEAR_WORDS = ("{team}'s starter is unclear: {listed} is listed, the dep
 
 def start_caveats(found: list[dict], season, week) -> list[dict]:
     """The starter caveats of the players compared ([] on any failure: a label never costs an answer)."""
-    try:
+    try:                                 # PO (Wave I-U): the words too — the promise above covers the whole function
         cvs = PV.caveats_for(found, season, week)
+        out = []
+        for c in cvs:
+            from . import starters
+            team = starters.team_name(str(c.get("team")))
+            who = " and ".join(dict.fromkeys(str(x) for x in c.get("players") or [])) or "him"
+            if c.get("kind") == "starter_set_by_hand":
+                listed = f", not the listed {c['listed']}" if c.get("listed") else ""
+                w = START_SET_WORDS.format(team=team, set=c.get("set"), listed=listed, last=PV._last(str(c.get("set"))))
+            elif c.get("kind") == "starter_unclear":
+                w = START_UNCLEAR_WORDS.format(team=team, listed=c.get("listed"), other=c.get("other"), who=who)
+            else:
+                w = c.get("words")
+            out.append({**c, "words": w, "verdict_words": c.get("words")})
+        return out
     except Exception:  # noqa: BLE001
         return []
-    out = []
-    for c in cvs:
-        from . import starters
-        team = starters.team_name(str(c.get("team")))
-        who = " and ".join(dict.fromkeys(str(x) for x in c.get("players") or [])) or "him"
-        if c.get("kind") == "starter_set_by_hand":
-            listed = f", not the listed {c['listed']}" if c.get("listed") else ""
-            w = START_SET_WORDS.format(team=team, set=c.get("set"), listed=listed, last=PV._last(str(c.get("set"))))
-        elif c.get("kind") == "starter_unclear":
-            w = START_UNCLEAR_WORDS.format(team=team, listed=c.get("listed"), other=c.get("other"), who=who)
-        else:
-            w = c.get("words")
-        out.append({**c, "words": w, "verdict_words": c.get("words")})
-    return out
 # ---- end IU-3
 
 

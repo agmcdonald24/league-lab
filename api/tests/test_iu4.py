@@ -1,5 +1,5 @@
 """IU-4 (Wave I-U): /api/ready asks again at once when a request finds a published table away (a drop-path publish);
-the swap's fallback and the kept-copy rule are drilled on a scratch database (docs/handbacks/IU-4.md)."""
+the swap's fallback and the kept-copy rule are drilled on a scratch database (docs/STATUS.md § "Wave I-U" (IU-4))."""
 
 from __future__ import annotations
 
