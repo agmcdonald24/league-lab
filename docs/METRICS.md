@@ -4126,6 +4126,119 @@ are summed as if every listed QB plays.
 5 seasons — "useful" by ud1.0's reading, where IR-4's v3.5-era number (0.594 / 0.615) still stands on the live site
 (`api/league_lab_api/provenance.py` `USEFUL["QB"]`, `src/league_lab/context_record.py` line 1666).
 
+### The horizon grade that counts a missed week (IU-5) (Wave I-U, 2026-10-09; `scripts/analysis/iu5_grade.py`)
+
+**Why.** IT-5's last finding: the 2–8 week board (§ v3.6, § v3.7) scores only the quarterbacks who played in week T, so
+it cannot reward "he will not be starting"; ud1.0 counts every missed week as 0, injuries included, so it rewards
+shrinking every line by the league's injury rate. This grade sits between them: a missed week counts when the team
+chose someone else, not when he was hurt.
+
+**The grade (hg1.0) — written at 13:46 ET on 2026-10-09 and committed before any number on it was computed.**
+
+* **Rows**: the horizon study's quarterback rows (`iq3_qb.py` / `it5_role.py` cache: as of W = 3, 5, 7, 9 of
+  2021–2025, h = 2–8, every QB with a market-week row and a row in week T — on an NFL roster that week by nflverse's
+  weekly roster file, as the projection universe is built), both house scorings.
+* **The outcome in week T**, by case:
+  * **he played**: his points (the 12 outcomes known; a row with one unknown is excluded, as on the old board);
+  * **bye** (his team has no game in week T): **excluded** — no row exists, nobody scores, the calculator counts 0 on
+    both sides of a trade;
+  * **did not play, injured**: week T's injury report lists him Out, Doubtful or Questionable, or his roster status
+    in week T is `RES` (injured reserve, PUP, NFI, suspension) — **excluded**: an injury h weeks out is news no
+    forecast made at W has, the model's lines are "if he plays", and on the screens the availability gate zeroes the
+    injured at request time; counting these weeks would reward shrinking every line by the injury rate, not knowing
+    who starts;
+  * **did not play, healthy, on a roster** (`ACT`, `INA` — a healthy scratch, `DEV` — the practice squad): **0** — the
+    team chose someone else: the role outcome itself, and what a manager who started him got;
+  * **cut or retired with a row in week T** (`CUT`, `RET`): **0** — the same reason (the team chose someone else);
+  * **anything else** (`E01` / `EXE`: exempt lists, a status the file does not explain) and did not play:
+    **excluded**;
+  * **cut with no row at all in week T** (not on any roster in the file, so not in the universe): not graded — the
+    study has no row for him (a limitation: such a week is 0 for a manager; their count is reported).
+* **Scored** like the old board: per league × season × W × target week × h, MAE and Spearman over the graded rows (≥ 8
+  a cell), pooled over h = 2–8 (cells → league × season × h → h → leagues), the season the paired unit, pooled = the
+  mean over seasons.
+* **"Better" on hg1.0** (the same form as § v3.7 (b)–(c)): MAE lower than the base's pooled **and** in at least 4 of
+  the 5 seasons, **and** Spearman pooled not lower. ud1.0 stays as it is (a separate grade).
+
+**What it is for (item 2 of IU-5, information, not a ship decision)**: v3.6, "the starter keeps the job", rf1.0 and the
+oracle on hg1.0 (`iu5_grade.py`, the IT-5 lines unchanged). Every 2021–2025 season has now been looked at, so nothing
+chosen on them ships; the reading says only what this grade would have decided.
+
+**The recorded forecast (item 3), defined here before any 2026 number exists.** Each nightly's `context-record` step
+stores, for the live season's market week M and every QB with a row in M, for h = 1 … 8 (target week T = M + h − 1, his
+team plays in T): **p_start** = the probability that he is the listed starter in week T (rf1.0's model: one logistic
+regression per market-week role, standardised inputs, C = 1, fitted on every earlier season's horizon rows 2018..S−1,
+h = 1 … 8, the inputs of § v3.7 with the market week's **own** injury designation — the defect IT-5 ran with fixed),
+**v3.6's points** for week T (`ops.projections`, Half PPR "League of Scrubs"), and **the mixture's points** (a
+market-week starter: p × v3.6's points + (1 − p) × the others' mean points; a market-week non-starter: p × the
+starters' mean points + (1 − p) × v3.6's points; the role means of the scored QB weeks of the 3 seasons before, Half
+PPR). A market week's rows are written while it has not kicked off and never rewritten after (a recorded forecast, as
+the context record is). As 2026's weeks are played, `context-record` grades the stored rows on hg1.0's cases and on
+the probability itself (Brier against the base rate); nothing on any screen reads them.
+
+**The four lines on hg1.0** (`iu5_grade.py`, 13:46:39–13:47:03 ET, 24 s, on IT-5's cache; the cases on the later-week QB
+rows of 2021–2025: played 4,542, healthy and not playing 4,463 — 3,985 of them market-week non-starters — injured
+1,065 excluded; no cut / retired / exempt row in the study's rows: a released QB has no row in week T):
+
+| season | v3.6 | the starter keeps the job | rf1.0 | the oracle |
+|---|---|---|---|---|
+| 2021 | 6.395 / .672 | 6.395 / .672 | 6.575 / .680 | 5.260 / .796 |
+| 2022 | 6.371 / .660 | 6.371 / .660 | 6.565 / .666 | 5.230 / .789 |
+| 2023 | 6.611 / .631 | 6.611 / .631 | 6.864 / .633 | 5.551 / .783 |
+| 2024 | 6.845 / .653 | 6.845 / .653 | 7.411 / .627 | 6.460 / .702 |
+| 2025 | 6.730 / .682 | 6.730 / .682 | 7.078 / .681 | 6.044 / .778 |
+| **pooled** | **6.590 / .6596** | 6.590 / .6596 | **6.899 / .6572** | 5.709 / .7696 |
+
+(MAE / Spearman, both house scorings; Half PPR alone v3.6 5.698 / .661, rf1.0 5.965 / .658; by horizon v3.6 → rf1.0 →
+oracle: h2 6.234/.711 → 6.419/.711 → 5.730/.768 … h8 7.074/.594 → 7.516/.584 → 5.903/.748.)
+
+**What hg1.0 would have decided**: rf1.0 **not better** — MAE higher in all 5 seasons (Δ +0.181 / +0.194 / +0.253 /
++0.567 / +0.348), Spearman lower pooled (0.6572 against 0.6596). The same verdict as the old board, for a different
+reason: on hg1.0 half the graded rows are healthy QBs who did not play (mostly backups) and score 0, while both v3.6 and
+rf1.0 give a backup his "if he plays" line (about 3 points) and rf1.0 adds q × a starter's line on top; a continuing
+starter's shrink still costs as before. The oracle (the mixture with the role known) is better by 0.88 of MAE and 0.11
+of Spearman — the role is worth more on this grade than on the old board (0.51), because a benched or idle QB's 0 now
+counts. Reading of the grade itself: it rewards knowing **who plays at all** more than who starts; a forecast built
+for it needs a play probability for the market week's backups (most of them never play), not only a start
+probability — the old rf1.0 mixture does not have one. Spearman on hg1.0 is high (0.66) because the many idle backups'
+zeros are easy to order; MAE is the clause that carries the information.
+
+**The recorded forecast in production (rr1.0, built 13:48–13:51 ET, after the four lines above; its definition is the
+one committed with the rule).** `calibration.fit_role_record` / `role_record_rows` (block `# ---- IU-5`) and
+`context_record.write_horizon_record` / `horizon_record_grade_rows`, called from `league-lab context-record` (the
+nightly's existing soft step; a failure is logged and never stops the context record's own write or its grade).
+
+* **Where**: `ops.horizon_record` (created by `league-lab db migrate`, its DDL in `context_record.DDL`): run_at,
+  first_kickoff_at, record_version `rr1.0`, model_version, scoring, season, market_week, target_week, h, gsis_id,
+  player_name, team, mkt_start, p_start, proj_v36, proj_mix. The live market week = the first week whose first kickoff
+  is after the run; its rows are replaced each night until that kickoff, then never again (the next night writes the
+  next market week). A QB without a v3.6 line for week T has `proj_v36` NULL (unknown, not 0).
+* **Size** (`league_lab_im1`, 2026 market week 6): 606 rows (85 QBs at h = 1; fewer where a team has a bye), 139 KB with
+  its index; about 13 market weeks are left in 2026 → about 8,000 rows, **about 2 MB a season** on the hosted database.
+  **Kept state that rides the publication**, like `ops.context_record`: `sync_to_hosted.sh` dumps `ops.*`, so the
+  table is published (two copies during a swap: about 4 MB at a season's end, against 1 GB) and the nightly restores
+  it from the hosted copy — once it is in the nightly's `STATE_TABLES` and `RECORD_TABLES` (the PO's lines; without
+  them the CI runner's fresh database would start the record again every night). Nothing on a screen or in the API
+  reads it.
+* **Cost**: 16.4 s to write (the QB frame 2018–2026 and two logistic fits), 1.3 s to grade, measured alone on
+  `league_lab_im1`.
+* **The grade it writes**: `ops.context_grade` kind `role_record`, grp `all` / `h2-4` / `h5-8` (h ≥ 2, hg1.0's cases;
+  a week T is graded once its last game kicked off 12 hours before and its played games are loaded): `n` QB-weeks,
+  `games` = target weeks, `mean_miss` = the mixture's mean miss, `rest_beat_share` = v3.6's mean miss on the same rows,
+  `vs_rest` = their difference, `beat_share` = the probability's Brier score, `lo` = the base rate's Brier, `words` one
+  sentence. The API's grade readers filter by kind and ignore it.
+* **When the first graded rows appear**: the first night after the merge stores market week 6 (its first kickoff
+  Thursday 15 October, 20:15 ET). Its h = 2 rows are week 7, whose last game kicks off Monday 26 October 20:15 ET: the
+  first `role_record` grade rows appear in the first nightly after **Tuesday 27 October 08:15 ET** whose stats include
+  that week (in practice Wednesday 28 October's run); then one more target week each week.
+* **What 2026 alone can say, and when**: the 4-of-5-seasons form cannot be read on one season, ever. What can be said:
+  (1) the probability's calibration — Brier against the base rate and a reliability table by quintile — honestly from
+  about mid-season (target weeks 7–12 graded, early December: roughly 2,000 QB-weeks at h ≥ 2, though the same players
+  repeat across market weeks and horizons, so the effective sample is far smaller); (2) the mixture against v3.6 on
+  hg1.0 as **one season, out of sample**, with an interval that resamples whole players — after week 18 (mid-January
+  2027), and only as one season's evidence: a ship decision would still need the same rule on further seasons, or a
+  rule written now for 2026 + 2027.
+
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
 **Why.** A projected line is a set of means. A linear rule (points per yard, per catch, per TD) prices a mean

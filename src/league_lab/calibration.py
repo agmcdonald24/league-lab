@@ -1691,3 +1691,103 @@ def horizon_blend_lines(season: int, every: pd.DataFrame, models: dict, target: 
              LAST_HORIZON_BLEND.get("k"), LAST_HORIZON_BLEND["moved"])
     return out
 # ---- end IQ-3
+
+
+# ---- IU-5 (Wave I-U): the role record -- a recorded forecast, not a number on a screen (docs/METRICS.md § "The horizon
+# grade that counts a missed week (IU-5)", "The recorded forecast"). For the live market week M and every QB with a row
+# in M, h = 1..8 (T = M + h - 1): p_start = the probability that he is the listed starter in week T (rf1.0's model: one
+# logistic regression per market-week role, standardised inputs, C = 1, fitted on the earlier seasons' horizon rows as
+# of W = 3, 5, 7, 9; the inputs from the market week's own row, its injury designation included), v3.6's points for T
+# and the mixture's points. Written by ``context_record.write_horizon_record``; nothing on any screen reads it.
+ROLE_RECORD_VERSION = "rr1.0"
+ROLE_RECORD_FIRST_SEASON = 2018
+ROLE_RECORD_AS_OF = (3, 5, 7, 9)
+ROLE_RECORD_H = tuple(range(1, 9))
+ROLE_RECORD_INPUTS = ("questionable", "snap_pct_std", "pn_qb_games_together", "pn_qb_changed", "pn_qb_is_rookie_or_backup",
+                      "pn_qb_prev_ppg_diff", "ppg_std", "prev_ppg", "games_to_date", "prev_games")
+
+
+def role_x(rows: pd.DataFrame, med: pd.Series | None = None) -> tuple[np.ndarray, pd.Series]:
+    """The forecast's inputs (one column per horizon, then the market week's row; NaN -> the training median)."""
+    x = rows[list(ROLE_RECORD_INPUTS)].astype(float)
+    if med is None:
+        med = x.median()
+    x = x.fillna(med).fillna(0.0)
+    x["pn_qb_games_together"] = np.log1p(x["pn_qb_games_together"].clip(lower=0))
+    hh = np.stack([(rows["h"].to_numpy() == h).astype(float) for h in ROLE_RECORD_H], axis=1)
+    return np.column_stack([hh, x.to_numpy()]), med
+
+
+def role_training_rows(qb: pd.DataFrame, seasons: range | list[int]) -> pd.DataFrame:
+    """The horizon rows of ``seasons``: the market week M = W + 1 (W = 3, 5, 7, 9), every QB with a row in M, each target
+    week T = M + h - 1 (h 1..8) where he has a row; ``t_start`` = his listed role in T, the inputs from his row in M."""
+    out = []
+    for s in seasons:
+        q = qb[qb["season"] == s].assign(week=lambda x: x["week"].astype(int))
+        role = q.drop_duplicates(["gsis_id", "week"]).set_index(["gsis_id", "week"])["pn_qb_starting"]
+        for w in ROLE_RECORD_AS_OF:
+            m = q[q["week"] == w + 1].drop_duplicates("gsis_id")
+            if m.empty:
+                continue
+            for h in ROLE_RECORD_H:
+                has = m["gsis_id"].isin(set(q.loc[q["week"] == w + h, "gsis_id"])).to_numpy()
+                t = role.reindex(pd.MultiIndex.from_arrays([m["gsis_id"], np.full(len(m), w + h)]))
+                r = m[has].assign(h=h, t_start=t.fillna(0).to_numpy(dtype=float)[has] > 0.5)
+                out.append(r)
+    if not out:
+        return qb.iloc[0:0].assign(h=pd.Series(dtype=int), t_start=pd.Series(dtype=bool), mkt_start=pd.Series(dtype=bool))
+    d = pd.concat(out, ignore_index=True)
+    d["mkt_start"] = d["pn_qb_starting"].fillna(0).astype(float) > 0.5
+    return d
+
+
+def fit_role_record(qb: pd.DataFrame, season: int) -> dict:
+    """Per market-week role (True / False): (model, medians) fitted on the horizon rows of 2018..season-1."""
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import make_pipeline
+    from sklearn.preprocessing import StandardScaler
+    tr = role_training_rows(qb, range(ROLE_RECORD_FIRST_SEASON, int(season)))
+    out = {}
+    for role in (True, False):
+        t = tr[tr["mkt_start"] == role]
+        y = t["t_start"].to_numpy().astype(int)
+        if len(t) < 50 or len(set(y)) < 2:
+            continue
+        x, med = role_x(t)
+        m = make_pipeline(StandardScaler(), LogisticRegression(C=1.0, max_iter=2000))
+        m.fit(x, y)
+        out[role] = (m, med, len(t))
+    return out
+
+
+def role_record_rows(qb: pd.DataFrame, season: int, market_week: int, proj: pd.DataFrame, playing: set[tuple[str, int]],
+                     means: tuple[float, float], models: dict) -> pd.DataFrame:
+    """The rows to store: every QB with a row in the market week, h 1..8 where his team plays in T (``playing``: the
+    (team, week) pairs with a game). ``proj``: gsis_id, week, proj_points (v3.6, the reference scoring); ``means``: the
+    starters' and the others' mean points (the scored QB weeks of the 3 seasons before)."""
+    m = qb[(qb["season"] == season) & (qb["week"] == market_week)].drop_duplicates("gsis_id")
+    if m.empty or not models:
+        return pd.DataFrame()
+    pts = proj.set_index(["gsis_id", "week"])["proj_points"]
+    out = []
+    for h in ROLE_RECORD_H:
+        t = market_week + h - 1
+        r = m[[(tm, t) in playing for tm in m["team"]]].assign(h=h, target_week=t)
+        if r.empty:
+            continue
+        r["mkt_start"] = r["pn_qb_starting"].fillna(0).astype(float) > 0.5
+        r["p_start"] = np.nan
+        for role, (model, med, _) in models.items():
+            sel = (r["mkt_start"] == role).to_numpy()
+            if sel.any():
+                r.loc[sel, "p_start"] = model.predict_proba(role_x(r[sel], med)[0])[:, 1]
+        line = pts.reindex(pd.MultiIndex.from_arrays([r["gsis_id"], np.full(len(r), t)])).to_numpy(dtype=float)
+        p = r["p_start"].to_numpy(dtype=float)
+        r["proj_v36"] = line
+        r["proj_mix"] = np.where(r["mkt_start"], p * line + (1 - p) * means[1], p * means[0] + (1 - p) * line)
+        out.append(r)
+    if not out:
+        return pd.DataFrame()
+    return pd.concat(out, ignore_index=True)[["gsis_id", "player_name", "team", "h", "target_week", "mkt_start", "p_start",
+                                               "proj_v36", "proj_mix"]]
+# ---- end IU-5
