@@ -510,6 +510,8 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
             md(sig_sec, f"Role: **{signals.alert_headline(r, p['player_name'])}**. {signals.alert_lines(r)}")
             if od is not None:
                 missing.append("signals.upside")       # the what-if is priced per house league in the nightly
+            elif r["direction"] == "up" and gate_note and gate_note.get("sits"):          # ---- IT-3
+                md(sig_sec, f"Upside: none this week — {gate_note['why']}.")
             elif r["direction"] == "up" and is_num(r["larger_points"]):
                 md(sig_sec, "Upside: " + signals.scenario_phrase(r, league_name))
             elif r["direction"] == "up":
