@@ -5840,6 +5840,31 @@ those scorings (labelled extra): scrubs MAE 3.957 → 3.135, Spearman 0.581 → 
 gate's — which the screens already apply at request time with the switch `week` (a player who sits is hidden); what
 `game` adds beyond that (the stored number every solve and grade reads, his teammates' inputs, the market, the depth
 chart) is not measured here. The hand-back recommends `game` after one weekend of the shadow.
+
+**fr1.1 — the rule as it now stands (IV-1, Wave I-V, 2026-10-09).** With `LEAGUE_LAB_FREEZE=game`:
+
+1. **The record is the kickoff board.** Every stored table keeps the week's rows as they were at its first kickoff
+   (`freeze_plan`, untouched); every grader reads them there: `ops.lineup_record` (its reconstruction too: `lineup`
+   reads the kickoff board for it), `context_record`, drift, `mart_projection_record`, odds grades, both freeze tests.
+2. **The live number has one home per stored table**: `ops.projection_live` (house leagues), `ops.projection_lines_live`,
+   `ops.projection_ranges_live`, `ops.kd_lines_live`, `ops.kd_ranges_live` (each `like` the table it overlays, plus
+   `team`, `game_kickoff`; created by `db migrate`), written by `project` in one transaction: tonight's rows of the week
+   under way for the units whose game had not kicked off, through the same gate as the live week (who sits: 0 with the
+   reason; a kicker who sits: 0).
+3. **One place answers "his number for the week under way"**: `league_lab.live_week.sql` — a stored table's rows
+   without an overlay row, plus the overlay rows cast to the stored table's own columns. The API applies it to every
+   statement it runs (`db._run`); `project`'s lineup and waiver solves apply it to their reads; the house marts read
+   it in SQL (`mart_player_week_projections`). An overlay that does not exist or holds no row: the statement unchanged.
+   The API follows the data, never an environment variable.
+4. **A game that has kicked off keeps the last live number written before its kickoff** (the overlay is state:
+   `STATE_TABLES` carries it), the same on every screen. The overlay of a week is read until the first nightly after
+   the week's last kickoff, which empties it (no week under way); from then the played week shows the kickoff board.
+5. `LEAGUE_LAB_FREEZE` unset or `week`: `project` empties every overlay; every reader reads the kickoff board, as before
+   IU-2 (0 cells differ against `main`).
+6. **The words follow.** In a week whose first game has kicked off, a player cleared after that kickoff is not told "his
+   number comes with the next update" (no update brings one with `week`): "His status changed after this week's numbers
+   were set at its first kickoff (…); there is no number for him this week." With `game` his live row carries tonight's
+   word, so he has his number.
 <!-- ---- IU-1 -->
 ### The Trade Finder searches on the basis; the basis waiver move nets its drop (ct1.3, IU-1, Wave I-U, 2026-10-09; `trades.partners(free=…)`, `trades.basis_best_move`, `decisions.it1_basis_alternative`)
 

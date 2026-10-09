@@ -796,6 +796,7 @@ play: #18 Breece Hall (OUT)"; a trade whose numbers do not reconcile names the s
 | His status line | IR (knee - acl) · Sleeper, Sep 28 |
 | His number | — (no projection: he cannot play) |
 | Cleared since last night's 0 | No number yet — His status changed since last night's projection (…); his number this week comes with the next update. |
+| Cleared after a frozen week's first kickoff (IV-1) | No number yet — His status changed after this week's numbers were set at its first kickoff (…); there is no number for him this week. / "Who should I start?": Williams has no number this week: His status changed after … |
 | "Who should I start?" | Achane is out — on injured reserve (IR (knee - acl) · Sleeper, Sep 28). Start Hall. / … Of the others: … |
 | "Who should I start?", under the players | A player who cannot play gets no chance and no call: there is nothing to compare. / Start him |
 | The free calculator, the verdict | Not priced: Achane — On injured reserve: no return date, so no rest-of-season value. (IR (knee - acl) · Sleeper, Sep 28). The calculator does not price a trade on a player who cannot play as if he were healthy — take him out, or try again when his status changes. |
