@@ -227,7 +227,7 @@ def mix_lines(d: pd.DataFrame, hz: pd.DataFrame, p: pd.Series, pre: str, priors:
     out = d
     for c in COMPS:
         out[f"{pre}_{c}"] = out[f"hb0_{c}"].to_numpy(dtype=float)
-    idx = hz.index[p.loc[hz.index].notna()]
+    idx = hz.index[p.loc[hz.index].notna().to_numpy() & hz["season"].isin(TESTS).to_numpy()]   # the scored seasons
     h = hz.loc[idx]
     pp = p.loc[idx].to_numpy(dtype=float)
     st = h["mkt_start"].to_numpy()
@@ -300,7 +300,11 @@ def run_study(cache_path: Path) -> None:
     d = mix_lines(d, hz, p0, "rf0", priors)
     d = mix_lines(d, hz, p1, "rf1", priors)
     d = mix_lines(d, hz, oracle, "orc", priors)
-    names = {"v3.6": "hb0", "keeps the job": "keep", "rf1.0": "rf0", "rf1.1": "rf1", "oracle": "orc"}
+    # rf1.2 -- defined AFTER rf1.0's numbers were read (post hoc, information only, not eligible to ship): rf1.0's
+    # probability for the market week's non-starters only; the market week's starter keeps v3.6's line
+    p2 = p0.where(~hz["mkt_start"], 1.0)
+    d = mix_lines(d, hz, p2, "rf2", priors)
+    names = {"v3.6": "hb0", "keeps the job": "keep", "rf1.0": "rf0", "rf1.1": "rf1", "rf1.2 (post hoc)": "rf2", "oracle": "orc"}
     r = priced_frame(d, leagues, names)
     print("\n### 2-8 weeks pooled, both house scorings (MAE / Spearman by season; mean = the rule's pooled number)\n")
     print(Q.table({k: Q.horizon_seasons(r, k) for k in names}))
@@ -321,7 +325,7 @@ def run_study(cache_path: Path) -> None:
     print(pd.concat({k: u["model"] for k, u in uds.items()} | {"his own record": base_ud["base"]}, axis=1).round(3).to_string())
     print("pooled:", {k: round(float(u["model"].mean()), 4) for k, u in uds.items()}, "record", round(float(base_ud["base"].mean()), 4))
     print("\n### The rule (clause e: QB-only code, 0 cells at other positions by construction)\n")
-    for cand, pre in (("rf1.0", "rf0"), ("rf1.1", "rf1"), ("oracle", "orc")):
+    for cand, pre in (("rf1.0", "rf0"), ("rf1.1", "rf1"), ("rf1.2 (post hoc)", "rf2"), ("oracle", "orc")):
         j = judge(r, d, sc, cand, pre, base_ud)
         print(f"{cand}: (a) {j['a_cells']} market-week cells -> {j['a']}; (b) MAE {j['mae']:.3f} vs {j['mae_v36']:.3f}, "
               f"lower in {j['seasons_lower']} of 5 (Δ by season {np.round(j['dm'].to_numpy(), 3).tolist()}) -> {j['b']}; "

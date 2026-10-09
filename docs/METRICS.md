@@ -4049,6 +4049,13 @@ clauses are fixed here; nothing is tuned on 2021–2025's outcomes (every fit be
   a hand-set or disputed starter (the override list has no history); the team's record; a rookie behind him (the depth
   chart's second QB is not a column).
 
+**Added at 03:23 ET, after rf1.0's and rf1.1's numbers were read, committed before its own run — post hoc, information
+only, not eligible to ship whatever it reads:** **rf1.2** = rf1.0's probability applied to the market week's
+non-starters only; the market week's starter keeps v3.6's line. (Why: on the rows the grade scores — the QBs who played
+in week T — a market-week starter who played was the starter 96–99 % of the time, so an unconditional shrink of his
+line can only cost; the backups' rows are where rf1.0 helped.) Judged by the same clauses as a reading for the next
+package; a pass would need a grade on seasons it was not chosen on before it could ship.
+
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
 **Why.** A projected line is a set of means. A linear rule (points per yard, per catch, per TD) prices a mean
