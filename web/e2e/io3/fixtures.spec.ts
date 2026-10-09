@@ -447,8 +447,8 @@ function bigPng(w: number, h: number): Buffer {
 }
 
 test("IU-6: a phone-sized picture is made smaller in the browser and arrives under the server's bound", async ({ page, isMobile }) => {
-  test.skip(isMobile, "the same code path at 375");
   test.setTimeout(120_000);
+  if (isMobile) await page.setViewportSize({ width: 375, height: 812 });
   await asEditor(page);
   await page.goto(`${API}/blog/new`);
   await page.getByTestId("editor-title").fill(`Photo ${randomBytes(3).toString("hex")}`);
@@ -465,10 +465,15 @@ test("IU-6: a phone-sized picture is made smaller in the browser and arrives und
   const url = /\((\/blog\/img\/db\/[0-9a-f-]{36})\)/.exec(await page.getByTestId("editor-body").inputValue())![1];
   const stored = await (await page.request.get(`${API}${url}`)).body(); // what the server kept, byte for byte
   expect(stored.length).toBeLessThanOrEqual(300 * 1024);
-  test.info().annotations.push({ type: "stored bytes", description: `${photo.length} sent to the file input, ${stored.length} stored` });
+  console.log(`IU6 resize: ${photo.length} bytes chosen, ${stored.length} bytes stored`);
   expect(stored.subarray(8, 12).toString("ascii") === "WEBP" || (stored[0] === 0xff && stored[1] === 0xd8)).toBe(true); // WebP or JPEG
   const img = page.getByTestId("editor-preview").locator('img[src^="/blog/img/db/"]');
+  if (isMobile) await page.getByTestId("switch-preview").click();
   await expect.poll(() => img.evaluate((el) => [(el as HTMLImageElement).naturalWidth, (el as HTMLImageElement).naturalHeight].join("x"))).toBe("1600x1067");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true); // no sideways scroll
+  mkdirSync(join(ROOT, "docs", "handbacks", "iu6"), { recursive: true });
+  await inert(page, '[data-testid="editor-preview"]');
+  await page.screenshot({ path: join(ROOT, "docs", "handbacks", "iu6", `iu6-editor-resized-${isMobile ? 375 : 1300}.jpg`), type: "jpeg", quality: 70, fullPage: true });
 });
 
 test("two drafts with one title: the second's address moves on to -2 with no complaint, and keeps following the title", async ({ page, isMobile }) => {

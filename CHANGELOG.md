@@ -2,6 +2,10 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-09 — Wave I-U
+
+- IU-6: the blog editor makes a picture over 300 KB smaller in the browser before it is sent (longest side 1600 px, WebP or JPEG, quality stepped down until it fits), so a phone photo uploads; the server's checks (PNG / JPEG / WebP by the first bytes, 300 KB, 50 pictures, 30 MB) are unchanged. Cover image, link-preview picture and embeds not done (the hand-back says why and what next).
+
 ## 2026-10-09 — Wave I-T
 
 - **PO — the merge and what the devs left for each other.** `decisions.best_waiver_move` and the kicker branch of
