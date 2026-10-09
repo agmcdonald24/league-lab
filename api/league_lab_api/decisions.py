@@ -2924,6 +2924,73 @@ def ir2_apply(ctx: TradeContext, out: dict, dec: dict, g: list[str], t: list[str
 # ---- end IR-2
 
 
+# ---- IT-1 (Wave I-T): the Trade Finder's rows on the calculator's basis. Each row's label, gains, strip, words, order and
+# tier are the decision the calculator gives for that package (`ir2_decision` on the row's own card — the covered pair the
+# card priced —, then IR-4's caveats and the PO's starter rule, `provenance.with_trade` / `rule_trade`, exactly as
+# `main.trades_evaluate` applies them). A row's decision is kept on the frame beside its card (a warm Finder re-prices
+# nothing). The row carries a compact copy (`decision`: the dial, the gains, the verdict, the alternative, the
+# recommendation, the caveat); the calculator's answer has the whole object. A row whose partner's own waiver move was
+# not compared (IL-4: it cannot change the answer) says so in its recommendation, as its card does.
+IT1_ROW_KEYS = ("basis", "dial", "verdict", "alternative", "recommendation", "caveat")
+
+
+def it1_row_decision(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span: str, window: str, frame: dict,
+                     team: int, row: dict, card: dict) -> dict:
+    """The calculator's decision for a Finder row's package (kept on the frame)."""
+    g, t = [x["sleeper_id"] for x in row["give"]], [x["sleeper_id"] for x in row["get"]]
+    compared = ((card.get("waiver_alternative") or {}).get("theirs") or {}).get("kind") != IL4_NOT_COMPARED
+    key = (int(team), tuple(g), tuple(t), compared)
+    cache = frame.setdefault("it1_decisions", {})
+    if key not in cache:
+        trade = T.evaluate(board, g, t, weeks, market=ctx.market, prices=ctx.prices)
+        now = trade if weeks[0] == ctx.this_week else T.evaluate(board, g, t, (ctx.this_week,), market=ctx.market,
+                                                                 prices=ctx.prices)
+        stub = {"span": span, "partner_team": ctx.team(int(row["partner"])), "partner": int(row["partner"])}
+        d = ir2_decision(ctx, stub, now, trade, board, weeks, window, int(team), g, t, frame, card)
+        from . import provenance
+        ans = provenance.rule_trade(provenance.with_trade(
+            {"weeks": list(weeks), "week": ctx.this_week, "give": row["give"], "get": row["get"], "decision": d}))
+        cache[key] = ans.get("decision") or d
+    return cache[key]
+
+
+def it1_apply_row(row: dict, d: dict, starts_now: bool) -> None:
+    """A Finder row's fields COPIED from its decision (one basis; nothing computed beside it)."""
+    m, th, a = d["mine"], d["theirs"], d["alternative"]
+    row.update({"you_gain_week": m["gain_week"] if starts_now else None, "you_gain_horizon": m["gain_window"],
+                "they_gain_week": th["gain_week"] if starts_now else None, "they_gain_horizon": th["gain_window"],
+                "interest": d["dial"], "strip": d["strip"], "story": d["story"],
+                "alternative_words": a["words"], "beyond_alternative": a["beyond"]["mine"],
+                "beats_alternative": a["beats"], "other_objective": a.get("other_objective")})
+    row["decision"] = {**{k: d.get(k) for k in IT1_ROW_KEYS},
+                       "mine": {k: m[k] for k in ("gain_week", "gain_window", "by_week")},
+                       "theirs": {k: th[k] for k in ("gain_week", "gain_window", "by_week")},
+                       "alternative": {k: a.get(k) for k in ("words", "beats", "beyond")}}
+    card = row.get("card")
+    if isinstance(card, dict):
+        card["credible"] = bool(d["recommendation"].get("credible"))
+        card["recommendation"] = d["recommendation"]
+
+
+def it1_rank(rows: list[dict]) -> list[dict]:
+    """`rank_partners`' order on the decision's numbers: the trades that beat your best waiver move first, by the gain
+    beyond it; the bigger package never above its cheaper equal (IE-1)."""
+    lead = {r["partner"]: r["beyond_alternative"] for r in rows if r.get("cheaper_than")}
+
+    def key(ir):
+        i, r = ir
+        b = r["beyond_alternative"]
+        if r.get("optional") and r["partner"] in lead:
+            b = min(b, lead[r["partner"]] - 0.001)
+        return (not r["beats_alternative"], -b, i)
+    out = [r for _, r in sorted(enumerate(rows), key=key)]
+    for i, r in enumerate(out, 1):
+        r["rank"] = i
+        r["demoted"] = not r["beats_alternative"]
+    return out
+# ---- end IT-1
+
+
 def _rank_change(ctx: TradeContext, me: int, them: int, ms: T.Side, ts: T.Side, rank_words, *,
                  horizon: tuple[T.Side, T.Side] | None = None) -> dict:
     """League rank before / after for this week, the horizon and depth (the page's rank lines). IA-2: ``ms`` / ``ts``
@@ -3020,7 +3087,10 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
         r["card"] = ii1_card(ctx, board, tuple(weeks), span, window, frame, int(team), [x["sleeper_id"] for x in r["give"]],
                              [x["sleeper_id"] for x in r["get"]], source=source, as_of=as_of,
                              compare_theirs=compare is None or int(r["partner"]) in compare)  # ---- IL-4
+        # ---- IT-1: the row is the calculator's answer for its package (label, gains, words, tier)
+        it1_apply_row(r, it1_row_decision(ctx, board, tuple(weeks), span, window, frame, int(team), r, r["card"]), starts_now)
         ii1_same_story(r["card"], r.get("beats_alternative"))
+    rows = it1_rank(rows)                                                               # ---- IT-1: the basis's order
     ii1 = ii1_verdict(rows, alt, span, window)
     rows, verdict = ii1["rows"], ii1["verdict"]
     # ---- end II-1
