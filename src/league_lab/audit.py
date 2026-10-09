@@ -693,7 +693,15 @@ def run(out_dir: Path | None = None) -> str:
         out_dir.mkdir(parents=True, exist_ok=True)
         with psycopg.connect(get_settings().pipeline_dsn()) as conn:
             conn.read_only = True
-            rep = build(frame_query(conn), ranks_path=out_dir / RANKS_FILE)
+            # ---- IV-1 (Wave I-V): the audit reads what a visitor sees — the week under way's live numbers where
+            # `project` wrote an overlay (league_lab.live_week, the API's own rewrite); none: the SQL unchanged
+            from . import live_week as LW
+            base, act = frame_query(conn), LW.active_on(conn)
+
+            def live_query(sql: str, params: tuple = ()) -> pd.DataFrame:
+                return base(LW.sql(sql, act), params)
+            rep = build(live_query, ranks_path=out_dir / RANKS_FILE)
+            # ---- end IV-1
         text = "\n".join(rep.lines) + "\n"
     except Exception as exc:  # noqa: BLE001 - exit 0 always: the audit's own failure is its report
         log.exception("audit-lists failed")
