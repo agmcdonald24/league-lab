@@ -109,6 +109,7 @@
   let unavailable = $state<UnavailableAsset[]>([]);
   const rowOf = (side: "give" | "get", key: string) => (side === "give" ? myPlayers : theirPlayers).find((r) => r.sleeper_id === key);
   const nameOf = (side: "give" | "get", key: string) => rowOf(side, key)?.player_name ?? unavailable.find((u) => u.key === key)?.name ?? key;
+  const gateOf = (r: TeamRosterRow) => (r as TeamRosterRow & { availability?: { why: string; sits: boolean } | null }).availability ?? null; // ---- IT-1
   const isUnitRow = (r: TeamRosterRow | undefined) => !!r && (r.unit === true || r.position === "TMQB" || r.position === "TMPK");
   // ---- end IE-0
   const pkgKey = $derived(
@@ -266,6 +267,8 @@
                   {#if r.position !== "DEF"}<TeamBadge team={r.team} />{/if}
                   <span class="truncate">{r.role === "starter" ? slotLabel(r.slot) : r.role === "bench" ? "bench" : (r.reason ?? "out")}</span>
                 </span>
+                <!-- IT-1: a player who sits shows why, with its source and date (league_gate.note: My Week's cell) -->
+                {#if gateOf(r)?.sits}<span class="block text-xs leading-snug text-ink-3" data-testid="trade-avail-reason">{gateOf(r)!.why}</span>{/if}
               </span>
               <span class="tabnum shrink-0 text-right text-base font-semibold">{r.role === "unplayable" ? "—" : f1(r.value)}</span>
             </label>
@@ -385,6 +388,10 @@
               <StatTile label={`${r.partner_team} · this week`} value={s1(d.theirs.gain_week)} caption={`${f2(d.theirs.before.this_week)} → ${f2(d.theirs.after.this_week)}`} size="sm" />
               <StatTile label={d.window === "week" ? `${r.partner_team} · ${d.span}` : `${r.partner_team} · ${d.span} in total`} value={s1(d.theirs.gain_window)} caption={`${f1(d.theirs.before.window)} → ${f1(d.theirs.after.window)}`} size="sm" />
             </div>
+            {#if d.unfilled.mine.before && d.unfilled.mine.after && (Math.abs(d.mine.before.this_week - d.unfilled.mine.before.this_week) >= 0.005 || Math.abs(d.mine.after.this_week - d.unfilled.mine.after.this_week) >= 0.005)}
+              <!-- IT-1: which total the tiles are (with the assumed pickups), the roster-only total other screens show beside it -->
+              <p class="mt-1 text-sm text-ink-2" data-testid="tile-totals">Totals with the assumed pickups for empty slots; your roster alone, as My Team shows it: {f2(d.unfilled.mine.before.this_week)} → {f2(d.unfilled.mine.after.this_week)} this week.</p>
+            {/if}
             <p class="mt-2 text-sm text-ink-2" data-testid="basis"><span class="font-semibold text-ink">{d.basis_label}.</span> {d.basis_words}</p>
             <p class="mt-3 text-lg leading-snug font-semibold text-ink" data-testid="verdict">{d.verdict}</p>
             <p class="mt-2 text-base leading-snug {d.recommendation.credible ? 'text-good' : 'text-ink'}" data-testid="recommendation"><span class="font-semibold">{d.recommendation.label}:</span> {d.recommendation.words.replace(`${d.recommendation.label}: `, "")}</p>

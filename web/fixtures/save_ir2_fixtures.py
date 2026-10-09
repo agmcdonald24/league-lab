@@ -104,7 +104,89 @@ def scrubs_package() -> None:
     print("scrubs tick", entry["from"]["label"], "->", entry["to"]["label"])
 
 
+# ---- IT-1 (Wave I-T): the Trade Finder's answers on the calculator's basis. Every saved `trades_partners_*.json` is
+# re-asked with its own league, team, `want` and window (from its name); every recording's `/api/trades/partners` key
+# with its own query; and the package each saved Finder answer leads to ("Try it": its first row and its first
+# credible row) is saved for the calculator over the four windows, so the calculator opens on a saved answer. The old
+# Scrubs package that is no longer a legal trade (`…_2_9_12490_…`) is removed.
+def evaluate_name(league: str, me: int, partner: int, give, get_, window: str | None = None) -> str:
+    w = f"{window}_" if window and window != "next4" else ""
+    return f"trades_evaluate_{w}{league}_{me}_{partner}_{'-'.join(sorted(give))}_{'-'.join(sorted(get_))}.json"
+
+
+def finder() -> None:
+    for old in OUT.glob("trades_evaluate_*1389709692405551104_2_9_12490_*.json"):
+        old.unlink()
+        print("removed", old.name)
+    leads: set[tuple] = set()
+    for f in sorted(OUT.glob("trades_partners_*.json")):
+        parts = f.stem.split("_")             # trades partners <league> <team> <want> [window]
+        league, team, want = parts[2], int(parts[3]), parts[4]
+        window = parts[5] if len(parts) > 5 else None
+        params = {"league": league, "team": team, **({} if want == "ALL" else {"want": want}),
+                  **({"window": window} if window else {})}
+        r = c.get("/api/trades/partners", params=params)
+        if r.status_code != 200:
+            print("KEPT (", r.status_code, ")", f.name, r.text[:200])
+            continue
+        ans = r.json()
+        sdf.save(league, f.name, ans)
+        rows = ans.get("partners") or []
+        if want == "ALL" and window is None:
+            for row in [rows[0]] if rows else []:
+                leads.add((league, team, row["partner"], tuple(x["sleeper_id"] for x in row["give"]),
+                           tuple(x["sleeper_id"] for x in row["get"])))
+            best = next((x for x in rows if x.get("is_best")), None)          # e2e/decisions: the first "best" row
+            if best is not None:
+                leads.add((league, team, best["partner"], tuple(x["sleeper_id"] for x in best["give"]),
+                           tuple(x["sleeper_id"] for x in best["get"])))
+            cred = next((x for x in rows if x.get("tier") == "credible"), None)
+            if cred is not None:
+                leads.add((league, team, cred["partner"], tuple(x["sleeper_id"] for x in cred["give"]),
+                           tuple(x["sleeper_id"] for x in cred["get"])))
+        print("saved", f.name, len(rows), "rows,", ans.get("credible_count"), "credible")
+    for league, team, partner, give, get_ in sorted(leads):
+        body = {"league": league, "team": team, "partner": partner, "give": list(give), "get": list(get_)}
+        for w in (None, "week", "ros", "playoffs"):
+            r = c.post("/api/trades/evaluate", json={**body, **({"window": w} if w else {})})
+            if r.status_code == 200:
+                sdf.save(league, evaluate_name(league, team, partner, give, get_, w), r.json())
+        print("saved the calculator's answers for", league, team, partner, give, get_)
+    for f in sorted(OUT.glob("*/api_*.json")):
+        if f.parent.name in ("ir2", "ir4"):
+            continue
+        saved = json.loads(f.read_text())
+        keys = [k for k in saved if k.split(" ")[-1].startswith("/api/trades/partners") or k.startswith("/api/trades/partners")]
+        if not keys:
+            continue
+        for k in keys:
+            path = k.removeprefix("GET ")
+            u = urlsplit(path)
+            r = c.get(u.path, params=dict(parse_qsl(u.query)))
+            saved[k] = {"status": r.status_code, "body": r.json() if r.headers.get("content-type", "").startswith("application/json") else r.text}
+            print("saved", f.parent.name, k[:100], r.status_code)
+        f.write_text(json.dumps(saved, indent=1) + "\n")
+
+
+def package_labels() -> None:
+    """ia2_packages.json's labels from the re-saved answers (the tick's from / to: the dial's label must change)."""
+    pk = json.loads((OUT / "ia2_packages.json").read_text())
+    for lg, v in pk.items():
+        me = sdf.MINE[lg]
+        for side in ("from", "to"):
+            d = json.loads((OUT / evaluate_name(lg, me, v["partner"], v[side]["give"], v[side]["get"])).read_text())
+            v[side]["label"] = d["decision"]["dial"]["label"]
+        print("tick", lg, v["from"]["label"], "->", v["to"]["label"], "" if v["from"]["label"] != v["to"]["label"] else "SAME")
+    (OUT / "ia2_packages.json").write_text(json.dumps(pk, indent=1) + "\n")
+
+
 if __name__ == "__main__":
+    if "--finder" in sys.argv:
+        finder()
+        top_level()
+        recorded()
+        package_labels()
+        sys.exit(0)
     if "--scrubs" in sys.argv:
         scrubs_package()
         sys.exit(0)

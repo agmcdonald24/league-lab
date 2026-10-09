@@ -132,7 +132,7 @@
    "mine": 59.5,
    "theirs": -23.01
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+11.3** this week and **+59.5** over weeks 5–8; them **-3.7** and **-23.0**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+11.3** this week and **+59.5** over weeks 5–8; them **−3.7** and **−23.0**."
  },
  "interest": {
   "score": 0,
@@ -1133,7 +1133,7 @@
   "waiver_gain": 0.0
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+11.3** this week and **+59.5** over weeks 5–8; them **-3.7** and **-23.0**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+11.3** this week and **+59.5** over weeks 5–8; them **−3.7** and **−23.0**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **195**, you get **366**: you get 171 more.",
   "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 271, you get 599.",
   "size": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 50 season points; costs 0.0 over weeks 5–8) to stay at 21 players; you must cut [Tory Horton](/player/00-0040648) (WR, 62 season points; costs 0.0 over weeks 5–8) to stay at 21 players; they open 2 spots: no free agent would add to that lineup over weeks 5–8.",
@@ -1399,7 +1399,7 @@
     -2.77
    ],
    "raw_window": -23.01,
-   "words": "The72Repeat's starters: -3.7 this week, -23.0 over weeks 5–8."
+   "words": "The72Repeat's starters: −3.7 this week, −23.0 over weeks 5–8."
   },
   "depth_cost": {
    "mine": "You lose Jaylen Wright, a backup RB: 6 RB left on your bench who can play in week 5 (Adam Randall in the IR slot and Jonah Coleman in the IR slot cannot); you lose Tory Horton, a backup WR: 4 WR left on your bench who can play in week 5 (Makai Lemon on the taxi squad, Barion Brown on the taxi squad and Caleb Douglas on the taxi squad cannot). You use 2 more roster spots.",
@@ -1508,7 +1508,7 @@
   ],
   "why_refuse": [
    "Their starters lose 3.7 this week.",
-   "It does not improve their starters over weeks 5–8 (-23.0).",
+   "It does not improve their starters over weeks 5–8 (−23.0).",
    "They give 366 season value above replacement for 195: 171 more, over 25% of what you give.",
    "They lose David Montgomery, a backup RB: 1 RB left on their bench who can play in week 5 (Emmett Johnson on a bye cannot)."
   ],
@@ -1544,7 +1544,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: The72Repeat's starters gain -25.9 beyond their own best move over weeks 5–8; they give 366 season value above replacement for 195: 171 more, over 25% of what you give.",
+   "words": "Not worth proposing: The72Repeat's starters end 25.9 behind their own best move over weeks 5–8; they give 366 season value above replacement for 195: 171 more, over 25% of what you give.",
    "plausibility": "Implausible"
   }
  },
@@ -1663,7 +1663,7 @@
   "headline": "**You give [Bo Nix](/player/00-0039732); you get [David Montgomery](/player/00-0035685), [Breece Hall](/player/00-0038120) and [Bijan Robinson](/player/00-0038542).** Helps your lineup +11.3 this week (+59.5 over weeks 5–8), costs their lineup 3.7 (23.0 over weeks 5–8); you get more season value: a lineup loss for them.",
   "effect_words": "Your starting lineup: about 11.3 more points this week, about 60 more in total over weeks 5–8.",
   "their_effect_words": "The72Repeat's starting lineup: about 3.7 fewer points this week, about 23 fewer in total over weeks 5–8.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+11.3** this week and **+59.5** over weeks 5–8; them **-3.7** and **-23.0**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+11.3** this week and **+59.5** over weeks 5–8; them **−3.7** and **−23.0**.",
   "strip": {
    "weeks": [
     5,
@@ -1810,7 +1810,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: The72Repeat's starters gain -25.9 beyond their own best move over weeks 5–8; they give 366 season value above replacement for 195: 171 more, over 25% of what you give.",
+   "words": "Not worth proposing: The72Repeat's starters end 25.9 behind their own best move over weeks 5–8; they give 366 season value above replacement for 195: 171 more, over 25% of what you give.",
    "plausibility": "Implausible"
   },
   "changes": {
@@ -2226,7 +2226,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters +11.3 this week, +59.5 over weeks 5–8; The72Repeat's -3.7 and -23.0. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters +11.3 this week, +59.5 over weeks 5–8; The72Repeat's −3.7 and −23.0. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": 11.33,
     "gain_window": 59.5,

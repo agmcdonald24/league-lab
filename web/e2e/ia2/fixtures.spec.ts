@@ -138,7 +138,12 @@ test("the window control: the caption, the span and the numbers change (calculat
   await page.getByTestId("window-playoffs").click();
   await expect(page).toHaveURL(/window=playoffs/);
   await expect(page.getByTestId("window-caption")).toContainText(`${po.span[0].toUpperCase()}${po.span.slice(1)}: ${po.window_why}`);
-  await expect(page.getByTestId("best-partner")).toHaveText(plain(po.words.headline));
+  // IT-1 (re-saved on the calculator's basis): with nothing worth proposing the line is the answer's headline and the
+  // screen's pointer to the calculator; otherwise the headline alone
+  const poHead = plain(po.words.headline);
+  await expect(page.getByTestId("best-partner")).toHaveText(
+    po.verdict?.kind === "none" ? `${poHead} Try one you have in mind in the trade calculator.` : poHead,
+  );
   await noSidewaysScroll(page);
 });
 

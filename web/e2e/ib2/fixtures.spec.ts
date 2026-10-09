@@ -199,9 +199,13 @@ for (const league of [SCRUBS, TEST_LEAGUE]) {
 test("Trades: each suggestion is the package, the dial's label, your gain, one reason, and Try it", async ({ page }) => {
   const all = fx(`trades_partners_${SCRUBS}_2_ALL.json`);
   await page.goto(`/trades?league=${SCRUBS}&team=2`);
+  // IT-1 (re-saved on the calculator's basis): with nothing worth proposing every suggestion is behind "Explore
+  // alternatives" — open it; the first card the screen shows is the first credible row, else the first explored one
+  const cred = all.partners.filter((x: { tier?: string }) => x.tier === "credible");
+  if (!cred.length) await page.getByTestId("explore").locator("summary").first().click();
   const rows = page.getByTestId("partner-row");
   await expect(rows.first()).toBeVisible();
-  const p = all.partners[0];
+  const p = cred[0] ?? all.partners[0];
   const r = rows.first();
   await expect(r).toContainText(p.partner_team);
   await expect(r.getByTestId("partner-label")).toContainText(p.interest.label);

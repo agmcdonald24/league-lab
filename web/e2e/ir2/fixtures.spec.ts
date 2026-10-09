@@ -99,10 +99,16 @@ test("Folk for Stafford + Reichard: one basis, the slots paired, one depth sente
   // the four tiles' values: you this week, you window, them this week, them window (the captions are totals, unsigned)
   expect(tileNums.length).toBeGreaterThanOrEqual(4);
   const [youWeek, youWin, themWeek, themWin] = tileNums;
-  expect(yourEffect).toContain(youWeek === 0 ? "no change this week" : `${youWeek > 0 ? "+" : ""}${youWeek.toFixed(1)} this week`);
-  expect(yourEffect).toContain(youWin === 0 ? "no change over" : `${youWin > 0 ? "+" : ""}${youWin.toFixed(1)} over weeks`);
-  expect(theirEffect).toContain(themWeek === 0 ? "no change this week" : `${themWeek > 0 ? "+" : ""}${themWeek.toFixed(1)} this week`);
-  expect(theirEffect).toContain(themWin === 0 ? "no change over" : `${themWin > 0 ? "+" : ""}${themWin.toFixed(1)} over weeks`);
+  // IT-1: one minus sign — the card's sentences say a negative number as the tiles do ("−0.3", never "-0.3")
+  const sgn = (x: number) => `${x > 0 ? "+" : "\u2212"}${Math.abs(x).toFixed(1)}`;
+  expect(yourEffect).toContain(youWeek === 0 ? "no change this week" : `${sgn(youWeek)} this week`);
+  expect(yourEffect).toContain(youWin === 0 ? "no change over" : `${sgn(youWin)} over weeks`);
+  expect(theirEffect).toContain(themWeek === 0 ? "no change this week" : `${sgn(themWeek)} this week`);
+  expect(theirEffect).toContain(themWin === 0 ? "no change over" : `${sgn(themWin)} over weeks`);
+  for (const t of [yourEffect, theirEffect, await page.getByTestId("verdict").innerText(), await page.getByTestId("recommendation").innerText()])
+    expect(t, "a hyphen as a minus sign").not.toMatch(/(^|[\s(])-\d/);
+  // IT-1: the tiles say which total they are, the roster-only total other screens show named beside them
+  await expect(page.getByTestId("tile-totals")).toContainText("as My Team shows it");
   // the dial's label agrees with their tile (the review's "Improves it" beside a card that says they lose)
   const label = await page.getByTestId("dial-row").innerText();
   if (themWin < -0.05) expect(label).toContain("Makes their lineup weaker");

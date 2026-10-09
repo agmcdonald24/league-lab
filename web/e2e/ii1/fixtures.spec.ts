@@ -18,11 +18,11 @@ const RECORD = process.env.II1_RECORD ?? "";
 type Saved = { status: number; body: unknown };
 // recording merges into the file (one test at a time with -g on a slow machine); replay reads it
 const saved: Record<string, Saved> = existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
-const MINE = /\/api\/(trades|rosters|leagues\?mfl)|mfl|1389709692405551104|9000000000000000001/i;
+const MINE = /\/api\/(trades|rosters|leagues\?mfl)|mfl|1389709692405551104|9000000000000000001|1321941740235550720/i; // IT-1: + Dynasty
 const WAIT = RECORD ? 900_000 : 10_000; // recording: the API answers live (minutes on a loaded machine)
 test.setTimeout(RECORD ? 1_800_000 : 60_000);
 const SCRUBS = "1389709692405551104";
-const TEST_LEAGUE = "9000000000000000001";
+const DYNASTY = "1321941740235550720"; // IT-1
 
 const keyOf = (u: URL, body: string | null) => {
   const q = [...u.searchParams.entries()].sort(([a], [b]) => a.localeCompare(b));
@@ -102,8 +102,10 @@ test("Scrubs roster 2: No compelling trade found, the reason, and the trades beh
   await shot(page, "scrubs2-finder", info.project.name);
 });
 
-test("the Test League team 1: the credible trades lead, each with its full card; the rest behind Explore", async ({ page }, info) => {
-  await page.goto(`/trades?league=${TEST_LEAGUE}&team=1`);
+test("credible trades lead, each with its full card; the rest behind Explore (Forever Unclean Dynasty, roster 12)", async ({ page }, info) => {
+  // IT-1: on the calculator's basis (each trade against the best waiver move searched on that basis) no Test League team
+  // has a trade worth proposing at the pinned moment; Forever Unclean Dynasty's roster 12 has three (re-recorded)
+  await page.goto(`/trades?league=${DYNASTY}&team=12`);
   const head = page.getByTestId("best-partner");
   await expect(head).toContainText("Best partner:", { timeout: WAIT });
   await expect(page.getByTestId("try-best")).toBeVisible();
@@ -120,7 +122,7 @@ test("the Test League team 1: the credible trades lead, each with its full card;
   await expect(page.getByTestId("explore")).toContainText("Explore alternatives");
   await expect(page.locator("main")).not.toContainText(/probab|% chance|likely to accept/i);
   await noSidewaysScroll(page);
-  await shot(page, "test-league-finder", info.project.name);
+  await shot(page, "dynasty12-finder", info.project.name);
 });
 
 test("the calculator: a kicker for a starter is labelled implausible, from the slots and the free pool", async ({ page }, info) => {

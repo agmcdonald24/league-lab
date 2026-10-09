@@ -1337,3 +1337,71 @@ __all__ += ["week_story"]
 # ---- end II-0
 
 __all__ += ["covered_pair", "fill_lineup", "slot_changes"]          # ---- IR-2
+
+
+# ---- IT-1 (Wave I-T): the best waiver move searched on the replacement frame itself. IF-1 / IF-2 choose the move on the
+# roster-only numbers (a claim that fills a bye is worth its whole projection there) and the card re-prices it on the
+# frame, where such a claim adds nothing the free fill did not. This searches the moves on the frame: each week's pool
+# is the roster with its empty starting slots filled from that week's free pool (the fills stay in the pool), and an add
+# is worth what it raises that lineup (`best_fill`'s exact entry bar). The moves tried: an open roster spot; else a drop —
+# the bench player with the fewest rest-of-season points (a bench player costs no lineup points; an add that beats a
+# starter sends that starter to the bench, so this covers "upgrade a starter"); a starter only when nobody sits on the
+# bench (dropping a starter would let the free pool refill his slot every week: a second pickup, not one claim). Free
+# agents used as a fill in any week are not candidates. Returns (add, drop | None, per-week gain) or None.
+def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free: Mapping[int, Sequence[Player]],
+                    free_agents: Mapping[str, Mapping[int, Player | None]],
+                    market: Mapping[str, float] | None = None) -> tuple[str, str | None, tuple[float, ...]] | None:
+    roster, weeks = int(roster), tuple(int(w) for w in weeks)
+    if not weeks:
+        return None
+
+    def covered(remove: Sequence[str]) -> tuple[list[list[Player]], list[float], set[str]]:
+        pools, totals, used = [], [], set()
+        for w in weeks:
+            ps = board.pool_with(roster, w, [d for d in remove if not board.is_locked(d, w)])
+            fw = free.get(w, ())
+            lu, ids = fill_lineup(ps, board.slots, fw)
+            fills = [q for q in fw if q.id in set(ids)]
+            pools.append([*ps, *fills])
+            totals.append(lu.total)
+            used |= set(ids)
+        return pools, totals, used
+
+    base_pools, base_totals, used = covered(())
+    cands = {k: v for k, v in (free_agents or {}).items() if k not in used and board.owner(k) is None}
+    if not cands:
+        return None
+    best: tuple[tuple, str, str | None, tuple[float, ...]] | None = None
+
+    def consider(pools, loss, drop):
+        nonlocal best
+        f = best_fill(board, weeks, pools, cands)
+        if f is None:
+            return
+        by = tuple(_r2(g - x) for g, x in zip(f.week_gains, loss, strict=True))
+        k = (_r2(sum(by)), by[0])
+        if best is None or k > best[0]:
+            best = (k, f.player_id, drop, by)
+
+    if roster_limit(board.slots) - board.active_count(roster) > 0:
+        consider(base_pools, [0.0] * len(weeks), None)
+    else:
+        stay = [p for p in board.roster(roster) if board.is_active(p) and not board.is_locked(p, weeks[0])]
+        starts = set()
+        for w in weeks:
+            starts |= set(solve(board.pool(roster, w), board.slots, margins=False).starter_ids)
+
+        def mkt(p: str) -> float:
+            v = (market or {}).get(p)
+            return math.inf if v is None else float(v)
+        bench = sorted((p for p in stay if p not in starts), key=lambda p: (mkt(p), p))[:1]
+        starters = [] if bench else sorted((p for p in stay if p in starts), key=lambda p: (mkt(p), p))[:1]
+        for d in [*bench, *starters]:
+            pools, totals, _ = covered([d])
+            consider(pools, [b - a for b, a in zip(base_totals, totals, strict=True)], d)
+    if best is None or best[0][0] < MIN_GAIN:
+        return None
+    return best[1], best[2], best[3]
+# ---- end IT-1
+
+__all__ += ["basis_best_move"]                                       # ---- IT-1

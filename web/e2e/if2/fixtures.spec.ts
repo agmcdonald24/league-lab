@@ -77,29 +77,48 @@ const shot = (page: Page, name: string, project: string) =>
   page.screenshot({ path: join(process.env.SHOTS_DIR ?? "e2e/.out", `if2-${name}-${project}.png`), fullPage: true });
 
 test("the Finder's first card is the headline, measured against the best waiver move, with the week strip", async ({ page }, info) => {
+  // IT-1 (re-saved on the calculator's basis): read from the saved answer. With a trade worth proposing the headline is
+  // the first credible card's trade against the best waiver move; on today's fixtures team 8 has none, so the answer
+  // says so with the best move it measured every trade against, and the cards (behind Explore) are measured the same way
+  type Row = { partner_team: string; tier?: string; demoted?: boolean; alternative_words?: string; get: { player_name: string }[];
+    give: { player_name: string }[]; strip?: { mine: number[]; theirs: number[] } };
+  const ans = Object.entries(saved).find(([k]) => k.includes("/api/trades/partners") && k.includes("team=8"))![1].body as {
+    partners: Row[]; verdict: { kind: string; reason: string | null }; ordering: { words: string }; best_alternative: { words: string };
+  };
   await page.goto(`/trades?league=${encodeURIComponent(MFL)}&team=8`);
   const head = page.getByTestId("best-partner");
-  await expect(head).toContainText("Best partner: Madeyes Revenge");
-  await expect(head).toContainText("Chicago Bears QB");
-  await expect(page.getByTestId("best-alternative")).toHaveText(/^\+14\.6 over weeks 4–7: 1\.8 more than your best waiver move \(the Atlanta Falcons defense claim gives \+12\.8/);
-  await expect(page.getByTestId("finder-ordering")).toContainText("Ranked by gain beyond your best waiver move over weeks 4–7");
+  const cred = ans.partners.filter((r) => r.tier === "credible");
+  if (cred.length) {
+    await expect(head).toContainText(`Best partner: ${cred[0].partner_team}`);
+    await expect(page.getByTestId("best-alternative")).toHaveText(cred[0].alternative_words!);
+  } else {
+    expect(ans.verdict.kind).toBe("none");
+    await expect(head).toContainText("No compelling trade found");
+    await expect(head).toContainText(ans.verdict.reason!);
+    expect(ans.verdict.reason).toContain(`Your best move: ${ans.best_alternative.words}`); // the move every card is measured against
+    await page.getByTestId("explore").locator("summary").first().click();
+  }
+  await expect(page.getByTestId("finder-ordering")).toContainText(ans.ordering.words);
+  const shown = cred.length ? cred : ans.partners;
   const cards = page.getByTestId("partner-row");
   await expect(cards.first()).toBeVisible();
-  // the first card is the headline's trade
-  await expect(cards.first()).toContainText("Madeyes Revenge");
-  await expect(cards.first()).toContainText("Chicago Bears QB");
-  await expect(cards.first()).toContainText("Rashee Rice");
-  await expect(cards.first().getByTestId("partner-demoted")).toHaveCount(0);
-  // the next one is below the claim: marked and worded
-  const second = cards.nth(1);
-  await expect(second.getByTestId("partner-demoted")).toHaveText("Below your best waiver move.");
-  await expect(second.getByTestId("partner-alternative")).toContainText("the trade does not beat it on starter points");
-  // the strip: both sides, four weeks
+  await expect(cards.first()).toContainText(shown[0].partner_team);
+  for (const x of [...shown[0].give, ...shown[0].get]) await expect(cards.first()).toContainText(x.player_name);
+  // each card against the claim: below it, marked and worded; above it, not marked
+  for (let i = 0; i < Math.min(2, shown.length); i++) {
+    const c = cards.nth(i);
+    await expect(c.getByTestId("partner-alternative")).toContainText(shown[i].alternative_words!);
+    if (shown[i].demoted) {
+      await expect(c.getByTestId("partner-demoted")).toHaveText("Below your best waiver move.");
+      expect(shown[i].alternative_words).toContain("the trade does not beat it on starter points");
+    } else await expect(c.getByTestId("partner-demoted")).toHaveCount(0);
+  }
+  // the strip: both sides, four weeks, the row's own numbers
   const strip = cards.first().getByTestId("partner-strip");
   await expect(strip).toBeVisible();
   await expect(strip.getByTestId("strip-mine").locator("td")).toHaveCount(4);
   await expect(strip.getByTestId("strip-theirs").locator("td")).toHaveCount(4);
-  await expect(strip.getByTestId("strip-mine").locator("td").first()).toHaveText("+5.1");
+  await expect(strip.getByTestId("strip-mine").locator("td").first()).toHaveText(sign1(shown[0].strip!.mine[0]));
   await noSidewaysScroll(page);
   await shot(page, "team8-finder", info.project.name);
 });

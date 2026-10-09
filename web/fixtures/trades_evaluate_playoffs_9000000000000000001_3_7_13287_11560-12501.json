@@ -114,7 +114,7 @@
    "mine": 1.11,
    "theirs": 9.22
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.8** this week and **+1.1** over weeks 15–17; them **+3.2** and **+9.2**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.8** this week and **+1.1** over weeks 15–17; them **+3.2** and **+9.2**."
  },
  "interest": {
   "score": 88,
@@ -204,8 +204,8 @@
    }
   ]
  },
- "verdict": "Helps your lineup +1.1 over weeks 15–17 (-2.8 this week), them +3.2 (+9.2 over weeks 15–17); you give up more season value: helps both lineups.",
- "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Helps your lineup +1.1 over weeks 15–17 (-2.8 this week), them +3.2 (+9.2 over weeks 15–17); you give up more season value: helps both lineups.",
+ "verdict": "Helps your lineup +1.1 over weeks 15–17 (−2.8 this week), them +3.2 (+9.2 over weeks 15–17); you give up more season value: helps both lineups.",
+ "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Helps your lineup +1.1 over weeks 15–17 (−2.8 this week), them +3.2 (+9.2 over weeks 15–17); you give up more season value: helps both lineups.",
  "ros": {
   "give": 176,
   "get": 280,
@@ -870,7 +870,7 @@
   "waiver_gain": 5.57
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.8** this week and **+1.1** over weeks 15–17; them **+3.2** and **+9.2**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.8** this week and **+1.1** over weeks 15–17; them **+3.2** and **+9.2**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **53**, you get **18**: you give 35 more.",
   "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 176, you get 280.",
   "size": "Roster size: you must cut [Pat Freiermuth](/player/00-0036894) (TE, 113 season points; costs 0.0 over weeks 15–17) to stay at 15 players; you must cut [Ladd McConkey](/player/00-0039915) (WR, 128 season points; costs 0.0 over weeks 15–17) to stay at 15 players.",
@@ -1250,7 +1250,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -4.5 beyond your best waiver move over weeks 15–17 (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 4.5 behind your best waiver move over weeks 15–17 (the bar is 1 point).",
    "plausibility": "A roster-fit idea"
   }
  },
@@ -1358,11 +1358,11 @@
    "title": "Effect on their starters",
    "need": "puts Love at their RB in place of Tuten"
   },
-  "verdict": "Helps your lineup +1.1 over weeks 15–17 (-2.8 this week), them +3.2 (+9.2 over weeks 15–17); you give up more season value: helps both lineups.",
-  "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Helps your lineup +1.1 over weeks 15–17 (-2.8 this week), them +3.2 (+9.2 over weeks 15–17); you give up more season value: helps both lineups.",
+  "verdict": "Helps your lineup +1.1 over weeks 15–17 (−2.8 this week), them +3.2 (+9.2 over weeks 15–17); you give up more season value: helps both lineups.",
+  "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Helps your lineup +1.1 over weeks 15–17 (−2.8 this week), them +3.2 (+9.2 over weeks 15–17); you give up more season value: helps both lineups.",
   "effect_words": "Your starting lineup: about 2.8 fewer points this week, about 1.1 more points in total over weeks 15–17.",
   "their_effect_words": "Goal Line Stand's starting lineup: about 3.2 more points this week, about 9.2 more points in total over weeks 15–17.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.8** this week and **+1.1** over weeks 15–17; them **+3.2** and **+9.2**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.8** this week and **+1.1** over weeks 15–17; them **+3.2** and **+9.2**.",
   "strip": {
    "weeks": [
     15,
@@ -1501,7 +1501,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -4.5 beyond your best waiver move over weeks 15–17 (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 4.5 behind your best waiver move over weeks 15–17 (the bar is 1 point).",
    "plausibility": "A roster-fit idea"
   },
   "changes": {
@@ -1710,7 +1710,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -2.8 this week, +1.1 over weeks 15–17; Goal Line Stand's +3.2 and +9.2. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −2.8 this week, +1.1 over weeks 15–17; Goal Line Stand's +3.2 and +9.2. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -2.75,
     "gain_window": 1.11,

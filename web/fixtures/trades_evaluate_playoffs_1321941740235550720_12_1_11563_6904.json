@@ -101,7 +101,7 @@
    "mine": -2.69,
    "theirs": 3.07
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.1** this week and **-2.7** over weeks 15–17; them **+2.1** and **+3.1**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.1** this week and **−2.7** over weeks 15–17; them **+2.1** and **+3.1**."
  },
  "interest": {
   "score": 57,
@@ -169,8 +169,8 @@
    }
   ]
  },
- "verdict": "Does not help your lineup (-2.1 this week, -2.7 over weeks 15–17), them +2.1 (+3.1 over weeks 15–17); about even by season value: not worth it for your lineup.",
- "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (-2.1 this week, -2.7 over weeks 15–17), them +2.1 (+3.1 over weeks 15–17); about even by season value: not worth it for your lineup.",
+ "verdict": "Does not help your lineup (−2.1 this week, −2.7 over weeks 15–17), them +2.1 (+3.1 over weeks 15–17); about even by season value: not worth it for your lineup.",
+ "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (−2.1 this week, −2.7 over weeks 15–17), them +2.1 (+3.1 over weeks 15–17); about even by season value: not worth it for your lineup.",
  "ros": {
   "give": 271,
   "get": 270,
@@ -748,14 +748,14 @@
   "lineup_words": "Bo Nix (from the trade) starts at Superflex in place of Jalen Hurts (traded)."
  },
  "window_words": "over weeks 15–17 in total",
- "hold_words": "-2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "hold_words": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "hold": {
   "hold": null,
-  "waiver": "-2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
   "waiver_gain": 0.06
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.1** this week and **-2.7** over weeks 15–17; them **+2.1** and **+3.1**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.1** this week and **−2.7** over weeks 15–17; them **+2.1** and **+3.1**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **195**, you get **194**: about even.",
   "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 271, you get 270.",
   "size": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 50 season points; costs 0.0 over weeks 15–17) to stay at 21 players.",
@@ -805,7 +805,7 @@
  },
  "beyond_alternative": -2.75,
  "beats_alternative": false,
- "alternative_words": "-2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "alternative_words": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -956,7 +956,7 @@
     -0.92
    ],
    "raw_window": -2.69,
-   "words": "Your starters: -0.8 this week, -2.7 over weeks 15–17."
+   "words": "Your starters: −0.8 this week, −2.7 over weeks 15–17."
   },
   "their_effect": {
    "this_week": 1.14,
@@ -1100,7 +1100,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -2.8 beyond your best waiver move over weeks 15–17 (the bar is 1 point); Pitts n’ Titts's starters gain -0.8 beyond their own best move over weeks 15–17.",
+   "words": "Not worth proposing: your starters end 2.8 behind your best waiver move over weeks 15–17 (the bar is 1 point); Pitts n’ Titts's starters end 0.8 behind their own best move over weeks 15–17.",
    "plausibility": "Plausible offer"
   }
  },
@@ -1195,11 +1195,11 @@
    "title": "Effect on their starters",
    "need": "puts Nix at their Superflex in place of Hurts"
   },
-  "verdict": "Does not help your lineup (-2.1 this week, -2.7 over weeks 15–17), them +2.1 (+3.1 over weeks 15–17); about even by season value: not worth it for your lineup.",
-  "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (-2.1 this week, -2.7 over weeks 15–17), them +2.1 (+3.1 over weeks 15–17); about even by season value: not worth it for your lineup.",
+  "verdict": "Does not help your lineup (−2.1 this week, −2.7 over weeks 15–17), them +2.1 (+3.1 over weeks 15–17); about even by season value: not worth it for your lineup.",
+  "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (−2.1 this week, −2.7 over weeks 15–17), them +2.1 (+3.1 over weeks 15–17); about even by season value: not worth it for your lineup.",
   "effect_words": "Your starting lineup: about 2.1 fewer points this week, about 2.7 fewer points in total over weeks 15–17.",
   "their_effect_words": "Pitts n’ Titts's starting lineup: about 2.1 more points this week, about 3.1 more points in total over weeks 15–17.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.1** this week and **-2.7** over weeks 15–17; them **+2.1** and **+3.1**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.1** this week and **−2.7** over weeks 15–17; them **+2.1** and **+3.1**.",
   "strip": {
    "weeks": [
     15,
@@ -1331,14 +1331,14 @@
     "theirs": -0.76
    },
    "beats": false,
-   "words": "-2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "words": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
    "other_objective": null
   },
   "recommendation": {
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -2.8 beyond your best waiver move over weeks 15–17 (the bar is 1 point); Pitts n’ Titts's starters gain -0.8 beyond their own best move over weeks 15–17.",
+   "words": "Not worth proposing: your starters end 2.8 behind your best waiver move over weeks 15–17 (the bar is 1 point); Pitts n’ Titts's starters end 0.8 behind their own best move over weeks 15–17.",
    "plausibility": "Plausible offer"
   },
   "changes": {
@@ -1461,7 +1461,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -2.1 this week, -2.7 over weeks 15–17; Pitts n’ Titts's +2.1 and +3.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −2.1 this week, −2.7 over weeks 15–17; Pitts n’ Titts's +2.1 and +3.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -2.14,
     "gain_window": -2.69,

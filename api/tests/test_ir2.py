@@ -122,7 +122,8 @@ def decide(b: RosterBoard, pool, me: int, give: list[str], get: list[str], weeks
 
 
 def s1(x: float) -> str:
-    return f"{x:+.1f}" if abs(x) >= 0.05 else "+0.0"
+    """The decision's own sign (IT-1: one minus sign, U+2212)."""
+    return (f"{x:+.1f}" if abs(x) >= 0.05 else "+0.0").replace("-", "\u2212")
 
 
 def assert_reconciles(d: dict, card: dict, window: str = "next4") -> None:

@@ -895,3 +895,15 @@ sentence of its own, only where they appear.
 | The card's points chart, the card's week of a player who sits | Week 5 vs CIN: not played yet · projected 0.0 (0.0–0.0) (the head and the projection block say why) |
 | My Week, a receiver for an open spot in the submitted lineup (was "… in place of Mahomes" at WR2) | Start Wilson at WR (an open spot in your Sleeper lineup). |
 <!-- ---- end IT-3 -->
+<!-- ---- IT-1 -->
+## One basis on every trade screen (Wave I-T, IT-1; the Trade Finder, the calculator)
+
+| Where | Words |
+|---|---|
+| Calculator, under the four tiles (when the pickups change a total) | Totals with the assumed pickups for empty slots; your roster alone, as My Team shows it: 97.54 → 118.18 this week. |
+| Every sentence of the verdict, the card and the Finder | One minus sign: "−0.3" (U+2212), the tiles' sign — never "-0.3". |
+| Finder card / calculator roster, a player who sits | The league screens' one note, beside his name: "IR (knee - acl) · Sleeper, Sep 28" (`league_gate.note`, My Week's cell). |
+| The Finder's "Your best move" and every verdict's waiver move | the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt) — the best move on the same basis as the trades (searched there; the roster-only pick is kept as `roster_only_pick`). |
+| Finder rows | Each row's label, gains, week strip, alternative line and tier are the calculator's answer for that package (the dial's caption "…, against realistic replacements"); a trade that does not raise both lineups on that basis is not listed. |
+| Explore alternatives, when trades past the first three are also worth proposing | 3 more are worth proposing (after the first three, marked on their card). The others raise both starting lineups, but do not beat both teams' own best alternative by 1 point, or are not a plausible offer: ideas to look at, not trades to propose. |
+<!-- ---- end IT-1 -->

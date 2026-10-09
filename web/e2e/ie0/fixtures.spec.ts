@@ -157,23 +157,37 @@ test("Finder → Try it: a package with a team QB opens with every asset ticked 
   await pickBigMac(page);
   const sent = watchEvaluate(page);
   await page.goto(`/trades?${Q}`);
-  const row = page.getByTestId("partner-row").filter({ hasText: "Chicago Bears QB" }).filter({ hasText: "Tuten" }).first();
+  // IT-1 (re-saved on the calculator's basis): the package is read from the saved answer — the first suggestion that
+  // gives a team QB unit with another asset (today Chicago Bears QB + Tuten to Klaby Crew); it is not worth proposing,
+  // so it is behind "Explore alternatives": the card is found by its place (the credible cards, then the explored ones)
+  type X = { sleeper_id: string; player_name: string; position: string };
+  type R = { partner: number; tier?: string; give: X[]; get: X[] };
+  const ans = Object.entries(saved).find(([k]) => k.includes("/api/trades/partners"))![1].body as { partners: R[] };
+  const order = [...ans.partners.filter((r) => r.tier === "credible"), ...ans.partners.filter((r) => r.tier !== "credible").slice(0, 12)];
+  const idx = order.findIndex((r) => r.give.length > 1 && r.give.some((x) => x.position === "TMQB"));
+  expect(idx).toBeGreaterThanOrEqual(0);
+  const pk = order[idx];
+  const gids = pk.give.map((x) => x.sleeper_id);
+  const names = pk.give.map((x) => x.player_name);
+  await expect(page.getByTestId("best-partner")).toBeVisible();
+  if (order.some((r) => r.tier !== "credible")) await page.getByTestId("explore").locator("summary").first().click();
+  const row = page.getByTestId("partner-row").nth(idx);
   await expect(row).toBeVisible();
+  for (const n of names) await expect(row).toContainText(n);
   await row.getByTestId("try-partner").click();
   const calc = page.getByTestId("trade-calc");
   await expect(calc.getByTestId("trade-result")).toBeVisible();
-  await expect(page).toHaveURL(/give=mfl%3A0671,12490|give=mfl%3A0671%2C12490/);
-  await expect(give(page, "mfl:0671")).toBeChecked();
-  await expect(give(page, "12490")).toBeChecked();
-  await expect(calc.getByTestId("picked-give")).toHaveText("Chicago Bears QB + Bhayshul Tuten");
-  await expect(calc.getByTestId("trade-headline")).toContainText("Chicago Bears QB and Bhayshul Tuten");
-  expect(sent.at(-1)?.give).toEqual(["mfl:0671", "12490"]);
+  await expect(page).toHaveURL(new RegExp(`give=${gids.map(encodeURIComponent).join("(,|%2C)")}`));
+  for (const g of gids) await expect(give(page, g)).toBeChecked();
+  await expect(calc.getByTestId("picked-give")).toHaveText(names.join(" + "));
+  await expect(calc.getByTestId("trade-headline")).toContainText(names.join(" and "));
+  expect(sent.at(-1)?.give).toEqual(gids);
   // a shared link (a fresh page on the same URL) opens the same trade
   const url = page.url();
   const other = await page.context().newPage();
   await other.goto(url);
   await expect(other.getByTestId("trade-result")).toBeVisible();
-  await expect(other.getByTestId("picked-give")).toHaveText("Chicago Bears QB + Bhayshul Tuten");
+  await expect(other.getByTestId("picked-give")).toHaveText(names.join(" + "));
   await other.close();
   await noSidewaysScroll(page);
 });

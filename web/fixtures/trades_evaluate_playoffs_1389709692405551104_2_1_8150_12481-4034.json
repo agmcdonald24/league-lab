@@ -109,7 +109,7 @@
    "mine": 5.4,
    "theirs": -9.45
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-1.4** this week and **+5.4** over weeks 15–16; them **-0.1** and **-9.4**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−1.4** this week and **+5.4** over weeks 15–16; them **−0.1** and **−9.4**."
  },
  "interest": {
   "score": 0,
@@ -137,8 +137,8 @@
     "player_name": "Cameron Dicker"
    },
    "QB": {
-    "season_points": 231,
-    "player_name": "Malik Willis"
+    "season_points": 239,
+    "player_name": "Kyler Murray"
    },
    "RB": {
     "season_points": 103,
@@ -199,8 +199,8 @@
    }
   ]
  },
- "verdict": "Helps your lineup +5.4 over weeks 15–16 (-1.4 this week), costs their lineup 0.1 (9.4 over weeks 15–16); you get more season value: a lineup loss for them.",
- "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280) and [Cam Skattebo](/player/00-0040715).** Helps your lineup +5.4 over weeks 15–16 (-1.4 this week), costs their lineup 0.1 (9.4 over weeks 15–16); you get more season value: a lineup loss for them.",
+ "verdict": "Helps your lineup +5.4 over weeks 15–16 (−1.4 this week), costs their lineup 0.1 (9.4 over weeks 15–16); you get more season value: a lineup loss for them.",
+ "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280) and [Cam Skattebo](/player/00-0040715).** Helps your lineup +5.4 over weeks 15–16 (−1.4 this week), costs their lineup 0.1 (9.4 over weeks 15–16); you get more season value: a lineup loss for them.",
  "ros": {
   "give": 186,
   "get": 345,
@@ -234,7 +234,7 @@
   },
   "words": "League rank, week 5: you 10th → **10th** of 10, Daejon Loves PR team 9th → 9th; depth: you 6th → **5th** of 10, Daejon Loves PR team 5th → 8th."
  },
- "size_words": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 46 season points; costs 0.0 over weeks 15–16) to stay at 15 players; they open a spot: the best free agent for it is [Malik Willis](/player/00-0038128) (QB, +3.6 over weeks 15–16).",
+ "size_words": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 46 season points; costs 0.0 over weeks 15–16) to stay at 15 players; they open a spot: the best free agent for it is [Kyler Murray](/player/00-0035228) (QB, +6.7 over weeks 15–16).",
  "sides": {
   "mine": {
    "roster_id": 2,
@@ -467,12 +467,12 @@
    "size_after": 14,
    "opened": 1,
    "fill": {
-    "sleeper_id": "8161",
+    "sleeper_id": "5849",
     "week_gains": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
-    "horizon_gain": 3.62
+    "horizon_gain": 6.65
    },
    "price_out": 166,
    "price_in": 101,
@@ -808,11 +808,11 @@
   }
  },
  "fill_players": {
-  "8161": {
-   "player_name": "Malik Willis",
+  "5849": {
+   "player_name": "Kyler Murray",
    "position": "QB",
-   "gsis_id": "00-0038128",
-   "sleeper_id": "8161"
+   "gsis_id": "00-0035228",
+   "sleeper_id": "5849"
   }
  },
  "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)",
@@ -1004,10 +1004,10 @@
   "waiver_gain": 3.85
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-1.4** this week and **+5.4** over weeks 15–16; them **-0.1** and **-9.4**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−1.4** this week and **+5.4** over weeks 15–16; them **−0.1** and **−9.4**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **101**, you get **166**: you get 65 more.",
   "ros": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 186, you get 345.",
-  "size": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 46 season points; costs 0.0 over weeks 15–16) to stay at 15 players; they open a spot: the best free agent for it is [Malik Willis](/player/00-0038128) (QB, +3.6 over weeks 15–16).",
+  "size": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 46 season points; costs 0.0 over weeks 15–16) to stay at 15 players; they open a spot: the best free agent for it is [Kyler Murray](/player/00-0035228) (QB, +6.7 over weeks 15–16).",
   "ranks": "League rank, week 5: you 10th → **10th** of 10, Daejon Loves PR team 9th → 9th; depth: you 6th → **5th** of 10, Daejon Loves PR team 5th → 8th.",
   "season_value": "Season value above replacement: you give 101, you get 166 (you get 65 more). You get 2 players for 1: 1 more roster spot used."
  },
@@ -1217,7 +1217,7 @@
     -4.57
    ],
    "raw_window": -9.45,
-   "words": "Daejon Loves PR team's starters: -4.9 this week, -9.4 over weeks 15–16."
+   "words": "Daejon Loves PR team's starters: −4.9 this week, −9.4 over weeks 15–16."
   },
   "depth_cost": {
    "mine": "You lose Jaylen Wright, a backup RB: 1 RB left on your bench who can play in week 5 (Zach Charbonnet in the IR slot and Jonah Coleman in the IR slot cannot). You use 1 more roster spot.",
@@ -1271,9 +1271,9 @@
    "theirs": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "8161",
-     "gsis_id": "00-0038128",
-     "player_name": "Malik Willis",
+     "sleeper_id": "5849",
+     "gsis_id": "00-0035228",
+     "player_name": "Kyler Murray",
      "position": "QB"
     },
     "drop": {
@@ -1283,11 +1283,11 @@
      "position": "QB"
     },
     "open_spot": false,
-    "gain_week": 1.78,
-    "gain_window": 3.62,
+    "gain_week": 4.03,
+    "gain_window": 6.65,
     "by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
     "weeks": [
      15,
@@ -1296,21 +1296,21 @@
     "span": "weeks 15–16",
     "source": "fa_pool fill",
     "note": null,
-    "words": "the Malik Willis claim gives +3.6 over weeks 15–16 (drop Jalen Hurts)",
+    "words": "the Kyler Murray claim gives +6.7 over weeks 15–16 (drop Jalen Hurts)",
     "covered_by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
-    "covered_window": 3.62,
-    "covered_week": 1.78,
+    "covered_window": 6.65,
+    "covered_week": 4.03,
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
    },
-   "words": "Yours: add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Jalen Hurts: +3.6 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+   "words": "Yours: add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Jalen Hurts: +6.7 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
    "mine": 1.55,
-   "theirs": -13.07,
+   "theirs": -16.1,
    "margin": 1.0
   },
   "why_consider": [
@@ -1319,7 +1319,7 @@
   ],
   "why_refuse": [
    "Their starters lose 4.9 this week.",
-   "It does not improve their starters over weeks 15–16 (-9.4).",
+   "It does not improve their starters over weeks 15–16 (−9.4).",
    "They give 166 season value above replacement for 101: 65 more, over 25% of what you give."
   ],
   "plausibility": {
@@ -1353,7 +1353,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: Daejon Loves PR team's starters end 13.1 behind their own best move over weeks 15–16; they give 166 season value above replacement for 101: 65 more, over 25% of what you give.",
+   "words": "Not worth proposing: Daejon Loves PR team's starters end 16.1 behind their own best move over weeks 15–16; they give 166 season value above replacement for 101: 65 more, over 25% of what you give.",
    "plausibility": "Implausible"
   }
  },
@@ -1441,11 +1441,11 @@
    "title": "Effect on their starters",
    "need": "puts Williams at their RB in place of McCaffrey, puts Egbuka at their FLEX in place of Henderson and moves Henderson from FLEX to RB"
   },
-  "verdict": "Helps your lineup +5.4 over weeks 15–16 (-1.4 this week), costs their lineup 0.1 (9.4 over weeks 15–16); you get more season value: a lineup loss for them.",
-  "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280) and [Cam Skattebo](/player/00-0040715).** Helps your lineup +5.4 over weeks 15–16 (-1.4 this week), costs their lineup 0.1 (9.4 over weeks 15–16); you get more season value: a lineup loss for them.",
+  "verdict": "Helps your lineup +5.4 over weeks 15–16 (−1.4 this week), costs their lineup 0.1 (9.4 over weeks 15–16); you get more season value: a lineup loss for them.",
+  "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280) and [Cam Skattebo](/player/00-0040715).** Helps your lineup +5.4 over weeks 15–16 (−1.4 this week), costs their lineup 0.1 (9.4 over weeks 15–16); you get more season value: a lineup loss for them.",
   "effect_words": "Your starting lineup: about 1.4 fewer points this week, about 5.4 more points in total over weeks 15–16.",
   "their_effect_words": "Daejon Loves PR team's starting lineup: about 0.1 fewer points this week, about 9.4 fewer points in total over weeks 15–16.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-1.4** this week and **+5.4** over weeks 15–16; them **-0.1** and **-9.4**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−1.4** this week and **+5.4** over weeks 15–16; them **−0.1** and **−9.4**.",
   "strip": {
    "weeks": [
     15,
@@ -1524,9 +1524,9 @@
    "theirs": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "8161",
-     "gsis_id": "00-0038128",
-     "player_name": "Malik Willis",
+     "sleeper_id": "5849",
+     "gsis_id": "00-0035228",
+     "player_name": "Kyler Murray",
      "position": "QB"
     },
     "drop": {
@@ -1536,11 +1536,11 @@
      "position": "QB"
     },
     "open_spot": false,
-    "gain_week": 1.78,
-    "gain_window": 3.62,
+    "gain_week": 4.03,
+    "gain_window": 6.65,
     "by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
     "weeks": [
      15,
@@ -1549,19 +1549,19 @@
     "span": "weeks 15–16",
     "source": "fa_pool fill",
     "note": null,
-    "words": "add Malik Willis, drop Jalen Hurts: +3.6 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Kyler Murray, drop Jalen Hurts: +6.7 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "covered_by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
-    "covered_window": 3.62,
-    "covered_week": 1.78,
+    "covered_window": 6.65,
+    "covered_week": 4.03,
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
    },
    "beyond": {
     "mine": 1.55,
-    "theirs": -13.07
+    "theirs": -16.1
    },
    "beats": true,
    "words": "+5.4 over weeks 15–16, 1.6 more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
@@ -1571,7 +1571,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: Daejon Loves PR team's starters end 13.1 behind their own best move over weeks 15–16; they give 166 season value above replacement for 101: 65 more, over 25% of what you give.",
+   "words": "Not worth proposing: Daejon Loves PR team's starters end 16.1 behind their own best move over weeks 15–16; they give 166 season value above replacement for 101: 65 more, over 25% of what you give.",
    "plausibility": "Implausible"
   },
   "changes": {
@@ -1851,7 +1851,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -1.4 this week, +5.4 over weeks 15–16; Daejon Loves PR team's -0.1 and -9.4. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −1.4 this week, +5.4 over weeks 15–16; Daejon Loves PR team's −0.1 and −9.4. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -1.35,
     "gain_window": 5.4,

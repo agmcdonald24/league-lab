@@ -106,7 +106,7 @@
    "mine": 1.07,
    "theirs": -1.07
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.1** this week and **+1.1** over weeks 5–8; them **+2.1** and **-1.1**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.1** this week and **+1.1** over weeks 5–8; them **+2.1** and **−1.1**."
  },
  "interest": {
   "score": 21,
@@ -174,8 +174,8 @@
    }
   ]
  },
- "verdict": "Helps your lineup +1.1 over weeks 5–8 (-2.1 this week), them +2.1 but -1.1 over weeks 5–8; about even by season value: a lineup loss for them.",
- "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Helps your lineup +1.1 over weeks 5–8 (-2.1 this week), them +2.1 but -1.1 over weeks 5–8; about even by season value: a lineup loss for them.",
+ "verdict": "Helps your lineup +1.1 over weeks 5–8 (−2.1 this week), them +2.1 but −1.1 over weeks 5–8; about even by season value: a lineup loss for them.",
+ "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Helps your lineup +1.1 over weeks 5–8 (−2.1 this week), them +2.1 but −1.1 over weeks 5–8; about even by season value: a lineup loss for them.",
  "ros": {
   "give": 271,
   "get": 270,
@@ -741,7 +741,7 @@
   "waiver_gain": 0.0
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.1** this week and **+1.1** over weeks 5–8; them **+2.1** and **-1.1**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.1** this week and **+1.1** over weeks 5–8; them **+2.1** and **−1.1**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **195**, you get **194**: about even.",
   "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 271, you get 270.",
   "size": "Roster size: no change (1 for 1).",
@@ -936,7 +936,7 @@
     2.24
    ],
    "raw_window": 1.07,
-   "words": "Your starters: -2.1 this week, +1.1 over weeks 5–8."
+   "words": "Your starters: −2.1 this week, +1.1 over weeks 5–8."
   },
   "their_effect": {
    "this_week": 2.14,
@@ -948,7 +948,7 @@
     -2.24
    ],
    "raw_window": -1.07,
-   "words": "Pitts n’ Titts's starters: +2.1 this week, -1.1 over weeks 5–8."
+   "words": "Pitts n’ Titts's starters: +2.1 this week, −1.1 over weeks 5–8."
   },
   "depth_cost": {
    "mine": null,
@@ -1060,7 +1060,7 @@
    "Bo Nix starts for them in weeks 5, 6, 7 and 8."
   ],
   "why_refuse": [
-   "It does not improve their starters over weeks 5–8 (-1.1)."
+   "It does not improve their starters over weeks 5–8 (−1.1)."
   ],
   "plausibility": {
    "key": "plausible",
@@ -1084,7 +1084,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: Pitts n’ Titts's starters gain -3.3 beyond their own best move over weeks 5–8.",
+   "words": "Not worth proposing: Pitts n’ Titts's starters end 3.3 behind their own best move over weeks 5–8.",
    "plausibility": "Plausible offer"
   }
  },
@@ -1172,11 +1172,11 @@
    "title": "Effect on their starters",
    "need": "puts Nix at their Superflex in place of Hurts"
   },
-  "verdict": "Helps your lineup +1.1 over weeks 5–8 (-2.1 this week), them +2.1 but -1.1 over weeks 5–8; about even by season value: a lineup loss for them.",
-  "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Helps your lineup +1.1 over weeks 5–8 (-2.1 this week), them +2.1 but -1.1 over weeks 5–8; about even by season value: a lineup loss for them.",
+  "verdict": "Helps your lineup +1.1 over weeks 5–8 (−2.1 this week), them +2.1 but −1.1 over weeks 5–8; about even by season value: a lineup loss for them.",
+  "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Helps your lineup +1.1 over weeks 5–8 (−2.1 this week), them +2.1 but −1.1 over weeks 5–8; about even by season value: a lineup loss for them.",
   "effect_words": "Your starting lineup: about 2.1 fewer points this week, about 1.1 more points in total over weeks 5–8.",
   "their_effect_words": "Pitts n’ Titts's starting lineup: about 2.1 more points this week, about 1.1 fewer points in total over weeks 5–8.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.1** this week and **+1.1** over weeks 5–8; them **+2.1** and **-1.1**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.1** this week and **+1.1** over weeks 5–8; them **+2.1** and **−1.1**.",
   "strip": {
    "weeks": [
     5,
@@ -1328,7 +1328,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: Pitts n’ Titts's starters gain -3.3 beyond their own best move over weeks 5–8.",
+   "words": "Not worth proposing: Pitts n’ Titts's starters end 3.3 behind their own best move over weeks 5–8.",
    "plausibility": "Plausible offer"
   },
   "changes": {
@@ -1474,7 +1474,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -2.1 this week, +1.1 over weeks 5–8; Pitts n’ Titts's +2.1 and -1.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −2.1 this week, +1.1 over weeks 5–8; Pitts n’ Titts's +2.1 and −1.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -2.14,
     "gain_window": 1.07,

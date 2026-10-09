@@ -96,7 +96,7 @@
    "mine": 0.08,
    "theirs": -0.08
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **+0.1** over weeks 15–16; them **+3.8** and **-0.1**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.8** this week and **+0.1** over weeks 15–16; them **+3.8** and **−0.1**."
  },
  "interest": {
   "score": 25,
@@ -124,8 +124,8 @@
     "player_name": "Cameron Dicker"
    },
    "QB": {
-    "season_points": 231,
-    "player_name": "Malik Willis"
+    "season_points": 239,
+    "player_name": "Kyler Murray"
    },
    "RB": {
     "season_points": 103,
@@ -172,8 +172,8 @@
    }
   ]
  },
- "verdict": "Helps your lineup +0.1 over weeks 15–16 (-3.8 this week), them +3.8 but -0.1 over weeks 15–16; about even by season value: a lineup loss for them.",
- "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280).** Helps your lineup +0.1 over weeks 15–16 (-3.8 this week), them +3.8 but -0.1 over weeks 15–16; about even by season value: a lineup loss for them.",
+ "verdict": "Helps your lineup +0.1 over weeks 15–16 (−3.8 this week), them +3.8 but −0.1 over weeks 15–16; about even by season value: a lineup loss for them.",
+ "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280).** Helps your lineup +0.1 over weeks 15–16 (−3.8 this week), them +3.8 but −0.1 over weeks 15–16; about even by season value: a lineup loss for them.",
  "ros": {
   "give": 186,
   "get": 190,
@@ -756,7 +756,7 @@
   "waiver_gain": 3.85
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **+0.1** over weeks 15–16; them **+3.8** and **-0.1**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.8** this week and **+0.1** over weeks 15–16; them **+3.8** and **−0.1**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **101**, you get **99**: about even.",
   "ros": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 186, you get 190.",
   "size": "Roster size: no change (1 for 1).",
@@ -939,7 +939,7 @@
     0.0
    ],
    "raw_window": -0.08,
-   "words": "Daejon Loves PR team's starters: -0.1 this week, -0.1 over weeks 15–16."
+   "words": "Daejon Loves PR team's starters: −0.1 this week, −0.1 over weeks 15–16."
   },
   "depth_cost": {
    "mine": null,
@@ -993,9 +993,9 @@
    "theirs": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "8161",
-     "gsis_id": "00-0038128",
-     "player_name": "Malik Willis",
+     "sleeper_id": "5849",
+     "gsis_id": "00-0035228",
+     "player_name": "Kyler Murray",
      "position": "QB"
     },
     "drop": {
@@ -1005,11 +1005,11 @@
      "position": "QB"
     },
     "open_spot": false,
-    "gain_week": 1.78,
-    "gain_window": 3.62,
+    "gain_week": 4.03,
+    "gain_window": 6.65,
     "by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
     "weeks": [
      15,
@@ -1018,21 +1018,21 @@
     "span": "weeks 15–16",
     "source": "fa_pool fill",
     "note": null,
-    "words": "the Malik Willis claim gives +3.6 over weeks 15–16 (drop Jalen Hurts)",
+    "words": "the Kyler Murray claim gives +6.7 over weeks 15–16 (drop Jalen Hurts)",
     "covered_by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
-    "covered_window": 3.62,
-    "covered_week": 1.78,
+    "covered_window": 6.65,
+    "covered_week": 4.03,
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
    },
-   "words": "Yours: add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Jalen Hurts: +3.6 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+   "words": "Yours: add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Jalen Hurts: +6.7 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
    "mine": -3.77,
-   "theirs": -3.7,
+   "theirs": -6.73,
    "margin": 1.0
   },
   "why_consider": [
@@ -1040,7 +1040,7 @@
   ],
   "why_refuse": [
    "Their starters lose 0.1 this week.",
-   "It does not improve their starters over weeks 15–16 (-0.1)."
+   "It does not improve their starters over weeks 15–16 (−0.1)."
   ],
   "plausibility": {
    "key": "plausible",
@@ -1064,7 +1064,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters end 3.8 behind your best waiver move over weeks 15–16 (the bar is 1 point); Daejon Loves PR team's starters end 3.7 behind their own best move over weeks 15–16.",
+   "words": "Not worth proposing: your starters end 3.8 behind your best waiver move over weeks 15–16 (the bar is 1 point); Daejon Loves PR team's starters end 6.7 behind their own best move over weeks 15–16.",
    "plausibility": "Plausible offer"
   }
  },
@@ -1138,11 +1138,11 @@
    "title": "Effect on their starters",
    "need": "puts Williams at their RB in place of McCaffrey"
   },
-  "verdict": "Helps your lineup +0.1 over weeks 15–16 (-3.8 this week), them +3.8 but -0.1 over weeks 15–16; about even by season value: a lineup loss for them.",
-  "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280).** Helps your lineup +0.1 over weeks 15–16 (-3.8 this week), them +3.8 but -0.1 over weeks 15–16; about even by season value: a lineup loss for them.",
+  "verdict": "Helps your lineup +0.1 over weeks 15–16 (−3.8 this week), them +3.8 but −0.1 over weeks 15–16; about even by season value: a lineup loss for them.",
+  "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280).** Helps your lineup +0.1 over weeks 15–16 (−3.8 this week), them +3.8 but −0.1 over weeks 15–16; about even by season value: a lineup loss for them.",
   "effect_words": "Your starting lineup: about 3.8 fewer points this week, about 0.1 more points in total over weeks 15–16.",
   "their_effect_words": "Daejon Loves PR team's starting lineup: about 3.8 more points this week, about 0.1 fewer points in total over weeks 15–16.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **+0.1** over weeks 15–16; them **+3.8** and **-0.1**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.8** this week and **+0.1** over weeks 15–16; them **+3.8** and **−0.1**.",
   "strip": {
    "weeks": [
     15,
@@ -1221,9 +1221,9 @@
    "theirs": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "8161",
-     "gsis_id": "00-0038128",
-     "player_name": "Malik Willis",
+     "sleeper_id": "5849",
+     "gsis_id": "00-0035228",
+     "player_name": "Kyler Murray",
      "position": "QB"
     },
     "drop": {
@@ -1233,11 +1233,11 @@
      "position": "QB"
     },
     "open_spot": false,
-    "gain_week": 1.78,
-    "gain_window": 3.62,
+    "gain_week": 4.03,
+    "gain_window": 6.65,
     "by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
     "weeks": [
      15,
@@ -1246,19 +1246,19 @@
     "span": "weeks 15–16",
     "source": "fa_pool fill",
     "note": null,
-    "words": "add Malik Willis, drop Jalen Hurts: +3.6 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Kyler Murray, drop Jalen Hurts: +6.7 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "covered_by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
-    "covered_window": 3.62,
-    "covered_week": 1.78,
+    "covered_window": 6.65,
+    "covered_week": 4.03,
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
    },
    "beyond": {
     "mine": -3.77,
-    "theirs": -3.7
+    "theirs": -6.73
    },
    "beats": false,
    "words": "+0.1 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
@@ -1268,7 +1268,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters end 3.8 behind your best waiver move over weeks 15–16 (the bar is 1 point); Daejon Loves PR team's starters end 3.7 behind their own best move over weeks 15–16.",
+   "words": "Not worth proposing: your starters end 3.8 behind your best waiver move over weeks 15–16 (the bar is 1 point); Daejon Loves PR team's starters end 6.7 behind their own best move over weeks 15–16.",
    "plausibility": "Plausible offer"
   },
   "changes": {
@@ -1391,7 +1391,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -3.8 this week, +0.1 over weeks 15–16; Daejon Loves PR team's +3.8 and -0.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −3.8 this week, +0.1 over weeks 15–16; Daejon Loves PR team's +3.8 and −0.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -3.78,
     "gain_window": 0.08,

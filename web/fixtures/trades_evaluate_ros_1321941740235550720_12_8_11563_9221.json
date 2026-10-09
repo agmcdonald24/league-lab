@@ -1,0 +1,2323 @@
+{
+ "league_id": "1321941740235550720",
+ "source": "database",
+ "roster_id": 12,
+ "partner": 8,
+ "partner_team": "Taco Corp.",
+ "week": 5,
+ "weeks": [
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17
+ ],
+ "span": "weeks 5–17",
+ "window": "ros",
+ "window_label": "Rest of season",
+ "window_why": "every week left to this league's final, playoffs included: the longest view, the least sure",
+ "give": [
+  {
+   "sleeper_id": "11563",
+   "gsis_id": "00-0039732",
+   "player_name": "Bo Nix",
+   "position": "QB",
+   "team": "DEN",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+   "this_week": 23.33,
+   "cannot_play": null,
+   "market_price": 195,
+   "season_points": 272,
+   "roster_id": 12
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "9221",
+   "gsis_id": "00-0039139",
+   "player_name": "Jahmyr Gibbs",
+   "position": "RB",
+   "team": "DET",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+   "this_week": 23.14,
+   "cannot_play": null,
+   "market_price": 178,
+   "season_points": 256,
+   "roster_id": 8
+  }
+ ],
+ "before": {
+  "mine": {
+   "this_week": 120.17,
+   "horizon": 1513.23,
+   "bench": 95.93,
+   "by_week": [
+    120.17,
+    106.3,
+    116.6,
+    115.38,
+    119.09,
+    116.72,
+    116.42,
+    116.24,
+    117.28,
+    114.89,
+    116.92,
+    118.88,
+    118.34
+   ]
+  },
+  "theirs": {
+   "this_week": 137.17,
+   "horizon": 1537.91,
+   "bench": 66.4,
+   "by_week": [
+    137.17,
+    94.25,
+    122.92,
+    119.9,
+    117.13,
+    108.46,
+    114.48,
+    121.55,
+    119.03,
+    120.15,
+    120.85,
+    121.82,
+    120.2
+   ]
+  }
+ },
+ "after": {
+  "mine": {
+   "this_week": 129.7,
+   "horizon": 1619.55,
+   "bench": 94.92,
+   "by_week": [
+    129.7,
+    104.64,
+    125.58,
+    124.13,
+    127.86,
+    126.45,
+    125.92,
+    125.65,
+    125.53,
+    125.33,
+    125.24,
+    127.15,
+    126.37
+   ]
+  },
+  "theirs": {
+   "this_week": 137.36,
+   "horizon": 1549.5,
+   "bench": 66.4,
+   "by_week": [
+    137.36,
+    105.42,
+    123.93,
+    121.29,
+    118.54,
+    94.25,
+    115.98,
+    122.34,
+    121.05,
+    120.77,
+    122.34,
+    124.16,
+    122.07
+   ]
+  }
+ },
+ "fit": {
+  "this_week": {
+   "mine": 9.53,
+   "theirs": 0.19
+  },
+  "window": {
+   "mine": 106.32,
+   "theirs": 11.59
+  },
+  "next_4": {
+   "mine": 106.32,
+   "theirs": 11.59
+  },
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+9.5** this week and **+106.3** over weeks 5–17; them **+0.2** and **+11.6**."
+ },
+ "interest": {
+  "score": 98,
+  "label": "Improves it a lot",
+  "their_gain": 11.59,
+  "you": 106.32,
+  "caption": "their starters over weeks 5–17, against realistic replacements",
+  "title": "Effect on their starters",
+  "need": "puts Nix at their Superflex in place of Odunze, moves Odunze from Superflex to FLEX and moves Swift from FLEX to RB"
+ },
+ "sanity": null,
+ "market": {
+  "give": 195,
+  "get": 178,
+  "season_points_give": 272,
+  "season_points_get": 256,
+  "unknown": [],
+  "replacement": {
+   "QB": {
+    "season_points": 77,
+    "player_name": "Athan Kaliakmanis"
+   },
+   "RB": {
+    "season_points": 77,
+    "player_name": "Justice Hill"
+   },
+   "TE": {
+    "season_points": 120,
+    "player_name": "Michael Mayer"
+   },
+   "WR": {
+    "season_points": 117,
+    "player_name": "Xavier Hutchinson"
+   }
+  },
+  "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **195**, you get **178**: about even.",
+  "players": [
+   {
+    "sleeper_id": "11563",
+    "gsis_id": "00-0039732",
+    "player_name": "Bo Nix",
+    "position": "QB",
+    "team": "DEN",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+    "this_week": 23.33,
+    "cannot_play": null,
+    "market_price": 195,
+    "season_points": 272,
+    "roster_id": 12,
+    "goes_to": "Taco Corp."
+   },
+   {
+    "sleeper_id": "9221",
+    "gsis_id": "00-0039139",
+    "player_name": "Jahmyr Gibbs",
+    "position": "RB",
+    "team": "DET",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+    "this_week": 23.14,
+    "cannot_play": null,
+    "market_price": 178,
+    "season_points": 256,
+    "roster_id": 8,
+    "goes_to": "You"
+   }
+  ]
+ },
+ "verdict": "Helps your lineup +9.5 this week (+106.3 over weeks 5–17), them +0.2 (+11.6 over weeks 5–17); about even by season value: helps both lineups.",
+ "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jahmyr Gibbs](/player/00-0039139).** Helps your lineup +9.5 this week (+106.3 over weeks 5–17), them +0.2 (+11.6 over weeks 5–17); about even by season value: helps both lineups.",
+ "ros": {
+  "give": 271,
+  "get": 263,
+  "window": "weeks 4–17",
+  "words": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 271, you get 263.",
+  "label": "Rest-of-season projected points",
+  "fairness": false
+ },
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    8,
+    4
+   ],
+   "theirs": [
+    3,
+    3
+   ],
+   "n": 12
+  },
+  "bench_value": {
+   "mine": [
+    2,
+    2
+   ],
+   "theirs": [
+    6,
+    6
+   ],
+   "n": 12
+  },
+  "words": "League rank, week 5: you 8th → **4th** of 12, Taco Corp. 3rd → 3rd; depth: you 2nd → **2nd** of 12, Taco Corp. 6th → 6th."
+ },
+ "size_words": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 50 season points; costs 0.0 over weeks 5–17) to stay at 21 players.",
+ "sides": {
+  "mine": {
+   "roster_id": 12,
+   "team_name": "Shake & Bake",
+   "gives": [
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 23.33,
+     "cannot_play": null,
+     "market_price": 195,
+     "season_points": 272,
+     "roster_id": 12
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "9221",
+     "gsis_id": "00-0039139",
+     "player_name": "Jahmyr Gibbs",
+     "position": "RB",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+     "this_week": 23.14,
+     "cannot_play": null,
+     "market_price": 178,
+     "season_points": 256,
+     "roster_id": 8
+    }
+   ],
+   "weeks": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+   ],
+   "before": {
+    "this_week": 120.17,
+    "horizon": 1504.27,
+    "bench": 95.93,
+    "by_week": [
+     120.17,
+     106.3,
+     116.6,
+     106.42,
+     119.09,
+     116.72,
+     116.42,
+     116.24,
+     117.28,
+     114.89,
+     116.92,
+     118.88,
+     118.34
+    ]
+   },
+   "after": {
+    "this_week": 129.7,
+    "horizon": 1610.59,
+    "bench": 94.92,
+    "by_week": [
+     129.7,
+     104.64,
+     125.58,
+     115.17,
+     127.86,
+     126.45,
+     125.92,
+     125.65,
+     125.53,
+     125.33,
+     125.24,
+     127.15,
+     126.37
+    ]
+   },
+   "gain_week": 9.53,
+   "gain_horizon": 106.32,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "11643",
+      "gsis_id": "00-0039874",
+      "player_name": "Jaylen Wright",
+      "position": "RB",
+      "team": "MIA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+      "this_week": 3.82,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 50,
+      "roster_id": 12
+     },
+     "horizon_loss": 0.0,
+     "season_points": 50
+    }
+   ],
+   "limit": 21,
+   "size_before": 22,
+   "size_after": 21,
+   "opened": 0,
+   "fill": null,
+   "price_out": 195,
+   "price_in": 178,
+   "points_out": 272,
+   "points_in": 256,
+   "starts": [
+    {
+     "sleeper_id": "9221",
+     "gsis_id": "00-0039139",
+     "player_name": "Jahmyr Gibbs",
+     "position": "RB",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+     "this_week": 23.14,
+     "cannot_play": null,
+     "market_price": 178,
+     "season_points": 256,
+     "roster_id": 8
+    },
+    {
+     "sleeper_id": "8161",
+     "gsis_id": "00-0038128",
+     "player_name": "Malik Willis",
+     "position": "QB",
+     "team": "MIA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/txvgdbwbryzyyqq6gfet",
+     "this_week": 19.37,
+     "cannot_play": null,
+     "market_price": 208,
+     "season_points": 285,
+     "roster_id": 12
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 23.33,
+     "cannot_play": null,
+     "market_price": 195,
+     "season_points": 272,
+     "roster_id": 12
+    },
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "this_week": 9.65,
+     "cannot_play": null,
+     "market_price": 39,
+     "season_points": 117,
+     "roster_id": 12
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 8,
+   "team_name": "Taco Corp.",
+   "gives": [
+    {
+     "sleeper_id": "9221",
+     "gsis_id": "00-0039139",
+     "player_name": "Jahmyr Gibbs",
+     "position": "RB",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+     "this_week": 23.14,
+     "cannot_play": null,
+     "market_price": 178,
+     "season_points": 256,
+     "roster_id": 8
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 23.33,
+     "cannot_play": null,
+     "market_price": 195,
+     "season_points": 272,
+     "roster_id": 12
+    }
+   ],
+   "weeks": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+   ],
+   "before": {
+    "this_week": 137.17,
+    "horizon": 1537.91,
+    "bench": 66.4,
+    "by_week": [
+     137.17,
+     94.25,
+     122.92,
+     119.9,
+     117.13,
+     108.46,
+     114.48,
+     121.55,
+     119.03,
+     120.15,
+     120.85,
+     121.82,
+     120.2
+    ]
+   },
+   "after": {
+    "this_week": 137.36,
+    "horizon": 1549.5,
+    "bench": 66.4,
+    "by_week": [
+     137.36,
+     105.42,
+     123.93,
+     121.29,
+     118.54,
+     94.25,
+     115.98,
+     122.34,
+     121.05,
+     120.77,
+     122.34,
+     124.16,
+     122.07
+    ]
+   },
+   "gain_week": 0.19,
+   "gain_horizon": 11.59,
+   "cuts": [],
+   "limit": 21,
+   "size_before": 20,
+   "size_after": 20,
+   "opened": 0,
+   "fill": null,
+   "price_out": 178,
+   "price_in": 195,
+   "points_out": 256,
+   "points_in": 272,
+   "starts": [
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 23.33,
+     "cannot_play": null,
+     "market_price": 195,
+     "season_points": 272,
+     "roster_id": 12
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "9221",
+     "gsis_id": "00-0039139",
+     "player_name": "Jahmyr Gibbs",
+     "position": "RB",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+     "this_week": 23.14,
+     "cannot_play": null,
+     "market_price": 178,
+     "season_points": 256,
+     "roster_id": 8
+    }
+   ]
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Aaron Rodgers",
+     "gsis_id": "00-0023459",
+     "value": 21.33,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Jahmyr Gibbs (new)",
+     "gsis_id": "00-0039139",
+     "value": 23.14,
+     "change": 23.14,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Emanuel Wilson",
+     "gsis_id": "00-0038797",
+     "value": 10.24,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Amon-Ra St. Brown",
+     "gsis_id": "00-0036963",
+     "value": 19.91,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 13.84,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "TE",
+     "player_name": "George Kittle",
+     "gsis_id": "00-0033288",
+     "value": 10.01,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Denzel Boston",
+     "gsis_id": "00-0041037",
+     "value": 11.86,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "Superflex",
+     "player_name": "Malik Willis",
+     "gsis_id": "00-0038128",
+     "value": 19.37,
+     "change": 19.37,
+     "no_projection": false,
+     "status": "in",
+     "fill": false
+    }
+   ],
+   "notes": [
+    "Malik Willis (from the bench) starts at QB in place of Bo Nix (traded).",
+    "Jahmyr Gibbs (from the trade) starts at RB in place of Jacory Croskey-Merritt (to the bench)."
+   ],
+   "closest_call": "Denzel Boston at FLEX, 0.04 ahead of the next option",
+   "out": [
+    {
+     "slot": "QB",
+     "player_name": "Bo Nix",
+     "gsis_id": "00-0039732",
+     "value": 23.33,
+     "change": -23.33,
+     "why": "traded"
+    },
+    {
+     "slot": "RB",
+     "player_name": "Jacory Croskey-Merritt",
+     "gsis_id": "00-0040242",
+     "value": 9.65,
+     "change": -9.65,
+     "why": "to the bench"
+    }
+   ],
+   "reshuffled": [],
+   "total": {
+    "before": 120.17,
+    "after": 129.7,
+    "change": 9.53
+   }
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Jared Goff",
+     "gsis_id": "00-0033106",
+     "value": 28.77,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Kyren Williams",
+     "gsis_id": "00-0037840",
+     "value": 21.1,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB2",
+     "player_name": "D'Andre Swift",
+     "gsis_id": "00-0036275",
+     "value": 14.91,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Ja'Marr Chase",
+     "gsis_id": "00-0036900",
+     "value": 13.94,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR2",
+     "player_name": "DK Metcalf",
+     "gsis_id": "00-0035640",
+     "value": 13.39,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "TE",
+     "player_name": "Mark Andrews",
+     "gsis_id": "00-0034753",
+     "value": 10.26,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Rome Odunze",
+     "gsis_id": "00-0039919",
+     "value": 11.66,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "Superflex",
+     "player_name": "Bo Nix (new)",
+     "gsis_id": "00-0039732",
+     "value": 23.33,
+     "change": 23.33,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
+    }
+   ],
+   "notes": [
+    "Bo Nix (from the trade) starts at Superflex in place of Rome Odunze.",
+    "Rome Odunze moves from Superflex to FLEX in place of D'Andre Swift.",
+    "D'Andre Swift moves from FLEX to RB in place of Jahmyr Gibbs (traded)."
+   ],
+   "closest_call": "Mark Andrews at TE, 0.32 ahead of the next option",
+   "out": [
+    {
+     "slot": "RB",
+     "player_name": "Jahmyr Gibbs",
+     "gsis_id": "00-0039139",
+     "value": 23.14,
+     "change": -23.14,
+     "why": "traded"
+    }
+   ],
+   "reshuffled": [
+    "Rome Odunze Superflex → FLEX",
+    "D'Andre Swift FLEX → RB"
+   ],
+   "total": {
+    "before": 137.17,
+    "after": 137.36,
+    "change": 0.19
+   }
+  }
+ },
+ "fill_players": {},
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)",
+ "starters_in": [
+  {
+   "player": {
+    "sleeper_id": "8161",
+    "gsis_id": "00-0038128",
+    "player_name": "Malik Willis",
+    "position": "QB",
+    "team": "MIA",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/txvgdbwbryzyyqq6gfet",
+    "this_week": 19.37,
+    "cannot_play": null,
+    "market_price": 208,
+    "season_points": 285,
+    "roster_id": 12
+   },
+   "slot": "QB",
+   "value": 19.37,
+   "how": "bench"
+  },
+  {
+   "player": {
+    "sleeper_id": "9221",
+    "gsis_id": "00-0039139",
+    "player_name": "Jahmyr Gibbs",
+    "position": "RB",
+    "team": "DET",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+    "this_week": 23.14,
+    "cannot_play": null,
+    "market_price": 178,
+    "season_points": 256,
+    "roster_id": 8
+   },
+   "slot": "RB",
+   "value": 23.14,
+   "how": "trade"
+  }
+ ],
+ "starters_out": [
+  {
+   "player": {
+    "sleeper_id": "11563",
+    "gsis_id": "00-0039732",
+    "player_name": "Bo Nix",
+    "position": "QB",
+    "team": "DEN",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+    "this_week": 23.33,
+    "cannot_play": null,
+    "market_price": 195,
+    "season_points": 272,
+    "roster_id": 12
+   },
+   "slot": "QB",
+   "value": 23.33,
+   "why": "traded"
+  },
+  {
+   "player": {
+    "sleeper_id": "12533",
+    "gsis_id": "00-0040242",
+    "player_name": "Jacory Croskey-Merritt",
+    "position": "RB",
+    "team": "WAS",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+    "this_week": 9.65,
+    "cannot_play": null,
+    "market_price": 39,
+    "season_points": 117,
+    "roster_id": 12
+   },
+   "slot": "RB",
+   "value": 9.65,
+   "why": "to the bench"
+  }
+ ],
+ "cut": [
+  {
+   "player": {
+    "sleeper_id": "11643",
+    "gsis_id": "00-0039874",
+    "player_name": "Jaylen Wright",
+    "position": "RB",
+    "team": "MIA",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+    "this_week": 3.82,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 50,
+    "roster_id": 12
+   },
+   "season_points": 50,
+   "words": "You must cut Jaylen Wright to make room (he does not start for you: no lineup points lost)."
+  }
+ ],
+ "effect_words": "Your starting lineup: about 9.5 more points this week, about 106 more in total over weeks 5–17.",
+ "lineup_words": "Malik Willis (from the bench) starts at QB in place of Bo Nix (traded); Jahmyr Gibbs (from the trade) starts at RB in place of Jacory Croskey-Merritt (to the bench).",
+ "backup_words": "Backup coverage: you lose Jaylen Wright, a backup RB: 4 RB left on your bench who can play in week 5 (Adam Randall in the IR slot and Jonah Coleman in the IR slot cannot).",
+ "their_change": {
+  "gain_week": 0.19,
+  "gain_window": 11.59,
+  "starters_in": [
+   {
+    "player": {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 23.33,
+     "cannot_play": null,
+     "market_price": 195,
+     "season_points": 272,
+     "roster_id": 12
+    },
+    "slot": "Superflex",
+    "value": 23.33,
+    "how": "trade"
+   }
+  ],
+  "starters_out": [
+   {
+    "player": {
+     "sleeper_id": "9221",
+     "gsis_id": "00-0039139",
+     "player_name": "Jahmyr Gibbs",
+     "position": "RB",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+     "this_week": 23.14,
+     "cannot_play": null,
+     "market_price": 178,
+     "season_points": 256,
+     "roster_id": 8
+    },
+    "slot": "RB",
+    "value": 23.14,
+    "why": "traded"
+   }
+  ],
+  "effect_words": "Taco Corp.'s starting lineup: about 0.2 more points this week, about 12 more in total over weeks 5–17.",
+  "lineup_words": "Bo Nix (from the trade) starts at Superflex in place of Rome Odunze; Rome Odunze moves from Superflex to FLEX in place of D'Andre Swift; D'Andre Swift moves from FLEX to RB in place of Jahmyr Gibbs (traded)."
+ },
+ "window_words": "over weeks 5–17 in total",
+ "hold_words": "+106.3 over weeks 5–17, 106.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.1 over weeks 5–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+ "hold": {
+  "hold": null,
+  "waiver": "+106.3 over weeks 5–17, 106.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.1 over weeks 5–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+  "waiver_gain": 0.06
+ },
+ "how": {
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+9.5** this week and **+106.3** over weeks 5–17; them **+0.2** and **+11.6**.",
+  "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **195**, you get **178**: about even.",
+  "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 271, you get 263.",
+  "size": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 50 season points; costs 0.0 over weeks 5–17) to stay at 21 players.",
+  "ranks": "League rank, week 5: you 8th → **4th** of 12, Taco Corp. 3rd → 3rd; depth: you 2nd → **2nd** of 12, Taco Corp. 6th → 6th.",
+  "season_value": "Season value above replacement: you give 195, you get 178 (about even)."
+ },
+ "alternative": {
+  "kind": "waiver",
+  "player": {
+   "sleeper_id": "9482",
+   "gsis_id": "00-0039066",
+   "player_name": "Michael Mayer",
+   "position": "TE"
+  },
+  "drop": {
+   "sleeper_id": "4037",
+   "gsis_id": "00-0033921",
+   "player_name": "Chris Godwin Jr.",
+   "position": "WR"
+  },
+  "open_spot": false,
+  "gain_week": 0.0,
+  "gain_window": 0.06,
+  "by_week": [
+   0.0,
+   0.0,
+   0.0,
+   8.96,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.06
+  ],
+  "weeks": [
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17
+  ],
+  "span": "weeks 5–17",
+  "source": "fa_pool fill",
+  "note": null,
+  "words": "add Michael Mayer, drop Chris Godwin Jr.: +0.1 over weeks 5–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+  "covered_by_week": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.06
+  ],
+  "covered_window": 0.06,
+  "covered_week": 0.0,
+  "availability": "claim",
+  "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+ },
+ "beyond_alternative": 106.26,
+ "beats_alternative": true,
+ "alternative_words": "+106.3 over weeks 5–17, 106.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.1 over weeks 5–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+ "other_objective": null,
+ "strip": {
+  "weeks": [
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17
+  ],
+  "mine": [
+   9.53,
+   -1.66,
+   8.98,
+   8.75,
+   8.77,
+   9.73,
+   9.5,
+   9.41,
+   8.25,
+   10.44,
+   8.32,
+   8.27,
+   8.03
+  ],
+  "theirs": [
+   0.19,
+   11.17,
+   1.01,
+   1.39,
+   1.41,
+   -14.21,
+   1.5,
+   0.79,
+   2.02,
+   0.62,
+   1.49,
+   2.34,
+   1.87
+  ]
+ },
+ "story": {
+  "this_week": {
+   "week": 5,
+   "change": 9.53,
+   "kind": "gain"
+  },
+  "window": {
+   "change": 106.32,
+   "kind": "gain"
+  },
+  "by_week": [
+   {
+    "week": 5,
+    "change": 9.53
+   },
+   {
+    "week": 6,
+    "change": -1.66
+   },
+   {
+    "week": 7,
+    "change": 8.98
+   },
+   {
+    "week": 8,
+    "change": 8.75
+   },
+   {
+    "week": 9,
+    "change": 8.77
+   },
+   {
+    "week": 10,
+    "change": 9.73
+   },
+   {
+    "week": 11,
+    "change": 9.5
+   },
+   {
+    "week": 12,
+    "change": 9.41
+   },
+   {
+    "week": 13,
+    "change": 8.25
+   },
+   {
+    "week": 14,
+    "change": 10.44
+   },
+   {
+    "week": 15,
+    "change": 8.32
+   },
+   {
+    "week": 16,
+    "change": 8.27
+   },
+   {
+    "week": 17,
+    "change": 8.03
+   }
+  ],
+  "words": "Your lineup gains 9.5 this week and 106.3 over weeks 5–17 in total (week 6 loses 1.7)."
+ },
+ "values": {
+  "projected_points": {
+   "label": "Projected points",
+   "words": "One player's forecast for one week, in this league's scoring (the lineup tables)."
+  },
+  "starter_points": {
+   "label": "Starter points",
+   "mine": 106.32,
+   "theirs": 11.59,
+   "this_week": {
+    "mine": 9.53,
+    "theirs": 0.19
+   },
+   "words": "Your starting lineup: about 9.5 more points this week, about 106 more in total over weeks 5–17."
+  },
+  "depth": {
+   "label": "Backup coverage",
+   "mine": {
+    "before": 95.93,
+    "after": 94.92
+   },
+   "theirs": {
+    "before": 66.4,
+    "after": 66.4
+   },
+   "words": "Backup coverage: you lose Jaylen Wright, a backup RB: 4 RB left on your bench who can play in week 5 (Adam Randall in the IR slot and Jonah Coleman in the IR slot cannot)."
+  },
+  "season_value": {
+   "label": "Season value above replacement",
+   "give": 195,
+   "get": 178,
+   "unknown": [],
+   "fairness": true,
+   "words": "Season value above replacement: you give 195, you get 178 (about even)."
+  },
+  "ros_points": {
+   "label": "Rest-of-season projected points",
+   "give": 271,
+   "get": 263,
+   "window": "weeks 4–17",
+   "fairness": false,
+   "words": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 271, you get 263."
+  }
+ },
+ "card": {
+  "give": [
+   {
+    "sleeper_id": "11563",
+    "gsis_id": "00-0039732",
+    "player_name": "Bo Nix",
+    "position": "QB",
+    "team": "DEN",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+    "this_week": 23.33,
+    "cannot_play": null,
+    "market_price": 195,
+    "season_points": 272,
+    "roster_id": 12
+   }
+  ],
+  "get": [
+   {
+    "sleeper_id": "9221",
+    "gsis_id": "00-0039139",
+    "player_name": "Jahmyr Gibbs",
+    "position": "RB",
+    "team": "DET",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+    "this_week": 23.14,
+    "cannot_play": null,
+    "market_price": 178,
+    "season_points": 256,
+    "roster_id": 8
+   }
+  ],
+  "partner": 8,
+  "drops": {
+   "mine": [
+    {
+     "player": {
+      "sleeper_id": "11643",
+      "gsis_id": "00-0039874",
+      "player_name": "Jaylen Wright",
+      "position": "RB",
+      "team": "MIA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+      "this_week": 3.82,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 50,
+      "roster_id": 12
+     },
+     "words": "You must cut Jaylen Wright."
+    }
+   ],
+   "theirs": []
+  },
+  "your_effect": {
+   "this_week": 9.53,
+   "window": 106.32,
+   "by_week": [
+    9.53,
+    -1.66,
+    8.98,
+    8.75,
+    8.77,
+    9.73,
+    9.5,
+    9.41,
+    8.25,
+    10.44,
+    8.32,
+    8.27,
+    8.03
+   ],
+   "raw_window": 106.32,
+   "words": "Your starters: +9.5 this week, +106.3 over weeks 5–17."
+  },
+  "their_effect": {
+   "this_week": 0.19,
+   "window": 11.59,
+   "by_week": [
+    0.19,
+    11.17,
+    1.01,
+    1.39,
+    1.41,
+    -14.21,
+    1.5,
+    0.79,
+    2.02,
+    0.62,
+    1.49,
+    2.34,
+    1.87
+   ],
+   "raw_window": 11.59,
+   "words": "Taco Corp.'s starters: +0.2 this week, +11.6 over weeks 5–17."
+  },
+  "depth_cost": {
+   "mine": "You lose Jaylen Wright, a backup RB: 4 RB left on your bench who can play in week 5 (Adam Randall in the IR slot and Jonah Coleman in the IR slot cannot).",
+   "theirs": null,
+   "roster_spots": 0,
+   "season_value": {
+    "give": 195,
+    "get": 178
+   },
+   "horizon": "This is a dynasty league: these numbers cover weeks of this season only; next season, ages and draft picks are not valued."
+  },
+  "waiver_alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "9482",
+     "gsis_id": "00-0039066",
+     "player_name": "Michael Mayer",
+     "position": "TE"
+    },
+    "drop": {
+     "sleeper_id": "4037",
+     "gsis_id": "00-0033921",
+     "player_name": "Chris Godwin Jr.",
+     "position": "WR"
+    },
+    "open_spot": false,
+    "gain_week": 0.0,
+    "gain_window": 9.02,
+    "by_week": [
+     0.0,
+     0.0,
+     0.0,
+     8.96,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.06
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17
+    ],
+    "span": "weeks 5–17",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Michael Mayer claim gives +9.0 over weeks 5–17 (drop Chris Godwin Jr.)",
+    "covered_by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.06
+    ],
+    "covered_window": 0.06,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "9482",
+     "gsis_id": "00-0039066",
+     "player_name": "Michael Mayer",
+     "position": "TE"
+    },
+    "drop": null,
+    "open_spot": true,
+    "gain_week": 0.0,
+    "gain_window": 2.22,
+    "by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     2.18,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.04
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17
+    ],
+    "span": "weeks 5–17",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Michael Mayer claim gives +2.2 over weeks 5–17 for an open spot",
+    "covered_by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     2.18,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.04
+    ],
+    "covered_window": 2.22,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+   },
+   "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.1 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer for an open roster spot: +2.2 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
+  },
+  "beyond": {
+   "mine": 106.26,
+   "theirs": 9.37,
+   "margin": 1.0
+  },
+  "why_consider": [
+   "Their starters gain +11.6 over weeks 5–17, 9.4 more than their best waiver move (+2.2 once empty slots are filled from the free pool).",
+   "Bo Nix starts for them in weeks 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16 and 17."
+  ],
+  "why_refuse": [],
+  "plausibility": {
+   "key": "plausible",
+   "label": "Plausible offer",
+   "reasons": []
+  },
+  "guardrails": [],
+  "legal": {
+   "ok": true,
+   "notes": [
+    "You must cut Jaylen Wright to make room."
+   ],
+   "checks": [
+    "ownership (trades.clean_package)",
+    "roster limits and required cuts (trades._after)",
+    "locked players (RosterBoard.is_locked)",
+    "position requirements (lineup.solve)",
+    "trade deadline (league settings)"
+   ]
+  },
+  "credible": true,
+  "recommendation": {
+   "credible": true,
+   "key": "worth_proposing",
+   "label": "Worth proposing",
+   "words": "Worth proposing: on this basis both lineups gain at least a point more than their own best waiver move, and it is a plausible offer.",
+   "plausibility": "Plausible offer"
+  }
+ },
+ "decision": {
+  "basis": "replacement",
+  "basis_label": "Against realistic replacements",
+  "basis_words": "Every number here fills an empty starting slot (a bye, a cut, a player traded away) with the best free agent who can play it that week, for both teams and never the same free agent for both, and compares the trade with each team's best waiver move.",
+  "weeks": [
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17
+  ],
+  "span": "weeks 5–17",
+  "window": "ros",
+  "this_week": 5,
+  "mine": {
+   "before": {
+    "this_week": 120.17,
+    "window": 1513.23,
+    "by_week": [
+     120.17,
+     106.3,
+     116.6,
+     115.38,
+     119.09,
+     116.72,
+     116.42,
+     116.24,
+     117.28,
+     114.89,
+     116.92,
+     118.88,
+     118.34
+    ]
+   },
+   "after": {
+    "this_week": 129.7,
+    "window": 1619.55,
+    "by_week": [
+     129.7,
+     104.64,
+     125.58,
+     124.13,
+     127.86,
+     126.45,
+     125.92,
+     125.65,
+     125.53,
+     125.33,
+     125.24,
+     127.15,
+     126.37
+    ]
+   },
+   "gain_week": 9.53,
+   "gain_window": 106.32,
+   "by_week": [
+    9.53,
+    -1.66,
+    8.98,
+    8.75,
+    8.77,
+    9.73,
+    9.5,
+    9.41,
+    8.25,
+    10.44,
+    8.32,
+    8.27,
+    8.03
+   ],
+   "cuts": [
+    {
+     "sleeper_id": "11643",
+     "gsis_id": "00-0039874",
+     "player_name": "Jaylen Wright",
+     "position": "RB",
+     "team": "MIA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+     "this_week": 3.82,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 50,
+     "roster_id": 12
+    }
+   ]
+  },
+  "theirs": {
+   "before": {
+    "this_week": 137.17,
+    "window": 1537.91,
+    "by_week": [
+     137.17,
+     94.25,
+     122.92,
+     119.9,
+     117.13,
+     108.46,
+     114.48,
+     121.55,
+     119.03,
+     120.15,
+     120.85,
+     121.82,
+     120.2
+    ]
+   },
+   "after": {
+    "this_week": 137.36,
+    "window": 1549.5,
+    "by_week": [
+     137.36,
+     105.42,
+     123.93,
+     121.29,
+     118.54,
+     94.25,
+     115.98,
+     122.34,
+     121.05,
+     120.77,
+     122.34,
+     124.16,
+     122.07
+    ]
+   },
+   "gain_week": 0.19,
+   "gain_window": 11.59,
+   "by_week": [
+    0.19,
+    11.17,
+    1.01,
+    1.39,
+    1.41,
+    -14.21,
+    1.5,
+    0.79,
+    2.02,
+    0.62,
+    1.49,
+    2.34,
+    1.87
+   ],
+   "cuts": []
+  },
+  "dial": {
+   "score": 98,
+   "label": "Improves it a lot",
+   "their_gain": 11.59,
+   "you": 106.32,
+   "caption": "their starters over weeks 5–17, against realistic replacements",
+   "title": "Effect on their starters",
+   "need": "puts Nix at their Superflex in place of Odunze, moves Odunze from Superflex to FLEX and moves Swift from FLEX to RB"
+  },
+  "verdict": "Helps your lineup +9.5 this week (+106.3 over weeks 5–17), them +0.2 (+11.6 over weeks 5–17); about even by season value: helps both lineups.",
+  "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jahmyr Gibbs](/player/00-0039139).** Helps your lineup +9.5 this week (+106.3 over weeks 5–17), them +0.2 (+11.6 over weeks 5–17); about even by season value: helps both lineups.",
+  "effect_words": "Your starting lineup: about 9.5 more points this week, about 106 more in total over weeks 5–17.",
+  "their_effect_words": "Taco Corp.'s starting lineup: about 0.2 more points this week, about 12 more in total over weeks 5–17.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+9.5** this week and **+106.3** over weeks 5–17; them **+0.2** and **+11.6**.",
+  "strip": {
+   "weeks": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+   ],
+   "mine": [
+    9.53,
+    -1.66,
+    8.98,
+    8.75,
+    8.77,
+    9.73,
+    9.5,
+    9.41,
+    8.25,
+    10.44,
+    8.32,
+    8.27,
+    8.03
+   ],
+   "theirs": [
+    0.19,
+    11.17,
+    1.01,
+    1.39,
+    1.41,
+    -14.21,
+    1.5,
+    0.79,
+    2.02,
+    0.62,
+    1.49,
+    2.34,
+    1.87
+   ]
+  },
+  "story": {
+   "this_week": {
+    "week": 5,
+    "change": 9.53,
+    "kind": "gain"
+   },
+   "window": {
+    "change": 106.32,
+    "kind": "gain"
+   },
+   "by_week": [
+    {
+     "week": 5,
+     "change": 9.53
+    },
+    {
+     "week": 6,
+     "change": -1.66
+    },
+    {
+     "week": 7,
+     "change": 8.98
+    },
+    {
+     "week": 8,
+     "change": 8.75
+    },
+    {
+     "week": 9,
+     "change": 8.77
+    },
+    {
+     "week": 10,
+     "change": 9.73
+    },
+    {
+     "week": 11,
+     "change": 9.5
+    },
+    {
+     "week": 12,
+     "change": 9.41
+    },
+    {
+     "week": 13,
+     "change": 8.25
+    },
+    {
+     "week": 14,
+     "change": 10.44
+    },
+    {
+     "week": 15,
+     "change": 8.32
+    },
+    {
+     "week": 16,
+     "change": 8.27
+    },
+    {
+     "week": 17,
+     "change": 8.03
+    }
+   ],
+   "words": "Your lineup gains 9.5 this week and 106.3 over weeks 5–17 in total (week 6 loses 1.7)."
+  },
+  "alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "9482",
+     "gsis_id": "00-0039066",
+     "player_name": "Michael Mayer",
+     "position": "TE"
+    },
+    "drop": {
+     "sleeper_id": "4037",
+     "gsis_id": "00-0033921",
+     "player_name": "Chris Godwin Jr.",
+     "position": "WR"
+    },
+    "open_spot": false,
+    "gain_week": 0.0,
+    "gain_window": 0.06,
+    "by_week": [
+     0.0,
+     0.0,
+     0.0,
+     8.96,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.06
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17
+    ],
+    "span": "weeks 5–17",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Michael Mayer, drop Chris Godwin Jr.: +0.1 over weeks 5–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.06
+    ],
+    "covered_window": 0.06,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "9482",
+     "gsis_id": "00-0039066",
+     "player_name": "Michael Mayer",
+     "position": "TE"
+    },
+    "drop": null,
+    "open_spot": true,
+    "gain_week": 0.0,
+    "gain_window": 2.22,
+    "by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     2.18,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.04
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17
+    ],
+    "span": "weeks 5–17",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Michael Mayer for an open roster spot: +2.2 over weeks 5–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     2.18,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.04
+    ],
+    "covered_window": 2.22,
+    "covered_week": 0.0,
+    "availability": "claim",
+    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+   },
+   "beyond": {
+    "mine": 106.26,
+    "theirs": 9.37
+   },
+   "beats": true,
+   "words": "+106.3 over weeks 5–17, 106.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.1 over weeks 5–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "other_objective": null
+  },
+  "recommendation": {
+   "credible": true,
+   "key": "worth_proposing",
+   "label": "Worth proposing",
+   "words": "Worth proposing: on this basis both lineups gain at least a point more than their own best waiver move, and it is a plausible offer.",
+   "plausibility": "Plausible offer"
+  },
+  "changes": {
+   "mine": [
+    {
+     "slot": "QB",
+     "slot_type": "QB",
+     "in": "8161",
+     "out": "11563",
+     "in_from": null,
+     "out_to": null,
+     "order": 1,
+     "slot_word": "QB",
+     "in_how": "bench",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "8161",
+      "gsis_id": "00-0038128",
+      "player_name": "Malik Willis",
+      "position": "QB",
+      "team": "MIA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/txvgdbwbryzyyqq6gfet",
+      "this_week": 19.37,
+      "cannot_play": null,
+      "market_price": 208,
+      "season_points": 285,
+      "roster_id": 12
+     },
+     "out_player": {
+      "sleeper_id": "11563",
+      "gsis_id": "00-0039732",
+      "player_name": "Bo Nix",
+      "position": "QB",
+      "team": "DEN",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+      "this_week": 23.33,
+      "cannot_play": null,
+      "market_price": 195,
+      "season_points": 272,
+      "roster_id": 12
+     },
+     "in_value": 19.37,
+     "out_value": 23.33,
+     "words": "Malik Willis (from the bench) starts at QB in place of Bo Nix (traded)"
+    },
+    {
+     "slot": "RB2",
+     "slot_type": "RB",
+     "in": "9221",
+     "out": "12533",
+     "in_from": null,
+     "out_to": null,
+     "order": 3,
+     "slot_word": "RB",
+     "in_how": "trade",
+     "out_why": "bench",
+     "in_player": {
+      "sleeper_id": "9221",
+      "gsis_id": "00-0039139",
+      "player_name": "Jahmyr Gibbs",
+      "position": "RB",
+      "team": "DET",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+      "this_week": 23.14,
+      "cannot_play": null,
+      "market_price": 178,
+      "season_points": 256,
+      "roster_id": 8
+     },
+     "out_player": {
+      "sleeper_id": "12533",
+      "gsis_id": "00-0040242",
+      "player_name": "Jacory Croskey-Merritt",
+      "position": "RB",
+      "team": "WAS",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+      "this_week": 9.65,
+      "cannot_play": null,
+      "market_price": 39,
+      "season_points": 117,
+      "roster_id": 12
+     },
+     "in_value": 23.14,
+     "out_value": 9.65,
+     "words": "Jahmyr Gibbs (from the trade) starts at RB in place of Jacory Croskey-Merritt (to the bench)"
+    }
+   ],
+   "theirs": [
+    {
+     "slot": "SUPER_FLEX",
+     "slot_type": "SUPER_FLEX",
+     "in": "11563",
+     "out": "11620",
+     "in_from": null,
+     "out_to": "FLEX",
+     "order": 8,
+     "slot_word": "Superflex",
+     "in_how": "trade",
+     "out_why": "slot",
+     "in_player": {
+      "sleeper_id": "11563",
+      "gsis_id": "00-0039732",
+      "player_name": "Bo Nix",
+      "position": "QB",
+      "team": "DEN",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+      "this_week": 23.33,
+      "cannot_play": null,
+      "market_price": 195,
+      "season_points": 272,
+      "roster_id": 12
+     },
+     "out_player": {
+      "sleeper_id": "11620",
+      "gsis_id": "00-0039919",
+      "player_name": "Rome Odunze",
+      "position": "WR",
+      "team": "CHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/niewdl2p2325kpohbw9v",
+      "this_week": 11.66,
+      "cannot_play": null,
+      "market_price": 32,
+      "season_points": 148,
+      "roster_id": 8
+     },
+     "in_value": 23.33,
+     "out_value": 11.66,
+     "words": "Bo Nix (from the trade) starts at Superflex in place of Rome Odunze"
+    },
+    {
+     "slot": "FLEX",
+     "slot_type": "FLEX",
+     "in": "11620",
+     "out": "6790",
+     "in_from": "SUPER_FLEX",
+     "out_to": "RB1",
+     "order": 7,
+     "slot_word": "FLEX",
+     "in_how": "slot",
+     "out_why": "slot",
+     "in_player": {
+      "sleeper_id": "11620",
+      "gsis_id": "00-0039919",
+      "player_name": "Rome Odunze",
+      "position": "WR",
+      "team": "CHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/niewdl2p2325kpohbw9v",
+      "this_week": 11.66,
+      "cannot_play": null,
+      "market_price": 32,
+      "season_points": 148,
+      "roster_id": 8
+     },
+     "out_player": {
+      "sleeper_id": "6790",
+      "gsis_id": "00-0036275",
+      "player_name": "D'Andre Swift",
+      "position": "RB",
+      "team": "CHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/owpmwzoilitcodc6cmxo",
+      "this_week": 14.91,
+      "cannot_play": null,
+      "market_price": 100,
+      "season_points": 177,
+      "roster_id": 8
+     },
+     "in_value": 11.66,
+     "out_value": 14.91,
+     "words": "Rome Odunze moves from Superflex to FLEX in place of D'Andre Swift"
+    },
+    {
+     "slot": "RB1",
+     "slot_type": "RB",
+     "in": "6790",
+     "out": "9221",
+     "in_from": "FLEX",
+     "out_to": null,
+     "order": 2,
+     "slot_word": "RB",
+     "in_how": "slot",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "6790",
+      "gsis_id": "00-0036275",
+      "player_name": "D'Andre Swift",
+      "position": "RB",
+      "team": "CHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/owpmwzoilitcodc6cmxo",
+      "this_week": 14.91,
+      "cannot_play": null,
+      "market_price": 100,
+      "season_points": 177,
+      "roster_id": 8
+     },
+     "out_player": {
+      "sleeper_id": "9221",
+      "gsis_id": "00-0039139",
+      "player_name": "Jahmyr Gibbs",
+      "position": "RB",
+      "team": "DET",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+      "this_week": 23.14,
+      "cannot_play": null,
+      "market_price": 178,
+      "season_points": 256,
+      "roster_id": 8
+     },
+     "in_value": 14.91,
+     "out_value": 23.14,
+     "words": "D'Andre Swift moves from FLEX to RB in place of Jahmyr Gibbs (traded)"
+    }
+   ],
+   "words": {
+    "mine": [
+     "Malik Willis (from the bench) starts at QB in place of Bo Nix (traded)",
+     "Jahmyr Gibbs (from the trade) starts at RB in place of Jacory Croskey-Merritt (to the bench)"
+    ],
+    "theirs": [
+     "Bo Nix (from the trade) starts at Superflex in place of Rome Odunze",
+     "Rome Odunze moves from Superflex to FLEX in place of D'Andre Swift",
+     "D'Andre Swift moves from FLEX to RB in place of Jahmyr Gibbs (traded)"
+    ]
+   }
+  },
+  "depth": {
+   "mine": {
+    "words": "you lose Jaylen Wright, a backup RB: 4 RB left on your bench who can play in week 5 (Adam Randall in the IR slot and Jonah Coleman in the IR slot cannot)",
+    "lost": [
+     {
+      "player": {
+       "sleeper_id": "11643",
+       "gsis_id": "00-0039874",
+       "player_name": "Jaylen Wright",
+       "position": "RB",
+       "team": "MIA",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+       "this_week": 3.82,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 50,
+       "roster_id": 12
+      },
+      "position": "RB",
+      "usable": [
+       "Jacory Croskey-Merritt",
+       "Ollie Gordon II",
+       "Kenny Gainwell",
+       "Najee Harris"
+      ],
+      "cannot_play": [
+       {
+        "player_name": "Adam Randall",
+        "why": "in the IR slot"
+       },
+       {
+        "player_name": "Jonah Coleman",
+        "why": "in the IR slot"
+       }
+      ],
+      "words": "you lose Jaylen Wright, a backup RB: 4 RB left on your bench who can play in week 5 (Adam Randall in the IR slot and Jonah Coleman in the IR slot cannot)"
+     }
+    ],
+    "joins": []
+   },
+   "theirs": {
+    "words": null,
+    "lost": [],
+    "joins": []
+   }
+  },
+  "fills": {
+   "mine": {
+    "rows": [
+     {
+      "week": 8,
+      "state": "before",
+      "player": {
+       "sleeper_id": "9482",
+       "gsis_id": "00-0039066",
+       "player_name": "Michael Mayer",
+       "position": "TE"
+      },
+      "value": 8.96
+     },
+     {
+      "week": 8,
+      "state": "after",
+      "player": {
+       "sleeper_id": "9482",
+       "gsis_id": "00-0039066",
+       "player_name": "Michael Mayer",
+       "position": "TE"
+      },
+      "value": 8.96
+     }
+    ],
+    "words": "Assumed pickups for your empty slots: without the trade, Michael Mayer (TE, week 8); with it, Michael Mayer (TE, week 8). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (FAAB blind bids) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   },
+   "theirs": {
+    "rows": [],
+    "words": null
+   }
+  },
+  "unfilled": {
+   "label": "If empty slots were left empty",
+   "words": "With nobody added for an empty slot (it counts 0): your starters +9.5 this week, +106.3 over weeks 5–17; Taco Corp.'s +0.2 and +11.6. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "mine": {
+    "gain_week": 9.53,
+    "gain_window": 106.32,
+    "by_week": [
+     9.53,
+     -1.66,
+     8.98,
+     8.75,
+     8.77,
+     9.73,
+     9.5,
+     9.41,
+     8.25,
+     10.44,
+     8.32,
+     8.27,
+     8.03
+    ],
+    "before": {
+     "this_week": 120.17,
+     "window": 1504.27
+    },
+    "after": {
+     "this_week": 129.7,
+     "window": 1610.59
+    }
+   },
+   "theirs": {
+    "gain_week": 0.19,
+    "gain_window": 11.59,
+    "by_week": [
+     0.19,
+     11.17,
+     1.01,
+     1.39,
+     1.41,
+     -14.21,
+     1.5,
+     0.79,
+     2.02,
+     0.62,
+     1.49,
+     2.34,
+     1.87
+    ],
+    "before": {
+     "this_week": 137.17,
+     "window": 1537.91
+    },
+    "after": {
+     "this_week": 137.36,
+     "window": 1549.5
+    }
+   }
+  },
+  "out_indefinitely": null
+ },
+ "provenance": {
+  "model_version": "v3.0",
+  "kd_model_version": null,
+  "published_at": "2026-10-05T12:21:31.576222+00:00",
+  "horizon": {
+   "first": 5,
+   "last": 17,
+   "market_week": 5,
+   "words": "weeks 5–17"
+  },
+  "checks": [
+   {
+    "span": "next",
+    "position": "QB",
+    "status": "graded",
+    "mae": 6.44,
+    "order": 0.587,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Quarterbacks next week: graded (order 0.59)"
+   },
+   {
+    "span": "next",
+    "position": "RB",
+    "status": "graded",
+    "mae": 4.52,
+    "order": 0.686,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Running backs next week: graded (order 0.69)"
+   },
+   {
+    "span": "later",
+    "position": "QB",
+    "status": "graded_weak",
+    "mae": 7.41,
+    "order": 0.495,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Quarterbacks two to eight weeks ahead: graded, weak (order 0.49)"
+   },
+   {
+    "span": "later",
+    "position": "RB",
+    "status": "graded",
+    "mae": 4.73,
+    "order": 0.636,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Running backs two to eight weeks ahead: graded (order 0.64)"
+   },
+   {
+    "span": "trade_gap",
+    "position": null,
+    "status": "not_graded",
+    "mae": null,
+    "order": null,
+    "ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+    "words": "The trade's range: not graded"
+   }
+  ],
+  "status": "not_graded",
+  "beta": true,
+  "words": "Beta · Model v3.0, data published 5 Oct, 8:21 am ET · weeks 5–17 · checked on 2021–2025: next week graded; two to eight weeks ahead graded, quarterbacks weak; the trade's range not graded."
+ },
+ "caveats": [],
+ "caveat_effect": null,
+ "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+}
