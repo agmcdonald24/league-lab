@@ -8,8 +8,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `report_block`: the one question, and one week's own injury-report status asked through the gate — the lineup
   solver keeps it beside the stored record (frozen at the week's first kickoff). The caches that hold published
   numbers register as `published` (dropped at a new publication). `image.yml` runs on `tests/**`, `scripts/gate.sh`
-  and `scripts/post_deploy_check.py`; `nightly.yml`'s "already published today" is New York's morning. Questionable
-  is not scaled (docs/STATUS.md § "Wave I-S": the decisions, the rehearsal, what is not done).
+  and `scripts/post_deploy_check.py`; `nightly.yml`'s "already published today" is New York's morning.
+  `assert_waiver_moves_are_legal` no longer tests the old status field (it failed 385 legal adds on the rehearsal and
+  is a hard step); `assert_waiver_adds_do_not_sit` (Sleeper's directory; a warning in the builds, an error in the
+  nightly's soft availability step). The card, the watchlist row and the console's player page keep this week's own
+  injury report when the live sources say nothing (`player.status_note`). Questionable is not scaled
+  (docs/STATUS.md § "Wave I-S": the decisions, the rehearsal, what is not done).
 - **IS-4 — what only the hosted setup can break.** `scripts/pooler_check.sh` runs the readiness probe, the API's pool,
   the usage writer, the sync's checks and the post-deploy check through a local transaction-mode PgBouncer (it fails on
   `748ff76`'s probe, passes now); a statement timeout is "query" on `/api/ready`; a new publication drops the API's

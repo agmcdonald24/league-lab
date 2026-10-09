@@ -394,7 +394,11 @@ number is worse, say so and show it.
   the week's own injury report through the gate (`availability_gate.report_block`), and the screens ask Sleeper and
   ESPN at request time. **Before a merge that touches a connection, a cache or the publish: `scripts/pooler_check.sh`**
   (a local transaction-mode PgBouncer; it reproduces the afternoon's `/api/ready` 503). A cache that holds published
-  numbers is created with `memo.region(..., published=True)` so a new publication drops it within 30 s. A package
+  numbers is created with `memo.region(..., published=True)` so a new publication drops it within 30 s. **A dev who changes what a stored
+  table means runs the nightly's middle on its copy (`/home/claude/waveIS/is_chain.sh`: full dbt build, `project`,
+  the projection marts, the guards, the audit), not `project` alone**: the merged tree failed a hard dbt guard
+  (`assert_waiver_moves_are_legal`, still reading last week's status) that would have stopped every nightly; a
+  guard on stored rows that runs before `project` must never test something that can change overnight. A package
   that would change every saved answer of a screen (the Finder) needs its own evening: IS-3's items 1, 2 and 5 are
   the next build's first package. Resuming the morning's developers on their own packages worked (three of four).
 * **Wave I-R (2026-10-08; STATUS § "Wave I-R (Iteration 28) — dependability", the PO section first)**: a player on

@@ -16270,3 +16270,623 @@ had no `decision`, so the screen printed "This answer has no verdict: ask again.
   from how often Doubtful players have played (it is in the injury-report history); the post-publish check should
   fail the run once `/api/ready` is green; `set` the SQL cache to drop at a new publication id instead of waiting
   ten minutes.
+
+## Wave I-S (Iteration 29) — dependability, second round
+
+### PO merge — Wave I-S, 2026-10-08 (Thursday 17:46 – 20:45 ET; Doubtful, the same check inside a league, the hosted-only bug made catchable, the trade tests whole)
+
+* **Why**: Andrew, 17:46, to the PO's roadmap: "cool. carry on building please." The first group of that roadmap:
+  a Doubtful player (Breece Hall, "Doubtful (quadriceps) · Sleeper, Oct 7") was RB19 with a full projection on the
+  live Rankings — "the next thing a visitor points at"; inside a league a dozen readers still decided "can he play"
+  from the old status field or their own code sets; trade suggestions rank on the old basis; and `/api/ready` had
+  been 503 on the live site all afternoon from a connection option only the hosted pooler refuses. The brief is
+  `/home/claude/waveIS/BRIEF.md` in the sandbox. The standard it set: a stranger must not find, in ten seconds, a
+  player who will not play ranked as if he will, or two screens that disagree about the same player or trade.
+* **How it ran**: four devs in one message at 17:55 from `main` `76b98df` — three of them the morning's developers
+  resumed on their own packages (IS-1 = IR-1, IS-3 = IR-2, IS-4 = IR-3), IS-2 new; hard stop 20:00; all back by
+  19:41. Before branching the PO put one interface on `main`: `availability_gate.sits(block)` ("is he left out this
+  week?") with placeholder fields `unlikely` / `p_play`, so IS-1 could change what Doubtful means while IS-2 moved
+  the league readers, and the branches merged without one line of disagreement (CHANGELOG and WORDS kept both).
+* **What was built** (hand-backs below; tables in docs/METRICS.md):
+  * **IS-1 — Doubtful sits.** Measured first (2016–2025, QB / RB / WR / TE on the final report): **Doubtful 6 of
+    520 played (1.2 %; never above 4 % in a season); Questionable 2,860 of 4,294 (66.6 %).** The rule was written
+    before the numbers (under 25 % = "unlikely": treated as not playing this week, later weeks kept): Doubtful gets
+    0 from `project` with the reason, is not ranked or tiered, and is listed under "Unlikely to play" with
+    "players listed doubtful have played about 1 in 100 times"; the start answer says so. Questionable stays ranked
+    and flagged. The older overlay's code sets are now views of the gate's (one source). The "Not playing" group
+    has two labelled parts and leads with the players a visitor looks for. Kickers' NFL-wide lines, the value pane
+    and the player page's preview are gated at request time; the house rest-of-season mart withholds a player out
+    indefinitely (NULL) instead of 0.0 over one game. The audit's first line counts "cannot play or are unlikely to
+    play" and reads the directory only.
+  * **IS-2 — inside a league.** Every league reader asks the one question (`api/league_lab_api/league_gate.py`;
+    `src/league_lab/league_status.py` for code that cannot import the API): the Waivers browse, the trade fill, the
+    free-agent lists, replacement level, the scenario expiry, the on-demand lineup values, the card, the lineup,
+    the team brief. My Week, Team, Waivers and the league card show the status, its source and date beside the zero
+    ("IR (ankle) · Sleeper, Sep 26"). On the real copy: of 514 free-agent rows one changes — **Kyler Murray was
+    hidden from League of Scrubs' free agents by last week's "Out" while the Rankings ranked him QB9** — and 59 of
+    291 rostered players' status lines change (34 lose last week's word, 17 gain a reserve list, 8 change word).
+    Found on the way: Waivers answered 500 on last night's schema (a missing block became NaN); fixed and tested.
+  * **IS-4 — the hosted-only bug made catchable.** `scripts/pooler_check.sh`: a local PgBouncer in transaction mode
+    in front of a sandbox database, and through it the readiness probe, the API's pool past the prepare threshold,
+    the usage writer, the sync's verification queries and the post-deploy check. **It fails on `748ff76`'s probe
+    with the pooler's own words — "unsupported startup parameter in options: statement_timeout=5000" — and passes
+    on the PO's fix**: the afternoon's diagnosis by elimination is now a reproduction. Also: a statement timeout
+    on `/api/ready` is "query", not "the database does not answer"; **a new publication drops the published caches
+    within 30 s** (`memo.region(..., published=True)`, the publication id read on the pool at most every 30 s);
+    the trigger Worker's source counts New York's morning (not deployed: that is Andrew's Cloudflare).
+  * **IS-3 — the trade tests whole.** The three `test.fixme` trades are legal trades with the same meaning again
+    (Scrubs: Kyren Williams for McCaffrey, + Skattebo flips the dial; Folk for Dak Prescott is "Implausible: a K
+    for a starter"); the full e2e is 595 passed, 0 failed. `evaluate` profiled: 0.67 s for a new package on a warm
+    context (the morning's "1.2 s" was one cold call that built the context); no change needed. **Not done: the
+    Finder's partner rows on the verdict's basis, the best waiver move searched on the basis, one minus sign** —
+    every saved Finder answer has to be re-saved for it and it did not fit before 20:00.
+* **What the rehearsal caught — it would have stopped tonight's refresh.** The projection marts ran red after the
+  merged `project`: **`assert_waiver_moves_are_legal` failed 385 rows**. That guard still required a waiver add to
+  be "not Out" by `mart_player_availability.injury_status` — nflverse's newest report row, which midweek is last
+  week's game status — while IS-2 had moved the engine to the one definition, so Kyler Murray, Jayden Daniels, Baker
+  Mayfield and seven more became legal adds the guard called illegal. It is a hard step: the nightly would have
+  stopped before publishing, every night. IS-2 ran `project` on its copy and not the marts' tests after it. **The
+  old-field clause is gone from the hard guard; who sits is its own guard, `assert_waiver_adds_do_not_sit`**: it
+  reads Sleeper's directory itself (a reserve list, or Out / Doubtful with news since the previous week's last
+  kickoff), a warning inside the builds and an error only in the nightly's soft availability step — because the
+  hard guard runs before `project` on the moves the previous night stored, and a status that changes overnight
+  must not lock the nightly out of ever recomputing them. **Rule: a dev who changes what a stored table means runs
+  the nightly's middle on its copy (`waveIS/is_chain.sh`), not `project` alone.**
+* **The PO's glue** (`44acd40`, `5dde8ca`):
+  * **The lineup solver keeps the week's own injury report as a second source, asked through the gate**
+    (`availability_gate.report_block`; `lineup._proposed_player`). IS-2 had moved it to the stored record alone —
+    and a week's stored record is written before its first kickoff and then frozen, so a player ruled Out on
+    Friday would have started in every nightly solve until Tuesday (before IS-2 he sat by a code test on the
+    report). `tests/test_lineup.py::test_the_weeks_own_injury_report_sits_a_player_who_has_no_stored_record`.
+  * **The card, the watchlist row and the console's player page keep THIS week's own injury report** when Sleeper,
+    ESPN and the stored record say nothing (`player.status_note`; the mart's row only when `injury_week =
+    next_week`). IS-2's card had dropped the report altogether: on the fixtures a player ruled Out on this week's
+    report showed "No injury designation" over a full projection. Last week's row is still dropped, which is the
+    point of IS-2: the parity tests' three stale cases (a "Questionable" and an "Out" from the week before) now say
+    "No injury designation" on both the API and the console page (`app/pages/0_Player.py`, PO-owned, ported).
+  * The caches that hold published numbers register as `published` (the gate's stored record, rankings, the value
+    pane, starters, the boards, priced leagues, rest-of-season, the matchup board, DFS pricing, the context
+    record): IS-4 had registered the SQL cache only.
+  * `image.yml`'s paths add `tests/**`, `scripts/gate.sh`, `scripts/post_deploy_check.py`; `nightly.yml`'s
+    "already published today" is New York's morning (an evening refresh after 20:00 is the next UTC day and made
+    the next morning's scheduled run skip itself).
+* **The PO's decisions**:
+  * **Questionable is not scaled.** IS-1's bias table says the stored number is about 58 % too high for a
+    Questionable player once the games he sits count as zero — which is the 67 % play rate said another way: the
+    number is "if he plays". A ranking by expected points would drop every Questionable starter below healthy
+    backups, which is not how anybody sets a lineup; the row keeps the flag, and "plays about 2 in 3" beside it is
+    the next step. Andrew can overrule (the candidate factor is 0.62).
+  * The 25 % rule stands as written; Trends still list a Doubtful player (unchanged on purpose tonight).
+  * IS-3's unfinished items are the next build's first package, not a late merge.
+* **Verified**: on the merged tree (`integ/IS`): ruff and the copy standard clean; `npm run lint` 207 files, 0 errors;
+  `scripts/gate.sh` GATE PASSED (781 + 29 tests, 67 s); the API suite run twice: 5 new failures by name on the
+  first pass (94 failed / 1335 passed), 1 on the second (90 / 1339) — **every one the card or the watchlist row
+  changing what it says about a status** (the parity tests against the console page, `test_il5`'s lean row, `test_player`'s numbers for a
+  player Out this week): fixed by the glue above or, for `test_player`, the test updated to the rule, and re-run by
+  file (all green but the known `test_watchlist_rows_in_a_league`); the root suite 4 failed / 1692 passed, 0 new
+  (IS-2's `test_lineup_no_longer_sits_on_nflverse_report_status` rewritten to the merged rule: Doubtful on the
+  week's own report sits, Questionable plays); `fresh_db_check.sh`: every state table exists after `db migrate` (20
+  tables). **The nightly's middle rehearsed twice on the real copy** (`league_lab_iq4`, `waveIS/is_chain.sh`): the
+  first run found the waiver guard (above); the second, on the fixed tree, ran the full `dbt build` on the tables
+  the merged `project` had written — PASS 732 / WARN 5 / ERROR 0 of 737 — then `project`, **which crossed tonight's
+  kickoff: "availability gate: week 6 … 77 players … kept frozen weeks [1, 2, 3, 4, 5]"**, so the first run with
+  week 5 frozen happened here and not on the live site; the projection marts PASS 145 / ERROR 0; both availability
+  guards as errors PASS 2; the audit's first line "Players who cannot play or are unlikely to play and are still
+  ranked or valued: 0". `scripts/pooler_check.sh` on the merged tree: POOLER CHECK PASSED (its one content line,
+  Breece Hall "Out" and ranked on the fixtures, is the third-source gap listed below). **The full fixtures e2e: 597
+  passed, 0 failed, 17 skipped** (12.6 minutes). **QA at 375 and 1300** on IS-2's copy (the merged API): Rankings
+  RB, My Week, Team, Waivers, a league card for a player on PUP (0.0, "PUP", no "why this number"), the free
+  calculator, Trades — no sideways scroll, no page errors. **Not verified here**: the request-time overlay against
+  live Sleeper and ESPN; whether the sync's publication comment exists on the hosted database (if it does not,
+  the caches keep their ten minutes: the release notes do not promise the faster switch); the gate job with the new
+  paths on GitHub — checked on the live site after the push
+* **Not done / next** (in order):
+  1. **The Finder's partner rows and the best waiver move on the verdict's basis; one minus sign; the tile's
+     caption** (IS-3's items 1, 2, 5). Two screens can still disagree about the same trade.
+  2. The trade rosters' status cells show no reason yet; `anyleague.UNIT_SKIP_STATUS` and
+     `mart_player_role_alerts.sql` are not on the one definition; kickers in `lineup.py` sit on the report only;
+     the card's points chart draws the live week from the mart (wrong between a deploy and a refresh).
+     **Fix the old field at its cause**: `mart_player_next_matchup` takes the newest injury-report row of any week
+     (it carries `injury_week` and `next_week`); null it unless the two are equal and every remaining SQL reader
+     is right at once. **The public lists' gate has no third source**: Sleeper, ESPN and the stored record — on a
+     copy with neither live source (the pooler check's API on the fixtures) a player Out on this week's own report
+     is still ranked (#18 Breece Hall); add `report_block` to `availability.statuses` for the week's own report.
+     Seen in QA, not chased: My Week on the rehearsal copy says "Start Wilson at WR in place of Mahomes" (a
+     quarterback on a bye named at WR2 — the fixtures' week-4 Sleeper lineup against a week-5 board, or a real
+     slot-naming fault).
+  3. "Plays about 2 in 3" on a Questionable row; `p_play` by position (Questionable quarterbacks: 45.8 %).
+  4. Start/sit softening for a hand-set starter; Waivers and My Week carry `provenance` / `caveats` in the answer
+     and no screen shows them; My Week needs caveat words of its own.
+  5. Publication: the decision-recompute guard when a publication lands mid-request; the switch timed on a real
+     publication; `prepare_threshold=None` if the hosted pooler ever stops keeping prepared statements (the pooler
+     check shows the API's pool fails without them); `scripts/pooler_check.sh` in the merge routine (done by hand
+     tonight); the post-publish step as a failing step (IS-4's four conditions); the Worker deployed (Andrew).
+  6. From before: the role forecast for later weeks; Tampa Bay's starter; the paid tier for the safe publish.
+
+### IS-1 — a status that rarely plays is not ranked as if it will (Wave I-S, 2026-10-08; continues IR-1)
+
+Branch `dev/IS1` (from `main` `76b98df`), worktree `/home/claude/wt-iq4`, database `league_lab_iq4`.
+METRICS § "A status that rarely plays" (av1.1: the rule first, then the tables), WORDS § "A status that rarely plays".
+
+#### 1. Done / not done / cut
+
+**Done.** (1) Measured (2016–2025) before ruling. (2) The 25 % rule: **Doubtful is `unlikely`** (6 of 520 played,
+1.2 %; `p_play` 0.01) — `sits()` true: 0 this week from `project` with the reason, out of this week's rankings and
+tiers, "He is doubtful" in "Who should I start?", the same request-time gate on the board, Compare, DFS, the free
+calculator's week, the player page's preview — and **not** out indefinitely (his later weeks and his season stay).
+Questionable (66.6 %) stays ranked and flagged with `p_play` 0.67 and words; **not scaled** (its stored number is off
+by ≈ +58 % zeros included — the PO's number, below). (3) The overlay's `CANNOT_PLAY` / `NOT_IN_TRENDS` / `FLAGGED` are
+views of the gate (`SITS_CODES` / `CANNOT_PLAY` / `FLAGGED`); Sleeper "Inactive" with a team is one rule now
+(`INACTIVE` in the gate). (4) "Not playing": two labelled parts ("Out", "Unlikely to play"), each ordered by his
+projection when he still has one, else his points per game this season; Rankings (week and season), `/api/ros`
+(a house league's list also lists the players its mart withholds), the board; one component (`NotPlaying.svelte`).
+(5) Left over, all three: kickers' league-free lines (`ops.kd_lines`, and `ops.kd_ranges` built from them) gated in
+`project`; `refleague.value_of` (the value without a league: card, Stats' value column, Compare) and `player_share`
+(the player page's preview and the sitemap's top players) gated at request time; the house ROS mart withholds a player
+out indefinitely (`ros_points` NULL, `out_indefinitely` column, unranked) instead of 0.0 over 1 game. (6) The audit's
+first line counts "cannot play **or are unlikely to play**" and reads Sleeper's directory alone (no longer the stored
+record it checks); the stored check knows Doubtful (dated after the previous week's last kickoff) and reads
+`raw.sleeper_player`'s own payload.
+
+**Not done / cut for the clock.** No Questionable scaling (by the rule; the PO's call). Trends keep a Doubtful player
+(`NOT_IN_TRENDS` = the gate's `CANNOT_PLAY`, as before). The Questionable label's words (`availability.words`) are in
+the Rankings answer but the row shows only "Questionable" (no tooltip). Kickers: none on this copy sits, so the
+`ops.kd_lines` gate removed 0 rows here (the rule is unit-tested). No re-recording of saved e2e answers was needed.
+
+#### 2. Commits
+
+`b500f94`, `8afd8e7`, plus the hand-back commit (see the final message for the last hash).
+
+#### 3. Evidence (`league_lab_iq4`)
+
+**The live fact, reproduced.** This copy's directory (Oct 5) has Breece Hall "Out (quadriceps)" dated Oct 2 — last
+week's game status, so he was ranked: **RB18, 11.8 (Half PPR)**. I set his directory row to the live site's entry
+("Doubtful", news Oct 7 17:00 UTC), ran the guards and `project`, then **restored the row** (the stored board keeps the
+run's result; the check still passes).
+
+| Step | Result |
+|---|---|
+| `assert_nobody_who_cannot_play_is_projected` (error), before `project` | **FAIL 2** — Hall 12.94 / 11.75, Doubtful (the guard reads the directory) |
+| `audit-lists` first lines, before | "…cannot play or are unlikely to play and are still ranked or valued: **1**" — "Breece Hall (NYJ, RB): Doubtful (quadriceps) · Sleeper, Oct 7 — this week rank 18, 12.9 [PPR, Standard, Half PPR]" |
+| `project` | EXIT 0: "80 players who cannot play or are unlikely to play get 0 this week, 79 of them out indefinitely" |
+| Hall, `ops.projections` | week 5: **0** with `availability` = `{"code": "DOUBTFUL", "why": "Doubtful (quadriceps) · Sleeper, Oct 7", "out_indefinitely": false, …}`; week 6: 13.16 / 11.96, week 7: 13.66 / 12.46 (kept) |
+| Hall, house ROS mart | 145.94 over 12 / 120.90 over 11, ranked (his season stays) |
+| Achane, house ROS mart | **NULL** over 1 game, unranked, `out_indefinitely` (was 0.0); 158 rows (79 × 2 leagues) withheld |
+| Projection marts + guards | PASS=144 WARN=0 (incl. `ros_points_known_unless_out_indefinitely`, the stored check) |
+| The check, after | PASS (error severity) |
+| Audit, after | "…: **0**" |
+| Frozen weeks 1–4 | `ops.projection_lines` 2,396 rows, `ops.projections` 4,856: **0 cells changed** |
+| `ops.kd_lines` | 1,088 → 1,088 (no kicker sits on this copy) |
+
+**Rankings on week 5, the API code, overlay off (stored record alone)**: RB 109 ranked / 14 tiers / not playing 24
+(Out 23, Unlikely to play 1: Hall, "Doubtful: players listed doubtful have played about 1 in 100 times; not ranked this
+week."); top 24 RB: Gibbs 20.6, B. Robinson 19.6, K. Williams 19.2, Ja. Williams 17.7, Taylor 16.9, Cook 16.4,
+McCaffrey 15.5, Henry 15.2, C. Brown 14.3, Warren 14.1, Swift 13.9, A. Jones 13.7, Jeanty 13.4, Love 13.3, Skattebo
+12.7, Hampton 11.9, Monangai 11.9, **Irving 11.8 (18, was Hall)**, Judkins 11.7, Tuten 10.7, Pollard 10.0, White 9.8,
+Stevenson 9.8, **E. Wilson 9.6 (new)**. WR 170 / 33 out; TE 116 / 19; QB 83 / 4 — unchanged from this morning's after
+list except their own refit noise. "Not playing" leads with Jordan Mason, Travis Etienne, De'Von Achane (points per
+game), not Adam Randall. Season: Hall ranked #20 at 132.7. Start: "Hall is doubtful — players listed doubtful have
+played about 1 in 100 times (Doubtful (quadriceps) · Sleeper, Oct 7). Start Irving." House `/ros` RB (League of
+Scrubs): 50 players, not playing 23 (Achane listed: "IR (knee - acl) · Sleeper, Sep 28"). `refleague.value_of` leaves
+Achane out (a dash).
+
+**Item 3 — what changes because the overlay and the gate are one** (before → after):
+
+| Place | Before | After |
+|---|---|---|
+| My Week / roster context / Waivers' overlay / trade board's week (`availability.CANNOT_PLAY`) | Doubtful benched | the same (by value the set is unchanged) |
+| Trends (`NOT_IN_TRENDS`) | Doubtful listed | the same |
+| Rankings week, start, board, Compare, the calculator's week, player preview, `project` (the gate, `sits()`) | Doubtful ranked with a full projection | not ranked; 0 this week; "He is doubtful" |
+| DFS (`dfs._statuses`) | Doubtful out (overlay set) | Doubtful out (`sits()`) — the same result, one rule |
+| The gate on Sleeper "Inactive" with a team | ranked (no word) | cannot play — matches the overlay; 13 directory rows, none projected |
+
+#### 4. Tests
+
+Own: `tests/test_is1_unlikely.py` 13 + `tests/test_ir1_availability_gate.py` 30 (one expectation updated on purpose:
+a Doubtful block now has week words) → 43 passed; `api/tests/test_is1.py` 6 + `api/tests/test_ir1.py` 14 (one updated on
+purpose: Doubtful sits) → 20 passed. Edited modules' API files (is1, ir1, ip2, in2, in3, io4, im5, in4, i0a, ib0,
+research, im3, iq4, io2, ip5, ia3, ii4, ib3): 447 passed, 20 failed, 9 skipped — 14 on the known list, 6 not:
+`test_ib0::…would_not_start[None]`, `test_im5::test_dk_classic_slate`, `::test_fd_full_slate`,
+`test_in3::test_board_without_a_league`, `test_in4::test_published_slates_listed`, `::test_the_listing_never_builds_a_slate`
+— the same six as IR-1's hand-back on this database (the waiver mart is week 5 while tests pin week 4; a grade
+sentence; slate counts on this week-5 board; a player named Lock), not this change. `check_root.sh`: 1,682 passed, 4
+failed, all known, 0 new. ruff clean; copy standard clean; `npm run lint` 0 errors; build OK; `scripts/gate.sh
+python` **PASSED** (root 780, api 25, ruff). e2e on port 8918, every spec that opens Rankings, Compare, `/ros`, the
+board, the calculator, the home: e2e/fixtures.spec.ts, ia3, ib2, ib3, ic3, ic4, ie0, ie1, if2, if3, if4, ig1, ii1,
+ii4, in1, in2, in3, inf1, io4, ip2, iq2, iq4, ir1, ir2, ir4, decisions — **223 passed, 9 skipped (their `fixme`s), 0
+failed** on phone and desktop; `e2e/is1` 2 passed (375, 1300; screenshots `docs/handbacks/is1/`).
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/ondemand.py:237` (`order by r.ros_points desc nulls last`: the mart's withheld totals sort last —
+IS-2 owns the file); `api/league_lab_api/refleague.py` `value_of` (item 5); `api/league_lab_api/player_share.py`
+(`_sitting`, item 5); `dbt/models/marts/nfl/mart_player_week_projections.sql` (passes `p.availability`, pre_hook adds the
+column) and `dbt/models/marts/edge/mart_player_ros_projection.sql` / `.yml` (item 5: NULL, `out_indefinitely`, the
+not-null test replaced by `ros_points_known_unless_out_indefinitely`); `dfs.py`, `research.py`, `freetrade.py`,
+`matchup_board.py` (my IR-1 blocks: `sits()`); `src/league_lab/cli.py` (the gate line); `web/src/lib/api.ts` (types at
+the end); `CHANGELOG.md`, `docs/WORDS.md`, `docs/METRICS.md`, `dbt/seeds/metric_registry.csv` (av1.1).
+
+#### 6. The PO's lines
+
+None required. The nightly's `availability-gate` step (soft) now also fails on a Doubtful player projected in the live
+week. **The Questionable number for the PO / Andrew**: the stored number for a Questionable player is ≈ +58 % too high
+zeros included (history; +75 % on 2026 weeks 1–4, n = 55); a scaling by ≈ 0.62 is the candidate — not shipped.
+
+#### 7. Found, not mine (IS-2's list)
+
+`src/league_lab/lineup.py:854` benches on nflverse's `report_status` Out / Doubtful (the week's own report — fine on
+Friday, empty midweek) and `mart_player_week_projections.is_rankable` reads the same field; both should take the gate
+(`sits()`) through the stored `availability` record (now in the mart). `api/league_lab_api/ondemand.py`'s house `/ros`
+query is the place to fetch the withheld players itself (I added `availability._withheld` for it).
+
+#### 8. Next
+
+Decide the Questionable scaling with the bias table; a measured `p_play` per position once the counts allow (QB
+Questionable 45.8 %); Trends' Doubtful policy; grade the 25 % rule's effect on lineups after week 5.
+
+### IS-2 — inside a league: the same "can he play" check as the public lists, and the reason beside the zero (Wave I-S, 2026-10-08)
+
+Task: `/home/claude/waveIS/BRIEF.md` § IS-2 (items 1 and 2; item 3 half: the data, not the start/sit softening). Branch `dev/IS2` from `main` `76b98df`,
+worktree `/home/claude/wt-iq2`, database `league_lab_im4` (2026 week 5, Sleeper directory copy of 2026-10-05 12:00 UTC;
+`db migrate` + `project` run once at 18:21–18:30 ET: "79 players who cannot play get 0 this week, 79 of them out
+indefinitely").
+
+#### How every league reader asks now
+
+* **API** (`api/league_lab_api/league_gate.py`, new): `blocks(ids, season, week)` = `availability.statuses` (the
+  stored record + the overlay's Sleeper and ESPN words), `sits` = `availability.sits`, `note(block)` = the piece a
+  screen shows (`status`, `why`, `sits`, `out_indefinitely`, `words` = the block's `ros_words` / `week_words`). The
+  week is refleague's window (`availability._current`, the week `/api/ros` gates).
+* **src** (`src/league_lab/league_status.py`, new; no API import): `blocks(query, season, week)` =
+  `availability_gate.statuses_from_query` (Sleeper's directory copy + the stored record, stale game statuses dropped),
+  `directory_block(entry)` = `classify` over one Sleeper directory entry a caller already holds, `record_block(text)`
+  = one stored record, `conn_query(conn)` (a failed statement rolls back to a savepoint only).
+* No reader tests a status code or a status string: `sits()` decides "left out this week", `out_indefinitely`
+  decides "every later week too", the words are the block's. When IS-1 sets `unlikely` (Doubtful), every
+  request-time reader and every `league_status.blocks` reader picks it up without an edit; the two readers of the
+  stored record alone (`lineup.py`, `REPLACEMENT_SQL`) pick it up when `project` writes the record for every player
+  `sits()` leaves out (today `apply_to_project` writes it for `cannot_play` only — IS-1's call).
+
+#### Reader by reader (week 5 on `league_lab_im4`; "the old field" = `mart_player_availability.injury_status`, nflverse's newest report row — on this copy week 4's game status)
+
+| Reader | Decided from the old field | Decides now | What changed on `league_lab_im4` |
+|---|---|---|---|
+| `src/league_lab/trades.py` `REPLACEMENT_SQL` (replacement level: nightly waivers, reports, the API's trade context, the console page) | a free agent with `Out` / `IR` is not the replacement | a free agent the gate's stored record leaves out of a week of the horizon is not (`to_jsonb(p) ->> 'availability'`: answers on a database without the column) | nothing: all 10 position levels (Scrubs 6, Dynasty 4) identical |
+| `decisions.FA_SQL` → `_free_agents` (Waivers, "Browse every free agent"; house leagues) | `Out` / `IR` left out; the old field shown as his status | out indefinitely: not listed; sits this week: listed at 0 with `availability.why` and the sentence; `injury_status` = the block's label | **Kyler Murray** (Scrubs; old field "Out" = week 4) is listed again: QB #4 of the browse at 17.44 — the Rankings rank him QB9 at 17.4 (before, Waivers hid a player the Rankings ranked) |
+| `decisions.FA_POOL_SQL` → `_house_fa_pool` (the trade fill's free agents) | `Out` / `IR` left out; nflverse `report_status` Out / Doubtful unplayable | sits this week: unplayable that week with `why` as the reason; out indefinitely: every week | Kyler Murray back in the pool (as above); no `report_status` rows for week 5 in this copy |
+| `anyleague.free_agents` (any Sleeper / ESPN / Yahoo league's free agents: Waivers, the Finder) | `Out` / `IR` of the mart row, else the directory's `injury_status` | the API's request-time blocks (`il4_free_agents` passes them); without them the directory entry's `classify` | not measurable here (needs a non-house league's directory); unit-tested |
+| `src/league_lab/waivers.py` free agents (nightly adds) and `UPSIDE_SQL` (stashes) | `Out` / `IR` in SQL | `league_status.blocks` → `sits` | the free-agent set differs by Kyler Murray only (514 QB/RB/WR/TE free-agent rows; old left out 1, new 0); takes effect at the next `project` |
+| `src/league_lab/signals.py` scenario expiry ("the teammate is back") | back = `ACT` and no designation at all in the mart (last week's word kept a scenario alive) | back = `ACT` and not `sits` | not measured (the scenarios are rewritten by the next `project`) |
+| `ondemand.lineup_values` (rest of season, "lineup" view: a free agent's weeks) | the label against its own sets (`UNPLAYABLE_NOW`, `{IR, PUP, SUSPENDED}`) | sits: 0 this week; out indefinitely: 0 every week | not measured separately (the 79 recorded players) |
+| `player.py` (the league card: status line, projection) | the old field + the older overlay's own codes; projection from the mart | the block: "⚠️ **IR (knee - acl) · Sleeper, Sep 28**. On injured reserve: …"; a player who sits gets no projection ("unavailable: …", `proj_points` 0.0) and no "Why this number" (it read the mart's 11.4) | **59 of 291 rostered skill players' lines change**: 34 lose last week's word ("Out" — Breece Hall, Justin Jefferson, Jayden Daniels, Kyler Murray …; "Questionable" — Burrow, Olave …) → "No injury designation"; 17 gain one (Achane, A.J. Brown, Etienne, Jordan Mason, Dart … "IR (…) · Sleeper, <date>"); 8 change word (Alec Pierce "Out" → "IR (heel) · Sleeper, Oct 2", Charbonnet "Out" → "PUP (knee - acl) · Sleeper, Oct 2" …). Achane's card: projection 11.44 (the mart, not yet rebuilt after `project`) → "unavailable: IR …", 0.0 |
+| `src/league_lab/lineup.py` `_proposed_player` (the nightly lineup, skill positions) | nflverse `report_status` Out / Doubtful → sits | the stored record (`ops.projections.availability`) → `sits`; reason = the block's label ("Out", "IR" …); nflverse `RES` kept | 0 of 393 rostered skill players change in week 5 (30 sit before and after: `RES` + recorded; this copy has no week-5 report rows) |
+| `roster_value.py` | no status read of its own (lineup roles / reasons) | inherits `lineup.py` | — |
+| `src/league_lab/reports.py` `team_brief` (the nightly's markdown pack: the roster tables and the free-agent tables) | the old field (`injury_status`, or the baseline rankings' `report_status`) printed; two target lists drop `Out` | the block's label printed; the target lists and the free agents' projections drop who `sits` (fetched wider, trimmed to the same 15 / 20 / 20) | Scrubs team 2's roster table: Coleman "IR", Charbonnet "PUP" (were blank) |
+| My Week (`myweek.lineup`), Team (`decisions.team`) — item 2 | a bare 0.00 (or "IR slot") | the row carries `sits` and the block's `why` beside his 0 | Scrubs team 2: Charbonnet "PUP (knee - acl) · Sleeper, Oct 2", Coleman "IR (ankle) · Sleeper, Sep 26"; Dynasty team 12: Adam Randall, Coleman |
+
+**Face validity** (the API on `league_lab_im4`, overlay off — the stored record decides; week 5):
+
+| List | Top (week 5 · status by the one definition · PPG (games)) |
+|---|---|
+| Scrubs, Waivers browse, all | Brissett 20.36 · no word · 15.8 (4); Daniels 17.97 · 16.2 (2); Nix 17.96 · 15.1 (4); **Murray 17.44 · no word · 7.8 (3)** (was hidden by last week's "Out"); Watson 16.31 · 17.2 (4); Stroud 16.19 · 17.1 (4) |
+| Scrubs, Waivers browse, RB | Dowdle 9.27 · no word · 4.3 (2); K. Mitchell 8.27 · 6.6 (4); C. Rodriguez 7.51 · 5.7 (4); Allgeier 7.23 · 6.4 (4); B. Robinson 7.17 · 7.3 (3) |
+| Dynasty, Waivers browse, RB | M. Carter 6.77 · no word · —; Ty Johnson 6.34 · 6.1 (2); Perine 6.07 · 3.6 (4); Sanders 5.96 · 5.1 (4) |
+| Scrubs team 2, My Week | starters: K. Williams 19.25, Hampton 11.92, Nacua 17.60, Wilson 14.14, Washington 11.42, Jefferson 10.22 (QB and TE empty: Mahomes, Young, Kelce on a bye); can't play: Charbonnet 0.00 "PUP (knee - acl) · Sleeper, Oct 2", Coleman 0.00 "IR (ankle) · Sleeper, Sep 26" |
+
+Nobody listed in these tops is on a reserve list or ruled out by the directory copy; Dowdle and Murray carried last
+week's "Out" in the nflverse report and are ranked by the public lists on the same copy. (On the live site the
+overlay's fresh Sleeper / ESPN word decides; Breece Hall is "Doubtful … Oct 7" there, which IS-1 decides.)
+
+**Between a deploy and the refresh** (both `availability` columns renamed away on `league_lab_im4`, a fresh API):
+My Week (both leagues), Waivers (Scrubs all; Dynasty RB and all), Team, the card (both leagues), Trades' lists, `/ros`
+lineup view: all 200, no traceback. **The first try answered 500** on Dynasty's Waivers RB: a free agent without a
+block became a frame's NaN, and `note()` called `.get` on it — fixed (every helper treats a non-block as no word) and
+tested (`test_waiver_browse_without_any_record_answers`).
+
+#### Tests
+
+* `api/tests/test_is2.py` 7 passed; `tests/test_is2_league_status.py` 9 passed. **On the old readers 10 of the 14
+  fail** (the 4 that pass are the helpers' own tests): Waivers browse keeps Achane (old field empty, block IR), the
+  trade fill marks him playable, the on-demand list gets no blocks, the lineup sits on `report_status` and not on the
+  record, `REPLACEMENT_SQL` reads `injury_status`, the browse 500s without a record.
+* `tests/test_lineup.py::test_build_proposed_realised_locks_byes_and_flags` asserted the old rule (nflverse "Out" →
+  sits): its player now carries the gate's record (`AG.record_text`), the same expected reason "Out". 265 passed.
+* Root suite (`check_root.sh`, on `league_lab_im4`), **last run on the final code: 5 failed / 1676 passed / 3 skipped,
+  one new by name — `test_ros.py::test_mart_matches_the_trade_engines_sum_on_the_same_weeks`, which fails the same on
+  `main`'s code on this database.** The first run (before the `test_lineup` update): 11 failed / 1669 passed; new:
+  `test_lineup.py::test_build_proposed_realised_locks_byes_and_flags` (fixed above),
+  `test_ros.py::test_mart_matches_the_trade_engines_sum_on_the_same_weeks` (fails on `main`'s code on this database
+  too: data state), `test_v1.py::test_close_calls_are_the_cards_decisions[2,3,4,9,10]` — failed in that run and in one
+  targeted run right after it, then **passed 3 times in a row on the same code**, on `main`'s code, and in the last full
+  run; I did not find the cause (a transient state of this database during the first run is my best guess).
+* API test files of the modules I edited (`test_myweek`, `test_player`, `test_decisions`, `test_i0a`, `test_ib0`,
+  `test_il4`, `test_anyleague`, `test_ip5`, `test_ig3`, `test_ir4`, `test_ia3`, `test_ir0`, `test_is2`, on
+  `league_lab_im4`): 27 failed / 184 passed / 1 skipped; 24 of the 27 are in the known list; the other 3
+  (`test_decisions.py::test_waivers_house_route_is_the_mart[both leagues]`,
+  `test_ib0.py::test_waivers_never_calls_an_overlay_starter_would_not_start[None]`) **fail the same on `main`'s code
+  on this database** (data state: week 5 here, the known list is week 4's).
+* `scripts/gate.sh python`: GATE PASSED (root 780, api 25, ruff). ruff clean; `copy_standard.py --check` clean;
+  `npm run lint` 0 errors (207 files); build ok.
+* **e2e, the whole fixtures suite** (every spec opens My Week, Team, Waivers or a card; both projects): 588 passed,
+  1 failed, 23 skipped in 12.2 m. The failure, `il5/fixtures.spec.ts:91` [desktop] (the watchlist's analytics events:
+  the third `watchlist_remove` missing), is not on a screen I changed and **passed on its own re-run** (`e2e/il5`: 14
+  passed). No saved answer needed re-saving: the new fields are absent from the saved answers and the screens fall
+  back to what they showed.
+* QA at 375 and 1300 (`docs/handbacks/is2/`, on `league_lab_im4`, real clock): My Week's bench and can't-play list
+  (Charbonnet 0.00 "IR slot / PUP (knee - acl) · Sleeper, Oct 2"), Team (the roster row's line), Achane's league card
+  (the projection withheld, the status line); no sideways scroll at 375 (scrollWidth 375), no page errors. Waivers has no
+  screenshot: no free agent on this copy has a word from the one definition (the reserve lists are also off the
+  active-roster filter), so its screen looks as before; its change is in `test_is2.py`.
+
+#### Not done / limits
+
+* **Item 3, half**: `/api/waivers` and `/api/my-week` now carry `provenance`, `caveats`, `caveat_effect`,
+  `caveat_rule` (`league_gate.with_waivers` / `with_lineup` → `provenance.for_players` over the players the answer
+  names; `test_waivers_and_my_week_carry_provenance_and_the_starter_caveats`). On this database: Scrubs Waivers QB
+  `withhold` with 3 caveats (Tampa Bay's starter unclear, Chicago's set by hand …), Dynasty My Week `withhold` (Jalon
+  Daniels on the roster) — the caveat words are the trade's ("No verdict while …"): a screen that shows them on My Week
+  needs its own words. **Not done**: no screen shows them yet
+  (no `ProvenanceLine` on Waivers / My Week), and start/sit does not soften for a hand-set quarterback (the "Who should
+  I start?" handler is IS-1's file tonight).
+* `anyleague.UNIT_SKIP_STATUS` (MFL's team-QB unit skips a QB by nflverse's Out / Doubtful), and
+  `mart_player_role_alerts.sql` (`trigger_ended` from the old field; read by `research.py`'s alerts and the card's role
+  block) are **not moved**; no request-time gate on the role alerts yet. (`reports.py`'s league recap is not a league
+  screen and has no status column; only `team_brief` read the old field.)
+* The trade rosters' status cells (`Trades.svelte`, `TradeCard.svelte`: IS-3's files tonight) are not changed.
+* `lineup.py` still sits a **kicker** on nflverse's report status (kickers are IS-1's item 5); `RES` (nflverse's weekly
+  roster) is kept in `lineup.py`, `FA_SQL`, `FA_POOL_SQL` and the free-agent SQL as an "active NFL roster" filter.
+* `REPLACEMENT_SQL` and `lineup.py` read the stored record only (the nightly's view), not the request-time overlay: a
+  player ruled out after the nightly moves the lists at once, the replacement level and the stored lineup at the next
+  `project`. My Week's re-solve on new news stays the older overlay's (`availability.apply_to_rows`, IS-1's constants).
+* My Week and Team are checked on the database and in the screenshots, not by a unit test of `myweek.lineup` /
+  `decisions.team`.
+
+#### Edits outside my files
+
+`api/league_lab_api/myweek.py` (one `# ---- IS-2` block at the end of `lineup()`: `sits` and the reason on each row);
+`api/league_lab_api/decisions.py` (marked blocks: `FA_SQL`, `FA_POOL_SQL` + `_house_fa_pool`, `_free_agents`,
+`il4_free_agents`' call, `team()`'s roster rows — none in the trade-basis functions); `web/src/components/LineupTable.svelte`
+(the reason shows for a player who sits in every table, not only the full list); `tests/test_lineup.py` (above);
+`api/league_lab_api/main.py` (the `/api/waivers` and `/api/my-week` handlers wrap their answer in
+`league_gate.with_waivers` / `with_lineup`, marked `# ---- IS-2 item 3`; no new route); `CHANGELOG.md`, `docs/WORDS.md`.
+
+#### PO lines
+
+None needed in PO-owned files.
+
+#### Found, not mine
+
+* `api/league_lab_api/watchlist.py:110` reads `player.overlay_status` (the older overlay's own codes) for the
+  watchlist's status: the next reader to move.
+* `availability.ros_overlay` still sets `injury_status` from the older overlay (`now()`) before `ros_gate` overwrites it.
+* `decisions.py` (the waiver views, ~4578 and ~5055) blocks a claim with `availability.cannot_play(...)` = the older
+  overlay's `CANNOT_PLAY` (Doubtful and Inactive in it): it follows the one definition once IS-1 makes those constants a
+  view of the gate (IS-1's item 3).
+
+* The card's "Points against the projection" chart (`research.player_games`, `/api/player/{gsis}/games`) still draws
+  week 5's live projection from the mart: on this copy, where only `project` ran and the marts were not rebuilt,
+  Achane's chart shows about 11 for week 5 under a head that says 0.0. After a nightly the mart holds the 0; between
+  `project` and the marts (and between a deploy and the refresh) a request-time gate there is needed — not my file.
+
+#### Next
+
+`UNIT_SKIP_STATUS` and the role alerts on the one definition (the alerts at request time); the trade
+rosters' status cells once IS-3's files settle; `project`'s record for every player `sits()` leaves out (so the nightly
+lineup and the replacement level follow IS-1's Doubtful rule); item 3.
+
+### IS-3 — trade suggestions and waiver picks on the verdict's basis; the trade tests whole again (Wave I-S, 2026-10-08)
+
+Branch `dev/IS3` from `main` `76b98df`, worktree `/home/claude/wt-ir2`, database `league_lab` read only (pinned clock
+2026-10-03T16:00Z). Nothing written to any database.
+
+#### 1. Done / not done / cut
+
+* **Done — item 4, the three `test.fixme` trade tests run again**, each on a trade that is legal on today's fixtures and
+  has the same meaning, re-saved from the API (never patched):
+  * `e2e/ia2/fixtures.spec.ts` "tick a player: the dial moves and its label changes" (Scrubs) and
+    `e2e/ib2/fixtures.spec.ts` "the calculator keeps the decision in view" (Scrubs): the Scrubs tick package is now
+    MacZaddy's Kyren Williams (8150) for Christian McCaffrey (4034, team 1); ticking Cam Skattebo (12481) as well turns
+    the dial from "Improves it a lot" to "Makes their lineup weaker". Chosen by `save_ia2_fixtures.py`'s rule on
+    today's rosters (players on the same roster in the saved team fixtures and in the database). Saved by
+    `web/fixtures/save_ir2_fixtures.py --scrubs` (next 4 and the three other windows, both packages; the script asserts
+    the label changes); `ia2_packages.json` updated by the same run.
+  * `e2e/ii1/fixtures.spec.ts` "a kicker for a starter is labelled implausible": McLaughlin (6650) is gone; MacZaddy's
+    kicker is Nick Folk (650), for GIBB ME ANOTA ONE's starting QB Dak Prescott (3294, team 10) — the API answers
+    "Implausible: a K for a starter (Dak Prescott) …", as before. Re-recorded with `II1_RECORD` from the fixture API.
+* **Item 3 — profiled, no change needed for the target**: the covered pair is already computed once per package (the
+  card and the decision share `il4_sides`' frame cache). Warm: 0.057 s for a package already asked, **0.67 s for a new
+  package on a warm context** (under 0.8 s); cold (context + package) 0.68–0.83 s. Of the 0.67 s, 0.55 s is the card's
+  two waiver alternatives (`ii1_alternative` → `best_alternative`): the partner's add-for-drop sweep (`_fill_alternative`
+  0.375 s, `best_fill` × 15) and yours (`best_waiver_move` 0.14 s); both are kept per team on the context, so a second
+  package with the same partner is fast. The 1.2 s quoted in IR-2's hand-back was one cold call (context included).
+* **Not done (cut for the clock)**: item 1 (the Finder's partner rows from `ir2_decision` + the three-row comparison
+  test + Finder timings), item 2 (the best waiver move searched on the basis), item 5 (one minus sign in every decision
+  sentence; the tile's caption naming both totals). Item 1 changes every saved `/api/trades/partners` answer, so it needs
+  its own re-save and a full e2e run: it did not fit with a full run before 20:00. Next wave: item 1 first (cards are
+  lazy per IL-4: price the decision only for the rows the Finder shows, reuse the card's covered pair), then 5, then 2.
+
+#### 2. Commits
+
+`60501da` IS-3: the three fixme'd trade e2e tests on legal trades of today's fixtures, re-saved from the API.
+The next commit: this hand-back and the CHANGELOG bullet.
+
+#### 3. Evidence
+
+| Test | Old saved trade (not legal today) | New trade (legal on `league_lab`) | Meaning kept |
+|---|---|---|---|
+| ia2:65 / ib2:143 (Scrubs) | 12490 (Tuten) to team 9 for 11624 + 7021 | 8150 (Kyren Williams) to team 1 for 4034 (McCaffrey); tick 12481 (Skattebo) | the tick changes the dial's label: "Improves it a lot" → "Makes their lineup weaker" |
+| ii1:126 | 6650 (McLaughlin) for 3294 (Prescott), team 10 | 650 (Folk) for 3294 (Prescott), team 10 | a kicker for a starter is "Implausible", its reason names the starter |
+
+Face validity: Williams (RB, 19.3 this week) for McCaffrey (RB) is an even RB swap that helps team 1 ("Improves it a
+lot"); asking for Skattebo too turns it into a loss for them ("Makes their lineup weaker") — the direction a manager
+would expect. Folk (K) for Prescott (their starting QB) is implausible: every other partner's starting QB gives the same
+label (Hurts, Lamar Jackson, Burrow, Goff, Love, Allen), Stafford alone is "plausible" (Run Bijan Run lose a QB they
+have a backup for, Maye).
+
+Evaluate timings (fixtures, warm context): same package 0.057 s; new package 0.67 s; cold 0.68–0.83 s (profile above).
+Finder timings: not measured (item 1 not done).
+
+#### 4. Tests
+
+* e2e ia2 + ib2 + ii1 (replay, both projects): 36 passed, 0 failed, 0 fixme.
+* Full e2e (`FIXTURES_PORT=8938`, both projects, on `60501da`): **595 passed, 0 failed, 17 skipped** (12.6 min; the 17
+  are the specs' own skips, as on the fix-round run: 589 + 6 failed + 17 there).
+* `scripts/gate.sh python`: GATE PASSED (ruff clean).
+* No Python, `src/` or `web/src` change on this branch (fixtures, specs and the save script only): the API suites,
+  `check_root.sh` and `npm run lint` / build are not affected; the build was re-run before the e2e (ok).
+
+#### 5. Edits outside my files
+
+`CHANGELOG.md` (one bullet under `## 2026-10-08 — Wave I-S (dependability, second round)`).
+
+#### 6. PO lines
+
+None.
+
+#### 7. Found, not mine
+
+* Several older saved Scrubs answers (`trades_evaluate_*1389709692405551104_2_9_12490_*`) are still not legal on
+  today's fixtures and carry no `decision`; no spec asserts on them now (the saved Scrubs Finder answer was built from
+  that package and may still link to it: the Finder fixtures are item 1's re-save).
+
+#### 8. Next
+
+Item 1 (Finder rows = the calculator's answer, with the three-row test and timings), item 5, item 2.
+
+### IS-4 — publication and release: what only the hosted setup can break (continues IR-3)
+
+Branch `dev/IS4` from `main` `76b98df`, worktree `/home/claude/wt-ip1`, database `league_lab_im1` read only; no
+scratch database was created. PgBouncer 1.22.0 installed (`apt-get install -y pgbouncer`, under a minute).
+
+#### 1. Done, not done, cut
+
+* **Item 1 — done.** `scripts/pooler_check.sh [--ready-from <commit>]`: a local PgBouncer in transaction mode (pool 2, no
+  startup parameters ignored, protocol-level prepared statements kept as Neon's pooler keeps them; `POOLER_PREPARED=0`
+  for a pooler that keeps none), and through it the readiness probe (this tree, and another commit's), the API's
+  pool past psycopg's prepare threshold on 6 threads, the usage writer's connection and transaction, the sync's
+  read-only verification queries, and the post-deploy check against an API started on the pooled address. **It fails
+  on `748ff76`'s `ready.py` and passes on this tree's (the PO's fix is right).**
+* **Item 3 — done.** `QueryCanceled` (a statement timeout; a subclass of `OperationalError`) is `query` ("A readiness
+  query took longer than 5 s"), not "the database does not answer".
+* **Item 2 — partly.** Built: `memo.region(..., published=True)` (a region registers itself) and
+  `memo.drop_published()`; `db.query` reads the publication id on the pool at most every 30 s and, when it changes,
+  drops every published region and runs `db.on_publication` callbacks (the health check's `as_of` is re-read at
+  its next call). Registered: the API's SQL cache (`sql`). **Cut for the clock:** registering the gate's
+  stored-record cache and `provenance`'s board cache (one keyword, `published=True`, on their `memo.region` call —
+  their owners' files); the straddle guard (re-run a decision once when the id changed during it); the measured
+  publish-on-a-scratch-database timing (the switch is proven by test only: before, up to 600 s; after, at most 30 s
+  plus the request that reads it).
+* **Item 4 — the PO's lines below.** The Worker's `todaysRuns` is edited (mine): the New York morning.
+* **Item 5** — nothing built of it.
+
+#### 2. Commits — see `git log 76b98df..dev/IS4`.
+
+#### 3. Evidence
+
+The old `ready.py` (`scripts/pooler_check.sh --ready-from 748ff76`, exit 1):
+
+```
+pooler check: PgBouncer 1.22.0 in transaction mode on 127.0.0.1:6439 -> league_lab_im1 (pool 2, prepared statements kept: 1000, startup parameters ignored: none)
+ok   ready probe (this tree): ready: The published numbers can be served.
+FAIL ready probe (748ff76): database: The database does not answer (OperationalError).
+     pooler log for 748ff76's probe: unsupported startup parameter in options: statement_timeout=5000
+ok   pool: 24 queries on 6 threads, each statement run 8 times (past the prepare threshold): 3 distinct answers
+ok   usage writer: connect (application_name), BEGIN; SET TRANSACTION READ WRITE; a statement; COMMIT
+ok   sync verification: analytics tables: 80;published through: 2026-10-05 12:25:32+00;4141 MB;no publication comment
+     post-deploy: FAIL rankings   200  0.47s  ranked though they cannot play: #18 Breece Hall (OUT)
+     post-deploy: FAILED: 1 check(s).
+ok   post-deploy check on the pooled API: every route answered through the pooler (1 content check(s) failed on the data, not the connection: the lines above)
+ok   pooler / API logs: no prepared-statement or startup-parameter errors
+POOLER CHECK FAILED: 1
+```
+
+This tree (`scripts/pooler_check.sh`, exit 0; the post-deploy "ok" lines left out):
+
+```
+pooler check: PgBouncer 1.22.0 in transaction mode on 127.0.0.1:6439 -> league_lab_im1 (pool 2, prepared statements kept: 1000, startup parameters ignored: none)
+ok   ready probe (this tree): ready: The published numbers can be served.
+ok   pool: 24 queries on 6 threads, each statement run 8 times (past the prepare threshold): 3 distinct answers
+ok   usage writer: connect (application_name), BEGIN; SET TRANSACTION READ WRITE; a statement; COMMIT
+ok   sync verification: analytics tables: 80;published through: 2026-10-05 12:25:32+00;4141 MB;no publication comment
+     post-deploy: FAIL rankings   200  0.45s  ranked though they cannot play: #18 Breece Hall (OUT)
+     post-deploy: FAILED: 1 check(s).
+ok   post-deploy check on the pooled API: every route answered through the pooler (1 content check(s) failed on the data, not the connection: the lines above)
+ok   pooler / API logs: no prepared-statement or startup-parameter errors
+POOLER CHECK PASSED
+```
+
+The rankings content failure is the data in `league_lab_im1` at the pinned week 4 (Breece Hall "Out", RB18), not the
+connection; the check counts only 5xx / no answer / database failures as the pooler's.
+
+**What else it found**: with a pooler that keeps no prepared statements (`POOLER_PREPARED=0`) **the API's pool breaks**
+— psycopg prepares a statement after 5 runs on a connection (`prepare_threshold=5`) and the next transaction lands on
+another server connection:
+
+```
+FAIL pool: DuplicatePreparedStatement: prepared statement "_pg3_0" already exists
+ok   post-deploy check on the pooled API: every route answered through the pooler (1 content check(s) failed on the data, not the connection: the lines above)
+ok   pooler / API logs: no prepared-statement or startup-parameter errors
+POOLER CHECK FAILED: 1
+```
+
+The live site works, so Neon's pooler keeps them today; if it ever does not, `db.py`'s pool needs
+`kwargs={"prepare_threshold": None}`. Session state: no session-level `SET` on pooled connections (`ready.py` uses
+`set local`; the usage writer uses `SET TRANSACTION`), no advisory locks, `LISTEN` or temp tables on the API's
+routes (grep of `api/` and the `src/league_lab` modules it imports); `application_name` is a parameter PgBouncer
+tracks and passed everywhere.
+
+#### 4. Tests
+
+`api/tests/test_is4.py` 4 passed (timeout → query; no startup options and `set local` inside the transaction; a new
+publication drops published regions only and refreshes `as_of`; no comment = today's behaviour). With
+`test_ir3`, `test_ir0`, `test_h0`, `test_inf2`: 34 passed; `tests/test_memo.py` 9 passed. `scripts/gate.sh python`:
+GATE PASSED, 809 ran (780 + 29; `test_is4` added to `API_GATE`). ruff clean, copy standard clean, `bash -n` clean,
+`node ops/nightly-trigger/test.mjs`: 7 + the New York morning checks passed. No `web/` change.
+`check_root.sh` (memo.py edited): 1,668 passed, 4 failed — all on the known list, 0 new. The pooler check re-run on
+the committed tree (with the publication watcher in `db.query`): the same lines as above.
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/main.py` (`# ---- IS-4` after H0 health: registers the `as_of` refresh), `CHANGELOG.md`.
+
+#### 6. The PO's lines
+
+`.github/workflows/image.yml` — a change to the gate or its tests runs the gate (and builds the image, as any push):
+
+```diff
+       - "web/**"
++      - "tests/**"
++      - "scripts/gate.sh"
++      - "scripts/post_deploy_check.py"
+       - ".dockerignore"
+```
+
+`.github/workflows/nightly.yml` (the `gate` job) — "today" is New York's morning:
+
+```diff
+-          today="$(date -u +%Y-%m-%d)"
+-          n="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nightly.yml/runs?status=success&created=>=${today}T00:00:00Z&per_page=10" \
++          since="$(date -u -d "TZ=\"America/New_York\" $(TZ=America/New_York date +%F) 07:30" +%Y-%m-%dT%H:%M:%SZ)"
++          n="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nightly.yml/runs?status=success&created=>=${since}&per_page=10" \
+```
+
+(the 13:07 UTC backup cron fires at 09:07 EDT / 08:07 EST, after 07:30 New York either way). The Worker
+(`ops/nightly-trigger/src/index.js`) is changed the same way here (`morningSince`); deploy it with Andrew.
+
+**The post-publish step becoming a failing step** — first: (a) this `ready.py` deployed and `/api/ready` 200 on the live
+site for a few mornings (the pooler check passes it here; only the live site confirms it); (b) the rankings check
+green on the live site for a few mornings (IS-1's Doubtful rule decides it); (c) the check run after the API has
+seen the new publication (with item 2 that is within 30 s: a `sleep 45` before it), or it compares yesterday's
+cached numbers; (d) the house-league trade's players still on those rosters (else `--trade` from the nightly's own
+database).
+
+#### 7. Found, not mine
+
+* The API depends on the hosted pooler keeping prepared statements (above).
+* `api/league_lab_api/ready.py`'s import block was unsorted on `main` (ruff I001 — the gate's ruff step failed on it);
+  fixed here.
+
+#### 8. Next
+
+Register the gate's and `provenance`'s caches as `published=True`; the straddle guard; the measured switch on a
+scratch publication; run `scripts/pooler_check.sh` in the PO's merge routine.
