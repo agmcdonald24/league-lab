@@ -155,6 +155,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="the version /api/health must report (a prefix of it is enough: a short commit)")
     ap.add_argument("--password", default=os.environ.get("POST_DEPLOY_PASSWORD", ""),
                     help="only when the server's gate is on (never printed)")
+    ap.add_argument("--expect-publication", default=os.environ.get("POST_DEPLOY_PUBLICATION", ""),
+                    help="IT-4: wait until /api/ready names this publication id before checking (after a nightly publish)")
+    ap.add_argument("--wait", type=float, default=float(os.environ.get("POST_DEPLOY_WAIT", "150")),
+                    help="the most seconds to wait for --expect-publication (default 150: /api/ready keeps an answer 60 s)")
     ap.add_argument("--timeout", type=float, default=float(os.environ.get("POST_DEPLOY_TIMEOUT", "90")))
     a = ap.parse_args(argv)
     try:
@@ -173,6 +177,21 @@ def main(argv: list[str] | None = None) -> int:
         if j.line(code == 200 and isinstance(b, dict) and bool(b.get("token")), "login", code, secs,
                   "signed in" if code == 200 else "refused: the password"):
             j.token = b["token"]
+
+    # ---- IT-4: after a publish, check the new publication, not the cached one (bounded: --wait seconds)
+    if a.expect_publication:
+        t0, seen = time.monotonic(), None
+        while True:
+            code, secs, b = j.call("GET", "/api/ready")
+            pub = ((b.get("checks") or {}).get("publication") or {}) if isinstance(b, dict) else {}
+            seen = pub.get("id") if isinstance(pub, dict) else None
+            if seen == a.expect_publication or time.monotonic() - t0 >= a.wait:
+                break
+            time.sleep(5)
+        j.line(seen == a.expect_publication, "picked up", code, time.monotonic() - t0,
+               f"publication {seen} is served" if seen == a.expect_publication
+               else f"the server still names {seen or 'no publication'} after {a.wait:.0f} s (expected {a.expect_publication})")
+    # ---- end IT-4
 
     code, secs, b = j.call("GET", "/api/health")
     ok = code == 200 and isinstance(b, dict) and b.get("ok") is True and b.get("database") == "ok"
