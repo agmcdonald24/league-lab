@@ -473,6 +473,9 @@ else
   fi
   echo "the swap stopped before its commit (exit ${swap_rc}): nothing of it was kept, the previous publication is untouched; publishing by the drop path instead (fallback)"
   use_swap=0
+  # PO (Wave I-U): a hosted database counts its size a few seconds behind; wait before the drop path restores, so the
+  # rolled-back copy's space is counted as free again (never for a local simulation)
+  [ "${target_local:-0}" = 1 ] || sleep "${LEAGUE_LAB_HOSTED_FALLBACK_WAIT_S:-20}"
 fi
 fi   # ---- end IU-4 (the swap)
 if [ "$use_swap" = 0 ]; then

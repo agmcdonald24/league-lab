@@ -161,9 +161,15 @@ summary() {
       for i in "${!STEP_NAMES[@]}"; do echo "| ${STEP_NAMES[$i]} | $(fmt "${STEP_SECS[$i]}") | ${STEP_RESULTS[$i]} |"; done
       while IFS= read -r line; do printf '\n`Done. %s`\n' "${line#*Done. }"; done < <(grep -h "Done. PASS=" logs/nightly.log 2>/dev/null | tail -2)
       while IFS= read -r line; do printf '\n`%s`\n' "$line"; done < <(grep -h "^verified: all" logs/sync.log 2>/dev/null | tail -1)
+      # ---- IU-4 (Wave I-U): which way tonight's publication went (swap / refused then fallback / drop), from this run's part of the log
+      while IFS= read -r line; do printf '\n`%s`\n' "$line"; done < <(awk '/=== .* sync start/ { n = NR } { l[NR] = $0 } END { for (i = n; i <= NR; i++) print l[i] }' logs/sync.log 2>/dev/null | grep -E "^(publication mode:|switched in|the swap stopped|the previous publication is|ERROR: +could not extend)")
+      # ---- end IU-4
       # ---- IR-3 (Wave I-R): the post-publish check's lines, when it ran
       if [ -s logs/post_publish_check.txt ]; then echo; echo "**Post-publish check (the live site)**"; echo; echo '```'; cat logs/post_publish_check.txt; echo '```'; fi
       # ---- end IR-3
+      # ---- IU-2 (Wave I-U): fr1.0's shadow, when it ran (who would move if the started week's unplayed games were re-projected)
+      if [ -s logs/freeze_shadow.md ]; then echo; echo "<details><summary>Freeze shadow (fr1.0): the live week's games not kicked off</summary>"; echo; cat logs/freeze_shadow.md; echo; echo "</details>"; fi
+      # ---- end IU-2
       # ---- IQ-4 (Wave I-Q): the list audit, whole (about 100 lines of markdown), when it ran
       if [ -s logs/list_audit.md ]; then echo; echo "<details><summary>List audit (the trust guard)</summary>"; echo; cat logs/list_audit.md; echo; echo "</details>"; fi
       # ---- end IQ-4
@@ -278,6 +284,10 @@ STATE_TABLES="$STATE_TABLES ops.calibration_oof"
 STATE_TABLES="$STATE_TABLES ops.context_record ops.context_grade"
 RECORD_TABLES="$RECORD_TABLES ops.context_record"
 # ---- end IO-1
+# ---- IU-5 (Wave I-U): the role record (rr1.0; kept like the context record)
+STATE_TABLES="$STATE_TABLES ops.horizon_record"
+RECORD_TABLES="$RECORD_TABLES ops.horizon_record"
+# ---- end IU-5
 
 is_record() { case " $RECORD_TABLES " in *" $1 "*) return 0;; esac; return 1; }
 
@@ -519,6 +529,15 @@ else
   FAILED+=(project)
   finish
 fi
+# ---- IU-2 (Wave I-U): fr1.0's shadow -- the house-league rows of the started week's games not kicked off that would move by
+# 2 points or more if they were re-projected (LEAGUE_LAB_FREEZE=game), and why; `project` computed it (logs/freeze_shadow.json),
+# this prints it and writes the run summary's part (logs/freeze_shadow.md). A report nothing reads: a failure is recorded,
+# never added to FAILED (the night is not failed by it).
+rm -f logs/freeze_shadow.md
+if run_step freeze-shadow uv run league-lab freeze-shadow --md logs/freeze_shadow.md; then
+  record freeze-shadow "$LAST_SECS" "ok: $(head -1 logs/freeze_shadow.md 2>/dev/null | sed 's/^fr1.0 shadow //' | cut -c1-160)"
+else record freeze-shadow "$LAST_SECS" "FAILED (a report nothing reads: the night goes on)"; fi
+# ---- end IU-2
 # ---- V-1 (Wave I-G): `project` wrote the decision record (lineups() -> lineup.write_record, never fatal there);
 # `league-lab validate` writes it again when that failed (same freeze rule: idempotent) and prints the grade. Soft:
 # the weeks already kept are untouched, and a week not written tonight is rebuilt (labelled) the night after kickoff.

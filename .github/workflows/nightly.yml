@@ -205,6 +205,12 @@ jobs:
           # (one transaction: nothing of the failed attempt is kept), up to twice, 30 s then 60 s apart. An SQL error
           # is never retried. Rollback = delete the line (0 = fail on the first lost connection, as before).
           LEAGUE_LAB_HOSTED_RETRIES: "2"
+          # Wave I-U (IU-4): publish with no gap when two copies fit the plan (Neon Free: 1 GB a project; the cap is the
+          # most the hosted database may hold at once). `auto` builds the new copy beside the live one and switches in
+          # one transaction; a swap that stops before its commit (the space refused, a lost connection, a failed check)
+          # keeps nothing and the same run publishes by the drop path, as before. Rollback = delete these two lines.
+          LEAGUE_LAB_HOSTED_PUBLISH: auto
+          LEAGUE_LAB_HOSTED_CAP_MB: "800"
         run: ./scripts/nightly.sh ${{ inputs.full && '--full' || '' }}
 
       # Save the archive only when its content changed (the key is a fingerprint of every data
