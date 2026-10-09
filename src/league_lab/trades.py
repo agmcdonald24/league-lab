@@ -509,10 +509,13 @@ class _Bars:
 
     def __init__(self, board: RosterBoard, roster: int, weeks: Sequence[int], remove: Sequence[str] = (),
                  free: Mapping[int, Sequence[Player]] | None = None):
-        pools = [board.pool_with(roster, w, _moving(board, remove, w)) for w in weeks]
-        if free is not None:            # ---- IU-1: the replacement frame — each week's empty slots filled from the free pool
-            pools = [_covered_pool(ps, board.slots, free.get(int(w), ())) for ps, w in zip(pools, weeks, strict=True)]
-        self.preps = [prepare(ps, board.slots) for ps in pools]
+        self.preps = []
+        for w in weeks:
+            ps = board.pool_with(roster, w, _moving(board, remove, w))
+            pr = prepare(ps, board.slots)
+            if free is not None and pr.lineup.empty_slots:   # ---- IU-1: the replacement frame (empty slots filled)
+                pr = prepare(_covered_pool(ps, board.slots, free.get(int(w), ())), board.slots)
+            self.preps.append(pr)
         self.totals = [p.total for p in self.preps]
         self._bars: list[dict[frozenset, float | None]] = [{} for _ in weeks]
         self._adds: dict[str, float] = {}
@@ -600,8 +603,23 @@ class _Search:
     def evaluate(self, give: tuple[str, ...], get: tuple[str, ...]) -> Package:
         self.stats["evaluated"] = self.stats.get("evaluated", 0) + 1
         if self.free is not None:                                                    # ---- IU-1
-            return package_gains_covered(self.board, give, get, self.weeks, self.free)
+            return self.covered_gains(give, get)
         return package_gains(self.board, give, get, self.weeks)
+
+    def covered_gains(self, give: tuple[str, ...], get: tuple[str, ...]) -> Package:
+        """IU-1: a package's four gains on the replacement frame — each side after the trade (`_after`: the cuts) with
+        its empty starting slots filled, against its covered total before (`bars(...).totals`). The verdict's exact
+        numbers (`covered_pair`: one free agent never for both teams) come later, on the rows shown."""
+        board, weeks = self.board, self.weeks
+        them = _owner(board, get, "get")
+        gains = []
+        for roster, out, inc in ((self.me, give, get), (them, get, give)):
+            pools, lineups, _, _ = _after(board, roster, out, inc, weeks, None)
+            after = [lu.total if not lu.empty_slots else fill_lineup(ps, board.slots, self.free.get(int(w), ()))[0].total
+                     for ps, lu, w in zip(pools, lineups, weeks, strict=True)]
+            g = [_r2(a - b) for a, b in zip(after, self.bars(roster).totals, strict=True)]
+            gains.append((g[0] if g else 0.0, _r2(sum(after) - sum(self.bars(roster).totals))))
+        return Package(them, tuple(give), tuple(get), gains[0][0], gains[0][1], gains[1][0], gains[1][1])
 
 
 def _best(search: _Search, cands: list[tuple[float, tuple[str, ...], tuple[str, ...]]]) -> Package | None:
@@ -1358,7 +1376,18 @@ __all__ += ["covered_pair", "fill_lineup", "slot_changes"]          # ---- IR-2
 # agents used as a fill in any week are not candidates. Returns (add, drop | None, per-week gain) or None.
 def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free: Mapping[int, Sequence[Player]],
                     free_agents: Mapping[str, Mapping[int, Player | None]],
-                    market: Mapping[str, float] | None = None) -> tuple[str, str | None, tuple[float, ...]] | None:
+                    market: Mapping[str, float] | None = None, prices: Mapping[str, float] | None = None,
+                    detail: dict | None = None,
+                    only: tuple[str, str | None] | None = None) -> tuple[str, str | None, tuple[float, ...]] | None:
+    """(add, drop | None, per-week gain on the frame) or None. IU-1: a drop is NETTED the way the roster-only move nets
+    it (`waivers.choose_drops`: net = the move's gain − (the drop's cost − his lineup loss), the cost the most of its
+    pieces): his lineup loss here is on the frame, his season value above replacement is ``prices`` (the same rule), his
+    depth is `waivers.depth_lost` on the frame's weeks; his starts after the window and a role scenario's upside are not
+    read here (None: not measured, as the waiver sweep treats a missing piece). Up to three bench players are tried (the
+    fewest rest-of-season points first) and the cheapest net wins; ``detail`` (when given) receives the netting
+    ({lineup_loss, season_value, depth_lost, cost, piece, excess, net_week, net_window}). ``only`` = (add, drop): that one
+    move, netted the same way (another search's pick priced on this frame)."""
+    from .waivers import depth_lost
     roster, weeks = int(roster), tuple(int(w) for w in weeks)
     if not weeks:
         return None
@@ -1377,9 +1406,11 @@ def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free:
 
     base_pools, base_totals, used = covered(())
     cands = {k: v for k, v in (free_agents or {}).items() if k not in used and board.owner(k) is None}
+    if only is not None:
+        cands = {k: v for k, v in cands.items() if k == str(only[0])}
     if not cands:
         return None
-    best: tuple[tuple, str, str | None, tuple[float, ...]] | None = None
+    best: tuple[tuple, str, str | None, tuple[float, ...], dict] | None = None
 
     def consider(pools, loss, drop):
         nonlocal best
@@ -1387,11 +1418,39 @@ def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free:
         if f is None:
             return
         by = tuple(_r2(g - x) for g, x in zip(f.week_gains, loss, strict=True))
-        k = (_r2(sum(by)), by[0])
+        net = {"lineup_loss": _r2(sum(loss)), "season_value": None, "depth_lost": None, "cost": 0.0, "piece": None,
+               "excess": 0.0}
+        if drop is not None:
+            pos = position_of(board, drop)
+            vals, sits, n_at, bf = [], [], [], []
+            for w, ps in zip(weeks, base_pools, strict=True):
+                lu = solve(ps, board.slots, margins=False)
+                me = next((q for q in ps if q.id == drop), None)
+                vals.append(me.value if me is not None and me.playable and me.value_source != UNVALUED else None)
+                sits.append(me is not None and me.playable and drop not in set(lu.starter_ids))
+                n_at.append(sum(1 for st in lu.starts if st.player is not None and st.player.position == pos))
+                bf.append(next((float(q.value) for q in free.get(w, ()) if pos in q.positions), None))
+            depth = _r2(depth_lost(vals, bf, sits, pos, n_at))
+            season = None if prices is None or drop not in prices else _r2(float(prices[drop]))
+            pieces = {"lineup_loss": max(0.0, net["lineup_loss"]), "season_value": season, "depth_lost": depth}
+            cost = max(v for v in pieces.values() if v is not None)
+            net.update(season_value=season, depth_lost=depth, cost=_r2(cost),
+                       piece=None if cost <= 0 else next(k for k, v in pieces.items() if v is not None and _r2(v) == _r2(cost)),
+                       excess=_r2(cost - max(0.0, net["lineup_loss"])))
+        net["net_week"] = _r2(by[0] - net["excess"])
+        net["net_window"] = _r2(sum(by) - net["excess"])
+        k = (net["net_window"], net["net_week"])
         if best is None or k > best[0]:
-            best = (k, f.player_id, drop, by)
+            best = (k, f.player_id, drop, by, net)
 
-    if roster_limit(board.slots) - board.active_count(roster) > 0:
+    if only is not None:
+        d = None if only[1] is None else str(only[1])
+        if d is None:
+            consider(base_pools, [0.0] * len(weeks), None)
+        else:
+            pools, totals, _ = covered([d])
+            consider(pools, [b - a for b, a in zip(base_totals, totals, strict=True)], d)
+    elif roster_limit(board.slots) - board.active_count(roster) > 0:
         consider(base_pools, [0.0] * len(weeks), None)
     else:
         stay = [p for p in board.roster(roster) if board.is_active(p) and not board.is_locked(p, weeks[0])]
@@ -1402,13 +1461,15 @@ def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free:
         def mkt(p: str) -> float:
             v = (market or {}).get(p)
             return math.inf if v is None else float(v)
-        bench = sorted((p for p in stay if p not in starts), key=lambda p: (mkt(p), p))[:1]
+        bench = sorted((p for p in stay if p not in starts), key=lambda p: (mkt(p), p))[:3]
         starters = [] if bench else sorted((p for p in stay if p in starts), key=lambda p: (mkt(p), p))[:1]
         for d in [*bench, *starters]:
             pools, totals, _ = covered([d])
             consider(pools, [b - a for b, a in zip(base_totals, totals, strict=True)], d)
-    if best is None or best[0][0] < MIN_GAIN:
+    if best is None or (only is None and best[0][0] < MIN_GAIN):
         return None
+    if detail is not None:
+        detail.update(best[4])
     return best[1], best[2], best[3]
 # ---- end IT-1
 
