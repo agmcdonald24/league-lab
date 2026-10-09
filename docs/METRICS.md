@@ -4126,6 +4126,56 @@ are summed as if every listed QB plays.
 5 seasons — "useful" by ud1.0's reading, where IR-4's v3.5-era number (0.594 / 0.615) still stands on the live site
 (`api/league_lab_api/provenance.py` `USEFUL["QB"]`, `src/league_lab/context_record.py` line 1666).
 
+### The horizon grade that counts a missed week (IU-5) (Wave I-U, 2026-10-09; `scripts/analysis/iu5_grade.py`)
+
+**Why.** IT-5's last finding: the 2–8 week board (§ v3.6, § v3.7) scores only the quarterbacks who played in week T, so
+it cannot reward "he will not be starting"; ud1.0 counts every missed week as 0, injuries included, so it rewards
+shrinking every line by the league's injury rate. This grade sits between them: a missed week counts when the team
+chose someone else, not when he was hurt.
+
+**The grade (hg1.0) — written at 13:47 ET on 2026-10-09 and committed before any number on it was computed.**
+
+* **Rows**: the horizon study's quarterback rows (`iq3_qb.py` / `it5_role.py` cache: as of W = 3, 5, 7, 9 of
+  2021–2025, h = 2–8, every QB with a market-week row and a row in week T — on an NFL roster that week by nflverse's
+  weekly roster file, as the projection universe is built), both house scorings.
+* **The outcome in week T**, by case:
+  * **he played**: his points (the 12 outcomes known; a row with one unknown is excluded, as on the old board);
+  * **bye** (his team has no game in week T): **excluded** — no row exists, nobody scores, the calculator counts 0 on
+    both sides of a trade;
+  * **did not play, injured**: week T's injury report lists him Out, Doubtful or Questionable, or his roster status
+    in week T is `RES` (injured reserve, PUP, NFI, suspension) — **excluded**: an injury h weeks out is news no
+    forecast made at W has, the model's lines are "if he plays", and on the screens the availability gate zeroes the
+    injured at request time; counting these weeks would reward shrinking every line by the injury rate, not knowing
+    who starts;
+  * **did not play, healthy, on a roster** (`ACT`, `INA` — a healthy scratch, `DEV` — the practice squad): **0** — the
+    team chose someone else: the role outcome itself, and what a manager who started him got;
+  * **cut or retired with a row in week T** (`CUT`, `RET`): **0** — the same reason (the team chose someone else);
+  * **anything else** (`E01` / `EXE`: exempt lists, a status the file does not explain) and did not play:
+    **excluded**;
+  * **cut with no row at all in week T** (not on any roster in the file, so not in the universe): not graded — the
+    study has no row for him (a limitation: such a week is 0 for a manager; their count is reported).
+* **Scored** like the old board: per league × season × W × target week × h, MAE and Spearman over the graded rows (≥ 8
+  a cell), pooled over h = 2–8 (cells → league × season × h → h → leagues), the season the paired unit, pooled = the
+  mean over seasons.
+* **"Better" on hg1.0** (the same form as § v3.7 (b)–(c)): MAE lower than the base's pooled **and** in at least 4 of
+  the 5 seasons, **and** Spearman pooled not lower. ud1.0 stays as it is (a separate grade).
+
+**What it is for (item 2 of IU-5, information, not a ship decision)**: v3.6, "the starter keeps the job", rf1.0 and the
+oracle on hg1.0 (`iu5_grade.py`, the IT-5 lines unchanged). Every 2021–2025 season has now been looked at, so nothing
+chosen on them ships; the reading says only what this grade would have decided.
+
+**The recorded forecast (item 3), defined here before any 2026 number exists.** Each nightly's `context-record` step
+stores, for the live season's market week M and every QB with a row in M, for h = 1 … 8 (target week T = M + h − 1, his
+team plays in T): **p_start** = the probability that he is the listed starter in week T (rf1.0's model: one logistic
+regression per market-week role, standardised inputs, C = 1, fitted on every earlier season's horizon rows 2018..S−1,
+h = 1 … 8, the inputs of § v3.7 with the market week's **own** injury designation — the defect IT-5 ran with fixed),
+**v3.6's points** for week T (`ops.projections`, Half PPR "League of Scrubs"), and **the mixture's points** (a
+market-week starter: p × v3.6's points + (1 − p) × the others' mean points; a market-week non-starter: p × the
+starters' mean points + (1 − p) × v3.6's points; the role means of the scored QB weeks of the 3 seasons before, Half
+PPR). A market week's rows are written while it has not kicked off and never rewritten after (a recorded forecast, as
+the context record is). As 2026's weeks are played, `context-record` grades the stored rows on hg1.0's cases and on
+the probability itself (Brier against the base rate); nothing on any screen reads them.
+
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
 **Why.** A projected line is a set of means. A linear rule (points per yard, per catch, per TD) prices a mean
