@@ -23,6 +23,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   waiver move" is searched on the same comparison as the trades. One minus sign in every sentence; the calculator's
   tiles name the roster-only total other screens show; a player who sits shows why on the trade rosters.
   docs/handbacks/IT-1.md.
+- **IT-5 — the quarterback beyond next week: who still starts (a study; nothing ships).** The rule was committed first
+  (docs/METRICS.md § "v3.7: the role forecast (IT-5)", with v3.6's own numbers on the same rows and the quarterback
+  useful-decision grade re-graded on v3.6's rows: 0.613 against his own record's 0.595, above it in 4 of 5 seasons).
+  The candidate (rf1.0: the probability that the market week's starter still starts h weeks out, calibrated, mixed
+  into the line) fails three of the five clauses (2–8 weeks MAE 7.493 against 7.406, Spearman 0.4935 against 0.4948,
+  useful decisions 0.603 against 0.613). No production change; the harness `scripts/analysis/it5_role.py`.
 
 ## 2026-10-08 — Wave I-S (dependability, second round)
 
