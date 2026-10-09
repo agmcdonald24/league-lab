@@ -1056,7 +1056,8 @@
     "position": "QB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -11.83,
@@ -1421,7 +1422,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1500,7 +1502,8 @@
      "excess": 0.0,
      "net_week": 0.96,
      "net_window": 29.03
-    }
+    },
+    "covered_gross_window": 29.03
    },
    "words": "Yours: add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Joe Burrow: +29.0 over weeks 5–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1903,7 +1906,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1982,7 +1986,8 @@
      "excess": 0.0,
      "net_week": 0.96,
      "net_window": 29.03
-    }
+    },
+    "covered_gross_window": 29.03
    },
    "beyond": {
     "mine": -11.83,

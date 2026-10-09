@@ -824,7 +824,8 @@
     "position": "WR"
    },
    "gain_window": 3.85,
-   "covered_window": -13.84
+   "covered_window": -13.84,
+   "covered_gross_window": 3.85
   }
  },
  "beyond_alternative": -3.77,
@@ -1039,7 +1040,8 @@
       "position": "WR"
      },
      "gain_window": 3.85,
-     "covered_window": -13.84
+     "covered_window": -13.84,
+     "covered_gross_window": 3.85
     }
    },
    "theirs": {
@@ -1293,7 +1295,8 @@
       "position": "WR"
      },
      "gain_window": 3.85,
-     "covered_window": -13.84
+     "covered_window": -13.84,
+     "covered_gross_window": 3.85
     }
    },
    "theirs": {

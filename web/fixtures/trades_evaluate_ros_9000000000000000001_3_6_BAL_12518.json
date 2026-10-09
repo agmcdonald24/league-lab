@@ -1148,7 +1148,8 @@
     "position": "WR"
    },
    "gain_window": 20.32,
-   "covered_window": 9.67
+   "covered_window": 9.67,
+   "covered_gross_window": 9.67
   }
  },
  "beyond_alternative": 36.42,
@@ -1541,7 +1542,8 @@
       "position": "WR"
      },
      "gain_window": 20.32,
-     "covered_window": 9.67
+     "covered_window": 9.67,
+     "covered_gross_window": 9.67
     }
    },
    "theirs": {
@@ -1641,7 +1643,8 @@
       "position": "QB"
      },
      "gain_window": 32.52,
-     "covered_window": 23.35
+     "covered_window": 23.35,
+     "covered_gross_window": 23.35
     }
    },
    "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Brian Thomas Jr.: +26.4 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -2112,7 +2115,8 @@
       "position": "WR"
      },
      "gain_window": 20.32,
-     "covered_window": 9.67
+     "covered_window": 9.67,
+     "covered_gross_window": 9.67
     }
    },
    "theirs": {
@@ -2212,7 +2216,8 @@
       "position": "QB"
      },
      "gain_window": 32.52,
-     "covered_window": 23.35
+     "covered_window": 23.35,
+     "covered_gross_window": 23.35
     }
    },
    "beyond": {

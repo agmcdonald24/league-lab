@@ -326,7 +326,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -411,7 +412,8 @@
        "excess": 0.0,
        "net_week": 0.0,
        "net_window": 34.05
-      }
+      },
+      "covered_gross_window": 34.05
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Caleb Williams: +34.0 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -962,7 +964,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -1062,7 +1065,8 @@
         "position": "WR"
        },
        "gain_window": 30.87,
-       "covered_window": 12.85
+       "covered_window": 12.85,
+       "covered_gross_window": 12.85
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Atlanta Falcons defense, drop Zach Charbonnet: +16.8 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -1596,7 +1600,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -1681,7 +1686,8 @@
        "excess": 0.0,
        "net_week": 0.0,
        "net_window": 34.05
-      }
+      },
+      "covered_gross_window": 34.05
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Caleb Williams: +34.0 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -2204,7 +2210,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -2304,7 +2311,8 @@
         "position": "WR"
        },
        "gain_window": 30.87,
-       "covered_window": 12.85
+       "covered_window": 12.85,
+       "covered_gross_window": 12.85
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Atlanta Falcons defense, drop Zach Charbonnet: +16.8 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -2839,7 +2847,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -2939,7 +2948,8 @@
         "position": "QB"
        },
        "gain_window": 32.52,
-       "covered_window": 23.35
+       "covered_window": 23.35,
+       "covered_gross_window": 23.35
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Brian Thomas Jr.: +26.4 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -3491,7 +3501,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -3591,7 +3602,8 @@
         "position": "RB"
        },
        "gain_window": 101.13,
-       "covered_window": -9.27
+       "covered_window": -9.27,
+       "covered_gross_window": 4.36
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add T.J. Hockenson, drop Kaelon Black: +26.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -4126,7 +4138,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -4226,7 +4239,8 @@
         "position": "RB"
        },
        "gain_window": 101.13,
-       "covered_window": -9.27
+       "covered_window": -9.27,
+       "covered_gross_window": 4.36
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add T.J. Hockenson, drop Kaelon Black: +26.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -4778,7 +4792,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -4863,7 +4878,8 @@
        "excess": 0.0,
        "net_week": 0.0,
        "net_window": 16.97
-      }
+      },
+      "covered_gross_window": 16.97
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop DJ Moore: +17.0 over weeks 4–17 (+34.7 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -5399,7 +5415,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -5499,7 +5516,8 @@
         "position": "RB"
        },
        "gain_window": 23.08,
-       "covered_window": 12.67
+       "covered_window": 12.67,
+       "covered_gross_window": 13.01
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Washington, drop Terrance Ferguson: +14.8 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -6029,7 +6047,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -6129,7 +6148,8 @@
         "position": "RB"
        },
        "gain_window": 126.46,
-       "covered_window": 1.67
+       "covered_window": 1.67,
+       "covered_gross_window": 1.67
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Jonah Coleman: +18.8 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -6690,7 +6710,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -6790,7 +6811,8 @@
         "position": "QB"
        },
        "gain_window": 32.52,
-       "covered_window": 23.35
+       "covered_window": 23.35,
+       "covered_gross_window": 23.35
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Brian Thomas Jr.: +26.4 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -7351,7 +7373,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -7451,7 +7474,8 @@
         "position": "RB"
        },
        "gain_window": 56.03,
-       "covered_window": 50.42
+       "covered_window": 50.42,
+       "covered_gross_window": 56.03
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop A.J. Brown: +56.0 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -7960,7 +7984,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -8045,7 +8070,8 @@
        "excess": 0.0,
        "net_week": 1.89,
        "net_window": 19.73
-      }
+      },
+      "covered_gross_window": 19.73
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Joe Burrow: +19.7 over weeks 4–17 (+28.5 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -8585,7 +8611,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -8685,7 +8712,8 @@
         "position": "RB"
        },
        "gain_window": 56.03,
-       "covered_window": 50.42
+       "covered_window": 50.42,
+       "covered_gross_window": 56.03
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop A.J. Brown: +56.0 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -9228,7 +9256,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -9313,7 +9342,8 @@
        "excess": 0.0,
        "net_week": 1.89,
        "net_window": 19.73
-      }
+      },
+      "covered_gross_window": 19.73
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Joe Burrow: +19.7 over weeks 4–17 (+28.5 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -9836,7 +9866,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -9921,7 +9952,8 @@
        "excess": 0.0,
        "net_week": 0.0,
        "net_window": 16.97
-      }
+      },
+      "covered_gross_window": 16.97
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop DJ Moore: +17.0 over weeks 4–17 (+34.7 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -10431,7 +10463,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -10531,7 +10564,8 @@
         "position": "RB"
        },
        "gain_window": 23.08,
-       "covered_window": 12.67
+       "covered_window": 12.67,
+       "covered_gross_window": 13.01
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Washington, drop Terrance Ferguson: +14.8 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -11087,7 +11121,8 @@
         "position": "WR"
        },
        "gain_window": 20.32,
-       "covered_window": 9.67
+       "covered_window": 9.67,
+       "covered_gross_window": 9.67
       }
      },
      "theirs": {
@@ -11187,7 +11222,8 @@
         "position": "RB"
        },
        "gain_window": 126.46,
-       "covered_window": 1.67
+       "covered_window": 1.67,
+       "covered_gross_window": 1.67
       }
      },
      "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Jonah Coleman: +18.8 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -11609,7 +11645,8 @@
     "position": "WR"
    },
    "gain_window": 20.32,
-   "covered_window": 9.67
+   "covered_window": 9.67,
+   "covered_gross_window": 9.67
   }
  },
  "alternatives": [
@@ -11754,7 +11791,8 @@
      "position": "WR"
     },
     "gain_window": 20.32,
-    "covered_window": 9.67
+    "covered_window": 9.67,
+    "covered_gross_window": 9.67
    }
   }
  ],
@@ -11767,7 +11805,7 @@
   "bar_sets": 130,
   "candidates": 13016,
   "evaluated": 119,
-  "seconds": 2.517,
+  "seconds": 2.572,
   "dropped_on_the_basis": 0
  }
 }

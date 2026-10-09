@@ -245,7 +245,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -680,7 +681,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -731,7 +733,8 @@
        "excess": 0.0,
        "net_week": 2.08,
        "net_window": 8.17
-      }
+      },
+      "covered_gross_window": 8.17
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Lamar Jackson: +8.2 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -1094,7 +1097,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -1160,7 +1164,8 @@
         "position": "WR"
        },
        "gain_window": 28.92,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add T.J. Hockenson, drop Kaelon Black: +8.0 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -1548,7 +1553,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -1614,7 +1620,8 @@
         "position": "WR"
        },
        "gain_window": 28.92,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add T.J. Hockenson, drop Kaelon Black: +8.0 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -1972,7 +1979,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -2404,7 +2412,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -2455,7 +2464,8 @@
        "excess": 0.0,
        "net_week": 3.59,
        "net_window": 13.08
-      }
+      },
+      "covered_gross_window": 13.08
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Bryce Young: +13.1 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -2842,7 +2852,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -3254,7 +3265,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -3320,7 +3332,8 @@
         "position": "QB"
        },
        "gain_window": 4.8,
-       "covered_window": -0.07
+       "covered_window": -0.07,
+       "covered_gross_window": 4.8
       }
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Arizona Cardinals defense, drop Terrance Ferguson: +4.8 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -3706,7 +3719,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -4106,7 +4120,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -4157,7 +4172,8 @@
        "excess": 0.0,
        "net_week": 3.59,
        "net_window": 13.08
-      }
+      },
+      "covered_gross_window": 13.08
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Bryce Young: +13.1 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -4523,7 +4539,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -4918,7 +4935,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -5340,7 +5358,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -5406,7 +5425,8 @@
         "position": "WR"
        },
        "gain_window": 28.96,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Jonah Coleman: +4.0 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -5774,7 +5794,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -5825,7 +5846,8 @@
        "excess": 0.0,
        "net_week": 0.09,
        "net_window": 4.62
-      }
+      },
+      "covered_gross_window": 4.62
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Atlanta Falcons defense, drop Jacory Croskey-Merritt: +4.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -6185,7 +6207,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -6236,7 +6259,8 @@
        "excess": 0.0,
        "net_week": 2.08,
        "net_window": 8.17
-      }
+      },
+      "covered_gross_window": 8.17
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Lamar Jackson: +8.2 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -6573,7 +6597,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -6639,7 +6664,8 @@
         "position": "QB"
        },
        "gain_window": 4.8,
-       "covered_window": -0.07
+       "covered_window": -0.07,
+       "covered_gross_window": 4.8
       }
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Arizona Cardinals defense, drop Terrance Ferguson: +4.8 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -7000,7 +7026,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -7066,7 +7093,8 @@
         "position": "WR"
        },
        "gain_window": 28.96,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Jonah Coleman: +4.0 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -7421,7 +7449,8 @@
        "excess": 0.0,
        "net_week": 1.48,
        "net_window": 5.57
-      }
+      },
+      "covered_gross_window": 5.57
      },
      "theirs": {
       "kind": "waiver",
@@ -7487,7 +7516,8 @@
         "position": "WR"
        },
        "gain_window": 28.92,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add T.J. Hockenson, drop Kaelon Black: +8.0 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -7760,7 +7790,8 @@
    "excess": 0.0,
    "net_week": 1.48,
    "net_window": 5.57
-  }
+  },
+  "covered_gross_window": 5.57
  },
  "alternatives": [
   {
@@ -7834,7 +7865,8 @@
     "excess": 0.0,
     "net_week": 1.48,
     "net_window": 5.57
-   }
+   },
+   "covered_gross_window": 5.57
   }
  ],
  "ordering": {
@@ -7846,7 +7878,7 @@
   "bar_sets": 89,
   "candidates": 4472,
   "evaluated": 98,
-  "seconds": 0.428,
+  "seconds": 0.372,
   "dropped_on_the_basis": 0
  }
 }

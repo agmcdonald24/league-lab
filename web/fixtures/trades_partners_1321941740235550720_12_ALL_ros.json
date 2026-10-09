@@ -262,7 +262,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -841,7 +842,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -922,7 +924,8 @@
        "excess": 0.0,
        "net_week": 0.0,
        "net_window": 0.78
-      }
+      },
+      "covered_gross_window": 0.78
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Cooper Kupp: +0.8 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
@@ -1436,7 +1439,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -2019,7 +2023,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -2602,7 +2607,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "stand_pat",
@@ -3137,7 +3143,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "not_compared",
@@ -3703,7 +3710,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -3784,7 +3792,8 @@
        "excess": 0.0,
        "net_week": 0.0,
        "net_window": 4.18
-      }
+      },
+      "covered_gross_window": 4.18
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Jauan Jennings: +4.2 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
@@ -4268,7 +4277,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "not_compared",
@@ -4832,7 +4842,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -4928,7 +4939,8 @@
         "position": "QB"
        },
        "gain_window": 7.03,
-       "covered_window": -3.8
+       "covered_window": -3.8,
+       "covered_gross_window": 7.03
       }
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Justice Hill, drop J.J. McCarthy: +7.0 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
@@ -5402,7 +5414,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -5946,7 +5959,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -6042,7 +6056,8 @@
         "position": "QB"
        },
        "gain_window": 7.03,
-       "covered_window": -3.8
+       "covered_window": -3.8,
+       "covered_gross_window": 7.03
       }
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Justice Hill, drop J.J. McCarthy: +7.0 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
@@ -6542,7 +6557,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -6623,7 +6639,8 @@
        "excess": 0.0,
        "net_week": 0.93,
        "net_window": 11.15
-      }
+      },
+      "covered_gross_window": 11.15
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Kyle Pitts: +11.2 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
@@ -7095,7 +7112,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -7176,7 +7194,8 @@
        "excess": 0.0,
        "net_week": 0.0,
        "net_window": 0.78
-      }
+      },
+      "covered_gross_window": 0.78
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Cooper Kupp: +0.8 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
@@ -7647,7 +7666,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "stand_pat",
@@ -8179,7 +8199,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -8260,7 +8281,8 @@
        "excess": 0.0,
        "net_week": 0.0,
        "net_window": 4.18
-      }
+      },
+      "covered_gross_window": 4.18
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Jauan Jennings: +4.2 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
@@ -8729,7 +8751,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -8810,7 +8833,8 @@
        "excess": 0.0,
        "net_week": 0.93,
        "net_window": 11.15
-      }
+      },
+      "covered_gross_window": 11.15
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Kyle Pitts: +11.2 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
@@ -9308,7 +9332,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -9389,7 +9414,8 @@
        "excess": 0.0,
        "net_week": 0.0,
        "net_window": 4.74
-      }
+      },
+      "covered_gross_window": 4.74
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Tua Tagovailoa: +4.7 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
@@ -9869,7 +9895,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "not_compared",
@@ -10436,7 +10463,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -10517,7 +10545,8 @@
        "excess": 0.0,
        "net_week": 0.91,
        "net_window": 0.91
-      }
+      },
+      "covered_gross_window": 0.91
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Xavier Hutchinson, drop Joe Flacco: +0.9 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
@@ -10990,7 +11019,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -11071,7 +11101,8 @@
        "excess": 0.0,
        "net_week": 0.0,
        "net_window": 4.74
-      }
+      },
+      "covered_gross_window": 4.74
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Tua Tagovailoa: +4.7 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
@@ -11584,7 +11615,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "not_compared",
@@ -12126,7 +12158,8 @@
        "excess": 0.06,
        "net_week": -0.06,
        "net_window": 0.0
-      }
+      },
+      "covered_gross_window": 0.06
      },
      "theirs": {
       "kind": "waiver",
@@ -12207,7 +12240,8 @@
        "excess": 0.0,
        "net_week": 0.91,
        "net_window": 0.91
-      }
+      },
+      "covered_gross_window": 0.91
      },
      "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–17 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Xavier Hutchinson, drop Joe Flacco: +0.9 over weeks 5–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
@@ -12585,7 +12619,8 @@
    "excess": 0.06,
    "net_week": -0.06,
    "net_window": 0.0
-  }
+  },
+  "covered_gross_window": 0.06
  },
  "alternatives": [
   {
@@ -12709,7 +12744,8 @@
     "excess": 0.06,
     "net_week": -0.06,
     "net_window": 0.0
-   }
+   },
+   "covered_gross_window": 0.06
   }
  ],
  "ordering": {
@@ -12721,7 +12757,7 @@
   "bar_sets": 160,
   "candidates": 22517,
   "evaluated": 332,
-  "seconds": 3.303,
+  "seconds": 3.139,
   "dropped_on_the_basis": 0
  }
 }

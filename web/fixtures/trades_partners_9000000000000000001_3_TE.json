@@ -2478,7 +2478,8 @@
         "headshot_url": null
        },
        "gain_window": 20.53,
-       "covered_window": 3.58
+       "covered_window": 3.58,
+       "covered_gross_window": 3.58
       }
      },
      "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Ka'imi Fairbairn, drop Marvin Harrison Jr.: +6.2 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -6744,7 +6745,8 @@
         "headshot_url": null
        },
        "gain_window": 20.53,
-       "covered_window": 3.58
+       "covered_window": 3.58,
+       "covered_gross_window": 3.58
       }
      },
      "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Ka'imi Fairbairn, drop Marvin Harrison Jr.: +6.2 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -7532,7 +7534,7 @@
   "bar_sets": 29,
   "candidates": 994,
   "evaluated": 46,
-  "seconds": 0.243,
+  "seconds": 0.246,
   "dropped_on_the_basis": 0
  }
 }

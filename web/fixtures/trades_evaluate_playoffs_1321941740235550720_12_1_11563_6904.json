@@ -826,7 +826,8 @@
     "position": "QB"
    },
    "gain_window": 0.06,
-   "covered_window": -180.35
+   "covered_window": -180.35,
+   "covered_gross_window": 0.06
   }
  },
  "beyond_alternative": -2.75,
@@ -1070,7 +1071,8 @@
       "position": "QB"
      },
      "gain_window": 0.06,
-     "covered_window": -180.35
+     "covered_window": -180.35,
+     "covered_gross_window": 0.06
     }
    },
    "theirs": {
@@ -1122,7 +1124,8 @@
      "excess": 0.0,
      "net_week": 1.11,
      "net_window": 3.83
-    }
+    },
+    "covered_gross_window": 3.83
    },
    "words": "Yours: add Michael Mayer, drop Jaylen Wright: +0.1 over weeks 15–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Dallas Goedert: +3.8 over weeks 15–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
   },
@@ -1370,7 +1373,8 @@
       "position": "QB"
      },
      "gain_window": 0.06,
-     "covered_window": -180.35
+     "covered_window": -180.35,
+     "covered_gross_window": 0.06
     }
    },
    "theirs": {
@@ -1422,7 +1426,8 @@
      "excess": 0.0,
      "net_week": 1.11,
      "net_window": 3.83
-    }
+    },
+    "covered_gross_window": 3.83
    },
    "beyond": {
     "mine": -2.75,

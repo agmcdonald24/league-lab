@@ -213,7 +213,8 @@
         "position": "QB"
        },
        "gain_window": 20.9,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "theirs": {
@@ -283,7 +284,8 @@
         "position": "WR"
        },
        "gain_window": 8.56,
-       "covered_window": 0.32
+       "covered_window": 0.32,
+       "covered_gross_window": 0.32
       }
      },
      "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add T.J. Hockenson, drop Pat Freiermuth: +3.4 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -682,7 +684,8 @@
         "position": "QB"
        },
        "gain_window": 20.9,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "theirs": {
@@ -752,7 +755,8 @@
         "position": "WR"
        },
        "gain_window": 8.56,
-       "covered_window": 0.32
+       "covered_window": 0.32,
+       "covered_gross_window": 0.32
       }
      },
      "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add T.J. Hockenson, drop Pat Freiermuth: +3.4 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -1029,7 +1033,8 @@
     "position": "QB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "alternatives": [
@@ -1124,7 +1129,8 @@
      "position": "QB"
     },
     "gain_window": 20.9,
-    "covered_window": 0.0
+    "covered_window": 0.0,
+    "covered_gross_window": 0.0
    }
   }
  ],
@@ -1137,7 +1143,7 @@
   "candidates": 140,
   "bar_sets": 23,
   "evaluated": 2,
-  "seconds": 0.108,
+  "seconds": 0.102,
   "dropped_on_the_basis": 0
  }
 }

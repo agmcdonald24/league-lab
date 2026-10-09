@@ -947,7 +947,8 @@
     "position": "QB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -4.4,
@@ -1216,7 +1217,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1286,7 +1288,8 @@
       "position": "TE"
      },
      "gain_window": 11.58,
-     "covered_window": 2.8
+     "covered_window": 2.8,
+     "covered_gross_window": 2.8
     }
    },
    "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Jake Ferguson: +9.0 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -1554,7 +1557,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1624,7 +1628,8 @@
       "position": "TE"
      },
      "gain_window": 11.58,
-     "covered_window": 2.8
+     "covered_window": 2.8,
+     "covered_gross_window": 2.8
     }
    },
    "beyond": {

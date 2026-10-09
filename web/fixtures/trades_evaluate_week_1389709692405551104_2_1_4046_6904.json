@@ -768,7 +768,8 @@
     "position": "RB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -8.7,
@@ -971,7 +972,8 @@
       "position": "RB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1032,7 +1034,8 @@
       "position": "K"
      },
      "gain_window": 9.42,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "words": "Yours: add Washington Commanders defense, drop Jaylen Wright: +4.9 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Washington Commanders defense, drop Colston Loveland: +3.9 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -1236,7 +1239,8 @@
       "position": "RB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1297,7 +1301,8 @@
       "position": "K"
      },
      "gain_window": 9.42,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "beyond": {

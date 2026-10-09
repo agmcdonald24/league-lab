@@ -1681,7 +1681,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -1736,7 +1737,8 @@
          "excess": 0.0,
          "net_week": 2.71,
          "net_window": 6.05
-        }
+        },
+        "covered_gross_window": 6.05
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add New England Patriots defense, drop DJ Moore: +6.0 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
@@ -2129,7 +2131,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -2184,7 +2187,8 @@
          "excess": 0.0,
          "net_week": 6.11,
          "net_window": 11.73
-        }
+        },
+        "covered_gross_window": 11.73
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Sam Darnold: +11.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
@@ -2530,7 +2534,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -2585,7 +2590,8 @@
          "excess": 0.0,
          "net_week": 6.07,
          "net_window": 8.96
-        }
+        },
+        "covered_gross_window": 8.96
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Romeo Doubs: +9.0 over weeks 5\u20138 (+26.2 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
@@ -2981,7 +2987,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -3051,7 +3058,8 @@
           "position": "WR"
          },
          "gain_window": 8.56,
-         "covered_window": 0.32
+         "covered_window": 0.32,
+         "covered_gross_window": 0.32
         }
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add T.J. Hockenson, drop Pat Freiermuth: +3.4 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -3455,7 +3463,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -3510,7 +3519,8 @@
          "excess": 0.0,
          "net_week": 0.0,
          "net_window": 13.33
-        }
+        },
+        "covered_gross_window": 13.33
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Jauan Jennings: +13.3 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
@@ -3865,7 +3875,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -3935,7 +3946,8 @@
           "position": "RB"
          },
          "gain_window": 9.26,
-         "covered_window": 1.43
+         "covered_window": 1.43,
+         "covered_gross_window": 1.46
         }
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Blake Corum: +4.4 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -4330,7 +4342,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -4400,7 +4413,8 @@
           "position": "RB"
          },
          "gain_window": 9.26,
-         "covered_window": 1.43
+         "covered_window": 1.43,
+         "covered_gross_window": 1.46
         }
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Blake Corum: +4.4 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -4791,7 +4805,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -4846,7 +4861,8 @@
          "excess": 0.0,
          "net_week": 6.07,
          "net_window": 8.96
-        }
+        },
+        "covered_gross_window": 8.96
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Romeo Doubs: +9.0 over weeks 5\u20138 (+26.2 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
@@ -5192,7 +5208,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -5247,7 +5264,8 @@
          "excess": 0.0,
          "net_week": 6.11,
          "net_window": 11.73
-        }
+        },
+        "covered_gross_window": 11.73
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Sam Darnold: +11.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
@@ -5647,7 +5665,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -5717,7 +5736,8 @@
           "position": "TE"
          },
          "gain_window": 11.58,
-         "covered_window": 2.8
+         "covered_window": 2.8,
+         "covered_gross_window": 2.8
         }
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Jake Ferguson: +9.0 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -6107,7 +6127,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -6177,7 +6198,8 @@
           "position": "RB"
          },
          "gain_window": 11.32,
-         "covered_window": 1.98
+         "covered_window": 1.98,
+         "covered_gross_window": 1.98
         }
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Washington Commanders defense, drop Colston Loveland: +4.6 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -6525,7 +6547,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -6580,7 +6603,8 @@
          "excess": 0.0,
          "net_week": 0.0,
          "net_window": 13.33
-        }
+        },
+        "covered_gross_window": 13.33
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Jauan Jennings: +13.3 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
@@ -6933,7 +6957,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -7003,7 +7028,8 @@
           "position": "WR"
          },
          "gain_window": 8.56,
-         "covered_window": 0.32
+         "covered_window": 0.32,
+         "covered_gross_window": 0.32
         }
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add T.J. Hockenson, drop Pat Freiermuth: +3.4 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -7364,7 +7390,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -7434,7 +7461,8 @@
           "position": "TE"
          },
          "gain_window": 11.58,
-         "covered_window": 2.8
+         "covered_window": 2.8,
+         "covered_gross_window": 2.8
         }
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Jake Ferguson: +9.0 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -7820,7 +7848,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -7875,7 +7904,8 @@
          "excess": 19.98,
          "net_week": -18.91,
          "net_window": -17.97
-        }
+        },
+        "covered_gross_window": 2.01
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Rhamondre Stevenson (netted: his season value above replacement, 20.0): +0.0 over weeks 5\u20138 (+10.8 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
@@ -8223,7 +8253,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -8293,7 +8324,8 @@
           "position": "RB"
          },
          "gain_window": 11.32,
-         "covered_window": 1.98
+         "covered_window": 1.98,
+         "covered_gross_window": 1.98
         }
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Washington Commanders defense, drop Colston Loveland: +4.6 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -8637,7 +8669,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -8692,7 +8725,8 @@
          "excess": 0.0,
          "net_week": 2.71,
          "net_window": 6.05
-        }
+        },
+        "covered_gross_window": 6.05
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add New England Patriots defense, drop DJ Moore: +6.0 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
@@ -9040,7 +9074,8 @@
           "position": "QB"
          },
          "gain_window": 20.9,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -9095,7 +9130,8 @@
          "excess": 19.98,
          "net_week": -18.91,
          "net_window": -17.97
-        }
+        },
+        "covered_gross_window": 2.01
        },
        "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Rhamondre Stevenson (netted: his season value above replacement, 20.0): +0.0 over weeks 5\u20138 (+10.8 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
@@ -9384,7 +9420,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "alternatives": [
@@ -9479,7 +9516,8 @@
        "position": "QB"
       },
       "gain_window": 20.9,
-      "covered_window": 0.0
+      "covered_window": 0.0,
+      "covered_gross_window": 0.0
      }
     }
    ],
@@ -9492,11 +9530,11 @@
     "bar_sets": 118,
     "candidates": 9775,
     "evaluated": 192,
-    "seconds": 1.261,
+    "seconds": 1.38,
     "dropped_on_the_basis": 0
    },
    "timings_ms": {
-    "total": 1301.1
+    "total": 1423.7
    }
   }
  }

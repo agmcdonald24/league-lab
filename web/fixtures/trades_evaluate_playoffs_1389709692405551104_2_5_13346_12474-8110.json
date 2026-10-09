@@ -920,7 +920,8 @@
     "position": "WR"
    },
    "gain_window": 3.85,
-   "covered_window": -13.84
+   "covered_window": -13.84,
+   "covered_gross_window": 3.85
   }
  },
  "beyond_alternative": -4.02,
@@ -1165,7 +1166,8 @@
       "position": "WR"
      },
      "gain_window": 3.85,
-     "covered_window": -13.84
+     "covered_window": -13.84,
+     "covered_gross_window": 3.85
     }
    },
    "theirs": {
@@ -1214,7 +1216,8 @@
      "excess": 0.0,
      "net_week": 3.97,
      "net_window": 7.37
-    }
+    },
+    "covered_gross_window": 7.37
    },
    "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Justin Herbert: +7.4 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1447,7 +1450,8 @@
       "position": "WR"
      },
      "gain_window": 3.85,
-     "covered_window": -13.84
+     "covered_window": -13.84,
+     "covered_gross_window": 3.85
     }
    },
    "theirs": {
@@ -1496,7 +1500,8 @@
      "excess": 0.0,
      "net_week": 3.97,
      "net_window": 7.37
-    }
+    },
+    "covered_gross_window": 7.37
    },
    "beyond": {
     "mine": -4.02,

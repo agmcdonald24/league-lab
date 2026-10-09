@@ -857,7 +857,8 @@
    "excess": 0.0,
    "net_week": 1.48,
    "net_window": 5.57
-  }
+  },
+  "covered_gross_window": 5.57
  },
  "beyond_alternative": -9.48,
  "beats_alternative": false,
@@ -1102,7 +1103,8 @@
      "excess": 0.0,
      "net_week": 1.48,
      "net_window": 5.57
-    }
+    },
+    "covered_gross_window": 5.57
    },
    "theirs": {
     "kind": "waiver",
@@ -1397,7 +1399,8 @@
      "excess": 0.0,
      "net_week": 1.48,
      "net_window": 5.57
-    }
+    },
+    "covered_gross_window": 5.57
    },
    "theirs": {
     "kind": "waiver",

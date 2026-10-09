@@ -964,7 +964,8 @@
     "position": "QB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -16.1,
@@ -1299,7 +1300,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1378,7 +1380,8 @@
      "excess": 0.0,
      "net_week": 0.45,
      "net_window": 16.53
-    }
+    },
+    "covered_gross_window": 16.53
    },
    "words": "Yours: add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Colston Loveland: +16.5 over weeks 5–16 (+34.1 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1763,7 +1766,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1842,7 +1846,8 @@
      "excess": 0.0,
      "net_week": 0.45,
      "net_window": 16.53
-    }
+    },
+    "covered_gross_window": 16.53
    },
    "beyond": {
     "mine": -16.1,

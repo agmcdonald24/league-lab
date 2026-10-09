@@ -2515,7 +2515,8 @@
         "headshot_url": null
        },
        "gain_window": 39.17,
-       "covered_window": 1.67
+       "covered_window": 1.67,
+       "covered_gross_window": 1.67
       }
      },
      "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Wan'Dale Robinson, drop Jonah Coleman: +5.1 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -3853,7 +3854,8 @@
         "headshot_url": null
        },
        "gain_window": 20.53,
-       "covered_window": 3.58
+       "covered_window": 3.58,
+       "covered_gross_window": 3.58
       }
      },
      "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Ka'imi Fairbairn, drop Marvin Harrison Jr.: +6.2 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -4708,7 +4710,8 @@
         "headshot_url": null
        },
        "gain_window": 20.53,
-       "covered_window": 3.58
+       "covered_window": 3.58,
+       "covered_gross_window": 3.58
       }
      },
      "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Ka'imi Fairbairn, drop Marvin Harrison Jr.: +6.2 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -5083,7 +5086,7 @@
   "bar_sets": 52,
   "candidates": 2157,
   "evaluated": 55,
-  "seconds": 0.272,
+  "seconds": 0.3,
   "dropped_on_the_basis": 0
  }
 }

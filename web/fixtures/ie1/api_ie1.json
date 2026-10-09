@@ -15045,7 +15045,8 @@
      },
      "drop": null,
      "gain_window": 11.89,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "beyond_alternative": 2.78,
@@ -15267,7 +15268,8 @@
        },
        "drop": null,
        "gain_window": 11.89,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "theirs": {
@@ -15341,7 +15343,8 @@
         "headshot_url": null
        },
        "gain_window": 36.66,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
@@ -15582,7 +15585,8 @@
        },
        "drop": null,
        "gain_window": 11.89,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "theirs": {
@@ -15656,7 +15660,8 @@
         "headshot_url": null
        },
        "gain_window": 36.66,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "beyond": {
@@ -15906,13 +15911,13 @@
    },
    "timings_ms": {
     "context": 0.0,
-    "evaluate": 3.9,
-    "words": 43.6,
-    "total": 47.5,
-    "league.sleeper": 3.6,
-    "league.price": 1377.2,
-    "league.solve": 316.7,
-    "league.total": 1697.5
+    "evaluate": 4.7,
+    "words": 50.3,
+    "total": 55.0,
+    "league.sleeper": 5.2,
+    "league.price": 1352.5,
+    "league.solve": 344.2,
+    "league.total": 1701.9
    },
    "provenance": {
     "model_version": "v3.0",
@@ -16896,7 +16901,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -16956,7 +16962,8 @@
         "covered_window": 12.94,
         "covered_week": 2.47,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 12.94
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Kenny Gainwell: +12.9 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -17341,7 +17348,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -17394,7 +17402,8 @@
          },
          "drop": null,
          "gain_window": 11.89,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
@@ -17758,7 +17767,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -17818,7 +17828,8 @@
         "covered_window": 18.68,
         "covered_week": 1.54,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 18.68
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Cincinnati Bengals QB: +18.7 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -18231,7 +18242,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -18305,7 +18317,8 @@
           "headshot_url": null
          },
          "gain_window": 15.64,
-         "covered_window": 3.05
+         "covered_window": 3.05,
+         "covered_gross_window": 3.05
         }
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add New Orleans Saints K, drop Courtland Sutton: +6.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
@@ -18671,7 +18684,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -18731,7 +18745,8 @@
         "covered_window": 10.41,
         "covered_week": 0.0,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 10.41
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Xavier Worthy: +10.4 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -19145,7 +19160,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -19205,7 +19221,8 @@
         "covered_window": 10.41,
         "covered_week": 0.0,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 10.41
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Xavier Worthy: +10.4 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -19617,7 +19634,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -19677,7 +19695,8 @@
         "covered_window": 19.36,
         "covered_week": 0.0,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 19.36
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Terrance Ferguson: +19.4 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -20092,7 +20111,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -20152,7 +20172,8 @@
         "covered_window": 5.52,
         "covered_week": 2.19,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 5.52
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add New Orleans Saints K, drop Jonathon Brooks: +5.5 over weeks 4\u20137 (+16.4 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -20517,7 +20538,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -20591,7 +20613,8 @@
           "headshot_url": null
          },
          "gain_window": 15.64,
-         "covered_window": 3.05
+         "covered_window": 3.05,
+         "covered_gross_window": 3.05
         }
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add New Orleans Saints K, drop Courtland Sutton: +6.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
@@ -20998,7 +21021,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -21058,7 +21082,8 @@
         "covered_window": 18.68,
         "covered_week": 1.54,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 18.68
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Cincinnati Bengals QB: +18.7 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -21431,7 +21456,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -21491,7 +21517,8 @@
         "covered_window": 16.52,
         "covered_week": 5.89,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 16.52
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Denver Broncos QB: +16.5 over weeks 4\u20137 (+16.3 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -21906,7 +21933,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -21966,7 +21994,8 @@
         "covered_window": 16.52,
         "covered_week": 5.89,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 16.52
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Denver Broncos QB: +16.5 over weeks 4\u20137 (+16.3 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -22332,7 +22361,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -22392,7 +22422,8 @@
         "covered_window": 5.52,
         "covered_week": 2.19,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 5.52
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add New Orleans Saints K, drop Jonathon Brooks: +5.5 over weeks 4\u20137 (+16.4 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -22754,7 +22785,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -22828,7 +22860,8 @@
           "headshot_url": null
          },
          "gain_window": 16.74,
-         "covered_window": 5.07
+         "covered_window": 5.07,
+         "covered_gross_window": 5.07
         }
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Kyle Pitts: +8.3 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
@@ -23191,7 +23224,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -23251,7 +23285,8 @@
         "covered_window": 19.36,
         "covered_week": 0.0,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 19.36
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Terrance Ferguson: +19.4 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -23614,7 +23649,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -23674,7 +23710,8 @@
         "covered_window": 6.82,
         "covered_week": 3.61,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 6.82
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add New Orleans Saints K, drop Jacksonville Jaguars K: +6.8 over weeks 4\u20137 (+18.6 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -24081,7 +24118,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -24141,7 +24179,8 @@
         "covered_window": 12.94,
         "covered_week": 2.47,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 12.94
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Kenny Gainwell: +12.9 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -24544,7 +24583,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -24604,7 +24644,8 @@
         "covered_window": 23.84,
         "covered_week": 9.1,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 23.84
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Philadelphia Eagles QB: +23.8 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -24959,7 +25000,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -25019,7 +25061,8 @@
         "covered_window": 16.52,
         "covered_week": 5.89,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 16.52
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Denver Broncos QB: +16.5 over weeks 4\u20137 (+16.3 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -25369,7 +25412,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -25422,7 +25466,8 @@
          },
          "drop": null,
          "gain_window": 11.89,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
@@ -25785,7 +25830,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -25845,7 +25891,8 @@
         "covered_window": 23.84,
         "covered_week": 9.1,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 23.84
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Philadelphia Eagles QB: +23.8 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -26239,7 +26286,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -26313,7 +26361,8 @@
           "headshot_url": null
          },
          "gain_window": 16.74,
-         "covered_window": 5.07
+         "covered_window": 5.07,
+         "covered_gross_window": 5.07
         }
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop Kyle Pitts: +8.3 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
@@ -26713,7 +26762,8 @@
           "headshot_url": null
          },
          "gain_window": 36.66,
-         "covered_window": 0.0
+         "covered_window": 0.0,
+         "covered_gross_window": 0.0
         }
        },
        "theirs": {
@@ -26773,7 +26823,8 @@
         "covered_window": 6.82,
         "covered_week": 3.61,
         "availability": "guaranteed",
-        "availability_words": "first come, first served: he is yours if you add him before anyone else"
+        "availability_words": "first come, first served: he is yours if you add him before anyone else",
+        "covered_gross_window": 6.82
        },
        "words": "Yours: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add New Orleans Saints K, drop Jacksonville Jaguars K: +6.8 over weeks 4\u20137 (+18.6 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else)."
       },
@@ -27043,7 +27094,8 @@
       "headshot_url": null
      },
      "gain_window": 36.66,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "alternatives": [
@@ -27142,7 +27194,8 @@
        "headshot_url": null
       },
       "gain_window": 36.66,
-      "covered_window": 0.0
+      "covered_window": 0.0,
+      "covered_gross_window": 0.0
      }
     }
    ],
@@ -27155,11 +27208,11 @@
     "bar_sets": 147,
     "candidates": 8037,
     "evaluated": 50,
-    "seconds": 0.813,
+    "seconds": 0.702,
     "dropped_on_the_basis": 0
    },
    "timings_ms": {
-    "total": 8466.3
+    "total": 8178.7
    }
   }
  }

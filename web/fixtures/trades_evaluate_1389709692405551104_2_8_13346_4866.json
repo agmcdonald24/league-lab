@@ -786,7 +786,8 @@
     "position": "QB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -2.0,
@@ -1025,7 +1026,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1080,7 +1082,8 @@
      "excess": 0.0,
      "net_week": 6.11,
      "net_window": 11.73
-    }
+    },
+    "covered_gross_window": 11.73
    },
    "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Sam Darnold: +11.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1329,7 +1332,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1384,7 +1388,8 @@
      "excess": 0.0,
      "net_week": 6.11,
      "net_window": 11.73
-    }
+    },
+    "covered_gross_window": 11.73
    },
    "beyond": {
     "mine": -2.0,

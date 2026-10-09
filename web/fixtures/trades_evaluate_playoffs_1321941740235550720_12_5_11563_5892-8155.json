@@ -987,7 +987,8 @@
     "position": "QB"
    },
    "gain_window": 0.06,
-   "covered_window": -180.35
+   "covered_window": -180.35,
+   "covered_gross_window": 0.06
   }
  },
  "beyond_alternative": 9.17,
@@ -1260,7 +1261,8 @@
       "position": "QB"
      },
      "gain_window": 0.06,
-     "covered_window": -180.35
+     "covered_window": -180.35,
+     "covered_gross_window": 0.06
     }
    },
    "theirs": {
@@ -1556,7 +1558,8 @@
       "position": "QB"
      },
      "gain_window": 0.06,
-     "covered_window": -180.35
+     "covered_window": -180.35,
+     "covered_gross_window": 0.06
     }
    },
    "theirs": {

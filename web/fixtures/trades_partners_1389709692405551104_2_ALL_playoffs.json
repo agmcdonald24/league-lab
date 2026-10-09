@@ -254,7 +254,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -303,7 +304,8 @@
        "excess": 0.0,
        "net_week": 1.33,
        "net_window": 2.25
-      }
+      },
+      "covered_gross_window": 2.25
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Kalif Raymond: +2.2 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -680,7 +682,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -729,7 +732,8 @@
        "excess": 0.0,
        "net_week": 5.0,
        "net_window": 8.91
-      }
+      },
+      "covered_gross_window": 8.91
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Darren Waller: +8.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -1105,7 +1109,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -1154,7 +1159,8 @@
        "excess": 0.0,
        "net_week": 2.47,
        "net_window": 5.2
-      }
+      },
+      "covered_gross_window": 5.2
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Josh Allen: +5.2 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -1517,7 +1523,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -1905,7 +1912,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -1954,7 +1962,8 @@
        "excess": 0.0,
        "net_week": 1.33,
        "net_window": 2.25
-      }
+      },
+      "covered_gross_window": 2.25
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Kalif Raymond: +2.2 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -2285,7 +2294,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -2334,7 +2344,8 @@
        "excess": 0.0,
        "net_week": 4.35,
        "net_window": 7.6
-      }
+      },
+      "covered_gross_window": 7.6
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Romeo Doubs: +7.6 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -2707,7 +2718,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -2756,7 +2768,8 @@
        "excess": 0.0,
        "net_week": 4.35,
        "net_window": 7.6
-      }
+      },
+      "covered_gross_window": 7.6
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Romeo Doubs: +7.6 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -3075,7 +3088,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -3124,7 +3138,8 @@
        "excess": 0.0,
        "net_week": 2.86,
        "net_window": 5.6
-      }
+      },
+      "covered_gross_window": 5.6
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Matthew Stafford: +5.6 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -3456,7 +3471,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -3505,7 +3521,8 @@
        "excess": 0.0,
        "net_week": 3.97,
        "net_window": 7.37
-      }
+      },
+      "covered_gross_window": 7.37
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Justin Herbert: +7.4 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -3836,7 +3853,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -4207,7 +4225,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -4256,7 +4275,8 @@
        "excess": 0.0,
        "net_week": 3.15,
        "net_window": 5.1
-      }
+      },
+      "covered_gross_window": 5.1
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Jared Goff: +5.1 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -4588,7 +4608,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -4637,7 +4658,8 @@
        "excess": 0.0,
        "net_week": 5.0,
        "net_window": 8.91
-      }
+      },
+      "covered_gross_window": 8.91
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Darren Waller: +8.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -4969,7 +4991,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -5018,7 +5041,8 @@
        "excess": 0.0,
        "net_week": 2.47,
        "net_window": 5.2
-      }
+      },
+      "covered_gross_window": 5.2
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Josh Allen: +5.2 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -5333,7 +5357,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -5382,7 +5407,8 @@
        "excess": 0.0,
        "net_week": 2.46,
        "net_window": 5.1
-      }
+      },
+      "covered_gross_window": 5.1
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Lamar Jackson: +5.1 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -5742,7 +5768,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -5791,7 +5818,8 @@
        "excess": 0.0,
        "net_week": 3.97,
        "net_window": 7.37
-      }
+      },
+      "covered_gross_window": 7.37
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Justin Herbert: +7.4 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -6152,7 +6180,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -6201,7 +6230,8 @@
        "excess": 0.0,
        "net_week": 2.46,
        "net_window": 5.1
-      }
+      },
+      "covered_gross_window": 5.1
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Lamar Jackson: +5.1 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -6562,7 +6592,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -6611,7 +6642,8 @@
        "excess": 0.0,
        "net_week": 2.86,
        "net_window": 5.6
-      }
+      },
+      "covered_gross_window": 5.6
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Matthew Stafford: +5.6 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -6976,7 +7008,8 @@
         "position": "WR"
        },
        "gain_window": 3.85,
-       "covered_window": -13.84
+       "covered_window": -13.84,
+       "covered_gross_window": 3.85
       }
      },
      "theirs": {
@@ -7025,7 +7058,8 @@
        "excess": 0.0,
        "net_week": 3.15,
        "net_window": 5.1
-      }
+      },
+      "covered_gross_window": 5.1
      },
      "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Jared Goff: +5.1 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -7296,7 +7330,8 @@
     "position": "WR"
    },
    "gain_window": 3.85,
-   "covered_window": -13.84
+   "covered_window": -13.84,
+   "covered_gross_window": 3.85
   }
  },
  "alternatives": [
@@ -7381,7 +7416,8 @@
      "position": "WR"
     },
     "gain_window": 3.85,
-    "covered_window": -13.84
+    "covered_window": -13.84,
+    "covered_gross_window": 3.85
    }
   }
  ],
@@ -7394,7 +7430,7 @@
   "bar_sets": 98,
   "candidates": 5208,
   "evaluated": 161,
-  "seconds": 0.372,
+  "seconds": 0.4,
   "dropped_on_the_basis": 0
  }
 }

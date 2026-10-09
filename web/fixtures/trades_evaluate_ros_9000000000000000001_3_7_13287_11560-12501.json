@@ -1095,7 +1095,8 @@
     "position": "WR"
    },
    "gain_window": 20.32,
-   "covered_window": 9.67
+   "covered_window": 9.67,
+   "covered_gross_window": 9.67
   }
  },
  "beyond_alternative": -19.56,
@@ -1500,7 +1501,8 @@
       "position": "WR"
      },
      "gain_window": 20.32,
-     "covered_window": 9.67
+     "covered_window": 9.67,
+     "covered_gross_window": 9.67
     }
    },
    "theirs": {
@@ -1585,7 +1587,8 @@
      "excess": 0.0,
      "net_week": 0.0,
      "net_window": 34.05
-    }
+    },
+    "covered_gross_window": 34.05
    },
    "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Caleb Williams: +34.0 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -2040,7 +2043,8 @@
       "position": "WR"
      },
      "gain_window": 20.32,
-     "covered_window": 9.67
+     "covered_window": 9.67,
+     "covered_gross_window": 9.67
     }
    },
    "theirs": {
@@ -2125,7 +2129,8 @@
      "excess": 0.0,
      "net_week": 0.0,
      "net_window": 34.05
-    }
+    },
+    "covered_gross_window": 34.05
    },
    "beyond": {
     "mine": -19.56,

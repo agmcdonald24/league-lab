@@ -53,6 +53,13 @@ def test_the_alternative_sentence_says_the_drop_and_its_netting_once():
     a["drop_cost"] = {"piece": None, "cost": 0.0, "excess": 0.0}            # a drop that costs nothing more
     assert D.alternative_words(a, "weeks 5–8", "window").endswith("(drop Jacory Croskey-Merritt)")
     assert D.iu1_drop_words({"drop": None}) == ""
+    # the PO's clause about Waivers' first claim reads what he adds on the frame BEFORE his drop is netted: a pick whose
+    # gain and drop cost cancel (net 0) does not fill an empty spot, and the sentence does not say it does
+    rop = {"player": {"player_name": "Jacoby Brissett"}, "covered_window": 0.0, "covered_gross_window": 5.0}
+    assert "already counted" not in D.alternative_words({**a, "roster_only_pick": rop}, "weeks 5–8", "window")
+    rop["covered_gross_window"] = 0.0
+    assert D.alternative_words({**a, "roster_only_pick": rop}, "weeks 5–8", "window").endswith(
+        "; Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)")
 
 
 @needs_db
@@ -73,6 +80,7 @@ def test_the_folk_case_nets_the_drop_on_the_basis(monkeypatch):
     assert "drop Bryce Young" in mine["words"]
     # the roster-only pick kept beside it, priced on the frame (he fills an empty starting spot: 0)
     assert mine["roster_only_pick"]["covered_window"] == pytest.approx(0.0, abs=0.05)
+    assert mine["roster_only_pick"]["covered_gross_window"] == pytest.approx(0.0, abs=0.05)
     # the partner: the roster-only pick netted on the frame (the drop's season value beyond his lineup loss)
     tdc = theirs.get("drop_cost") or {}
     assert tdc.get("piece") == "season_value" and tdc["excess"] > 0

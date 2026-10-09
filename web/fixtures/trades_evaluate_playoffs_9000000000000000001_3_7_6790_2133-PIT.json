@@ -1013,7 +1013,8 @@
    "excess": 0.0,
    "net_week": 1.48,
    "net_window": 5.57
-  }
+  },
+  "covered_gross_window": 5.57
  },
  "beyond_alternative": 2.12,
  "beats_alternative": true,
@@ -1270,7 +1271,8 @@
      "excess": 0.0,
      "net_week": 1.48,
      "net_window": 5.57
-    }
+    },
+    "covered_gross_window": 5.57
    },
    "theirs": {
     "kind": "waiver",
@@ -1321,7 +1323,8 @@
      "excess": 0.0,
      "net_week": 2.08,
      "net_window": 8.17
-    }
+    },
+    "covered_gross_window": 8.17
    },
    "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Lamar Jackson: +8.2 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1574,7 +1577,8 @@
      "excess": 0.0,
      "net_week": 1.48,
      "net_window": 5.57
-    }
+    },
+    "covered_gross_window": 5.57
    },
    "theirs": {
     "kind": "waiver",
@@ -1625,7 +1629,8 @@
      "excess": 0.0,
      "net_week": 2.08,
      "net_window": 8.17
-    }
+    },
+    "covered_gross_window": 8.17
    },
    "beyond": {
     "mine": 2.12,

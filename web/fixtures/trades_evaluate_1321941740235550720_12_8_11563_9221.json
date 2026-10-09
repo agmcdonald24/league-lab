@@ -876,7 +876,8 @@
    "excess": 0.06,
    "net_week": -0.06,
    "net_window": -0.06
-  }
+  },
+  "covered_gross_window": 0.0
  },
  "beyond_alternative": 25.6,
  "beats_alternative": true,
@@ -1099,7 +1100,8 @@
      "excess": 0.06,
      "net_week": -0.06,
      "net_window": -0.06
-    }
+    },
+    "covered_gross_window": 0.0
    },
    "theirs": {
     "kind": "stand_pat",
@@ -1365,7 +1367,8 @@
      "excess": 0.06,
      "net_week": -0.06,
      "net_window": -0.06
-    }
+    },
+    "covered_gross_window": 0.0
    },
    "theirs": {
     "kind": "stand_pat",

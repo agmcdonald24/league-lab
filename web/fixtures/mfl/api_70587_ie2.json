@@ -2268,7 +2268,8 @@
      },
      "drop": null,
      "gain_window": 11.89,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "beyond_alternative": 2.78,
@@ -2490,7 +2491,8 @@
        },
        "drop": null,
        "gain_window": 11.89,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "theirs": {
@@ -2564,7 +2566,8 @@
         "headshot_url": null
        },
        "gain_window": 36.66,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
@@ -2805,7 +2808,8 @@
        },
        "drop": null,
        "gain_window": 11.89,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "theirs": {
@@ -2879,7 +2883,8 @@
         "headshot_url": null
        },
        "gain_window": 36.66,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "beyond": {
@@ -3129,13 +3134,13 @@
    },
    "timings_ms": {
     "context": 0.0,
-    "evaluate": 4.3,
-    "words": 38.3,
-    "total": 42.6,
-    "league.sleeper": 3.6,
-    "league.price": 1377.2,
-    "league.solve": 316.7,
-    "league.total": 1697.5
+    "evaluate": 4.4,
+    "words": 33.6,
+    "total": 38.0,
+    "league.sleeper": 5.2,
+    "league.price": 1352.5,
+    "league.solve": 344.2,
+    "league.total": 1701.9
    },
    "provenance": {
     "model_version": "v3.0",

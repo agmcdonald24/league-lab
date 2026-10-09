@@ -891,7 +891,8 @@
     "position": "RB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -5.65,
@@ -1124,7 +1125,8 @@
       "position": "RB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1170,7 +1172,8 @@
      "excess": 0.0,
      "net_week": 4.34,
      "net_window": 4.34
-    }
+    },
+    "covered_gross_window": 4.34
    },
    "words": "Yours: add Washington Commanders defense, drop Jaylen Wright: +4.9 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Justin Herbert: +4.3 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1386,7 +1389,8 @@
       "position": "RB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1432,7 +1436,8 @@
      "excess": 0.0,
      "net_week": 4.34,
      "net_window": 4.34
-    }
+    },
+    "covered_gross_window": 4.34
    },
    "beyond": {
     "mine": -5.65,

@@ -1600,7 +1600,8 @@
         "headshot_url": null
        },
        "gain_window": 12.02,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Daniel Carlson, drop Terrance Ferguson: +4.3 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -2068,7 +2069,8 @@
         "headshot_url": null
        },
        "gain_window": 12.02,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Daniel Carlson, drop Terrance Ferguson: +4.3 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -5487,7 +5489,7 @@
   "bar_sets": 27,
   "candidates": 772,
   "evaluated": 26,
-  "seconds": 0.17,
+  "seconds": 0.174,
   "dropped_on_the_basis": 0
  }
 }

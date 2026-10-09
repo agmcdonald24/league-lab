@@ -1110,7 +1110,8 @@
     "position": "QB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": 15.64,
@@ -1475,7 +1476,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1554,7 +1556,8 @@
      "excess": 0.0,
      "net_week": 1.57,
      "net_window": 19.6
-    }
+    },
+    "covered_gross_window": 19.6
    },
    "words": "Yours: add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop DJ Moore: +19.6 over weeks 5–16 (+28.1 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1961,7 +1964,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -2040,7 +2044,8 @@
      "excess": 0.0,
      "net_week": 1.57,
      "net_window": 19.6
-    }
+    },
+    "covered_gross_window": 19.6
    },
    "beyond": {
     "mine": 15.64,

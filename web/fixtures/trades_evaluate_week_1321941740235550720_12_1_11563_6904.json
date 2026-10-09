@@ -939,7 +939,8 @@
      "excess": 0.0,
      "net_week": 0.93,
      "net_window": 0.93
-    }
+    },
+    "covered_gross_window": 0.93
    },
    "words": "Yours: no waiver claim improves your starting lineup this week (nothing to claim). Theirs: add Michael Mayer, drop Dallas Goedert: +0.9 this week (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
   },
@@ -1145,7 +1146,8 @@
      "excess": 0.0,
      "net_week": 0.93,
      "net_window": 0.93
-    }
+    },
+    "covered_gross_window": 0.93
    },
    "beyond": {
     "mine": -2.14,

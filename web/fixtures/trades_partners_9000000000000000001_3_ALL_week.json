@@ -268,7 +268,8 @@
        "excess": 0.0,
        "net_week": 4.33,
        "net_window": 4.33
-      }
+      },
+      "covered_gross_window": 4.33
      },
      "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Chicago Bears defense, drop Philadelphia Eagles: +4.3 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -643,7 +644,8 @@
        "excess": 0.0,
        "net_week": 4.33,
        "net_window": 4.33
-      }
+      },
+      "covered_gross_window": 4.33
      },
      "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Chicago Bears defense, drop Philadelphia Eagles: +4.3 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -3993,7 +3995,8 @@
        "excess": 0.0,
        "net_week": 2.42,
        "net_window": 2.42
-      }
+      },
+      "covered_gross_window": 2.42
      },
      "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add C.J. Stroud, drop Bryce Young: +2.4 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -4398,7 +4401,8 @@
        "excess": 0.0,
        "net_week": 2.42,
        "net_window": 2.42
-      }
+      },
+      "covered_gross_window": 2.42
      },
      "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add C.J. Stroud, drop Bryce Young: +2.4 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
@@ -5518,7 +5522,8 @@
         "position": "QB"
        },
        "gain_window": 9.9,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Daniel Carlson, drop Jonah Coleman: +2.3 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -6225,7 +6230,8 @@
         "position": "QB"
        },
        "gain_window": 9.9,
-       "covered_window": 0.0
+       "covered_window": 0.0,
+       "covered_gross_window": 0.0
       }
      },
      "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Daniel Carlson, drop Jonah Coleman: +2.3 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -6910,7 +6916,7 @@
   "bar_sets": 85,
   "candidates": 3186,
   "evaluated": 70,
-  "seconds": 0.126,
+  "seconds": 0.136,
   "dropped_on_the_basis": 0
  }
 }

@@ -1075,7 +1075,8 @@
      "excess": 0.0,
      "net_week": 4.33,
      "net_window": 4.33
-    }
+    },
+    "covered_gross_window": 4.33
    },
    "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Chicago Bears defense, drop Philadelphia Eagles: +4.3 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1330,7 +1331,8 @@
      "excess": 0.0,
      "net_week": 4.33,
      "net_window": 4.33
-    }
+    },
+    "covered_gross_window": 4.33
    },
    "beyond": {
     "mine": -6.41,

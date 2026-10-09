@@ -1551,7 +1551,7 @@ def alternative_words(alt: dict, span: str, window: str) -> str:
     # next one. Without the sentence the two screens name two different "best" claims and neither says why.
     rop = alt.get("roster_only_pick") or {}
     rname = (rop.get("player") or {}).get("player_name")
-    covered = rop.get("covered_window")
+    covered = rop.get("covered_gross_window", rop.get("covered_window"))   # IU-1: before any netting of his drop
     if rname and rname != (alt.get("player") or {}).get("player_name") and covered is not None and abs(float(covered)) < 0.05:
         words += f"; {rname} is already counted in every number here (he fills a starting spot that is empty)"
     # ---- end PO
@@ -3001,7 +3001,8 @@ def it1_basis_alternative(ctx: TradeContext, board: RosterBoard, weeks: tuple[in
         if mv0 is not None:
             alt = dict(alt)
             nw, nh = net_of(det0)
-            alt.update({"covered_week": T._r2(nw), "covered_window": T._r2(nh), "drop_cost": det0})
+            alt.update({"covered_week": T._r2(nw), "covered_window": T._r2(nh), "drop_cost": det0,
+                        "covered_gross_window": T._r2(sum(mv0[2]))})
     mv, det = priced()
     if mv is None:
         return alt
@@ -3020,7 +3021,9 @@ def it1_basis_alternative(ctx: TradeContext, board: RosterBoard, weeks: tuple[in
     new["words"] = alternative_words(new, span, window)
     if alt.get("kind") != STAND_PAT:
         new["roster_only_pick"] = {"player": alt.get("player"), "drop": alt.get("drop"),
-                                   "gain_window": alt.get("gain_window"), "covered_window": alt.get("covered_window")}
+                                   "gain_window": alt.get("gain_window"), "covered_window": alt.get("covered_window"),
+                                   # IU-1: what he adds on the frame before his drop is netted (the PO's sentence reads it)
+                                   "covered_gross_window": alt.get("covered_gross_window", alt.get("covered_window"))}
     return new
 
 
