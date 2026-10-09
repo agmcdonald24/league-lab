@@ -1455,7 +1455,7 @@ def live_rows(pred: pd.DataFrame, week: int, teams: pd.DataFrame, player_team: p
 
 
 def shadow_moves(live: pd.DataFrame, stored: pd.DataFrame, names: dict[str, str], move: float = SHADOW_MOVE,
-                 leagues: dict[str, str] | None = None) -> list[dict]:
+                 leagues: dict[str, str] | None = None, scorings: dict[str, dict[str, float]] | None = None) -> list[dict]:
     """The players whose number would move by ``move`` points or more if the overlay were on: tonight's gated row
     (``live``) against the kickoff board (``stored``: ops.projections of the week), per house league, with the reason —
     he sits now (the gate's why) / he is back / a teammate sits (projection v3 reads the week's report: the personnel
@@ -1485,25 +1485,54 @@ def shadow_moves(live: pd.DataFrame, stored: pd.DataFrame, names: dict[str, str]
             elif r.model_version != r.model_version_kickoff:
                 reason = f"the model changed since the kickoff board ({r.model_version_kickoff} -> {r.model_version})"
             else:
-                reason = "the inputs moved since the kickoff board (report, market lines, depth chart / starter)"
-            line = _line_moves(r._asdict())
+                reason = "the inputs moved since the kickoff board (the week's report, market lines, who starts at QB)"
+            row = r._asdict()
+            line = _line_moves(row)
+            bonus = _bonus_crossings(row, (scorings or {}).get(r.league_id, {}))
             reason += f"; the line: {line}" if line and not reason.startswith(("sits", "back")) else ""
+            reason += f"; {bonus}" if bonus and not reason.startswith(("sits", "back")) else ""
         out.append({"league_id": r.league_id, "league": (leagues or {}).get(r.league_id, r.league_id), "gsis_id": r.gsis_id, "name": names.get(r.gsis_id, r.gsis_id),
                     "position": r.position, "team": r.team, "kickoff_points": round(float(r.proj_points_kickoff), 2),
                     "live_points": round(float(r.proj_points), 2), "delta": round(float(r.delta), 2), "reason": reason})
     return out
 
 
+LINE_WEIGHT = {"receiving_yards": 0.1, "rushing_yards": 0.1, "passing_yards": 0.04, "receiving_tds": 6.0, "rushing_tds": 6.0,
+               "passing_tds": 4.0, "receptions": 0.5, "passing_interceptions": 2.0, "fumbles_lost_total": 2.0}
+BONUS_KEYS = {"bonus_rec_yd_": "receiving_yards", "bonus_rush_yd_": "rushing_yards", "bonus_pass_yd_": "passing_yards"}
+
+
 def _line_moves(row: dict, top: int = 3) -> str:
     """The stat-line components that moved most between the kickoff board (``proj_<c>_kickoff``) and tonight's
-    (``proj_<c>``), in their own units: "passing_yards 251.0 -> 270.4, passing_tds 1.71 -> 1.95"."""
+    (``proj_<c>``), ranked by their rough worth in points (``LINE_WEIGHT``; volume-only stats last), in their own
+    units: "passing_yards 292.42 -> 304.91, passing_tds 1.71 -> 1.95"."""
     moved = []
     for c in ALL_COMPONENTS:
         a, b = row.get(f"proj_{c}_kickoff"), row.get(f"proj_{c}")
         if a is None or b is None or pd.isna(a) or pd.isna(b) or abs(float(b) - float(a)) < 0.01:
             continue
-        moved.append((abs(float(b) - float(a)) / max(abs(float(a)), 1.0), c, float(a), float(b)))
-    return ", ".join(f"{c} {a:.2f} -> {b:.2f}" for _, c, a, b in sorted(moved, reverse=True)[:top])
+        moved.append((abs(float(b) - float(a)) * LINE_WEIGHT.get(c, 0.0), abs(float(b) - float(a)), c, float(a), float(b)))
+    return ", ".join(f"{c} {a:.2f} -> {b:.2f}" for *_, c, a, b in sorted(moved, reverse=True)[:top])
+
+
+def _bonus_crossings(row: dict, scoring: dict[str, float]) -> str:
+    """A yardage bonus of the league's scoring the projected line crossed between the kickoff board and tonight
+    ("crosses the 300-yard passing bonus (+3)"): a flat price adds the whole bonus for a few yards."""
+    out = []
+    for key, v in sorted(scoring.items()):
+        stat = next((s for p, s in BONUS_KEYS.items() if key.startswith(p)), None)
+        if stat is None or not v:
+            continue
+        try:
+            n = float(key.rsplit("_", 1)[1])
+        except ValueError:
+            continue
+        a, b = row.get(f"proj_{stat}_kickoff"), row.get(f"proj_{stat}")
+        if a is None or b is None or pd.isna(a) or pd.isna(b):
+            continue
+        if (float(a) < n) != (float(b) < n):
+            out.append(f"crosses the {n:g}-yard {stat.split('_')[0]} bonus ({'+' if b > a else '-'}{v:g})")
+    return ", ".join(out)
 
 
 def live_after_project(conn: psycopg.Connection, season: int, pred: pd.DataFrame, target: pd.DataFrame,
@@ -1548,7 +1577,8 @@ def live_after_project(conn: psycopg.Connection, season: int, pred: pd.DataFrame
                 cur.execute("select distinct on (league_id) league_id, league_name from analytics.dim_league_season "
                             "order by league_id, season desc")
                 leagues = {str(a): b for a, b in cur.fetchall() if isinstance(b, str)}
-            summary["moves"] = shadow_moves(live, stored, names, leagues=leagues)
+            scorings = {lid: sc for lid, (_, sc) in league_scorings(conn).items()}
+            summary["moves"] = shadow_moves(live, stored, names, leagues=leagues, scorings=scorings)
         conn.commit()   # the reads above leave no transaction open
         if mode == "game":
             summary["written"] = _write_live(conn, season, live, now)

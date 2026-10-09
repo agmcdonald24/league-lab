@@ -179,3 +179,14 @@ def test_freeze_shadow_prints_and_writes_the_summary_part_and_never_fails(monkey
     assert "| House | A. Receiver | WR | JAX | 14.00 | 0.00 | -14.00 | sits: Out · Sleeper |" in text
     (tmp_path / "freeze_shadow.json").write_text("{not json")
     assert CliRunner().invoke(app, ["freeze-shadow"]).exit_code == 0
+
+
+def test_the_reason_names_a_yardage_bonus_the_line_crossed():
+    row = {"proj_passing_yards_kickoff": 292.42, "proj_passing_yards": 304.91, "proj_receiving_yards_kickoff": 98.2,
+           "proj_receiving_yards": 99.0}
+    dynasty = {"bonus_pass_yd_300": 3.0, "bonus_pass_yd_400": 6.0, "bonus_rec_yd_100": 3.0, "rec": 1.0}
+    assert P._bonus_crossings(row, dynasty) == "crosses the 300-yard passing bonus (+3)"
+    assert P._bonus_crossings({**row, "proj_passing_yards": 290.0}, dynasty) == ""
+    assert P._bonus_crossings(row, {"rec": 0.5}) == ""
+    down = {"proj_receiving_yards_kickoff": 104.0, "proj_receiving_yards": 97.0}
+    assert P._bonus_crossings(down, dynasty) == "crosses the 100-yard receiving bonus (-3)"

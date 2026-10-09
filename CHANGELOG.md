@@ -10,7 +10,9 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `ops.projection_live` (created by `db migrate`; gated like the live week), which `mart_player_week_projections`
   reads before the stored row. With `week`, `project` writes only the shadow — the house-league rows that would move
   by 2 points or more, and why (`logs/freeze_shadow.json`, `league-lab freeze-shadow`; a nightly step that never
-  fails the night). Rule and readers: docs/METRICS.md § "The live week after its first kickoff".
+  fails the night). The evidence (rule first; the only dated news is the final injury report, so it measures the
+  gate's part): MAE 4.24 → 3.25 (2025), 4.25 → 3.44 (2026 weeks 2–4) — `game` recommended after a weekend of the
+  shadow. Rule and readers: docs/METRICS.md § "The live week after its first kickoff".
 
 ## 2026-10-09 — Wave I-T
 
