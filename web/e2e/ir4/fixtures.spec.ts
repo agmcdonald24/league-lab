@@ -113,6 +113,11 @@ test("About: what changed and when, what each number has been checked against", 
   await expect(page.getByTestId("about-checked-card").first()).toContainText("Two to eight weeks ahead: graded, weak");
   await expect(page.getByTestId("about-not-graded")).toContainText("a trade of several players or across positions");
   await expect(page.getByTestId("about-useful")).toContainText("Is the trade calculator right? On a close one-for-one");
+  // ---- IU-3: the quarterback clause is read from the saved answer (it was stale by a sentence), never written here
+  const useful = (recorded["/api/about?league=ref%3Ahalf"].body as { checked: { useful: { words: string } } }).checked.useful.words;
+  const qbClause = useful.split(/(?<=\.) /).find((x) => x.startsWith("At quarterback"));
+  expect(qbClause).toBeTruthy();
+  await expect(page.getByTestId("about-useful")).toContainText(qbClause!);
   await noSideScroll(page);
   await page.getByTestId("about-versions").scrollIntoViewIfNeeded();
   await shot(page, `about-versions-${info.project.name}`);

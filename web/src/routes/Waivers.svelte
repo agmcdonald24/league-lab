@@ -10,7 +10,7 @@
   import { get, peek, Unauthorized, decisionPaths, type FreeAgent, type WaiverCard, type Waivers } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { md, withContext } from "../lib/md";
-  import { errorWords, f1, f2, rangeWords, s1, slotLabel, waiverAnswer, waiverHeadline } from "../lib/decisions";
+  import { errorWords, f1, rangeWords, s1, slotLabel, waiverAnswer, waiverHeadline } from "../lib/decisions";
   import { openPlayer, VIEW_TABS, viewOf } from "../lib/decisions";
   import { restoreScroll, route, setParams } from "../lib/router.svelte";
   import { fmt } from "../lib/theme";
@@ -122,7 +122,7 @@
     const who = w.player?.player_name;
     if (!who) return ` · closest call ${slotLabel(w.slot)}`;
     return w.replacement_name
-      ? ` · closest call ${slotLabel(w.slot)}, ${who} over ${w.replacement_name} by ${f2(w.margin)}`
+      ? ` · closest call ${slotLabel(w.slot)}, ${who} over ${w.replacement_name} by ${f1(w.margin)}`
       : ` · closest call ${slotLabel(w.slot)}, ${who} (nobody on the bench can fill in)`;
   });
   // ---- end IB-2

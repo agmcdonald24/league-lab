@@ -85,12 +85,12 @@ test("a bench player with no projection shows a dash and the words, never 0.00",
   await expect(row).toHaveCount(1);
   const proj = row.getByTestId("lineup-proj");
   await expect(proj).toContainText("—");
-  await expect(proj).not.toContainText("0.00");
+  await expect(proj).not.toContainText("0.0"); // IU-3: one decimal
   await expect(proj).toHaveAttribute("title", /no projection/i);
   await expect(row.getByTestId("lineup-flag")).toHaveText("no projection"); // the console's flag, mirrored (parity)
   await expect(row.getByTestId("no-projection")).toHaveCount(0); // said once
   // every other row keeps its number; no row shows a bare 0.00 for a player
-  await expect(table.getByTestId("lineup-proj").filter({ hasText: /^0\.00$/ })).toHaveCount(0);
+  await expect(table.getByTestId("lineup-proj").filter({ hasText: /^0\.0+$/ })).toHaveCount(0); // IU-3: one decimal
   await expect(page.getByTestId("unvalued-words")).toHaveCount(0); // the bench is not in the total: nothing to say
   await noSidewaysScroll(page);
   await shot(page, "scrubs6-bench", info.project.name);

@@ -6,7 +6,7 @@
   import { get, peek, Unauthorized, decisionPaths, type Team, type TeamRosterRow } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { md, withContext } from "../lib/md";
-  import { acquiredLine, closestCall, errorWords, f1, f2, ordinal, rankText, slotLabel, teamAnswer } from "../lib/decisions";
+  import { acquiredLine, closestCall, errorWords, f1, ordinal, rankText, slotLabel, teamAnswer } from "../lib/decisions";
   import { restoreScroll } from "../lib/router.svelte";
   import { fmt } from "../lib/theme";
   import Bar from "../components/Bar.svelte";
@@ -98,7 +98,7 @@
   function rowContext(r: TeamRosterRow): string {
     const where = r.role === "starter" ? slotLabel(r.slot) + (r.is_locked ? " · locked" : "") : r.role === "bench" ? "Bench" : (REASON[r.reason ?? ""] ?? r.reason ?? "Out");
     const bits = [where];
-    if (r.role === "starter" && r.margin != null) bits.push(`margin ${f2(r.margin)}`);
+    if (r.role === "starter" && r.margin != null) bits.push(`margin ${f1(r.margin)}`);
     if (r.no_projection) bits.push("no projection"); // ---- IG-1: the dash in the number says it too
     // ---- IS-2: the one definition's status with its source and date ("IR (knee - acl) · Sleeper, Sep 28") beside his number
     const gate = (r as TeamRosterRow & { availability?: { why: string; sits: boolean } | null }).availability ?? null;
