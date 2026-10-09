@@ -1,0 +1,41 @@
+version: 2
+
+# ---- IT-2 (Wave I-T): the report fields are the coming week's only. Before: `inj` took the newest report row of any
+# week, so on a Wednesday a1's "Out" from last Sunday read as this week's status. The fixture: next week is 5; a1's newest
+# report row is week 4 ("Out", hamstring); b1 is on week 5's report ("Doubtful", quadriceps); c1 was never listed.
+unit_tests:
+  - name: next_matchup_report_is_the_coming_weeks_only
+    model: mart_player_next_matchup
+    given:
+      - input: ref('int_nfl_calendar')
+        rows:
+          - {season: 2026, next_week: 5}
+      - input: ref('int_player_week_team')
+        rows:
+          - {gsis_id: a1, season: 2026, week: 4, team: AAA, position: WR, roster_status: ACT, depth_chart_position: WR}
+          - {gsis_id: b1, season: 2026, week: 4, team: BBB, position: RB, roster_status: ACT, depth_chart_position: RB}
+          - {gsis_id: c1, season: 2026, week: 4, team: AAA, position: TE, roster_status: ACT, depth_chart_position: TE}
+      - input: ref('dim_game')
+        rows:
+          - {game_id: g5, season: 2026, season_type: REG, week: 5, home_team: AAA, away_team: BBB, kickoff_at: "2026-10-11 17:00:00+00"}
+      - input: ref('stg_nflverse__injuries')
+        rows:
+          - {gsis_id: a1, season: 2026, week: 4, report_status: Out, report_primary_injury: Hamstring, practice_status: Did Not Participate In Practice}
+          - {gsis_id: b1, season: 2026, week: 4, report_status: Questionable, report_primary_injury: Quadriceps, practice_status: Limited Participation in Practice}
+          - {gsis_id: b1, season: 2026, week: 5, report_status: Doubtful, report_primary_injury: Quadriceps, practice_status: Did Not Participate In Practice}
+      - input: ref('int_depth_chart_current')
+        rows:
+          - {gsis_id: a1, pos_rank: 1, pos_abb: WR}
+      - input: ref('dim_player')
+        rows:
+          - {gsis_id: a1, player_name: A One}
+          - {gsis_id: b1, player_name: B One}
+          - {gsis_id: c1, player_name: C One}
+      - input: ref('mart_defense_vs_position_current')
+        rows:
+          - {defense: BBB, position: WR, points_allowed_per_game_std: 30.0, rank_std: 3, points_allowed_per_game_l4: 28.0, rank_l4: 5}
+    expect:
+      rows:
+        - {gsis_id: a1, next_week: 5, injury_status: null, injury: null, practice_status: null, injury_week: 4}
+        - {gsis_id: b1, next_week: 5, injury_status: Doubtful, injury: Quadriceps, practice_status: Did Not Participate In Practice, injury_week: 5}
+        - {gsis_id: c1, next_week: 5, injury_status: null, injury: null, practice_status: null, injury_week: null}

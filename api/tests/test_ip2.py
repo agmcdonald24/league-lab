@@ -405,7 +405,10 @@ def test_a_flagged_quarterback_keeps_his_rank_and_leaves_the_tiers(client, monke
     d = client.get(ROUTE, params={"league": "ref:half", "position": "QB", "limit": 200}).json()
     rows = d["rows"]
     by = {x["gsis_id"]: x for x in rows}
+    gated = {r["gsis_id"] for r in d.get("not_playing") or []}
     for g in (SEA_LOCK, SEA_DARNOLD, CHI_KEENUM, CHI_WILLIAMS):
+        if g in gated:          # IT-2: Out on the week's own injury report (Caleb Williams, week 4): not ranked at all
+            continue
         x = by[g]
         assert x["starter_unclear"]["words"] and x["starter_unclear"]["role"] in ("listed", "played")
         assert x["tier"] is None and x["tier_p"] is None

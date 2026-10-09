@@ -551,7 +551,8 @@ def _split_not_playing(d: pd.DataFrame, gate: dict, view: str) -> tuple[pd.DataF
     would = {str(r["key"]): r.get("proj_points") for r in d[gone].to_dict("records")}
     rows = AV.order_not_playing(rows, would, gate.get("season"))
     keep = d[~gone & ~unranked].copy()
-    keep["availability"] = [_flag(st.get(x)) if isinstance(x, str) else None for x in keep["gsis_id"]]
+    keep["availability"] = [_flag(st.get(x), pos) if isinstance(x, str) else None
+                            for x, pos in zip(keep["gsis_id"], keep["position"], strict=True)]   # ---- IT-2: by position
     keep["report_status"] = [(a or {}).get("status") or r for a, r in zip(keep["availability"], keep["report_status"], strict=True)]
     return keep.drop(columns=["_ranked"], errors="ignore"), rows
 
@@ -568,12 +569,20 @@ def _out_words(r: dict) -> str:
                                 "p_play": r.get("p_play")})                                     # ---- IS-1
 
 
-def _flag(s: dict | None) -> dict | None:
-    """A ranked player's status label (Questionable): who said it and when, and how often such players play."""
+def _flag(s: dict | None, position: str | None = None) -> dict | None:
+    """A ranked player's status label (Questionable): who said it and when, and how often such players play — IT-2:
+    the rate of his position where the counts allow, and the short words beside the label ("Questionable: about 2 in 3
+    play")."""
     if not s or AV.sits(s):
         return None
+    from league_lab import availability_gate as AG
+    p = AG.p_play_for(s.get("code"), position)
+    p = s.get("p_play") if p is None else p
+    lab = s.get("status") or ""
+    words = (AG.FLAG_WORDS.format(label=lab, lower=lab.lower(), n=round(100 * p)) if s.get("flag_words") and p is not None
+             else s.get("flag_words"))
     return {"status": s.get("status"), "code": s.get("code"), "why": s.get("why"), "source": s.get("source"),
-            "as_of": s.get("as_of"), "p_play": s.get("p_play"), "words": s.get("flag_words")}   # ---- IS-1
+            "as_of": s.get("as_of"), "p_play": p, "words": words, "short": AG.short_words(s, position)}   # ---- IS-1 / IT-2
 # ---- end IR-1
 
 

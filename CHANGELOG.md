@@ -2,6 +2,16 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-09 — Wave I-T
+
+- **IT-2 — the injury field at its cause, a third source, an audit line that means something.** The coming week's
+  injury report only (`mart_player_next_matchup`: an older week's word is no longer this week's — 24 free-agent rows
+  lose one, Kyler Murray's week-2 "Out" among them); the week's own report is the gate's third source (it rules when nothing dated
+  speaks: a player Out on it is not ranked on a copy with no live feed); a frozen week's record is never rewritten
+  (the routes, the lineup solve and the audit read Friday's news at read time); the audit's first line is what a
+  visitor can see (must be 0), the frozen stored rows a note with names; "Questionable: about 2 in 3 play" under the
+  ranked row, by position.
+
 ## 2026-10-08 — Wave I-S (dependability, second round)
 
 - **PO — the merge, the lineup's second source, the caches, the workflow lines.** `availability_gate.sits` /

@@ -1,5 +1,6 @@
 -- Every skill player on a current NFL roster: next game (or bye), the opposing defense's
--- points-allowed rank for the player's position, latest injury report and depth-chart rank.
+-- points-allowed rank for the player's position, the coming week's injury report (IT-2: never an older week's) and
+-- depth-chart rank.
 with cal as (select * from {{ ref('int_nfl_calendar') }}),
 
 roster as (
@@ -45,9 +46,13 @@ select
     dvp.rank_std                                                         as opp_rank_std,
     dvp.points_allowed_per_game_l4                                       as opp_points_allowed_pg_l4,
     dvp.rank_l4                                                          as opp_rank_l4,
-    inj.report_status                                                    as injury_status,
-    inj.report_primary_injury                                            as injury,
-    inj.practice_status,
+    -- IT-2 (Wave I-T): the report fields are the COMING week's only. `inj` is the newest report row of any week; midweek
+    -- that is last week's game status (Kyler Murray's "Out" kept him off a free-agent list while he was QB9). They are
+    -- NULL unless the row is the report for `next_week`; `injury_week` stays so a reader can still say "last listed in
+    -- week N". Every reader of mart_player_next_matchup / mart_player_availability is right at once.
+    case when inj.injury_week = cal.next_week then inj.report_status end            as injury_status,
+    case when inj.injury_week = cal.next_week then inj.report_primary_injury end    as injury,
+    case when inj.injury_week = cal.next_week then inj.practice_status end          as practice_status,
     inj.injury_week,
     dc.depth_rank,
     dc.depth_pos

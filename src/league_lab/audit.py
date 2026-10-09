@@ -157,6 +157,20 @@ def against_scored(board: Board, ppg: pd.DataFrame) -> tuple[list[dict], list[di
     return flagged, explained
 
 
+def _week_started(query: Query, season: int, week: int) -> bool:
+    """IT-2: has the week's first game kicked off (its stored rows are frozen)?"""
+    from . import clock
+    try:
+        d = query("select min(kickoff_at) as k from analytics.dim_game where season = %s and week = %s and season_type = 'REG'",
+                  (int(season), int(week)))
+        k = AG.ts(d["k"].iloc[0]) if not d.empty else None
+    except Exception:  # noqa: BLE001
+        return False
+    now = pd.Timestamp(clock.now())
+    now = now.tz_localize("UTC") if now.tzinfo is None else now.tz_convert("UTC")
+    return k is not None and k <= now.to_pydatetime()
+
+
 # ---- IR-1 (Wave I-R): the site's definition and sources (league_lab.availability_gate), the report's first rule
 def still_ranked(boards: list[Board], st: Mapping[str, dict]) -> list[dict]:
     """Players who cannot play and are still ranked or valued: this week's lists, a player who cannot play this week
@@ -173,7 +187,8 @@ def still_ranked(boards: list[Board], st: Mapping[str, dict]) -> list[dict]:
             if s is None or not hit or pd.isna(x.proj) or float(x.proj) <= 0:
                 continue
             title = {"week": "this week", "season": "rest of season", "value": "calculator value"}[b.view]
-            out.append({"player": x.player_name, "team": x.team, "position": x.position, "view": title, "label": b.label,
+            out.append({"gsis_id": getattr(x, "gsis_id", None), "player": x.player_name, "team": x.team,   # IT-2: the id
+                        "position": x.position, "view": title, "label": b.label,
                         "proj": float(x.proj), "rank": int(x.rank), "why": s.get("why")})
     return out
 # ---- end IR-1
@@ -492,23 +507,48 @@ def build(query: Query, *, ranks_path: Path | None = None) -> Report:
                 rep.add(f"- {label} {fn.__name__}: could not be built ({exc.__class__.__name__}: {str(exc)[:120]})")
         ppg[label] = scored(query, season, week, sc)
 
-    # ---- IR-1 (Wave I-R): the hard rule, first: nobody who cannot play is ranked or valued
+    # ---- IR-1 / IT-2 (Wave I-T): the hard rule, first, in two lines. Who sits is the directory's word (never the stored
+    # field the rule checks). (a) the alarm: rows a visitor can SEE — the stored lists after the routes' own request-time
+    # gate (availability_gate.merge over the stored record, the directory standing for the live Sleeper overlay, and the
+    # week's own injury report); it must be 0. (b) a note: stored rows that still carry a number for a player who sits
+    # (a week frozen at its first kickoff before his news) — the screens gate them; names, not an alarm.
+    src = AG.sources_from_query(query, season, week)
+    screens = AG.merge(src["record"], {g: [e] for g, e in src["directory"].items()}, src["report"], src["pwe"])
+    stored_only = AG.merge(src["record"], None, src["report"], src["pwe"])
     sr = still_ranked(boards, gate_st)
-    names = _group({lb: [it for it in sr if it["label"] == lb] for lb in {it["label"] for it in sr}},
-                   lambda it: (it["player"], it["team"], it["view"]))
-    n_players = len({(it["player"], it["team"]) for it in sr})
-    rep.counts["cannot_play_ranked"] = n_players
+
+    def hidden(it: dict, st: Mapping[str, dict]) -> bool:
+        s = st.get(it.get("gsis_id") or "")
+        return AG.sits(s) if it["view"] == "this week" else bool((s or {}).get("out_indefinitely"))
+    seen = [it for it in sr if not hidden(it, screens)]
+    note = [it for it in sr if hidden(it, screens)]
+    live_only = {(it["player"], it["team"]) for it in note if not hidden(it, stored_only)}
+    frozen = _week_started(query, season, week)
+
+    def grouped(items: list[dict]) -> list[tuple[dict, list[str]]]:
+        return _group({lb: [it for it in items if it["label"] == lb] for lb in {it["label"] for it in items}},
+                      lambda it: (it["player"], it["team"], it["view"]))
+    n_seen = len({(it["player"], it["team"]) for it in seen})
+    n_note = len({(it["player"], it["team"]) for it in note})
+    rep.counts["cannot_play_ranked"] = n_seen
+    rep.counts["cannot_play_stored_gated"] = n_note
     n_cp = sum(1 for v in gate_st.values() if v.get("cannot_play"))
     n_un = sum(1 for v in gate_st.values() if v.get("unlikely"))           # ---- IS-1
-    rep.add(f"## Players who cannot play or are unlikely to play and are still ranked or valued: {n_players}",
+    rep.add(f"## Players who cannot play or are unlikely to play and are ranked or valued on the screens: {n_seen}",
             f"_Who cannot play: {n_cp} players, unlikely to play (Doubtful): {n_un}, by Sleeper's directory (copy of "
-            f"{gate_meta.get('fetched_at') or 'no date'}; the directory alone, never the stored record it checks) "
-            "(league_lab.availability_gate)._")
+            f"{gate_meta.get('fetched_at') or 'no date'}; the directory alone, never the stored record it checks); the "
+            "screens' gate as the routes apply it at request time (the stored record, the live Sleeper word — here the "
+            "directory — and the week's own injury report) (league_lab.availability_gate)._")
     rep.add(*([f"- **{it['player']} ({it['team']}, {it['position']}): {it['why']} — {it['view']} rank {it['rank']}, "
-               f"{it['proj']:.1f} [{', '.join(lb)}]**" for it, lb in names[:MAX_ROWS * 2]]
-              or ["- None: every player who cannot play or is unlikely to play is out of this week's lists, and every player out indefinitely "
-                  "out of the season lists and the calculator's values."]), "")
-    # ---- end IR-1
+               f"{it['proj']:.1f} [{', '.join(lb)}]**" for it, lb in grouped(seen)[:MAX_ROWS * 2]]
+              or ["- None: every player who cannot play or is unlikely to play is off this week's screens, and every "
+                  "player out indefinitely off the season lists and the calculator's values."]))
+    rep.add(f"- Note — stored rows the screens gate: {n_note}"
+            + (f" (week {week} froze at its first kickoff; its numbers are never rewritten)" if frozen else "")
+            + (": " + "; ".join(f"{it['player']} ({it['team']}, {it['why']}, {it['view']} {it['proj']:.1f}"
+                                + (", hidden by the live word alone" if (it["player"], it["team"]) in live_only else "")
+                                + ")" for it, _lb in grouped(note)[:MAX_ROWS * 2]) if note else "."), "")
+    # ---- end IR-1 / IT-2
     # ---- coverage: the first section
     rep.add("## Coverage — every team in every list")
     miss = []
