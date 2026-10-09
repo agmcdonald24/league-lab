@@ -386,6 +386,22 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-T (2026-10-09 overnight; STATUS § "Wave I-T (Iteration 30)")**: **the trade screens are one answer** — a
+  Finder row is `ir2_decision` for its package and the best waiver move is searched on the same basis
+  (`trades.basis_best_move`); a new sentence or number on Trades reads the decision, never its own arithmetic.
+  **The injury field is fixed where it is made** (`mart_player_next_matchup`: the report row only when
+  `injury_week = next_week`) and **the week's own report is the gate's third source** (`availability_gate.merge`).
+  **A frozen week is never rewritten, not even its `availability` record**: read Friday's news at request time; the
+  audit's first line is the alarm (what a visitor can see: must be 0) and its note lists frozen stored rows the
+  screens gate. **No API connection prepares statements** (`prepare_threshold=None`) and
+  `scripts/pooler_check.sh` runs both pooler modes: run it before any merge that touches a connection.
+  **A study ships only by a rule committed before its numbers** — IT-5's role forecast was calibrated and failed
+  three of five clauses; v3.6 stays, and no variant picked after the numbers may ship (every graded season has been
+  seen: the next test is 2026's own weeks). **When a study re-grades a number the site states, the PO re-runs it and
+  the site's sentence changes the same night** (About's quarterback clause was v3.5's). **After a merge the PO opens
+  the same roster on every screen that names a "best" thing**: Waivers and the Finder named two different best
+  claims and neither said why. Do not edit code while a suite is running: three source-reading tests failed on the
+  PO's own mid-run edits and passed on the tree.
 * **Wave I-S (2026-10-08 evening; STATUS § "Wave I-S (Iteration 29) — dependability, second round")**: **one
   question, `availability_gate.sits(block)`** ("is he left out this week?" = cannot play, or a status that rarely
   plays: Doubtful, 6 of 520 since 2016). No reader tests a status code or string: API code calls

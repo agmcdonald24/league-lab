@@ -4,6 +4,17 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-09 — Wave I-T
 
+- **PO — the merge and what the devs left for each other.** `decisions.best_waiver_move` and the kicker branch of
+  `lineup._proposed_player` ask the gate. Four more caches are `published` (`stats`, `stats_agg`, `outlook`, the
+  league `contexts`). `sync_to_hosted.sh` prints the publication id and the nightly's post-publish check waits for it
+  (`--expect-publication`, 150 s at most). About's quarterback useful-decision clause is v3.6's (IT-5, re-run by the
+  PO: 0.613 against 0.595 for his own record, 4 of 5 seasons; it was v3.5's 0.594 against 0.615). The alternative's
+  sentence says where Waivers' first claim went when the basis search picks another one ("…; Jacoby Brissett is
+  already counted in every number here (he fills a starting spot that is empty)"); every saved trade answer re-saved
+  from the merged API. docs/STATUS.md § "Wave I-T".
+- **IT-4 — publication.** No API connection prepares statements (`prepare_threshold=None`; `scripts/pooler_check.sh`
+  runs both pooler modes); `db.one_publication` — a trade evaluation computed on one publication, a second change is
+  a 503 in words; `scripts/post_deploy_check.py --expect-publication / --wait`. docs/STATUS.md § "Wave I-T" (IT-4).
 - **IT-2 — the injury field at its cause, a third source, an audit line that means something.** The coming week's
   injury report only (`mart_player_next_matchup`: an older week's word is no longer this week's — 24 free-agent rows
   lose one, Kyler Murray's week-2 "Out" among them); the week's own report is the gate's third source (it rules when nothing dated
@@ -17,12 +28,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   player who sits, like its head. My Week and Waivers show their provenance line and the starter caveats in a
   lineup's words ("Tampa Bay's starter is unclear … check who starts before kickoff"). My Week no longer pairs a
   receiver "in place of" a quarterback when the submitted lineup still holds a player who left the roster (the slot
-  chain kept him in no slot). `docs/handbacks/IT-3.md`.
+  chain kept him in no slot). docs/STATUS.md § "Wave I-T" (IT-3).
 - **IT-1 — one basis on every trade screen.** The Trade Finder's suggestions are now the trade calculator's own answer
   for each package (the same label, gains, sentences and recommendation, the starter rule included), and "your best
   waiver move" is searched on the same comparison as the trades. One minus sign in every sentence; the calculator's
   tiles name the roster-only total other screens show; a player who sits shows why on the trade rosters.
-  docs/handbacks/IT-1.md.
+  docs/STATUS.md § "Wave I-T" (IT-1).
 - **IT-5 — the quarterback beyond next week: who still starts (a study; nothing ships).** The rule was committed first
   (docs/METRICS.md § "v3.7: the role forecast (IT-5)", with v3.6's own numbers on the same rows and the quarterback
   useful-decision grade re-graded on v3.6's rows: 0.613 against his own record's 0.595, above it in 4 of 5 seasons).

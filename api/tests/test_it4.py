@@ -51,6 +51,10 @@ def test_the_pool_and_the_one_off_connections_never_prepare(monkeypatch):
     import psycopg
     seen = []
     monkeypatch.setattr(psycopg, "connect", lambda *a, **k: seen.append(k) or (_ for _ in ()).throw(psycopg.OperationalError("x")))
+    # PO (Wave I-T): an earlier test of the full suite leaves an open "accounts" connection in db._rw, and _rw_conn
+    # then returns it without connecting — the test passed alone and failed in the suite. Start from no connections.
+    monkeypatch.setattr(db, "_rw", {})
+    monkeypatch.setattr(db, "_writer", None)
     for fn in (db._writer_conn, lambda: db._rw_conn("accounts")):
         db._writer = None
         with pytest.raises(psycopg.OperationalError):

@@ -79,3 +79,15 @@ def test_a_verdict_that_does_not_carry_the_numbers_fails():
 def test_an_answer_without_the_decision_fields_says_to_update_the_check():
     ok, text, _ = pdc.check_trade({"verdict": "x"})
     assert not ok and "update this check" in text
+
+
+def test_the_trade_check_reads_the_true_minus_sign():
+    """PO (Wave I-T): IT-1 writes one minus sign in every decision sentence ("−0.3", U+2212). The check looked for the
+    ASCII "-0.3" and called a correct answer wrong (both trade lines of the pooler check, before delivery)."""
+    b = copy.deepcopy(TRADE)
+    for k in ("verdict", "headline"):
+        if isinstance(b.get(k), str):
+            b[k] = b[k].replace("-", "−")
+    b["fit"]["words"] = str(b["fit"].get("words") or "").replace("-", "−")
+    ok, text, _ = pdc.check_trade(b)
+    assert ok, text

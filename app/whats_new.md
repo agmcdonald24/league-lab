@@ -3,6 +3,25 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 9 · trade suggestions that agree with the calculator, and the injury clean-up finished
+
+- **Trade Finder and the trade calculator now give the same answer.** Each suggested trade is the calculator's own
+  verdict for that trade, so "worth proposing" means one thing on both screens. A trade that does not help both
+  starting lineups is no longer listed.
+- **"Your best waiver move" is the best one on the same comparison as the trade.** When that is not the claim the
+  Waivers screen leads with, it says why: the player who fills an empty starting spot is already counted.
+- **Last week's "Out" no longer shows as this week's status, anywhere.** We fixed it where the status is made. This
+  week's official injury report now counts as a third source beside the two live ones.
+- **Questionable shows its odds.** About 2 in 3 questionable players play; for quarterbacks it is closer to half.
+- **A player who sits shows why on the trade screens too**, with the source and date.
+- **My Week and Waivers say what has been checked**, and when a team's starting quarterback is unclear.
+- **A lineup alert named the wrong player.** If your saved lineup still held a player you had dropped, an alert
+  could tell you to start a receiver "in place of" your quarterback. Fixed.
+- **Quarterbacks beyond next week: one thing tested, one thing corrected.** We tested forecasting who will still be
+  starting weeks from now; it did not beat the current model, so nothing changed. We also re-checked the current
+  model's quarterback picks on five past seasons: the side it favoured scored more 61 times in 100, against 60 for
+  the quarterback's own scoring record. Our About page had the previous version's worse number; it is corrected.
+
 ## Oct 8 (evening) · doubtful players, and the same injury check inside your league
 
 - **Doubtful players are no longer ranked for the week.** We counted first: since 2016, 520 quarterbacks, running

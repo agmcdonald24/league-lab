@@ -138,6 +138,9 @@ def check_trade(b: object) -> tuple[bool, str, dict | None]:
                 return False, f"{side} {span}: after − before = {d:+.2f}, the change shown is {fit[span][side]}", None
             changes[(side, span)] = f
     words = " ".join(str(b.get(k) or "") for k in ("verdict", "headline")) + " " + str(fit.get("words") or "")
+    # PO (Wave I-T): every sentence of the decision writes the true minus sign since IT-1 ("−0.3", U+2212); the check
+    # looked for "-0.3" and failed both trade lines on a correct answer (seen on the pooler check before delivery).
+    words = words.replace("\u2212", "-")
     missing = [_signed(v) for v in changes.values() if _signed(v) not in words]
     if missing:
         return False, f"the words do not carry the changes {', '.join(missing)}: {b['verdict'][:120]}", changes

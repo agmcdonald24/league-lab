@@ -598,6 +598,24 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 30 — Wave I-T, the overnight build (2026-10-09, Friday 00:02 – early morning ET)
+
+Andrew: "ok proceed then." Five packages, four of them Thursday's developers resumed: **IT-1** one basis on every
+trade screen (a Finder row is the calculator's decision for its package; the best waiver move searched on the basis;
+one minus sign; the reason on the trade rosters; every saved Finder answer re-saved); **IT-2** the injury field at
+its cause (`mart_player_next_matchup`: the coming week's report only), the week's own report as the gate's third
+source, a frozen week left as recorded, the audit's alarm counting what a visitor can see, Questionable's rate by
+position on the row; **IT-3** the last league readers on the one definition, the slot-chain fault behind "Start
+Wilson at WR in place of Mahomes", provenance and starter caveats on My Week and Waivers; **IT-4** no prepared
+statements on any API connection (the pooler check passes both modes), a trade evaluation that never mixes two
+publications, a real publish timed (no 500 in the gap); **IT-5** the quarterback role forecast — a study with its
+rule committed first: calibrated, and it failed three of five clauses, so nothing ships. The PO's glue: the two
+calls the devs left for each other, four more published caches, the publish prints its id and the post-publish check
+waits for it, About's quarterback useful-decision clause re-graded on v3.6 (0.613 against 0.595, 4 of 5 seasons),
+and a sentence for the case where Waivers and the Finder name different best claims. Acceptance and evidence:
+`docs/STATUS.md` § "Wave I-T". **Next**: a horizon grade that counts a missed week and a play probability for
+later weeks, judged on 2026's weeks; the Finder's search on the basis; Andrew's open decisions.
+
 ### Iteration 29 — Wave I-S, dependability, second round (2026-10-08, Thursday 17:46 – late evening ET)
 
 Andrew, to the PO's roadmap: "cool. carry on building please." Four devs (three of the morning's, resumed): **IS-1**
