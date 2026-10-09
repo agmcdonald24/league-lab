@@ -874,3 +874,12 @@ sentence of its own, only where they appear.
 | The league card, "Projection", a player who sits | unavailable: IR (knee - acl) · Sleeper, Sep 28 — On injured reserve: no return date, so no rest-of-season value. |
 | The league card, no word from the one definition | No injury designation. (last week's injury report no longer speaks for this week) |
 <!-- ---- end IS-2 -->
+
+## The week's own report and the rate beside the label (IT-2, Wave I-T, 2026-10-09)
+
+| Where | Words |
+|---|---|
+| A ranked row, under it (a flagged status) | Questionable: about 2 in 3 play · Questionable (ankle) · NFL injury report (QB: about 1 in 2; WR, TE: about 7 in 10) |
+| A player's reason from the week's own report | Out · NFL injury report |
+| The audit, the alarm | Players who cannot play or are unlikely to play and are ranked or valued on the screens: N |
+| The audit, the note | Note — stored rows the screens gate: N (week W froze at its first kickoff; its numbers are never rewritten): Name (TEAM, why, this week 5.5, hidden by the live word alone) |

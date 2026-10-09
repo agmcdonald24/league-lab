@@ -5395,3 +5395,38 @@ The Questionable group is off by far more than 10 % once the games he sits count
 ≈ +58 % (history) / +75 % (2026, n = 55)**. Per the rule nothing is scaled: a Questionable player stays ranked,
 flagged, with "players listed questionable have played about 67 in 100 times; ranked as if he plays." Whether to
 scale him (by about 0.62, the played share × the when-played ratio) is the PO's and Andrew's decision.
+
+### The week's own injury report, a frozen week, the audit's two lines (av1.2, IT-2, Wave I-T, 2026-10-09)
+
+* **The old field at its cause.** `mart_player_next_matchup` took the newest injury-report row of any week; its
+  report fields (`injury_status`, `injury`, `practice_status`) are now the coming week's only (`injury_week =
+  next_week`), NULL otherwise, `injury_week` kept ("last listed in week N"). Unit test
+  `next_matchup_report_is_the_coming_weeks_only` (fails on the old SQL: FAIL 1). On `league_lab_iq4` (calendar next
+  week 4): players with a report word 63 → 39; the 24 who lost an older week's word include Kyler Murray (week 2 "Out"),
+  Joe Burrow (week 2 "Questionable"), Jaylen Warren and Rome Odunze; `mart_player_availability` rows with a word
+  126 → 78, 24 of the 48 lost on free agents (Murray in League of Scrubs among them); `mart_player_role_alerts`
+  (latest 765): `trigger_ended` 86 → 88, `trigger_injury_now` 48 → 42.
+* **A third source.** The week's own injury report (`mart_player_week_projections.report_status` of that week — the
+  nightly rebuilds it, also for a frozen week) is the gate's third source, after the stored record, Sleeper and ESPN
+  (`availability_gate.merge`, shared by `availability.statuses` and the audit). **It has a week, not a time**: an
+  undated word, it rules only when no dated word speaks about him; any dated word outranks it — even an older
+  reserve-list word (IR from September stays IR, never "Out", or his season would come back) — and a dated game
+  status from before the week has already been dropped as last week's. On a copy with neither live source, a player
+  Out on this week's report is not ranked; on the live site the feeds speak first.
+* **A frozen week's record: nothing is written.** A week's rows freeze at its first kickoff (`freeze_plan`) and are
+  never rewritten; `availability` is part of that record — what was known at kickoff and why a row is 0. Writing
+  Friday's news into a kickoff row that still carries 12.94 would make the record say something nobody knew at
+  kickoff, and a grader who reads `availability` to tell a decision-0 from a number would grade a different set of
+  rows after the fact. So `project` writes nothing to a frozen week; the three readers that need Friday's news read it
+  at read time: the routes (`availability.statuses`: stored record + Sleeper + ESPN + the week's report), the nightly
+  lineup solve (`lineup._proposed_player`: the stored record + `report_block` of the week's report), the audit (the
+  directory). A grader of the frozen projections reads `proj_points` / `p10`–`p90` exactly as published and
+  `availability` exactly as known at kickoff.
+* **The audit's first rule, two lines.** (a) **the alarm**, must be 0: rows a visitor can see — the stored lists after
+  the routes' own request-time gate (the stored record, the directory standing for the live Sleeper word, the week's
+  report); (b) **a note**: stored rows that still carry a number for a player who sits (a week frozen before his
+  news), with the names and whether only the live word hides them. Who sits is still the directory's word alone.
+* **Questionable by position** (2016–2025, played = a snap or a stat): QB 146 / 319 = **45.8 %**, RB 708 / 1,115 =
+  63.5 %, WR 1,425 / 2,026 = 70.3 %, TE 581 / 834 = 69.7 %. The 25 % rule per position: **no position falls under
+  it** (lowest QB 45.8 %); Doubtful by position 0.0 / 1.3 / 1.5 / 1.0 % — under it at every position. The row says
+  "Questionable: about 1 in 2 play" (QB), "about 2 in 3" (RB), "about 7 in 10" (WR, TE) — the nearest plain fraction.

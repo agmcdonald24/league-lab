@@ -115,7 +115,10 @@ def status_note(p, gsis, season, week) -> tuple[dict | None, bool]:
     (``injury_week = next_week``; the newest row of another week is last week's game status, which is what IS-2
     removed) — asked through the same gate. The card and the watchlist's lean row both call this."""
     blk = LG.blocks([gsis], season, week).get(gsis) if isinstance(gsis, str) and week is not None else None
-    from_report = False
+    # ---- IT-2 (Wave I-T): the gate's own third source is the week's report — the same word as the fallback below, so
+    # the card keeps its report line (the injury and the practice status) when that is where the word came from
+    from_report = bool(blk) and blk.get("source") == AGATE.REPORT_SOURCE
+    # ---- end IT-2
     if blk is None and isinstance(p.get("injury_status"), str) and p.get("injury_status") \
             and pd.notna(p.get("injury_week")) and pd.notna(p.get("report_for_week")) \
             and int(p["injury_week"]) == int(p["report_for_week"]):
