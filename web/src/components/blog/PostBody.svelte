@@ -2,7 +2,7 @@
   // ---- IN-1 (Wave I-N): a post's body — lib/md.ts `mdDoc` (escaped first; only its own tags) in the reading styles
   // below: a readable measure, headings, lists, quotes, code, pictures, and tables that scroll inside themselves on a
   // phone (the page never scrolls sideways). Player links carry the frame's league, so a tap opens the drawer.
-  import { mdDoc } from "../../lib/md";
+  import { isYoutubeId, mdDoc } from "../../lib/md";
   import PlayersBlock from "./PlayersBlock.svelte";
 
   let { markdown, league }: { markdown: string; league: string } = $props();
@@ -13,9 +13,37 @@
     if (!m) return { before: mdDoc(markdown, { league }), block: null as string | null, after: "" };
     return { before: mdDoc(markdown.slice(0, m.index), { league }), block: m[1], after: mdDoc(markdown.slice(m.index + m[0].length), { league }) };
   });
+
+  // ---- IU-6 (Wave I-U): a YouTube embed is a Play button until the reader taps it (md.ts `embed`); only then is the
+  // iframe made — to youtube-nocookie.com, from the id checked again here, sandboxed, lazy, with a title. Nothing from
+  // YouTube or X is asked for before that tap, and no script from either is ever loaded.
+  let root = $state<HTMLDivElement | null>(null);
+  function play(e: MouseEvent) {
+    const btn = (e.target as Element | null)?.closest?.("button[data-yt-play]") as HTMLButtonElement | null;
+    if (!btn || !root?.contains(btn)) return;
+    const id = btn.dataset.ytPlay;
+    if (!isYoutubeId(id)) return;
+    const frame = document.createElement("iframe");
+    frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
+    frame.title = "YouTube video";
+    frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation allow-popups");
+    frame.setAttribute("loading", "lazy");
+    frame.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
+    frame.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture; fullscreen");
+    frame.allowFullscreen = true;
+    frame.className = "ll-embed-frame";
+    frame.dataset.testid = "embed-frame";
+    btn.replaceWith(frame);
+  }
+  $effect(() => {
+    const el = root;
+    if (!el) return;
+    el.addEventListener("click", play);
+    return () => el.removeEventListener("click", play);
+  });
 </script>
 
-<div class="mt-5" data-testid="post-body">
+<div class="mt-5" data-testid="post-body" bind:this={root}>
   <div class="ll-prose">{@html parts.before}</div>
   {#if parts.block !== null}
     <PlayersBlock body={parts.block} /><!-- the Stats table keeps its own styles: outside the reading styles -->
@@ -135,5 +163,66 @@
   }
   .ll-prose :global(tbody tr:last-child td) {
     border-bottom: 0;
+  }
+  /* ---- IU-6: embeds (md.ts `embed`) */
+  .ll-prose :global(.ll-embed) {
+    margin: 0 0 1.1em;
+  }
+  .ll-prose :global(.ll-embed-play),
+  .ll-prose :global(.ll-embed-frame) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25em;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--ll-line);
+    border-radius: 10px;
+    background: var(--ll-sunken);
+    color: var(--ll-ink);
+    cursor: pointer;
+  }
+  .ll-prose :global(.ll-embed-frame) {
+    display: block;
+    border: 0;
+    cursor: auto;
+  }
+  .ll-prose :global(.ll-embed-play:hover) {
+    border-color: var(--ll-line-strong);
+  }
+  .ll-prose :global(.ll-embed-play:focus-visible),
+  .ll-prose :global(.ll-embed-card:focus-visible) {
+    outline: 2px solid var(--ll-accent);
+  }
+  .ll-prose :global(.ll-embed-k) {
+    font-weight: 700;
+  }
+  .ll-prose :global(.ll-embed-s) {
+    font-size: 0.875rem;
+    color: var(--ll-ink-2);
+  }
+  .ll-prose :global(.ll-embed figcaption) {
+    margin-top: 0.35em;
+    font-size: 0.875rem;
+  }
+  .ll-prose :global(.ll-embed-card) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
+    padding: 0.75em 1em;
+    border: 1px solid var(--ll-line);
+    border-left: 4px solid var(--ll-line-strong);
+    border-radius: 10px;
+    background: var(--ll-raised);
+    color: var(--ll-ink);
+    text-decoration: none;
+  }
+  .ll-prose :global(.ll-embed-card:hover) {
+    border-color: var(--ll-line-strong);
+  }
+  .ll-prose :global(.ll-embed-h) {
+    font-weight: 700;
+    overflow-wrap: anywhere;
   }
 </style>

@@ -6,6 +6,7 @@
   import { ApiError, blogPaths, get, type BlogMeta, type BlogPost } from "../lib/api";
   import { longDate } from "../components/home/home";
   import PostBody from "../components/blog/PostBody.svelte";
+  import { coverSrc } from "../components/blog/cover";
   // ---- IO-3 (Wave I-O): an editor (an account the server lists in LEAGUE_LAB_EDITORS) sees "Write a post" and their
   // own posts here; everyone else sees exactly the blog as before (the check is quiet: any failure is "not an editor")
   import { loadStatus } from "../lib/account.svelte";
@@ -140,14 +141,19 @@
           <ol class="space-y-3" data-testid="blog-list">
             {#each posts as p (p.slug)}
               <li>
-                <a href={`/blog/${p.slug}`} class="block rounded-lg border border-line bg-surface p-4 hover:border-line-strong wide:p-5" data-testid="blog-item" data-slug={p.slug}>
-                  <div class="text-sm text-ink-3">{@render postMeta(p)}</div>
-                  <h2 class="mt-1 text-xl leading-snug font-bold">{p.title}</h2>
-                  {#if p.summary}<p class="mt-1 text-base leading-snug text-ink-2">{p.summary}</p>{/if}
-                  {#if p.tags.length}
-                    <div class="mt-2 flex flex-wrap gap-1.5">
-                      {#each p.tags as t (t)}<span class="rounded-full bg-raised px-2 py-0.5 text-xs text-ink-2">{t}</span>{/each}
-                    </div>
+                <a href={`/blog/${p.slug}`} class="flex gap-3 rounded-lg border border-line bg-surface p-4 hover:border-line-strong wide:gap-5 wide:p-5" data-testid="blog-item" data-slug={p.slug}>
+                  <div class="min-w-0 flex-1">
+                    <div class="text-sm text-ink-3">{@render postMeta(p)}</div>
+                    <h2 class="mt-1 text-xl leading-snug font-bold break-words">{p.title}</h2>
+                    {#if p.summary}<p class="mt-1 text-base leading-snug text-ink-2">{p.summary}</p>{/if}
+                    {#if p.tags.length}
+                      <div class="mt-2 flex flex-wrap gap-1.5">
+                        {#each p.tags as t (t)}<span class="rounded-full bg-raised px-2 py-0.5 text-xs text-ink-2">{t}</span>{/each}
+                      </div>
+                    {/if}
+                  </div>
+                  {#if coverSrc(p.image)}<!-- ---- IU-6: the cover as the list's thumbnail -->
+                    <img src={coverSrc(p.image)} alt="" loading="lazy" decoding="async" class="h-20 w-24 shrink-0 rounded-md bg-raised object-cover wide:h-28 wide:w-44" data-testid="blog-item-cover" />
                   {/if}
                 </a>
               </li>
@@ -175,6 +181,9 @@
           <p class="mt-3 rounded-lg bg-raised p-4 text-base" data-testid="post-failed">The post did not load. Try again in a minute.</p>
         {:else}
           <header class="mt-2 space-y-2 border-b border-line pb-4">
+            {#if coverSrc(post.image)}<!-- ---- IU-6: the cover as the post's banner -->
+              <img src={coverSrc(post.image)} alt="" decoding="async" fetchpriority="high" class="mb-3 aspect-[1200/630] w-full rounded-lg bg-raised object-cover" data-testid="post-cover" />
+            {/if}
             <h1 class="text-3xl leading-tight font-extrabold tracking-tight wide:text-[2.5rem]" data-testid="post-title">{post.title}</h1>
             <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-3">
               <span data-testid="post-meta">By {post.author} · {@render postMeta(post)}</span>

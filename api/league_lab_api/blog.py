@@ -45,6 +45,7 @@ SITE_AUTHOR = APP_NAME                      # a post with no author is the site'
 FILE_NAME = re.compile(r"^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$")
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 IMG_NAME = re.compile(r"^[a-z0-9][a-z0-9_-]{0,79}\.(png|jpg|jpeg|webp)$")
+DB_IMG_NAME = re.compile(r"^db/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")   # IU-6: an exported cover
 IMG_TYPES = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp"}
 MAX_SLUG = 80
 MAX_POSTS = 300
@@ -137,8 +138,8 @@ def parse_post(name: str, text: str) -> dict[str, Any] | None:
     image = _scalar(meta.get("image", "")) or None
     if image and image.startswith("/blog/img/"):
         image = image[len("/blog/img/"):]
-    if image and not IMG_NAME.fullmatch(image):
-        image = None                                   # only a picture from blog/img/ can be a post's picture
+    if image and not (IMG_NAME.fullmatch(image) or DB_IMG_NAME.fullmatch(image)):
+        image = None                                   # only a picture from blog/img/ (or the editor's, IU-6) can be one
     return {"slug": m.group(2), "title": title, "date": d.isoformat(), "summary": _scalar(meta.get("summary", ""))[:MAX_SUMMARY],
             "author": _scalar(meta.get("author", ""))[:60] or SITE_AUTHOR, "tags": _tags(meta.get("tags")),
             "minutes": minutes(body), "image": f"/blog/img/{image}" if image else None,

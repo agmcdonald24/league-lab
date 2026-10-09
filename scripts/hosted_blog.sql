@@ -84,10 +84,18 @@ create table if not exists blog.images (
 );
 create index if not exists images_account on blog.images (account_id, created_at desc);
 
+-- Wave I-U (IU-6): a post's cover — one of the post's author's own pictures (the API checks the owner on save), the
+-- banner on the post, the thumbnail in the list and on the home, the link preview's og:image. Nullable: no cover = the
+-- post as before. A deleted picture leaves the post without a cover. The API works with or without this column (it
+-- looks once a minute while it is absent: the nightly applies this file after the API is deployed).
+alter table blog.posts add column if not exists cover uuid references blog.images (id) on delete set null;
+
 comment on table blog.posts is
   'Blog posts written on the site (Wave I-O, IO-3): slug, title, summary, markdown body, tags, author, status draft / published / deleted (restorable for 30 days), the writing account, a revision number for the editor''s conflict check.';
 comment on table blog.revisions is
   'The last 20 saved bodies of each blog post (Wave I-O, IO-3), at most one every two minutes while autosaving.';
+comment on column blog.posts.cover is
+  'The post''s cover picture (Wave I-U, IU-6): one of its author''s own blog.images, or null.';
 comment on table blog.images is
   'Pictures uploaded from the blog editor (Wave I-O, IO-3): PNG, JPEG or WebP by their first bytes, at most 300 KB each and 50 in all, served at /blog/img/db/<id>.';
 

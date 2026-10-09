@@ -101,6 +101,18 @@ export round trip, the buckets, the script. `web/e2e/io3/fixtures.spec.ts` (at 3
 publish → the public post → unpublish → delete, every hostile shape inert in the preview and the post, a starter, two
 tabs, a dropped connection, typing in a 20 KB post, a visitor with no Write, the account id.
 
+## Covers, pictures made smaller, embeds and links (Wave I-U, IU-6)
+
+| what | how |
+| --- | --- |
+| a cover | In the editor: **Picture**, then **Make it the cover** under one of the editor's own pictures (**Remove** takes it off). Stored as `blog.posts.cover` (a nullable uuid referencing `blog.images (id) on delete set null`: a deleted picture leaves the post without a cover). The save accepts only an id of a picture **the saving account uploaded** (`blog.images.account_id`); a malformed id, an unknown one and another account's are the same 400 `bad_cover` ("A cover is one of your own pictures: upload it under Picture first."), nothing stored. A save without the `cover` field keeps it (an older tab cannot clear it). The published post's `image` is then `/blog/img/db/<id>`: the banner on the post, the thumbnail in the list and on the home, and the link preview's `og:image` / `twitter:image` (absolute: `https://isuckatfantasy.io/blog/img/db/<id>`). A post without a cover looks as before (`og.png` in the preview). A file post can name one the same way (`image: /blog/img/db/<id>`; the export writes it) |
+| how a crawler gets it | A crawler runs no script: the API answers `/blog/<slug>` with `index.html` whose head block (between `<!-- ll:seo -->` markers) is the post's own — `blog.shell` → `preview` → `seo_tags`, every value `html.escape`d, from the stored post only (title, summary, date, slug, cover) |
+| the column on the hosted database | `scripts/hosted_blog.sql` adds it: `alter table blog.posts add column if not exists cover uuid references blog.images (id) on delete set null;` — run by the nightly's sync **after** the API is deployed. Until then the API sees no column (`blog_store.cover_on`: one `pg_attribute` query per process, again at most once a minute while absent, every ten minutes once present) and works as before: `GET /api/blog/mine` says `limits.cover: false`, the editor offers no cover, a `cover` in a save is quietly not stored, every post's `image` is null. When the column appears the API notices within a minute, no restart |
+| pictures made smaller | A picture over 300 KB is made smaller **in the editor's browser** before it is sent (`web/src/components/blog/shrink.ts`): longest side ≤ 1600 px, WebP (JPEG where the browser cannot write WebP), quality 0.85 → 0.45, then 75 % / 50 % of the size, until it is ≤ 300 KB. The server's checks are unchanged (first bytes, 300 KB, 50, 30 MB). One rendition only (no thumbnail copy: it would spend a second of the 50) |
+| embeds | A YouTube or X link **alone on its line** (its own paragraph). Matched by strict patterns on the raw line: YouTube `https://(www.|m.)youtube.com/watch?v=<id>`, `https://(www.)youtube.com/shorts/<id>`, `https://youtu.be/<id>` with `<id>` = 11 of `[A-Za-z0-9_-]`; X `https://(www.|mobile.)(x|twitter).com/<handle>/status/<number>` with `<handle>` 1–15 of `[A-Za-z0-9_]`, `<number>` 1–20 digits. YouTube shows a **Play the video** button and a "Watch on YouTube" link — **nothing is asked of YouTube until the reader taps**; then the post makes `<iframe src="https://www.youtube-nocookie.com/embed/<id>?autoplay=1" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" title="YouTube video">` from the id checked again. X is a plain link card built from the URL ("A post on X", "@handle", "Open it on X ›") — no script from X is ever loaded, so the post's text is not shown. Anything else alone on a line stays a paragraph |
+| links | In a post (`mdDoc` only), `[words](https://…)` to any https site with no user, password or port becomes a link with `rel="noopener noreferrer nofollow ugc" target="_blank"`; an in-app path as before; `http:`, `javascript:`, `data:`, `//host` and the rest stay the words as text. The site's sentences (`md`, provider text) keep IM-3's nine hosts |
+| the CSP | `frame-src https://www.youtube-nocookie.com` (security.py) — the only frame the site allows; `frame-ancestors 'none'` unchanged |
+
 ## Posts as files (Wave I-N, IN-1)
 
 Posts are also markdown files in this repository; a push to `main` publishes them with the next deploy. Writing one:
@@ -154,8 +166,10 @@ second fence stays a code block. The numbers move with every nightly: the block 
 ## Not built
 
 * Comments, search, tag pages, a newsletter, scheduled posts.
-* ---- IO-3: a post's `image:` (its link-preview picture) exists for files only; a database post previews with `og.png`
-  (a picture uploaded from the editor shows in the post, not in the link preview).
+* ---- IU-6: a cover is not kept in a revision (Earlier versions bring back the text, not the cover); a cover's link preview
+  has no width / height tags (crawlers read the picture); WebP covers preview on X and Facebook, not everywhere (a JPEG
+  is the safe choice). A post on X is a link card: its text is not shown (that needs X's script). One embed per line,
+  YouTube and X only; no uploaded video.
 * ---- IO-3: the players block's numbers are live (they move with the nightly) even in a post written from a starter —
   the starter's own numbers are written in as text; the block is the one live thing, and it says so.
 * ---- IO-3: RSS and the sitemap keep their 10-minute cache: a post published now reaches a feed reader within 10 minutes.

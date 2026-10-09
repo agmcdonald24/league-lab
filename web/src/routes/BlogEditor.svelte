@@ -52,6 +52,7 @@
   let body = $state("");
   let slug = $state("");
   let slugTouched = $state(false);
+  let cover = $state<string | null>(null); // ---- IU-6: the post's cover (one of the editor's own pictures)
   let saveState = $state<"idle" | "dirty" | "saving" | "saved" | "error">("idle");
   let savedAt = $state<Date | null>(null);
   let problem = $state<string | null>(null); // the last refusal's words
@@ -66,7 +67,9 @@
   let panel = $state<"none" | "player" | "table" | "picture">("none");
   let area = $state<HTMLTextAreaElement | null>(null);
 
-  const draft = (): Draft => ({ title, summary, tags: tagsFrom(tagsText), author, body, slug: slug.trim() || null });
+  const coverOn = $derived(!!editor.mine?.limits.cover); // IU-6: false while the server has no cover column
+  const draft = (): Draft => ({ title, summary, tags: tagsFrom(tagsText), author, body, slug: slug.trim() || null, ...(coverOn ? { cover } : {}) });
+  const coverUrl = $derived(cover ? `/blog/img/db/${cover}` : null);
   const sent = { text: "" }; // the draft as last sent (not reactive: compared on each change)
   const localKey = () => post?.id ?? "new";
   const published = $derived(post?.status === "published");
@@ -84,6 +87,7 @@
     body = p.body ?? "";
     slug = p.slug;
     slugTouched = true;
+    cover = p.cover ?? null;
     preview = body;
     sent.text = JSON.stringify(draft());
   }
@@ -255,6 +259,7 @@
     body = offer.body;
     if (offer.slug) slug = offer.slug;
     slugTouched = !!offer.slug;
+    if (offer.cover !== undefined) cover = offer.cover ?? null;
     offer = null;
   }
 
@@ -442,6 +447,7 @@
     try {
       await editorApi.removeImage(img.id);
       images = images.filter((x) => x.id !== img.id);
+      if (cover === img.id) cover = null; // IU-6: the server already left the post without it
       void checkEditor(true);
     } catch (err) {
       picWords = err instanceof Error ? err.message : "That did not work.";
@@ -643,6 +649,13 @@
                 <img src={img.url} alt="" class="h-20 w-full rounded-sm object-cover" loading="lazy" />
                 <div class="flex flex-wrap gap-2 text-sm">
                   <button type="button" class="ll-link font-semibold" onclick={() => insertImage(img)}>Insert</button>
+                  {#if coverOn && post}<!-- ---- IU-6 -->
+                    {#if cover === img.id}
+                      <span class="font-semibold text-ink-2" data-testid="picture-is-cover">The cover</span>
+                    {:else}
+                      <button type="button" class="ll-link" onclick={() => (cover = img.id)} data-testid="picture-make-cover">Make it the cover</button>
+                    {/if}
+                  {/if}
                   <button type="button" class="ll-link" onclick={() => deleteImage(img)}>Delete</button>
                 </div>
               </li>
@@ -727,6 +740,16 @@
         <p class="mt-1 text-sm {over ? 'font-semibold text-bad' : 'text-ink-3'}" data-testid="editor-size">
           {(size / 1024).toFixed(size < 10240 ? 1 : 0)} KB of {LIMIT_KB} KB
         </p>
+        {#if coverUrl}<!-- ---- IU-6: the chosen cover -->
+          <div class="mt-2 flex items-center gap-3 rounded-md border border-line bg-surface p-2 text-sm" data-testid="editor-cover">
+            <img src={coverUrl} alt="" class="h-12 w-20 shrink-0 rounded-sm object-cover" />
+            <span class="min-w-0 flex-1 text-ink-2">The cover: the post's banner, its picture in the list and on the home, and its link preview.</span>
+            <button type="button" class="ll-link shrink-0" onclick={() => (cover = null)} data-testid="editor-cover-remove">Remove</button>
+          </div>
+        {/if}
+        <p class="mt-1 text-sm text-ink-3" data-testid="editor-embeds">
+          A YouTube or X link alone on its line shows as a video (it plays after a tap) or a post card.{#if coverOn} The cover: <strong>Picture</strong>, then <strong>Make it the cover</strong>.{/if}
+        </p>
         <p class="mt-1 text-sm text-ink-3" data-testid="editor-pictures">
           Pictures: <strong>Picture</strong> above uploads one (PNG, JPEG or WebP, 300 KB at most: a bigger one, like a phone photo, is made smaller in your browser first). A file in <code>blog/img/</code> in the repository works too:
           <code>![words](/blog/img/name.png)</code>.
@@ -735,6 +758,7 @@
       <section class="min-w-0 {view === 'preview' ? '' : 'hidden wide:block'}" aria-label="Preview" data-testid="editor-preview">
         <span class="ll-label">Preview</span>
         <div class="mt-1 rounded-lg border border-line bg-surface p-4 wide:max-h-[75vh] wide:overflow-y-auto">
+          {#if coverUrl}<img src={coverUrl} alt="" class="mb-3 aspect-[1200/630] w-full rounded-md object-cover" data-testid="preview-cover" />{/if}
           <h2 class="text-2xl leading-tight font-extrabold break-words" data-testid="preview-title">{title || "Untitled"}</h2>
           {#if preview.trim()}
             <PostBody markdown={preview} {league} />

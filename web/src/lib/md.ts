@@ -43,7 +43,21 @@ export function trustedHttps(raw: string): boolean {
   }
 }
 
-function inline(text: string, ctx: LinkContext, more?: (html: string) => string): string {
+// ---- IU-6 (Wave I-U): in a blog post (mdDoc only) a link may go to any https site — no user / password / port in it —
+// and says it is the writer's, not ours: rel="noopener noreferrer nofollow ugc", a new tab. `md`'s sentences (provider
+// text) keep IM-3's rule above. http:, javascript:, data:, "//host" and everything else stay the label as text.
+export const POST_LINK_REL = "noopener noreferrer nofollow ugc";
+export function anyHttps(raw: string): boolean {
+  if (!/^https:\/\/[a-z0-9.-]+([/?#]|$)/i.test(raw)) return false; // the host spelled plainly: no "\", "@", ":" before the path
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" && !u.username && !u.password && !u.port && u.hostname.includes(".");
+  } catch {
+    return false;
+  }
+}
+
+function inline(text: string, ctx: LinkContext, more?: (html: string) => string, post = false): string {
   // ---- IN-1 fix round: a link's opening tag is held aside (U+E001) until the end, so nothing marked up later — bold,
   // italic, a picture or code (mdDoc's U+E000 placeholders) — can land inside its href; a target holding a placeholder
   // is not a link at all. U+E001 in the text itself is dropped (it is the mark).
@@ -55,6 +69,7 @@ function inline(text: string, ctx: LinkContext, more?: (html: string) => string)
     const raw = href.replace(/&amp;/g, "&");
     if (/[\uE000\uE001]/.test(raw)) return label; // a picture or code inside the target: the words, never a link
     if (inAppPath(raw)) return `${tag(`<a href="${escapeHtml(withContext(raw, ctx))}" class="ll-link">`)}${label}</a>`;
+    if (post && anyHttps(raw)) return `${tag(`<a href="${escapeHtml(raw)}" rel="${POST_LINK_REL}" target="_blank" class="ll-link">`)}${label}</a>`; // IU-6
     if (trustedHttps(raw)) return `${tag(`<a href="${escapeHtml(raw)}" rel="noopener" target="_blank" class="ll-link">`)}${label}</a>`;
     return label;
   });
@@ -99,8 +114,60 @@ function inlineDoc(text: string, ctx: LinkContext): string {
     hold(BLOG_IMG.test(src) ? `<img src="${src}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" class="ll-md-img">` : escapeHtml(alt)),
   );
   // escapes, then links / bold / hard breaks, then italic — all before the links' tags come back (none inside an href)
-  const out = inline(rest, ctx, (h) => h.replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>"));
+  const out = inline(rest, ctx, (h) => h.replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>"), true);
   return out.replace(/\uE000(\d+)\uE000/g, (_m, i: string) => held[Number(i)]);
+}
+
+// ---- IU-6 (Wave I-U): embeds from a closed list — a YouTube video or a post on X, written as the link alone on its
+// line. Matched on the raw line by strict patterns (the host spelled exactly, the id's own alphabet and length), and
+// built from the captured ids alone (escaped all the same). YouTube: a placeholder with a Play button and the video's
+// link — nothing is asked of YouTube until the reader taps; then PostBody makes the iframe to
+// https://www.youtube-nocookie.com/embed/<id> (sandboxed, lazy, its own referrer policy, a title). X: a plain link card
+// from the URL (the handle and the post's number) — no script from X, ever. Any other link alone on a line is a
+// paragraph as before.
+const YT_ID = /^[A-Za-z0-9_-]{11}$/;
+const YT = [
+  /^https:\/\/(?:www\.|m\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})(?:&[A-Za-z0-9_.=-]*)*$/,
+  /^https:\/\/(?:www\.)?youtube\.com\/shorts\/([A-Za-z0-9_-]{11})(?:\?[A-Za-z0-9_.=&-]*)?$/,
+  /^https:\/\/youtu\.be\/([A-Za-z0-9_-]{11})(?:\?[A-Za-z0-9_.=&-]*)?$/,
+];
+const X_POST = /^https:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})\/status\/(\d{1,20})(?:\?[A-Za-z0-9_.=&-]*)?$/;
+
+export function youtubeId(line: string): string | null {
+  for (const re of YT) {
+    const m = re.exec(line);
+    if (m && YT_ID.test(m[1])) return m[1];
+  }
+  return null;
+}
+export function xPost(line: string): { handle: string; id: string } | null {
+  const m = X_POST.exec(line);
+  return m ? { handle: m[1], id: m[2] } : null;
+}
+export function isYoutubeId(id: string | null | undefined): id is string {
+  return typeof id === "string" && YT_ID.test(id);
+}
+/** The embed's HTML for a line that is one link alone, else null (the line stays a paragraph). */
+export function embed(line: string): string | null {
+  const yt = youtubeId(line);
+  if (yt) {
+    const id = escapeHtml(yt);
+    return (
+      `<figure class="ll-embed ll-embed-yt" data-yt="${id}">` +
+      `<button type="button" class="ll-embed-play" data-yt-play="${id}" aria-label="Play the YouTube video"><span class="ll-embed-k">▶ Play the video</span><span class="ll-embed-s">From YouTube: it loads when you tap.</span></button>` +
+      `<figcaption><a href="https://www.youtube.com/watch?v=${id}" rel="${POST_LINK_REL}" target="_blank" class="ll-link">Watch on YouTube</a></figcaption></figure>`
+    );
+  }
+  const x = xPost(line);
+  if (x) {
+    const h = escapeHtml(x.handle);
+    const n = escapeHtml(x.id);
+    return (
+      `<figure class="ll-embed ll-embed-x"><a href="https://x.com/${h}/status/${n}" rel="${POST_LINK_REL}" target="_blank" class="ll-embed-card" data-x-post="${n}">` +
+      `<span class="ll-embed-k">A post on X</span><span class="ll-embed-h">@${h}</span><span class="ll-embed-s">Open it on X ›</span></a></figure>`
+    );
+  }
+  return null;
 }
 
 const isRule = (l: string) => /^ {0,3}([-*_])( *\1){2,} *$/.test(l);
@@ -126,7 +193,9 @@ export function mdDoc(text: string | null | undefined, ctx: LinkContext = {}): s
   let i = 0;
   const para: string[] = [];
   const flush = () => {
-    if (para.length) out.push(`<p>${inlineDoc(para.join("\n"), ctx).replace(/\n/g, " ")}</p>`);
+    const alone = para.length === 1 ? embed(para[0].trim()) : null; // IU-6: a YouTube / X link alone on its line
+    if (alone) out.push(alone);
+    else if (para.length) out.push(`<p>${inlineDoc(para.join("\n"), ctx).replace(/\n/g, " ")}</p>`);
     para.length = 0;
   };
   while (i < lines.length) {
