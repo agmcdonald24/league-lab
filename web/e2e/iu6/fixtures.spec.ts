@@ -325,6 +325,26 @@ test.describe("the blog with a cover and embeds, on the real API", () => {
     const csp = (await fetch(`${API}/blog/${slug}`)).headers.get("content-security-policy") ?? "";
     expect(csp.split("; ").filter((d) => d.startsWith("frame-src"))).toEqual(["frame-src https://www.youtube-nocookie.com"]);
   });
+
+  test("a file over 300 KB that is not a picture (HTML named .png) is refused in the browser and never sent", async ({ page, isMobile }) => {
+    test.skip(isMobile, "the same code path at 375");
+    test.setTimeout(120_000);
+    await page.context().addCookies([{ name: "ll_session", value: who!.cookie, domain: "localhost", path: "/api", httpOnly: true, sameSite: "Lax" }]);
+    const posts: string[] = [];
+    page.on("request", (r) => {
+      if (r.method() === "POST" && r.url().endsWith("/api/blog/images")) posts.push(r.url());
+    });
+    await page.goto(`${API}/blog/new`);
+    await page.getByTestId("editor-title").fill(`Not a picture ${randomBytes(3).toString("hex")}`);
+    await expect(page).toHaveURL(/\/blog\/edit\//, { timeout: 20_000 });
+    await page.getByTestId("tool-picture").click();
+    const html = Buffer.from("<!doctype html><script>window.__iu6 = 1</script>" + "<p>x</p>".repeat(50_000)); // ~400 KB
+    expect(html.length).toBeGreaterThan(300 * 1024);
+    await page.getByTestId("picture-file").setInputFiles({ name: "evil.png", mimeType: "image/png", buffer: html });
+    await expect(page.getByTestId("picture-problem")).toHaveText("A picture is a PNG, JPEG or WebP file.", { timeout: 30_000 });
+    expect(posts, "nothing sent").toEqual([]);
+    expect(await page.evaluate(() => (window as unknown as { __iu6?: number }).__iu6)).toBeUndefined();
+  });
 });
 
 // a phone-sized PNG (several MB, nothing to compress) — io3's resize test's maker

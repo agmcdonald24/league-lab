@@ -4,7 +4,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-09 — Wave I-U
 
-- IU-6: the blog editor makes a picture over 300 KB smaller in the browser before it is sent (longest side 1600 px, WebP or JPEG, quality stepped down until it fits), so a phone photo uploads; the server's checks (PNG / JPEG / WebP by the first bytes, 300 KB, 50 pictures, 30 MB) are unchanged. Cover image, link-preview picture and embeds not done (the hand-back says why and what next).
+- IU-6: the blog can carry a cover, smaller pictures and embeds. A post's cover (one of the editor's own pictures, `blog.posts.cover`, added by `scripts/hosted_blog.sql`; the API works without the column until the nightly adds it) is its banner, its thumbnail in the list and on the home, and its link preview (`og:image` / `twitter:image` in the HTML a crawler gets). A picture over 300 KB is made smaller in the editor's browser (the server's checks unchanged). A YouTube link alone on its line is a Play button that loads the youtube-nocookie player only after the tap; a post on X is a plain link card (no script from X). A link in a post may go to any https site (`rel="noopener noreferrer nofollow ugc"`). The CSP gains `frame-src https://www.youtube-nocookie.com`.
 
 ## 2026-10-09 — Wave I-T
 

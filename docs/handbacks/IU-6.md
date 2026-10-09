@@ -1,136 +1,161 @@
-# IU-6 — the blog can carry pictures and embeds (Wave I-U) — hand-back
+# IU-6 — the blog can carry pictures and embeds (Wave I-U) — hand-back, both rounds
 
-Branch `dev/IU6` from `main` `99fb216`. Worked 14:09–14:30 ET: the package arrived with 21 minutes to the hard stop,
-so **one item is done (item 2, the resize) and the rest is cut**, with what I found for each so the next round
-starts from facts.
+Branch `dev/IU6` from `main` `99fb216`. Round 1 (14:09–14:18 ET, 21 minutes): the resize, merged. Round 2 (14:24–
+15:40 ET, `league_lab_im4` as the only database written): the cover with its link preview, embeds, links, the security
+table, the editor's help line and the template, the e2e.
 
 ## 1. Done, not done, cut
 
 | item | state |
 | --- | --- |
-| 1 cover image + link preview | **not done (cut for the clock).** Findings and a design below (§ 4). |
-| 2 pictures resized before they are stored | **done.** Browser-side shrink; server checks unchanged; e2e. |
-| 3 embeds (YouTube, X) | **not done (cut).** No iframe, no third-party script added anywhere. |
-| 4 links | **answered, not changed** (§ 5). |
-| 5 security table | for what shipped only (§ 6). |
-| 6 editor help line | the picture help line and the picture panel's label say what the editor now does (WORDS.md); no cover / embed words because neither shipped; `blog/_template.md` untouched. |
-| 7 e2e | one new test in `web/e2e/io3/fixtures.spec.ts` (the resize); no embed e2e (nothing to embed). |
-| screenshots in `docs/handbacks/iu6/` | the editor after a resized upload, `iu6-editor-resized-375.jpg` / `-1300.jpg` (JPEG q70, taken by the e2e). No list-with-thumbnails / cover / embed shots: those screens were not built. |
+| 1 a cover per post + link preview | **done.** Column, owner check on save, banner / list thumbnail / home thumbnail, `og:image` + `twitter:image` in the no-script HTML, works without the column. |
+| 2 pictures resized in the browser | **done** (round 1, merged). |
+| 3 embeds: YouTube behind a tap, X as a link card | **done.** No third-party script anywhere; CSP `frame-src` gains exactly one host. |
+| 4 links to any https site | **done** (blog posts only; the site's sentences keep IM-3's nine hosts). |
+| 5 the security table | § 5. |
+| 6 the editor's help line, WORDS.md, `blog/_template.md` | **done.** |
+| 7 e2e at 375 and 1300, outside hosts answered by the test | **done** (`web/e2e/iu6`). Screenshots in `docs/handbacks/iu6/`. |
+| cut | a small thumbnail rendition (it would spend a second of the blog's 50 pictures); the cover in revisions; the X post's text (needs X's script). |
 
-## 2. What an editor can now do
+## 2. What a post can now hold, and how an editor writes it
 
-Choose a phone photo (several MB, PNG / JPEG / WebP, any size) in **Picture**. If it is 300 KB or less it is sent as
-it is (a crisp PNG chart stays a PNG and the server still judges it by its first bytes). If it is bigger, the browser
-(`web/src/components/blog/shrink.ts`):
+* **A cover.** **Picture** → upload (a phone photo is made smaller first) → **Make it the cover** under the picture.
+  The editor shows it above the body with **Remove** and at the top of the preview. Saved with the post (a draft
+  autosaves; a published post with **Save changes**). It is the post's banner, its thumbnail in the list and on the
+  home, and its link preview. Whose pictures: **only pictures the saving account uploaded** (`blog.images.account_id`);
+  the post being edited is the account's own (`_get` filters on it), so a cover is always the post owner's picture.
+* **A video.** A YouTube link alone on its line (`youtube.com/watch?v=…`, `youtu.be/…`, `youtube.com/shorts/…`) → a
+  **▶ Play the video** box with "Watch on YouTube"; the player loads only on the tap.
+* **A post on X.** An `x.com` / `twitter.com` `/<handle>/status/<number>` link alone on its line → a card: "A post on X ·
+  @handle · Open it on X ›".
+* **A link** to any https site: `[words](https://…)`.
+* The help line under the body says the first three in one sentence (WORDS.md § the blog editor).
 
-1. decodes it with `createImageBitmap(file, {imageOrientation: "from-image"})` (a phone's rotation is applied; a file
-   the browser cannot decode → "A picture is a PNG, JPEG or WebP file.", nothing sent);
-2. draws it on a canvas with its longest side at most 1600 px (never enlarged), on white (a transparent PNG does not
-   turn black as a JPEG);
-3. writes WebP at quality 0.85, 0.75, 0.65, 0.55, 0.45 until one is ≤ 300 KB; a browser that cannot write WebP
-   (it hands back a PNG) switches to JPEG at the same steps;
-4. if none fits, the same at 75 % and 50 % of that size; still none → "That picture could not be made small enough.
-   Try a smaller one.", nothing sent.
+**Bytes.** One rendition per picture, ≤ 300 KB (the server's bound, unchanged); the cover is one of the post's pictures,
+not a copy. The e2e's 2400 × 1600 PNG (11.5 MB) was stored as **72,938 bytes** at 1600 × 1067 (a synthetic gradient;
+a detailed phone photo will be bigger, up to the 300 KB the steps stop at). 50 posts with one cover each = the blog's
+whole 50-picture cap, at most 14.6 MB of the 30 MB cap; **the count, not the bytes, is the limit** (the cap is
+blog-wide: `select count(*) from blog.images`). The cover column itself: 16 bytes a row.
 
-What arrives is then checked by the server exactly as before (`blog_store.upload`: ≤ 300 KB else 413, PNG / JPEG /
-WebP by the first bytes else 400, 50 pictures, 30 MB in all). No server line changed.
+## 3. Commits (on top of `d8535ac`)
 
-**Bytes.** A stored picture is ≤ 300 KB (307 200 bytes), by the server's check. The blog-wide caps are 50 pictures
-and 30 MB for posts + revisions + pictures together (`_room`). 50 pictures at the bound = 14.6 MB, under the 30 MB
-cap; **the binding limit for pictures is the count (50 for the whole blog), not the bytes** — which matters for the
-cover design (a cover per post spends one of the 50). A second, small thumbnail rendition was not built: it would
-spend a second of the 50 per picture; the list can show the one picture at a small size instead (`loading="lazy"`).
-Measured once: the e2e's 2400 × 1600 PNG (11 523 418 bytes, a synthetic gradient) was stored as 72 938 bytes at
-1600 × 1067. Not measured: a real phone photo (more detail → bigger; the steps stop at the first that is ≤ 300 KB).
+- `a8b59c5` the cover, server side: `hosted_blog.sql`'s column, `blog_store` (detection, save check, published
+  `image`, export), `blog.parse_post` accepts `/blog/img/db/<id>`, CSP `frame-src`; `api/tests/test_iu6.py`;
+  `test_io3`'s schema test allows the one additive `alter`
+- `cf0b130` the cover on the screens (post banner, list and home thumbnails, the editor's choice) and the help line
+- `328093e` embeds and post links in `md.ts`, the tap-to-play in `PostBody.svelte`, `web/e2e/iu6`, io3's inert check
+- (last) docs: this file, BLOG.md, WORDS.md, `blog/_template.md`, CHANGELOG, screenshots
 
-## 3. Commits
+## 4. Evidence
 
-- `IU-6: a picture over 300 KB is made smaller in the editor's browser …` — `shrink.ts`, `BlogEditor.svelte`
-  (import, one line in `onFile`, the two picture sentences), the io3 e2e test.
-- `IU-6: hand-back, CHANGELOG, WORDS` — this file, the CHANGELOG bullet, WORDS.md's pictures row.
+**The column (exact line, `scripts/hosted_blog.sql`):**
 
-## 4. The link preview and the cover — findings for the next round (nothing changed)
+```sql
+alter table blog.posts add column if not exists cover uuid references blog.images (id) on delete set null;
+```
 
-**How `/blog/<slug>` reaches a crawler that runs no script today:** the web app's catch-all in `main.py` calls
-`blog.shell(index.html, path)`, which replaces the block between `<!-- ll:seo -->` and `<!-- /ll:seo -->` with
-`blog.seo_tags(blog.preview(path))`: `<title>`, `description`, canonical, `og:type/site_name/title/description/url/
-image`, `article:published_time`, `twitter:card` = `summary_large_image`, `twitter:title/description/image` — every
-value through `html.escape(…, quote=True)`, from the stored post only (title, summary, date, author, slug). So
-`og:title` / `og:description` / `twitter:card` are already in the HTML a crawler receives. `og:image` is the post's
-`image` when it has one, else `https://isuckatfantasy.io/og.png` (1200 × 630). **A file post** can set `image:` in its
-front matter today; **a database post** (written in the editor) always has `"image": None`
-(`blog_store._read_published`), so it always previews with the site's default picture.
+Applied twice to `league_lab_im4` with the pipeline role (idempotent). **While it is absent** (the hosted database for
+some hours after the deploy): `blog_store.cover_on` asks `pg_attribute` once per process, then at most once a minute
+while absent (every ten minutes once present). Without it: `GET /api/blog/mine` → `limits.cover: false`, the editor
+offers no cover (the help line drops its cover sentence), a `cover` in a save is **quietly not stored** (200, the rest
+saved), every post's `image` is null (the list, the post, the home and the preview as today), the export has no image
+line. When the nightly adds the column the API sees it within a minute, no restart. `test_without_the_cover_column_…`
+drops the real column on `league_lab_im4` and runs the list, a post, the shell, `/`, `/blog`, RSS, the sitemap, the
+export, `mine`, a post's load and two saves (one with a cover) — all 200 — then re-runs the SQL file and shows the
+column noticed after the minute.
 
-**The cover, as I would build it (not built):** a nullable column `blog.posts.cover uuid references blog.images (id)
-on delete set null` (an `alter table … add column if not exists` in `scripts/hosted_blog.sql`, run by the publish);
-`SaveIn` gains `cover` (an id or null), and `save` accepts it only when `select 1 from blog.images where id = %s and
-account_id = %s` matches the saving account (else 400 `bad_cover`, the same answer for "not yours" and "no such
-picture"); `_read_published` selects it and sets `image` = `/blog/img/db/<id>`, so `preview()` and `seo_tags()` carry
-it with no change; the list, the home card and the post page render `image` (escaped attribute, `loading="lazy"`,
-fixed aspect box). The app must tolerate the column missing (hosted before the next publish): `to_regclass` /
-`information_schema` check once, as `ready()` does. A crawler-side `og:image` for a WebP: Facebook and X accept WebP;
-LinkedIn's support is uneven — a JPEG cover is the safe choice (the shrink could write JPEG for a picture chosen as
-cover).
+**The link preview.** A crawler that runs no script gets `index.html` from the API's catch-all with the head block
+between `<!-- ll:seo -->` markers replaced by the post's own (`blog.shell` → `preview` → `seo_tags`, every value
+`html.escape`d, from the stored post only). Before: a database post's `image` was always null → `og:image` =
+`https://isuckatfantasy.io/og.png`. Now: `og:image` and `twitter:image` = `https://isuckatfantasy.io/blog/img/db/<id>`,
+`twitter:card` = `summary_large_image`. Proven twice: `test_a_cover_is_stored_…` (TestClient, a title with `<`, `&`,
+`"`: escaped) and the e2e (`fetch` of `/blog/<slug>` from the real server, no browser).
 
-## 5. Links in a post today (`web/src/lib/md.ts`, unchanged)
+**The CSP header, before (main `99fb216`):**
 
-`[label](href)`: an in-app path (`/…`, not `//` or `/\`) → `<a href>` with the league context; `https://` to one of
-nine hosts (`isuckatfantasy.io`, `espn.com`, `sleeper.com`, `sleeper.app`, `myfantasyleague.com`, `yahoo.com`,
-`nfl.com`, `draftkings.com`, `fanduel.com`, and their subdomains), no user / password / port → `<a href …
-rel="noopener" target="_blank">`; anything else (another https host, `http:`, `javascript:`, `data:`, a link holding a
-picture or code) → the label as plain text. Nothing is wrong in what it does; "links to any https site" is a product
-choice the brief asks for, not a defect — not changed today. If it is made: allow any `https:` host with no
-credentials or port, add `nofollow ugc` to `rel` (`noopener noreferrer nofollow ugc`), keep everything else.
+```
+default-src 'self'; script-src 'self' 'sha256-8yOK4emASucVfrkU+4aINXAjtjcigTaSHC3JW5CqBuA=' https://*.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; font-src 'self' data:; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+```
 
-**CSP:** the app sends one (`security.py`, `csp()`): `default-src 'self'` and no `frame-src`, so any iframe is
-refused today; `frame-ancestors 'none'`, `object-src 'none'`. An embed would need exactly
-`frame-src https://www.youtube-nocookie.com` added — not done, since no embed shipped. The resize needs no CSP change
-(a canvas from a local file; no network).
+**After:** the same, plus `; frame-src https://www.youtube-nocookie.com` at the end. Nothing else changed.
 
-## 6. Security table (what shipped: the resized upload)
+**No request before the tap (e2e, both widths):** every non-localhost request is routed by the test; on the post page,
+after load and 1.5 s more, the list of outside requests is **empty**; after the tap it holds only
+`https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=1` (answered by the test's stub page, which renders in the
+iframe). No `<script src>` from another origin on the page.
 
-The server's route and checks are untouched, so every attack is answered by the same lines IO-3 / IO-4 reviewed.
+## 5. The security table
 
-| input | attack | answer | how verified |
-| --- | --- | --- | --- |
-| upload | an SVG (with `onload`) named `.png`, under 300 KB | sent as it is (under the bound, no decode), server 400 "A picture is a PNG, JPEG or WebP file." | io3 e2e (existing test, green with the change) |
-| upload | an HTML / SVG file over 300 KB | the browser cannot decode it → "A picture is a PNG, JPEG or WebP file.", nothing sent; a script that skips the editor and posts it gets the server's 413 / 400 | reasoning + the server's unchanged checks; **no test of the over-300 KB non-picture path** |
-| upload | an oversized picture posted around the editor (curl) | server 413 `too_big` (unchanged) | existing API tests (`test_io3` / `test_io4`), not re-run by me |
-| upload | an 11.5 MB 2400 × 1600 PNG through the editor | shrunk to 1600 × 1067, WebP / JPEG by its first bytes, 72 938 bytes, server 201; no sideways scroll at 375 | new e2e (both projects) |
-| upload | 51st picture | server 409 `too_many_images` (unchanged) | not re-run |
-| new route | — | none added; no new list | — |
+Server answers are from `api/tests/test_iu6.py` / `test_io3.py` (TestClient on `league_lab_im4`); render answers from
+the md.ts tests in `web/e2e/iu6` (pure) and the e2e.
 
-## 7. Tests
+| input | attack | answer |
+| --- | --- | --- |
+| cover (save) | `javascript:alert(1)`, `data:image/png;base64,…`, `/blog/img/db/x`, `../../etc/passwd`, `x`×64 | 400 `bad_cover` "A cover is one of your own pictures: upload it under Picture first."; nothing stored |
+| cover | a well-formed uuid with no picture | 400 `bad_cover` (same words) |
+| cover | an id with a quote (`…00000000000'`) or a slash (`…0000000000/0`); an upper-case uuid | 400 `bad_cover` |
+| cover | 65 characters; a number instead of a string | 422 (the model's bound / type) |
+| cover | another editor's picture | 400 `bad_cover` — the same answer as no picture (no telling whose ids exist) |
+| cover | signed out / a cross-site `Origin` | 401 `signed_out` / 403 (the same-site rule) |
+| cover | its picture deleted | the post keeps no cover (`on delete set null`), the published list's cache cleared, preview back to `og.png` |
+| cover | a file post naming `https://evil.example/x.png`, `javascript:…`, `/blog/img/db/../x.png`, an upper-case id | no picture (`image: null`) |
+| resized upload | an SVG with `onload` named `.png` (< 300 KB) | sent as it is; server 400 `bad_image` (io3 e2e) |
+| resized upload | an HTML file of ~400 KB with a `<script>`, named `.png`, chosen in the editor | the browser cannot decode it → "A picture is a PNG, JPEG or WebP file."; **no request sent**, the script never ran (iu6 e2e) |
+| resized upload | over the bound around the editor | 413 `too_big` (the server's check, unchanged; `test_io3`) |
+| resized upload | HTML / GIF / 4 bytes / empty | 400 `bad_image` (unchanged; `test_io3`) |
+| embed line | `https://www.youtube.com.evil.example/watch?v=…`, `https://youtu.be.evil.example/…`, `https://evilyoutube.com/…`, `https://evil.example/youtube.com/…` | not an embed: the line stays a paragraph of text |
+| embed line | an id of 10 or 12 characters, with `"`, `'`, `/`, `%22`, `"><script>`, `&x="onload=…` | not an embed (text) |
+| embed line | `http:`, a user (`user@`), a port, `javascript:…//https://youtu.be/…`, `data:text/html,https://youtu.be/…` | not an embed (text) |
+| embed line | an X handle with `-`, `%22`, `"`; 16 characters; a 21-digit or non-digit number; `x.com.evil.example`; `/photo/1` after the number | not an embed (text) |
+| embed line | the link inside a sentence, or two links on two lines of one paragraph | not an embed (text) |
+| embed render | — | the YouTube placeholder has no `<iframe>`, `<script>`, `<img>`, no `youtube-nocookie` or `ytimg` URL; the X card has no `<script>`, `<iframe>`, `<img>`, no `platform.twitter` / `widgets.js` |
+| the tap | a tampered `data-yt-play` | `PostBody` checks the id against `^[A-Za-z0-9_-]{11}$` again before making the iframe; the src is built from it, never read from the page |
+| link | `javascript:`, `JaVaScRiPt:`, `data:text/html,…`, `http:`, `//evil.example`, `https://user:pw@…`, `https://…:8443/`, `https://localhost/`, `https:\\evil.example`, `https://evil.example\@good.example/`, `vbscript:`, `ftp:` | the words as text, no `<a>` |
+| link | a quote in the target (`"onmouseover="…`) | escaped inside `href`; no attribute escapes |
 
-- `web`: `npm run lint` (eslint + svelte-check + tsc) 0 errors 0 warnings; `npm run build` green.
-- `scripts/copy_standard.py --check` exit 0.
-- e2e `e2e/io3` (the editor; the only screen changed), both projects, `IO3_API_PORT=8968 FIXTURES_PORT=8967`: the full
-  spec **17 passed, 9 skipped (the phone-skipped ones), 0 failed** in 2.2 min with the resize test desktop-only; then
-  the resize test on both projects after adding the 375 run and the screenshots: **2 passed**. Other blog / home
-  specs (`in1`, `in4`, …) not run: their screens did not change.
-- No Python changed: ruff / `gate.sh python` / the blog API tests not run (nothing of theirs moved).
+New routes: none. New lists: none (the cover is one column). `mine`'s pictures stay bounded by 50.
 
-## 8. Edits outside my files
+## 6. Tests
 
-None. (`CHANGELOG.md`, `docs/WORDS.md` as the brief asks.)
+All on `league_lab_im4` (`LEAGUE_LAB_DB_NAME=league_lab_im4`); `league_lab` not written in round 2.
 
-## 9. PO lines
+- API: `test_iu6.py` 12 · with `test_io3`, `test_io4`, `test_in1`, `test_in2`, `test_im3`: **193 passed, 0 failed** ·
+  `test_ip5.py` (reads the blog's sitemap) **35 passed**. The first run had one failure:
+  `test_io3::test_the_script_is_idempotent_…` forbade any `alter`. It now allows exactly the one additive line.
+- e2e, both projects (`FIXTURES_PORT=8967`, `IU6_API_PORT=8964`, `IO3_API_PORT=8968`):
+  - `e2e/iu6 e2e/io3 e2e/in1 e2e/ip0` together: **45 passed, 17 skipped (phone-only / desktop-only skips), 0 failed**.
+  - `e2e/in4 e2e/im3`: **15 passed, 1 skipped, 0 failed**.
+  - `e2e/iu6` alone again, with the added non-picture test: **6 passed, 4 skipped, 0 failed**.
+- Checks: `npm run lint` (eslint + svelte-check + tsc) 0 errors, 0 warnings; `npm run build` green;
+  `uv run ruff check src app tests api scripts` clean; `copy_standard.py --check` exit 0; `scripts/gate.sh python`
+  **GATE PASSED**.
+- Afterwards, `league_lab_im4` holds 0 blog posts, 0 pictures and 0 `@iu6.test` / `@io3.test` accounts, and keeps the
+  cover column. No server is left on ports 8960–8969. The in1 / in4 / io3 screenshots the e2e rewrote were restored.
 
-None needed for what shipped. For the cover (next): `scripts/hosted_blog.sql` gains the `alter table` (mine to write
-next round; `sync_to_hosted.sh` already runs that file).
+## 7. Edits outside the blog's files
 
-## 10. Found, not mine
+- `api/league_lab_api/security.py`: one directive in `csp()` (`frame-src https://www.youtube-nocookie.com`), as the
+  PO asked.
+- `scripts/hosted_blog.sql` (the blog's schema file; run by `sync_to_hosted.sh`, which is unchanged).
+- `web/src/routes/Home.svelte`: the blog block's thumbnail (one `<img>` and an import).
+- `CHANGELOG.md`, `docs/WORDS.md`, `docs/BLOG.md`.
 
-- The 50-picture cap is blog-wide (`select count(*) from blog.images`), not per post or per editor: one editor can
-  use all 50. With covers this will be reached quickly.
+## 8. The PO's lines and by-hand steps
 
-## 11. Next
+- **Nothing in a PO-owned file.** The nightly's sync already runs `scripts/hosted_blog.sql` as the owner; the first
+  nightly after the merge adds the column (a sub-second `alter` on a table of a few rows; the foreign key takes a
+  short lock on `blog.posts` and `blog.images`). Until then the site works as today (§ 4).
+- If a cover is wanted before the nightly: run the one `alter` line above on Neon as the owner role, by hand.
+- `test_io3::test_the_script_is_idempotent_…` now allows exactly that `alter` (a deliberate change in a blog test).
 
-1. The cover per § 4 (column, owner check on save, `image` from the stored post → banner, list, home, `og:image`),
-   with an e2e that a crawler's HTML (no script) carries the cover's absolute URL, escaped.
-2. Embeds: one bare link on its own line; YouTube by `^[A-Za-z0-9_-]{11}$` from `youtube.com/watch?v=`,
-   `youtu.be/`, `youtube.com/shorts/` only; a click-to-load placeholder → iframe to
-   `https://www.youtube-nocookie.com/embed/<id>` (`sandbox="allow-scripts allow-same-origin allow-presentation"`,
-   `loading="lazy"`, `referrerpolicy="strict-origin-when-cross-origin"`, a title); X by
-   `^https://(x|twitter)\.com/([A-Za-z0-9_]{1,15})/status/(\d{1,20})$` → a plain link card; CSP `frame-src` +1 host.
-3. Then links to any https host (§ 5).
+## 9. Found, not mine / limitations
+
+- The 50-picture cap is blog-wide: one editor can use it all, and with covers it will be reached sooner.
+- A cover is not kept in a revision; **Earlier versions** brings back text, not the cover.
+- WebP covers preview on X and Facebook; some other sites prefer JPEG.
+- The X card cannot show the post's text without X's script (by design).
+
+## 10. Next
+
+1. A per-editor or per-post picture cap if more than one editor writes.
+2. A JPEG for a picture chosen as cover (the resize can write JPEG on request) if previews elsewhere need it.
