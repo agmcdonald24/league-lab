@@ -274,7 +274,7 @@ def _version() -> str:
 def _refresh_as_of() -> None:
     """The newest fitted_at of the decision record, on a short connection of its own (5 s to connect)."""
     try:
-        with _psycopg.connect(_app_dsn(), connect_timeout=5, autocommit=True) as conn:
+        with _psycopg.connect(_app_dsn(), connect_timeout=5, autocommit=True, prepare_threshold=None) as conn:  # IT-4
             row = conn.execute("select max(fitted_at) from ops.projections").fetchone()
         _health_state.update(as_of=None if row is None or row[0] is None else row[0].isoformat(), database="ok",
                              next=_time.monotonic() + _HEALTH_TTL_S)
@@ -687,7 +687,8 @@ def trades_evaluate(body: TradeBody, response: Response, source: str | None = No
     if refleague.is_reference(body.league):                                                      # ---- IM-3
         raise refleague.NeedsLeague()
     provider_gate(body.league)                                                                   # ---- IK-3
-    out = decisions.evaluate(body.league, body.team, body.partner, body.give, body.get, source=source, window=body.window)
+    out = db.one_publication(decisions.evaluate, body.league, body.team, body.partner, body.give, body.get,  # IT-4
+                             source=source, window=body.window)
     out = provenance.with_trade(out)                          # ---- IR-4: provenance + the starter caveats (data)
     out = provenance.rule_trade(out)                          # ---- PO (Wave I-R): the caveat rule applied to the one decision
     response.headers["Cache-Control"] = "no-store"

@@ -6,7 +6,7 @@
 # writer's connection, the sync's read-only verification queries, and the post-deploy check against an API started on
 # the pooled address. One line per check; exit 1 if any fails.
 #
-#   scripts/pooler_check.sh                         # this tree
+#   scripts/pooler_check.sh                         # this tree, both modes (POOLER_PREPARED=1000 and 0)
 #   scripts/pooler_check.sh --ready-from 748ff76    # + the readiness probe of another commit (the 2026-10-08 bug)
 #
 # Needs: pgbouncer (apt-get install -y pgbouncer), sudo -u postgres (PgBouncer will not run as root), the .env of this
@@ -19,6 +19,17 @@ cd "$(dirname "$0")/.."
 ROOT="$PWD"
 OLD_REF=""
 [ "${1:-}" = --ready-from ] && OLD_REF="${2:?--ready-from <commit>}"
+# ---- IT-4: both pooler modes by default - one that keeps protocol-level prepared statements (as Neon's does today) and
+# one that keeps none (a pooler need not); the API must pass both (its connections never prepare: prepare_threshold=None)
+if [ -z "${POOLER_PREPARED:-}" ]; then
+  rc=0
+  for mode in 1000 0; do
+    echo "=== pooler mode: prepared statements kept: $mode"
+    POOLER_PREPARED=$mode POOLER_PORT=$(( ${POOLER_PORT:-6439} + (mode == 0 ? 1 : 0) )) "$0" "$@" || rc=1
+  done
+  [ "$rc" = 0 ] && echo "POOLER CHECK PASSED IN BOTH MODES" || echo "POOLER CHECK FAILED IN A MODE"
+  exit "$rc"
+fi
 PORT="${POOLER_PORT:-6439}"; API_PORT="${POOLER_API_PORT:-8964}"; PREPARED="${POOLER_PREPARED:-1000}"
 envval() { grep "^$1=" .env | head -1 | cut -d= -f2-; }
 DB="${POOLER_DB:-$(envval LEAGUE_LAB_DB_NAME)}"

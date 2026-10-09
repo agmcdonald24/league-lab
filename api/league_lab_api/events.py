@@ -257,7 +257,8 @@ LIVE_SQL = ("select id, status from events.events where kind = 'availability' an
 def _writer() -> psycopg.Connection:
     global _conn
     if _conn is None or _conn.closed or _conn.broken:
-        _conn = psycopg.connect(app_dsn(), autocommit=True, connect_timeout=5, application_name="league-lab-events")
+        _conn = psycopg.connect(app_dsn(), autocommit=True, connect_timeout=5, application_name="league-lab-events",
+                                 prepare_threshold=None)   # ---- IT-4: no prepared statements (a pooler need not keep them)
     return _conn
 
 

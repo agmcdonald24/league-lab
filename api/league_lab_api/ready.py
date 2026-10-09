@@ -143,7 +143,7 @@ def check(dsn: str | None = None) -> tuple[bool, dict]:
         # the app's own pool, on the same address, served every screen. The timeout is set for this transaction only
         # (`set local`: nothing is left on a pooled connection).
         with psycopg.connect(dsn or app_dsn(), connect_timeout=CONNECT_TIMEOUT_S,
-                             application_name="league-lab-ready") as conn:  # one transaction: `set local` lives in it
+                             application_name="league-lab-ready", prepare_threshold=None) as conn:  # one transaction: `set local` lives in it
             conn.execute(f"set local statement_timeout = {int(STATEMENT_TIMEOUT_MS)}")
             return probe(conn)
     except psycopg.errors.QueryCanceled as exc:   # ---- IS-4: a statement timeout is an OperationalError in psycopg,
