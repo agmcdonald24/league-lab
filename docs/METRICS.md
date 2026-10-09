@@ -5453,6 +5453,13 @@ weeks; pairs pair-weighted within a season, then the mean over seasons):
 | WR | 8,643 | **0.584** | 0.539 | 3,847 | 0.629 | 0.569 | 4 of 5 | useful |
 | TE | 2,939 | **0.555** | 0.524 | 1,463 | 0.601 | 0.523 | 4 of 5 | useful |
 
+**2026-10-09 (PO, Wave I-T): the quarterback row re-graded on the current version.** IT-5 ran ud1.0 on v3.6's rows
+(§ "v3.7: the role forecast (IT-5)"; `scripts/analysis/it5_role.py v36`, re-run by the PO with the same output): 3,999
+pairs, the calculator's side 0.613 against 0.595 for his own record, above both 50 % and the record in 4 of the 5
+seasons — "useful" by this section's rule, by the smallest margin of the four positions. The row above is v3.5's and is
+kept as the record of what the site said until this date; `provenance.USEFUL["QB"]` and
+`context_record.USEFUL_GRADES["QB"]` hold v3.6's.
+
 By season (calculator / his own record): QB 0.580 / 0.647, 0.578 / 0.590, 0.632 / 0.643, 0.593 / 0.594, 0.586 / 0.603;
 RB 0.554 / 0.586, 0.572 / 0.513, 0.578 / 0.554, 0.603 / 0.582, 0.569 / 0.524; WR 0.604 / 0.613, 0.615 / 0.558, 0.553 /
 0.526, 0.566 / 0.498, 0.583 / 0.500; TE 0.544 / 0.535, 0.547 / 0.474, 0.572 / 0.545, 0.562 / 0.500, 0.550 / 0.565 (2021

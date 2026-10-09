@@ -542,12 +542,14 @@ NOT_GRADED = (
     "below is one-for-one, same position)",
     "kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their "
     "order is no better than chance)",
-    "quarterbacks' useful-decision grade on the current version (it was measured on the version before)",
 )
 # The useful-decision grade (ud1.0, docs/METRICS.md § "The useful decision grade"; scripts/analysis/ir4_useful.py,
 # 2021–2025): on a close one-for-one (projected four-week totals within 20 %), how often the side the calculator favours
-# scored more over those four weeks, against the side his own per-game record favours. QB rows are v3.5's.
-USEFUL = {"QB": {"pairs": 3680, "rate": 0.594, "base": 0.615, "seasons": 0, "useful": False},
+# scored more over those four weeks, against the side his own per-game record favours.
+# PO (Wave I-T): the QB row is re-graded on the current version's rows (v3.6: IT-5, scripts/analysis/it5_role.py v36,
+# re-run by the PO — 3,999 pairs, 0.613 against 0.595, above both 50 % and the record in 4 of 5 seasons). It was v3.5's
+# (3,680 pairs, 0.594 against 0.615, 0 of 5) and the sentence said his own record did better: true of v3.5, not of v3.6.
+USEFUL = {"QB": {"pairs": 3999, "rate": 0.613, "base": 0.595, "seasons": 4, "useful": True},
           "RB": {"pairs": 6320, "rate": 0.575, "base": 0.552, "seasons": 4, "useful": True},
           "WR": {"pairs": 8643, "rate": 0.584, "base": 0.539, "seasons": 4, "useful": True},
           "TE": {"pairs": 2939, "rate": 0.555, "base": 0.524, "seasons": 4, "useful": True}}
@@ -556,8 +558,8 @@ USEFUL_WORDS = ("Is the trade calculator right? On a close one-for-one between t
                 f"{USEFUL['WR']['rate'] * 100:.0f} times in 100 at receiver, {USEFUL['RB']['rate'] * 100:.0f} at running "
                 f"back and {USEFUL['TE']['rate'] * 100:.0f} at tight end — more often than the side his own per-game "
                 f"record favours ({USEFUL['WR']['base'] * 100:.0f}, {USEFUL['RB']['base'] * 100:.0f} and "
-                f"{USEFUL['TE']['base'] * 100:.0f}). At quarterback {USEFUL['QB']['rate'] * 100:.0f} in 100, but the side his own "
-                f"per-game record favours did better ({USEFUL['QB']['base'] * 100:.0f}). 50 would be a coin flip.")
+                f"{USEFUL['TE']['base'] * 100:.0f}). At quarterback {USEFUL['QB']['rate'] * 100:.0f} in 100 against "
+                f"{USEFUL['QB']['base'] * 100:.0f} for his own record: the smallest margin of the four. 50 would be a coin flip.")
 CHECKED_HEAD = ("What each number has been checked against: every projection below was scored on 2021–2025 seasons it "
                 "never saw, against what happened that week. The order is the rank correlation (1 = perfect, 0 = no "
                 "better than chance); the miss is in points per game.")

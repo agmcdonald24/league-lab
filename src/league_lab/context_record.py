@@ -1663,7 +1663,7 @@ def horizon_sentence(pos: str, window: str, miss: float, order: float, bmiss: fl
 # where the calculator's side scored more over four weeks (``beat_share``) against his own per-game record's side
 # (``rest_beat_share``), ``n`` = pairs, ``beat`` = seasons (of 5) above both 50 % and the baseline. kind ``useful``.
 USEFUL_GRADES: dict[str, tuple[int, float, float, int]] = {
-    "QB": (3680, 0.594, 0.615, 0), "RB": (6320, 0.575, 0.552, 4), "WR": (8643, 0.584, 0.539, 4), "TE": (2939, 0.555, 0.524, 4)}
+    "QB": (3999, 0.613, 0.595, 4), "RB": (6320, 0.575, 0.552, 4), "WR": (8643, 0.584, 0.539, 4), "TE": (2939, 0.555, 0.524, 4)}
 
 
 def horizon_grade_rows(graded_at: datetime | None = None) -> list[dict]:

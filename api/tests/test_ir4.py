@@ -161,7 +161,9 @@ def test_about_block_lists_versions_and_checks(board):
     assert rows["QB"]["later"]["status"] == "graded_weak" and rows["QB"]["next4"]["base_order"] is not None
     assert rows["K"]["later"]["words"] == "no better than chance" and rows["K"]["next4"] is None
     assert any("several players" in n for n in a["checked"]["not_graded"])
-    assert a["checked"]["useful"]["by_position"]["QB"]["useful"] is False
+    # PO (Wave I-T): re-graded on v3.6's rows (IT-5: 3,999 pairs, 0.613 against 0.595, 4 of 5 seasons) — was v3.5's False
+    qb = a["checked"]["useful"]["by_position"]["QB"]
+    assert qb["useful"] is True and qb["rate"] > qb["base"] and "smallest margin" in a["checked"]["useful"]["words"]
 
 
 # ------------------------------------------------------------------------------------------------ the routes (database)
