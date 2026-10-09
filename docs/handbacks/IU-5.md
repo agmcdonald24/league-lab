@@ -24,7 +24,8 @@ reached me then); hard stop 14:30.
    definition change).
 3. `63bf32a` 13:50:50 — rr1.0: `calibration.py` (block `# ---- IU-5`), `context_record.py` (the horizon part, and two
    marked hooks in `run` / `write_grade`), `tests/test_iu5_role_record.py`.
-4. (last) — METRICS (the record: where, size, when), CHANGELOG, this hand-back.
+4. `c9517bc` 13:53:21 — METRICS (the record: where, size, publication, when), CHANGELOG.
+5. `5ac26af` 14:08:49 and the last — this hand-back.
 
 #### 3. Evidence
 
