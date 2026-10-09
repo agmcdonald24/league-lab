@@ -55,7 +55,8 @@ def pool() -> ConnectionPool:
     with _pool_lock:
         if _pool is None:
             _pool = ConnectionPool(app_dsn(), min_size=1, max_size=4, open=True, timeout=30,
-                                   kwargs={"autocommit": True}, check=ConnectionPool.check_connection,
+                                   kwargs={"autocommit": True, "prepare_threshold": None},   # IT-4: no server-side prepared statements
+                                   check=ConnectionPool.check_connection,
                                    max_idle=240, name="league-lab-api", configure=_numeric_as_float)
         return _pool
 
@@ -162,6 +163,40 @@ def publication_id() -> str | None:
     return str(meta["publication"]) if isinstance(meta, dict) and meta.get("publication") else None
 
 
+# ---- IT-4 (Wave I-T): a decision never straddles a publication. `one_publication(fn)` reads the id before and after
+# the computation (one indexed catalog read each, uncached); when it changed, the published caches are dropped and the
+# computation runs ONCE more on the new publication. If it changes again during the retry (two publications inside
+# one request: the nightly publishes once a day), the caller gets 503 in words (DataNotReady), never a mixed answer.
+# Detect-and-retry rather than pinning: pinning would need one REPEATABLE READ transaction across every query of the
+# decision on one pool connection (the cached frames come from other transactions, so they could not be pinned), and
+# a drop-path publication removes the tables mid-request anyway.
+class PublicationChanged(DataNotReady):
+    """The publication changed twice while one decision was computed."""
+
+
+def _id_or_none() -> str | None:
+    try:
+        return publication_id()
+    except Exception:  # noqa: BLE001 - no reading, no guard (the database answers the computation itself)
+        return None
+
+
+def one_publication(fn, *args, **kwargs):
+    """``fn(*args, **kwargs)`` computed on one publication (see the block comment)."""
+    before = _id_or_none()
+    out = fn(*args, **kwargs)
+    after = _id_or_none()
+    if before == after:
+        return out
+    memo.drop_published()
+    _pub.update(id=after, seen=True)
+    out = fn(*args, **kwargs)
+    if _id_or_none() != after:
+        raise PublicationChanged("The numbers are being replaced right now; try again in a minute.")
+    return out
+# ---- end IT-4
+
+
 def watch_publication(now: float | None = None) -> bool:
     """Read the publication id when 30 s have passed; True when it changed (and the published caches were dropped)."""
     now = time.monotonic() if now is None else now
@@ -221,7 +256,8 @@ _writer_lock = threading.Lock()
 def _writer_conn() -> psycopg.Connection:
     global _writer
     if _writer is None or _writer.closed or _writer.broken:
-        _writer = psycopg.connect(app_dsn(), autocommit=True, connect_timeout=5, application_name="league-lab-usage")
+        _writer = psycopg.connect(app_dsn(), autocommit=True, connect_timeout=5, application_name="league-lab-usage",
+                                  prepare_threshold=None)   # IT-4
     return _writer
 
 
@@ -266,7 +302,8 @@ _rw_guard = threading.Lock()
 def _rw_conn(purpose: str) -> psycopg.Connection:
     conn = _rw.get(purpose)
     if conn is None or conn.closed or conn.broken:
-        conn = psycopg.connect(app_dsn(), autocommit=True, connect_timeout=5, application_name=f"league-lab-{purpose}")
+        conn = psycopg.connect(app_dsn(), autocommit=True, connect_timeout=5, application_name=f"league-lab-{purpose}",
+                               prepare_threshold=None)   # IT-4
         _rw[purpose] = conn
     return conn
 
