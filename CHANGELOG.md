@@ -35,6 +35,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   ladder is no longer computed); the basis waiver move nets its drop the way the roster-only move does (season value,
   backup cover, lineup loss) and its sentence names the drop and the netting; a Finder row's reason reads the league
   screens' one note. ct1.2 → ct1.3. docs/handbacks/IU-1.md.
+- IU-6: the blog editor makes a picture over 300 KB smaller in the browser before it is sent (longest side 1600 px, WebP or JPEG, quality stepped down until it fits), so a phone photo uploads; the server's checks (PNG / JPEG / WebP by the first bytes, 300 KB, 50 pictures, 30 MB) are unchanged. Cover image, link-preview picture and embeds not done (the hand-back says why and what next).
 
 ## 2026-10-09 — Wave I-T
 

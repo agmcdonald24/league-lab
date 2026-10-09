@@ -13,6 +13,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { mkdirSync } from "node:fs";
+import { deflateSync } from "node:zlib";
 import { join } from "node:path";
 
 const PORT = Number(process.env.IO3_API_PORT ?? 8863);
@@ -405,6 +406,74 @@ test("a picture: uploaded from the editor, checked by its first bytes, shown in 
   await expect.poll(() => img.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBe(1);
   await inert(page, '[data-testid="editor-preview"]');
   await page.screenshot({ path: join(SHOTS, `io3-picture-${isMobile ? 375 : 1300}.png`), fullPage: true });
+});
+
+// IU-6: a phone-sized photo (2400 × 1600, several MB) is made smaller in the browser: what reaches the server is under
+// its 300 KB bound and at most 1600 px on its longest side; the server's own checks are unchanged (the test above).
+function bigPng(w: number, h: number): Buffer {
+  const crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc = (b: Buffer) => {
+    let c = 0xffffffff;
+    for (const x of b) c = crcTable[(c ^ x) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type: string, data: Buffer) => {
+    const len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    const td = Buffer.concat([Buffer.from(type, "ascii"), data]);
+    const c = Buffer.alloc(4);
+    c.writeUInt32BE(crc(td));
+    return Buffer.concat([len, td, c]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0);
+  ihdr.writeUInt32BE(h, 4);
+  ihdr.set([8, 2, 0, 0, 0], 8); // 8-bit RGB
+  const raw = Buffer.alloc((w * 3 + 1) * h);
+  for (let y = 0; y < h; y++) {
+    const o = y * (w * 3 + 1);
+    for (let x = 0; x < w; x++) {
+      const i = o + 1 + x * 3;
+      raw[i] = (x * 255) / w;
+      raw[i + 1] = (y * 255) / h;
+      raw[i + 2] = ((x ^ y) & 0x3f) + 96;
+    }
+  }
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw, { level: 0 })), chunk("IEND", Buffer.alloc(0))]);
+}
+
+test("IU-6: a phone-sized picture is made smaller in the browser and arrives under the server's bound", async ({ page, isMobile }) => {
+  test.setTimeout(120_000);
+  if (isMobile) await page.setViewportSize({ width: 375, height: 812 });
+  await asEditor(page);
+  await page.goto(`${API}/blog/new`);
+  await page.getByTestId("editor-title").fill(`Photo ${randomBytes(3).toString("hex")}`);
+  await page.getByTestId("editor-body").fill("A photo below.");
+  await expect(page).toHaveURL(/\/blog\/edit\//, { timeout: 15_000 });
+  await page.getByTestId("tool-picture").click();
+  const photo = bigPng(2400, 1600);
+  expect(photo.length).toBeGreaterThan(5 * 1024 * 1024);
+  const answered = page.waitForResponse((r) => r.url().endsWith("/api/blog/images") && r.request().method() === "POST", { timeout: 60_000 });
+  await page.getByTestId("picture-file").setInputFiles({ name: "phone-photo.png", mimeType: "image/png", buffer: photo });
+  expect((await answered).status()).toBe(201); // created: the server took it with its checks unchanged
+  await expect(page.getByTestId("editor-body")).toHaveValue(/!\[phone-photo\]\(\/blog\/img\/db\/[0-9a-f-]{36}\)/, { timeout: 30_000 });
+  await expect(page.getByTestId("picture-problem")).toHaveCount(0);
+  const url = /\((\/blog\/img\/db\/[0-9a-f-]{36})\)/.exec(await page.getByTestId("editor-body").inputValue())![1];
+  const stored = await (await page.request.get(`${API}${url}`)).body(); // what the server kept, byte for byte
+  expect(stored.length).toBeLessThanOrEqual(300 * 1024);
+  console.log(`IU6 resize: ${photo.length} bytes chosen, ${stored.length} bytes stored`);
+  expect(stored.subarray(8, 12).toString("ascii") === "WEBP" || (stored[0] === 0xff && stored[1] === 0xd8)).toBe(true); // WebP or JPEG
+  const img = page.getByTestId("editor-preview").locator('img[src^="/blog/img/db/"]');
+  if (isMobile) await page.getByTestId("switch-preview").click();
+  await expect.poll(() => img.evaluate((el) => [(el as HTMLImageElement).naturalWidth, (el as HTMLImageElement).naturalHeight].join("x"))).toBe("1600x1067");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true); // no sideways scroll
+  mkdirSync(join(ROOT, "docs", "handbacks", "iu6"), { recursive: true });
+  await inert(page, '[data-testid="editor-preview"]');
+  await page.screenshot({ path: join(ROOT, "docs", "handbacks", "iu6", `iu6-editor-resized-${isMobile ? 375 : 1300}.jpg`), type: "jpeg", quality: 70, fullPage: true });
 });
 
 test("two drafts with one title: the second's address moves on to -2 with no complaint, and keeps following the title", async ({ page, isMobile }) => {
