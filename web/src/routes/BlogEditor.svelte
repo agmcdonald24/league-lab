@@ -32,6 +32,7 @@
     uploadImage,
   } from "../components/blog/editor.svelte";
   import { STARTERS, starter, type StarterKind } from "../components/blog/starters";
+  import { shrinkPicture } from "../components/blog/shrink";
 
   let { id = null, league }: { id?: string | null; league: string } = $props();
 
@@ -421,13 +422,9 @@
     input.value = "";
     if (!f) return;
     picWords = null;
-    if (f.size > 300 * 1024) {
-      picWords = "A picture is 300 KB at most. Make it smaller first.";
-      return;
-    }
     uploading = true;
     try {
-      const img = await uploadImage(f);
+      const img = await uploadImage(await shrinkPicture(f)); // IU-6: over 300 KB → made smaller here first
       images = [img, ...images];
       insertImage(img, f.name.replace(/\.[a-z0-9]+$/i, ""));
       void checkEditor(true);
@@ -633,10 +630,10 @@
     {#if panel === "picture"}
       <section class="space-y-2 rounded-lg border border-line bg-surface p-3" data-testid="editor-picture">
         <label class="block">
-          <span class="ll-label">Add a picture <span class="font-normal text-ink-3">(PNG, JPEG or WebP, 300 KB at most)</span></span>
+          <span class="ll-label">Add a picture <span class="font-normal text-ink-3">(PNG, JPEG or WebP; a bigger one, like a phone photo, is made smaller here first)</span></span>
           <input type="file" accept="image/png,image/jpeg,image/webp" class="mt-1 block w-full text-sm" onchange={onFile} disabled={uploading} data-testid="picture-file" />
         </label>
-        {#if uploading}<p class="text-sm text-ink-3">Uploading…</p>{/if}
+        {#if uploading}<p class="text-sm text-ink-3" data-testid="picture-uploading">Making it smaller and uploading…</p>{/if}
         {#if picWords}<p class="text-sm text-bad" role="alert" data-testid="picture-problem">{picWords}</p>{/if}
         {#if images.length}
           <h3 class="ll-label">Your pictures ({images.length} of {editor.mine?.limits.images ?? 50})</h3>
@@ -731,7 +728,7 @@
           {(size / 1024).toFixed(size < 10240 ? 1 : 0)} KB of {LIMIT_KB} KB
         </p>
         <p class="mt-1 text-sm text-ink-3" data-testid="editor-pictures">
-          Pictures: <strong>Picture</strong> above uploads one (PNG, JPEG or WebP, 300 KB at most). A file in <code>blog/img/</code> in the repository works too:
+          Pictures: <strong>Picture</strong> above uploads one (PNG, JPEG or WebP, 300 KB at most: a bigger one, like a phone photo, is made smaller in your browser first). A file in <code>blog/img/</code> in the repository works too:
           <code>![words](/blog/img/name.png)</code>.
         </p>
       </div>
