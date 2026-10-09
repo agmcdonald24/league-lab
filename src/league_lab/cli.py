@@ -427,9 +427,13 @@ def freeze_shadow_cmd(
         head, moves = f"fr1.0 shadow: no {SHADOW_PATH.name} yet (`league-lab project` writes it)", []
     else:
         moves = sorted(s.get("moves") or [], key=lambda m: -abs(m.get("delta") or 0))
-        head = (f"fr1.0 shadow: week under way: {s.get('week') or 'none'}; {len(moves)} house-league rows move by "
-                f"{s.get('move_threshold')} points or more; {s.get('games_left')} games not kicked off, "
+        game = s.get("mode") == "game"                                  # ---- IV-1: what was written, not what would be
+        wrote = s.get("written_by_table") or {}
+        head = (f"fr1.0 {'live week' if game else 'shadow'}: week under way: {s.get('week') or 'none'}; {len(moves)} "
+                f"house-league rows {'moved' if game else 'would move'} by {s.get('move_threshold')} points or more"
+                f"{' (written)' if game else ''}; {s.get('games_left')} games not kicked off, "
                 f"{s.get('players_live')} players re-projected"
+                + ("; overlay rows written: " + ", ".join(f"{t.split('.')[1]} {n}" for t, n in wrote.items()) if game else "")
                 + (" — the step FAILED, see the project log" if s.get("error") else "")
                 + f" (switch {s.get('mode')}; computed {s.get('computed_at')} in {s.get('seconds')} s"
                 + (f"; gate: {s.get('gate_source')} copy of {s.get('gate_copy') or 'no date'})" if s.get("gate_source") else ")"))

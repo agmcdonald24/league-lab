@@ -175,7 +175,15 @@ def test_freeze_shadow_prints_and_writes_the_summary_part_and_never_fails(monkey
     r = CliRunner().invoke(app, ["freeze-shadow", "--md", str(md)])
     assert r.exit_code == 0 and "A. Receiver" in r.output
     text = md.read_text()
-    assert text.startswith("fr1.0 shadow: week under way: 5; 1 house-league rows move by 2.0 points or more")
+    assert text.startswith("fr1.0 shadow: week under way: 5; 1 house-league rows would move by 2.0 points or more")
+    # ---- IV-1: with `game` the same step reports what was written
+    js = json.loads((tmp_path / "freeze_shadow.json").read_text())
+    js.update(mode="game", written_by_table={"ops.projection_live": 1104, "ops.projection_lines_live": 552})
+    (tmp_path / "freeze_shadow.json").write_text(json.dumps(js))
+    assert CliRunner().invoke(app, ["freeze-shadow", "--md", str(md)]).exit_code == 0
+    assert md.read_text().startswith("fr1.0 live week: week under way: 5; 1 house-league rows moved by 2.0 points or more "
+                                     "(written)")
+    assert "overlay rows written: projection_live 1104, projection_lines_live 552" in md.read_text()
     assert "| House | A. Receiver | WR | JAX | 14.00 | 0.00 | -14.00 | sits: Out · Sleeper |" in text
     (tmp_path / "freeze_shadow.json").write_text("{not json")
     assert CliRunner().invoke(app, ["freeze-shadow"]).exit_code == 0

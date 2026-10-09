@@ -53,6 +53,7 @@ import pandas as pd
 import psycopg
 
 from . import kdef as KD
+from . import live_week as _LW  # ---- IV-1: the overlays' names and keys (one place)
 from .config import PROJECT_ROOT, get_settings
 from .feature_groups import personnel as _PN
 from .lineup import lineups_after_project
@@ -993,11 +994,6 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     pred.attrs["availability_gate"] = gate
     # ---- end IR-1
     _write_projections(conn, pred, season, now)   # B5: weeks whose first game has kicked off are kept, not rewritten
-    # ---- IU-2 (Wave I-U): fr1.0 -- the started week's games not kicked off: the shadow (switch week, the default: nothing
-    # written but logs/freeze_shadow.json) or the overlay ops.projection_live (LEAGUE_LAB_FREEZE=game). Never raises
-    live = live_after_project(conn, season, pred, target, now)
-    pred.attrs["live"] = {k: v for k, v in live.items() if k != "moves"} | {"moves": len(live["moves"])}
-    # ---- end IU-2
     log.info("projections computed: %s rows for %s (%s leagues; ranges fitted in %s scorings: %s)", len(pred), season,
              len(leagues), len(fit), ", ".join(fit))
 
@@ -1026,6 +1022,15 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
         conn.rollback()
         log.exception("NFL-wide outputs failed (ops.projections was written); `league-lab project` retries them")
         nfl_error = exc
+    # ---- IU-2 (Wave I-U): fr1.0 -- the started week's games not kicked off: the shadow (switch week, the default: nothing
+    # written but logs/freeze_shadow.json) or the overlays (LEAGUE_LAB_FREEZE=game). Never raises. ---- IV-1: after the
+    # NFL-wide writer, with its frames (every stored table a live reader reads gets its overlay), and before the lineup
+    # and waiver solves, which read the overlays (live_week)
+    live = live_after_project(conn, season, pred, target, now,
+                              nfl={"lines": lines, "ranges": ranges, "kd_lines": kd.lines, "kd_offsets": kd.offsets,
+                                   "references": references})
+    pred.attrs["live"] = {k: v for k, v in live.items() if k != "moves"} | {"moves": len(live["moves"])}
+    # ---- end IU-2
     signals_after_project(conn, season, train, target, pred, leagues)   # R-10/R-12: role alerts + scenario upside (a failure is logged, not fatal)
     # M-06: keep the drift monitor current on every refit. It scores the stored (for a started week:
     # frozen, B5) projections against the outcomes in mart_player_week_projections as last built: in
@@ -1267,6 +1272,14 @@ NFL_DDL = {
         p25 double precision, p50 double precision, p75 double precision, p90 double precision, pricing text,
         availability text, team text, game_kickoff timestamptz, frozen_at timestamptz, frozen_source text);
         create index if not exists projection_live_idx on ops.projection_live (league_id, season, week, gsis_id)""",
+    # ---- IV-1 (Wave I-V): fr1.1 -- the NFL-wide overlays, each the shape of the table it overlays plus the game's team
+    # and kickoff (live_week.OVERLAYS: the key one overlay row replaces); empty unless LEAGUE_LAB_FREEZE=game
+    **{live: f"""create table if not exists {live} (like {base});
+        alter table {live} add column if not exists team text;
+        alter table {live} add column if not exists game_kickoff timestamptz;
+        create index if not exists {live.split('.')[1]}_idx on {live} ({', '.join(keys)})"""
+       for base, (live, keys) in _LW.OVERLAYS.items() if base != "ops.projections"},
+    # ---- end IV-1
 }
 DDL.update(NFL_DDL)
 LIVE_TABLE = "ops.projection_live"                       # ---- IU-2: not state, not the record (see live_after_project)
@@ -1536,12 +1549,14 @@ def _bonus_crossings(row: dict, scoring: dict[str, float]) -> str:
 
 
 def live_after_project(conn: psycopg.Connection, season: int, pred: pd.DataFrame, target: pd.DataFrame,
-                       now: datetime | None = None) -> dict:
+                       now: datetime | None = None, nfl: dict | None = None) -> dict:
     """``project``'s fr1.0 step, after the B5 writer (which it never touches): the started week's rows of the games
     not kicked off, gated with that week's word; the shadow (who would move, why) to ``SHADOW_PATH``; with
     ``LEAGUE_LAB_FREEZE=game`` the overlay rewritten (the rows of the games not kicked off; a game that kicked off since
     keeps its rows until the week is over), else emptied. Never raises: a failure is logged and the night goes on
-    (with ``week`` nothing a reader sees depends on this step)."""
+    (with ``week`` nothing a reader sees depends on this step). ---- IV-1: ``nfl`` (``lines``, ``ranges``,
+    ``kd_lines``, ``kd_offsets``, ``references``: tonight's gated NFL-wide frames) gets the same overlay, one per
+    stored table (``live_week.OVERLAYS``), all written in one transaction."""
     import time
 
     from . import availability_gate as _ag
@@ -1557,6 +1572,7 @@ def live_after_project(conn: psycopg.Connection, season: int, pred: pd.DataFrame
         week, teams = started_week(games, now)
         summary["week"], summary["games_left"] = week, int(len(teams) // 2)
         live = pd.DataFrame()
+        frames: dict[str, pd.DataFrame] = {}                                   # ---- IV-1: overlay table -> rows
         if week is not None:
             tw = target[target["week"].astype(int) == week] if target is not None and not target.empty else pd.DataFrame()
             pt = tw[["position", "gsis_id", "team"]] if not tw.empty else pd.DataFrame(columns=["position", "gsis_id", "team"])
@@ -1579,9 +1595,11 @@ def live_after_project(conn: psycopg.Connection, season: int, pred: pd.DataFrame
                 leagues = {str(a): b for a, b in cur.fetchall() if isinstance(b, str)}
             scorings = {lid: sc for lid, (_, sc) in league_scorings(conn).items()}
             summary["moves"] = shadow_moves(live, stored, names, leagues=leagues, scorings=scorings)
+            frames = {LIVE_TABLE: live, **nfl_live_rows(nfl or {}, week, teams, pt, kt, statuses)}   # ---- IV-1
         conn.commit()   # the reads above leave no transaction open
         if mode == "game":
-            summary["written"] = _write_live(conn, season, live, now)
+            summary["written_by_table"] = _write_overlays(conn, season, week, frames, now)   # ---- IV-1
+            summary["written"] = summary["written_by_table"].get(LIVE_TABLE, 0)
         else:
             _clear_live(conn)
     except Exception:  # noqa: BLE001 - the shadow / overlay never costs the night its projections
@@ -1603,30 +1621,94 @@ def live_after_project(conn: psycopg.Connection, season: int, pred: pd.DataFrame
 
 
 def _clear_live(conn: psycopg.Connection) -> None:
-    """With the switch ``week`` the overlay is empty: delete what an earlier ``game`` run left (none: nothing done)."""
+    """With the switch ``week`` every overlay is empty: delete what an earlier ``game`` run left (none: nothing done).
+    ---- IV-1: all five overlays (``live_week.LIVE_TABLES``)."""
     with conn.cursor() as cur:
-        cur.execute("select to_regclass(%s) is not null", (LIVE_TABLE,))
-        if cur.fetchone()[0]:
-            cur.execute(f"select exists (select 1 from {LIVE_TABLE})")
+        for table in _LW.LIVE_TABLES:
+            cur.execute("select to_regclass(%s) is not null", (table,))
+            if not cur.fetchone()[0]:
+                continue
+            cur.execute(f"select exists (select 1 from {table})")
             if cur.fetchone()[0]:
-                cur.execute(f"delete from {LIVE_TABLE}")
-                log.info("fr1.0: switch is week: %s emptied (%s rows an earlier game run left)", LIVE_TABLE, cur.rowcount)
+                cur.execute(f"delete from {table}")
+                log.info("fr1.0: switch is week: %s emptied (%s rows an earlier game run left)", table, cur.rowcount)
     conn.commit()
 
 
-def _write_live(conn: psycopg.Connection, season: int, live: pd.DataFrame, now: datetime) -> int:
-    """The overlay (``LEAGUE_LAB_FREEZE=game``), in one transaction: rows of another week or season go, the rows of the
-    games that have not kicked off are replaced by ``live``; a game that kicked off since the last run keeps its rows."""
-    week = int(live["week"].iloc[0]) if live is not None and not live.empty else None
+def _write_overlays(conn: psycopg.Connection, season: int, week: int | None, frames: dict[str, pd.DataFrame],
+                    now: datetime) -> dict[str, int]:
+    """Every overlay (``LEAGUE_LAB_FREEZE=game``) in one transaction: rows of another week or season go, the rows of
+    the games that have not kicked off are replaced by tonight's; a game that kicked off since the last run keeps its
+    rows (its last number before kickoff) until no week is under way, when every overlay is emptied."""
+    written: dict[str, int] = {}
     with conn.cursor() as cur:
-        cur.execute(NFL_DDL[LIVE_TABLE])
-        if week is None:
-            cur.execute(f"delete from {LIVE_TABLE}")
-            conn.commit()
-            return 0
-        cur.execute(f"delete from {LIVE_TABLE} where season <> %s or week <> %s or game_kickoff > %s", (season, week, now))
-    _write(conn, LIVE_TABLE, live, "season = %s and week = %s and game_kickoff > %s", (season, week, now))
-    return int(len(live))
+        for table in _LW.LIVE_TABLES:
+            cur.execute(NFL_DDL[table])
+            if week is None:
+                cur.execute(f"delete from {table}")
+                written[table] = 0
+                continue
+            cur.execute(f"delete from {table} where season <> %s or week <> %s or game_kickoff > %s", (season, week, now))
+            df = frames.get(table)
+            if df is None or df.empty:
+                written[table] = 0
+                continue
+            cur.execute("select column_name from information_schema.columns where table_schema = %s and table_name = %s",
+                        tuple(table.split(".")))
+            cols = [r[0] for r in cur.fetchall() if r[0] in df.columns]
+            records = [tuple(None if (isinstance(v, float) and np.isnan(v)) else v for v in r)
+                       for r in df[cols].itertuples(index=False, name=None)]
+            with cur.copy(f"copy {table} ({', '.join(cols)}) from stdin") as cp:
+                for r in records:
+                    cp.write_row(r)
+            written[table] = len(records)
+    conn.commit()
+    return written
+
+
+def nfl_live_rows(nfl: dict, week: int, teams: pd.DataFrame, pt: pd.DataFrame, kt: pd.DataFrame,
+                  statuses: dict[str, dict]) -> dict[str, pd.DataFrame]:
+    """IV-1: tonight's NFL-wide rows of ``week`` for the units whose game has not kicked off (``teams``), gated like the
+    live week (who sits: every number 0, the reason in ``availability`` where the table has it), one frame per overlay.
+    ``pt`` / ``kt``: position, gsis_id (a K / DEF unit id), team."""
+    from . import availability_gate as _ag
+
+    out: dict[str, pd.DataFrame] = {}
+    if teams is None or teams.empty:
+        return out
+    labels = {"frozen_source": None, "frozen_at": None}
+    who = pt.dropna(subset=["gsis_id", "team"]).drop_duplicates(["position", "gsis_id"])[["position", "gsis_id", "team"]]
+
+    def place(df: pd.DataFrame, on: list[str], ids: pd.DataFrame) -> pd.DataFrame:
+        d = df[df["week"].astype(int) == int(week)].merge(ids, on=on, how="inner").merge(teams, on="team", how="inner")
+        return d.reset_index(drop=True)
+
+    lines, ranges = nfl.get("lines"), nfl.get("ranges")
+    if lines is not None and len(lines):
+        d, _ = _ag.gate_frame(place(lines, ["position", "gsis_id"], who), statuses, int(week))
+        out["ops.projection_lines_live"] = d.assign(**labels)
+    if ranges is not None and len(ranges):
+        d, _ = _ag.gate_frame(place(ranges, ["position", "gsis_id"], who), statuses, int(week))
+        out["ops.projection_ranges_live"] = d.assign(**labels)
+    kdl = nfl.get("kd_lines")
+    if kdl is not None and len(kdl):
+        units = kt.dropna(subset=["gsis_id", "team"]).drop_duplicates(["position", "gsis_id"])
+        units = units.rename(columns={"gsis_id": "unit_id"})[["position", "unit_id", "team"]]
+        d = place(kdl.reindex(columns=KD_LINES_TABLE_COLUMNS), ["position", "unit_id"], units)
+        sits = d["unit_id"].astype(str).isin({g for g, st in statuses.items() if _ag.sits(st)})
+        nums = [c for c in d.columns if c.startswith("proj_")]
+        d.loc[sits, nums] = 0.0                                  # a kicker who sits: 0 (the stored row would show through)
+        out["ops.kd_lines_live"] = d.assign(**labels)
+        refs, offsets = nfl.get("references") or {}, nfl.get("kd_offsets") or {}
+        if refs and offsets and len(d):
+            r = KD.ranges_from_lines(d.drop(columns=["team", "game_kickoff"]), refs, offsets)
+            if len(r):
+                r["model_version"], r["fitted_at"] = KD.KD_MODEL_VERSION, d["fitted_at"].iloc[0]
+                r = r.merge(d[["position", "unit_id", "team", "game_kickoff"]], on=["position", "unit_id"], how="inner")
+                gone = r["unit_id"].astype(str).isin(set(d.loc[sits, "unit_id"].astype(str)))
+                r.loc[gone, ["proj_points", "p10", "p50", "p90"]] = 0.0
+                out["ops.kd_ranges_live"] = r.assign(**labels)
+    return out
 
 
 # ------------------------------------------------------------------------------ plan F1: the NFL-wide tables under the same freeze

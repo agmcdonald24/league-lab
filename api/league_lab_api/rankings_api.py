@@ -516,6 +516,21 @@ NOT_PLAYING_WORDS = {"week": "Not playing this week: not ranked, not tiered.",
                      "season": "Out with no return date: no rest-of-season value until his status changes."}
 BACK_WORDS = ("His status changed since last night's projection ({why}); his number this week comes with the next "
               "update.")
+# ---- IV-1 (Wave I-V): a week whose first game has kicked off keeps the numbers set then (fr1.1): no update brings a
+# number for him this week, so the sentence says so (with the live week on, a player cleared since has his number: the
+# nightly's live row carries tonight's word, so he is not in last night's 0s at all)
+BACK_FROZEN_WORDS = ("His status changed after this week's numbers were set at its first kickoff ({why}); there is no "
+                     "number for him this week.")
+FIRST_KICKOFF_SQL = """select min(kickoff_at) as k from analytics.dim_game where season = %s and week = %s and season_type = 'REG'"""
+
+
+def _week_frozen(season: int, week: int) -> bool:
+    try:
+        k = query(FIRST_KICKOFF_SQL, (int(season), int(week)))["k"].iloc[0]
+    except Exception:  # noqa: BLE001 - no schedule: the older sentence
+        return False
+    return k is not None and not pd.isna(k) and pd.Timestamp(k) <= pd.Timestamp(clock.now())
+# ---- end IV-1
 
 
 def _gate(season: int, week: int | None, view: str) -> dict:
@@ -528,8 +543,9 @@ def _gate(season: int, week: int | None, view: str) -> dict:
     out = frozenset(g for g, s in st.items() if (AV.sits(s) if view == "week" else s.get("out_indefinitely")))
     stored = frozenset(AV.stored_status(int(season), int(week))) if view == "week" else frozenset()
     flags = tuple(sorted((g, s.get("code")) for g, s in st.items() if s.get("flag_words") or s.get("doubtful")))
-    return {"st": st, "out": out, "stored": stored, "season": int(season),
-            "key": (tuple(sorted(out)), tuple(sorted(stored - out)), flags)}
+    frozen = view == "week" and bool(stored - out) and _week_frozen(int(season), int(week))   # ---- IV-1
+    return {"st": st, "out": out, "stored": stored, "season": int(season), "frozen": frozen,   # ---- IV-1: frozen
+            "key": (tuple(sorted(out)), tuple(sorted(stored - out)), flags, frozen)}
 
 
 def _split_not_playing(d: pd.DataFrame, gate: dict, view: str) -> tuple[pd.DataFrame, list[dict]]:
@@ -546,8 +562,9 @@ def _split_not_playing(d: pd.DataFrame, gate: dict, view: str) -> tuple[pd.DataF
         if s is not None and r["gsis_id"] in out:
             rows.append(AV.not_playing_row(r, s, view=view))
         else:
+            words = BACK_FROZEN_WORDS if gate.get("frozen") else BACK_WORDS                      # ---- IV-1
             rows.append({**AV.not_playing_row(r, {"status": None, "code": "BACK", "why": None}, view=view),
-                         "words": BACK_WORDS.format(why=(s or {}).get("why") or "cleared to play")})
+                         "words": words.format(why=(s or {}).get("why") or "cleared to play")})
     # ---- IS-1: the players a visitor looks for lead (his projection when he still has one, else points per game)
     would = {str(r["key"]): r.get("proj_points") for r in d[gone].to_dict("records")}
     rows = AV.order_not_playing(rows, would, gate.get("season"))
@@ -563,6 +580,8 @@ def _out_words(r: dict) -> str:
     record: his number comes with the next update — no call either)."""
     nm = cards.last_name(str(r.get("player_name") or "")) or str(r.get("player_name") or "He")
     if r.get("code") == "BACK":
+        if str(r.get("words") or "").startswith(BACK_FROZEN_WORDS.split(" (")[0]):              # ---- IV-1
+            return f"{nm} has no number this week: {r.get('words')}"
         return f"{nm} has no number this week until the next update: {r.get('words')}"
     from league_lab import availability_gate as AG
     return AG.out_sentence(nm, {"reason": AG.REASON.get(str(r.get("code"))), "why": r.get("why"), "code": r.get("code"),

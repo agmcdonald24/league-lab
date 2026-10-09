@@ -29,6 +29,7 @@ from decimal import Decimal
 import numpy as np
 import pandas as pd
 import psycopg
+from league_lab import live_week as LW  # ---- IV-1
 from league_lab import memo
 from psycopg.types.numeric import FloatLoader
 from psycopg_pool import ConnectionPool
@@ -84,6 +85,7 @@ atexit.register(close)
 
 def clear_cache() -> None:
     _cache.clear()
+    _live.clear()   # ---- IV-1
 
 
 def intern_strings(df: pd.DataFrame) -> pd.DataFrame:
@@ -119,10 +121,32 @@ def intern_strings(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# ---- IV-1 (Wave I-V): fr1.1 -- every statement reads the week under way's live numbers where `project` wrote an overlay
+# (league_lab.live_week, the one place: a stored projection table's rows without an overlay row plus the overlay's rows,
+# for the games not kicked off when the nightly ran). No overlay table (the deploy before the nightly that creates
+# them), or an empty one: the statement runs unchanged, character for character. Which overlays hold rows is read once
+# per publication (they change only with one) and at most every 10 minutes: one entry.
+_live = memo.region("live_overlay", ttl=CACHE_TTL_SECONDS, max_entries=1, published=True)
+
+
+def _live_sql(cur, sql: str) -> str:
+    if "ops." not in sql:
+        return sql
+    act = _live.get("active")
+    if act is None:
+        try:
+            act = LW.active(lambda q: (cur.execute(q), cur.fetchone())[1])
+        except psycopg.Error:                                  # never a 500 for this: the stored rows
+            act = frozenset()
+        _live.put("active", act)
+    return LW.sql(sql, act)
+# ---- end IV-1
+
+
 def _run(sql: str, params: tuple) -> pd.DataFrame:
     with pool().connection() as conn, conn.cursor() as cur:
         try:
-            cur.execute(sql, params)
+            cur.execute(_live_sql(cur, sql), params)            # ---- IV-1: _live_sql
         except psycopg.errors.UndefinedTable as exc:
             for fn in list(on_tables_away):        # ---- IU-4: /api/ready asks again at once (it may say `publishing`)
                 try:

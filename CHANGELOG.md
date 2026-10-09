@@ -2,6 +2,16 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-09 — Wave I-V
+
+- **IV-1 — the live week, switchable on for Sunday (fr1.1).** With `LEAGUE_LAB_FREEZE=game` every stored projection
+  table a live reader reads has an overlay of its own shape (`ops.projection_live` and, new, the NFL-wide
+  `projection_lines_live` / `projection_ranges_live` / `kd_lines_live` / `kd_ranges_live`: the week under way's games not
+  kicked off, gated, written in one transaction; created by `db migrate`). `league_lab.live_week` is the one place a
+  read becomes live: the API's every statement (`db._run`), `project`'s lineup and waiver solves; the graders keep the
+  kickoff board. No overlay, or an empty one: unchanged. A game that kicked off keeps its last live number until the
+  week is over. A player cleared after a frozen week's first kickoff is no longer promised "the next update".
+
 ## 2026-10-09 — Wave I-U
 
 - **PO — the merge.** The nightly publishes with `LEAGUE_LAB_HOSTED_PUBLISH: auto` and `LEAGUE_LAB_HOSTED_CAP_MB:
