@@ -7,6 +7,7 @@
   import { untrack } from "svelte";
   import { APP_MARK, APP_NAME } from "../lib/brand";
   import { get, aboutPath, blogPaths, homePaths, paths, type AboutAnswer, type BlogMeta, type MatchupBoard, type RecordAnswer, type RosList } from "../lib/api";
+  import { coverSrc } from "../components/blog/cover";
   import { BROWSE_HREF, REF_DEFAULT, refLabel } from "../lib/refleague";
   import { recordView, STARTS } from "../lib/record";
   import { withContext } from "../lib/md";
@@ -254,6 +255,9 @@
         {#each posts ?? [] as p (p.slug)}
           <li>
             <a href={`/blog/${p.slug}`} class="block h-full rounded-lg border border-line bg-surface p-4 hover:border-line-strong" data-testid="home-post">
+              {#if coverSrc(p.image)}<!-- ---- IU-6: the cover as the thumbnail -->
+                <img src={coverSrc(p.image)} alt="" loading="lazy" decoding="async" class="mb-2 aspect-[1200/630] w-full rounded-md bg-raised object-cover" data-testid="home-post-cover" />
+              {/if}
               <div class="text-xs text-ink-3">{longDate(p.date)} · {p.minutes} min read</div>
               <div class="mt-1 text-base leading-snug font-bold">{p.title}</div>
               {#if p.summary}<p class="mt-1 line-clamp-3 text-sm leading-snug text-ink-2">{p.summary}</p>{/if}

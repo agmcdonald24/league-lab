@@ -27,6 +27,7 @@ export interface EditorPost {
   revisions?: { id: number; revision: number; saved_at: string | null; bytes: number }[];
   slug_problem?: string;
   slug_words?: string;
+  cover?: string | null; // IU-6: the id of one of the editor's pictures (absent: the server has no cover column yet)
 }
 
 export interface EditorImage {
@@ -42,7 +43,7 @@ export interface Mine {
   author: string;
   posts: EditorPost[];
   images?: EditorImage[];
-  limits: { body_kb: number; posts: number; title: number; summary: number; tags: number; tag: number; slug: number; restore_days: number; revisions: number; image_kb?: number; images?: number };
+  limits: { body_kb: number; posts: number; title: number; summary: number; tags: number; tag: number; slug: number; restore_days: number; revisions: number; image_kb?: number; images?: number; cover?: boolean };
 }
 
 export interface Draft {
@@ -52,6 +53,7 @@ export interface Draft {
   author: string;
   body: string;
   slug: string | null;
+  cover?: string | null; // IU-6: sent only when the server offers a cover (Mine.limits.cover)
 }
 
 /** An answer that is not OK: the API's words, its code, and (409 conflict) the newer post. */
