@@ -81,7 +81,8 @@ probe() {  # probe <label> <ready.py path>
   out="$(cd api && LEAGUE_LAB_APP_DB_URL="$POOLED_APP" PYTHONPATH=. uv run --quiet python - "$2" 2>&1 <<'PY'
 import importlib.util, os, sys, pathlib, tempfile
 import league_lab_api.settings, league_lab_api.db  # noqa: F401 - puts src/ on the path as the app does
-src = pathlib.Path(sys.argv[1]).read_text().replace("from .settings import", "from league_lab_api.settings import")
+src = (pathlib.Path(sys.argv[1]).read_text().replace("from .settings import", "from league_lab_api.settings import")
+       .replace("from . import ", "from league_lab_api import "))   # IU-4: ready.py imports db for its hook
 p = pathlib.Path(tempfile.mkdtemp()) / "ready_under_test.py"; p.write_text(src)
 spec = importlib.util.spec_from_file_location("ready_under_test", p); m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)

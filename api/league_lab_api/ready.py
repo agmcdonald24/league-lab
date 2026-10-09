@@ -186,6 +186,19 @@ def reset() -> None:
     _state.update(answer=None, next=0.0)
 
 
+# ---- IU-4 (Wave I-U): a request that finds a published table missing (a drop-path publish has begun) makes the next
+# /api/ready probe at once instead of serving a 200 kept for up to 60 s; a failure is then kept 15 s, so `publishing`
+# is what a monitor sees for the whole gap, even a 5 s one.
+def _tables_away() -> None:
+    _state["next"] = 0.0
+
+
+from . import db as _db  # noqa: E402 - the hook stays beside its handler
+
+_db.on_tables_away.append(_tables_away)
+# ---- end IU-4
+
+
 @router.get("/api/ready", include_in_schema=False)
 def ready() -> JSONResponse:
     ok, body = cached()

@@ -43,10 +43,11 @@
 #         readiness rule: projections, the current week on the boards and the lists, the rest-of-season list). Readers
 #         see the old publication until the commit and the new one after it; a failed or interrupted restore or a
 #         failed check rolls everything back and the old publication stays. Needs room for two copies: refused (exit 8,
-#         nothing published) when the hosted database's size + this copy > LEAGUE_LAB_HOSTED_CAP_MB (default 500).
+#         nothing published) when the hosted database's size + this copy > LEAGUE_LAB_HOSTED_CAP_MB (default 800; IU-4).
 #         The old copy is kept as `_prev` (the app role's grants revoked) for --rollback until the next run, or
 #         dropped at once when keeping it would leave the database over the cap (or LEAGUE_LAB_HOSTED_KEEP_PREV=0).
-#   auto  swap when it fits under the cap, otherwise drop (and the log says which and why).
+#   auto  swap when it fits under the cap, otherwise drop (and the log says which and why). IU-4: a swap that stops
+#         before its commit for any reason falls back to drop IN THE SAME RUN (one refresh never ends unpublished).
 # LEAGUE_LAB_HOSTED_RETRIES (default 0 = as before): a restore whose connection is lost (psql exit 2) is run again whole,
 # up to that many times, after LEAGUE_LAB_HOSTED_RETRY_WAIT_S × the attempt (default 30 s); an SQL error never is.
 set -euo pipefail
@@ -94,7 +95,12 @@ fi
 # ---- IR-3 (Wave I-R): the publication mode (the header), the swap's room, and --rollback ---------------------------
 PUBLISH_MODE="${LEAGUE_LAB_HOSTED_PUBLISH:-drop}"
 case "$PUBLISH_MODE" in drop|swap|auto) ;; *) echo "LEAGUE_LAB_HOSTED_PUBLISH is drop, swap or auto (got: $PUBLISH_MODE)" >&2; exit 64 ;; esac
-CAP_MB="${LEAGUE_LAB_HOSTED_CAP_MB:-500}"     # the most the hosted database may hold at once (Neon free: 512 MB)
+# ---- IU-4: Neon's Free plan holds 1 GB per project (was 0.5 GB). The cap is the most the hosted database may hold at
+# once: 800 MB leaves 224 MB of the 1,024 for what our measure does not see (the console said 281 MB when the published
+# tables were 243: catalogs, the other database, the state schemas, the history the plan keeps). OVERHEAD scales our
+# estimate of a copy (tables + indexes as stored locally) to what the database will hold: 1.2 (281 / 243 = 1.16).
+CAP_MB="${LEAGUE_LAB_HOSTED_CAP_MB:-800}"
+OVERHEAD="${LEAGUE_LAB_HOSTED_OVERHEAD:-1.2}"
 KEEP_PREV="${LEAGUE_LAB_HOSTED_KEEP_PREV:-1}"
 # a simulation on the local cluster (target_local=1 only) may skip the role step: roles are cluster-wide, and the
 # local league_lab_app role belongs to every developer's database (never honoured against a hosted database)
@@ -140,7 +146,7 @@ restore_retrying() {  # restore_retrying <stream function>
 if [ "$MODE" = --rollback ]; then
   have_prev="$(hosted_q "select count(*) from pg_namespace where nspname in ('analytics_prev', 'analytics_seeds_prev', 'ops_prev')")"
   if [ "$have_prev" != 3 ]; then
-    echo "rollback: no previous publication is kept ($have_prev of 3 _prev schemas): nothing was touched" >&2
+    echo "rollback: nothing to roll back to - no previous publication is kept ($have_prev of 3 _prev schemas: the last publish used the drop path, or its previous copy did not fit beside the next swap and was dropped). Nothing was touched; to replace a bad publication, run the nightly again." >&2
     exit 9
   fi
   echo "rollback: putting the previous publication back ($(hosted_q "select coalesce(obj_description(to_regnamespace('analytics_prev'), 'pg_namespace'), 'not recorded')") replaces $(hosted_q "select coalesce(obj_description(to_regnamespace('analytics'), 'pg_namespace'), 'not recorded')")) ..."
@@ -316,15 +322,16 @@ if [ "$PUBLISH_MODE" != drop ]; then
   # a kept previous publication goes first (it would not fit beside the current one and the new one)
   psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "set client_min_messages = warning; drop schema if exists analytics_prev cascade; drop schema if exists analytics_seeds_prev cascade; drop schema if exists ops_prev cascade;"
   now_mb="$(hosted_mb)"
-  need_mb="$(awk -v a="$now_mb" -v b="$total_mb" 'BEGIN { printf "%d", a + b + 0.5 }')"
+  copy_mb="$(awk -v b="$total_mb" -v o="$OVERHEAD" 'BEGIN { printf "%d", b * o + 0.5 }')"     # IU-4: × the overhead
+  need_mb=$(( now_mb + copy_mb ))
   if [ "$need_mb" -le "$CAP_MB" ]; then
     use_swap=1
-    echo "publication mode: swap (the hosted database holds ${now_mb} MB; + this copy ~${total_mb} MB = ${need_mb} MB <= the ${CAP_MB} MB cap)"
+    echo "publication mode: swap (the hosted database holds ${now_mb} MB; + this copy ~${copy_mb} MB (${total_mb} × ${OVERHEAD}) = ${need_mb} MB <= the ${CAP_MB} MB cap)"
   elif [ "$PUBLISH_MODE" = swap ]; then
-    echo "ERROR: LEAGUE_LAB_HOSTED_PUBLISH=swap, but the hosted database (${now_mb} MB) + this copy (~${total_mb} MB) = ${need_mb} MB is over the ${CAP_MB} MB cap: nothing was published (the hosted copy keeps the last publication). Raise LEAGUE_LAB_HOSTED_CAP_MB on a larger plan, or publish with auto / drop." >&2
+    echo "ERROR: LEAGUE_LAB_HOSTED_PUBLISH=swap, but the hosted database (${now_mb} MB) + this copy (~${copy_mb} MB) = ${need_mb} MB is over the ${CAP_MB} MB cap: nothing was published (the hosted copy keeps the last publication). Raise LEAGUE_LAB_HOSTED_CAP_MB on a larger plan, or publish with auto / drop." >&2
     exit 8
   else
-    echo "publication mode: drop (auto: the hosted database ${now_mb} MB + this copy ~${total_mb} MB = ${need_mb} MB is over the ${CAP_MB} MB cap - two copies do not fit)"
+    echo "publication mode: drop (auto: the hosted database ${now_mb} MB + this copy ~${copy_mb} MB = ${need_mb} MB is over the ${CAP_MB} MB cap - two copies do not fit)"
   fi
 fi
 if [ "$use_swap" = 1 ]; then
@@ -438,17 +445,37 @@ do $chk$ declare s int; w int; begin
   end if;
 end $chk$;
 SQL
+  # ---- IU-4: the drill's stand-in for the database refusing the space, after the whole restore, before the commit
+  # (honoured only for a local simulation: target_local=1)
+  if [ "${target_local:-0}" = 1 ] && [ "${LEAGUE_LAB_HOSTED_DRILL_REFUSE:-}" = 1 ]; then
+    echo "do \$d\$ begin raise exception using errcode = 'disk_full', message = 'could not extend file: project size limit exceeded (a drill: LEAGUE_LAB_HOSTED_DRILL_REFUSE=1)'; end \$d\$;"
+  fi
 }
-restore_retrying swap_stream
-echo "switched in $(( $(date +%s) - t0 )) s: publication ${PUB_ID} is live"
-after_mb="$(hosted_mb)"
-if [ "$KEEP_PREV" = 1 ] && [ "$after_mb" -le "$CAP_MB" ]; then
-  echo "the previous publication is kept as analytics_prev / analytics_seeds_prev / ops_prev until the next run (${after_mb} MB in all; scripts/sync_to_hosted.sh --rollback puts it back)"
+# ---- IU-4: a swap that stops before its commit - the database refusing the space, a lost connection, a failed check -
+# changed nothing (one transaction); with `auto` the same run then publishes by the drop path below, so one refresh never
+# ends without a publication because the better method did not work. An explicit `swap` still stops (no drop, ever).
+if restore_retrying swap_stream; then
+  echo "switched in $(( $(date +%s) - t0 )) s: publication ${PUB_ID} is live"
+  after_mb="$(hosted_mb)"
+  # keep the previous copy only if the next swap would still fit beside it (three copies do not fit the plan)
+  next_need=$(( after_mb + copy_mb ))
+  if [ "$KEEP_PREV" = 1 ] && [ "$next_need" -le "$CAP_MB" ]; then
+    echo "the previous publication is kept as analytics_prev / analytics_seeds_prev / ops_prev until the next run (${after_mb} MB in all; the next swap would need ${next_need} MB <= ${CAP_MB}; scripts/sync_to_hosted.sh --rollback puts it back)"
+  else
+    psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "set client_min_messages = warning; drop schema if exists analytics_prev cascade; drop schema if exists analytics_seeds_prev cascade; drop schema if exists ops_prev cascade;"
+    echo "the previous publication is dropped (kept, the next swap would need ${next_need} MB of the ${CAP_MB} MB cap): $(hosted_mb) MB now; nothing to roll back to until the next swap"
+  fi
 else
-  psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "set client_min_messages = warning; drop schema if exists analytics_prev cascade; drop schema if exists analytics_seeds_prev cascade; drop schema if exists ops_prev cascade;"
-  echo "the previous publication is dropped (${after_mb} MB with it; cap ${CAP_MB} MB, LEAGUE_LAB_HOSTED_KEEP_PREV=${KEEP_PREV}): $(hosted_mb) MB now"
+  swap_rc=$?
+  if [ "$PUBLISH_MODE" != auto ]; then
+    echo "ERROR: the swap stopped before its commit (exit ${swap_rc}); the previous publication is untouched (LEAGUE_LAB_HOSTED_PUBLISH=swap never drops)" >&2
+    exit "$swap_rc"
+  fi
+  echo "the swap stopped before its commit (exit ${swap_rc}): nothing of it was kept, the previous publication is untouched; publishing by the drop path instead (fallback)"
+  use_swap=0
 fi
-else
+fi   # ---- end IU-4 (the swap)
+if [ "$use_swap" = 0 ]; then
 # ---- end IR-3 (the drop path below is the pre-IR-3 path, unchanged but for the marker and the stamp around it)
 echo "publishing: dropping the previous marts, then restoring (pages show 'not built yet' meanwhile; ops swaps atomically) ..."
 t0=$(date +%s)
