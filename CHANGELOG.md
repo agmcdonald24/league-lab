@@ -4,6 +4,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-09 — Wave I-V
 
+- **PO — the live week is on.** `LEAGUE_LAB_FREEZE: game` in `nightly.yml`; the five overlays in `nightly.sh`'s
+  `STATE_TABLES`. `live_week.relation` names the overlay's columns (a plain scan; one JSON cast a row as the
+  fallback): a live statement costs 1–3 ms over the stored read, not 77–160. Rollback = delete the env line and run
+  the nightly. docs/STATUS.md § "Wave I-V".
 - **IV-1 — the live week, switchable on for Sunday (fr1.1).** With `LEAGUE_LAB_FREEZE=game` every stored projection
   table a live reader reads has an overlay of its own shape (`ops.projection_live` and, new, the NFL-wide
   `projection_lines_live` / `projection_ranges_live` / `kd_lines_live` / `kd_ranges_live`: the week under way's games not

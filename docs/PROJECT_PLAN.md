@@ -598,6 +598,18 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 32 — Wave I-V, the live week switched on (2026-10-09, Friday 16:35 – evening ET)
+
+Wave I-U's shadow step said on its first night that 16 house-league rows of the frozen week 5 would move by 2 points
+or more — Baltimore's Sunday starter stood at 4.8 on the public Rankings. One package, **IV-1** (IU-2's developer):
+an overlay for every stored projection table a live reader reads (the NFL-wide lines and ranges, kickers and defenses
+included), one place that makes a read live (`league_lab.live_week`, applied to every API statement and to
+`project`'s solves; never to a grader), the API following the data with no setting on Render, the overlays kept as
+state so a game that has kicked off keeps its last live number, and the sentence that promised a cleared player "the
+next update" made true. The PO turned it on (`LEAGUE_LAB_FREEZE: game`). The record and every grade stay the kickoff
+board (0 cells differ). Acceptance and evidence: `docs/STATUS.md` § "Wave I-V". **Next**: the first `game` nightly's
+summary; a grade of the live numbers against the kickoff board; Wave I-U's list.
+
 ### Iteration 31 — Wave I-U (2026-10-09, Friday 10:37 – late afternoon ET)
 
 Andrew: "lets keep using the free neon if thats what we are on. and lets keep building this out." Six packages,

@@ -3,6 +3,17 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 9 (night) · this week's numbers keep up with the news until each game kicks off
+
+- **A week no longer stands still after Thursday night.** The numbers for a week used to be set at its first kickoff
+  and left alone, so news on Friday or Saturday did not reach Sunday's players. Now every game that has not kicked off
+  yet is updated each morning: a quarterback named the starter on Friday gets a starter's projection, and a player
+  ruled out drops to zero with the reason.
+- **Our record is still the Thursday numbers.** What we grade ourselves on is what we said before the week's first
+  kickoff. The updates are for your decisions, not for our scorecard.
+- **A player cleared late is told the truth.** His row no longer promises a number "with the next update" when none
+  was coming.
+
 ## Oct 9 (evening) · a blog with pictures and video, a wider trade search, and a smoother nightly update
 
 - **The blog can carry a cover picture, photos and video.** A post's cover is its banner, its thumbnail in the list

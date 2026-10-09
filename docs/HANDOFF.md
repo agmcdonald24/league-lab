@@ -386,6 +386,21 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-V (2026-10-09, Friday evening; STATUS § "Wave I-V (Iteration 32)")**: **the live week is on**
+  (`LEAGUE_LAB_FREEZE: game` in `nightly.yml`; fr1.1). A week's first kickoff still freezes **the record** — the
+  kickoff board, which every grade reads and nothing rewrites — but the screens read tonight's number for every game
+  of that week that has not kicked off: `project` writes five overlays (`ops.projection_live`,
+  `projection_lines_live`, `projection_ranges_live`, `kd_lines_live`, `kd_ranges_live`; state, in `STATE_TABLES`)
+  and **`league_lab.live_week.sql` is the one place a read becomes live** — the API applies it to every statement in
+  `db._run`, `project`'s lineup and waiver solves and the audit call it, a grader never does. No overlay rows = every
+  statement unchanged. The way back: delete the env line and run the nightly. **When you add a statement that reads
+  `ops.projections` / `projection_lines` / `projection_ranges` / `kd_lines` / `kd_ranges`** write it as the others
+  are (`from` / `join` the unquoted table, then an alias) and add its form to `tests/test_iv1_live.py` if it is new; a
+  grader must read on its own connection, never through `db._run`. **A "wait for the evidence" decision is
+  re-opened the moment the evidence arrives**: the shadow's first table (Baltimore's starter at 4.8) was the
+  evidence, on a Friday, with Sunday's games ahead. **After a container restart**: start Postgres and wait for
+  recovery (`pg_isready`), look at every worktree's `git status` (a dev's baseline checkout may be staged), and have
+  the dev re-run whatever was in flight — a log that stops is not a result.
 * **Wave I-U (2026-10-09, Friday; STATUS § "Wave I-U (Iteration 31)")**: **the nightly publishes with `auto`** —
   a swap with no gap when the hosted size + 1.2 × the copy fits 800 MB of Neon Free's 1 GB, and **a swap that stops
   before its commit falls back to the drop path in the same run**; the run's summary says which way it went (read
