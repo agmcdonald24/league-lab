@@ -394,6 +394,61 @@ def project_cmd(
                       f"{sum(1 for r in gate.get('players') or [] if r.get('out_indefinitely'))} of them out indefinitely "
                       f"(no later weeks); kickers' league-free lines removed: {len(gate.get('kd_lines_removed') or [])}")
     # ---- end IR-1
+    # ---- IU-2 (Wave I-U): fr1.0, the started week's games not kicked off (`league-lab freeze-shadow` lists the moves)
+    live = pred.attrs.get("live") or {}
+    if live:
+        console.print(f"fr1.0 ({live.get('mode')}): week under way: {live.get('week') or 'none'}, "
+                      f"{live.get('games_left')} games not kicked off, {live.get('players_live')} players re-projected, "
+                      f"{live.get('moves')} house-league rows would move by {live.get('move_threshold')} points or more; "
+                      + (f"overlay rows written: {live.get('written')}" if live.get("mode") == "game" else "overlay off")
+                      + (" — FAILED, see the log" if live.get("error") else "") + f" ({live.get('seconds')} s)")
+    # ---- end IU-2
+
+
+@app.command("freeze-shadow")
+def freeze_shadow_cmd(
+    limit: int = typer.Option(60, help="Rows to print (the biggest moves first)"),
+    md: Path | None = typer.Option(None, help="Also write the same as markdown here (the nightly's run summary reads it)"),
+):
+    """IU-2 (fr1.0): what LEAGUE_LAB_FREEZE=game would change — the house-league rows of the started week's games not
+    kicked off whose number moves by 2 points or more against the kickoff board, with the reason. Reads
+    logs/freeze_shadow.json (written by `league-lab project`); never fails (a soft nightly step)."""
+    import json
+    import time
+
+    from .projections import SHADOW_PATH
+
+    t0 = time.perf_counter()
+    try:
+        s = json.loads(SHADOW_PATH.read_text())
+    except (OSError, ValueError):
+        s = None
+    if s is None:
+        head, moves = f"fr1.0 shadow: no {SHADOW_PATH.name} yet (`league-lab project` writes it)", []
+    else:
+        moves = sorted(s.get("moves") or [], key=lambda m: -abs(m.get("delta") or 0))
+        head = (f"fr1.0 shadow: week under way: {s.get('week') or 'none'}; {len(moves)} house-league rows move by "
+                f"{s.get('move_threshold')} points or more; {s.get('games_left')} games not kicked off, "
+                f"{s.get('players_live')} players re-projected"
+                + (" — the step FAILED, see the project log" if s.get("error") else "")
+                + f" (switch {s.get('mode')}; computed {s.get('computed_at')} in {s.get('seconds')} s"
+                + (f"; gate: {s.get('gate_source')} copy of {s.get('gate_copy') or 'no date'})" if s.get("gate_source") else ")"))
+    console.print(head, soft_wrap=True)
+    for m in moves[:limit]:
+        console.print(f"  {m.get('league') or m['league_id']:<24} {m['name']:<24} {m['position']:<3} {m['team']:<4} "
+                      f"{m['kickoff_points']:>6.2f} -> {m['live_points']:>6.2f} ({m['delta']:+.2f})  {m['reason']}", soft_wrap=True)
+    if md is not None:
+        try:
+            rows = [f"| {m.get('league') or m['league_id']} | {m['name']} | {m['position']} | {m['team']} | {m['kickoff_points']:.2f} | "
+                    f"{m['live_points']:.2f} | {m['delta']:+.2f} | {m['reason']} |" for m in moves[:limit]]
+            table = ["", "| league | player | pos | team | kickoff board | tonight | move | reason |",
+                     "|---|---|---|---|---:|---:|---:|---|", *rows] if rows else []
+            md.parent.mkdir(parents=True, exist_ok=True)
+            md.write_text("\n".join([head, *table]) + "\n")
+        except OSError:
+            console.print(f"fr1.0 shadow: could not write {md}")
+    console.print(f"fr1.0 shadow printed in {time.perf_counter() - t0:.2f} s")
+    # ---- end IU-2
 
 
 @app.command("drift")

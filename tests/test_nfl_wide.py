@@ -166,7 +166,8 @@ def test_nfl_wide_ddl_carries_the_freeze_labels_and_the_written_columns():
     # and the nightly carries them as state
     nightly = (ROOT / "scripts/nightly.sh").read_text()
     state = re.search(r'^STATE_TABLES="(.*)"', nightly, re.M).group(1).split()
-    assert {t for t in NFL_DDL} <= set(state)
+    # ---- IU-2: ops.projection_live is the live overlay (fr1.0), not state: empty with the default switch
+    assert {t for t in NFL_DDL if t != projections.LIVE_TABLE} <= set(state)
 
 
 def test_freeze_plan_works_on_a_whole_week_unit():

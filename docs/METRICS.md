@@ -5617,3 +5617,113 @@ scale him (by about 0.62, the played share × the when-played ratio) is the PO's
 * **One minus sign**: `it1_minus` on every sentence of the decision, the card and the Finder's headline.
 * Not graded: whether the basis's pickups are available (another team can add the player first) — said on the card.
 <!-- ---- end IT-1 -->
+
+### The live week after its first kickoff (fr1.0, IU-2, Wave I-U, 2026-10-09) — the rule, written before the code
+
+**What reads the frozen rows today** (read first, `projections.py` / the record marts / the nightly):
+
+* The **decision record**: `ops.projections` (house leagues) and `ops.projection_lines` / `ops.projection_ranges` /
+  `ops.kd_lines` / `ops.kd_ranges` (NFL-wide) rows of a league-week (or week) whose first kickoff has passed —
+  `freeze_plan`'s `keep`, labelled `frozen_source = 'kickoff'` (written before the first kickoff: the board managers
+  saw) or `'refit'`. They are graded by: `drift` / `load_board` → `ops.projection_drift` → `mart_projection_drift`
+  (About's grades, the honest floor's coverage, `frozen_share`); `mart_projection_record` (only `frozen_source =
+  'kickoff'`: our board against Sleeper's last pre-kickoff snapshot); `context_record` (`PROJ_SQL`, the record's
+  source label); `signals` (no scenario for a kickoff week); `lineup.lineup_record` (the lineup recommended before the
+  first kickoff, reconstructed from frozen rows); `market_record`. Kept across nights by `restore_state` (hosted copy)
+  and the archive (`save-record` → `RECORD_DIR`, `restore_record_from_archive`); held to "written before the first
+  kickoff" by `assert_frozen_projections_precede_kickoff` / `assert_frozen_nfl_wide_precede_kickoff`.
+* The **live readers** of the same rows: `mart_player_week_projections` (every house screen, the card's chart,
+  `ratings`), the ROS mart's board ("a week held twice keeps the frozen row"), `anyleague`'s NFL-wide board
+  (`_FRESHEST`: frozen first — every reference key and any league on demand), `ratings` / `unitcard` (`frozen_source`
+  shown as the row's source), the lineup and waiver solves inside `project` (`lineup.lineups` reads `ops.projections`
+  for the week), My Week's realised rows (`ops.lineup_totals.is_realised`: played weeks, from Sleeper's points).
+* **Why the whole week freezes at once**: the unit of `freeze_plan` is (league, week) — one label, one `frozen_at`,
+  one `fitted_at` per unit, which the record's grades and both freeze tests assume (a week is "the board as
+  published"), and a partly rewritten week would mix two fits under one label.
+* **What a Saturday re-projection of a Sunday game would change** (the model's inputs for week W are as-of week W,
+  `assert_features_never_peek`): Thursday's game does **not** enter a Sunday player's season-to-date features (they
+  stop at week W−1). What does change between Thursday and Sunday: the week's **injury report** (`report_status`, the
+  `questionable` input; Friday's final — and through it the personnel inputs of v3: `pn_top_target_out`,
+  `pn_top_rusher_out`, `pn_teammate_share_out`, `pn_absence_beneficiary` for RB / WR / TE, the line starters out, and
+  QB `pn_qb_*` (who starts), all read from week W's report and the reserve lists), the **market** (`implied_team_total`, `spread_line` as lines move), the
+  **roster file / depth chart / starter overrides** (`int_depth_chart_current`, IQ-2's seed: who starts), the gate's
+  word (Sleeper / ESPN / the report: a player who sits is 0). And one thing that must **not** move: the fit itself
+  (tonight's models on the same training seasons — the coefficients of a re-run are the same up to the rows the
+  calibration reads; `calibration.future_inputs` / `horizon_blend_lines` act on weeks after the market week only).
+  So a re-projection of unplayed games is the same model on fresher inputs, not a peek at the week's results.
+
+**The rule.**
+
+1. **A game's rows are the record once that game kicks off.** Until then the nightly may re-project them with
+   today's inputs. The board managers saw at the week's first kickoff (`frozen_source = 'kickoff'`) stays **kept,
+   unchanged, where it is**, and every grade keeps reading it there (nothing above changes).
+2. **Where the live number lives**: a separate overlay table, `ops.projection_live` (the shape of `ops.projections`
+   plus `game_kickoff`), holding only the rows of the started week's games that have not kicked off, replaced on
+   every run (empty when no week is under way, or when the switch is `week`). `db migrate` creates it. Size: one row
+   per house league × player of an unplayed game, about 1,200 rows ≈ 0.3 MB on the hosted copy (it rides the `ops`
+   publish; no grade reads it).
+3. **The switch, `LEAGUE_LAB_FREEZE=week|game`, default `week`** — today's behaviour bit for bit: `freeze_plan`,
+   the writers and every reader are untouched; `ops.projection_live` stays empty. With `game`: `project` writes
+   `ops.projection_live` (the fresh rows of the unplayed games, through the same availability gate as the live week:
+   a player who sits is 0 with the reason); `mart_player_week_projections` takes the live row for a (league, week,
+   player) when one exists, else the stored one — so the house screens, the card and the lineup readers of the mart
+   read Sunday's number until that game kicks off. Played and in-progress games keep their stored rows.
+4. **Shadow first.** With the switch still `week`, `project` computes what `game` would write and saves the players
+   whose live-week number would move by 2 points or more, with the reason (who sits; whose teammate sits), to
+   `logs/freeze_shadow.json`; `league-lab freeze-shadow` prints it (a soft nightly step, seconds, never fails the
+   night).
+5. **What moves with `game` and what does not**: the injury report, the gate (Sleeper / ESPN / report), the market
+   lines, IQ-2's starter override and the depth chart move a re-projection to the extent the model reads them (the
+   override and the depth chart through who is the listed starter; the report through `questionable`, the gate and
+   the personnel inputs). *Corrected 12:15 ET, before any code or number:* the first text of this point said the
+   model has no "teammate out this week" feature — wrong: projection v3 reads `pn_top_target_out` /
+   `pn_top_rusher_out` / `pn_teammate_share_out` / `pn_absence_beneficiary` (RB / WR / TE) and `pn_qb_*` (QB) from
+   week W's report, so a starter ruled Out on Friday moves his teammates' numbers in a Saturday re-projection, by
+   as much as the model learned those inputs to be worth. The shadow names the teammate who sits when it can.
+   *Precised 12:42 ET (read in the SQL; a description, not a rule):* the **depth chart** does not
+   reach the projections (`int_depth_chart_current` feeds `mart_player_next_matchup` and `mart_starter_check`, not
+   `mart_player_week_features`); **who starts at QB** does — the schedule's projected starter or IQ-2's override
+   (`int_pn_team_game.starting_qb_id`) — through `pn_qb_*`, on the **QB rows only** (RB / WR / TE read no QB input:
+   a QB change reaches his receivers only through the market's implied total); the **roster file** through the
+   reserve lists (the gate's fallback, the personnel inputs' "gone"); the **report** through the gate,
+   `questionable` and the personnel inputs (RB / WR / TE teammates out, line starters out).
+6. **Housekeeping of the overlay** (precision of point 2, before the code): a run deletes and rewrites the live rows
+   of the games that have not kicked off; a game that kicked off since the last run keeps the live rows it had (the
+   number at its own kickoff) until the week is over; with no week under way, or with the switch `week`, the
+   overlay is emptied. Kicker and defense rows follow the same rule (their team's game).   overlay is emptied. Kicker and defense rows follow the same rule (their team's game).
+
+**The evidence on the past — the rule, committed before its numbers (12:30 ET).** The warehouse dates one piece of
+Saturday's news: week W's final injury report (nflverse; Friday's designations). It holds no Thursday copy of the
+market lines, the depth chart or the report, so a "Thursday board" can only be rebuilt as the same model without
+Friday's designations. Study:
+
+* **Boards.** *Thursday* T: the model's number for every QB / RB / WR / TE player-week (a fit on the seasons before,
+  as `project` fits: 2025 from a 2016–2024 fit, 2026 from the 2016–2025 fit), the week's features as built.
+  *Saturday* S: T with every player whose final report says Out or Doubtful (or who is on a reserve list) set to 0 —
+  the gate's part of a re-projection. 2026 week 4 also with its real kickoff board (`frozen_source = 'kickoff'`, v3.0)
+  as T. The features as built already carry the final report (`questionable`, the personnel inputs), so T is more
+  informed than a real Thursday board: the measured gain is a lower bound for the gate's part and says nothing about
+  the teammates', the market's or the depth chart's part.
+* **Population.** Players of the games after the week's first kickoff; weeks 1–18 of 2025 and 2026 weeks 2–4 (weeks
+  2–3 of 2026 have no kickoff board, so only the rebuilt T there). Scored on the points they scored in the reference
+  scoring (`ppr`), 0 when they did not play. (a) All of them; (b) those whose status changed: Out / Doubtful on the
+  final report and not already on a reserve list at the week's start.
+* **Metrics.** MAE (points), and Spearman within week × position averaged over week × position cells with 8 or more
+  players.
+* **Decision.** S is "better" if its MAE is lower in (a) in 2025 and in 2026 weeks 2–4 and its Spearman is not lower
+  by more than 0.005 in either. Better → the hand-back recommends `game` after one weekend of the shadow; not better →
+  the switch stays `week` and the shadow is the deliverable. Either way the number is the gate's part only.
+
+**Result (IU-2, numbers after the rule; a refit of today's v3.6 on the seasons before, ppr, players of the games after
+the week's first kickoff):** 2025 weeks 1–18, 9,594 player-weeks: MAE T 4.238 → S 3.249, Spearman 0.614 → 0.746 (72
+week × position cells); 2026 weeks 2–4, 1,699: MAE 4.248 → 3.444, Spearman 0.606 → 0.713 (12 cells). Status changed
+(Out / Doubtful on the final report, not on a reserve list): 2025 344 player-weeks, MAE 6.763 → 0.000 (none of them
+played — 25 were Doubtful); 2026 45, 7.113 → 0.000; Spearman not computable (no cell of 8). Sensitivity, not the
+decision — a Thursday board that already zeroed the reserve lists (as the gate does since IR-1): 2025 MAE 3.491 →
+3.249, Spearman 0.713 → 0.746; 2026 3.632 → 3.444, 0.689 → 0.713. 2026 week 4's real kickoff board exists only in the
+house scorings (ppr's week 4 ranges are refit values), so the rule's line for it is not computable as written; in
+those scorings (labelled extra): scrubs MAE 3.957 → 3.135, Spearman 0.581 → 0.708; dynasty 4.778 → 3.802, 0.585 →
+0.710 (554 players). **Verdict by the rule: S is better** in both seasons. What it means: the measured part is the
+gate's — which the screens already apply at request time with the switch `week` (a player who sits is hidden); what
+`game` adds beyond that (the stored number every solve and grade reads, his teammates' inputs, the market, the depth
+chart) is not measured here. The hand-back recommends `game` after one weekend of the shadow.

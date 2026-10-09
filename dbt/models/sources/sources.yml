@@ -144,6 +144,8 @@ sources:
         description: "Written by `league-lab backtest`: per season-week-position-scorer Spearman, top-N hit rate, MAE."
       - name: projections
         description: "Written by `league-lab project` (projection v2): per league x season x week x player, the projected stat line, its priced points and P10/P50/P90, plus (plan D6) P25/P75, the 50% range (NULL on rows written before it existed). Plan B5: a league-week is rewritten by every refit until its first kickoff and never after; frozen_source / frozen_at label the kept rows (assert_frozen_projections_precede_kickoff)."
+      - name: projection_live
+        description: "IU-2 (Wave I-U), fr1.0: the live overlay of the started week (its first kickoff passed) for the games that have not kicked off — tonight's re-projection, gated like the live week, the shape of ops.projections plus team and game_kickoff. Written by `league-lab project` only with LEAGUE_LAB_FREEZE=game (default week: empty); read by mart_player_week_projections before the stored row; never the record (no grade reads it)."
       - name: projection_backtest
         description: "Written by `league-lab backtest-v2`: walk-forward scores per league-season-week-position-scorer, with interval coverage."
       - name: projection_importance

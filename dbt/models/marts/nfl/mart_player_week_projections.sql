@@ -1,7 +1,7 @@
 -- depends_on: {{ ref('scoring_stat_map') }}
 {{ config(
     indexes=[{'columns': ['league_id', 'season', 'week', 'position']}, {'columns': ['gsis_id', 'season', 'week']}],
-    pre_hook="create table if not exists ops.projections (model_version text, fitted_at timestamptz, train_seasons text, league_id text, season integer, week integer, gsis_id text, position text, proj_targets double precision, proj_receptions double precision, proj_receiving_yards double precision, proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision, proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision, proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision, proj_points double precision, p10 double precision, p25 double precision, p50 double precision, p75 double precision, p90 double precision, frozen_at timestamptz, frozen_source text); alter table ops.projections add column if not exists frozen_at timestamptz; alter table ops.projections add column if not exists frozen_source text; alter table ops.projections add column if not exists p25 double precision; alter table ops.projections add column if not exists p75 double precision; alter table ops.projections add column if not exists pricing text; alter table ops.projections add column if not exists availability text"
+    pre_hook="create table if not exists ops.projections (model_version text, fitted_at timestamptz, train_seasons text, league_id text, season integer, week integer, gsis_id text, position text, proj_targets double precision, proj_receptions double precision, proj_receiving_yards double precision, proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision, proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision, proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision, proj_points double precision, p10 double precision, p25 double precision, p50 double precision, p75 double precision, p90 double precision, frozen_at timestamptz, frozen_source text); alter table ops.projections add column if not exists frozen_at timestamptz; alter table ops.projections add column if not exists frozen_source text; alter table ops.projections add column if not exists p25 double precision; alter table ops.projections add column if not exists p75 double precision; alter table ops.projections add column if not exists pricing text; alter table ops.projections add column if not exists availability text; create table if not exists ops.projection_live (like ops.projections); alter table ops.projection_live add column if not exists team text; alter table ops.projection_live add column if not exists game_kickoff timestamptz"
 ) }}
 -- Projection v2 (plan M-01/M-03) per league x season x week x player: the projected stat line,
 -- the points it is worth under THAT league's scoring, and the P10 / P50 / P90 of the league's
@@ -9,8 +9,16 @@
 -- the outcome for played weeks. Written by `league-lab project`; empty until it has run.
 -- Ranking rule: by proj_points (the priced line) among rankable players (Out / Doubtful / IR excluded,
 -- like the baseline); the interval belongs to that projection.
+-- IU-2 (Wave I-U), fr1.0: a (league, week, player) with a row in ops.projection_live (the started week's games not kicked
+-- off, LEAGUE_LAB_FREEZE=game) reads that row, every other one the stored row; the overlay is empty with the default
+-- switch (week), so p is ops.projections itself. The live row is cast to ops.projections' own columns (by name).
 with p as (
-    select * from {{ source('ops', 'projections') }}
+    select s.* from {{ source('ops', 'projections') }} as s
+    where not exists (select 1 from {{ source('ops', 'projection_live') }} as v
+                      where v.league_id = s.league_id and v.season = s.season and v.week = s.week and v.gsis_id = s.gsis_id)
+    union all
+    select (jsonb_populate_record(null::{{ source('ops', 'projections') }}, to_jsonb(v))).*
+    from {{ source('ops', 'projection_live') }} as v
 ),
 
 f as (

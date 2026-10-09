@@ -8,6 +8,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   the plan's 1 GB (cap 800 MB, the copy's estimate × 1.2) and, when the swap stops before its commit for any reason,
   publishes by the drop path in the same run; the previous copy is kept only when the next swap still fits beside it;
   `/api/ready` asks again the moment a request finds the tables away, so a drop-path publish shows as `publishing`.
+- **IU-2 — the live week after its first kickoff (fr1.0, shadow).** The kickoff board stays the record, kept where it
+  is; a switch, `LEAGUE_LAB_FREEZE=week|game` (default `week`: today's rule bit for bit, 0 cells differ on a copy),
+  lets `project` re-project the started week's games that have not kicked off into an overlay,
+  `ops.projection_live` (created by `db migrate`; gated like the live week), which `mart_player_week_projections`
+  reads before the stored row. With `week`, `project` writes only the shadow — the house-league rows that would move
+  by 2 points or more, and why (`logs/freeze_shadow.json`, `league-lab freeze-shadow`; a nightly step that never
+  fails the night). The evidence (rule first; the only dated news is the final injury report, so it measures the
+  gate's part): MAE 4.24 → 3.25 (2025), 4.25 → 3.44 (2026 weeks 2–4) — `game` recommended after a weekend of the
+  shadow. Rule and readers: docs/METRICS.md § "The live week after its first kickoff".
 
 ## 2026-10-09 — Wave I-T
 
