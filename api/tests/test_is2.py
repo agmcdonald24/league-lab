@@ -145,7 +145,7 @@ def test_waivers_and_my_week_carry_provenance_and_the_starter_caveats(monkeypatc
     w = LG.with_waivers({"week": 5, "horizon_last_week": 8,
                          "moves": [{"add": {"gsis_id": "g1", "position": "QB", "team": "SEA", "player_name": "Sam Darnold"}}],
                          "free_agents": [{"gsis_id": "g2", "position": "RB", "team": "NYJ", "player_name": "B"}]})
-    assert seen["players"] == ["Sam Darnold", "B"]
+    assert seen["players"] == ["Sam Darnold"]          # IT-3: the claims it suggests, not the whole browse
     assert w["caveat_effect"] == P.SOFTEN and w["caveats"][0]["team"] == "SEA" and "provenance" in w
     m = LG.with_lineup({"week": 5, "lineup_full": [{"gsis_id": "g1", "position": "QB", "team": "SEA", "player_name": "Sam Darnold"}]})
     assert m["caveats"] and m["caveat_rule"] == P.RULE_WORDS

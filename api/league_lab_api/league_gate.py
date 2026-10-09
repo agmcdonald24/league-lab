@@ -52,6 +52,36 @@ def _named(rows) -> list[dict]:
     return out
 
 
+# ---- IT-3: the caveat in a lineup's (or a claim's) words — the provenance caveat is written for a trade verdict ("No
+# verdict while …"); on My Week and Waivers there is no verdict to withhold, only a number that assumes who starts
+UNCLEAR_WORDS = ("{team}'s starter is unclear: {listed} is listed, the depth chart puts {other} first. {who}'s "
+                 "projection assumes the listing — check who starts before kickoff.")
+SET_WORDS = "{team}'s starter was set by hand ({set}{listed}): {who}'s projection assumes {last} starts."
+
+
+def lineup_words(c: Mapping) -> str | None:
+    """A caveat's sentence for a lineup or a claim (WORDS.md § IT-3); None for a kind it does not know."""
+    from . import provenance, starters
+    team = starters.team_name(str(c.get("team")))
+    who = " and ".join(dict.fromkeys(str(x) for x in c.get("players") or [])) or "This"
+    if c.get("kind") == "starter_unclear":
+        return UNCLEAR_WORDS.format(team=team, listed=c.get("listed"), other=c.get("other"), who=who)
+    if c.get("kind") == "starter_set_by_hand":
+        listed = f", not the listed {c['listed']}" if c.get("listed") else ""
+        return SET_WORDS.format(team=team, set=c.get("set"), listed=listed, who=who, last=provenance._last(str(c.get("set"))))
+    return None
+
+
+def _lineup_caveats(out: dict) -> dict:
+    cvs = []
+    for c in out.get("caveats") or []:
+        w = lineup_words(c)
+        cvs.append({**c, "words": w, "verdict_words": c.get("words")} if w else c)
+    out["caveats"] = cvs
+    return out
+# ---- end IT-3
+
+
 def with_players(ans, *keys: str):
     from . import provenance
     if not isinstance(ans, dict):
@@ -59,12 +89,12 @@ def with_players(ans, *keys: str):
     season, wk = week()
     wk = ans.get("week") if isinstance(ans.get("week"), int) else wk
     players = [p for k in keys for p in _named(ans.get(k))]
-    return provenance._with(ans, lambda a: provenance.for_players(players, season, wk,
-                                                                   last_week=a.get("horizon_last_week")))
+    return provenance._with(ans, lambda a: _lineup_caveats(provenance.for_players(players, season, wk,      # IT-3: words
+                                                                                  last_week=a.get("horizon_last_week"))))
 
 
 def with_waivers(ans):
-    return with_players(ans, "moves", "free_agents")
+    return with_players(ans, "moves")          # ---- IT-3: the claims it suggests (was + the whole free-agent browse)
 
 
 def with_lineup(ans):

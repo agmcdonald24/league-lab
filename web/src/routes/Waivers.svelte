@@ -15,6 +15,8 @@
   import { restoreScroll, route, setParams } from "../lib/router.svelte";
   import { fmt } from "../lib/theme";
   import Card from "../components/Card.svelte";
+  import ProvenanceLine from "../components/provenance/ProvenanceLine.svelte"; // ---- IT-3
+  import type { DecisionCaveat, Provenance } from "../lib/api"; // ---- IT-3
   import Chips from "../components/Chips.svelte";
   import Expander from "../components/Expander.svelte";
   import ListDetail from "../components/ListDetail.svelte";
@@ -31,6 +33,8 @@
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
   let data = $state<Waivers | null>(null);
+  // ---- IT-3: provenance and the starter caveats the answer carries since IS-2
+  const prov = (d: Waivers | null) => d as (Waivers & { provenance?: Provenance | null; caveats?: DecisionCaveat[] | null }) | null;
   let error = $state<string | null>(null);
   let picked = $state<string | null>(null);
 
@@ -224,6 +228,8 @@
         </div>
         {#each rivals as r, i (i)}<p class="text-sm leading-snug font-semibold text-ink" data-testid="top-compete">{r}</p>{/each}<!-- II-4 -->
         {#if data.not_additive}<p class="text-sm leading-snug text-ink-2" data-testid="not-additive">{data.not_additive}</p>{/if}<!-- IE-1 -->
+        <!-- ---- IT-3: what the numbers are and what has been checked; a claim on a quarterback whose starter is unclear or set by hand says so -->
+        <ProvenanceLine p={prov(data)?.provenance} caveats={prov(data)?.caveats} testid="waivers-provenance" />
       </section>
     {/if}
 

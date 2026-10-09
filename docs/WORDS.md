@@ -874,3 +874,15 @@ sentence of its own, only where they appear.
 | The league card, "Projection", a player who sits | unavailable: IR (knee - acl) · Sleeper, Sep 28 — On injured reserve: no return date, so no rest-of-season value. |
 | The league card, no word from the one definition | No injury designation. (last week's injury report no longer speaks for this week) |
 <!-- ---- end IS-2 -->
+<!-- ---- IT-3 -->
+## Inside a league: the caveats on screen (IT-3, Wave I-T, 2026-10-09; My Week, Waivers, the card)
+
+| Where | Words |
+|---|---|
+| My Week (under the lineup) and Waivers (under the strongest moves), a quarterback whose team's starter is unclear | Tampa Bay's starter is unclear: Jalon Daniels is listed, the depth chart puts Baker Mayfield first. Baker Mayfield's projection assumes the listing — check who starts before kickoff. |
+| The same, a starter set by hand | Seattle's starter was set by hand (Sam Darnold, not the listed Drew Lock): Sam Darnold's projection assumes Darnold starts. |
+| The same, under the caveats | the provenance line ("Model v3.6, data published …"), as on Rankings and the card |
+| The card, Signals, a role-up alert for a player who sits this week | Upside: none this week — IR (knee - acl) · Sleeper, Sep 28. |
+| The card's points chart, the card's week of a player who sits | Week 5 vs CIN: not played yet · projected 0.0 (0.0–0.0) (the head and the projection block say why) |
+| My Week, a receiver for an open spot in the submitted lineup (was "… in place of Mahomes" at WR2) | Start Wilson at WR (an open spot in your Sleeper lineup). |
+<!-- ---- end IT-3 -->
