@@ -384,14 +384,14 @@
   "words": "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's. A player with no season projection is not judged."
  },
  "words": {
-  "headline": "**No compelling trade found.** None of the 1 trade that raise both starting lineups this week is worth proposing: 1 does not beat your own best alternative by a point and 1 does not beat the other team's. Your best move: the Washington Commanders defense claim gives +4.9 this week (drop Jaylen Wright).",
+  "headline": "**No compelling trade found.** None of the 1 trade that raise both starting lineups this week is worth proposing: 1 does not beat your own best alternative by a point and 1 does not beat the other team's. Your best move: the Washington Commanders defense claim gives +4.9 this week (drop Jaylen Wright); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty).",
   "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
   "alternative": null
  },
  "verdict": {
   "kind": "none",
   "headline": "No compelling trade found",
-  "reason": "None of the 1 trade that raise both starting lineups this week is worth proposing: 1 does not beat your own best alternative by a point and 1 does not beat the other team's. Your best move: the Washington Commanders defense claim gives +4.9 this week (drop Jaylen Wright)."
+  "reason": "None of the 1 trade that raise both starting lineups this week is worth proposing: 1 does not beat your own best alternative by a point and 1 does not beat the other team's. Your best move: the Washington Commanders defense claim gives +4.9 this week (drop Jaylen Wright); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)."
  },
  "credible_count": 0,
  "headline_rank": null,
@@ -442,7 +442,7 @@
   "covered_week": 4.87,
   "availability": "claim",
   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-  "words": "the Washington Commanders defense claim gives +4.9 this week (drop Jaylen Wright)",
+  "words": "the Washington Commanders defense claim gives +4.9 this week (drop Jaylen Wright); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)",
   "roster_only_pick": {
    "player": {
     "sleeper_id": "3257",
@@ -512,7 +512,7 @@
    "covered_week": 4.87,
    "availability": "claim",
    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-   "words": "the Washington Commanders defense claim gives +4.9 this week (drop Jaylen Wright)",
+   "words": "the Washington Commanders defense claim gives +4.9 this week (drop Jaylen Wright); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)",
    "roster_only_pick": {
     "player": {
      "sleeper_id": "3257",
@@ -539,7 +539,7 @@
   "bar_sets": 107,
   "candidates": 6276,
   "evaluated": 619,
-  "seconds": 0.324,
+  "seconds": 0.418,
   "dropped_on_the_basis": 13
  }
 }

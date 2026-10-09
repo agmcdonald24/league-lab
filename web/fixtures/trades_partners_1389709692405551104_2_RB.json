@@ -6244,14 +6244,14 @@
   "words": "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's. A player with no season projection is not judged."
  },
  "words": {
-  "headline": "**No compelling trade found.** None of the 15 trades that raise both starting lineups over weeks 5–8 is worth proposing: 15 do not beat your own best alternative by a point, 14 do not beat the other team's and 2 are not a plausible offer. Your best move: the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt).",
+  "headline": "**No compelling trade found.** None of the 15 trades that raise both starting lineups over weeks 5–8 is worth proposing: 15 do not beat your own best alternative by a point, 14 do not beat the other team's and 2 are not a plausible offer. Your best move: the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty).",
   "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
   "alternative": null
  },
  "verdict": {
   "kind": "none",
   "headline": "No compelling trade found",
-  "reason": "None of the 15 trades that raise both starting lineups over weeks 5–8 is worth proposing: 15 do not beat your own best alternative by a point, 14 do not beat the other team's and 2 are not a plausible offer. Your best move: the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)."
+  "reason": "None of the 15 trades that raise both starting lineups over weeks 5–8 is worth proposing: 15 do not beat your own best alternative by a point, 14 do not beat the other team's and 2 are not a plausible offer. Your best move: the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)."
  },
  "credible_count": 0,
  "headline_rank": null,
@@ -6311,7 +6311,7 @@
   "covered_week": 4.87,
   "availability": "claim",
   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-  "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)",
+  "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)",
   "roster_only_pick": {
    "player": {
     "sleeper_id": "3257",
@@ -6396,7 +6396,7 @@
    "covered_week": 4.87,
    "availability": "claim",
    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-   "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)",
+   "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)",
    "roster_only_pick": {
     "player": {
      "sleeper_id": "3257",
@@ -6423,7 +6423,7 @@
   "bar_sets": 52,
   "candidates": 3841,
   "evaluated": 172,
-  "seconds": 0.369,
+  "seconds": 0.468,
   "dropped_on_the_basis": 4
  }
 }

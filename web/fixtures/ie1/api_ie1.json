@@ -15883,13 +15883,13 @@
    },
    "timings_ms": {
     "context": 0.0,
-    "evaluate": 3.8,
-    "words": 38.6,
-    "total": 42.4,
-    "league.sleeper": 2.9,
-    "league.price": 1136.3,
-    "league.solve": 118.5,
-    "league.total": 1257.7
+    "evaluate": 4.3,
+    "words": 43.0,
+    "total": 47.3,
+    "league.sleeper": 4.0,
+    "league.price": 1358.7,
+    "league.solve": 143.7,
+    "league.total": 1506.4
    },
    "provenance": {
     "model_version": "v3.0",
@@ -16711,7 +16711,13 @@
        "market_price": 9,
        "season_points": 134,
        "roster_id": 3,
-       "availability": null
+       "availability": {
+        "status": "Out",
+        "why": "Out \u00b7 NFL injury report",
+        "sits": true,
+        "out_indefinitely": false,
+        "words": "Ruled out this week: he will not play this week, so he is not ranked."
+       }
       }
      ],
      "you_gain_week": -1.37,
@@ -17097,7 +17103,13 @@
        "market_price": 0,
        "season_points": 109,
        "roster_id": 12,
-       "availability": null
+       "availability": {
+        "status": "Out",
+        "why": "Out \u00b7 NFL injury report",
+        "sits": true,
+        "out_indefinitely": false,
+        "words": "Ruled out this week: he will not play this week, so he is not ranked."
+       }
       }
      ],
      "get": [
@@ -17934,7 +17946,13 @@
        "market_price": 0,
        "season_points": 109,
        "roster_id": 12,
-       "availability": null
+       "availability": {
+        "status": "Out",
+        "why": "Out \u00b7 NFL injury report",
+        "sits": true,
+        "out_indefinitely": false,
+        "words": "Ruled out this week: he will not play this week, so he is not ranked."
+       }
       }
      ],
      "get": [
@@ -17950,7 +17968,13 @@
        "market_price": 0,
        "season_points": 108,
        "roster_id": 7,
-       "availability": null
+       "availability": {
+        "status": "Questionable",
+        "why": "Questionable \u00b7 NFL injury report",
+        "sits": false,
+        "out_indefinitely": false,
+        "words": null
+       }
       }
      ],
      "you_gain_week": 0.0,
@@ -18328,7 +18352,13 @@
        "market_price": 0,
        "season_points": 118,
        "roster_id": 5,
-       "availability": null
+       "availability": {
+        "status": "Questionable",
+        "why": "Questionable \u00b7 NFL injury report",
+        "sits": false,
+        "out_indefinitely": false,
+        "words": null
+       }
       }
      ],
      "you_gain_week": -0.24,
@@ -18721,7 +18751,13 @@
        "market_price": 0,
        "season_points": 118,
        "roster_id": 5,
-       "availability": null
+       "availability": {
+        "status": "Questionable",
+        "why": "Questionable \u00b7 NFL injury report",
+        "sits": false,
+        "out_indefinitely": false,
+        "words": null
+       }
       }
      ],
      "you_gain_week": -0.24,
@@ -19559,14 +19595,14 @@
     "words": "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's. A player with no season projection is not judged."
    },
    "words": {
-    "headline": "**No compelling trade found.** None of the 7 trades that raise both starting lineups over weeks 4\u20137 is worth proposing: 7 do not beat your own best alternative by a point, 7 do not beat the other team's and 1 is not a plausible offer. Your best move: the New Orleans Saints K claim gives +10.6 over weeks 4\u20137 (drop RJ Harvey).",
+    "headline": "**No compelling trade found.** None of the 7 trades that raise both starting lineups over weeks 4\u20137 is worth proposing: 7 do not beat your own best alternative by a point, 7 do not beat the other team's and 1 is not a plausible offer. Your best move: the New Orleans Saints K claim gives +10.6 over weeks 4\u20137 (drop RJ Harvey); Arizona Cardinals QB is already counted in every number here (he fills a starting spot that is empty).",
     "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
     "alternative": null
    },
    "verdict": {
     "kind": "none",
     "headline": "No compelling trade found",
-    "reason": "None of the 7 trades that raise both starting lineups over weeks 4\u20137 is worth proposing: 7 do not beat your own best alternative by a point, 7 do not beat the other team's and 1 is not a plausible offer. Your best move: the New Orleans Saints K claim gives +10.6 over weeks 4\u20137 (drop RJ Harvey)."
+    "reason": "None of the 7 trades that raise both starting lineups over weeks 4\u20137 is worth proposing: 7 do not beat your own best alternative by a point, 7 do not beat the other team's and 1 is not a plausible offer. Your best move: the New Orleans Saints K claim gives +10.6 over weeks 4\u20137 (drop RJ Harvey); Arizona Cardinals QB is already counted in every number here (he fills a starting spot that is empty)."
    },
    "credible_count": 0,
    "headline_rank": null,
@@ -19626,7 +19662,7 @@
     "covered_week": 3.33,
     "availability": "guaranteed",
     "availability_words": "first come, first served: he is yours if you add him before anyone else",
-    "words": "the New Orleans Saints K claim gives +10.6 over weeks 4\u20137 (drop RJ Harvey)",
+    "words": "the New Orleans Saints K claim gives +10.6 over weeks 4\u20137 (drop RJ Harvey); Arizona Cardinals QB is already counted in every number here (he fills a starting spot that is empty)",
     "roster_only_pick": {
      "player": {
       "sleeper_id": "mfl:TMQB-ARI",
@@ -19715,7 +19751,7 @@
      "covered_week": 3.33,
      "availability": "guaranteed",
      "availability_words": "first come, first served: he is yours if you add him before anyone else",
-     "words": "the New Orleans Saints K claim gives +10.6 over weeks 4\u20137 (drop RJ Harvey)",
+     "words": "the New Orleans Saints K claim gives +10.6 over weeks 4\u20137 (drop RJ Harvey); Arizona Cardinals QB is already counted in every number here (he fills a starting spot that is empty)",
      "roster_only_pick": {
       "player": {
        "sleeper_id": "mfl:TMQB-ARI",
@@ -19746,11 +19782,11 @@
     "bar_sets": 150,
     "candidates": 11204,
     "evaluated": 231,
-    "seconds": 0.845,
+    "seconds": 0.802,
     "dropped_on_the_basis": 14
    },
    "timings_ms": {
-    "total": 5479.2
+    "total": 6476.4
    }
   }
  }

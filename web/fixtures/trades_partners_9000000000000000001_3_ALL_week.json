@@ -2212,7 +2212,13 @@
      "market_price": 0,
      "season_points": 171,
      "roster_id": 3,
-     "availability": null
+     "availability": {
+      "status": "Questionable",
+      "why": "Questionable · NFL injury report",
+      "sits": false,
+      "out_indefinitely": false,
+      "words": null
+     }
     }
    ],
    "get": [
@@ -4520,7 +4526,7 @@
   "bar_sets": 98,
   "candidates": 3386,
   "evaluated": 121,
-  "seconds": 0.101,
+  "seconds": 0.144,
   "dropped_on_the_basis": 3
  }
 }

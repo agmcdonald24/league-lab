@@ -137,7 +137,7 @@
   "covered_week": 4.87,
   "availability": "claim",
   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-  "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)",
+  "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)",
   "roster_only_pick": {
    "player": {
     "sleeper_id": "3257",
@@ -222,7 +222,7 @@
    "covered_week": 4.87,
    "availability": "claim",
    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-   "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)",
+   "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)",
    "roster_only_pick": {
     "player": {
      "sleeper_id": "3257",
@@ -249,7 +249,7 @@
   "bar_sets": 29,
   "candidates": 1388,
   "evaluated": 231,
-  "seconds": 0.407,
+  "seconds": 0.507,
   "dropped_on_the_basis": 4
  }
 }

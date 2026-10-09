@@ -3106,13 +3106,13 @@
    },
    "timings_ms": {
     "context": 0.0,
-    "evaluate": 3.4,
-    "words": 27.2,
-    "total": 30.7,
-    "league.sleeper": 2.9,
-    "league.price": 1136.3,
-    "league.solve": 118.5,
-    "league.total": 1257.7
+    "evaluate": 4.9,
+    "words": 36.6,
+    "total": 41.6,
+    "league.sleeper": 4.0,
+    "league.price": 1358.7,
+    "league.solve": 143.7,
+    "league.total": 1506.4
    },
    "provenance": {
     "model_version": "v3.0",

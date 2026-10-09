@@ -1534,7 +1534,18 @@ def alternative_words(alt: dict, span: str, window: str) -> str:
     g = alt["gain_week"] if window == "week" else alt["gain_window"]
     how = "for an open spot" if alt.get("open_spot") else (f"(drop {(alt.get('drop') or {}).get('player_name')})"
                                                           if alt.get("drop") else "")
-    return f"the {_claim_name(alt)} claim gives {g:+.1f} {when} {how}".strip()
+    words = f"the {_claim_name(alt)} claim gives {g:+.1f} {when} {how}".strip()
+    # ---- PO (Wave I-T): when the basis search picked another claim than Waivers' first one, say where that one went.
+    # Waivers (roster-only: an empty starting spot scores 0) leads with the player who fills the hole (+20.4); every
+    # number here already fills that hole with him, so on this comparison he adds nothing and the best move is the
+    # next one. Without the sentence the two screens name two different "best" claims and neither says why.
+    rop = alt.get("roster_only_pick") or {}
+    rname = (rop.get("player") or {}).get("player_name")
+    covered = rop.get("covered_window")
+    if rname and rname != (alt.get("player") or {}).get("player_name") and covered is not None and abs(float(covered)) < 0.05:
+        words += f"; {rname} is already counted in every number here (he fills a starting spot that is empty)"
+    # ---- end PO
+    return words
 
 
 def _stand_pat(weeks, span: str, source: str, note: str | None = None) -> dict:

@@ -2881,7 +2881,13 @@
        "market_price": 27,
        "season_points": 152,
        "roster_id": 5,
-       "availability": null
+       "availability": {
+        "status": "Questionable",
+        "why": "Questionable \u00b7 NFL injury report",
+        "sits": false,
+        "out_indefinitely": false,
+        "words": null
+       }
       }
      ],
      "you_gain_week": -0.31,
@@ -3286,7 +3292,13 @@
        "market_price": 0,
        "season_points": 89,
        "roster_id": 8,
-       "availability": null
+       "availability": {
+        "status": "Questionable",
+        "why": "Questionable \u00b7 NFL injury report",
+        "sits": false,
+        "out_indefinitely": false,
+        "words": null
+       }
       }
      ],
      "get": [
@@ -3731,7 +3743,13 @@
        "market_price": 0,
        "season_points": 118,
        "roster_id": 5,
-       "availability": null
+       "availability": {
+        "status": "Questionable",
+        "why": "Questionable \u00b7 NFL injury report",
+        "sits": false,
+        "out_indefinitely": false,
+        "words": null
+       }
       }
      ],
      "you_gain_week": 0.92,
@@ -4592,14 +4610,14 @@
     "words": "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's. A player with no season projection is not judged."
    },
    "words": {
-    "headline": "**No compelling trade found.** None of the 9 trades that raise both starting lineups over weeks 4\u20137 is worth proposing: 9 do not beat your own best alternative by a point, 9 do not beat the other team's and 3 are not a plausible offer. Your best move: the Arizona Cardinals QB claim gives +10.8 over weeks 4\u20137 for an open spot.",
+    "headline": "**No compelling trade found.** None of the 9 trades that raise both starting lineups over weeks 4\u20137 is worth proposing: 9 do not beat your own best alternative by a point, 9 do not beat the other team's and 3 are not a plausible offer. Your best move: the Arizona Cardinals QB claim gives +10.8 over weeks 4\u20137 for an open spot; Chicago Bears is already counted in every number here (he fills a starting spot that is empty).",
     "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
     "alternative": null
    },
    "verdict": {
     "kind": "none",
     "headline": "No compelling trade found",
-    "reason": "None of the 9 trades that raise both starting lineups over weeks 4\u20137 is worth proposing: 9 do not beat your own best alternative by a point, 9 do not beat the other team's and 3 are not a plausible offer. Your best move: the Arizona Cardinals QB claim gives +10.8 over weeks 4\u20137 for an open spot."
+    "reason": "None of the 9 trades that raise both starting lineups over weeks 4\u20137 is worth proposing: 9 do not beat your own best alternative by a point, 9 do not beat the other team's and 3 are not a plausible offer. Your best move: the Arizona Cardinals QB claim gives +10.8 over weeks 4\u20137 for an open spot; Chicago Bears is already counted in every number here (he fills a starting spot that is empty)."
    },
    "credible_count": 0,
    "headline_rank": null,
@@ -4654,7 +4672,7 @@
     "covered_week": 0.0,
     "availability": "guaranteed",
     "availability_words": "first come, first served: he is yours if you add him before anyone else",
-    "words": "the Arizona Cardinals QB claim gives +10.8 over weeks 4\u20137 for an open spot",
+    "words": "the Arizona Cardinals QB claim gives +10.8 over weeks 4\u20137 for an open spot; Chicago Bears is already counted in every number here (he fills a starting spot that is empty)",
     "roster_only_pick": {
      "player": {
       "sleeper_id": "CHI",
@@ -4731,7 +4749,7 @@
      "covered_week": 0.0,
      "availability": "guaranteed",
      "availability_words": "first come, first served: he is yours if you add him before anyone else",
-     "words": "the Arizona Cardinals QB claim gives +10.8 over weeks 4\u20137 for an open spot",
+     "words": "the Arizona Cardinals QB claim gives +10.8 over weeks 4\u20137 for an open spot; Chicago Bears is already counted in every number here (he fills a starting spot that is empty)",
      "roster_only_pick": {
       "player": {
        "sleeper_id": "CHI",
@@ -4755,11 +4773,11 @@
     "bar_sets": 147,
     "candidates": 7179,
     "evaluated": 123,
-    "seconds": 0.446,
+    "seconds": 0.563,
     "dropped_on_the_basis": 6
    },
    "timings_ms": {
-    "total": 1230.4
+    "total": 1623.4
    }
   }
  },
@@ -8014,13 +8032,13 @@
    },
    "timings_ms": {
     "context": 0.0,
-    "evaluate": 35.3,
-    "words": 41.1,
-    "total": 76.4,
-    "league.sleeper": 2.9,
-    "league.price": 1136.3,
-    "league.solve": 118.5,
-    "league.total": 1257.7
+    "evaluate": 39.9,
+    "words": 47.6,
+    "total": 87.6,
+    "league.sleeper": 4.0,
+    "league.price": 1358.7,
+    "league.solve": 143.7,
+    "league.total": 1506.4
    },
    "provenance": {
     "model_version": "v3.0",

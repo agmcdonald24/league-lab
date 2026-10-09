@@ -485,7 +485,13 @@
      "market_price": 60,
      "season_points": 197,
      "roster_id": 1,
-     "availability": null
+     "availability": {
+      "status": "Out",
+      "why": "Out · NFL injury report",
+      "sits": true,
+      "out_indefinitely": false,
+      "words": "Ruled out this week: he will not play this week, so he is not ranked."
+     }
     }
    ],
    "you_gain_week": 0.0,
@@ -3376,7 +3382,13 @@
      "market_price": 60,
      "season_points": 197,
      "roster_id": 1,
-     "availability": null
+     "availability": {
+      "status": "Out",
+      "why": "Out · NFL injury report",
+      "sits": true,
+      "out_indefinitely": false,
+      "words": "Ruled out this week: he will not play this week, so he is not ranked."
+     }
     }
    ],
    "you_gain_week": -2.46,
@@ -3919,7 +3931,7 @@
   "bar_sets": 38,
   "candidates": 1342,
   "evaluated": 51,
-  "seconds": 0.142,
+  "seconds": 0.178,
   "dropped_on_the_basis": 1
  }
 }

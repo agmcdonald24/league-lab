@@ -2568,7 +2568,13 @@
      "market_price": 0,
      "season_points": 171,
      "roster_id": 3,
-     "availability": null
+     "availability": {
+      "status": "Questionable",
+      "why": "Questionable · NFL injury report",
+      "sits": false,
+      "out_indefinitely": false,
+      "words": null
+     }
     },
     {
      "sleeper_id": "7600",
@@ -2987,7 +2993,13 @@
      "market_price": 0,
      "season_points": 171,
      "roster_id": 3,
-     "availability": null
+     "availability": {
+      "status": "Questionable",
+      "why": "Questionable · NFL injury report",
+      "sits": false,
+      "out_indefinitely": false,
+      "words": null
+     }
     },
     {
      "sleeper_id": "13279",
@@ -3588,7 +3600,7 @@
   "bar_sets": 52,
   "candidates": 2252,
   "evaluated": 66,
-  "seconds": 0.178,
+  "seconds": 0.264,
   "dropped_on_the_basis": 3
  }
 }

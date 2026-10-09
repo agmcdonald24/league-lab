@@ -2838,14 +2838,14 @@
   "words": "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's. A player with no season projection is not judged."
  },
  "words": {
-  "headline": "**No compelling trade found.** None of the 5 trades that raise both starting lineups over weeks 5–16 is worth proposing: 5 do not beat your own best alternative by a point, 5 do not beat the other team's and 1 is not a plausible offer. Your best move: the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young).",
+  "headline": "**No compelling trade found.** None of the 5 trades that raise both starting lineups over weeks 5–16 is worth proposing: 5 do not beat your own best alternative by a point, 5 do not beat the other team's and 1 is not a plausible offer. Your best move: the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty).",
   "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
   "alternative": null
  },
  "verdict": {
   "kind": "none",
   "headline": "No compelling trade found",
-  "reason": "None of the 5 trades that raise both starting lineups over weeks 5–16 is worth proposing: 5 do not beat your own best alternative by a point, 5 do not beat the other team's and 1 is not a plausible offer. Your best move: the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young)."
+  "reason": "None of the 5 trades that raise both starting lineups over weeks 5–16 is worth proposing: 5 do not beat your own best alternative by a point, 5 do not beat the other team's and 1 is not a plausible offer. Your best move: the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)."
  },
  "credible_count": 0,
  "headline_rank": null,
@@ -2929,7 +2929,7 @@
   "covered_week": 4.87,
   "availability": "claim",
   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-  "words": "the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young)",
+  "words": "the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)",
   "roster_only_pick": {
    "player": {
     "sleeper_id": "3257",
@@ -3054,7 +3054,7 @@
    "covered_week": 4.87,
    "availability": "claim",
    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-   "words": "the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young)",
+   "words": "the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young); Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty)",
    "roster_only_pick": {
     "player": {
      "sleeper_id": "3257",
@@ -3081,7 +3081,7 @@
   "bar_sets": 147,
   "candidates": 19731,
   "evaluated": 293,
-  "seconds": 2.318,
+  "seconds": 2.635,
   "dropped_on_the_basis": 12
  }
 }
