@@ -467,6 +467,10 @@ def test_the_database_down_leaves_the_files(api, folder, monkeypatch):
 def test_the_script_is_idempotent_and_grants_only_its_tables():
     sql = SQL_FILE.read_text().lower()
     code = "\n".join(line.split("--")[0] for line in sql.splitlines())
+    # IU-6: one additive alter is allowed — the nullable cover column (if not exists: idempotent; nothing dropped)
+    cover = "alter table blog.posts add column if not exists cover uuid references blog.images (id) on delete set null;"
+    assert code.count("alter table") == 1 and code.count(cover) == 1
+    code = code.replace(cover, "")
     assert not re.search(r"\b(drop|alter)\b", code) and not re.search(r"^\s*truncate", code, re.M)
     assert "create schema if not exists blog" in code and code.count("create table if not exists blog.") == 3
     grants = re.findall(r"grant [^;]+;", code)

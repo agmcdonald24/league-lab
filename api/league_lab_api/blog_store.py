@@ -130,8 +130,28 @@ def ready() -> bool:
     return bool(_ready["ok"])
 
 
+# ---- IU-6 (Wave I-U): the cover column (scripts/hosted_blog.sql) may be absent — on the hosted database the nightly
+# applies that file AFTER the new API is deployed. Asked once per process, then again at most once a minute while it is
+# absent (every ten once it is there); without it every read and save works as before: no cover offered (`mine`'s
+# limits say `cover: false`), a `cover` in a save is quietly not stored, the posts carry `image: null`.
+COVER_COL = "cover"
+COVER_SQL = ("select exists (select 1 from pg_attribute where attrelid = to_regclass(%s) and attname = %s "
+             "and not attisdropped)")
+_cover = {"on": False, "next": 0.0}
+
+
+def cover_on(c: psycopg.Connection) -> bool:
+    """Does blog.posts have the cover column — asked on this connection at most once a minute while it does not."""
+    now = time.monotonic()
+    if now >= _cover["next"]:
+        on = bool(c.execute(COVER_SQL, (TABLES[0], COVER_COL)).fetchone()[0])
+        _cover.update(on=on, next=now + (600.0 if on else 60.0))
+    return bool(_cover["on"])
+
+
 def reset() -> None:
     _ready.update(ok=False, next=0.0)
+    _cover.update(on=False, next=0.0)
     _pub.clear()
 
 
@@ -186,6 +206,8 @@ class SaveIn(PostIn):
     revision: int = Field(ge=1, le=10_000_000)
     autosave: bool = False
     slug_auto: bool = False        # the address was made from the title, not typed: a taken one moves on to -2, -3 …
+    cover: str | None = Field(default=None, max_length=64)   # IU-6: one of the editor's own pictures, "" / null = none;
+    #                                                          absent from the body = the cover as it is
 
 
 class PublishIn(BaseModel):
@@ -302,9 +324,27 @@ def _check_id(post_id: str) -> str:
 
 
 def _get(c: psycopg.Connection, post_id: str, uid: str, *, body: bool = True, lock: bool = False) -> dict | None:
-    r = c.execute(f"select {COLS}, body from blog.posts where id = %s and account_id = %s" + (" for update" if lock else ""),
-                  (post_id, uid)).fetchone()
-    return None if r is None else _row(r, r[15] if body else None)
+    has_cover = cover_on(c)
+    r = c.execute(f"select {COLS}, body" + (f", {COVER_COL}" if has_cover else "") + " from blog.posts where id = %s "
+                  "and account_id = %s" + (" for update" if lock else ""), (post_id, uid)).fetchone()
+    if r is None:
+        return None
+    out = _row(r, r[15] if body else None)
+    out["cover"] = str(r[16]) if has_cover and r[16] is not None else None
+    return out
+
+
+COVER_WORDS = "A cover is one of your own pictures: upload it under Picture first."
+
+
+def _cover_id(v: str | None) -> str | None:
+    """A cover as sent: "" / null = none; else a lower-case uuid, or 400 bad_cover (the shape; whose it is: in save)."""
+    v = (v or "").strip()
+    if not v:
+        return None
+    if not _ID.fullmatch(v):
+        raise _err(400, "bad_cover", COVER_WORDS)
+    return v
 
 
 def _prune(c: psycopg.Connection) -> None:
@@ -352,7 +392,7 @@ def mine(uid: str) -> dict[str, Any]:
         _prune(c)
         rows = c.execute(f"select {COLS} from blog.posts where account_id = %s order by "
                          "(status = 'deleted'), updated_at desc limit %s", (uid, MAX_POSTS)).fetchall()
-        return {"rows": rows}
+        return {"rows": rows, "cover": cover_on(c)}
     got = db.run_rw(tx, purpose=PURPOSE)
     images = db.run_rw(lambda c: c.execute("select id, kind, size, created_at from blog.images where account_id = %s "
                                            "order by created_at desc limit %s", (uid, MAX_IMAGES)).fetchall(),
@@ -366,7 +406,7 @@ def mine(uid: str) -> dict[str, Any]:
             "limits": {"body_kb": MAX_BODY_BYTES // 1024, "posts": MAX_POSTS, "title": blog.MAX_TITLE,
                        "summary": blog.MAX_SUMMARY, "tags": blog.MAX_TAGS, "tag": blog.MAX_TAG, "slug": blog.MAX_SLUG,
                        "restore_days": RESTORE_DAYS, "revisions": KEEP_REVISIONS, "image_kb": MAX_IMAGE_BYTES // 1024,
-                       "images": MAX_IMAGES}}
+                       "images": MAX_IMAGES, "cover": got["cover"]}}
 
 
 def get_post(uid: str, post_id: str) -> dict[str, Any]:
@@ -468,11 +508,18 @@ def save(uid: str, post_id: str, s: SaveIn) -> dict[str, Any]:
     f = clean(s)
     want = _INVISIBLE.sub("", s.slug or "").strip()
     files = file_slugs()
+    cover_sent = "cover" in s.model_fields_set                       # IU-6: absent = the cover stays as it is
+    want_cover = _cover_id(s.cover) if cover_sent else None
 
     def tx(c: psycopg.Connection) -> dict:
         cur = _get(c, post_id, uid, lock=True)
         if cur is None:
             raise _err(404, "no_post", blog.NOT_FOUND)
+        set_cover = cover_sent and cover_on(c)                       # no column yet: the choice is not stored
+        cover = want_cover if set_cover else cur["cover"]
+        if set_cover and cover is not None and cover != cur["cover"] and c.execute(
+                "select 1 from blog.images where id = %s and account_id = %s", (cover, uid)).fetchone() is None:
+            raise _err(400, "bad_cover", COVER_WORDS)                # no such picture, or another account's: one answer
         if cur["status"] == "deleted":
             raise _err(409, "deleted", "This post is deleted. Restore it to edit it.")
         if cur["revision"] != s.revision:
@@ -492,7 +539,8 @@ def save(uid: str, post_id: str, s: SaveIn) -> dict[str, Any]:
                 elif problem is None:
                     slug = want
         # ---- fix round (the review's L1): a save that changes nothing writes nothing (200, the same revision) …
-        if slug == cur["slug"] and all(f[k] == cur[k] for k in ("title", "summary", "tags", "author", "body")):
+        if slug == cur["slug"] and cover == cur["cover"] and all(f[k] == cur[k] for k in ("title", "summary", "tags",
+                                                                                              "author", "body")):
             out = dict(cur)
             if problem:
                 out.update(slug_problem=problem, slug_words=SLUG_WORDS[problem])
@@ -504,13 +552,14 @@ def save(uid: str, post_id: str, s: SaveIn) -> dict[str, Any]:
             raise TooFast(wait)
         _room(c, max(0, f["body_bytes"] * 2 - cur["bytes"]))
         rev = cur["revision"] + 1
-        r = c.execute(f"update blog.posts set slug = %s, title = %s, summary = %s, body = %s, body_bytes = %s, "
-                      f"minutes = %s, tags = %s, author = %s, revision = %s, updated_at = now() where id = %s "
-                      f"returning {COLS}, body",
+        r = c.execute("update blog.posts set slug = %s, title = %s, summary = %s, body = %s, body_bytes = %s, "
+                      "minutes = %s, tags = %s, author = %s, revision = %s, updated_at = now()"
+                      + (f", {COVER_COL} = %s" if set_cover else "") + f" where id = %s returning {COLS}, body",
                       (slug, f["title"], f["summary"], f["body"], f["body_bytes"], f["minutes"], f["tags"], f["author"],
-                       rev, post_id)).fetchone()
+                       rev, *((cover,) if set_cover else ()), post_id)).fetchone()
         _revision(c, post_id, rev, f["title"], f["body"], f["body_bytes"], autosave=s.autosave)
         out = _row(r, r[15])
+        out["cover"] = cover
         if problem:
             out["slug_problem"] = problem
             out["slug_words"] = SLUG_WORDS[problem]
@@ -564,14 +613,16 @@ def _status(uid: str, post_id: str, action: str, revision: int | None = None) ->
 def export(uid: str) -> tuple[bytes, int, str]:
     """Every post of this editor that is not deleted, as blog/*.md files in one zip (the files' own front matter:
     blog.parse_post reads each back to the same post). Bounded by the storage cap (≤ 30 MB of bodies)."""
-    rows, today = db.run_rw(lambda c: (c.execute(
-        f"select {COLS}, body from blog.posts where account_id = %s and status <> 'deleted' order by created_at",
-        (uid,)).fetchall(), c.execute("select (now() at time zone 'America/New_York')::date").fetchone()[0]),
-        purpose=PURPOSE)
+    def tx(c: psycopg.Connection) -> tuple:
+        cover = COVER_COL if cover_on(c) else "null::uuid"            # IU-6: the cover, when the column is there
+        return (c.execute(f"select {COLS}, body, {cover} from blog.posts where account_id = %s and status <> 'deleted' "
+                          "order by created_at", (uid,)).fetchall(),
+                c.execute("select (now() at time zone 'America/New_York')::date").fetchone()[0])
+    rows, today = db.run_rw(tx, purpose=PURPOSE)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for r in rows:
-            p = _row(r, r[15])
+            p = _row(r, r[15]) | {"cover": str(r[16]) if r[16] is not None else None}
             z.writestr(f"blog/{p['date']}-{p['slug']}.md", to_markdown(p))
     return buf.getvalue(), len(rows), today.isoformat()
 
@@ -588,6 +639,8 @@ def to_markdown(p: dict[str, Any]) -> str:
         lines.append(f"author: {_q(p['author'])}")
     if p["tags"]:
         lines.append("tags: [" + ", ".join(p["tags"]) + "]")
+    if p.get("cover"):
+        lines.append(f"image: /blog/img/db/{p['cover']}")             # IU-6: blog.parse_post reads it back
     if p["status"] != "published":
         lines.append("draft: true")
     lines += ["---", "", p["body"]]
@@ -618,18 +671,20 @@ def _read_published() -> tuple[bool, list[dict[str, Any]]]:
         with db.pool().connection(timeout=5) as c:
             if c.execute("select has_table_privilege(to_regclass(%s), 'select')", TABLES[:1]).fetchone()[0] is not True:
                 return False, []
-            rows = c.execute("select slug, title, summary, tags, author, minutes, published_at from blog.posts "
+            has_cover = cover_on(c)                                  # IU-6: the cover is the post's `image`
+            rows = c.execute("select slug, title, summary, tags, author, minutes, published_at, "
+                             + (COVER_COL if has_cover else "null::uuid") + " from blog.posts "
                              "where status = 'published' order by published_at desc limit %s", (MAX_POSTS,)).fetchall()
     except Exception as exc:                                         # noqa: BLE001 - the files' blog stays up
         log.info("blog: database posts not read (%s)", exc.__class__.__name__)
         return False, []
     out = []
-    for slug, title, summary, tags, author, minutes, published in rows:
+    for slug, title, summary, tags, author, minutes, published, cover in rows:
         if not blog.SLUG.fullmatch(slug or "") or not title:
             continue
         out.append({"slug": slug, "title": title, "date": _date(published), "summary": summary or "",
                     "author": author or blog.SITE_AUTHOR, "tags": list(tags or []), "minutes": minutes or 1,
-                    "image": None, "draft": False, "source": "db"})
+                    "image": f"/blog/img/db/{cover}" if cover is not None else None, "draft": False, "source": "db"})
     return True, out
 
 
@@ -767,6 +822,7 @@ def remove_image(uid: str, image_id: str) -> None:
     if not n:
         raise _err(404, "no_image", "No picture at that address.")
     _pub.pop(("img", image_id))
+    _published_changed()                                             # IU-6: a cover goes with its picture (set null)
 
 
 def image(image_id: str) -> tuple[str, bytes] | None:
