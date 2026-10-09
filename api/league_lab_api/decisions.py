@@ -1887,6 +1887,7 @@ def ii1_alternative(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...
     alt["covered_window"] = None if cov is None else T._r2(sum(cov))
     alt["covered_week"] = None if cov is None else (T._r2(cov[0]) if cov else 0.0)
     alt["availability"], alt["availability_words"] = _availability(alt, frame["rules"])
+    alt = it1_basis_alternative(ctx, board, weeks, team, span, window, frame, alt)          # ---- IT-1
     frame["alts"][team] = alt
     return alt
 
@@ -1933,8 +1934,8 @@ def ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span
     key = (int(team), tuple(give), tuple(get), bool(compare_theirs))                 # ---- IL-4: never a stub for a full card
     cards_ = frame.setdefault("cards", {})
     if key not in cards_:
-        cards_[key] = _ii1_card(ctx, board, weeks, span, window, frame, team, give, get, source=source, as_of=as_of,
-                                compare_theirs=compare_theirs)
+        cards_[key] = it1_minus(_ii1_card(ctx, board, weeks, span, window, frame, team, give, get, source=source,  # IT-1
+                                          as_of=as_of, compare_theirs=compare_theirs))
     return dict(cards_[key])
 
 
@@ -2781,7 +2782,7 @@ def ir2_decision(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, boa
                       ("" if window == "week" else f" and {_s1w(raw_t['gain_window'])}") +
                       ". The difference from the numbers above is the cover the free pool gives anyway: an explanation, "
                       "not the verdict.")
-    return {
+    return it1_minus({                                                               # ---- IT-1: one minus sign
         "basis": IR2_BASIS, "basis_label": IR2_BASIS_LABEL, "basis_words": IR2_BASIS_WORDS,
         "weeks": list(weeks), "span": span, "window": window, "this_week": ctx.this_week if starts_now else None,
         "mine": {**_ir2_state(cm, nm), "gain_week": gm_w, "gain_window": gm_h, "by_week": list(cm.by_week),
@@ -2808,7 +2809,7 @@ def ir2_decision(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, boa
                   "theirs": ir2_fills(ctx, ct, meta, frame["rules"], f"{partner_team}'s", frame.get("pool"))},
         "unfilled": {"label": IR2_UNFILLED_LABEL, "words": unfilled_words, "mine": raw_m, "theirs": raw_t},
         "out_indefinitely": {"players": oi, "words": oi_words} if oi else None,         # the IR-1 hook (above)
-    }
+    })
 
 
 def _ir2_lineup(ctx: TradeContext, c: T.Covered, changes: list[dict], gets, meta: dict, old: dict) -> dict:
@@ -2932,6 +2933,52 @@ def ir2_apply(ctx: TradeContext, out: dict, dec: dict, g: list[str], t: list[str
 # recommendation, the caveat); the calculator's answer has the whole object. A row whose partner's own waiver move was
 # not compared (IL-4: it cannot change the answer) says so in its recommendation, as its card does.
 IT1_ROW_KEYS = ("basis", "dial", "verdict", "alternative", "recommendation", "caveat")
+# One minus sign: every sentence the decision, the card and the Finder write says a negative number with the true minus
+# (U+2212), as the screen's own numbers do ("−0.3" never beside "-0.3"). A hyphen is a minus only before a digit and not
+# after a letter, a digit or a point (names, ids "00-0025565" and dates keep theirs).
+_IT1_MINUS = re.compile(r"(?<![\w.\-])-(?=\d)")
+
+
+def it1_minus(x):
+    """The one helper: the same value with every sentence's minus signs true minus signs (dicts and lists walked)."""
+    if isinstance(x, str):
+        return _IT1_MINUS.sub("\u2212", x)
+    if isinstance(x, dict):
+        return {k: it1_minus(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [it1_minus(v) for v in x]
+    return x
+
+
+def it1_basis_alternative(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], team: int, span: str,
+                          window: str, frame: dict, alt: dict) -> dict:
+    """The best waiver move on the replacement frame (`trades.basis_best_move`) when it beats, on that frame, the move
+    IF-1 / IF-2 chose on the roster-only numbers (re-priced): the verdict's "your best waiver move" is then the best one
+    on the same comparison. The roster-only pick is kept beside it (`roster_only_pick`) when the choice changes."""
+    try:
+        mv = T.basis_best_move(board, int(team), weeks, frame["free"], frame["pool"], ctx.market)
+    except Exception:  # noqa: BLE001 - the re-priced move stands (it is still a real move)
+        import logging
+        logging.getLogger(__name__).warning("decisions: the basis waiver search failed", exc_info=True)
+        mv = None
+    if mv is None:
+        return alt
+    add, drop, by = mv
+    gain = T._r2(by[0]) if window == "week" else T._r2(sum(by))
+    if gain < _alt_gain(alt, window) + 0.05:
+        return alt
+    meta = frame.get("meta") or {}
+    new = {"kind": "waiver", "player": _alt_player(ctx, meta, add), "drop": _alt_player(ctx, meta, drop),
+           "open_spot": drop is None, "gain_week": T._r2(by[0]), "gain_window": T._r2(sum(by)),
+           "by_week": [T._r2(x) for x in by], "weeks": list(weeks), "span": span, "source": "basis search",
+           "note": None, "covered_by_week": [T._r2(x) for x in by], "covered_window": T._r2(sum(by)),
+           "covered_week": T._r2(by[0])}
+    new["availability"], new["availability_words"] = _availability(new, frame["rules"])
+    new["words"] = alternative_words(new, span, window)
+    if alt.get("kind") != STAND_PAT:
+        new["roster_only_pick"] = {"player": alt.get("player"), "drop": alt.get("drop"),
+                                   "gain_window": alt.get("gain_window"), "covered_window": alt.get("covered_window")}
+    return new
 
 
 def it1_row_decision(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span: str, window: str, frame: dict,
@@ -2970,6 +3017,15 @@ def it1_apply_row(row: dict, d: dict, starts_now: bool) -> None:
     if isinstance(card, dict):
         card["credible"] = bool(d["recommendation"].get("credible"))
         card["recommendation"] = d["recommendation"]
+
+
+def it1_row_notes(ctx: TradeContext, rows: list[dict]) -> None:
+    """Each Finder row's players carry the league screens' one status note (`league_gate.note`: the reason, its source
+    and date; `sits`): the same cell My Week and the Team Hub draw. One request-time read for every row."""
+    ps = [x for r in rows for x in (*r.get("give", []), *r.get("get", []))]
+    gate = LG.blocks([x.get("gsis_id") for x in ps if isinstance(x.get("gsis_id"), str)], ctx.season, ctx.this_week)
+    for x in ps:
+        x["availability"] = LG.note(gate.get(x["gsis_id"])) if isinstance(x.get("gsis_id"), str) else None
 
 
 def it1_rank(rows: list[dict]) -> list[dict]:
@@ -3090,7 +3146,12 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
         # ---- IT-1: the row is the calculator's answer for its package (label, gains, words, tier)
         it1_apply_row(r, it1_row_decision(ctx, board, tuple(weeks), span, window, frame, int(team), r, r["card"]), starts_now)
         ii1_same_story(r["card"], r.get("beats_alternative"))
-    rows = it1_rank(rows)                                                               # ---- IT-1: the basis's order
+    # ---- IT-1: the Finder lists trades that raise both starting lineups — on the one basis (the search's roster-only
+    # gains found them; a row whose decision says one side does not gain is not listed, and counted)
+    kept = [r for r in rows if r["you_gain_horizon"] >= T.MIN_GAIN and r["they_gain_horizon"] >= T.MIN_GAIN]
+    stats["dropped_on_the_basis"] = len(rows) - len(kept)
+    rows = it1_rank(kept)                                                               # ---- IT-1: the basis's order
+    it1_row_notes(ctx, rows)                                                            # ---- IT-1: the reason beside a player
     ii1 = ii1_verdict(rows, alt, span, window)
     rows, verdict = ii1["rows"], ii1["verdict"]
     # ---- end II-1
@@ -3118,14 +3179,15 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
     return {"league_id": ctx.league_id, "source": "database" if ctx.is_house else "sleeper", "roster_id": int(team),
             "want": want, "week": ctx.this_week, "span": span, "weeks": list(weeks), "window": window,
             "window_label": WINDOW_LABELS[window], "window_why": WINDOW_WHY[window], "partners": rows,
-            "no_trade_with": [ctx.team(p.roster_id) for p in found if p.best is None],
+            "no_trade_with": [ctx.team(p.roster_id) for p in found
+                              if p.best is None or not any(int(r["partner"]) == int(p.roster_id) for r in rows)],  # IT-1
             "rejected": examples, "rejected_count": len(rejected),
             "sanity": {"ros_gap_share": T.ROS_GAP_SHARE, "market_share": T.MARKET_SHARE, "ros_players": len(ros),
                        "market_players": len(mkt),
                        "market_note": None if mkt else (f"Sleeper's week-{ctx.this_week} projections are not in the database: "
                                                         "the market check is not applied"),
                        **finder_rule_words(ctx)},                                                     # ---- IG-1
-            "words": {"headline": links(head), "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
+            "words": {"headline": it1_minus(links(head)), "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
                       "alternative": next((r["alternative_words"] for r in rows if r.get("tier") == "credible"),  # II-1
                                           None)},                                                                # ---- IF-2
             "verdict": verdict, "credible_count": sum(1 for r in rows if r.get("tier") == "credible"),     # ---- II-1

@@ -2874,6 +2874,13 @@ export interface TradeRecommendation {
   words: string;
   plausibility: string | null;
 }
+export interface UnfilledSide {
+  gain_week: number;
+  gain_window: number;
+  by_week: number[];
+  before?: { this_week: number; window: number }; // the roster-only totals (IT-1: named beside the tiles)
+  after?: { this_week: number; window: number };
+}
 export interface TradeDecision {
   basis: "replacement";
   basis_label: string;
@@ -2897,7 +2904,7 @@ export interface TradeDecision {
   changes: { mine: DecisionChange[]; theirs: DecisionChange[]; words: { mine: string[]; theirs: string[] } };
   depth: { mine: DecisionDepth; theirs: DecisionDepth };
   fills: { mine: { words: string | null }; theirs: { words: string | null } };
-  unfilled: { label: string; words: string; mine: { gain_week: number; gain_window: number; by_week: number[] }; theirs: { gain_week: number; gain_window: number; by_week: number[] } };
+  unfilled: { label: string; words: string; mine: UnfilledSide; theirs: UnfilledSide };
   out_indefinitely: { players: TradePlayer[]; words: string } | null;
 }
 export interface TradeEval {

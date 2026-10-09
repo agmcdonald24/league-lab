@@ -146,6 +146,8 @@
         >{p.player_name}</a
       >{:else}<span class="truncate font-semibold">{p.player_name}</span>{/if}
     <PosBadge pos={p.position} />
+    <!-- IT-1: a player who sits shows why, with its source and date (league_gate.note: My Week's cell) -->
+    {#if (p as TradePlayer & { availability?: { why: string; sits: boolean } | null }).availability?.sits}<span class="text-xs leading-snug text-ink-3" data-testid="trade-avail-reason">{(p as TradePlayer & { availability?: { why: string } | null }).availability?.why}</span>{/if}
   </span>
 {/snippet}
 

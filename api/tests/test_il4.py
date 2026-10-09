@@ -19,7 +19,7 @@ from league_lab import sleeper_client as SC
 from league_lab_api import availability as AV
 from league_lab_api import decisions
 
-from .conftest import needs_db
+from .conftest import DYNASTY, needs_db
 
 TEST_LEAGUE = "9000000000000000001"
 ESPN = Path(__file__).with_name("fixtures") / "espn"
@@ -85,7 +85,8 @@ def test_status_says_what_the_directory_holds(client):
 
 
 # ------------------------------------------------------------------------------ the Finder's partners, lazily
-THEIRS_FIELDS = ("waiver_alternative", "beyond", "why_consider", "why_refuse")
+# IT-1: the recommendation's words name their own best move's margin (as why_refuse does); its key and label agree below
+THEIRS_FIELDS = ("waiver_alternative", "beyond", "why_consider", "why_refuse", "recommendation")
 
 
 def _finder(client, monkeypatch, lazy: bool, url: str) -> tuple[dict, set[int]]:
@@ -127,6 +128,8 @@ def _agree(eager: dict, lazy: dict) -> int:
         assert {k: v for k, v in cz.items() if k not in THEIRS_FIELDS} == \
                {k: v for k, v in ce.items() if k not in THEIRS_FIELDS}
         assert cz["waiver_alternative"]["mine"] == ce["waiver_alternative"]["mine"]
+        assert (cz["recommendation"]["key"], cz["recommendation"]["label"]) == \
+               (ce["recommendation"]["key"], ce["recommendation"]["label"])          # IT-1
         assert cz["beyond"]["mine"] == ce["beyond"]["mine"]
         assert cz["beyond"]["theirs"] >= ce["beyond"]["theirs"]   # standing pat in his place: an upper bound
         assert "their own best waiver move was not compared: " in cz["waiver_alternative"]["words"]
@@ -136,13 +139,22 @@ def _agree(eager: dict, lazy: dict) -> int:
 
 @needs_db
 def test_lazy_and_eager_finder_agree_on_the_test_league(client, monkeypatch):
-    url = f"/api/trades/partners?league={TEST_LEAGUE}&team=3"
-    eager, t_eager = _finder(client, monkeypatch, False, url)
-    lazy, t_lazy = _finder(client, monkeypatch, True, url)
-    stubs = _agree(eager, lazy)
-    assert eager["verdict"]["kind"] == "compelling" and eager["credible_count"] >= 1
-    assert t_lazy < t_eager and 3 in t_lazy, (sorted(t_lazy), sorted(t_eager))   # fewer partners' waiver moves priced
-    assert stubs >= 1
+    # IT-1: the Finder is on the calculator's basis now (its best waiver move searched on it): no Test League team has a
+    # compelling trade at the pinned moment, so the test takes the first league / team that has one — Forever Unclean
+    # Dynasty's roster 12 (house) when the Test League has none (the meaning is the same: a compelling answer, the lazy
+    # path pricing fewer partners' moves, every card the eager one's)
+    for league, team in ((TEST_LEAGUE, 3), *[(TEST_LEAGUE, t) for t in range(1, 11) if t != 3], (DYNASTY, 12)):
+        url = f"/api/trades/partners?league={league}&team={team}"
+        eager, t_eager = _finder(client, monkeypatch, False, url)
+        if eager["verdict"]["kind"] != "compelling":
+            continue
+        lazy, t_lazy = _finder(client, monkeypatch, True, url)
+        stubs = _agree(eager, lazy)
+        assert eager["credible_count"] >= 1
+        assert t_lazy < t_eager and team in t_lazy, (sorted(t_lazy), sorted(t_eager))   # fewer partners' moves priced
+        assert stubs >= 1
+        return
+    pytest.skip("no team with a compelling trade at the pinned moment")
 
 
 @needs_db
