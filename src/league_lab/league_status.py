@@ -92,15 +92,20 @@ def sitting(bl: Mapping[str, dict], ids: Iterable[str] | None = None) -> dict[st
     return {g: bl[g] for g in keys if sits(bl[g])}
 
 
-def note(block: Mapping | None) -> dict | None:
+def note(block: Mapping | None, position: str | None = None) -> dict | None:
     """What a league screen shows beside a player's number: ``status`` (the label), ``why`` (the label, the detail, the
     source and its date), ``sits`` (left out this week: his week is 0), ``out_indefinitely``, ``words`` (the reason in
-    a sentence, None for a flag only). None when there is no word."""
+    a sentence, None for a flag only), ``rate_words`` (IU-3: a flag's measured rate by ``position``, "Questionable:
+    about 2 in 3 play" — the Rankings row's words; None otherwise). None when there is no word."""
     if not isinstance(block, Mapping) or not block.get("why"):
         return None
     out_ind = out_indefinitely(block)
+    try:
+        rate = AG.short_words(dict(block), position)                                    # ---- IU-3
+    except Exception:  # noqa: BLE001 - no rate: the flag alone
+        rate = None
     return {"status": block.get("status"), "why": block.get("why"), "sits": sits(block), "out_indefinitely": out_ind,
-            "words": (block.get("ros_words") if out_ind else None) or block.get("week_words")}
+            "words": (block.get("ros_words") if out_ind else None) or block.get("week_words"), "rate_words": rate}
 
 
 __all__ = ["blocks", "conn_query", "directory_block", "note", "out_indefinitely", "record_block", "sits", "sitting"]
