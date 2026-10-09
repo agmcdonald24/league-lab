@@ -4203,6 +4203,42 @@ for it needs a play probability for the market week's backups (most of them neve
 probability — the old rf1.0 mixture does not have one. Spearman on hg1.0 is high (0.66) because the many idle backups'
 zeros are easy to order; MAE is the clause that carries the information.
 
+**The recorded forecast in production (rr1.0, built 13:48–13:51 ET, after the four lines above; its definition is the
+one committed with the rule).** `calibration.fit_role_record` / `role_record_rows` (block `# ---- IU-5`) and
+`context_record.write_horizon_record` / `horizon_record_grade_rows`, called from `league-lab context-record` (the
+nightly's existing soft step; a failure is logged and never stops the context record's own write or its grade).
+
+* **Where**: `ops.horizon_record` (created by `league-lab db migrate`, its DDL in `context_record.DDL`): run_at,
+  first_kickoff_at, record_version `rr1.0`, model_version, scoring, season, market_week, target_week, h, gsis_id,
+  player_name, team, mkt_start, p_start, proj_v36, proj_mix. The live market week = the first week whose first kickoff
+  is after the run; its rows are replaced each night until that kickoff, then never again (the next night writes the
+  next market week). A QB without a v3.6 line for week T has `proj_v36` NULL (unknown, not 0).
+* **Size** (`league_lab_im1`, 2026 market week 6): 606 rows (85 QBs at h = 1; fewer where a team has a bye), 139 KB with
+  its index; about 13 market weeks are left in 2026 → about 8,000 rows, **about 2 MB a season** on the hosted database.
+  **Kept state that rides the publication**, like `ops.context_record`: `sync_to_hosted.sh` dumps `ops.*`, so the
+  table is published (two copies during a swap: about 4 MB at a season's end, against 1 GB) and the nightly restores
+  it from the hosted copy — once it is in the nightly's `STATE_TABLES` and `RECORD_TABLES` (the PO's lines; without
+  them the CI runner's fresh database would start the record again every night). Nothing on a screen or in the API
+  reads it.
+* **Cost**: 16.4 s to write (the QB frame 2018–2026 and two logistic fits), 1.3 s to grade, measured alone on
+  `league_lab_im1`.
+* **The grade it writes**: `ops.context_grade` kind `role_record`, grp `all` / `h2-4` / `h5-8` (h ≥ 2, hg1.0's cases;
+  a week T is graded once its last game kicked off 12 hours before and its played games are loaded): `n` QB-weeks,
+  `games` = target weeks, `mean_miss` = the mixture's mean miss, `rest_beat_share` = v3.6's mean miss on the same rows,
+  `vs_rest` = their difference, `beat_share` = the probability's Brier score, `lo` = the base rate's Brier, `words` one
+  sentence. The API's grade readers filter by kind and ignore it.
+* **When the first graded rows appear**: the first night after the merge stores market week 6 (its first kickoff
+  Thursday 15 October, 20:15 ET). Its h = 2 rows are week 7, whose last game kicks off Monday 26 October 20:15 ET: the
+  first `role_record` grade rows appear in the first nightly after **Tuesday 27 October 08:15 ET** whose stats include
+  that week (in practice Wednesday 28 October's run); then one more target week each week.
+* **What 2026 alone can say, and when**: the 4-of-5-seasons form cannot be read on one season, ever. What can be said:
+  (1) the probability's calibration — Brier against the base rate and a reliability table by quintile — honestly from
+  about mid-season (target weeks 7–12 graded, early December: roughly 2,000 QB-weeks at h ≥ 2, though the same players
+  repeat across market weeks and horizons, so the effective sample is far smaller); (2) the mixture against v3.6 on
+  hg1.0 as **one season, out of sample**, with an interval that resamples whole players — after week 18 (mid-January
+  2027), and only as one season's evidence: a ship decision would still need the same rule on further seasons, or a
+  rule written now for 2026 + 2027.
+
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
 **Why.** A projected line is a set of means. A linear rule (points per yard, per catch, per TD) prices a mean

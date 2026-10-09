@@ -2,6 +2,16 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-09 — Wave I-U
+
+- **IU-5 — a grade that can reward the right quarterback forecast, and this season's own record.** The rule first
+  (docs/METRICS.md § "The horizon grade that counts a missed week (IU-5)", hg1.0: a missed week counts 0 when he was
+  healthy and on a roster, is left out when he was hurt or on a bye). On it rf1.0 is still not better than v3.6 (MAE
+  6.899 against 6.590, higher in 5 of 5); the oracle is (5.709). New: each nightly's `context-record` stores rr1.0 —
+  every quarterback's probability of starting 1–8 weeks out, v3.6's line beside the mixture's — in
+  `ops.horizon_record` (kept state, about 2 MB a season) and grades it on hg1.0 as 2026's weeks are played. Nothing on
+  a screen changes.
+
 ## 2026-10-09 — Wave I-T
 
 - **PO — the merge and what the devs left for each other.** `decisions.best_waiver_move` and the kicker branch of
