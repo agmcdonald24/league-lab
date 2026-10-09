@@ -1392,11 +1392,11 @@ def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free:
     if not weeks:
         return None
 
-    def covered(remove: Sequence[str]) -> tuple[list[list[Player]], list[float], set[str]]:
+    def covered(remove: Sequence[str], skip: str | None = None) -> tuple[list[list[Player]], list[float], set[str]]:
         pools, totals, used = [], [], set()
         for w in weeks:
             ps = board.pool_with(roster, w, [d for d in remove if not board.is_locked(d, w)])
-            fw = free.get(w, ())
+            fw = [q for q in free.get(w, ()) if q.id != skip] if skip else free.get(w, ())
             lu, ids = fill_lineup(ps, board.slots, fw)
             fills = [q for q in fw if q.id in set(ids)]
             pools.append([*ps, *fills])
@@ -1405,7 +1405,17 @@ def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free:
         return pools, totals, used
 
     base_pools, base_totals, used = covered(())
-    cands = {k: v for k, v in (free_agents or {}).items() if k not in used and board.owner(k) is None}
+    # IU-1: another search's pick priced here may be a free agent this frame already uses as a fill (the free kicker in
+    # a bye week): he is measured against the frame without him (the next free agent fills that spot) and the fill he
+    # gives up is charged to the move (``shift``), so his gain is what he adds over the frame — `covered_move`'s number
+    skip = str(only[0]) if only is not None and str(only[0]) in used else None
+    shift = [0.0] * len(weeks)
+    if skip is not None:
+        base_pools, skip_totals, _ = covered((), skip)
+        shift = [b - a for b, a in zip(base_totals, skip_totals, strict=True)]
+        base_totals = skip_totals
+    cands = {k: v for k, v in (free_agents or {}).items()
+             if (k not in used or k == skip) and board.owner(k) is None}
     if only is not None:
         cands = {k: v for k, v in cands.items() if k == str(only[0])}
     if not cands:
@@ -1417,7 +1427,7 @@ def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free:
         f = best_fill(board, weeks, pools, cands)
         if f is None:
             return
-        by = tuple(_r2(g - x) for g, x in zip(f.week_gains, loss, strict=True))
+        by = tuple(_r2(g - x - c) for g, x, c in zip(f.week_gains, loss, shift, strict=True))
         net = {"lineup_loss": _r2(sum(loss)), "season_value": None, "depth_lost": None, "cost": 0.0, "piece": None,
                "excess": 0.0}
         if drop is not None:
@@ -1429,7 +1439,7 @@ def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free:
                 vals.append(me.value if me is not None and me.playable and me.value_source != UNVALUED else None)
                 sits.append(me is not None and me.playable and drop not in set(lu.starter_ids))
                 n_at.append(sum(1 for st in lu.starts if st.player is not None and st.player.position == pos))
-                bf.append(next((float(q.value) for q in free.get(w, ()) if pos in q.positions), None))
+                bf.append(next((float(q.value) for q in free.get(w, ()) if pos in q.positions and q.id != skip), None))
             depth = _r2(depth_lost(vals, bf, sits, pos, n_at))
             season = None if prices is None or drop not in prices else _r2(float(prices[drop]))
             pieces = {"lineup_loss": max(0.0, net["lineup_loss"]), "season_value": season, "depth_lost": depth}
@@ -1448,7 +1458,7 @@ def basis_best_move(board: RosterBoard, roster: int, weeks: Sequence[int], free:
         if d is None:
             consider(base_pools, [0.0] * len(weeks), None)
         else:
-            pools, totals, _ = covered([d])
+            pools, totals, _ = covered([d], skip)
             consider(pools, [b - a for b, a in zip(base_totals, totals, strict=True)], d)
     elif roster_limit(board.slots) - board.active_count(roster) > 0:
         consider(base_pools, [0.0] * len(weeks), None)

@@ -1542,7 +1542,7 @@ def alternative_words(alt: dict, span: str, window: str) -> str:
     if alt.get("kind") == STAND_PAT:
         return f"no waiver claim improves your starting lineup {when}"
     g = alt["gain_week"] if window == "week" else alt["gain_window"]
-    how = "for an open spot" if alt.get("open_spot") else (f"({iu1_drop_words(alt)[2:]})"     # ---- IU-1: the netting
+    how = "for an open spot" if alt.get("open_spot") else (f"({iu1_drop_words(alt, '; ')[2:]})"  # ---- IU-1: netting
                                                           if alt.get("drop") else "")
     words = f"the {_claim_name(alt)} claim gives {g:+.1f} {when} {how}".strip()
     # ---- PO (Wave I-T): when the basis search picked another claim than Waivers' first one, say where that one went.
@@ -3028,9 +3028,11 @@ IU1_PIECE_WORDS = {"lineup_loss": "his starts", "season_value": "his season valu
                    "depth_lost": "his backup cover"}
 
 
-def iu1_drop_words(a: dict) -> str:
+def iu1_drop_words(a: dict, inside: str | None = None) -> str:
     """", drop Croskey-Merritt (netted: his season value above replacement, 5.0)" — what the move drops and what that
-    costs beyond the lineup points already in its gain; "" when it drops nobody or the drop costs nothing more."""
+    costs beyond the lineup points already in its gain; ", drop X" when the drop costs nothing more; "" when it drops
+    nobody. ``inside`` (e.g. "; ") puts the netting after that separator instead of in its own parentheses, for a
+    sentence that already wraps the drop in parentheses ("(drop X; netted: …)")."""
     d = (a.get("drop") or {}).get("player_name")
     if not d:
         return ""
@@ -3038,7 +3040,8 @@ def iu1_drop_words(a: dict) -> str:
     ex = float(dc.get("excess") or 0.0)
     if ex < 0.05 or not dc.get("piece"):
         return f", drop {d}"
-    return f", drop {d} (netted: {IU1_PIECE_WORDS.get(dc['piece'], dc['piece'])}, {float(dc['cost']):.1f})"
+    net = f"netted: {IU1_PIECE_WORDS.get(dc['piece'], dc['piece'])}, {float(dc['cost']):.1f}"
+    return f", drop {d}{inside}{net}" if inside else f", drop {d} ({net})"
 
 
 def it1_row_decision(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span: str, window: str, frame: dict,

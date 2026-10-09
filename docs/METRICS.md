@@ -5617,3 +5617,29 @@ scale him (by about 0.62, the played share × the when-played ratio) is the PO's
 * **One minus sign**: `it1_minus` on every sentence of the decision, the card and the Finder's headline.
 * Not graded: whether the basis's pickups are available (another team can add the player first) — said on the card.
 <!-- ---- end IT-1 -->
+<!-- ---- IU-1 -->
+### The Trade Finder searches on the basis; the basis waiver move nets its drop (ct1.3, IU-1, Wave I-U, 2026-10-09; `trades.partners(free=…)`, `trades.basis_best_move`, `decisions.it1_basis_alternative`)
+
+* **The search proposes on the basis** (`trades.partners(..., free=…)`, the API's `/api/trades/partners`): every entry
+  bar, loss and package gain the branch-and-bound reads is on the replacement frame — each roster-week's pool carries
+  the free agents `fill_lineup` puts in its empty starting slots (`trades._covered_pool`), and a package's gains are
+  each side's covered total after the trade (cuts included) against its covered total before. The bounds stay valid on
+  that frame (tests/test_iu1_trades.py: the bounded search's best 1-for-1 is the exhaustive one); they ignore the one
+  rule of `covered_pair` (a free agent never counted for both teams), which the decision applies to every row shown.
+  `search.search_basis` says which frame proposed ("replacement"; `LEAGUE_LAB_FINDER_SEARCH=roster` switches back to
+  the roster-only search for a comparison). IF-2's roster-only ladder (`rank_partners`, `row_story`) is no longer
+  computed: the rows' order is the decision's (`it1_rank`). IE-1's one-of-two is priced on the same frame.
+* **The rule that shipped it, committed before its numbers** (docs/handbacks/IU-1.md): the basis search is the default
+  only if, on Scrubs roster 2, the Test League roster 3 and the Dynasty roster 12 at the pinned moment, its
+  worth-proposing list is never shorter than the roster-only search's and every roster-only worth-proposing trade is
+  found or replaced by one with the same partner and more gain; cold and warm within 1.5× of main's.
+* **The basis waiver move nets its drop** (`waivers.choose_drops`' rule, the one the roster-only move's
+  `net_horizon_gain` uses): net = the move's gain on the frame − (the drop's cost − his lineup loss), the cost the most
+  of his lineup loss (on the frame), his season value above replacement (`price_by_player`) and his backup cover
+  (`waivers.depth_lost` on the frame's weeks); his starts after the window and a role scenario's upside are not read
+  here (unknown, as the sweep treats a missing piece). Up to three bench players are tried (fewest rest-of-season
+  points first) and the best net wins. The roster-only pick is netted the same way before the two are compared; when
+  the frame already uses that pick as a fill (a free kicker covering a bye), he is priced over the next free agent
+  (`covered_move`'s number) and his drop netted. The netting rides on the move (`drop_cost`) and in its sentence.
+* Not graded: a drop's starts after the window and its upside (the waiver sweep's other two pieces).
+<!-- ---- end IU-1 -->

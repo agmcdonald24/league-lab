@@ -1137,6 +1137,16 @@
     ],
     "covered_window": 2.73,
     "covered_week": 2.73,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 2.73,
+     "net_window": 2.73
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "words": "the Daniel Carlson claim gives +2.7 this week (drop Caleb Williams)",
@@ -1154,7 +1164,7 @@
       "position": "WR"
      },
      "gain_window": 12.23,
-     "covered_window": 0.0
+     "covered_window": -18.48
     }
    },
    "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Daniel Carlson, drop Caleb Williams: +2.7 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -1396,6 +1406,16 @@
     ],
     "covered_window": 2.73,
     "covered_week": 2.73,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 2.73,
+     "net_window": 2.73
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "words": "add Daniel Carlson, drop Caleb Williams: +2.7 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
@@ -1413,7 +1433,7 @@
       "position": "WR"
      },
      "gain_window": 12.23,
-     "covered_window": 0.0
+     "covered_window": -18.48
     }
    },
    "beyond": {

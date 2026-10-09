@@ -2,6 +2,14 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-09 — Wave I-U
+
+- **IU-1 — the Trade Finder searches on the basis; a waiver move says what it drops.** The partner search proposes and
+  bounds every package on the replacement frame the verdict judges it on (`trades.partners(free=…)`; the roster-only
+  ladder is no longer computed); the basis waiver move nets its drop the way the roster-only move does (season value,
+  backup cover, lineup loss) and its sentence names the drop and the netting; a Finder row's reason reads the league
+  screens' one note. ct1.2 → ct1.3. docs/handbacks/IU-1.md.
+
 ## 2026-10-09 — Wave I-T
 
 - **PO — the merge and what the devs left for each other.** `decisions.best_waiver_move` and the kicker branch of

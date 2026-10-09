@@ -1,0 +1,1886 @@
+{
+ "league_id": "9000000000000000001",
+ "source": "sleeper",
+ "roster_id": 3,
+ "partner": 1,
+ "partner_team": "Bench Mob",
+ "week": 4,
+ "weeks": [
+  4
+ ],
+ "span": "week 4",
+ "window": "week",
+ "window_label": "This week",
+ "window_why": "this week only: the lineup you set for Sunday",
+ "give": [
+  {
+   "sleeper_id": "BAL",
+   "gsis_id": null,
+   "player_name": "Baltimore Ravens",
+   "position": "DEF",
+   "team": "BAL",
+   "headshot_url": null,
+   "this_week": 12.22,
+   "cannot_play": null,
+   "market_price": 0,
+   "season_points": 138,
+   "roster_id": 3
+  },
+  {
+   "sleeper_id": "13279",
+   "gsis_id": "00-0041438",
+   "player_name": "Carnell Tate",
+   "position": "WR",
+   "team": "TEN",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+   "this_week": 9.74,
+   "cannot_play": null,
+   "market_price": 17,
+   "season_points": 190,
+   "roster_id": 3
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "10859",
+   "gsis_id": "00-0039065",
+   "player_name": "Sam LaPorta",
+   "position": "TE",
+   "team": "DET",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+   "this_week": 12.76,
+   "cannot_play": null,
+   "market_price": 27,
+   "season_points": 166,
+   "roster_id": 1
+  }
+ ],
+ "before": {
+  "mine": {
+   "this_week": 124.49,
+   "horizon": 124.49,
+   "bench": 66.92,
+   "by_week": [
+    124.49
+   ]
+  },
+  "theirs": {
+   "this_week": 119.38,
+   "horizon": 119.38,
+   "bench": 47.25,
+   "by_week": [
+    119.38
+   ]
+  }
+ },
+ "after": {
+  "mine": {
+   "this_week": 128.5,
+   "horizon": 128.5,
+   "bench": 65.94,
+   "by_week": [
+    128.5
+   ]
+  },
+  "theirs": {
+   "this_week": 123.68,
+   "horizon": 123.68,
+   "bench": 35.78,
+   "by_week": [
+    123.68
+   ]
+  }
+ },
+ "fit": {
+  "this_week": {
+   "mine": 4.01,
+   "theirs": 4.3
+  },
+  "window": {
+   "mine": 4.01,
+   "theirs": 4.3
+  },
+  "next_4": {
+   "mine": 4.01,
+   "theirs": 4.3
+  },
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.0** this week and **+4.0** over week 4; them **+4.3** and **+4.3**."
+ },
+ "interest": {
+  "score": 64,
+  "label": "Improves their lineup",
+  "their_gain": 4.3,
+  "you": 4.01,
+  "caption": "their starters over week 4, against realistic replacements",
+  "title": "Effect on their starters",
+  "need": "puts Skattebo at their FLEX in place of LaPorta and puts Baltimore Ravens at their DEF in place of Philadelphia Eagles"
+ },
+ "sanity": null,
+ "market": {
+  "give": 17,
+  "get": 27,
+  "season_points_give": 328,
+  "season_points_get": 166,
+  "unknown": [],
+  "replacement": {
+   "DEF": {
+    "season_points": 145,
+    "player_name": "Houston Texans"
+   },
+   "K": {
+    "season_points": 134,
+    "player_name": "Cameron Dicker"
+   },
+   "QB": {
+    "season_points": 243,
+    "player_name": "Drake Maye"
+   },
+   "RB": {
+    "season_points": 136,
+    "player_name": "Alvin Kamara"
+   },
+   "TE": {
+    "season_points": 140,
+    "player_name": "Cade Otton"
+   },
+   "WR": {
+    "season_points": 174,
+    "player_name": "Malik Washington"
+   }
+  },
+  "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **17**, you get **27**: about even.",
+  "players": [
+   {
+    "sleeper_id": "BAL",
+    "gsis_id": null,
+    "player_name": "Baltimore Ravens",
+    "position": "DEF",
+    "team": "BAL",
+    "headshot_url": null,
+    "this_week": 12.22,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 138,
+    "roster_id": 3,
+    "goes_to": "Bench Mob"
+   },
+   {
+    "sleeper_id": "13279",
+    "gsis_id": "00-0041438",
+    "player_name": "Carnell Tate",
+    "position": "WR",
+    "team": "TEN",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+    "this_week": 9.74,
+    "cannot_play": null,
+    "market_price": 17,
+    "season_points": 190,
+    "roster_id": 3,
+    "goes_to": "Bench Mob"
+   },
+   {
+    "sleeper_id": "10859",
+    "gsis_id": "00-0039065",
+    "player_name": "Sam LaPorta",
+    "position": "TE",
+    "team": "DET",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+    "this_week": 12.76,
+    "cannot_play": null,
+    "market_price": 27,
+    "season_points": 166,
+    "roster_id": 1,
+    "goes_to": "You"
+   }
+  ]
+ },
+ "verdict": "Helps your lineup +4.0 this week (+4.0 over week 4), them +4.3 (+4.3 over week 4); about even by season value: helps both lineups.",
+ "headline": "**You give Baltimore Ravens and [Carnell Tate](/player/00-0041438); you get [Sam LaPorta](/player/00-0039065).** Helps your lineup +4.0 this week (+4.0 over week 4), them +4.3 (+4.3 over week 4); about even by season value: helps both lineups.",
+ "ros": {
+  "give": 304,
+  "get": 155,
+  "window": "weeks 4–17",
+  "words": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 304, you get 155.",
+  "label": "Rest-of-season projected points",
+  "fairness": false
+ },
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    3,
+    6
+   ],
+   "theirs": [
+    6,
+    3
+   ],
+   "n": 10
+  },
+  "bench_value": {
+   "mine": [
+    1,
+    1
+   ],
+   "theirs": [
+    5,
+    7
+   ],
+   "n": 10
+  },
+  "words": "League rank, week 4: you 3rd → **6th** of 10, Bench Mob 6th → 3rd; depth: you 1st → **1st** of 10, Bench Mob 5th → 7th."
+ },
+ "size_words": "Roster size: they must cut [DJ Moore](/player/00-0034827) (WR, 129 season points; costs 0.0 over week 4) to stay at 15 players; they must cut [Alec Pierce](/player/00-0037664) (WR, 130 season points; costs 0.0 over week 4) to stay at 15 players.",
+ "sides": {
+  "mine": {
+   "roster_id": 3,
+   "team_name": "Fixture Falcons",
+   "gives": [
+    {
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 138,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "13279",
+     "gsis_id": "00-0041438",
+     "player_name": "Carnell Tate",
+     "position": "WR",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+     "this_week": 9.74,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 190,
+     "roster_id": 3
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "10859",
+     "gsis_id": "00-0039065",
+     "player_name": "Sam LaPorta",
+     "position": "TE",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+     "this_week": 12.76,
+     "cannot_play": null,
+     "market_price": 27,
+     "season_points": 166,
+     "roster_id": 1
+    }
+   ],
+   "weeks": [
+    4
+   ],
+   "before": {
+    "this_week": 124.49,
+    "horizon": 124.49,
+    "bench": 66.92,
+    "by_week": [
+     124.49
+    ]
+   },
+   "after": {
+    "this_week": 116.27,
+    "horizon": 116.27,
+    "bench": 65.94,
+    "by_week": [
+     116.27
+    ]
+   },
+   "gain_week": -8.22,
+   "gain_horizon": -8.22,
+   "cuts": [],
+   "limit": 15,
+   "size_before": 16,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 17,
+   "price_in": 27,
+   "points_out": 328,
+   "points_in": 166,
+   "starts": [
+    {
+     "sleeper_id": "10859",
+     "gsis_id": "00-0039065",
+     "player_name": "Sam LaPorta",
+     "position": "TE",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+     "this_week": 12.76,
+     "cannot_play": null,
+     "market_price": 27,
+     "season_points": 166,
+     "roster_id": 1
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+     "this_week": 8.76,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 128,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 138,
+     "roster_id": 3
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 1,
+   "team_name": "Bench Mob",
+   "gives": [
+    {
+     "sleeper_id": "10859",
+     "gsis_id": "00-0039065",
+     "player_name": "Sam LaPorta",
+     "position": "TE",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+     "this_week": 12.76,
+     "cannot_play": null,
+     "market_price": 27,
+     "season_points": 166,
+     "roster_id": 1
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 138,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "13279",
+     "gsis_id": "00-0041438",
+     "player_name": "Carnell Tate",
+     "position": "WR",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+     "this_week": 9.74,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 190,
+     "roster_id": 3
+    }
+   ],
+   "weeks": [
+    4
+   ],
+   "before": {
+    "this_week": 119.38,
+    "horizon": 119.38,
+    "bench": 47.25,
+    "by_week": [
+     119.38
+    ]
+   },
+   "after": {
+    "this_week": 123.68,
+    "horizon": 123.68,
+    "bench": 35.78,
+    "by_week": [
+     123.68
+    ]
+   },
+   "gain_week": 4.3,
+   "gain_horizon": 4.3,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "4983",
+      "gsis_id": "00-0034827",
+      "player_name": "DJ Moore",
+      "position": "WR",
+      "team": "BUF",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lsavpxtqoqu25emwcnvy",
+      "this_week": 9.51,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 129,
+      "roster_id": 1
+     },
+     "horizon_loss": 0.0,
+     "season_points": 129
+    },
+    {
+     "player": {
+      "sleeper_id": "8142",
+      "gsis_id": "00-0037664",
+      "player_name": "Alec Pierce",
+      "position": "WR",
+      "team": "IND",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qcg9t51wgp3hicavmkmy",
+      "this_week": null,
+      "cannot_play": "NFL injured reserve",
+      "market_price": 0,
+      "season_points": 130,
+      "roster_id": 1
+     },
+     "horizon_loss": 0.0,
+     "season_points": 130
+    }
+   ],
+   "limit": 15,
+   "size_before": 16,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 27,
+   "price_in": 17,
+   "points_out": 166,
+   "points_in": 328,
+   "starts": [
+    {
+     "sleeper_id": "12481",
+     "gsis_id": "00-0040715",
+     "player_name": "Cam Skattebo",
+     "position": "RB",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+     "this_week": 12.74,
+     "cannot_play": null,
+     "market_price": 64,
+     "season_points": 200,
+     "roster_id": 1
+    },
+    {
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 138,
+     "roster_id": 3
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "10859",
+     "gsis_id": "00-0039065",
+     "player_name": "Sam LaPorta",
+     "position": "TE",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+     "this_week": 12.76,
+     "cannot_play": null,
+     "market_price": 27,
+     "season_points": 166,
+     "roster_id": 1
+    },
+    {
+     "sleeper_id": "PHI",
+     "gsis_id": null,
+     "player_name": "Philadelphia Eagles",
+     "position": "DEF",
+     "team": "PHI",
+     "headshot_url": null,
+     "this_week": 7.9,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 134,
+     "roster_id": 1
+    }
+   ]
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Jared Goff",
+     "gsis_id": "00-0033106",
+     "value": 20.16,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB1",
+     "player_name": "D'Andre Swift",
+     "gsis_id": "00-0036275",
+     "value": 15.2,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Bucky Irving",
+     "gsis_id": "00-0039361",
+     "value": 14.16,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Chris Olave",
+     "gsis_id": "00-0037239",
+     "value": 20.23,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Terry McLaurin",
+     "gsis_id": "00-0035659",
+     "value": 11.8,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "TE",
+     "player_name": "Sam LaPorta (new)",
+     "gsis_id": "00-0039065",
+     "value": 12.76,
+     "change": 12.76,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Jeremiyah Love",
+     "gsis_id": "00-0041027",
+     "value": 14.08,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "K",
+     "player_name": "Chase McLaughlin",
+     "gsis_id": "00-0035358",
+     "value": 7.88,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Chicago Bears (free agent for the week)",
+     "gsis_id": null,
+     "value": 12.23,
+     "change": 12.23,
+     "no_projection": false,
+     "status": "in",
+     "fill": true
+    }
+   ],
+   "notes": [
+    "Sam LaPorta (from the trade) starts at TE in place of Isaiah Likely (to the bench).",
+    "Chicago Bears (a free agent for the week) starts at DEF in place of Baltimore Ravens (traded)."
+   ],
+   "closest_call": "Terry McLaurin at WR2, 2.01 ahead of the next option",
+   "out": [
+    {
+     "slot": "TE",
+     "player_name": "Isaiah Likely",
+     "gsis_id": "00-0037838",
+     "value": 8.76,
+     "change": -8.76,
+     "why": "to the bench"
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Baltimore Ravens",
+     "gsis_id": null,
+     "value": 12.22,
+     "change": -12.22,
+     "why": "traded"
+    }
+   ],
+   "reshuffled": [],
+   "total": {
+    "before": 124.49,
+    "after": 128.5,
+    "change": 4.01
+   }
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Kirk Cousins",
+     "gsis_id": "00-0029604",
+     "value": 15.72,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Derrick Henry",
+     "gsis_id": "00-0032764",
+     "value": 17.25,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Kyren Williams",
+     "gsis_id": "00-0037840",
+     "value": 14.01,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR1",
+     "player_name": "CeeDee Lamb",
+     "gsis_id": "00-0036358",
+     "value": 16.35,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 13.93,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "TE",
+     "player_name": "Brock Bowers",
+     "gsis_id": "00-0039338",
+     "value": 12.9,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Cam Skattebo",
+     "gsis_id": "00-0040715",
+     "value": 12.74,
+     "change": 12.74,
+     "no_projection": false,
+     "status": "in",
+     "fill": false
+    },
+    {
+     "slot": "K",
+     "player_name": "Brandon Aubrey",
+     "gsis_id": "00-0037692",
+     "value": 8.56,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Baltimore Ravens (new)",
+     "gsis_id": null,
+     "value": 12.22,
+     "change": 12.22,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
+    }
+   ],
+   "notes": [
+    "Cam Skattebo (from the bench) starts at FLEX in place of Sam LaPorta (traded).",
+    "Baltimore Ravens (from the trade) starts at DEF in place of Philadelphia Eagles (to the bench)."
+   ],
+   "closest_call": "Cam Skattebo at FLEX, 3.00 ahead of the next option",
+   "out": [
+    {
+     "slot": "FLEX",
+     "player_name": "Sam LaPorta",
+     "gsis_id": "00-0039065",
+     "value": 12.76,
+     "change": -12.76,
+     "why": "traded"
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Philadelphia Eagles",
+     "gsis_id": null,
+     "value": 7.9,
+     "change": -7.9,
+     "why": "to the bench"
+    }
+   ],
+   "reshuffled": [],
+   "total": {
+    "before": 119.38,
+    "after": 123.68,
+    "change": 4.3
+   }
+  }
+ },
+ "fill_players": {},
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)",
+ "starters_in": [
+  {
+   "player": {
+    "sleeper_id": "10859",
+    "gsis_id": "00-0039065",
+    "player_name": "Sam LaPorta",
+    "position": "TE",
+    "team": "DET",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+    "this_week": 12.76,
+    "cannot_play": null,
+    "market_price": 27,
+    "season_points": 166,
+    "roster_id": 1
+   },
+   "slot": "TE",
+   "value": 12.76,
+   "how": "trade"
+  },
+  {
+   "player": {
+    "sleeper_id": "CHI",
+    "gsis_id": null,
+    "player_name": "Chicago Bears",
+    "position": "DEF"
+   },
+   "slot": "DEF",
+   "value": 12.23,
+   "how": "free_agent"
+  }
+ ],
+ "starters_out": [
+  {
+   "player": {
+    "sleeper_id": "8131",
+    "gsis_id": "00-0037838",
+    "player_name": "Isaiah Likely",
+    "position": "TE",
+    "team": "NYG",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+    "this_week": 8.76,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 128,
+    "roster_id": 3
+   },
+   "slot": "TE",
+   "value": 8.76,
+   "why": "to the bench"
+  },
+  {
+   "player": {
+    "sleeper_id": "BAL",
+    "gsis_id": null,
+    "player_name": "Baltimore Ravens",
+    "position": "DEF",
+    "team": "BAL",
+    "headshot_url": null,
+    "this_week": 12.22,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 138,
+    "roster_id": 3
+   },
+   "slot": "DEF",
+   "value": 12.22,
+   "why": "traded"
+  }
+ ],
+ "cut": [],
+ "effect_words": "Your starting lineup: about 4.0 more points this week.",
+ "lineup_words": "Sam LaPorta (from the trade) starts at TE in place of Isaiah Likely (to the bench); Chicago Bears (a free agent for the week) starts at DEF in place of Baltimore Ravens (traded).",
+ "backup_words": "Backup coverage: you lose Carnell Tate, a backup WR: 2 WR left on your bench who can play in week 4.",
+ "their_change": {
+  "gain_week": 4.3,
+  "gain_window": 4.3,
+  "starters_in": [
+   {
+    "player": {
+     "sleeper_id": "12481",
+     "gsis_id": "00-0040715",
+     "player_name": "Cam Skattebo",
+     "position": "RB",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+     "this_week": 12.74,
+     "cannot_play": null,
+     "market_price": 64,
+     "season_points": 200,
+     "roster_id": 1
+    },
+    "slot": "FLEX",
+    "value": 12.74,
+    "how": "bench"
+   },
+   {
+    "player": {
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 138,
+     "roster_id": 3
+    },
+    "slot": "DEF",
+    "value": 12.22,
+    "how": "trade"
+   }
+  ],
+  "starters_out": [
+   {
+    "player": {
+     "sleeper_id": "10859",
+     "gsis_id": "00-0039065",
+     "player_name": "Sam LaPorta",
+     "position": "TE",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+     "this_week": 12.76,
+     "cannot_play": null,
+     "market_price": 27,
+     "season_points": 166,
+     "roster_id": 1
+    },
+    "slot": "FLEX",
+    "value": 12.76,
+    "why": "traded"
+   },
+   {
+    "player": {
+     "sleeper_id": "PHI",
+     "gsis_id": null,
+     "player_name": "Philadelphia Eagles",
+     "position": "DEF",
+     "team": "PHI",
+     "headshot_url": null,
+     "this_week": 7.9,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 134,
+     "roster_id": 1
+    },
+    "slot": "DEF",
+    "value": 7.9,
+    "why": "bench"
+   }
+  ],
+  "effect_words": "Bench Mob's starting lineup: about 4.3 more points this week.",
+  "lineup_words": "Cam Skattebo (from the bench) starts at FLEX in place of Sam LaPorta (traded); Baltimore Ravens (from the trade) starts at DEF in place of Philadelphia Eagles (to the bench)."
+ },
+ "window_words": "this week",
+ "hold_words": "+4.0 this week, 1.5 more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+ "hold": {
+  "hold": null,
+  "waiver": "+4.0 this week, 1.5 more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+  "waiver_gain": 2.53
+ },
+ "how": {
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.0** this week and **+4.0** over week 4; them **+4.3** and **+4.3**.",
+  "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **17**, you get **27**: about even.",
+  "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 304, you get 155.",
+  "size": "Roster size: they must cut [DJ Moore](/player/00-0034827) (WR, 129 season points; costs 0.0 over week 4) to stay at 15 players; they must cut [Alec Pierce](/player/00-0037664) (WR, 130 season points; costs 0.0 over week 4) to stay at 15 players.",
+  "ranks": "League rank, week 4: you 3rd → **6th** of 10, Bench Mob 6th → 3rd; depth: you 1st → **1st** of 10, Bench Mob 5th → 7th.",
+  "season_value": "Season value above replacement: you give 17, you get 27 (about even). You give 2 players for 1: 1 roster spot freed."
+ },
+ "alternative": {
+  "kind": "waiver",
+  "player": {
+   "sleeper_id": "5095",
+   "gsis_id": "00-0034161",
+   "player_name": "Daniel Carlson",
+   "position": "K"
+  },
+  "drop": {
+   "sleeper_id": "6650",
+   "gsis_id": "00-0035358",
+   "player_name": "Chase McLaughlin",
+   "position": "K"
+  },
+  "open_spot": false,
+  "gain_week": 2.53,
+  "gain_window": 2.53,
+  "by_week": [
+   2.53
+  ],
+  "weeks": [
+   4
+  ],
+  "span": "week 4",
+  "source": "fa_pool fill",
+  "note": null,
+  "words": "add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "covered_by_week": [
+   2.53
+  ],
+  "covered_window": 2.53,
+  "covered_week": 2.53,
+  "availability": "claim",
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+ },
+ "beyond_alternative": 1.48,
+ "beats_alternative": true,
+ "alternative_words": "+4.0 this week, 1.5 more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+ "other_objective": null,
+ "strip": {
+  "weeks": [
+   4
+  ],
+  "mine": [
+   4.01
+  ],
+  "theirs": [
+   4.3
+  ]
+ },
+ "story": {
+  "this_week": {
+   "week": 4,
+   "change": 4.01,
+   "kind": "gain"
+  },
+  "window": {
+   "change": 4.01,
+   "kind": "gain"
+  },
+  "by_week": [
+   {
+    "week": 4,
+    "change": 4.01
+   }
+  ],
+  "words": "Your lineup gains 4.0 this week."
+ },
+ "values": {
+  "projected_points": {
+   "label": "Projected points",
+   "words": "One player's forecast for one week, in this league's scoring (the lineup tables)."
+  },
+  "starter_points": {
+   "label": "Starter points",
+   "mine": 4.01,
+   "theirs": 4.3,
+   "this_week": {
+    "mine": 4.01,
+    "theirs": 4.3
+   },
+   "words": "Your starting lineup: about 4.0 more points this week."
+  },
+  "depth": {
+   "label": "Backup coverage",
+   "mine": {
+    "before": 66.92,
+    "after": 65.94
+   },
+   "theirs": {
+    "before": 47.25,
+    "after": 35.78
+   },
+   "words": "Backup coverage: you lose Carnell Tate, a backup WR: 2 WR left on your bench who can play in week 4."
+  },
+  "season_value": {
+   "label": "Season value above replacement",
+   "give": 17,
+   "get": 27,
+   "unknown": [],
+   "fairness": true,
+   "words": "Season value above replacement: you give 17, you get 27 (about even). You give 2 players for 1: 1 roster spot freed."
+  },
+  "ros_points": {
+   "label": "Rest-of-season projected points",
+   "give": 304,
+   "get": 155,
+   "window": "weeks 4–17",
+   "fairness": false,
+   "words": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 304, you get 155."
+  }
+ },
+ "card": {
+  "give": [
+   {
+    "sleeper_id": "BAL",
+    "gsis_id": null,
+    "player_name": "Baltimore Ravens",
+    "position": "DEF",
+    "team": "BAL",
+    "headshot_url": null,
+    "this_week": 12.22,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 138,
+    "roster_id": 3
+   },
+   {
+    "sleeper_id": "13279",
+    "gsis_id": "00-0041438",
+    "player_name": "Carnell Tate",
+    "position": "WR",
+    "team": "TEN",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+    "this_week": 9.74,
+    "cannot_play": null,
+    "market_price": 17,
+    "season_points": 190,
+    "roster_id": 3
+   }
+  ],
+  "get": [
+   {
+    "sleeper_id": "10859",
+    "gsis_id": "00-0039065",
+    "player_name": "Sam LaPorta",
+    "position": "TE",
+    "team": "DET",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+    "this_week": 12.76,
+    "cannot_play": null,
+    "market_price": 27,
+    "season_points": 166,
+    "roster_id": 1
+   }
+  ],
+  "partner": 1,
+  "drops": {
+   "mine": [],
+   "theirs": [
+    {
+     "player": {
+      "sleeper_id": "4983",
+      "gsis_id": "00-0034827",
+      "player_name": "DJ Moore",
+      "position": "WR",
+      "team": "BUF",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lsavpxtqoqu25emwcnvy",
+      "this_week": 9.51,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 129,
+      "roster_id": 1
+     },
+     "words": "They must cut DJ Moore."
+    },
+    {
+     "player": {
+      "sleeper_id": "8142",
+      "gsis_id": "00-0037664",
+      "player_name": "Alec Pierce",
+      "position": "WR",
+      "team": "IND",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qcg9t51wgp3hicavmkmy",
+      "this_week": null,
+      "cannot_play": "NFL injured reserve",
+      "market_price": 0,
+      "season_points": 130,
+      "roster_id": 1
+     },
+     "words": "They must cut Alec Pierce."
+    }
+   ]
+  },
+  "your_effect": {
+   "this_week": 4.01,
+   "window": 4.01,
+   "by_week": [
+    4.01
+   ],
+   "raw_window": -8.22,
+   "words": "Your starters: +4.0 this week (−8.2 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+  },
+  "their_effect": {
+   "this_week": 4.3,
+   "window": 4.3,
+   "by_week": [
+    4.3
+   ],
+   "raw_window": 4.3,
+   "words": "Bench Mob's starters: +4.3 this week."
+  },
+  "depth_cost": {
+   "mine": "You lose Carnell Tate, a backup WR: 2 WR left on your bench who can play in week 4. You free 1 roster spot.",
+   "theirs": "they lose DJ Moore, a backup WR: 2 WR left on their bench who can play in week 4; they lose Alec Pierce, a WR who cannot play in week 4 (on injured reserve): 2 WR left on their bench who can play in week 4",
+   "roster_spots": -1,
+   "season_value": {
+    "give": 17,
+    "get": 27
+   },
+   "horizon": null
+  },
+  "waiver_alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "5095",
+     "gsis_id": "00-0034161",
+     "player_name": "Daniel Carlson",
+     "position": "K"
+    },
+    "drop": {
+     "sleeper_id": "6650",
+     "gsis_id": "00-0035358",
+     "player_name": "Chase McLaughlin",
+     "position": "K"
+    },
+    "open_spot": false,
+    "gain_week": 2.53,
+    "gain_window": 2.53,
+    "by_week": [
+     2.53
+    ],
+    "weeks": [
+     4
+    ],
+    "span": "week 4",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Daniel Carlson claim gives +2.5 this week (drop Chase McLaughlin)",
+    "covered_by_week": [
+     2.53
+    ],
+    "covered_window": 2.53,
+    "covered_week": 2.53,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "CHI",
+     "gsis_id": null,
+     "player_name": "Chicago Bears",
+     "position": "DEF"
+    },
+    "drop": {
+     "sleeper_id": "PHI",
+     "gsis_id": null,
+     "player_name": "Philadelphia Eagles",
+     "position": "DEF"
+    },
+    "open_spot": false,
+    "gain_week": 4.33,
+    "gain_window": 4.33,
+    "by_week": [
+     4.33
+    ],
+    "weeks": [
+     4
+    ],
+    "span": "week 4",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Chicago Bears defense claim gives +4.3 this week (drop Philadelphia Eagles)",
+    "covered_by_week": [
+     4.33
+    ],
+    "covered_window": 4.33,
+    "covered_week": 4.33,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 1.04,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 1.04,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 4.33,
+     "net_window": 4.33
+    }
+   },
+   "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Chicago Bears defense, drop Philadelphia Eagles: +4.3 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+  },
+  "beyond": {
+   "mine": 1.48,
+   "theirs": -0.03,
+   "margin": 1.0
+  },
+  "why_consider": [
+   "Their starters gain +4.3 this week.",
+   "Baltimore Ravens starts for them in week 4."
+  ],
+  "why_refuse": [
+   "Their best waiver move (Chicago Bears defense, +4.3) does about as much or more for them this week.",
+   "They must cut DJ Moore to make room.",
+   "They must cut Alec Pierce to make room.",
+   "They lose DJ Moore, a backup WR: 2 WR left on their bench who can play in week 4; they lose Alec Pierce, a WR who cannot play in week 4 (on injured reserve): 2 WR left on their bench who can play in week 4.",
+   "Our numbers only: no market price for Baltimore Ravens, Carnell Tate, Sam LaPorta: this is how the rosters fit, not what the players would fetch."
+  ],
+  "plausibility": {
+   "key": "roster_fit",
+   "label": "A roster-fit idea",
+   "reasons": [
+    "no market price for Baltimore Ravens, Carnell Tate, Sam LaPorta: this is how the rosters fit, not what the players would fetch"
+   ]
+  },
+  "guardrails": [],
+  "legal": {
+   "ok": true,
+   "notes": [
+    "You would have nobody for DEF in week 4: counted with the best free agent there, not as an empty slot.",
+    "Bench Mob must cut DJ Moore to make room.",
+    "Bench Mob must cut Alec Pierce to make room."
+   ],
+   "checks": [
+    "ownership (trades.clean_package)",
+    "roster limits and required cuts (trades._after)",
+    "locked players (RosterBoard.is_locked)",
+    "position requirements (lineup.solve)",
+    "trade deadline (league settings)"
+   ]
+  },
+  "credible": false,
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "words": "Not worth proposing: Bench Mob's starters end 0.0 behind their own best move this week.",
+   "plausibility": "A roster-fit idea"
+  }
+ },
+ "decision": {
+  "basis": "replacement",
+  "basis_label": "Against realistic replacements",
+  "basis_words": "Every number here fills an empty starting slot (a bye, a cut, a player traded away) with the best free agent who can play it that week, for both teams and never the same free agent for both, and compares the trade with each team's best waiver move.",
+  "weeks": [
+   4
+  ],
+  "span": "week 4",
+  "window": "week",
+  "this_week": 4,
+  "mine": {
+   "before": {
+    "this_week": 124.49,
+    "window": 124.49,
+    "by_week": [
+     124.49
+    ]
+   },
+   "after": {
+    "this_week": 128.5,
+    "window": 128.5,
+    "by_week": [
+     128.5
+    ]
+   },
+   "gain_week": 4.01,
+   "gain_window": 4.01,
+   "by_week": [
+    4.01
+   ],
+   "cuts": []
+  },
+  "theirs": {
+   "before": {
+    "this_week": 119.38,
+    "window": 119.38,
+    "by_week": [
+     119.38
+    ]
+   },
+   "after": {
+    "this_week": 123.68,
+    "window": 123.68,
+    "by_week": [
+     123.68
+    ]
+   },
+   "gain_week": 4.3,
+   "gain_window": 4.3,
+   "by_week": [
+    4.3
+   ],
+   "cuts": [
+    {
+     "sleeper_id": "4983",
+     "gsis_id": "00-0034827",
+     "player_name": "DJ Moore",
+     "position": "WR",
+     "team": "BUF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lsavpxtqoqu25emwcnvy",
+     "this_week": 9.51,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 129,
+     "roster_id": 1
+    },
+    {
+     "sleeper_id": "8142",
+     "gsis_id": "00-0037664",
+     "player_name": "Alec Pierce",
+     "position": "WR",
+     "team": "IND",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qcg9t51wgp3hicavmkmy",
+     "this_week": null,
+     "cannot_play": "NFL injured reserve",
+     "market_price": 0,
+     "season_points": 130,
+     "roster_id": 1
+    }
+   ]
+  },
+  "dial": {
+   "score": 64,
+   "label": "Improves their lineup",
+   "their_gain": 4.3,
+   "you": 4.01,
+   "caption": "their starters over week 4, against realistic replacements",
+   "title": "Effect on their starters",
+   "need": "puts Skattebo at their FLEX in place of LaPorta and puts Baltimore Ravens at their DEF in place of Philadelphia Eagles"
+  },
+  "verdict": "Helps your lineup +4.0 this week (+4.0 over week 4), them +4.3 (+4.3 over week 4); about even by season value: helps both lineups.",
+  "headline": "**You give Baltimore Ravens and [Carnell Tate](/player/00-0041438); you get [Sam LaPorta](/player/00-0039065).** Helps your lineup +4.0 this week (+4.0 over week 4), them +4.3 (+4.3 over week 4); about even by season value: helps both lineups.",
+  "effect_words": "Your starting lineup: about 4.0 more points this week.",
+  "their_effect_words": "Bench Mob's starting lineup: about 4.3 more points this week.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.0** this week and **+4.0** over week 4; them **+4.3** and **+4.3**.",
+  "strip": {
+   "weeks": [
+    4
+   ],
+   "mine": [
+    4.01
+   ],
+   "theirs": [
+    4.3
+   ]
+  },
+  "story": {
+   "this_week": {
+    "week": 4,
+    "change": 4.01,
+    "kind": "gain"
+   },
+   "window": {
+    "change": 4.01,
+    "kind": "gain"
+   },
+   "by_week": [
+    {
+     "week": 4,
+     "change": 4.01
+    }
+   ],
+   "words": "Your lineup gains 4.0 this week."
+  },
+  "alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "5095",
+     "gsis_id": "00-0034161",
+     "player_name": "Daniel Carlson",
+     "position": "K"
+    },
+    "drop": {
+     "sleeper_id": "6650",
+     "gsis_id": "00-0035358",
+     "player_name": "Chase McLaughlin",
+     "position": "K"
+    },
+    "open_spot": false,
+    "gain_week": 2.53,
+    "gain_window": 2.53,
+    "by_week": [
+     2.53
+    ],
+    "weeks": [
+     4
+    ],
+    "span": "week 4",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     2.53
+    ],
+    "covered_window": 2.53,
+    "covered_week": 2.53,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "CHI",
+     "gsis_id": null,
+     "player_name": "Chicago Bears",
+     "position": "DEF"
+    },
+    "drop": {
+     "sleeper_id": "PHI",
+     "gsis_id": null,
+     "player_name": "Philadelphia Eagles",
+     "position": "DEF"
+    },
+    "open_spot": false,
+    "gain_week": 4.33,
+    "gain_window": 4.33,
+    "by_week": [
+     4.33
+    ],
+    "weeks": [
+     4
+    ],
+    "span": "week 4",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Chicago Bears defense, drop Philadelphia Eagles: +4.3 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     4.33
+    ],
+    "covered_window": 4.33,
+    "covered_week": 4.33,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 1.04,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 1.04,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 4.33,
+     "net_window": 4.33
+    }
+   },
+   "beyond": {
+    "mine": 1.48,
+    "theirs": -0.03
+   },
+   "beats": true,
+   "words": "+4.0 this week, 1.5 more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "other_objective": null
+  },
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "words": "Not worth proposing: Bench Mob's starters end 0.0 behind their own best move this week.",
+   "plausibility": "A roster-fit idea"
+  },
+  "changes": {
+   "mine": [
+    {
+     "slot": "TE",
+     "slot_type": "TE",
+     "in": "10859",
+     "out": "8131",
+     "in_from": null,
+     "out_to": null,
+     "order": 6,
+     "slot_word": "TE",
+     "in_how": "trade",
+     "out_why": "bench",
+     "in_player": {
+      "sleeper_id": "10859",
+      "gsis_id": "00-0039065",
+      "player_name": "Sam LaPorta",
+      "position": "TE",
+      "team": "DET",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+      "this_week": 12.76,
+      "cannot_play": null,
+      "market_price": 27,
+      "season_points": 166,
+      "roster_id": 1
+     },
+     "out_player": {
+      "sleeper_id": "8131",
+      "gsis_id": "00-0037838",
+      "player_name": "Isaiah Likely",
+      "position": "TE",
+      "team": "NYG",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+      "this_week": 8.76,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 128,
+      "roster_id": 3
+     },
+     "in_value": 12.76,
+     "out_value": 8.76,
+     "words": "Sam LaPorta (from the trade) starts at TE in place of Isaiah Likely (to the bench)"
+    },
+    {
+     "slot": "DEF",
+     "slot_type": "DEF",
+     "in": "CHI",
+     "out": "BAL",
+     "in_from": null,
+     "out_to": null,
+     "order": 9,
+     "slot_word": "DEF",
+     "in_how": "free agent",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "CHI",
+      "gsis_id": null,
+      "player_name": "Chicago Bears",
+      "position": "DEF"
+     },
+     "out_player": {
+      "sleeper_id": "BAL",
+      "gsis_id": null,
+      "player_name": "Baltimore Ravens",
+      "position": "DEF",
+      "team": "BAL",
+      "headshot_url": null,
+      "this_week": 12.22,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 138,
+      "roster_id": 3
+     },
+     "in_value": 12.23,
+     "out_value": 12.22,
+     "words": "Chicago Bears (a free agent for the week) starts at DEF in place of Baltimore Ravens (traded)"
+    }
+   ],
+   "theirs": [
+    {
+     "slot": "FLEX",
+     "slot_type": "FLEX",
+     "in": "12481",
+     "out": "10859",
+     "in_from": null,
+     "out_to": null,
+     "order": 7,
+     "slot_word": "FLEX",
+     "in_how": "bench",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "12481",
+      "gsis_id": "00-0040715",
+      "player_name": "Cam Skattebo",
+      "position": "RB",
+      "team": "NYG",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hlggiqdfvj1f4kntkafr",
+      "this_week": 12.74,
+      "cannot_play": null,
+      "market_price": 64,
+      "season_points": 200,
+      "roster_id": 1
+     },
+     "out_player": {
+      "sleeper_id": "10859",
+      "gsis_id": "00-0039065",
+      "player_name": "Sam LaPorta",
+      "position": "TE",
+      "team": "DET",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+      "this_week": 12.76,
+      "cannot_play": null,
+      "market_price": 27,
+      "season_points": 166,
+      "roster_id": 1
+     },
+     "in_value": 12.74,
+     "out_value": 12.76,
+     "words": "Cam Skattebo (from the bench) starts at FLEX in place of Sam LaPorta (traded)"
+    },
+    {
+     "slot": "DEF",
+     "slot_type": "DEF",
+     "in": "BAL",
+     "out": "PHI",
+     "in_from": null,
+     "out_to": null,
+     "order": 9,
+     "slot_word": "DEF",
+     "in_how": "trade",
+     "out_why": "bench",
+     "in_player": {
+      "sleeper_id": "BAL",
+      "gsis_id": null,
+      "player_name": "Baltimore Ravens",
+      "position": "DEF",
+      "team": "BAL",
+      "headshot_url": null,
+      "this_week": 12.22,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 138,
+      "roster_id": 3
+     },
+     "out_player": {
+      "sleeper_id": "PHI",
+      "gsis_id": null,
+      "player_name": "Philadelphia Eagles",
+      "position": "DEF",
+      "team": "PHI",
+      "headshot_url": null,
+      "this_week": 7.9,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 134,
+      "roster_id": 1
+     },
+     "in_value": 12.22,
+     "out_value": 7.9,
+     "words": "Baltimore Ravens (from the trade) starts at DEF in place of Philadelphia Eagles (to the bench)"
+    }
+   ],
+   "words": {
+    "mine": [
+     "Sam LaPorta (from the trade) starts at TE in place of Isaiah Likely (to the bench)",
+     "Chicago Bears (a free agent for the week) starts at DEF in place of Baltimore Ravens (traded)"
+    ],
+    "theirs": [
+     "Cam Skattebo (from the bench) starts at FLEX in place of Sam LaPorta (traded)",
+     "Baltimore Ravens (from the trade) starts at DEF in place of Philadelphia Eagles (to the bench)"
+    ]
+   }
+  },
+  "depth": {
+   "mine": {
+    "words": "you lose Carnell Tate, a backup WR: 2 WR left on your bench who can play in week 4",
+    "lost": [
+     {
+      "player": {
+       "sleeper_id": "13279",
+       "gsis_id": "00-0041438",
+       "player_name": "Carnell Tate",
+       "position": "WR",
+       "team": "TEN",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+       "this_week": 9.74,
+       "cannot_play": null,
+       "market_price": 17,
+       "season_points": 190,
+       "roster_id": 3
+      },
+      "position": "WR",
+      "usable": [
+       "Ladd McConkey",
+       "Rome Odunze"
+      ],
+      "cannot_play": [],
+      "words": "you lose Carnell Tate, a backup WR: 2 WR left on your bench who can play in week 4"
+     }
+    ],
+    "joins": []
+   },
+   "theirs": {
+    "words": "they lose DJ Moore, a backup WR: 2 WR left on their bench who can play in week 4; they lose Alec Pierce, a WR who cannot play in week 4 (on injured reserve): 2 WR left on their bench who can play in week 4; Tate joins their bench as a backup WR",
+    "lost": [
+     {
+      "player": {
+       "sleeper_id": "4983",
+       "gsis_id": "00-0034827",
+       "player_name": "DJ Moore",
+       "position": "WR",
+       "team": "BUF",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lsavpxtqoqu25emwcnvy",
+       "this_week": 9.51,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 129,
+       "roster_id": 1
+      },
+      "position": "WR",
+      "usable": [
+       "Carnell Tate",
+       "Tre Tucker"
+      ],
+      "cannot_play": [],
+      "words": "they lose DJ Moore, a backup WR: 2 WR left on their bench who can play in week 4"
+     },
+     {
+      "player": {
+       "sleeper_id": "8142",
+       "gsis_id": "00-0037664",
+       "player_name": "Alec Pierce",
+       "position": "WR",
+       "team": "IND",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qcg9t51wgp3hicavmkmy",
+       "this_week": null,
+       "cannot_play": "NFL injured reserve",
+       "market_price": 0,
+       "season_points": 130,
+       "roster_id": 1
+      },
+      "position": "WR",
+      "usable": [
+       "Carnell Tate",
+       "Tre Tucker"
+      ],
+      "cannot_play": [],
+      "words": "they lose Alec Pierce, a WR who cannot play in week 4 (on injured reserve): 2 WR left on their bench who can play in week 4"
+     }
+    ],
+    "joins": [
+     "Carnell Tate"
+    ]
+   }
+  },
+  "fills": {
+   "mine": {
+    "rows": [
+     {
+      "week": 4,
+      "state": "after",
+      "player": {
+       "sleeper_id": "CHI",
+       "gsis_id": null,
+       "player_name": "Chicago Bears",
+       "position": "DEF"
+      },
+      "value": 12.23
+     }
+    ],
+    "words": "Assumed pickups for your empty slots: with it, Chicago Bears (DEF, week 4). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   },
+   "theirs": {
+    "rows": [],
+    "words": null
+   }
+  },
+  "unfilled": {
+   "label": "If empty slots were left empty",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −8.2 this week; Bench Mob's +4.3. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "mine": {
+    "gain_week": -8.22,
+    "gain_window": -8.22,
+    "by_week": [
+     -8.22
+    ],
+    "before": {
+     "this_week": 124.49,
+     "window": 124.49
+    },
+    "after": {
+     "this_week": 116.27,
+     "window": 116.27
+    }
+   },
+   "theirs": {
+    "gain_week": 4.3,
+    "gain_window": 4.3,
+    "by_week": [
+     4.3
+    ],
+    "before": {
+     "this_week": 119.38,
+     "window": 119.38
+    },
+    "after": {
+     "this_week": 123.68,
+     "window": 123.68
+    }
+   }
+  },
+  "out_indefinitely": null
+ },
+ "provenance": {
+  "model_version": "v3.0",
+  "kd_model_version": "kd1.0",
+  "published_at": "2026-10-05T12:21:31.576222+00:00",
+  "horizon": {
+   "first": 4,
+   "last": 4,
+   "market_week": 4,
+   "words": "week 4"
+  },
+  "checks": [
+   {
+    "span": "next",
+    "position": "DEF",
+    "status": "graded_weak",
+    "mae": 4.32,
+    "order": 0.257,
+    "ref": "docs/METRICS.md § Kickers and defenses beyond next week (IQ-4)",
+    "words": "Defenses next week: graded, weak (order 0.26)"
+   },
+   {
+    "span": "next",
+    "position": "WR",
+    "status": "graded",
+    "mae": 4.44,
+    "order": 0.618,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Receivers next week: graded (order 0.62)"
+   },
+   {
+    "span": "next",
+    "position": "TE",
+    "status": "graded",
+    "mae": 3.25,
+    "order": 0.599,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Tight ends next week: graded (order 0.60)"
+   },
+   {
+    "span": "trade_gap",
+    "position": null,
+    "status": "not_graded",
+    "mae": null,
+    "order": null,
+    "ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+    "words": "The trade's range: not graded"
+   }
+  ],
+  "status": "not_graded",
+  "beta": true,
+  "words": "Beta · Model v3.0 (kickers and defenses kd1.0), data published 5 Oct, 8:21 am ET · week 4 · checked on 2021–2025: next week graded, defenses weak; the trade's range not graded."
+ },
+ "caveats": [],
+ "caveat_effect": null,
+ "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+}

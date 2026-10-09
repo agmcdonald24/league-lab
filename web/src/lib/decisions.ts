@@ -244,8 +244,11 @@ export function viewOf(v: string | null | undefined, fallback: WaiverView = "hel
 
 /** A partner suggestion's one reason (a fact, not the paragraph): when the gain comes, or who cannot play. */
 export function partnerReason(p: PartnerRow, span: string): string {
-  const out = p.get.find((x) => x.cannot_play);
-  if (out) return `${out.player_name} cannot play this week (${String(out.cannot_play).toLowerCase()}): the gain comes after it.`;
+  // ---- IU-1: who cannot play comes from the league screens' one note (`league_gate.note` on the row's players: the
+  // reason with its source and date, `sits`), not from a field of its own; a bye is in the row's own story and strip
+  const note = (x: (typeof p.get)[number]) => (x as typeof x & { availability?: { sits?: boolean; why?: string } | null }).availability ?? null;
+  const out = p.get.find((x) => note(x)?.sits);
+  if (out) return `${out.player_name} cannot play this week (${note(out)!.why}): the gain comes after it.`;
   const starter = p.get.slice().sort((a, b) => (b.this_week ?? 0) - (a.this_week ?? 0))[0];
   if (p.you_gain_week >= 0.05 && starter) return `${starter.player_name} starts for you this week: ${s1(p.you_gain_week)} now, ${s1(p.you_gain_horizon)} over ${span}.`;
   // ---- II-0 (Wave I-I): a week that loses is said, never "Nothing changes this week" beside its own −1.5 (the row's story:

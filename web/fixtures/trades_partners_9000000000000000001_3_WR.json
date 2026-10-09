@@ -18,9 +18,910 @@
   {
    "partner": 7,
    "partner_team": "Goal Line Stand",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "11584",
+     "gsis_id": "00-0039361",
+     "player_name": "Bucky Irving",
+     "position": "RB",
+     "team": "TB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkc00rvnix3f2b96vkwo",
+     "this_week": 14.16,
+     "cannot_play": null,
+     "market_price": 59,
+     "season_points": 195,
+     "roster_id": 3,
+     "availability": null
+    },
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 17.92,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 219,
+     "roster_id": 3,
+     "availability": null
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "2133",
+     "gsis_id": "00-0031381",
+     "player_name": "Davante Adams",
+     "position": "WR",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tdzluk4xau3arxqk9zsl",
+     "this_week": 14.64,
+     "cannot_play": null,
+     "market_price": 55,
+     "season_points": 229,
+     "roster_id": 7,
+     "availability": null
+    }
+   ],
+   "you_gain_week": 0.48,
+   "you_gain_horizon": 11.54,
+   "they_gain_week": 0.01,
+   "they_gain_horizon": 10.43,
+   "interest": {
+    "score": 93,
+    "label": "Improves it a lot",
+    "their_gain": 10.43,
+    "you": 11.54,
+    "caption": "their starters over weeks 4–7, against realistic replacements",
+    "title": "Effect on their starters",
+    "need": "puts Irving at their RB in place of Tuten and puts Golden at their WR in place of Adams"
+   },
+   "price_out": 59,
+   "price_in": 55,
+   "card": {
+    "give": [
+     {
+      "sleeper_id": "11584",
+      "gsis_id": "00-0039361",
+      "player_name": "Bucky Irving",
+      "position": "RB",
+      "team": "TB",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkc00rvnix3f2b96vkwo",
+      "this_week": 14.16,
+      "cannot_play": null,
+      "market_price": 59,
+      "season_points": 195,
+      "roster_id": 3
+     },
+     {
+      "sleeper_id": "12545",
+      "gsis_id": "00-0040743",
+      "player_name": "Tyler Shough",
+      "position": "QB",
+      "team": "NO",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+      "this_week": 17.92,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 219,
+      "roster_id": 3
+     }
+    ],
+    "get": [
+     {
+      "sleeper_id": "2133",
+      "gsis_id": "00-0031381",
+      "player_name": "Davante Adams",
+      "position": "WR",
+      "team": "LA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tdzluk4xau3arxqk9zsl",
+      "this_week": 14.64,
+      "cannot_play": null,
+      "market_price": 55,
+      "season_points": 229,
+      "roster_id": 7
+     }
+    ],
+    "partner": 7,
+    "drops": {
+     "mine": [],
+     "theirs": [
+      {
+       "player": {
+        "sleeper_id": "11560",
+        "gsis_id": "00-0039918",
+        "player_name": "Caleb Williams",
+        "position": "QB",
+        "team": "CHI",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
+        "this_week": null,
+        "cannot_play": "Out",
+        "market_price": 0,
+        "season_points": 109,
+        "roster_id": 7
+       },
+       "words": "They must cut Caleb Williams."
+      },
+      {
+       "player": {
+        "sleeper_id": "12517",
+        "gsis_id": "00-0040126",
+        "player_name": "Colston Loveland",
+        "position": "TE",
+        "team": "CHI",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cnxiyi76jeahgx94nh6d",
+        "this_week": 7.93,
+        "cannot_play": null,
+        "market_price": 0,
+        "season_points": 119,
+        "roster_id": 7
+       },
+       "words": "They must cut Colston Loveland."
+      }
+     ]
+    },
+    "your_effect": {
+     "this_week": 0.48,
+     "window": 11.54,
+     "by_week": [
+      0.48,
+      4.26,
+      4.63,
+      2.17
+     ],
+     "raw_window": -6.33,
+     "words": "Your starters: +0.5 this week, +11.5 over weeks 4–7 (−6.3 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+    },
+    "their_effect": {
+     "this_week": 0.01,
+     "window": 10.43,
+     "by_week": [
+      0.01,
+      -2.13,
+      0.95,
+      11.6
+     ],
+     "raw_window": 10.43,
+     "words": "Goal Line Stand's starters: no change this week, +10.4 over weeks 4–7."
+    },
+    "depth_cost": {
+     "mine": "You lose Tyler Shough, a backup QB: no QB left on your bench who can play in week 4. You free 1 roster spot.",
+     "theirs": "they lose Caleb Williams, a QB who cannot play in week 4 (Out): 1 QB left on their bench who can play in week 4; they lose Colston Loveland, a backup TE: no TE left on their bench who can play in week 4",
+     "roster_spots": -1,
+     "season_value": {
+      "give": 59,
+      "get": 55
+     },
+     "horizon": null
+    },
+    "waiver_alternative": {
+     "mine": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "5095",
+       "gsis_id": "00-0034161",
+       "player_name": "Daniel Carlson",
+       "position": "K"
+      },
+      "drop": {
+       "sleeper_id": "11635",
+       "gsis_id": "00-0039915",
+       "player_name": "Ladd McConkey",
+       "position": "WR"
+      },
+      "open_spot": false,
+      "gain_week": 2.53,
+      "gain_window": 4.54,
+      "by_week": [
+       2.53,
+       0.21,
+       0.0,
+       1.8
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4–7",
+      "source": "basis search",
+      "note": null,
+      "covered_by_week": [
+       2.53,
+       0.21,
+       0.0,
+       1.8
+      ],
+      "covered_window": 4.54,
+      "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
+      "availability": "claim",
+      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+      "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
+     },
+     "theirs": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "4035",
+       "gsis_id": "00-0033906",
+       "player_name": "Alvin Kamara",
+       "position": "RB"
+      },
+      "drop": {
+       "sleeper_id": "11560",
+       "gsis_id": "00-0039918",
+       "player_name": "Caleb Williams",
+       "position": "QB"
+      },
+      "open_spot": false,
+      "gain_week": 0.0,
+      "gain_window": 9.67,
+      "by_week": [
+       0.0,
+       0.0,
+       0.0,
+       9.67
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4–7",
+      "source": "basis search",
+      "note": null,
+      "covered_by_week": [
+       0.0,
+       0.0,
+       0.0,
+       9.67
+      ],
+      "covered_window": 9.67,
+      "covered_week": 0.0,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 0.0,
+       "net_window": 9.67
+      },
+      "availability": "claim",
+      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+      "words": "the Alvin Kamara claim gives +9.7 over weeks 4–7 (drop Caleb Williams)"
+     },
+     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Alvin Kamara, drop Caleb Williams: +9.7 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+    },
+    "beyond": {
+     "mine": 7.0,
+     "theirs": 0.76,
+     "margin": 1.0
+    },
+    "why_consider": [
+     "Their starters gain +10.4 over weeks 4–7.",
+     "Bucky Irving and Tyler Shough start for them in weeks 4, 5, 6 and 7."
+    ],
+    "why_refuse": [
+     "Their best waiver move (Alvin Kamara, +9.7) does about as much or more for them over weeks 4–7.",
+     "They must cut Caleb Williams to make room.",
+     "They must cut Colston Loveland to make room.",
+     "They lose Caleb Williams, a QB who cannot play in week 4 (Out): 1 QB left on their bench who can play in week 4; they lose Colston Loveland, a backup TE: no TE left on their bench who can play in week 4.",
+     "Our numbers only: no market price for Bucky Irving, Tyler Shough, Davante Adams: this is how the rosters fit, not what the players would fetch."
+    ],
+    "plausibility": {
+     "key": "roster_fit",
+     "label": "A roster-fit idea",
+     "reasons": [
+      "no market price for Bucky Irving, Tyler Shough, Davante Adams: this is how the rosters fit, not what the players would fetch"
+     ]
+    },
+    "guardrails": [],
+    "legal": {
+     "ok": true,
+     "notes": [
+      "You would have nobody for QB in week 6: counted with the best free agent there, not as an empty slot.",
+      "Goal Line Stand must cut Caleb Williams to make room.",
+      "Goal Line Stand must cut Colston Loveland to make room."
+     ],
+     "checks": [
+      "ownership (trades.clean_package)",
+      "roster limits and required cuts (trades._after)",
+      "locked players (RosterBoard.is_locked)",
+      "position requirements (lineup.solve)",
+      "trade deadline (league settings)"
+     ]
+    },
+    "credible": false,
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: Goal Line Stand's starters gain +0.8 beyond their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
+    }
+   },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     0.48,
+     4.26,
+     4.63,
+     2.17
+    ],
+    "theirs": [
+     0.01,
+     -2.13,
+     0.95,
+     11.6
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": 0.48,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 11.54,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": 0.48
+     },
+     {
+      "week": 5,
+      "change": 4.26
+     },
+     {
+      "week": 6,
+      "change": 4.63
+     },
+     {
+      "week": 7,
+      "change": 2.17
+     }
+    ],
+    "words": "Your lineup gains 0.5 this week and 11.5 over weeks 4–7 in total."
+   },
+   "alternative_words": "+11.5 over weeks 4–7, 7.0 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "beyond_alternative": 7.0,
+   "beats_alternative": true,
+   "other_objective": null,
+   "decision": {
+    "basis": "replacement",
+    "dial": {
+     "score": 93,
+     "label": "Improves it a lot",
+     "their_gain": 10.43,
+     "you": 11.54,
+     "caption": "their starters over weeks 4–7, against realistic replacements",
+     "title": "Effect on their starters",
+     "need": "puts Irving at their RB in place of Tuten and puts Golden at their WR in place of Adams"
+    },
+    "verdict": "Helps your lineup +0.5 this week (+11.5 over weeks 4–7), them +0.0 (+10.4 over weeks 4–7); about even by season value: helps both lineups.",
+    "alternative": {
+     "words": "+11.5 over weeks 4–7, 7.0 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+     "beats": true,
+     "beyond": {
+      "mine": 7.0,
+      "theirs": 0.76
+     }
+    },
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: Goal Line Stand's starters gain +0.8 beyond their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
+    },
+    "caveat": null,
+    "mine": {
+     "gain_week": 0.48,
+     "gain_window": 11.54,
+     "by_week": [
+      0.48,
+      4.26,
+      4.63,
+      2.17
+     ]
+    },
+    "theirs": {
+     "gain_week": 0.01,
+     "gain_window": 10.43,
+     "by_week": [
+      0.01,
+      -2.13,
+      0.95,
+      11.6
+     ]
+    }
+   },
+   "rank": 1,
+   "demoted": false,
+   "tier": "explore",
+   "credible_rank": null
+  },
+  {
+   "partner": 5,
+   "partner_team": "Practice Squad",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "6790",
+     "gsis_id": "00-0036275",
+     "player_name": "D'Andre Swift",
+     "position": "RB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/owpmwzoilitcodc6cmxo",
+     "this_week": 15.2,
+     "cannot_play": null,
+     "market_price": 56,
+     "season_points": 192,
+     "roster_id": 3,
+     "availability": null
+    },
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 17.92,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 219,
+     "roster_id": 3,
+     "availability": null
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7569",
+     "gsis_id": "00-0036554",
+     "player_name": "Nico Collins",
+     "position": "WR",
+     "team": "HOU",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fguybjrn1kwflxm5szwq",
+     "this_week": 16.35,
+     "cannot_play": null,
+     "market_price": 59,
+     "season_points": 232,
+     "roster_id": 5,
+     "availability": null
+    }
+   ],
+   "you_gain_week": 1.15,
+   "you_gain_horizon": 11.04,
+   "they_gain_week": -0.36,
+   "they_gain_horizon": 7.99,
+   "interest": {
+    "score": 83,
+    "label": "Improves it a lot",
+    "their_gain": 7.99,
+    "you": 11.04,
+    "caption": "their starters over weeks 4–7, against realistic replacements",
+    "title": "Effect on their starters",
+    "need": "puts Shough at their QB in place of Young, puts Swift at their FLEX in place of Downs and moves Downs from FLEX to WR"
+   },
+   "price_out": 56,
+   "price_in": 59,
+   "card": {
+    "give": [
+     {
+      "sleeper_id": "6790",
+      "gsis_id": "00-0036275",
+      "player_name": "D'Andre Swift",
+      "position": "RB",
+      "team": "CHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/owpmwzoilitcodc6cmxo",
+      "this_week": 15.2,
+      "cannot_play": null,
+      "market_price": 56,
+      "season_points": 192,
+      "roster_id": 3
+     },
+     {
+      "sleeper_id": "12545",
+      "gsis_id": "00-0040743",
+      "player_name": "Tyler Shough",
+      "position": "QB",
+      "team": "NO",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+      "this_week": 17.92,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 219,
+      "roster_id": 3
+     }
+    ],
+    "get": [
+     {
+      "sleeper_id": "7569",
+      "gsis_id": "00-0036554",
+      "player_name": "Nico Collins",
+      "position": "WR",
+      "team": "HOU",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fguybjrn1kwflxm5szwq",
+      "this_week": 16.35,
+      "cannot_play": null,
+      "market_price": 59,
+      "season_points": 232,
+      "roster_id": 5
+     }
+    ],
+    "partner": 5,
+    "drops": {
+     "mine": [],
+     "theirs": [
+      {
+       "player": {
+        "sleeper_id": "4943",
+        "gsis_id": "00-0034869",
+        "player_name": "Sam Darnold",
+        "position": "QB",
+        "team": "SEA",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fyay8vruj0cqmhopufzk",
+        "this_week": 4.98,
+        "cannot_play": null,
+        "market_price": 0,
+        "season_points": 61,
+        "roster_id": 5
+       },
+       "words": "They must cut Sam Darnold."
+      },
+      {
+       "player": {
+        "sleeper_id": "11581",
+        "gsis_id": "00-0039811",
+        "player_name": "MarShawn Lloyd",
+        "position": "RB",
+        "team": "GB",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xp8sd4enimuk4zd0aqgu",
+        "this_week": 7.8,
+        "cannot_play": null,
+        "market_price": 1,
+        "season_points": 137,
+        "roster_id": 5
+       },
+       "words": "They must cut MarShawn Lloyd."
+      }
+     ]
+    },
+    "your_effect": {
+     "this_week": 1.15,
+     "window": 11.04,
+     "by_week": [
+      1.15,
+      1.15,
+      5.61,
+      3.13
+     ],
+     "raw_window": -6.83,
+     "words": "Your starters: +1.1 this week, +11.0 over weeks 4–7 (−6.8 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+    },
+    "their_effect": {
+     "this_week": -0.36,
+     "window": 7.99,
+     "by_week": [
+      -0.36,
+      9.3,
+      0.79,
+      -1.74
+     ],
+     "raw_window": 7.99,
+     "words": "Practice Squad's starters: −0.4 this week, +8.0 over weeks 4–7."
+    },
+    "depth_cost": {
+     "mine": "You lose Tyler Shough, a backup QB: no QB left on your bench who can play in week 4. You free 1 roster spot.",
+     "theirs": "they lose Sam Darnold, a backup QB: 1 QB left on their bench who can play in week 4; they lose MarShawn Lloyd, a backup RB: 1 RB left on their bench who can play in week 4 (Rachaad White Out cannot)",
+     "roster_spots": -1,
+     "season_value": {
+      "give": 56,
+      "get": 59
+     },
+     "horizon": null
+    },
+    "waiver_alternative": {
+     "mine": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "5095",
+       "gsis_id": "00-0034161",
+       "player_name": "Daniel Carlson",
+       "position": "K"
+      },
+      "drop": {
+       "sleeper_id": "11635",
+       "gsis_id": "00-0039915",
+       "player_name": "Ladd McConkey",
+       "position": "WR"
+      },
+      "open_spot": false,
+      "gain_week": 2.53,
+      "gain_window": 4.54,
+      "by_week": [
+       2.53,
+       0.21,
+       0.0,
+       1.8
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4–7",
+      "source": "basis search",
+      "note": null,
+      "covered_by_week": [
+       2.53,
+       0.21,
+       0.0,
+       1.8
+      ],
+      "covered_window": 4.54,
+      "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
+      "availability": "claim",
+      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+      "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
+     },
+     "theirs": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "3257",
+       "gsis_id": "00-0033119",
+       "player_name": "Jacoby Brissett",
+       "position": "QB"
+      },
+      "drop": {
+       "sleeper_id": "5859",
+       "gsis_id": "00-0035676",
+       "player_name": "A.J. Brown",
+       "position": "WR"
+      },
+      "open_spot": false,
+      "gain_week": 1.23,
+      "gain_window": 23.69,
+      "by_week": [
+       1.23,
+       16.52,
+       2.92,
+       3.02
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4–7",
+      "source": "basis search",
+      "note": null,
+      "covered_by_week": [
+       1.23,
+       16.52,
+       2.92,
+       3.02
+      ],
+      "covered_window": 23.69,
+      "covered_week": 1.23,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 1.23,
+       "net_window": 23.69
+      },
+      "availability": "claim",
+      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+      "words": "the Jacoby Brissett claim gives +23.7 over weeks 4–7 (drop A.J. Brown)"
+     },
+     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop A.J. Brown: +23.7 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+    },
+    "beyond": {
+     "mine": 6.5,
+     "theirs": -15.7,
+     "margin": 1.0
+    },
+    "why_consider": [
+     "Their starters gain +8.0 over weeks 4–7.",
+     "D'Andre Swift and Tyler Shough start for them in weeks 4, 5, 6 and 7."
+    ],
+    "why_refuse": [
+     "Their starters lose 0.4 this week.",
+     "Their best waiver move (Jacoby Brissett, +23.7) does about as much or more for them over weeks 4–7.",
+     "They must cut Sam Darnold to make room.",
+     "They must cut MarShawn Lloyd to make room.",
+     "They lose Sam Darnold, a backup QB: 1 QB left on their bench who can play in week 4; they lose MarShawn Lloyd, a backup RB: 1 RB left on their bench who can play in week 4 (Rachaad White Out cannot).",
+     "Our numbers only: no market price for D'Andre Swift, Tyler Shough, Nico Collins: this is how the rosters fit, not what the players would fetch."
+    ],
+    "plausibility": {
+     "key": "roster_fit",
+     "label": "A roster-fit idea",
+     "reasons": [
+      "no market price for D'Andre Swift, Tyler Shough, Nico Collins: this is how the rosters fit, not what the players would fetch"
+     ]
+    },
+    "guardrails": [],
+    "legal": {
+     "ok": true,
+     "notes": [
+      "You would have nobody for QB in week 6: counted with the best free agent there, not as an empty slot.",
+      "Practice Squad must cut Sam Darnold to make room.",
+      "Practice Squad must cut MarShawn Lloyd to make room."
+     ],
+     "checks": [
+      "ownership (trades.clean_package)",
+      "roster limits and required cuts (trades._after)",
+      "locked players (RosterBoard.is_locked)",
+      "position requirements (lineup.solve)",
+      "trade deadline (league settings)"
+     ]
+    },
+    "credible": false,
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: Practice Squad's starters end 15.7 behind their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
+    }
+   },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     1.15,
+     1.15,
+     5.61,
+     3.13
+    ],
+    "theirs": [
+     -0.36,
+     9.3,
+     0.79,
+     -1.74
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": 1.15,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 11.04,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": 1.15
+     },
+     {
+      "week": 5,
+      "change": 1.15
+     },
+     {
+      "week": 6,
+      "change": 5.61
+     },
+     {
+      "week": 7,
+      "change": 3.13
+     }
+    ],
+    "words": "Your lineup gains 1.1 this week and 11.0 over weeks 4–7 in total."
+   },
+   "alternative_words": "+11.0 over weeks 4–7, 6.5 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "beyond_alternative": 6.5,
+   "beats_alternative": true,
+   "other_objective": null,
+   "decision": {
+    "basis": "replacement",
+    "dial": {
+     "score": 83,
+     "label": "Improves it a lot",
+     "their_gain": 7.99,
+     "you": 11.04,
+     "caption": "their starters over weeks 4–7, against realistic replacements",
+     "title": "Effect on their starters",
+     "need": "puts Shough at their QB in place of Young, puts Swift at their FLEX in place of Downs and moves Downs from FLEX to WR"
+    },
+    "verdict": "Helps your lineup +1.1 this week (+11.0 over weeks 4–7), them +8.0 over weeks 4–7 (−0.4 this week); about even by season value: helps both lineups.",
+    "alternative": {
+     "words": "+11.0 over weeks 4–7, 6.5 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+     "beats": true,
+     "beyond": {
+      "mine": 6.5,
+      "theirs": -15.7
+     }
+    },
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: Practice Squad's starters end 15.7 behind their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
+    },
+    "caveat": null,
+    "mine": {
+     "gain_week": 1.15,
+     "gain_window": 11.04,
+     "by_week": [
+      1.15,
+      1.15,
+      5.61,
+      3.13
+     ]
+    },
+    "theirs": {
+     "gain_week": -0.36,
+     "gain_window": 7.99,
+     "by_week": [
+      -0.36,
+      9.3,
+      0.79,
+      -1.74
+     ]
+    }
+   },
+   "rank": 2,
+   "demoted": false,
+   "tier": "explore",
+   "credible_rank": null
+  },
+  {
+   "partner": 7,
+   "partner_team": "Goal Line Stand",
    "shape": "1-for-1",
    "kind": "1-for-1",
-   "is_best": true,
+   "is_best": false,
    "give": [
     {
      "sleeper_id": "11584",
@@ -68,69 +969,6 @@
    },
    "price_out": 59,
    "price_in": 55,
-   "cheaper_than": {
-    "give": [
-     "Bucky Irving",
-     "TreVeyon Henderson"
-    ],
-    "words": "Same gain for you without TreVeyon Henderson."
-   },
-   "beyond_alternative": 4.82,
-   "beats_alternative": true,
-   "alternative_words": "+9.4 over weeks 4–7, 4.8 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     4,
-     5,
-     6,
-     7
-    ],
-    "mine": [
-     0.48,
-     4.26,
-     2.45,
-     2.17
-    ],
-    "theirs": [
-     0.01,
-     -2.13,
-     0.81,
-     11.6
-    ]
-   },
-   "rank": 1,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 4,
-     "change": 0.48,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 9.36,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 4,
-      "change": 0.48
-     },
-     {
-      "week": 5,
-      "change": 4.26
-     },
-     {
-      "week": 6,
-      "change": 2.45
-     },
-     {
-      "week": 7,
-      "change": 2.17
-     }
-    ],
-    "words": "Your lineup gains 0.5 this week and 9.4 over weeks 4–7 in total."
-   },
    "card": {
     "give": [
      {
@@ -276,6 +1114,16 @@
       ],
       "covered_window": 4.54,
       "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
       "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
@@ -320,6 +1168,16 @@
       ],
       "covered_window": 9.67,
       "covered_week": 0.0,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 0.0,
+       "net_window": 9.67
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
       "words": "the Alvin Kamara claim gives +9.7 over weeks 4–7 (drop Caleb Williams)"
@@ -372,6 +1230,60 @@
      "plausibility": "A roster-fit idea"
     }
    },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     0.48,
+     4.26,
+     2.45,
+     2.17
+    ],
+    "theirs": [
+     0.01,
+     -2.13,
+     0.81,
+     11.6
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": 0.48,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 9.36,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": 0.48
+     },
+     {
+      "week": 5,
+      "change": 4.26
+     },
+     {
+      "week": 6,
+      "change": 2.45
+     },
+     {
+      "week": 7,
+      "change": 2.17
+     }
+    ],
+    "words": "Your lineup gains 0.5 this week and 9.4 over weeks 4–7 in total."
+   },
+   "alternative_words": "+9.4 over weeks 4–7, 4.8 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "beyond_alternative": 4.82,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -421,251 +1333,191 @@
      ]
     }
    },
+   "rank": 3,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
   {
-   "partner": 7,
-   "partner_team": "Goal Line Stand",
+   "partner": 6,
+   "partner_team": "Two-Point Tries",
    "shape": "2-for-1",
    "kind": "2-for-1",
-   "is_best": false,
+   "is_best": true,
    "give": [
     {
-     "sleeper_id": "11584",
-     "gsis_id": "00-0039361",
-     "player_name": "Bucky Irving",
-     "position": "RB",
-     "team": "TB",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkc00rvnix3f2b96vkwo",
-     "this_week": 14.16,
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
      "cannot_play": null,
-     "market_price": 59,
-     "season_points": 195,
+     "market_price": 0,
+     "season_points": 138,
      "roster_id": 3,
      "availability": null
     },
     {
-     "sleeper_id": "12529",
-     "gsis_id": "00-0040734",
-     "player_name": "TreVeyon Henderson",
-     "position": "RB",
-     "team": "NE",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ebcjvwytgu2y4kqm8ihv",
-     "this_week": 9.16,
+     "sleeper_id": "13279",
+     "gsis_id": "00-0041438",
+     "player_name": "Carnell Tate",
+     "position": "WR",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+     "this_week": 9.74,
      "cannot_play": null,
-     "market_price": 0,
-     "season_points": 130,
+     "market_price": 17,
+     "season_points": 190,
      "roster_id": 3,
      "availability": null
     }
    ],
    "get": [
     {
-     "sleeper_id": "2133",
-     "gsis_id": "00-0031381",
-     "player_name": "Davante Adams",
+     "sleeper_id": "8146",
+     "gsis_id": "00-0037740",
+     "player_name": "Garrett Wilson",
      "position": "WR",
-     "team": "LA",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tdzluk4xau3arxqk9zsl",
-     "this_week": 14.64,
+     "team": "NYJ",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/upxwxmhdd8xluztgqwhe",
+     "this_week": 13.64,
      "cannot_play": null,
-     "market_price": 55,
-     "season_points": 229,
-     "roster_id": 7,
+     "market_price": 27,
+     "season_points": 200,
+     "roster_id": 6,
      "availability": null
     }
    ],
-   "you_gain_week": 0.48,
+   "you_gain_week": 1.85,
    "you_gain_horizon": 9.36,
-   "they_gain_week": 0.01,
-   "they_gain_horizon": 10.29,
+   "they_gain_week": 0.59,
+   "they_gain_horizon": 3.53,
    "interest": {
-    "score": 93,
-    "label": "Improves it a lot",
-    "their_gain": 10.29,
+    "score": 60,
+    "label": "Improves their lineup",
+    "their_gain": 3.53,
     "you": 9.36,
     "caption": "their starters over weeks 4–7, against realistic replacements",
     "title": "Effect on their starters",
-    "need": "puts Irving at their RB in place of Tuten and puts Golden at their WR in place of Adams"
+    "need": "puts Kincaid at their FLEX in place of Waddle, moves Waddle from FLEX to WR and puts Baltimore Ravens at their DEF in place of San Francisco 49ers"
    },
-   "price_out": 59,
-   "price_in": 55,
-   "optional": {
-    "sleeper_id": "12529",
-    "player_name": "TreVeyon Henderson",
-    "season_points": 130,
-    "words": "Adding TreVeyon Henderson does not change your gain; it costs you RB depth (TreVeyon Henderson: 130 season points)."
-   },
-   "beyond_alternative": 4.82,
-   "beats_alternative": true,
-   "alternative_words": "+9.4 over weeks 4–7, 4.8 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     4,
-     5,
-     6,
-     7
-    ],
-    "mine": [
-     0.48,
-     4.26,
-     2.45,
-     2.17
-    ],
-    "theirs": [
-     0.01,
-     -2.13,
-     0.81,
-     11.6
-    ]
-   },
-   "rank": 2,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 4,
-     "change": 0.48,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 9.36,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 4,
-      "change": 0.48
-     },
-     {
-      "week": 5,
-      "change": 4.26
-     },
-     {
-      "week": 6,
-      "change": 2.45
-     },
-     {
-      "week": 7,
-      "change": 2.17
-     }
-    ],
-    "words": "Your lineup gains 0.5 this week and 9.4 over weeks 4–7 in total."
-   },
+   "price_out": 17,
+   "price_in": 27,
    "card": {
     "give": [
      {
-      "sleeper_id": "11584",
-      "gsis_id": "00-0039361",
-      "player_name": "Bucky Irving",
-      "position": "RB",
-      "team": "TB",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkc00rvnix3f2b96vkwo",
-      "this_week": 14.16,
+      "sleeper_id": "BAL",
+      "gsis_id": null,
+      "player_name": "Baltimore Ravens",
+      "position": "DEF",
+      "team": "BAL",
+      "headshot_url": null,
+      "this_week": 12.22,
       "cannot_play": null,
-      "market_price": 59,
-      "season_points": 195,
+      "market_price": 0,
+      "season_points": 138,
       "roster_id": 3
      },
      {
-      "sleeper_id": "12529",
-      "gsis_id": "00-0040734",
-      "player_name": "TreVeyon Henderson",
-      "position": "RB",
-      "team": "NE",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ebcjvwytgu2y4kqm8ihv",
-      "this_week": 9.16,
+      "sleeper_id": "13279",
+      "gsis_id": "00-0041438",
+      "player_name": "Carnell Tate",
+      "position": "WR",
+      "team": "TEN",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+      "this_week": 9.74,
       "cannot_play": null,
-      "market_price": 0,
-      "season_points": 130,
+      "market_price": 17,
+      "season_points": 190,
       "roster_id": 3
      }
     ],
     "get": [
      {
-      "sleeper_id": "2133",
-      "gsis_id": "00-0031381",
-      "player_name": "Davante Adams",
+      "sleeper_id": "8146",
+      "gsis_id": "00-0037740",
+      "player_name": "Garrett Wilson",
       "position": "WR",
-      "team": "LA",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tdzluk4xau3arxqk9zsl",
-      "this_week": 14.64,
+      "team": "NYJ",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/upxwxmhdd8xluztgqwhe",
+      "this_week": 13.64,
       "cannot_play": null,
-      "market_price": 55,
-      "season_points": 229,
-      "roster_id": 7
+      "market_price": 27,
+      "season_points": 200,
+      "roster_id": 6
      }
     ],
-    "partner": 7,
+    "partner": 6,
     "drops": {
      "mine": [],
      "theirs": [
       {
        "player": {
-        "sleeper_id": "11560",
-        "gsis_id": "00-0039918",
-        "player_name": "Caleb Williams",
-        "position": "QB",
-        "team": "CHI",
-        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
-        "this_week": null,
-        "cannot_play": "Out",
+        "sleeper_id": "11631",
+        "gsis_id": "00-0039893",
+        "player_name": "Brian Thomas Jr.",
+        "position": "WR",
+        "team": "JAX",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/plnekkriys4cm11rnxwl",
+        "this_week": 7.34,
+        "cannot_play": null,
         "market_price": 0,
-        "season_points": 109,
-        "roster_id": 7
+        "season_points": 115,
+        "roster_id": 6
        },
-       "words": "They must cut Caleb Williams."
+       "words": "They must cut Brian Thomas Jr.."
       },
       {
        "player": {
-        "sleeper_id": "12517",
-        "gsis_id": "00-0040126",
-        "player_name": "Colston Loveland",
-        "position": "TE",
-        "team": "CHI",
-        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cnxiyi76jeahgx94nh6d",
-        "this_week": 7.93,
+        "sleeper_id": "SF",
+        "gsis_id": null,
+        "player_name": "San Francisco 49ers",
+        "position": "DEF",
+        "team": "SF",
+        "headshot_url": null,
+        "this_week": 8.02,
         "cannot_play": null,
         "market_price": 0,
-        "season_points": 119,
-        "roster_id": 7
+        "season_points": 121,
+        "roster_id": 6
        },
-       "words": "They must cut Colston Loveland."
+       "words": "They must cut San Francisco 49ers."
       }
      ]
     },
     "your_effect": {
-     "this_week": 0.48,
+     "this_week": 1.85,
      "window": 9.36,
      "by_week": [
-      0.48,
-      4.26,
-      2.45,
-      2.17
+      1.85,
+      3.97,
+      2.19,
+      1.35
      ],
-     "raw_window": 9.36,
-     "words": "Your starters: +0.5 this week, +9.4 over weeks 4–7."
+     "raw_window": -37.95,
+     "words": "Your starters: +1.9 this week, +9.4 over weeks 4–7 (−38.0 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
     },
     "their_effect": {
-     "this_week": 0.01,
-     "window": 10.29,
+     "this_week": 0.59,
+     "window": 3.53,
      "by_week": [
-      0.01,
-      -2.13,
-      0.81,
-      11.6
+      0.59,
+      1.38,
+      1.21,
+      0.35
      ],
-     "raw_window": 10.29,
-     "words": "Goal Line Stand's starters: no change this week, +10.3 over weeks 4–7."
+     "raw_window": 3.53,
+     "words": "Two-Point Tries's starters: +0.6 this week, +3.5 over weeks 4–7."
     },
     "depth_cost": {
-     "mine": "You lose TreVeyon Henderson, a backup RB: 1 RB left on your bench who can play in week 4. You free 1 roster spot.",
-     "theirs": "they lose Caleb Williams, a QB who cannot play in week 4 (Out): no QB left on their bench who can play in week 4; they lose Colston Loveland, a backup TE: no TE left on their bench who can play in week 4",
+     "mine": "You lose Carnell Tate, a backup WR: 3 WR left on your bench who can play in week 4. You free 1 roster spot.",
+     "theirs": "they lose Brian Thomas Jr., a backup WR: 3 WR left on their bench who can play in week 4",
      "roster_spots": -1,
      "season_value": {
-      "give": 59,
-      "get": 55
+      "give": 17,
+      "get": 27
      },
      "horizon": null
     },
@@ -710,6 +1562,16 @@
       ],
       "covered_window": 4.54,
       "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
       "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
@@ -717,25 +1579,25 @@
      "theirs": {
       "kind": "waiver",
       "player": {
-       "sleeper_id": "4035",
-       "gsis_id": "00-0033906",
-       "player_name": "Alvin Kamara",
-       "position": "RB"
+       "sleeper_id": "HOU",
+       "gsis_id": null,
+       "player_name": "Houston Texans",
+       "position": "DEF"
       },
       "drop": {
-       "sleeper_id": "11560",
-       "gsis_id": "00-0039918",
-       "player_name": "Caleb Williams",
-       "position": "QB"
+       "sleeper_id": "11631",
+       "gsis_id": "00-0039893",
+       "player_name": "Brian Thomas Jr.",
+       "position": "WR"
       },
       "open_spot": false,
-      "gain_week": 0.0,
-      "gain_window": 9.67,
+      "gain_week": 1.51,
+      "gain_window": 9.19,
       "by_week": [
-       0.0,
-       0.0,
-       0.0,
-       9.67
+       1.51,
+       5.01,
+       1.07,
+       1.6
       ],
       "weeks": [
        4,
@@ -747,48 +1609,59 @@
       "source": "basis search",
       "note": null,
       "covered_by_week": [
-       0.0,
-       0.0,
-       0.0,
-       9.67
+       1.51,
+       5.01,
+       1.07,
+       1.6
       ],
-      "covered_window": 9.67,
-      "covered_week": 0.0,
+      "covered_window": 9.19,
+      "covered_week": 1.51,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 1.51,
+       "net_window": 9.19
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-      "words": "the Alvin Kamara claim gives +9.7 over weeks 4–7 (drop Caleb Williams)"
+      "words": "the Houston Texans defense claim gives +9.2 over weeks 4–7 (drop Brian Thomas Jr.)"
      },
-     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Alvin Kamara, drop Caleb Williams: +9.7 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Houston Texans defense, drop Brian Thomas Jr.: +9.2 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
     "beyond": {
      "mine": 4.82,
-     "theirs": 0.62,
+     "theirs": -5.66,
      "margin": 1.0
     },
     "why_consider": [
-     "Their starters gain +10.3 over weeks 4–7.",
-     "Bucky Irving starts for them in weeks 4, 5, 6 and 7."
+     "Their starters gain +3.5 over weeks 4–7.",
+     "Baltimore Ravens and Carnell Tate start for them in weeks 4, 5, 6 and 7."
     ],
     "why_refuse": [
-     "Their best waiver move (Alvin Kamara, +9.7) does about as much or more for them over weeks 4–7.",
-     "They must cut Caleb Williams to make room.",
-     "They must cut Colston Loveland to make room.",
-     "They lose Caleb Williams, a QB who cannot play in week 4 (Out): no QB left on their bench who can play in week 4; they lose Colston Loveland, a backup TE: no TE left on their bench who can play in week 4.",
-     "Our numbers only: no market price for Bucky Irving, TreVeyon Henderson, Davante Adams: this is how the rosters fit, not what the players would fetch."
+     "Their best waiver move (Houston Texans defense, +9.2) does about as much or more for them over weeks 4–7.",
+     "They must cut Brian Thomas Jr. to make room.",
+     "They must cut San Francisco 49ers to make room.",
+     "They lose Brian Thomas Jr., a backup WR: 3 WR left on their bench who can play in week 4.",
+     "Our numbers only: no market price for Baltimore Ravens, Carnell Tate, Garrett Wilson: this is how the rosters fit, not what the players would fetch."
     ],
     "plausibility": {
      "key": "roster_fit",
      "label": "A roster-fit idea",
      "reasons": [
-      "no market price for Bucky Irving, TreVeyon Henderson, Davante Adams: this is how the rosters fit, not what the players would fetch"
+      "no market price for Baltimore Ravens, Carnell Tate, Garrett Wilson: this is how the rosters fit, not what the players would fetch"
      ]
     },
     "guardrails": [],
     "legal": {
      "ok": true,
      "notes": [
-      "Goal Line Stand must cut Caleb Williams to make room.",
-      "Goal Line Stand must cut Colston Loveland to make room."
+      "You would have nobody for DEF in weeks 4, 5, 6 and 7: counted with the best free agent there, not as an empty slot.",
+      "Two-Point Tries must cut Brian Thomas Jr. to make room.",
+      "Two-Point Tries must cut San Francisco 49ers to make room."
      ],
      "checks": [
       "ownership (trades.clean_package)",
@@ -803,59 +1676,115 @@
      "credible": false,
      "key": "not_worth_proposing",
      "label": "Not worth proposing",
-     "words": "Not worth proposing: Goal Line Stand's starters gain +0.6 beyond their own best move over weeks 4–7.",
+     "words": "Not worth proposing: Two-Point Tries's starters end 5.7 behind their own best move over weeks 4–7.",
      "plausibility": "A roster-fit idea"
     }
    },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     1.85,
+     3.97,
+     2.19,
+     1.35
+    ],
+    "theirs": [
+     0.59,
+     1.38,
+     1.21,
+     0.35
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": 1.85,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 9.36,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": 1.85
+     },
+     {
+      "week": 5,
+      "change": 3.97
+     },
+     {
+      "week": 6,
+      "change": 2.19
+     },
+     {
+      "week": 7,
+      "change": 1.35
+     }
+    ],
+    "words": "Your lineup gains 1.9 this week and 9.4 over weeks 4–7 in total."
+   },
+   "alternative_words": "+9.4 over weeks 4–7, 4.8 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "beyond_alternative": 4.82,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
-     "score": 93,
-     "label": "Improves it a lot",
-     "their_gain": 10.29,
+     "score": 60,
+     "label": "Improves their lineup",
+     "their_gain": 3.53,
      "you": 9.36,
      "caption": "their starters over weeks 4–7, against realistic replacements",
      "title": "Effect on their starters",
-     "need": "puts Irving at their RB in place of Tuten and puts Golden at their WR in place of Adams"
+     "need": "puts Kincaid at their FLEX in place of Waddle, moves Waddle from FLEX to WR and puts Baltimore Ravens at their DEF in place of San Francisco 49ers"
     },
-    "verdict": "Helps your lineup +0.5 this week (+9.4 over weeks 4–7), them +0.0 (+10.3 over weeks 4–7); about even by season value: helps both lineups.",
+    "verdict": "Helps your lineup +1.9 this week (+9.4 over weeks 4–7), them +0.6 (+3.5 over weeks 4–7); about even by season value: helps both lineups.",
     "alternative": {
      "words": "+9.4 over weeks 4–7, 4.8 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 4.82,
-      "theirs": 0.62
+      "theirs": -5.66
      }
     },
     "recommendation": {
      "credible": false,
      "key": "not_worth_proposing",
      "label": "Not worth proposing",
-     "words": "Not worth proposing: Goal Line Stand's starters gain +0.6 beyond their own best move over weeks 4–7.",
+     "words": "Not worth proposing: Two-Point Tries's starters end 5.7 behind their own best move over weeks 4–7.",
      "plausibility": "A roster-fit idea"
     },
     "caveat": null,
     "mine": {
-     "gain_week": 0.48,
+     "gain_week": 1.85,
      "gain_window": 9.36,
      "by_week": [
-      0.48,
-      4.26,
-      2.45,
-      2.17
+      1.85,
+      3.97,
+      2.19,
+      1.35
      ]
     },
     "theirs": {
-     "gain_week": 0.01,
-     "gain_window": 10.29,
+     "gain_week": 0.59,
+     "gain_window": 3.53,
      "by_week": [
-      0.01,
-      -2.13,
-      0.81,
-      11.6
+      0.59,
+      1.38,
+      1.21,
+      0.35
      ]
     }
    },
+   "rank": 4,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -867,142 +1796,85 @@
    "is_best": true,
    "give": [
     {
-     "sleeper_id": "3163",
-     "gsis_id": "00-0033106",
-     "player_name": "Jared Goff",
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
      "position": "QB",
-     "team": "DET",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kaicbot8qhzrvddilbtp",
-     "this_week": 20.16,
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 17.92,
      "cannot_play": null,
      "market_price": 0,
-     "season_points": 238,
+     "season_points": 219,
      "roster_id": 3,
      "availability": null
     }
    ],
    "get": [
     {
-     "sleeper_id": "7569",
-     "gsis_id": "00-0036554",
-     "player_name": "Nico Collins",
+     "sleeper_id": "7525",
+     "gsis_id": "00-0036912",
+     "player_name": "DeVonta Smith",
      "position": "WR",
-     "team": "HOU",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fguybjrn1kwflxm5szwq",
-     "this_week": 16.35,
-     "cannot_play": null,
-     "market_price": 59,
-     "season_points": 232,
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/k724kq3hyv7jc0y9s03x",
+     "this_week": null,
+     "cannot_play": "Out",
+     "market_price": 43,
+     "season_points": 216,
      "roster_id": 5,
-     "availability": null
+     "availability": {
+      "status": "Out",
+      "why": "Out · NFL injury report",
+      "sits": true,
+      "out_indefinitely": false,
+      "words": "Ruled out this week: he will not play this week, so he is not ranked."
+     }
     }
    ],
-   "you_gain_week": 2.31,
-   "you_gain_horizon": 4.77,
-   "they_gain_week": -1.75,
-   "they_gain_horizon": 8.17,
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 8.64,
+   "they_gain_week": 0.79,
+   "they_gain_horizon": 8.37,
    "interest": {
-    "score": 84,
+    "score": 85,
     "label": "Improves it a lot",
-    "their_gain": 8.17,
-    "you": 4.77,
+    "their_gain": 8.37,
+    "you": 8.64,
     "caption": "their starters over weeks 4–7, against realistic replacements",
     "title": "Effect on their starters",
-    "need": "puts Goff at their QB in place of Young, puts Barkley at their FLEX in place of Downs and moves Downs from FLEX to WR"
+    "need": "puts Shough at their QB in place of Young"
    },
    "price_out": 0,
-   "price_in": 59,
-   "cheaper_than": {
-    "give": [
-     "Jared Goff",
-     "Tony Pollard"
-    ],
-    "words": "Same gain for you without Tony Pollard."
-   },
-   "beyond_alternative": 0.23,
-   "beats_alternative": true,
-   "alternative_words": "+4.8 over weeks 4–7, 0.2 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     4,
-     5,
-     6,
-     7
-    ],
-    "mine": [
-     2.31,
-     -3.01,
-     3.45,
-     2.02
-    ],
-    "theirs": [
-     -1.75,
-     14.34,
-     -3.43,
-     -0.99
-    ]
-   },
-   "rank": 3,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 4,
-     "change": 2.31,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 4.77,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 4,
-      "change": 2.31
-     },
-     {
-      "week": 5,
-      "change": -3.01
-     },
-     {
-      "week": 6,
-      "change": 3.45
-     },
-     {
-      "week": 7,
-      "change": 2.02
-     }
-    ],
-    "words": "Your lineup gains 2.3 this week and 4.8 over weeks 4–7 in total (week 5 loses 3.0)."
-   },
+   "price_in": 43,
    "card": {
     "give": [
      {
-      "sleeper_id": "3163",
-      "gsis_id": "00-0033106",
-      "player_name": "Jared Goff",
+      "sleeper_id": "12545",
+      "gsis_id": "00-0040743",
+      "player_name": "Tyler Shough",
       "position": "QB",
-      "team": "DET",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kaicbot8qhzrvddilbtp",
-      "this_week": 20.16,
+      "team": "NO",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+      "this_week": 17.92,
       "cannot_play": null,
       "market_price": 0,
-      "season_points": 238,
+      "season_points": 219,
       "roster_id": 3
      }
     ],
     "get": [
      {
-      "sleeper_id": "7569",
-      "gsis_id": "00-0036554",
-      "player_name": "Nico Collins",
+      "sleeper_id": "7525",
+      "gsis_id": "00-0036912",
+      "player_name": "DeVonta Smith",
       "position": "WR",
-      "team": "HOU",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fguybjrn1kwflxm5szwq",
-      "this_week": 16.35,
-      "cannot_play": null,
-      "market_price": 59,
-      "season_points": 232,
+      "team": "PHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/k724kq3hyv7jc0y9s03x",
+      "this_week": null,
+      "cannot_play": "Out",
+      "market_price": 43,
+      "season_points": 216,
       "roster_id": 5
      }
     ],
@@ -1046,36 +1918,36 @@
      ]
     },
     "your_effect": {
-     "this_week": 2.31,
-     "window": 4.77,
+     "this_week": 0.0,
+     "window": 8.64,
      "by_week": [
-      2.31,
-      -3.01,
-      3.45,
-      2.02
+      0.0,
+      2.07,
+      4.26,
+      2.31
      ],
-     "raw_window": 4.77,
-     "words": "Your starters: +2.3 this week, +4.8 over weeks 4–7."
+     "raw_window": -9.23,
+     "words": "Your starters: no change this week, +8.6 over weeks 4–7 (−9.2 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
     },
     "their_effect": {
-     "this_week": -1.75,
-     "window": 8.17,
+     "this_week": 0.79,
+     "window": 8.37,
      "by_week": [
-      -1.75,
-      14.34,
-      -3.43,
-      -0.99
+      0.79,
+      9.26,
+      -0.4,
+      -1.28
      ],
-     "raw_window": 8.17,
-     "words": "Practice Squad's starters: −1.8 this week, +8.2 over weeks 4–7."
+     "raw_window": 8.37,
+     "words": "Practice Squad's starters: +0.8 this week, +8.4 over weeks 4–7."
     },
     "depth_cost": {
-     "mine": "You lose Ladd McConkey, a backup WR: 3 WR left on your bench who can play in week 4.",
-     "theirs": "they lose Sam Darnold, a backup QB: 1 QB left on their bench who can play in week 4",
+     "mine": "You lose Tyler Shough, a backup QB: no QB left on your bench who can play in week 4; you lose Ladd McConkey, a backup WR: 2 WR left on your bench who can play in week 4 (DeVonta Smith Out cannot).",
+     "theirs": "they lose DeVonta Smith, a WR who cannot play in week 4 (Out): no WR left on their bench who can play in week 4 (DK Metcalf game started (bench) and A.J. Brown on injured reserve cannot); they lose Sam Darnold, a backup QB: 1 QB left on their bench who can play in week 4",
      "roster_spots": 0,
      "season_value": {
       "give": 0,
-      "get": 59
+      "get": 43
      },
      "horizon": null
     },
@@ -1120,6 +1992,16 @@
       ],
       "covered_window": 4.54,
       "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
       "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
@@ -1133,10 +2015,10 @@
        "position": "QB"
       },
       "drop": {
-       "sleeper_id": "11581",
-       "gsis_id": "00-0039811",
-       "player_name": "MarShawn Lloyd",
-       "position": "RB"
+       "sleeper_id": "5859",
+       "gsis_id": "00-0035676",
+       "player_name": "A.J. Brown",
+       "position": "WR"
       },
       "open_spot": false,
       "gain_week": 1.23,
@@ -1164,45 +2046,55 @@
       ],
       "covered_window": 23.69,
       "covered_week": 1.23,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 1.23,
+       "net_window": 23.69
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-      "words": "the Jacoby Brissett claim gives +23.7 over weeks 4–7 (drop MarShawn Lloyd)"
+      "words": "the Jacoby Brissett claim gives +23.7 over weeks 4–7 (drop A.J. Brown)"
      },
-     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop MarShawn Lloyd: +23.7 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop A.J. Brown: +23.7 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
     "beyond": {
-     "mine": 0.23,
-     "theirs": -15.52,
+     "mine": 4.1,
+     "theirs": -15.32,
      "margin": 1.0
     },
     "why_consider": [
-     "Their starters gain +8.2 over weeks 4–7.",
-     "Jared Goff starts for them in weeks 4, 5 and 7."
+     "Their starters gain +8.4 over weeks 4–7.",
+     "Tyler Shough starts for them in weeks 4, 5, 6 and 7."
     ],
     "why_refuse": [
-     "Their starters lose 1.8 this week.",
      "Their best waiver move (Jacoby Brissett, +23.7) does about as much or more for them over weeks 4–7.",
-     "They give 59 season value above replacement for 0: 59 more, over 25% of what you give.",
+     "They give 43 season value above replacement for 0: 43 more, over 25% of what you give.",
      "They must cut Sam Darnold to make room.",
-     "They lose Sam Darnold, a backup QB: 1 QB left on their bench who can play in week 4."
+     "They lose DeVonta Smith, a WR who cannot play in week 4 (Out): no WR left on their bench who can play in week 4 (DK Metcalf game started (bench) and A.J. Brown on injured reserve cannot); they lose Sam Darnold, a backup QB: 1 QB left on their bench who can play in week 4."
     ],
     "plausibility": {
      "key": "implausible",
      "label": "Implausible",
      "reasons": [
-      "they give 59 season value above replacement for 0: 59 more, over 25% of what you give"
+      "they give 43 season value above replacement for 0: 43 more, over 25% of what you give"
      ]
     },
     "guardrails": [
      {
       "rule": "value_gap_theirs",
-      "words": "they give 59 season value above replacement for 0: 59 more, over 25% of what you give"
+      "words": "they give 43 season value above replacement for 0: 43 more, over 25% of what you give"
      }
     ],
     "legal": {
      "ok": true,
      "notes": [
       "You must cut Ladd McConkey to make room.",
+      "You would have nobody for QB in week 6: counted with the best free agent there, not as an empty slot.",
       "Practice Squad must cut Sam Darnold to make room."
      ],
      "checks": [
@@ -1218,139 +2110,10 @@
      "credible": false,
      "key": "not_worth_proposing",
      "label": "Not worth proposing",
-     "words": "Not worth proposing: your starters gain +0.2 beyond your best waiver move over weeks 4–7 (the bar is 1 point); Practice Squad's starters end 15.5 behind their own best move over weeks 4–7; they give 59 season value above replacement for 0: 59 more, over 25% of what you give.",
+     "words": "Not worth proposing: Practice Squad's starters end 15.3 behind their own best move over weeks 4–7; they give 43 season value above replacement for 0: 43 more, over 25% of what you give.",
      "plausibility": "Implausible"
     }
    },
-   "decision": {
-    "basis": "replacement",
-    "dial": {
-     "score": 84,
-     "label": "Improves it a lot",
-     "their_gain": 8.17,
-     "you": 4.77,
-     "caption": "their starters over weeks 4–7, against realistic replacements",
-     "title": "Effect on their starters",
-     "need": "puts Goff at their QB in place of Young, puts Barkley at their FLEX in place of Downs and moves Downs from FLEX to WR"
-    },
-    "verdict": "Helps your lineup +2.3 this week (+4.8 over weeks 4–7), them +8.2 over weeks 4–7 (−1.8 this week); you get more season value: helps both lineups, and they give up the value.",
-    "alternative": {
-     "words": "+4.8 over weeks 4–7, 0.2 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
-     "beats": true,
-     "beyond": {
-      "mine": 0.23,
-      "theirs": -15.52
-     }
-    },
-    "recommendation": {
-     "credible": false,
-     "key": "not_worth_proposing",
-     "label": "Not worth proposing",
-     "words": "Not worth proposing: your starters gain +0.2 beyond your best waiver move over weeks 4–7 (the bar is 1 point); Practice Squad's starters end 15.5 behind their own best move over weeks 4–7; they give 59 season value above replacement for 0: 59 more, over 25% of what you give.",
-     "plausibility": "Implausible"
-    },
-    "caveat": null,
-    "mine": {
-     "gain_week": 2.31,
-     "gain_window": 4.77,
-     "by_week": [
-      2.31,
-      -3.01,
-      3.45,
-      2.02
-     ]
-    },
-    "theirs": {
-     "gain_week": -1.75,
-     "gain_window": 8.17,
-     "by_week": [
-      -1.75,
-      14.34,
-      -3.43,
-      -0.99
-     ]
-    }
-   },
-   "tier": "explore",
-   "credible_rank": null
-  },
-  {
-   "partner": 5,
-   "partner_team": "Practice Squad",
-   "shape": "2-for-1",
-   "kind": "2-for-1",
-   "is_best": false,
-   "give": [
-    {
-     "sleeper_id": "3163",
-     "gsis_id": "00-0033106",
-     "player_name": "Jared Goff",
-     "position": "QB",
-     "team": "DET",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kaicbot8qhzrvddilbtp",
-     "this_week": 20.16,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 238,
-     "roster_id": 3,
-     "availability": null
-    },
-    {
-     "sleeper_id": "5967",
-     "gsis_id": "00-0035261",
-     "player_name": "Tony Pollard",
-     "position": "RB",
-     "team": "TEN",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mb2xdrqiys6ktlcuah2n",
-     "this_week": 10.66,
-     "cannot_play": null,
-     "market_price": 30,
-     "season_points": 166,
-     "roster_id": 3,
-     "availability": null
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "7569",
-     "gsis_id": "00-0036554",
-     "player_name": "Nico Collins",
-     "position": "WR",
-     "team": "HOU",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fguybjrn1kwflxm5szwq",
-     "this_week": 16.35,
-     "cannot_play": null,
-     "market_price": 59,
-     "season_points": 232,
-     "roster_id": 5,
-     "availability": null
-    }
-   ],
-   "you_gain_week": 2.31,
-   "you_gain_horizon": 4.77,
-   "they_gain_week": -1.75,
-   "they_gain_horizon": 9.91,
-   "interest": {
-    "score": 91,
-    "label": "Improves it a lot",
-    "their_gain": 9.91,
-    "you": 4.77,
-    "caption": "their starters over weeks 4–7, against realistic replacements",
-    "title": "Effect on their starters",
-    "need": "puts Goff at their QB in place of Young, puts Barkley at their FLEX in place of Downs and moves Downs from FLEX to WR"
-   },
-   "price_out": 30,
-   "price_in": 59,
-   "optional": {
-    "sleeper_id": "5967",
-    "player_name": "Tony Pollard",
-    "season_points": 166,
-    "words": "Adding Tony Pollard does not change your gain; it costs you RB depth (Tony Pollard: 166 season points)."
-   },
-   "beyond_alternative": 0.23,
-   "beats_alternative": true,
-   "alternative_words": "+4.8 over weeks 4–7, 0.2 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
-   "other_objective": null,
    "strip": {
     "weeks": [
      4,
@@ -1359,163 +2122,270 @@
      7
     ],
     "mine": [
-     2.31,
-     -3.01,
-     3.45,
-     2.02
+     0.0,
+     2.07,
+     4.26,
+     2.31
     ],
     "theirs": [
-     -1.75,
-     14.34,
-     -1.69,
-     -0.99
+     0.79,
+     9.26,
+     -0.4,
+     -1.28
     ]
    },
-   "rank": 4,
-   "demoted": false,
    "story": {
     "this_week": {
      "week": 4,
-     "change": 2.31,
-     "kind": "gain"
+     "change": 0.0,
+     "kind": "none"
     },
     "window": {
-     "change": 4.77,
+     "change": 8.64,
      "kind": "gain"
     },
     "by_week": [
      {
       "week": 4,
-      "change": 2.31
+      "change": 0.0
      },
      {
       "week": 5,
-      "change": -3.01
+      "change": 2.07
      },
      {
       "week": 6,
-      "change": 3.45
+      "change": 4.26
      },
      {
       "week": 7,
-      "change": 2.02
+      "change": 2.31
      }
     ],
-    "words": "Your lineup gains 2.3 this week and 4.8 over weeks 4–7 in total (week 5 loses 3.0)."
+    "words": "Nothing changes this week; your lineup gains 8.6 over weeks 4–7 in total."
    },
+   "alternative_words": "+8.6 over weeks 4–7, 4.1 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "beyond_alternative": 4.1,
+   "beats_alternative": true,
+   "other_objective": null,
+   "decision": {
+    "basis": "replacement",
+    "dial": {
+     "score": 85,
+     "label": "Improves it a lot",
+     "their_gain": 8.37,
+     "you": 8.64,
+     "caption": "their starters over weeks 4–7, against realistic replacements",
+     "title": "Effect on their starters",
+     "need": "puts Shough at their QB in place of Young"
+    },
+    "verdict": "Helps your lineup +0.0 this week (+8.6 over weeks 4–7), them +0.8 (+8.4 over weeks 4–7); you get more season value: helps both lineups, and they give up the value.",
+    "alternative": {
+     "words": "+8.6 over weeks 4–7, 4.1 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+     "beats": true,
+     "beyond": {
+      "mine": 4.1,
+      "theirs": -15.32
+     }
+    },
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: Practice Squad's starters end 15.3 behind their own best move over weeks 4–7; they give 43 season value above replacement for 0: 43 more, over 25% of what you give.",
+     "plausibility": "Implausible"
+    },
+    "caveat": null,
+    "mine": {
+     "gain_week": 0.0,
+     "gain_window": 8.64,
+     "by_week": [
+      0.0,
+      2.07,
+      4.26,
+      2.31
+     ]
+    },
+    "theirs": {
+     "gain_week": 0.79,
+     "gain_window": 8.37,
+     "by_week": [
+      0.79,
+      9.26,
+      -0.4,
+      -1.28
+     ]
+    }
+   },
+   "rank": 5,
+   "demoted": false,
+   "tier": "explore",
+   "credible_rank": null
+  },
+  {
+   "partner": 10,
+   "partner_team": "Fourth and Long",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "6790",
+     "gsis_id": "00-0036275",
+     "player_name": "D'Andre Swift",
+     "position": "RB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/owpmwzoilitcodc6cmxo",
+     "this_week": 15.2,
+     "cannot_play": null,
+     "market_price": 56,
+     "season_points": 192,
+     "roster_id": 3,
+     "availability": null
+    },
+    {
+     "sleeper_id": "13279",
+     "gsis_id": "00-0041438",
+     "player_name": "Carnell Tate",
+     "position": "WR",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+     "this_week": 9.74,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 190,
+     "roster_id": 3,
+     "availability": null
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7547",
+     "gsis_id": "00-0036963",
+     "player_name": "Amon-Ra St. Brown",
+     "position": "WR",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fd8nwhm6pvxfyzphzl6i",
+     "this_week": 17.24,
+     "cannot_play": null,
+     "market_price": 89,
+     "season_points": 262,
+     "roster_id": 10,
+     "availability": null
+    }
+   ],
+   "you_gain_week": 2.04,
+   "you_gain_horizon": 6.78,
+   "they_gain_week": -1.15,
+   "they_gain_horizon": 6.08,
+   "interest": {
+    "score": 75,
+    "label": "Improves it a lot",
+    "their_gain": 6.08,
+    "you": 6.78,
+    "caption": "their starters over weeks 4–7, against realistic replacements",
+    "title": "Effect on their starters",
+    "need": "puts Swift at their RB in place of Ollie Gordon II and puts Tate at their WR in place of Brown"
+   },
+   "price_out": 73,
+   "price_in": 89,
    "card": {
     "give": [
      {
-      "sleeper_id": "3163",
-      "gsis_id": "00-0033106",
-      "player_name": "Jared Goff",
-      "position": "QB",
-      "team": "DET",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kaicbot8qhzrvddilbtp",
-      "this_week": 20.16,
+      "sleeper_id": "6790",
+      "gsis_id": "00-0036275",
+      "player_name": "D'Andre Swift",
+      "position": "RB",
+      "team": "CHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/owpmwzoilitcodc6cmxo",
+      "this_week": 15.2,
       "cannot_play": null,
-      "market_price": 0,
-      "season_points": 238,
+      "market_price": 56,
+      "season_points": 192,
       "roster_id": 3
      },
      {
-      "sleeper_id": "5967",
-      "gsis_id": "00-0035261",
-      "player_name": "Tony Pollard",
-      "position": "RB",
+      "sleeper_id": "13279",
+      "gsis_id": "00-0041438",
+      "player_name": "Carnell Tate",
+      "position": "WR",
       "team": "TEN",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mb2xdrqiys6ktlcuah2n",
-      "this_week": 10.66,
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+      "this_week": 9.74,
       "cannot_play": null,
-      "market_price": 30,
-      "season_points": 166,
+      "market_price": 17,
+      "season_points": 190,
       "roster_id": 3
      }
     ],
     "get": [
      {
-      "sleeper_id": "7569",
-      "gsis_id": "00-0036554",
-      "player_name": "Nico Collins",
+      "sleeper_id": "7547",
+      "gsis_id": "00-0036963",
+      "player_name": "Amon-Ra St. Brown",
       "position": "WR",
-      "team": "HOU",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fguybjrn1kwflxm5szwq",
-      "this_week": 16.35,
+      "team": "DET",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fd8nwhm6pvxfyzphzl6i",
+      "this_week": 17.24,
       "cannot_play": null,
-      "market_price": 59,
-      "season_points": 232,
-      "roster_id": 5
+      "market_price": 89,
+      "season_points": 262,
+      "roster_id": 10
      }
     ],
-    "partner": 5,
+    "partner": 10,
     "drops": {
      "mine": [],
      "theirs": [
       {
        "player": {
-        "sleeper_id": "4943",
-        "gsis_id": "00-0034869",
-        "player_name": "Sam Darnold",
-        "position": "QB",
-        "team": "SEA",
-        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fyay8vruj0cqmhopufzk",
-        "this_week": 4.98,
-        "cannot_play": null,
-        "market_price": 0,
-        "season_points": 61,
-        "roster_id": 5
-       },
-       "words": "They must cut Sam Darnold."
-      },
-      {
-       "player": {
-        "sleeper_id": "11581",
-        "gsis_id": "00-0039811",
-        "player_name": "MarShawn Lloyd",
+        "sleeper_id": "13345",
+        "gsis_id": "00-0041496",
+        "player_name": "Jonah Coleman",
         "position": "RB",
-        "team": "GB",
-        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xp8sd4enimuk4zd0aqgu",
-        "this_week": 7.8,
-        "cannot_play": null,
-        "market_price": 1,
-        "season_points": 137,
-        "roster_id": 5
+        "team": "DEN",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qbauucaxakkhtxihuvmr",
+        "this_week": null,
+        "cannot_play": "NFL injured reserve",
+        "market_price": 0,
+        "season_points": 93,
+        "roster_id": 10
        },
-       "words": "They must cut MarShawn Lloyd."
+       "words": "They must cut Jonah Coleman."
       }
      ]
     },
     "your_effect": {
-     "this_week": 2.31,
-     "window": 4.77,
+     "this_week": 2.04,
+     "window": 6.78,
      "by_week": [
-      2.31,
-      -3.01,
-      3.45,
-      2.02
+      2.04,
+      4.79,
+      -2.82,
+      2.77
      ],
-     "raw_window": 4.77,
-     "words": "Your starters: +2.3 this week, +4.8 over weeks 4–7."
+     "raw_window": 6.78,
+     "words": "Your starters: +2.0 this week, +6.8 over weeks 4–7."
     },
     "their_effect": {
-     "this_week": -1.75,
-     "window": 9.91,
+     "this_week": -1.15,
+     "window": 6.08,
      "by_week": [
-      -1.75,
-      14.34,
-      -1.69,
-      -0.99
+      -1.15,
+      -2.23,
+      10.19,
+      -0.73
      ],
-     "raw_window": 9.91,
-     "words": "Practice Squad's starters: −1.8 this week, +9.9 over weeks 4–7."
+     "raw_window": 44.2,
+     "words": "Fourth and Long's starters: −1.1 this week, +6.1 over weeks 4–7 (+44.2 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
     },
     "depth_cost": {
-     "mine": "You lose Tony Pollard, a backup RB: 1 RB left on your bench who can play in week 4. You free 1 roster spot.",
-     "theirs": "they lose Sam Darnold, a backup QB: 1 QB left on their bench who can play in week 4; they lose MarShawn Lloyd, a backup RB: 1 RB left on their bench who can play in week 4 (Rachaad White Out cannot)",
+     "mine": "You lose Carnell Tate, a backup WR: 2 WR left on your bench who can play in week 4. You free 1 roster spot.",
+     "theirs": "they lose Jonah Coleman, an RB who cannot play in week 4 (on injured reserve): no RB left on their bench who can play in week 4 (Jaylen Warren game started (bench), Jadarian Price on injured reserve and Travis Etienne on injured reserve cannot)",
      "roster_spots": -1,
      "season_value": {
-      "give": 30,
-      "get": 59
+      "give": 73,
+      "get": 89
      },
      "horizon": null
     },
@@ -1560,6 +2430,16 @@
       ],
       "covered_window": 4.54,
       "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
       "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
@@ -1567,25 +2447,25 @@
      "theirs": {
       "kind": "waiver",
       "player": {
-       "sleeper_id": "3257",
-       "gsis_id": "00-0033119",
-       "player_name": "Jacoby Brissett",
-       "position": "QB"
+       "sleeper_id": "8126",
+       "gsis_id": "00-0038117",
+       "player_name": "Wan'Dale Robinson",
+       "position": "WR"
       },
       "drop": {
-       "sleeper_id": "11581",
-       "gsis_id": "00-0039811",
-       "player_name": "MarShawn Lloyd",
+       "sleeper_id": "13345",
+       "gsis_id": "00-0041496",
+       "player_name": "Jonah Coleman",
        "position": "RB"
       },
       "open_spot": false,
-      "gain_week": 1.23,
-      "gain_window": 23.69,
+      "gain_week": 0.0,
+      "gain_window": 5.09,
       "by_week": [
-       1.23,
-       16.52,
-       2.92,
-       3.02
+       0.0,
+       0.0,
+       5.09,
+       0.0
       ],
       "weeks": [
        4,
@@ -1597,54 +2477,77 @@
       "source": "basis search",
       "note": null,
       "covered_by_week": [
-       1.23,
-       16.52,
-       2.92,
-       3.02
+       0.0,
+       0.0,
+       5.09,
+       0.0
       ],
-      "covered_window": 23.69,
-      "covered_week": 1.23,
+      "covered_window": 5.09,
+      "covered_week": 0.0,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 0.0,
+       "net_window": 5.09
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-      "words": "the Jacoby Brissett claim gives +23.7 over weeks 4–7 (drop MarShawn Lloyd)"
+      "words": "the Wan'Dale Robinson claim gives +5.1 over weeks 4–7 (drop Jonah Coleman)",
+      "roster_only_pick": {
+       "player": {
+        "sleeper_id": "4035",
+        "gsis_id": "00-0033906",
+        "player_name": "Alvin Kamara",
+        "position": "RB",
+        "team": "NO",
+        "headshot_url": null
+       },
+       "drop": {
+        "sleeper_id": "13286",
+        "gsis_id": "00-0041512",
+        "player_name": "Jadarian Price",
+        "position": "RB",
+        "team": null,
+        "headshot_url": null
+       },
+       "gain_window": 39.17,
+       "covered_window": 1.67
+      }
      },
-     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop MarShawn Lloyd: +23.7 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Wan'Dale Robinson, drop Jonah Coleman: +5.1 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
     "beyond": {
-     "mine": 0.23,
-     "theirs": -13.78,
+     "mine": 2.24,
+     "theirs": 0.99,
      "margin": 1.0
     },
     "why_consider": [
-     "Their starters gain +9.9 over weeks 4–7.",
-     "Jared Goff and Tony Pollard start for them in weeks 4, 5, 6 and 7."
+     "Their starters gain +6.1 over weeks 4–7.",
+     "Carnell Tate and D'Andre Swift start for them in weeks 4, 5, 6 and 7."
     ],
     "why_refuse": [
-     "Their starters lose 1.8 this week.",
-     "Their best waiver move (Jacoby Brissett, +23.7) does about as much or more for them over weeks 4–7.",
-     "They give 59 season value above replacement for 30: 29 more, over 25% of what you give.",
-     "They must cut Sam Darnold to make room.",
-     "They must cut MarShawn Lloyd to make room.",
-     "They lose Sam Darnold, a backup QB: 1 QB left on their bench who can play in week 4; they lose MarShawn Lloyd, a backup RB: 1 RB left on their bench who can play in week 4 (Rachaad White Out cannot)."
+     "Their starters lose 1.1 this week.",
+     "Their best waiver move (Wan'Dale Robinson, +5.1) does about as much or more for them over weeks 4–7.",
+     "They must cut Jonah Coleman to make room.",
+     "They lose Jonah Coleman, an RB who cannot play in week 4 (on injured reserve): no RB left on their bench who can play in week 4 (Jaylen Warren game started (bench), Jadarian Price on injured reserve and Travis Etienne on injured reserve cannot).",
+     "Our numbers only: no market price for D'Andre Swift, Carnell Tate, Amon-Ra St. Brown: this is how the rosters fit, not what the players would fetch."
     ],
     "plausibility": {
-     "key": "implausible",
-     "label": "Implausible",
+     "key": "roster_fit",
+     "label": "A roster-fit idea",
      "reasons": [
-      "they give 59 season value above replacement for 30: 29 more, over 25% of what you give"
+      "no market price for D'Andre Swift, Carnell Tate, Amon-Ra St. Brown: this is how the rosters fit, not what the players would fetch"
      ]
     },
-    "guardrails": [
-     {
-      "rule": "value_gap_theirs",
-      "words": "they give 59 season value above replacement for 30: 29 more, over 25% of what you give"
-     }
-    ],
+    "guardrails": [],
     "legal": {
      "ok": true,
      "notes": [
-      "Practice Squad must cut Sam Darnold to make room.",
-      "Practice Squad must cut MarShawn Lloyd to make room."
+      "Fourth and Long must cut Jonah Coleman to make room."
      ],
      "checks": [
       "ownership (trades.clean_package)",
@@ -1659,59 +2562,1001 @@
      "credible": false,
      "key": "not_worth_proposing",
      "label": "Not worth proposing",
-     "words": "Not worth proposing: your starters gain +0.2 beyond your best waiver move over weeks 4–7 (the bar is 1 point); Practice Squad's starters end 13.8 behind their own best move over weeks 4–7; they give 59 season value above replacement for 30: 29 more, over 25% of what you give.",
-     "plausibility": "Implausible"
+     "words": "Not worth proposing: Fourth and Long's starters gain +1.0 beyond their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
     }
    },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     2.04,
+     4.79,
+     -2.82,
+     2.77
+    ],
+    "theirs": [
+     -1.15,
+     -2.23,
+     10.19,
+     -0.73
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": 2.04,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 6.78,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": 2.04
+     },
+     {
+      "week": 5,
+      "change": 4.79
+     },
+     {
+      "week": 6,
+      "change": -2.82
+     },
+     {
+      "week": 7,
+      "change": 2.77
+     }
+    ],
+    "words": "Your lineup gains 2.0 this week and 6.8 over weeks 4–7 in total (week 6 loses 2.8)."
+   },
+   "alternative_words": "+6.8 over weeks 4–7, 2.2 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "beyond_alternative": 2.24,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
-     "score": 91,
+     "score": 75,
      "label": "Improves it a lot",
-     "their_gain": 9.91,
-     "you": 4.77,
+     "their_gain": 6.08,
+     "you": 6.78,
      "caption": "their starters over weeks 4–7, against realistic replacements",
      "title": "Effect on their starters",
-     "need": "puts Goff at their QB in place of Young, puts Barkley at their FLEX in place of Downs and moves Downs from FLEX to WR"
+     "need": "puts Swift at their RB in place of Ollie Gordon II and puts Tate at their WR in place of Brown"
     },
-    "verdict": "Helps your lineup +2.3 this week (+4.8 over weeks 4–7), them +9.9 over weeks 4–7 (−1.8 this week); you get more season value: helps both lineups, and they give up the value.",
+    "verdict": "Helps your lineup +2.0 this week (+6.8 over weeks 4–7), them +6.1 over weeks 4–7 (−1.1 this week); you get more season value: helps both lineups, and they give up the value.",
     "alternative": {
-     "words": "+4.8 over weeks 4–7, 0.2 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+     "words": "+6.8 over weeks 4–7, 2.2 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
-      "mine": 0.23,
-      "theirs": -13.78
+      "mine": 2.24,
+      "theirs": 0.99
      }
     },
     "recommendation": {
      "credible": false,
      "key": "not_worth_proposing",
      "label": "Not worth proposing",
-     "words": "Not worth proposing: your starters gain +0.2 beyond your best waiver move over weeks 4–7 (the bar is 1 point); Practice Squad's starters end 13.8 behind their own best move over weeks 4–7; they give 59 season value above replacement for 30: 29 more, over 25% of what you give.",
-     "plausibility": "Implausible"
+     "words": "Not worth proposing: Fourth and Long's starters gain +1.0 beyond their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
     },
     "caveat": null,
     "mine": {
-     "gain_week": 2.31,
-     "gain_window": 4.77,
+     "gain_week": 2.04,
+     "gain_window": 6.78,
      "by_week": [
-      2.31,
-      -3.01,
-      3.45,
-      2.02
+      2.04,
+      4.79,
+      -2.82,
+      2.77
      ]
     },
     "theirs": {
-     "gain_week": -1.75,
-     "gain_window": 9.91,
+     "gain_week": -1.15,
+     "gain_window": 6.08,
      "by_week": [
-      -1.75,
-      14.34,
-      -1.69,
-      -0.99
+      -1.15,
+      -2.23,
+      10.19,
+      -0.73
      ]
     }
    },
+   "rank": 6,
+   "demoted": false,
+   "tier": "explore",
+   "credible_rank": null
+  },
+  {
+   "partner": 4,
+   "partner_team": "Kickoff Kings",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "5927",
+     "gsis_id": "00-0035659",
+     "player_name": "Terry McLaurin",
+     "position": "WR",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmfl2zruajmkrtcg4zxp",
+     "this_week": 11.8,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 171,
+     "roster_id": 3,
+     "availability": {
+      "status": "Questionable",
+      "why": "Questionable · NFL injury report",
+      "sits": false,
+      "out_indefinitely": false,
+      "words": null
+     }
+    },
+    {
+     "sleeper_id": "6650",
+     "gsis_id": "00-0035358",
+     "player_name": "Chase McLaughlin",
+     "position": "K",
+     "team": "TB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+     "this_week": 7.88,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 126,
+     "roster_id": 3,
+     "availability": null
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "8148",
+     "gsis_id": "00-0037240",
+     "player_name": "Jameson Williams",
+     "position": "WR",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/byiptqggtglvy5qrw5wp",
+     "this_week": 11.75,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 170,
+     "roster_id": 4,
+     "availability": null
+    }
+   ],
+   "you_gain_week": 2.48,
+   "you_gain_horizon": 6.43,
+   "they_gain_week": 0.35,
+   "they_gain_horizon": 0.56,
+   "interest": {
+    "score": 32,
+    "label": "About even",
+    "their_gain": 0.56,
+    "you": 6.43,
+    "caption": "their starters over weeks 4–7, against realistic replacements",
+    "title": "Effect on their starters",
+    "need": "puts McLaurin at their WR in place of Williams and puts McLaughlin at their K in place of Smack"
+   },
+   "price_out": 0,
+   "price_in": 0,
+   "card": {
+    "give": [
+     {
+      "sleeper_id": "5927",
+      "gsis_id": "00-0035659",
+      "player_name": "Terry McLaurin",
+      "position": "WR",
+      "team": "WAS",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmfl2zruajmkrtcg4zxp",
+      "this_week": 11.8,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 171,
+      "roster_id": 3
+     },
+     {
+      "sleeper_id": "6650",
+      "gsis_id": "00-0035358",
+      "player_name": "Chase McLaughlin",
+      "position": "K",
+      "team": "TB",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+      "this_week": 7.88,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 126,
+      "roster_id": 3
+     }
+    ],
+    "get": [
+     {
+      "sleeper_id": "8148",
+      "gsis_id": "00-0037240",
+      "player_name": "Jameson Williams",
+      "position": "WR",
+      "team": "DET",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/byiptqggtglvy5qrw5wp",
+      "this_week": 11.75,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 170,
+      "roster_id": 4
+     }
+    ],
+    "partner": 4,
+    "drops": {
+     "mine": [],
+     "theirs": [
+      {
+       "player": {
+        "sleeper_id": "13414",
+        "gsis_id": "00-0041052",
+        "player_name": "Kaelon Black",
+        "position": "RB",
+        "team": "SF",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/nwgkzr1ysr32jc79zfnt",
+        "this_week": 6.75,
+        "cannot_play": null,
+        "market_price": 0,
+        "season_points": 89,
+        "roster_id": 4
+       },
+       "words": "They must cut Kaelon Black."
+      },
+      {
+       "player": {
+        "sleeper_id": "13281",
+        "gsis_id": "00-0041029",
+        "player_name": "Jordyn Tyson",
+        "position": "WR",
+        "team": "NO",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/al6fifxstyc6omsenzhd",
+        "this_week": null,
+        "cannot_play": "NFL injured reserve",
+        "market_price": 0,
+        "season_points": 117,
+        "roster_id": 4
+       },
+       "words": "They must cut Jordyn Tyson."
+      }
+     ]
+    },
+    "your_effect": {
+     "this_week": 2.48,
+     "window": 6.43,
+     "by_week": [
+      2.48,
+      2.2,
+      -0.05,
+      1.8
+     ],
+     "raw_window": -33.62,
+     "words": "Your starters: +2.5 this week, +6.4 over weeks 4–7 (−33.6 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+    },
+    "their_effect": {
+     "this_week": 0.35,
+     "window": 0.56,
+     "by_week": [
+      0.35,
+      -0.49,
+      1.27,
+      -0.57
+     ],
+     "raw_window": 0.56,
+     "words": "Kickoff Kings's starters: +0.3 this week, +0.6 over weeks 4–7."
+    },
+    "depth_cost": {
+     "mine": "You free 1 roster spot.",
+     "theirs": "they lose Kaelon Black, a backup RB: 2 RB left on their bench who can play in week 4; they lose Jordyn Tyson, a WR who cannot play in week 4 (on injured reserve): 2 WR left on their bench who can play in week 4",
+     "roster_spots": -1,
+     "season_value": {
+      "give": 0,
+      "get": 0
+     },
+     "horizon": null
+    },
+    "waiver_alternative": {
+     "mine": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "5095",
+       "gsis_id": "00-0034161",
+       "player_name": "Daniel Carlson",
+       "position": "K"
+      },
+      "drop": {
+       "sleeper_id": "11635",
+       "gsis_id": "00-0039915",
+       "player_name": "Ladd McConkey",
+       "position": "WR"
+      },
+      "open_spot": false,
+      "gain_week": 2.53,
+      "gain_window": 4.54,
+      "by_week": [
+       2.53,
+       0.21,
+       0.0,
+       1.8
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4–7",
+      "source": "basis search",
+      "note": null,
+      "covered_by_week": [
+       2.53,
+       0.21,
+       0.0,
+       1.8
+      ],
+      "covered_window": 4.54,
+      "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
+      "availability": "claim",
+      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+      "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
+     },
+     "theirs": {
+      "kind": "not_compared",
+      "player": null,
+      "drop": null,
+      "open_spot": false,
+      "gain_week": 0.0,
+      "gain_window": 0.0,
+      "by_week": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4–7",
+      "source": "not compared (IL-4)",
+      "note": null,
+      "words": "their own best waiver move was not compared: the trade adds +0.6 to their starters over weeks 4–7, under the 1-point bar, so no move of theirs changes the answer",
+      "covered_by_week": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "covered_window": 0.0,
+      "covered_week": 0.0,
+      "availability": "not_compared",
+      "availability_words": "not compared"
+     },
+     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade adds +0.6 to their starters over weeks 4–7, under the 1-point bar, so no move of theirs changes the answer."
+    },
+    "beyond": {
+     "mine": 1.89,
+     "theirs": 0.56,
+     "margin": 1.0
+    },
+    "why_consider": [
+     "Their starters gain +0.6 over weeks 4–7.",
+     "Chase McLaughlin and Terry McLaurin start for them in weeks 4, 5, 6 and 7."
+    ],
+    "why_refuse": [
+     "They must cut Kaelon Black to make room.",
+     "They must cut Jordyn Tyson to make room.",
+     "They lose Kaelon Black, a backup RB: 2 RB left on their bench who can play in week 4; they lose Jordyn Tyson, a WR who cannot play in week 4 (on injured reserve): 2 WR left on their bench who can play in week 4.",
+     "Our numbers only: no market price for Terry McLaurin, Chase McLaughlin, Jameson Williams: this is how the rosters fit, not what the players would fetch."
+    ],
+    "plausibility": {
+     "key": "roster_fit",
+     "label": "A roster-fit idea",
+     "reasons": [
+      "no market price for Terry McLaurin, Chase McLaughlin, Jameson Williams: this is how the rosters fit, not what the players would fetch"
+     ]
+    },
+    "guardrails": [],
+    "legal": {
+     "ok": true,
+     "notes": [
+      "You would have nobody for K in weeks 4, 5, 6 and 7: counted with the best free agent there, not as an empty slot.",
+      "Kickoff Kings must cut Kaelon Black to make room.",
+      "Kickoff Kings must cut Jordyn Tyson to make room."
+     ],
+     "checks": [
+      "ownership (trades.clean_package)",
+      "roster limits and required cuts (trades._after)",
+      "locked players (RosterBoard.is_locked)",
+      "position requirements (lineup.solve)",
+      "trade deadline (league settings)"
+     ]
+    },
+    "credible": false,
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: Kickoff Kings's starters gain +0.6 beyond their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
+    }
+   },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     2.48,
+     2.2,
+     -0.05,
+     1.8
+    ],
+    "theirs": [
+     0.35,
+     -0.49,
+     1.27,
+     -0.57
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": 2.48,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 6.43,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": 2.48
+     },
+     {
+      "week": 5,
+      "change": 2.2
+     },
+     {
+      "week": 6,
+      "change": -0.05
+     },
+     {
+      "week": 7,
+      "change": 1.8
+     }
+    ],
+    "words": "Your lineup gains 2.5 this week and 6.4 over weeks 4–7 in total (week 6 loses 0.1)."
+   },
+   "alternative_words": "+6.4 over weeks 4–7, 1.9 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "beyond_alternative": 1.89,
+   "beats_alternative": true,
+   "other_objective": null,
+   "decision": {
+    "basis": "replacement",
+    "dial": {
+     "score": 32,
+     "label": "About even",
+     "their_gain": 0.56,
+     "you": 6.43,
+     "caption": "their starters over weeks 4–7, against realistic replacements",
+     "title": "Effect on their starters",
+     "need": "puts McLaurin at their WR in place of Williams and puts McLaughlin at their K in place of Smack"
+    },
+    "verdict": "Helps your lineup +2.5 this week (+6.4 over weeks 4–7), them +0.3 (+0.6 over weeks 4–7); about even by season value: helps both lineups.",
+    "alternative": {
+     "words": "+6.4 over weeks 4–7, 1.9 more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+     "beats": true,
+     "beyond": {
+      "mine": 1.89,
+      "theirs": 0.56
+     }
+    },
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: Kickoff Kings's starters gain +0.6 beyond their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
+    },
+    "caveat": null,
+    "mine": {
+     "gain_week": 2.48,
+     "gain_window": 6.43,
+     "by_week": [
+      2.48,
+      2.2,
+      -0.05,
+      1.8
+     ]
+    },
+    "theirs": {
+     "gain_week": 0.35,
+     "gain_window": 0.56,
+     "by_week": [
+      0.35,
+      -0.49,
+      1.27,
+      -0.57
+     ]
+    }
+   },
+   "rank": 7,
+   "demoted": false,
+   "tier": "explore",
+   "credible_rank": null
+  },
+  {
+   "partner": 2,
+   "partner_team": "Waiver Wire Warriors",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 17.92,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 219,
+     "roster_id": 3,
+     "availability": null
+    },
+    {
+     "sleeper_id": "13279",
+     "gsis_id": "00-0041438",
+     "player_name": "Carnell Tate",
+     "position": "WR",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+     "this_week": 9.74,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 190,
+     "roster_id": 3,
+     "availability": null
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "10229",
+     "gsis_id": "00-0039067",
+     "player_name": "Rashee Rice",
+     "position": "WR",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+     "this_week": 14.22,
+     "cannot_play": null,
+     "market_price": 24,
+     "season_points": 197,
+     "roster_id": 2,
+     "availability": null
+    }
+   ],
+   "you_gain_week": 2.42,
+   "you_gain_horizon": 4.55,
+   "they_gain_week": -0.46,
+   "they_gain_horizon": 1.0,
+   "interest": {
+    "score": 38,
+    "label": "About even",
+    "their_gain": 1.0,
+    "you": 4.55,
+    "caption": "their starters over weeks 4–7, against realistic replacements",
+    "title": "Effect on their starters",
+    "need": "puts Shough at their QB in place of Hurts and puts Vele at their WR in place of Rice"
+   },
+   "price_out": 17,
+   "price_in": 24,
+   "card": {
+    "give": [
+     {
+      "sleeper_id": "12545",
+      "gsis_id": "00-0040743",
+      "player_name": "Tyler Shough",
+      "position": "QB",
+      "team": "NO",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+      "this_week": 17.92,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 219,
+      "roster_id": 3
+     },
+     {
+      "sleeper_id": "13279",
+      "gsis_id": "00-0041438",
+      "player_name": "Carnell Tate",
+      "position": "WR",
+      "team": "TEN",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+      "this_week": 9.74,
+      "cannot_play": null,
+      "market_price": 17,
+      "season_points": 190,
+      "roster_id": 3
+     }
+    ],
+    "get": [
+     {
+      "sleeper_id": "10229",
+      "gsis_id": "00-0039067",
+      "player_name": "Rashee Rice",
+      "position": "WR",
+      "team": "KC",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+      "this_week": 14.22,
+      "cannot_play": null,
+      "market_price": 24,
+      "season_points": 197,
+      "roster_id": 2
+     }
+    ],
+    "partner": 2,
+    "drops": {
+     "mine": [],
+     "theirs": [
+      {
+       "player": {
+        "sleeper_id": "9753",
+        "gsis_id": "00-0039165",
+        "player_name": "Zach Charbonnet",
+        "position": "RB",
+        "team": "SEA",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cuuyog0lpxfaj0y0huvp",
+        "this_week": null,
+        "cannot_play": "NFL injured reserve",
+        "market_price": 0,
+        "season_points": 95,
+        "roster_id": 2
+       },
+       "words": "They must cut Zach Charbonnet."
+      },
+      {
+       "player": {
+        "sleeper_id": "12508",
+        "gsis_id": "00-0040691",
+        "player_name": "Jaxson Dart",
+        "position": "QB",
+        "team": "NYG",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/n6uymxssgiicjmxkzxoc",
+        "this_week": null,
+        "cannot_play": "NFL injured reserve",
+        "market_price": 0,
+        "season_points": 103,
+        "roster_id": 2
+       },
+       "words": "They must cut Jaxson Dart."
+      }
+     ]
+    },
+    "your_effect": {
+     "this_week": 2.42,
+     "window": 4.55,
+     "by_week": [
+      2.42,
+      -0.21,
+      2.34,
+      0.0
+     ],
+     "raw_window": -13.32,
+     "words": "Your starters: +2.4 this week, +4.5 over weeks 4–7 (−13.3 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+    },
+    "their_effect": {
+     "this_week": -0.46,
+     "window": 1.0,
+     "by_week": [
+      -0.46,
+      1.62,
+      -0.16,
+      0.0
+     ],
+     "raw_window": 1.0,
+     "words": "Waiver Wire Warriors's starters: −0.5 this week, +1.0 over weeks 4–7."
+    },
+    "depth_cost": {
+     "mine": "You lose Tyler Shough, a backup QB: no QB left on your bench who can play in week 4; you lose Carnell Tate, a backup WR: 3 WR left on your bench who can play in week 4. You free 1 roster spot.",
+     "theirs": "they lose Zach Charbonnet, an RB who cannot play in week 4 (on injured reserve): 2 RB left on their bench who can play in week 4; they lose Jaxson Dart, a QB who cannot play in week 4 (on injured reserve): 1 QB left on their bench who can play in week 4",
+     "roster_spots": -1,
+     "season_value": {
+      "give": 17,
+      "get": 24
+     },
+     "horizon": null
+    },
+    "waiver_alternative": {
+     "mine": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "5095",
+       "gsis_id": "00-0034161",
+       "player_name": "Daniel Carlson",
+       "position": "K"
+      },
+      "drop": {
+       "sleeper_id": "11635",
+       "gsis_id": "00-0039915",
+       "player_name": "Ladd McConkey",
+       "position": "WR"
+      },
+      "open_spot": false,
+      "gain_week": 2.53,
+      "gain_window": 4.54,
+      "by_week": [
+       2.53,
+       0.21,
+       0.0,
+       1.8
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4–7",
+      "source": "basis search",
+      "note": null,
+      "covered_by_week": [
+       2.53,
+       0.21,
+       0.0,
+       1.8
+      ],
+      "covered_window": 4.54,
+      "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
+      "availability": "claim",
+      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+      "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
+     },
+     "theirs": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "3257",
+       "gsis_id": "00-0033119",
+       "player_name": "Jacoby Brissett",
+       "position": "QB"
+      },
+      "drop": {
+       "sleeper_id": "9753",
+       "gsis_id": "00-0039165",
+       "player_name": "Zach Charbonnet",
+       "position": "RB"
+      },
+      "open_spot": false,
+      "gain_week": 3.04,
+      "gain_window": 6.87,
+      "by_week": [
+       3.04,
+       3.83,
+       0.0,
+       0.0
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4–7",
+      "source": "basis search",
+      "note": null,
+      "covered_by_week": [
+       3.04,
+       3.83,
+       0.0,
+       0.0
+      ],
+      "covered_window": 6.87,
+      "covered_week": 3.04,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 3.04,
+       "net_window": 6.87
+      },
+      "availability": "claim",
+      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+      "words": "the Jacoby Brissett claim gives +6.9 over weeks 4–7 (drop Zach Charbonnet)"
+     },
+     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Zach Charbonnet: +6.9 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+    },
+    "beyond": {
+     "mine": 0.01,
+     "theirs": -5.87,
+     "margin": 1.0
+    },
+    "why_consider": [
+     "Their starters gain +1.0 over weeks 4–7.",
+     "Carnell Tate and Tyler Shough start for them in weeks 4, 5, 6 and 7."
+    ],
+    "why_refuse": [
+     "Their starters lose 0.5 this week.",
+     "Their best waiver move (Jacoby Brissett, +6.9) does about as much or more for them over weeks 4–7.",
+     "They must cut Zach Charbonnet to make room.",
+     "They must cut Jaxson Dart to make room.",
+     "They lose Zach Charbonnet, an RB who cannot play in week 4 (on injured reserve): 2 RB left on their bench who can play in week 4; they lose Jaxson Dart, a QB who cannot play in week 4 (on injured reserve): 1 QB left on their bench who can play in week 4.",
+     "Our numbers only: no market price for Tyler Shough, Carnell Tate, Rashee Rice: this is how the rosters fit, not what the players would fetch."
+    ],
+    "plausibility": {
+     "key": "roster_fit",
+     "label": "A roster-fit idea",
+     "reasons": [
+      "no market price for Tyler Shough, Carnell Tate, Rashee Rice: this is how the rosters fit, not what the players would fetch"
+     ]
+    },
+    "guardrails": [],
+    "legal": {
+     "ok": true,
+     "notes": [
+      "You would have nobody for QB in week 6: counted with the best free agent there, not as an empty slot.",
+      "Waiver Wire Warriors must cut Zach Charbonnet to make room.",
+      "Waiver Wire Warriors must cut Jaxson Dart to make room."
+     ],
+     "checks": [
+      "ownership (trades.clean_package)",
+      "roster limits and required cuts (trades._after)",
+      "locked players (RosterBoard.is_locked)",
+      "position requirements (lineup.solve)",
+      "trade deadline (league settings)"
+     ]
+    },
+    "credible": false,
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: your starters gain +0.0 beyond your best waiver move over weeks 4–7 (the bar is 1 point); Waiver Wire Warriors's starters end 5.9 behind their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
+    }
+   },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     2.42,
+     -0.21,
+     2.34,
+     0.0
+    ],
+    "theirs": [
+     -0.46,
+     1.62,
+     -0.16,
+     0.0
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": 2.42,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 4.55,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": 2.42
+     },
+     {
+      "week": 5,
+      "change": -0.21
+     },
+     {
+      "week": 6,
+      "change": 2.34
+     },
+     {
+      "week": 7,
+      "change": 0.0
+     }
+    ],
+    "words": "Your lineup gains 2.4 this week and 4.5 over weeks 4–7 in total (week 5 loses 0.2)."
+   },
+   "alternative_words": "+4.5 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "beyond_alternative": 0.01,
+   "beats_alternative": false,
+   "other_objective": null,
+   "decision": {
+    "basis": "replacement",
+    "dial": {
+     "score": 38,
+     "label": "About even",
+     "their_gain": 1.0,
+     "you": 4.55,
+     "caption": "their starters over weeks 4–7, against realistic replacements",
+     "title": "Effect on their starters",
+     "need": "puts Shough at their QB in place of Hurts and puts Vele at their WR in place of Rice"
+    },
+    "verdict": "Helps your lineup +2.4 this week (+4.5 over weeks 4–7), them +1.0 over weeks 4–7 (−0.5 this week); about even by season value: helps both lineups.",
+    "alternative": {
+     "words": "+4.5 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+     "beats": false,
+     "beyond": {
+      "mine": 0.01,
+      "theirs": -5.87
+     }
+    },
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: your starters gain +0.0 beyond your best waiver move over weeks 4–7 (the bar is 1 point); Waiver Wire Warriors's starters end 5.9 behind their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
+    },
+    "caveat": null,
+    "mine": {
+     "gain_week": 2.42,
+     "gain_window": 4.55,
+     "by_week": [
+      2.42,
+      -0.21,
+      2.34,
+      0.0
+     ]
+    },
+    "theirs": {
+     "gain_week": -0.46,
+     "gain_window": 1.0,
+     "by_week": [
+      -0.46,
+      1.62,
+      -0.16,
+      0.0
+     ]
+    }
+   },
+   "rank": 8,
+   "demoted": true,
    "tier": "explore",
    "credible_rank": null
   },
@@ -1782,62 +3627,6 @@
    },
    "price_out": 47,
    "price_in": 45,
-   "beyond_alternative": -0.24,
-   "beats_alternative": false,
-   "alternative_words": "+4.3 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     4,
-     5,
-     6,
-     7
-    ],
-    "mine": [
-     1.03,
-     -0.21,
-     1.83,
-     1.65
-    ],
-    "theirs": [
-     -0.96,
-     3.63,
-     0.59,
-     0.06
-    ]
-   },
-   "rank": 5,
-   "demoted": true,
-   "story": {
-    "this_week": {
-     "week": 4,
-     "change": 1.03,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 4.3,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 4,
-      "change": 1.03
-     },
-     {
-      "week": 5,
-      "change": -0.21
-     },
-     {
-      "week": 6,
-      "change": 1.83
-     },
-     {
-      "week": 7,
-      "change": 1.65
-     }
-    ],
-    "words": "Your lineup gains 1.0 this week and 4.3 over weeks 4–7 in total (week 5 loses 0.2)."
-   },
    "card": {
     "give": [
      {
@@ -1979,6 +3768,16 @@
       ],
       "covered_window": 4.54,
       "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
       "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
@@ -2023,6 +3822,16 @@
       ],
       "covered_window": 6.2,
       "covered_week": 2.46,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.46,
+       "net_window": 6.2
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
       "words": "the Ka'imi Fairbairn claim gives +6.2 over weeks 4–7 (drop Marvin Harrison Jr.)",
@@ -2044,7 +3853,7 @@
         "headshot_url": null
        },
        "gain_window": 20.53,
-       "covered_window": 2.66
+       "covered_window": 3.58
       }
      },
      "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Ka'imi Fairbairn, drop Marvin Harrison Jr.: +6.2 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -2095,6 +3904,60 @@
      "plausibility": "A roster-fit idea"
     }
    },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     1.03,
+     -0.21,
+     1.83,
+     1.65
+    ],
+    "theirs": [
+     -0.96,
+     3.63,
+     0.59,
+     0.06
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": 1.03,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 4.3,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": 1.03
+     },
+     {
+      "week": 5,
+      "change": -0.21
+     },
+     {
+      "week": 6,
+      "change": 1.83
+     },
+     {
+      "week": 7,
+      "change": 1.65
+     }
+    ],
+    "words": "Your lineup gains 1.0 this week and 4.3 over weeks 4–7 in total (week 5 loses 0.2)."
+   },
+   "alternative_words": "+4.3 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "beyond_alternative": -0.24,
+   "beats_alternative": false,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -2144,6 +4007,438 @@
      ]
     }
    },
+   "rank": 9,
+   "demoted": true,
+   "tier": "explore",
+   "credible_rank": null
+  },
+  {
+   "partner": 1,
+   "partner_team": "Bench Mob",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 17.92,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 219,
+     "roster_id": 3,
+     "availability": null
+    },
+    {
+     "sleeper_id": "13279",
+     "gsis_id": "00-0041438",
+     "player_name": "Carnell Tate",
+     "position": "WR",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+     "this_week": 9.74,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 190,
+     "roster_id": 3,
+     "availability": null
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "9487",
+     "gsis_id": "00-0038606",
+     "player_name": "Parker Washington",
+     "position": "WR",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+     "this_week": 13.93,
+     "cannot_play": null,
+     "market_price": 19,
+     "season_points": 192,
+     "roster_id": 1,
+     "availability": null
+    }
+   ],
+   "you_gain_week": 2.13,
+   "you_gain_horizon": 2.53,
+   "they_gain_week": -1.99,
+   "they_gain_horizon": 0.9,
+   "interest": {
+    "score": 36,
+    "label": "About even",
+    "their_gain": 0.9,
+    "you": 2.53,
+    "caption": "their starters over weeks 4–7, against realistic replacements",
+    "title": "Effect on their starters",
+    "need": "puts Shough at their QB in place of Cousins and puts Tate at their WR in place of Washington"
+   },
+   "price_out": 17,
+   "price_in": 19,
+   "card": {
+    "give": [
+     {
+      "sleeper_id": "12545",
+      "gsis_id": "00-0040743",
+      "player_name": "Tyler Shough",
+      "position": "QB",
+      "team": "NO",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+      "this_week": 17.92,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 219,
+      "roster_id": 3
+     },
+     {
+      "sleeper_id": "13279",
+      "gsis_id": "00-0041438",
+      "player_name": "Carnell Tate",
+      "position": "WR",
+      "team": "TEN",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+      "this_week": 9.74,
+      "cannot_play": null,
+      "market_price": 17,
+      "season_points": 190,
+      "roster_id": 3
+     }
+    ],
+    "get": [
+     {
+      "sleeper_id": "9487",
+      "gsis_id": "00-0038606",
+      "player_name": "Parker Washington",
+      "position": "WR",
+      "team": "JAX",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+      "this_week": 13.93,
+      "cannot_play": null,
+      "market_price": 19,
+      "season_points": 192,
+      "roster_id": 1
+     }
+    ],
+    "partner": 1,
+    "drops": {
+     "mine": [],
+     "theirs": [
+      {
+       "player": {
+        "sleeper_id": "4983",
+        "gsis_id": "00-0034827",
+        "player_name": "DJ Moore",
+        "position": "WR",
+        "team": "BUF",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lsavpxtqoqu25emwcnvy",
+        "this_week": 9.51,
+        "cannot_play": null,
+        "market_price": 0,
+        "season_points": 129,
+        "roster_id": 1
+       },
+       "words": "They must cut DJ Moore."
+      },
+      {
+       "player": {
+        "sleeper_id": "8142",
+        "gsis_id": "00-0037664",
+        "player_name": "Alec Pierce",
+        "position": "WR",
+        "team": "IND",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qcg9t51wgp3hicavmkmy",
+        "this_week": null,
+        "cannot_play": "NFL injured reserve",
+        "market_price": 0,
+        "season_points": 130,
+        "roster_id": 1
+       },
+       "words": "They must cut Alec Pierce."
+      }
+     ]
+    },
+    "your_effect": {
+     "this_week": 2.13,
+     "window": 2.53,
+     "by_week": [
+      2.13,
+      1.33,
+      1.74,
+      -2.67
+     ],
+     "raw_window": -15.34,
+     "words": "Your starters: +2.1 this week, +2.5 over weeks 4–7 (−15.3 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+    },
+    "their_effect": {
+     "this_week": -1.99,
+     "window": 0.9,
+     "by_week": [
+      -1.99,
+      -1.33,
+      0.44,
+      3.78
+     ],
+     "raw_window": 0.9,
+     "words": "Bench Mob's starters: −2.0 this week, +0.9 over weeks 4–7."
+    },
+    "depth_cost": {
+     "mine": "You lose Tyler Shough, a backup QB: no QB left on your bench who can play in week 4; you lose Carnell Tate, a backup WR: 3 WR left on your bench who can play in week 4. You free 1 roster spot.",
+     "theirs": "they lose DJ Moore, a backup WR: 1 WR left on their bench who can play in week 4; they lose Alec Pierce, a WR who cannot play in week 4 (on injured reserve): 1 WR left on their bench who can play in week 4",
+     "roster_spots": -1,
+     "season_value": {
+      "give": 17,
+      "get": 19
+     },
+     "horizon": null
+    },
+    "waiver_alternative": {
+     "mine": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "5095",
+       "gsis_id": "00-0034161",
+       "player_name": "Daniel Carlson",
+       "position": "K"
+      },
+      "drop": {
+       "sleeper_id": "11635",
+       "gsis_id": "00-0039915",
+       "player_name": "Ladd McConkey",
+       "position": "WR"
+      },
+      "open_spot": false,
+      "gain_week": 2.53,
+      "gain_window": 4.54,
+      "by_week": [
+       2.53,
+       0.21,
+       0.0,
+       1.8
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4–7",
+      "source": "basis search",
+      "note": null,
+      "covered_by_week": [
+       2.53,
+       0.21,
+       0.0,
+       1.8
+      ],
+      "covered_window": 4.54,
+      "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
+      "availability": "claim",
+      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+      "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
+     },
+     "theirs": {
+      "kind": "not_compared",
+      "player": null,
+      "drop": null,
+      "open_spot": false,
+      "gain_week": 0.0,
+      "gain_window": 0.0,
+      "by_week": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "span": "weeks 4–7",
+      "source": "not compared (IL-4)",
+      "note": null,
+      "words": "their own best waiver move was not compared: the trade adds +0.9 to their starters over weeks 4–7, under the 1-point bar, so no move of theirs changes the answer",
+      "covered_by_week": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "covered_window": 0.0,
+      "covered_week": 0.0,
+      "availability": "not_compared",
+      "availability_words": "not compared"
+     },
+     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade adds +0.9 to their starters over weeks 4–7, under the 1-point bar, so no move of theirs changes the answer."
+    },
+    "beyond": {
+     "mine": -2.01,
+     "theirs": 0.9,
+     "margin": 1.0
+    },
+    "why_consider": [
+     "Their starters gain +0.9 over weeks 4–7.",
+     "Carnell Tate and Tyler Shough start for them in weeks 4, 5, 6 and 7."
+    ],
+    "why_refuse": [
+     "Their starters lose 2.0 this week.",
+     "They must cut DJ Moore to make room.",
+     "They must cut Alec Pierce to make room.",
+     "They lose DJ Moore, a backup WR: 1 WR left on their bench who can play in week 4; they lose Alec Pierce, a WR who cannot play in week 4 (on injured reserve): 1 WR left on their bench who can play in week 4.",
+     "Our numbers only: no market price for Tyler Shough, Carnell Tate, Parker Washington: this is how the rosters fit, not what the players would fetch."
+    ],
+    "plausibility": {
+     "key": "roster_fit",
+     "label": "A roster-fit idea",
+     "reasons": [
+      "no market price for Tyler Shough, Carnell Tate, Parker Washington: this is how the rosters fit, not what the players would fetch"
+     ]
+    },
+    "guardrails": [],
+    "legal": {
+     "ok": true,
+     "notes": [
+      "You would have nobody for QB in week 6: counted with the best free agent there, not as an empty slot.",
+      "Bench Mob must cut DJ Moore to make room.",
+      "Bench Mob must cut Alec Pierce to make room."
+     ],
+     "checks": [
+      "ownership (trades.clean_package)",
+      "roster limits and required cuts (trades._after)",
+      "locked players (RosterBoard.is_locked)",
+      "position requirements (lineup.solve)",
+      "trade deadline (league settings)"
+     ]
+    },
+    "credible": false,
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: your starters end 2.0 behind your best waiver move over weeks 4–7 (the bar is 1 point); Bench Mob's starters gain +0.9 beyond their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
+    }
+   },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     2.13,
+     1.33,
+     1.74,
+     -2.67
+    ],
+    "theirs": [
+     -1.99,
+     -1.33,
+     0.44,
+     3.78
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": 2.13,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 2.53,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": 2.13
+     },
+     {
+      "week": 5,
+      "change": 1.33
+     },
+     {
+      "week": 6,
+      "change": 1.74
+     },
+     {
+      "week": 7,
+      "change": -2.67
+     }
+    ],
+    "words": "Your lineup gains 2.1 this week and 2.5 over weeks 4–7 in total (week 7 loses 2.7)."
+   },
+   "alternative_words": "+2.5 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "beyond_alternative": -2.01,
+   "beats_alternative": false,
+   "other_objective": null,
+   "decision": {
+    "basis": "replacement",
+    "dial": {
+     "score": 36,
+     "label": "About even",
+     "their_gain": 0.9,
+     "you": 2.53,
+     "caption": "their starters over weeks 4–7, against realistic replacements",
+     "title": "Effect on their starters",
+     "need": "puts Shough at their QB in place of Cousins and puts Tate at their WR in place of Washington"
+    },
+    "verdict": "Helps your lineup +2.1 this week (+2.5 over weeks 4–7), them +0.9 over weeks 4–7 (−2.0 this week); about even by season value: helps both lineups.",
+    "alternative": {
+     "words": "+2.5 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+     "beats": false,
+     "beyond": {
+      "mine": -2.01,
+      "theirs": 0.9
+     }
+    },
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: your starters end 2.0 behind your best waiver move over weeks 4–7 (the bar is 1 point); Bench Mob's starters gain +0.9 beyond their own best move over weeks 4–7.",
+     "plausibility": "A roster-fit idea"
+    },
+    "caveat": null,
+    "mine": {
+     "gain_week": 2.13,
+     "gain_window": 2.53,
+     "by_week": [
+      2.13,
+      1.33,
+      1.74,
+      -2.67
+     ]
+    },
+    "theirs": {
+     "gain_week": -1.99,
+     "gain_window": 0.9,
+     "by_week": [
+      -1.99,
+      -1.33,
+      0.44,
+      3.78
+     ]
+    }
+   },
+   "rank": 10,
+   "demoted": true,
    "tier": "explore",
    "credible_rank": null
   },
@@ -2200,62 +4495,6 @@
    },
    "price_out": 53,
    "price_in": 46,
-   "beyond_alternative": -2.51,
-   "beats_alternative": false,
-   "alternative_words": "+2.0 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     4,
-     5,
-     6,
-     7
-    ],
-    "mine": [
-     -0.28,
-     0.91,
-     -0.8,
-     2.2
-    ],
-    "theirs": [
-     1.49,
-     -0.91,
-     3.22,
-     -2.08
-    ]
-   },
-   "rank": 6,
-   "demoted": true,
-   "story": {
-    "this_week": {
-     "week": 4,
-     "change": -0.28,
-     "kind": "loss"
-    },
-    "window": {
-     "change": 2.03,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 4,
-      "change": -0.28
-     },
-     {
-      "week": 5,
-      "change": 0.91
-     },
-     {
-      "week": 6,
-      "change": -0.8
-     },
-     {
-      "week": 7,
-      "change": 2.2
-     }
-    ],
-    "words": "Your lineup loses 0.3 this week but gains 2.0 over weeks 4–7 in total (week 6 loses 0.8)."
-   },
    "card": {
     "give": [
      {
@@ -2384,6 +4623,16 @@
       ],
       "covered_window": 4.54,
       "covered_week": 2.53,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.53,
+       "net_window": 4.54
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
       "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
@@ -2428,6 +4677,16 @@
       ],
       "covered_window": 6.2,
       "covered_week": 2.46,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 2.46,
+       "net_window": 6.2
+      },
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
       "words": "the Ka'imi Fairbairn claim gives +6.2 over weeks 4–7 (drop Marvin Harrison Jr.)",
@@ -2449,7 +4708,7 @@
         "headshot_url": null
        },
        "gain_window": 20.53,
-       "covered_window": 2.66
+       "covered_window": 3.58
       }
      },
      "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Ka'imi Fairbairn, drop Marvin Harrison Jr.: +6.2 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
@@ -2497,6 +4756,60 @@
      "plausibility": "A roster-fit idea"
     }
    },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     -0.28,
+     0.91,
+     -0.8,
+     2.2
+    ],
+    "theirs": [
+     1.49,
+     -0.91,
+     3.22,
+     -2.08
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 4,
+     "change": -0.28,
+     "kind": "loss"
+    },
+    "window": {
+     "change": 2.03,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 4,
+      "change": -0.28
+     },
+     {
+      "week": 5,
+      "change": 0.91
+     },
+     {
+      "week": 6,
+      "change": -0.8
+     },
+     {
+      "week": 7,
+      "change": 2.2
+     }
+    ],
+    "words": "Your lineup loses 0.3 this week but gains 2.0 over weeks 4–7 in total (week 6 loses 0.8)."
+   },
+   "alternative_words": "+2.0 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "beyond_alternative": -2.51,
+   "beats_alternative": false,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -2546,864 +4859,13 @@
      ]
     }
    },
-   "tier": "explore",
-   "credible_rank": null
-  },
-  {
-   "partner": 4,
-   "partner_team": "Kickoff Kings",
-   "shape": "2-for-1",
-   "kind": "2-for-1",
-   "is_best": true,
-   "give": [
-    {
-     "sleeper_id": "5927",
-     "gsis_id": "00-0035659",
-     "player_name": "Terry McLaurin",
-     "position": "WR",
-     "team": "WAS",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmfl2zruajmkrtcg4zxp",
-     "this_week": 11.8,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 171,
-     "roster_id": 3,
-     "availability": {
-      "status": "Questionable",
-      "why": "Questionable · NFL injury report",
-      "sits": false,
-      "out_indefinitely": false,
-      "words": null
-     }
-    },
-    {
-     "sleeper_id": "7600",
-     "gsis_id": "00-0036894",
-     "player_name": "Pat Freiermuth",
-     "position": "TE",
-     "team": "PIT",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
-     "this_week": null,
-     "cannot_play": "game started (bench)",
-     "market_price": 0,
-     "season_points": 113,
-     "roster_id": 3,
-     "availability": null
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "8148",
-     "gsis_id": "00-0037240",
-     "player_name": "Jameson Williams",
-     "position": "WR",
-     "team": "DET",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/byiptqggtglvy5qrw5wp",
-     "this_week": 11.75,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 170,
-     "roster_id": 4,
-     "availability": null
-    }
-   ],
-   "you_gain_week": -0.05,
-   "you_gain_horizon": 0.37,
-   "they_gain_week": 0.05,
-   "they_gain_horizon": 0.62,
-   "interest": {
-    "score": 33,
-    "label": "About even",
-    "their_gain": 0.62,
-    "you": 0.37,
-    "caption": "their starters over weeks 4–7, against realistic replacements",
-    "title": "Effect on their starters",
-    "need": "puts McLaurin at their WR in place of Williams"
-   },
-   "price_out": 0,
-   "price_in": 0,
-   "beyond_alternative": -4.17,
-   "beats_alternative": false,
-   "alternative_words": "+0.4 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     4,
-     5,
-     6,
-     7
-    ],
-    "mine": [
-     -0.05,
-     0.42,
-     0.0,
-     0.0
-    ],
-    "theirs": [
-     0.05,
-     -0.63,
-     1.24,
-     -0.04
-    ]
-   },
-   "rank": 7,
+   "rank": 11,
    "demoted": true,
-   "story": {
-    "this_week": {
-     "week": 4,
-     "change": -0.05,
-     "kind": "loss"
-    },
-    "window": {
-     "change": 0.37,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 4,
-      "change": -0.05
-     },
-     {
-      "week": 5,
-      "change": 0.42
-     },
-     {
-      "week": 6,
-      "change": 0.0
-     },
-     {
-      "week": 7,
-      "change": 0.0
-     }
-    ],
-    "words": "Your lineup loses 0.1 this week but gains 0.4 over weeks 4–7 in total."
-   },
-   "card": {
-    "give": [
-     {
-      "sleeper_id": "5927",
-      "gsis_id": "00-0035659",
-      "player_name": "Terry McLaurin",
-      "position": "WR",
-      "team": "WAS",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmfl2zruajmkrtcg4zxp",
-      "this_week": 11.8,
-      "cannot_play": null,
-      "market_price": 0,
-      "season_points": 171,
-      "roster_id": 3
-     },
-     {
-      "sleeper_id": "7600",
-      "gsis_id": "00-0036894",
-      "player_name": "Pat Freiermuth",
-      "position": "TE",
-      "team": "PIT",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
-      "this_week": null,
-      "cannot_play": "game started (bench)",
-      "market_price": 0,
-      "season_points": 113,
-      "roster_id": 3
-     }
-    ],
-    "get": [
-     {
-      "sleeper_id": "8148",
-      "gsis_id": "00-0037240",
-      "player_name": "Jameson Williams",
-      "position": "WR",
-      "team": "DET",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/byiptqggtglvy5qrw5wp",
-      "this_week": 11.75,
-      "cannot_play": null,
-      "market_price": 0,
-      "season_points": 170,
-      "roster_id": 4
-     }
-    ],
-    "partner": 4,
-    "drops": {
-     "mine": [],
-     "theirs": [
-      {
-       "player": {
-        "sleeper_id": "13414",
-        "gsis_id": "00-0041052",
-        "player_name": "Kaelon Black",
-        "position": "RB",
-        "team": "SF",
-        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/nwgkzr1ysr32jc79zfnt",
-        "this_week": 6.75,
-        "cannot_play": null,
-        "market_price": 0,
-        "season_points": 89,
-        "roster_id": 4
-       },
-       "words": "They must cut Kaelon Black."
-      },
-      {
-       "player": {
-        "sleeper_id": "13281",
-        "gsis_id": "00-0041029",
-        "player_name": "Jordyn Tyson",
-        "position": "WR",
-        "team": "NO",
-        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/al6fifxstyc6omsenzhd",
-        "this_week": null,
-        "cannot_play": "NFL injured reserve",
-        "market_price": 0,
-        "season_points": 117,
-        "roster_id": 4
-       },
-       "words": "They must cut Jordyn Tyson."
-      }
-     ]
-    },
-    "your_effect": {
-     "this_week": -0.05,
-     "window": 0.37,
-     "by_week": [
-      -0.05,
-      0.42,
-      0.0,
-      0.0
-     ],
-     "raw_window": 0.37,
-     "words": "Your starters: −0.1 this week, +0.4 over weeks 4–7."
-    },
-    "their_effect": {
-     "this_week": 0.05,
-     "window": 0.62,
-     "by_week": [
-      0.05,
-      -0.63,
-      1.24,
-      -0.04
-     ],
-     "raw_window": 0.62,
-     "words": "Kickoff Kings's starters: +0.1 this week, +0.6 over weeks 4–7."
-    },
-    "depth_cost": {
-     "mine": "You lose Pat Freiermuth, a TE who cannot play in week 4 (game started (bench)): no TE left on your bench who can play in week 4 (Pat Freiermuth game started (bench) cannot). You free 1 roster spot.",
-     "theirs": "they lose Kaelon Black, a backup RB: 2 RB left on their bench who can play in week 4; they lose Jordyn Tyson, a WR who cannot play in week 4 (on injured reserve): 2 WR left on their bench who can play in week 4",
-     "roster_spots": -1,
-     "season_value": {
-      "give": 0,
-      "get": 0
-     },
-     "horizon": null
-    },
-    "waiver_alternative": {
-     "mine": {
-      "kind": "waiver",
-      "player": {
-       "sleeper_id": "5095",
-       "gsis_id": "00-0034161",
-       "player_name": "Daniel Carlson",
-       "position": "K"
-      },
-      "drop": {
-       "sleeper_id": "11635",
-       "gsis_id": "00-0039915",
-       "player_name": "Ladd McConkey",
-       "position": "WR"
-      },
-      "open_spot": false,
-      "gain_week": 2.53,
-      "gain_window": 4.54,
-      "by_week": [
-       2.53,
-       0.21,
-       0.0,
-       1.8
-      ],
-      "weeks": [
-       4,
-       5,
-       6,
-       7
-      ],
-      "span": "weeks 4–7",
-      "source": "basis search",
-      "note": null,
-      "covered_by_week": [
-       2.53,
-       0.21,
-       0.0,
-       1.8
-      ],
-      "covered_window": 4.54,
-      "covered_week": 2.53,
-      "availability": "claim",
-      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-      "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
-     },
-     "theirs": {
-      "kind": "not_compared",
-      "player": null,
-      "drop": null,
-      "open_spot": false,
-      "gain_week": 0.0,
-      "gain_window": 0.0,
-      "by_week": [
-       0.0,
-       0.0,
-       0.0,
-       0.0
-      ],
-      "weeks": [
-       4,
-       5,
-       6,
-       7
-      ],
-      "span": "weeks 4–7",
-      "source": "not compared (IL-4)",
-      "note": null,
-      "words": "their own best waiver move was not compared: the trade adds +0.6 to their starters over weeks 4–7, under the 1-point bar, so no move of theirs changes the answer",
-      "covered_by_week": [
-       0.0,
-       0.0,
-       0.0,
-       0.0
-      ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
-      "availability": "not_compared",
-      "availability_words": "not compared"
-     },
-     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade adds +0.6 to their starters over weeks 4–7, under the 1-point bar, so no move of theirs changes the answer."
-    },
-    "beyond": {
-     "mine": -4.17,
-     "theirs": 0.62,
-     "margin": 1.0
-    },
-    "why_consider": [
-     "Their starters gain +0.6 over weeks 4–7.",
-     "Pat Freiermuth and Terry McLaurin start for them in weeks 4, 5, 6 and 7."
-    ],
-    "why_refuse": [
-     "They must cut Kaelon Black to make room.",
-     "They must cut Jordyn Tyson to make room.",
-     "They lose Kaelon Black, a backup RB: 2 RB left on their bench who can play in week 4; they lose Jordyn Tyson, a WR who cannot play in week 4 (on injured reserve): 2 WR left on their bench who can play in week 4.",
-     "Our numbers only: no market price for Terry McLaurin, Pat Freiermuth, Jameson Williams: this is how the rosters fit, not what the players would fetch."
-    ],
-    "plausibility": {
-     "key": "roster_fit",
-     "label": "A roster-fit idea",
-     "reasons": [
-      "no market price for Terry McLaurin, Pat Freiermuth, Jameson Williams: this is how the rosters fit, not what the players would fetch"
-     ]
-    },
-    "guardrails": [],
-    "legal": {
-     "ok": true,
-     "notes": [
-      "Pat Freiermuth's game has started: he changes teams after this week.",
-      "Kickoff Kings must cut Kaelon Black to make room.",
-      "Kickoff Kings must cut Jordyn Tyson to make room."
-     ],
-     "checks": [
-      "ownership (trades.clean_package)",
-      "roster limits and required cuts (trades._after)",
-      "locked players (RosterBoard.is_locked)",
-      "position requirements (lineup.solve)",
-      "trade deadline (league settings)"
-     ]
-    },
-    "credible": false,
-    "recommendation": {
-     "credible": false,
-     "key": "not_worth_proposing",
-     "label": "Not worth proposing",
-     "words": "Not worth proposing: your starters end 4.2 behind your best waiver move over weeks 4–7 (the bar is 1 point); Kickoff Kings's starters gain +0.6 beyond their own best move over weeks 4–7.",
-     "plausibility": "A roster-fit idea"
-    }
-   },
-   "decision": {
-    "basis": "replacement",
-    "dial": {
-     "score": 33,
-     "label": "About even",
-     "their_gain": 0.62,
-     "you": 0.37,
-     "caption": "their starters over weeks 4–7, against realistic replacements",
-     "title": "Effect on their starters",
-     "need": "puts McLaurin at their WR in place of Williams"
-    },
-    "verdict": "Helps your lineup +0.4 over weeks 4–7 (−0.1 this week), them +0.1 (+0.6 over weeks 4–7); about even by season value: helps both lineups.",
-    "alternative": {
-     "words": "+0.4 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
-     "beats": false,
-     "beyond": {
-      "mine": -4.17,
-      "theirs": 0.62
-     }
-    },
-    "recommendation": {
-     "credible": false,
-     "key": "not_worth_proposing",
-     "label": "Not worth proposing",
-     "words": "Not worth proposing: your starters end 4.2 behind your best waiver move over weeks 4–7 (the bar is 1 point); Kickoff Kings's starters gain +0.6 beyond their own best move over weeks 4–7.",
-     "plausibility": "A roster-fit idea"
-    },
-    "caveat": null,
-    "mine": {
-     "gain_week": -0.05,
-     "gain_window": 0.37,
-     "by_week": [
-      -0.05,
-      0.42,
-      0.0,
-      0.0
-     ]
-    },
-    "theirs": {
-     "gain_week": 0.05,
-     "gain_window": 0.62,
-     "by_week": [
-      0.05,
-      -0.63,
-      1.24,
-      -0.04
-     ]
-    }
-   },
-   "tier": "explore",
-   "credible_rank": null
-  },
-  {
-   "partner": 1,
-   "partner_team": "Bench Mob",
-   "shape": "2-for-1",
-   "kind": "2-for-1",
-   "is_best": true,
-   "give": [
-    {
-     "sleeper_id": "5927",
-     "gsis_id": "00-0035659",
-     "player_name": "Terry McLaurin",
-     "position": "WR",
-     "team": "WAS",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmfl2zruajmkrtcg4zxp",
-     "this_week": 11.8,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 171,
-     "roster_id": 3,
-     "availability": {
-      "status": "Questionable",
-      "why": "Questionable · NFL injury report",
-      "sits": false,
-      "out_indefinitely": false,
-      "words": null
-     }
-    },
-    {
-     "sleeper_id": "13279",
-     "gsis_id": "00-0041438",
-     "player_name": "Carnell Tate",
-     "position": "WR",
-     "team": "TEN",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
-     "this_week": 9.74,
-     "cannot_play": null,
-     "market_price": 17,
-     "season_points": 190,
-     "roster_id": 3,
-     "availability": null
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "9487",
-     "gsis_id": "00-0038606",
-     "player_name": "Parker Washington",
-     "position": "WR",
-     "team": "JAX",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
-     "this_week": 13.93,
-     "cannot_play": null,
-     "market_price": 19,
-     "season_points": 192,
-     "roster_id": 1,
-     "availability": null
-    }
-   ],
-   "you_gain_week": 2.13,
-   "you_gain_horizon": 0.35,
-   "they_gain_week": -2.13,
-   "they_gain_horizon": 0.76,
-   "interest": {
-    "score": 34,
-    "label": "About even",
-    "their_gain": 0.76,
-    "you": 0.35,
-    "caption": "their starters over weeks 4–7, against realistic replacements",
-    "title": "Effect on their starters",
-    "need": "puts McLaurin at their WR in place of Washington"
-   },
-   "price_out": 17,
-   "price_in": 19,
-   "beyond_alternative": -4.19,
-   "beats_alternative": false,
-   "alternative_words": "+0.3 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     4,
-     5,
-     6,
-     7
-    ],
-    "mine": [
-     2.13,
-     1.33,
-     -0.44,
-     -2.67
-    ],
-    "theirs": [
-     -2.13,
-     -1.33,
-     0.44,
-     3.78
-    ]
-   },
-   "rank": 8,
-   "demoted": true,
-   "story": {
-    "this_week": {
-     "week": 4,
-     "change": 2.13,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 0.35,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 4,
-      "change": 2.13
-     },
-     {
-      "week": 5,
-      "change": 1.33
-     },
-     {
-      "week": 6,
-      "change": -0.44
-     },
-     {
-      "week": 7,
-      "change": -2.67
-     }
-    ],
-    "words": "Your lineup gains 2.1 this week and 0.3 over weeks 4–7 in total (week 7 loses 2.7)."
-   },
-   "card": {
-    "give": [
-     {
-      "sleeper_id": "5927",
-      "gsis_id": "00-0035659",
-      "player_name": "Terry McLaurin",
-      "position": "WR",
-      "team": "WAS",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmfl2zruajmkrtcg4zxp",
-      "this_week": 11.8,
-      "cannot_play": null,
-      "market_price": 0,
-      "season_points": 171,
-      "roster_id": 3
-     },
-     {
-      "sleeper_id": "13279",
-      "gsis_id": "00-0041438",
-      "player_name": "Carnell Tate",
-      "position": "WR",
-      "team": "TEN",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
-      "this_week": 9.74,
-      "cannot_play": null,
-      "market_price": 17,
-      "season_points": 190,
-      "roster_id": 3
-     }
-    ],
-    "get": [
-     {
-      "sleeper_id": "9487",
-      "gsis_id": "00-0038606",
-      "player_name": "Parker Washington",
-      "position": "WR",
-      "team": "JAX",
-      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
-      "this_week": 13.93,
-      "cannot_play": null,
-      "market_price": 19,
-      "season_points": 192,
-      "roster_id": 1
-     }
-    ],
-    "partner": 1,
-    "drops": {
-     "mine": [],
-     "theirs": [
-      {
-       "player": {
-        "sleeper_id": "4983",
-        "gsis_id": "00-0034827",
-        "player_name": "DJ Moore",
-        "position": "WR",
-        "team": "BUF",
-        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lsavpxtqoqu25emwcnvy",
-        "this_week": 9.51,
-        "cannot_play": null,
-        "market_price": 0,
-        "season_points": 129,
-        "roster_id": 1
-       },
-       "words": "They must cut DJ Moore."
-      },
-      {
-       "player": {
-        "sleeper_id": "8142",
-        "gsis_id": "00-0037664",
-        "player_name": "Alec Pierce",
-        "position": "WR",
-        "team": "IND",
-        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qcg9t51wgp3hicavmkmy",
-        "this_week": null,
-        "cannot_play": "NFL injured reserve",
-        "market_price": 0,
-        "season_points": 130,
-        "roster_id": 1
-       },
-       "words": "They must cut Alec Pierce."
-      }
-     ]
-    },
-    "your_effect": {
-     "this_week": 2.13,
-     "window": 0.35,
-     "by_week": [
-      2.13,
-      1.33,
-      -0.44,
-      -2.67
-     ],
-     "raw_window": 0.35,
-     "words": "Your starters: +2.1 this week, +0.3 over weeks 4–7."
-    },
-    "their_effect": {
-     "this_week": -2.13,
-     "window": 0.76,
-     "by_week": [
-      -2.13,
-      -1.33,
-      0.44,
-      3.78
-     ],
-     "raw_window": 0.76,
-     "words": "Bench Mob's starters: −2.1 this week, +0.8 over weeks 4–7."
-    },
-    "depth_cost": {
-     "mine": "You lose Carnell Tate, a backup WR: 2 WR left on your bench who can play in week 4. You free 1 roster spot.",
-     "theirs": "they lose DJ Moore, a backup WR: 2 WR left on their bench who can play in week 4; they lose Alec Pierce, a WR who cannot play in week 4 (on injured reserve): 2 WR left on their bench who can play in week 4",
-     "roster_spots": -1,
-     "season_value": {
-      "give": 17,
-      "get": 19
-     },
-     "horizon": null
-    },
-    "waiver_alternative": {
-     "mine": {
-      "kind": "waiver",
-      "player": {
-       "sleeper_id": "5095",
-       "gsis_id": "00-0034161",
-       "player_name": "Daniel Carlson",
-       "position": "K"
-      },
-      "drop": {
-       "sleeper_id": "11635",
-       "gsis_id": "00-0039915",
-       "player_name": "Ladd McConkey",
-       "position": "WR"
-      },
-      "open_spot": false,
-      "gain_week": 2.53,
-      "gain_window": 4.54,
-      "by_week": [
-       2.53,
-       0.21,
-       0.0,
-       1.8
-      ],
-      "weeks": [
-       4,
-       5,
-       6,
-       7
-      ],
-      "span": "weeks 4–7",
-      "source": "basis search",
-      "note": null,
-      "covered_by_week": [
-       2.53,
-       0.21,
-       0.0,
-       1.8
-      ],
-      "covered_window": 4.54,
-      "covered_week": 2.53,
-      "availability": "claim",
-      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-      "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
-     },
-     "theirs": {
-      "kind": "not_compared",
-      "player": null,
-      "drop": null,
-      "open_spot": false,
-      "gain_week": 0.0,
-      "gain_window": 0.0,
-      "by_week": [
-       0.0,
-       0.0,
-       0.0,
-       0.0
-      ],
-      "weeks": [
-       4,
-       5,
-       6,
-       7
-      ],
-      "span": "weeks 4–7",
-      "source": "not compared (IL-4)",
-      "note": null,
-      "words": "their own best waiver move was not compared: the trade adds +0.8 to their starters over weeks 4–7, under the 1-point bar, so no move of theirs changes the answer",
-      "covered_by_week": [
-       0.0,
-       0.0,
-       0.0,
-       0.0
-      ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
-      "availability": "not_compared",
-      "availability_words": "not compared"
-     },
-     "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade adds +0.8 to their starters over weeks 4–7, under the 1-point bar, so no move of theirs changes the answer."
-    },
-    "beyond": {
-     "mine": -4.19,
-     "theirs": 0.76,
-     "margin": 1.0
-    },
-    "why_consider": [
-     "Their starters gain +0.8 over weeks 4–7.",
-     "Carnell Tate and Terry McLaurin start for them in weeks 4, 5, 6 and 7."
-    ],
-    "why_refuse": [
-     "Their starters lose 2.1 this week.",
-     "They must cut DJ Moore to make room.",
-     "They must cut Alec Pierce to make room.",
-     "They lose DJ Moore, a backup WR: 2 WR left on their bench who can play in week 4; they lose Alec Pierce, a WR who cannot play in week 4 (on injured reserve): 2 WR left on their bench who can play in week 4.",
-     "Our numbers only: no market price for Terry McLaurin, Carnell Tate, Parker Washington: this is how the rosters fit, not what the players would fetch."
-    ],
-    "plausibility": {
-     "key": "roster_fit",
-     "label": "A roster-fit idea",
-     "reasons": [
-      "no market price for Terry McLaurin, Carnell Tate, Parker Washington: this is how the rosters fit, not what the players would fetch"
-     ]
-    },
-    "guardrails": [],
-    "legal": {
-     "ok": true,
-     "notes": [
-      "Bench Mob must cut DJ Moore to make room.",
-      "Bench Mob must cut Alec Pierce to make room."
-     ],
-     "checks": [
-      "ownership (trades.clean_package)",
-      "roster limits and required cuts (trades._after)",
-      "locked players (RosterBoard.is_locked)",
-      "position requirements (lineup.solve)",
-      "trade deadline (league settings)"
-     ]
-    },
-    "credible": false,
-    "recommendation": {
-     "credible": false,
-     "key": "not_worth_proposing",
-     "label": "Not worth proposing",
-     "words": "Not worth proposing: your starters end 4.2 behind your best waiver move over weeks 4–7 (the bar is 1 point); Bench Mob's starters gain +0.8 beyond their own best move over weeks 4–7.",
-     "plausibility": "A roster-fit idea"
-    }
-   },
-   "decision": {
-    "basis": "replacement",
-    "dial": {
-     "score": 34,
-     "label": "About even",
-     "their_gain": 0.76,
-     "you": 0.35,
-     "caption": "their starters over weeks 4–7, against realistic replacements",
-     "title": "Effect on their starters",
-     "need": "puts McLaurin at their WR in place of Washington"
-    },
-    "verdict": "Helps your lineup +2.1 this week (+0.3 over weeks 4–7), them +0.8 over weeks 4–7 (−2.1 this week); about even by season value: helps both lineups.",
-    "alternative": {
-     "words": "+0.3 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
-     "beats": false,
-     "beyond": {
-      "mine": -4.19,
-      "theirs": 0.76
-     }
-    },
-    "recommendation": {
-     "credible": false,
-     "key": "not_worth_proposing",
-     "label": "Not worth proposing",
-     "words": "Not worth proposing: your starters end 4.2 behind your best waiver move over weeks 4–7 (the bar is 1 point); Bench Mob's starters gain +0.8 beyond their own best move over weeks 4–7.",
-     "plausibility": "A roster-fit idea"
-    },
-    "caveat": null,
-    "mine": {
-     "gain_week": 2.13,
-     "gain_window": 0.35,
-     "by_week": [
-      2.13,
-      1.33,
-      -0.44,
-      -2.67
-     ]
-    },
-    "theirs": {
-     "gain_week": -2.13,
-     "gain_window": 0.76,
-     "by_week": [
-      -2.13,
-      -1.33,
-      0.44,
-      3.78
-     ]
-    }
-   },
    "tier": "explore",
    "credible_rank": null
   }
  ],
  "no_trade_with": [
-  "Fourth and Long",
-  "Waiver Wire Warriors",
-  "Two-Point Tries",
   "Hail Marys"
  ],
  "rejected": [
@@ -3419,13 +4881,13 @@
    "why": "you give 47 season value above replacement for 24: 23 more, over 25% of what you give"
   },
   {
-   "partner_team": "Waiver Wire Warriors",
+   "partner_team": "Kickoff Kings",
    "give": [
-    "Terry McLaurin",
+    "Baltimore Ravens",
     "Tony Pollard"
    ],
    "get": [
-    "Luther Burden III"
+    "Jameson Williams"
    ],
    "why": "you give 30 season value above replacement for 0: 30 more, over 25% of what you give"
   },
@@ -3441,7 +4903,7 @@
    "why": "you give 30 season value above replacement for 0: 30 more, over 25% of what you give"
   }
  ],
- "rejected_count": 3,
+ "rejected_count": 6,
  "sanity": {
   "ros_gap_share": 0.25,
   "market_share": 0.65,
@@ -3453,18 +4915,18 @@
   "words": "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's. A player with no season projection is not judged."
  },
  "words": {
-  "headline": "**No compelling trade found.** None of the 8 trades that raise both starting lineups over weeks 4–7 is worth proposing: 6 do not beat your own best alternative by a point, 8 do not beat the other team's and 2 are not a plausible offer. Your best move: the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey).",
+  "headline": "**No compelling trade found.** None of the 11 trades that raise both starting lineups over weeks 4–7 is worth proposing: 4 do not beat your own best alternative by a point, 11 do not beat the other team's and 1 is not a plausible offer. Your best move: the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey).",
   "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
   "alternative": null
  },
  "verdict": {
   "kind": "none",
   "headline": "No compelling trade found",
-  "reason": "None of the 8 trades that raise both starting lineups over weeks 4–7 is worth proposing: 6 do not beat your own best alternative by a point, 8 do not beat the other team's and 2 are not a plausible offer. Your best move: the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)."
+  "reason": "None of the 11 trades that raise both starting lineups over weeks 4–7 is worth proposing: 4 do not beat your own best alternative by a point, 11 do not beat the other team's and 1 is not a plausible offer. Your best move: the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)."
  },
  "credible_count": 0,
  "headline_rank": null,
- "explore_count": 8,
+ "explore_count": 11,
  "guard_positions": {
   "DEF": {
    "free_best": 11.83,
@@ -3518,6 +4980,16 @@
   ],
   "covered_window": 4.54,
   "covered_week": 2.53,
+  "drop_cost": {
+   "lineup_loss": 0.0,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 0.0,
+   "piece": null,
+   "excess": 0.0,
+   "net_week": 2.53,
+   "net_window": 4.54
+  },
   "availability": "claim",
   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
   "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
@@ -3587,6 +5059,16 @@
    ],
    "covered_window": 4.54,
    "covered_week": 2.53,
+   "drop_cost": {
+    "lineup_loss": 0.0,
+    "season_value": 0.0,
+    "depth_lost": 0.0,
+    "cost": 0.0,
+    "piece": null,
+    "excess": 0.0,
+    "net_week": 2.53,
+    "net_window": 4.54
+   },
    "availability": "claim",
    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
    "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
@@ -3597,10 +5079,11 @@
   "words": "Ranked by gain beyond your best waiver move over weeks 4–7 (Daniel Carlson, +4.5); trades that do not beat it come last."
  },
  "search": {
+  "search_basis": "replacement",
   "bar_sets": 52,
-  "candidates": 2252,
-  "evaluated": 66,
-  "seconds": 0.264,
-  "dropped_on_the_basis": 3
+  "candidates": 2157,
+  "evaluated": 55,
+  "seconds": 0.272,
+  "dropped_on_the_basis": 0
  }
 }

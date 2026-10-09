@@ -908,3 +908,13 @@ sentence of its own, only where they appear.
 | Explore alternatives, when trades past the first three are also worth proposing | 3 more are worth proposing (after the first three, marked on their card). The others raise both starting lineups, but do not beat both teams' own best alternative by 1 point, or are not a plausible offer: ideas to look at, not trades to propose. |
 | The same sentence, when Waivers' first claim is another player (PO) | …; Jacoby Brissett is already counted in every number here (he fills a starting spot that is empty) — Waivers leads with the player who fills an empty spot (+20.4 on your roster alone); the trade screens already fill that spot with him, so their best move is the next one, and the sentence says where he went. |
 <!-- ---- end IT-1 -->
+<!-- ---- IU-1 -->
+## The Trade Finder searches on the basis; a waiver move says what it drops (Wave I-U, IU-1)
+
+| Where | Words |
+|---|---|
+| Every verdict's waiver move and the Finder's "Your best move", a drop that costs more than its starts | the Washington Commanders defense claim gives +1.5 over weeks 5–8 (drop Jacory Croskey-Merritt; netted: his season value above replacement, 5.2) — the gain is net of what the drop costs beyond the lineup points already in it (`waivers.choose_drops`' rule, on the same basis as the trades). The pieces: "his starts", "his season value above replacement", "his backup cover". |
+| The same, a drop that costs nothing more | the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Bryce Young) |
+| The calculator's alternative line | add Cameron Dicker, drop Rhamondre Stevenson (netted: his season value above replacement, 20.0): +0.0 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you |
+| A Finder row's reason, a player who cannot play this week | Ja'Marr Chase cannot play this week (Out · Sleeper, Oct 3): the gain comes after it. — the note in brackets is the league screens' one note (`league_gate.note`), no longer the old `cannot_play` field. |
+<!-- ---- end IU-1 -->
