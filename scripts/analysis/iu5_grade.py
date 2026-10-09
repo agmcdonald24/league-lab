@@ -66,7 +66,7 @@ def hg_outcome(d: pd.DataFrame, status: pd.DataFrame) -> pd.DataFrame:
     played = d["played"].fillna(False).astype(bool).to_numpy()
     ok = Q.scored(d)
     cases = np.array([case_of(p, o, r if isinstance(r, str) else None, q if isinstance(q, str) else None)
-                      for p, o, r, q in zip(played, ok, m["roster_status"], m["report_status"])], dtype=object)
+                      for p, o, r, q in zip(played, ok, m["roster_status"], m["report_status"], strict=True)], dtype=object)
     cases[~hz] = "not a later-week row"
     graded = np.isin(cases, ["played", *ZERO_CASES])
     return pd.DataFrame({"case": cases, "graded": graded, "zero": np.isin(cases, list(ZERO_CASES))}, index=d.index)

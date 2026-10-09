@@ -4133,7 +4133,7 @@ it cannot reward "he will not be starting"; ud1.0 counts every missed week as 0,
 shrinking every line by the league's injury rate. This grade sits between them: a missed week counts when the team
 chose someone else, not when he was hurt.
 
-**The grade (hg1.0) — written at 13:47 ET on 2026-10-09 and committed before any number on it was computed.**
+**The grade (hg1.0) — written at 13:46 ET on 2026-10-09 and committed before any number on it was computed.**
 
 * **Rows**: the horizon study's quarterback rows (`iq3_qb.py` / `it5_role.py` cache: as of W = 3, 5, 7, 9 of
   2021–2025, h = 2–8, every QB with a market-week row and a row in week T — on an NFL roster that week by nflverse's
@@ -4175,6 +4175,33 @@ starters' mean points + (1 − p) × v3.6's points; the role means of the scored
 PPR). A market week's rows are written while it has not kicked off and never rewritten after (a recorded forecast, as
 the context record is). As 2026's weeks are played, `context-record` grades the stored rows on hg1.0's cases and on
 the probability itself (Brier against the base rate); nothing on any screen reads them.
+
+**The four lines on hg1.0** (`iu5_grade.py`, 13:46:39–13:47:03 ET, 24 s, on IT-5's cache; the cases on the later-week QB
+rows of 2021–2025: played 4,542, healthy and not playing 4,463 — 3,985 of them market-week non-starters — injured
+1,065 excluded; no cut / retired / exempt row in the study's rows: a released QB has no row in week T):
+
+| season | v3.6 | the starter keeps the job | rf1.0 | the oracle |
+|---|---|---|---|---|
+| 2021 | 6.395 / .672 | 6.395 / .672 | 6.575 / .680 | 5.260 / .796 |
+| 2022 | 6.371 / .660 | 6.371 / .660 | 6.565 / .666 | 5.230 / .789 |
+| 2023 | 6.611 / .631 | 6.611 / .631 | 6.864 / .633 | 5.551 / .783 |
+| 2024 | 6.845 / .653 | 6.845 / .653 | 7.411 / .627 | 6.460 / .702 |
+| 2025 | 6.730 / .682 | 6.730 / .682 | 7.078 / .681 | 6.044 / .778 |
+| **pooled** | **6.590 / .6596** | 6.590 / .6596 | **6.899 / .6572** | 5.709 / .7696 |
+
+(MAE / Spearman, both house scorings; Half PPR alone v3.6 5.698 / .661, rf1.0 5.965 / .658; by horizon v3.6 → rf1.0 →
+oracle: h2 6.234/.711 → 6.419/.711 → 5.730/.768 … h8 7.074/.594 → 7.516/.584 → 5.903/.748.)
+
+**What hg1.0 would have decided**: rf1.0 **not better** — MAE higher in all 5 seasons (Δ +0.181 / +0.194 / +0.253 /
++0.567 / +0.348), Spearman lower pooled (0.6572 against 0.6596). The same verdict as the old board, for a different
+reason: on hg1.0 half the graded rows are healthy QBs who did not play (mostly backups) and score 0, while both v3.6 and
+rf1.0 give a backup his "if he plays" line (about 3 points) and rf1.0 adds q × a starter's line on top; a continuing
+starter's shrink still costs as before. The oracle (the mixture with the role known) is better by 0.88 of MAE and 0.11
+of Spearman — the role is worth more on this grade than on the old board (0.51), because a benched or idle QB's 0 now
+counts. Reading of the grade itself: it rewards knowing **who plays at all** more than who starts; a forecast built
+for it needs a play probability for the market week's backups (most of them never play), not only a start
+probability — the old rf1.0 mixture does not have one. Spearman on hg1.0 is high (0.66) because the many idle backups'
+zeros are easy to order; MAE is the clause that carries the information.
 
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
