@@ -700,10 +700,10 @@
   "lineup_words": "Denzel Boston (from the trade) starts at FLEX in place of Saquon Barkley (traded)."
  },
  "window_words": "over weeks 15–16 in total",
- "hold_words": "−0.2 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "hold_words": "−0.2 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "hold": {
   "hold": null,
-  "waiver": "−0.2 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver": "−0.2 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
   "waiver_gain": 3.85
  },
  "how": {
@@ -723,10 +723,10 @@
    "position": "DEF"
   },
   "drop": {
-   "sleeper_id": "6794",
-   "gsis_id": "00-0036322",
-   "player_name": "Justin Jefferson",
-   "position": "WR"
+   "sleeper_id": "11643",
+   "gsis_id": "00-0039874",
+   "player_name": "Jaylen Wright",
+   "position": "RB"
   },
   "open_spot": false,
   "gain_week": 1.03,
@@ -740,21 +740,48 @@
    16
   ],
   "span": "weeks 15–16",
-  "source": "fa_pool fill",
+  "source": "basis search",
   "note": null,
-  "words": "add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
   "covered_by_week": [
    1.03,
    2.82
   ],
   "covered_window": 3.85,
   "covered_week": 1.03,
+  "drop_cost": {
+   "lineup_loss": 0.0,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 0.0,
+   "piece": null,
+   "excess": 0.0,
+   "net_week": 1.03,
+   "net_window": 3.85
+  },
   "availability": "claim",
-  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "words": "add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "roster_only_pick": {
+   "player": {
+    "sleeper_id": "ARI",
+    "gsis_id": null,
+    "player_name": "Arizona Cardinals",
+    "position": "DEF"
+   },
+   "drop": {
+    "sleeper_id": "6794",
+    "gsis_id": "00-0036322",
+    "player_name": "Justin Jefferson",
+    "position": "WR"
+   },
+   "gain_window": 3.85,
+   "covered_window": -13.84,
+   "covered_gross_window": 3.85
+  }
  },
  "beyond_alternative": -4.02,
  "beats_alternative": false,
- "alternative_words": "−0.2 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "alternative_words": "−0.2 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -912,10 +939,10 @@
      "position": "DEF"
     },
     "drop": {
-     "sleeper_id": "6794",
-     "gsis_id": "00-0036322",
-     "player_name": "Justin Jefferson",
-     "position": "WR"
+     "sleeper_id": "11643",
+     "gsis_id": "00-0039874",
+     "player_name": "Jaylen Wright",
+     "position": "RB"
     },
     "open_spot": false,
     "gain_week": 1.03,
@@ -929,17 +956,44 @@
      16
     ],
     "span": "weeks 15–16",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "the Arizona Cardinals defense claim gives +3.9 over weeks 15–16 (drop Justin Jefferson)",
     "covered_by_week": [
      1.03,
      2.82
     ],
     "covered_window": 3.85,
     "covered_week": 1.03,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 1.03,
+     "net_window": 3.85
+    },
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "the Arizona Cardinals defense claim gives +3.9 over weeks 15–16 (drop Jaylen Wright)",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "ARI",
+      "gsis_id": null,
+      "player_name": "Arizona Cardinals",
+      "position": "DEF"
+     },
+     "drop": {
+      "sleeper_id": "6794",
+      "gsis_id": "00-0036322",
+      "player_name": "Justin Jefferson",
+      "position": "WR"
+     },
+     "gain_window": 3.85,
+     "covered_window": -13.84,
+     "covered_gross_window": 3.85
+    }
    },
    "theirs": {
     "kind": "waiver",
@@ -977,9 +1031,20 @@
     "covered_window": 8.91,
     "covered_week": 5.0,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 5.0,
+     "net_window": 8.91
+    },
+    "covered_gross_window": 8.91
    },
-   "words": "Yours: add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Darren Waller: +8.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+   "words": "Yours: add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Darren Waller: +8.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
    "mine": -4.02,
@@ -1140,10 +1205,10 @@
      "position": "DEF"
     },
     "drop": {
-     "sleeper_id": "6794",
-     "gsis_id": "00-0036322",
-     "player_name": "Justin Jefferson",
-     "position": "WR"
+     "sleeper_id": "11643",
+     "gsis_id": "00-0039874",
+     "player_name": "Jaylen Wright",
+     "position": "RB"
     },
     "open_spot": false,
     "gain_week": 1.03,
@@ -1157,17 +1222,44 @@
      16
     ],
     "span": "weeks 15–16",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "covered_by_week": [
      1.03,
      2.82
     ],
     "covered_window": 3.85,
     "covered_week": 1.03,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 1.03,
+     "net_window": 3.85
+    },
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "ARI",
+      "gsis_id": null,
+      "player_name": "Arizona Cardinals",
+      "position": "DEF"
+     },
+     "drop": {
+      "sleeper_id": "6794",
+      "gsis_id": "00-0036322",
+      "player_name": "Justin Jefferson",
+      "position": "WR"
+     },
+     "gain_window": 3.85,
+     "covered_window": -13.84,
+     "covered_gross_window": 3.85
+    }
    },
    "theirs": {
     "kind": "waiver",
@@ -1205,14 +1297,25 @@
     "covered_window": 8.91,
     "covered_week": 5.0,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 5.0,
+     "net_window": 8.91
+    },
+    "covered_gross_window": 8.91
    },
    "beyond": {
     "mine": -4.02,
     "theirs": -6.85
    },
    "beats": false,
-   "words": "−0.2 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "words": "−0.2 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Jaylen Wright: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
    "other_objective": null
   },
   "recommendation": {

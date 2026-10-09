@@ -706,6 +706,16 @@
   ],
   "covered_window": 4.87,
   "covered_week": 4.87,
+  "drop_cost": {
+   "lineup_loss": 0.0,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 0.0,
+   "piece": null,
+   "excess": 0.0,
+   "net_week": 4.87,
+   "net_window": 4.87
+  },
   "availability": "claim",
   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
   "words": "add Washington Commanders defense, drop Jaylen Wright: +4.9 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
@@ -723,7 +733,8 @@
     "position": "RB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -4.87,
@@ -899,6 +910,16 @@
     ],
     "covered_window": 4.87,
     "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 4.87
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "words": "the Washington Commanders defense claim gives +4.9 this week (drop Jaylen Wright)",
@@ -916,7 +937,8 @@
       "position": "RB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -952,7 +974,18 @@
     "covered_window": 6.11,
     "covered_week": 6.11,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 6.11,
+     "net_window": 6.11
+    },
+    "covered_gross_window": 6.11
    },
    "words": "Yours: add Washington Commanders defense, drop Jaylen Wright: +4.9 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Sam Darnold: +6.1 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1123,6 +1156,16 @@
     ],
     "covered_window": 4.87,
     "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 4.87
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "words": "add Washington Commanders defense, drop Jaylen Wright: +4.9 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
@@ -1140,7 +1183,8 @@
       "position": "RB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1176,7 +1220,18 @@
     "covered_window": 6.11,
     "covered_week": 6.11,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 6.11,
+     "net_window": 6.11
+    },
+    "covered_gross_window": 6.11
    },
    "beyond": {
     "mine": -4.87,

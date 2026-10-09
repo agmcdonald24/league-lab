@@ -705,10 +705,10 @@
   "lineup_words": "Denzel Boston (from the trade) starts at FLEX in place of Saquon Barkley (traded)."
  },
  "window_words": "over weeks 5–8 in total",
- "hold_words": "+4.7 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "hold_words": "+4.7 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "hold": {
   "hold": null,
-  "waiver": "+4.7 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver": "+4.7 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
   "waiver_gain": 6.71
  },
  "how": {
@@ -728,10 +728,10 @@
    "position": "DEF"
   },
   "drop": {
-   "sleeper_id": "12533",
-   "gsis_id": "00-0040242",
-   "player_name": "Jacory Croskey-Merritt",
-   "position": "RB"
+   "sleeper_id": "9228",
+   "gsis_id": "00-0039150",
+   "player_name": "Bryce Young",
+   "position": "QB"
   },
   "open_spot": false,
   "gain_week": 4.87,
@@ -759,9 +759,19 @@
   ],
   "covered_window": 6.71,
   "covered_week": 4.87,
+  "drop_cost": {
+   "lineup_loss": 0.0,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 0.0,
+   "piece": null,
+   "excess": 0.0,
+   "net_week": 4.87,
+   "net_window": 6.71
+  },
   "availability": "claim",
   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-  "words": "add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "words": "add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
   "roster_only_pick": {
    "player": {
     "sleeper_id": "3257",
@@ -776,12 +786,13 @@
     "position": "QB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -2.0,
  "beats_alternative": false,
- "alternative_words": "+4.7 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "alternative_words": "+4.7 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -957,10 +968,10 @@
      "position": "DEF"
     },
     "drop": {
-     "sleeper_id": "12533",
-     "gsis_id": "00-0040242",
-     "player_name": "Jacory Croskey-Merritt",
-     "position": "RB"
+     "sleeper_id": "9228",
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB"
     },
     "open_spot": false,
     "gain_week": 4.87,
@@ -988,9 +999,19 @@
     ],
     "covered_window": 6.71,
     "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 6.71
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-    "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)",
+    "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Bryce Young)",
     "roster_only_pick": {
      "player": {
       "sleeper_id": "3257",
@@ -1005,7 +1026,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1050,9 +1072,20 @@
     "covered_window": 11.73,
     "covered_week": 6.11,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 6.11,
+     "net_window": 11.73
+    },
+    "covered_gross_window": 11.73
    },
-   "words": "Yours: add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Sam Darnold: +11.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+   "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Jacoby Brissett, drop Sam Darnold: +11.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
    "mine": -2.0,
@@ -1241,10 +1274,10 @@
      "position": "DEF"
     },
     "drop": {
-     "sleeper_id": "12533",
-     "gsis_id": "00-0040242",
-     "player_name": "Jacory Croskey-Merritt",
-     "position": "RB"
+     "sleeper_id": "9228",
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB"
     },
     "open_spot": false,
     "gain_week": 4.87,
@@ -1272,9 +1305,19 @@
     ],
     "covered_window": 6.71,
     "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 6.71
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-    "words": "add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "roster_only_pick": {
      "player": {
       "sleeper_id": "3257",
@@ -1289,7 +1332,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1334,14 +1378,25 @@
     "covered_window": 11.73,
     "covered_week": 6.11,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 6.11,
+     "net_window": 11.73
+    },
+    "covered_gross_window": 11.73
    },
    "beyond": {
     "mine": -2.0,
     "theirs": -8.12
    },
    "beats": false,
-   "words": "+4.7 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "words": "+4.7 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
    "other_objective": null
   },
   "recommendation": {

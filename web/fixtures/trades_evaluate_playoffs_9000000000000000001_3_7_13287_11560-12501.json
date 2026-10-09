@@ -916,7 +916,18 @@
   "covered_window": 5.57,
   "covered_week": 1.48,
   "availability": "claim",
-  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "drop_cost": {
+   "lineup_loss": 2.29,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 2.29,
+   "piece": "lineup_loss",
+   "excess": 0.0,
+   "net_week": 1.48,
+   "net_window": 5.57
+  },
+  "covered_gross_window": 5.57
  },
  "beyond_alternative": -4.46,
  "beats_alternative": false,
@@ -1163,7 +1174,18 @@
     "covered_window": 5.57,
     "covered_week": 1.48,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 2.29,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 2.29,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 1.48,
+     "net_window": 5.57
+    },
+    "covered_gross_window": 5.57
    },
    "theirs": {
     "kind": "waiver",
@@ -1204,7 +1226,18 @@
     "covered_window": 8.17,
     "covered_week": 2.08,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 22.25,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 22.25,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 2.08,
+     "net_window": 8.17
+    },
+    "covered_gross_window": 8.17
    },
    "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Lamar Jackson: +8.2 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1446,7 +1479,18 @@
     "covered_window": 5.57,
     "covered_week": 1.48,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 2.29,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 2.29,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 1.48,
+     "net_window": 5.57
+    },
+    "covered_gross_window": 5.57
    },
    "theirs": {
     "kind": "waiver",
@@ -1487,7 +1531,18 @@
     "covered_window": 8.17,
     "covered_week": 2.08,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 22.25,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 22.25,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 2.08,
+     "net_window": 8.17
+    },
+    "covered_gross_window": 8.17
    },
    "beyond": {
     "mine": -4.46,

@@ -98,10 +98,10 @@ test("Trades: a partner card whose week loses says so", async ({ page }, info) =
   for (const [i, p] of rows.entries()) {
     if ((p.strip.mine[0] ?? 0) > -0.05) continue;
     expect(reasons[i]).not.toContain("Nothing changes this week");
-    // IT-1 (re-saved): a card whose incoming player cannot play this week says that first (the screen's one reason)
-    const out = (p as Partner & { get?: { player_name: string; cannot_play?: string | null }[] }).get?.find((x) => x.cannot_play);
+    // IT-1 / IU-1 (re-saved): a card whose incoming player sits this week (the league screens' one note) says that first
+    const out = (p as Partner & { get?: { player_name: string; availability?: { sits?: boolean; why?: string } | null }[] }).get?.find((x) => x.availability?.sits);
     if (out) {
-      expect(reasons[i]).toContain(`${out.player_name} cannot play this week`);
+      expect(reasons[i]).toBe(`${out.player_name} cannot play this week (${out.availability!.why}): the gain comes after it.`);
       continue;
     }
     expect(reasons[i]).toBe(p.story.words); // the strip's own numbers (trades.week_story)

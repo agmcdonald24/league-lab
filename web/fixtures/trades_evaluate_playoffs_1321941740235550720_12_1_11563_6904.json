@@ -748,10 +748,10 @@
   "lineup_words": "Bo Nix (from the trade) starts at Superflex in place of Jalen Hurts (traded)."
  },
  "window_words": "over weeks 15–17 in total",
- "hold_words": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "hold_words": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Jaylen Wright: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "hold": {
   "hold": null,
-  "waiver": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Jaylen Wright: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
   "waiver_gain": 0.06
  },
  "how": {
@@ -771,10 +771,10 @@
    "position": "TE"
   },
   "drop": {
-   "sleeper_id": "96",
-   "gsis_id": "00-0023459",
-   "player_name": "Aaron Rodgers",
-   "position": "QB"
+   "sleeper_id": "11643",
+   "gsis_id": "00-0039874",
+   "player_name": "Jaylen Wright",
+   "position": "RB"
   },
   "open_spot": false,
   "gain_week": 0.0,
@@ -790,9 +790,8 @@
    17
   ],
   "span": "weeks 15–17",
-  "source": "fa_pool fill",
+  "source": "basis search",
   "note": null,
-  "words": "add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
   "covered_by_week": [
    0.0,
    0.0,
@@ -800,12 +799,40 @@
   ],
   "covered_window": 0.06,
   "covered_week": 0.0,
+  "drop_cost": {
+   "lineup_loss": 0.0,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 0.0,
+   "piece": null,
+   "excess": 0.0,
+   "net_week": 0.0,
+   "net_window": 0.06
+  },
   "availability": "claim",
-  "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+  "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+  "words": "add Michael Mayer, drop Jaylen Wright: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+  "roster_only_pick": {
+   "player": {
+    "sleeper_id": "9482",
+    "gsis_id": "00-0039066",
+    "player_name": "Michael Mayer",
+    "position": "TE"
+   },
+   "drop": {
+    "sleeper_id": "96",
+    "gsis_id": "00-0023459",
+    "player_name": "Aaron Rodgers",
+    "position": "QB"
+   },
+   "gain_window": 0.06,
+   "covered_window": -180.35,
+   "covered_gross_window": 0.06
+  }
  },
  "beyond_alternative": -2.75,
  "beats_alternative": false,
- "alternative_words": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "alternative_words": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Jaylen Wright: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -989,10 +1016,10 @@
      "position": "TE"
     },
     "drop": {
-     "sleeper_id": "96",
-     "gsis_id": "00-0023459",
-     "player_name": "Aaron Rodgers",
-     "position": "QB"
+     "sleeper_id": "11643",
+     "gsis_id": "00-0039874",
+     "player_name": "Jaylen Wright",
+     "position": "RB"
     },
     "open_spot": false,
     "gain_week": 0.0,
@@ -1008,9 +1035,8 @@
      17
     ],
     "span": "weeks 15–17",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "the Michael Mayer claim gives +0.1 over weeks 15–17 (drop Aaron Rodgers)",
     "covered_by_week": [
      0.0,
      0.0,
@@ -1018,8 +1044,36 @@
     ],
     "covered_window": 0.06,
     "covered_week": 0.0,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 0.0,
+     "net_window": 0.06
+    },
     "availability": "claim",
-    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+    "words": "the Michael Mayer claim gives +0.1 over weeks 15–17 (drop Jaylen Wright)",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "9482",
+      "gsis_id": "00-0039066",
+      "player_name": "Michael Mayer",
+      "position": "TE"
+     },
+     "drop": {
+      "sleeper_id": "96",
+      "gsis_id": "00-0023459",
+      "player_name": "Aaron Rodgers",
+      "position": "QB"
+     },
+     "gain_window": 0.06,
+     "covered_window": -180.35,
+     "covered_gross_window": 0.06
+    }
    },
    "theirs": {
     "kind": "waiver",
@@ -1060,9 +1114,20 @@
     "covered_window": 3.83,
     "covered_week": 1.11,
     "availability": "claim",
-    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 2.8,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 2.8,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 1.11,
+     "net_window": 3.83
+    },
+    "covered_gross_window": 3.83
    },
-   "words": "Yours: add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Dallas Goedert: +3.8 over weeks 15–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
+   "words": "Yours: add Michael Mayer, drop Jaylen Wright: +0.1 over weeks 15–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Dallas Goedert: +3.8 over weeks 15–17 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
   },
   "beyond": {
    "mine": -2.75,
@@ -1253,10 +1318,10 @@
      "position": "TE"
     },
     "drop": {
-     "sleeper_id": "96",
-     "gsis_id": "00-0023459",
-     "player_name": "Aaron Rodgers",
-     "position": "QB"
+     "sleeper_id": "11643",
+     "gsis_id": "00-0039874",
+     "player_name": "Jaylen Wright",
+     "position": "RB"
     },
     "open_spot": false,
     "gain_week": 0.0,
@@ -1272,9 +1337,8 @@
      17
     ],
     "span": "weeks 15–17",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
     "covered_by_week": [
      0.0,
      0.0,
@@ -1282,8 +1346,36 @@
     ],
     "covered_window": 0.06,
     "covered_week": 0.0,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 0.0,
+     "net_window": 0.06
+    },
     "availability": "claim",
-    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+    "words": "add Michael Mayer, drop Jaylen Wright: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "9482",
+      "gsis_id": "00-0039066",
+      "player_name": "Michael Mayer",
+      "position": "TE"
+     },
+     "drop": {
+      "sleeper_id": "96",
+      "gsis_id": "00-0023459",
+      "player_name": "Aaron Rodgers",
+      "position": "QB"
+     },
+     "gain_window": 0.06,
+     "covered_window": -180.35,
+     "covered_gross_window": 0.06
+    }
    },
    "theirs": {
     "kind": "waiver",
@@ -1324,14 +1416,25 @@
     "covered_window": 3.83,
     "covered_week": 1.11,
     "availability": "claim",
-    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 2.8,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 2.8,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 1.11,
+     "net_window": 3.83
+    },
+    "covered_gross_window": 3.83
    },
    "beyond": {
     "mine": -2.75,
     "theirs": -0.76
    },
    "beats": false,
-   "words": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Aaron Rodgers: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "words": "−2.7 over weeks 15–17, not more than your best waiver move (add Michael Mayer, drop Jaylen Wright: +0.1 over weeks 15–17 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
    "other_objective": null
   },
   "recommendation": {

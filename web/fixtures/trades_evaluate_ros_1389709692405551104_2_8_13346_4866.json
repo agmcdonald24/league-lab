@@ -860,6 +860,16 @@
   ],
   "covered_window": 14.21,
   "covered_week": 4.87,
+  "drop_cost": {
+   "lineup_loss": 0.0,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 0.0,
+   "piece": null,
+   "excess": 0.0,
+   "net_week": 4.87,
+   "net_window": 14.21
+  },
   "availability": "claim",
   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
   "words": "add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
@@ -877,7 +887,8 @@
     "position": "QB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -8.85,
@@ -1185,6 +1196,16 @@
     ],
     "covered_window": 14.21,
     "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 14.21
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "words": "the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young)",
@@ -1202,7 +1223,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1221,7 +1243,7 @@
     },
     "open_spot": false,
     "gain_week": 2.73,
-    "gain_window": 36.49,
+    "gain_window": 54.31,
     "by_week": [
      2.73,
      0.0,
@@ -1229,7 +1251,7 @@
      5.03,
      3.92,
      2.74,
-     0.0,
+     17.82,
      3.23,
      3.87,
      2.8,
@@ -1251,8 +1273,9 @@
      16
     ],
     "span": "weeks 5–16",
-    "source": "basis search",
+    "source": "fa_pool fill",
     "note": null,
+    "words": "the Kyler Murray claim gives +54.3 over weeks 5–16 (drop Sam Darnold)",
     "covered_by_week": [
      2.73,
      0.0,
@@ -1260,7 +1283,7 @@
      5.03,
      3.92,
      2.74,
-     0.0,
+     -0.3,
      3.23,
      3.87,
      2.8,
@@ -1271,25 +1294,19 @@
     "covered_week": 2.73,
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-    "words": "the Kyler Murray claim gives +36.5 over weeks 5–16 (drop Sam Darnold)",
-    "roster_only_pick": {
-     "player": {
-      "sleeper_id": "5849",
-      "gsis_id": "00-0035228",
-      "player_name": "Kyler Murray",
-      "position": "QB"
-     },
-     "drop": {
-      "sleeper_id": "4943",
-      "gsis_id": "00-0034869",
-      "player_name": "Sam Darnold",
-      "position": "QB"
-     },
-     "gain_window": 54.31,
-     "covered_window": 36.19
-    }
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 2.73,
+     "net_window": 36.49
+    },
+    "covered_gross_window": 36.49
    },
-   "words": "Yours: add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Sam Darnold: +36.5 over weeks 5–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+   "words": "Yours: add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Sam Darnold: +36.5 over weeks 5–16 (+54.3 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
    "mine": -8.85,
@@ -1645,6 +1662,16 @@
     ],
     "covered_window": 14.21,
     "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 14.21
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "words": "add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
@@ -1662,7 +1689,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1681,7 +1709,7 @@
     },
     "open_spot": false,
     "gain_week": 2.73,
-    "gain_window": 36.49,
+    "gain_window": 54.31,
     "by_week": [
      2.73,
      0.0,
@@ -1689,7 +1717,7 @@
      5.03,
      3.92,
      2.74,
-     0.0,
+     17.82,
      3.23,
      3.87,
      2.8,
@@ -1711,8 +1739,9 @@
      16
     ],
     "span": "weeks 5–16",
-    "source": "basis search",
+    "source": "fa_pool fill",
     "note": null,
+    "words": "add Kyler Murray, drop Sam Darnold: +36.5 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "covered_by_week": [
      2.73,
      0.0,
@@ -1720,7 +1749,7 @@
      5.03,
      3.92,
      2.74,
-     0.0,
+     -0.3,
      3.23,
      3.87,
      2.8,
@@ -1731,23 +1760,17 @@
     "covered_week": 2.73,
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-    "words": "add Kyler Murray, drop Sam Darnold: +36.5 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-    "roster_only_pick": {
-     "player": {
-      "sleeper_id": "5849",
-      "gsis_id": "00-0035228",
-      "player_name": "Kyler Murray",
-      "position": "QB"
-     },
-     "drop": {
-      "sleeper_id": "4943",
-      "gsis_id": "00-0034869",
-      "player_name": "Sam Darnold",
-      "position": "QB"
-     },
-     "gain_window": 54.31,
-     "covered_window": 36.19
-    }
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 2.73,
+     "net_window": 36.49
+    },
+    "covered_gross_window": 36.49
    },
    "beyond": {
     "mine": -8.85,

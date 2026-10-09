@@ -30,6 +30,11 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   play"), and its points chart says why a week he sits is 0. Trends leaves out a player who sits this week (Doubtful
   included) through the one definition, with his reason. About's saved answer re-recorded. My Week, Team and Waivers
   print a projection and a margin to one decimal like the other screens. `docs/handbacks/IU-3.md`.
+- **IU-1 — the Trade Finder searches on the basis; a waiver move says what it drops.** The partner search proposes and
+  bounds every package on the replacement frame the verdict judges it on (`trades.partners(free=…)`; the roster-only
+  ladder is no longer computed); the basis waiver move nets its drop the way the roster-only move does (season value,
+  backup cover, lineup loss) and its sentence names the drop and the netting; a Finder row's reason reads the league
+  screens' one note. ct1.2 → ct1.3. docs/handbacks/IU-1.md.
 
 ## 2026-10-09 — Wave I-T
 

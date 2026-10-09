@@ -1,0 +1,2672 @@
+{
+ "league_id": "1389709692405551104",
+ "source": "database",
+ "roster_id": 2,
+ "partner": 4,
+ "partner_team": "Scrote Squad",
+ "week": 5,
+ "weeks": [
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16
+ ],
+ "span": "weeks 5–16",
+ "window": "ros",
+ "window_label": "Rest of season",
+ "window_why": "every week left to this league's final, playoffs included: the longest view, the least sure",
+ "give": [
+  {
+   "sleeper_id": "10232",
+   "gsis_id": "00-0038559",
+   "player_name": "Michael Wilson",
+   "position": "WR",
+   "team": "ARI",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+   "this_week": 14.14,
+   "cannot_play": null,
+   "market_price": 60,
+   "season_points": 177,
+   "roster_id": 2
+  },
+  {
+   "sleeper_id": "BUF",
+   "gsis_id": null,
+   "player_name": "Buffalo Bills",
+   "position": "DEF",
+   "team": "BUF",
+   "headshot_url": null,
+   "this_week": 4.48,
+   "cannot_play": null,
+   "market_price": 0,
+   "season_points": 89,
+   "roster_id": 2
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "7594",
+   "gsis_id": "00-0036555",
+   "player_name": "Chuba Hubbard",
+   "position": "RB",
+   "team": "CAR",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rzsvnt0pxsaize2ndhxm",
+   "this_week": null,
+   "cannot_play": "bye",
+   "market_price": 74,
+   "season_points": 177,
+   "roster_id": 4
+  }
+ ],
+ "before": {
+  "mine": {
+   "this_week": 127.12,
+   "horizon": 1450.29,
+   "bench": 31.9,
+   "by_week": [
+    127.12,
+    123.06,
+    113.83,
+    122.52,
+    123.11,
+    122.25,
+    111.0,
+    123.5,
+    121.47,
+    118.56,
+    122.27,
+    121.6
+   ]
+  },
+  "theirs": {
+   "this_week": 111.03,
+   "horizon": 1380.26,
+   "bench": 31.39,
+   "by_week": [
+    111.03,
+    117.91,
+    113.56,
+    117.25,
+    111.61,
+    117.35,
+    111.19,
+    117.52,
+    110.54,
+    117.71,
+    117.17,
+    117.42
+   ]
+  }
+ },
+ "after": {
+  "mine": {
+   "this_week": 127.71,
+   "horizon": 1480.14,
+   "bench": 22.04,
+   "by_week": [
+    127.71,
+    125.43,
+    120.54,
+    124.68,
+    124.76,
+    123.99,
+    112.42,
+    124.52,
+    122.64,
+    124.26,
+    124.4,
+    124.79
+   ]
+  },
+  "theirs": {
+   "this_week": 116.55,
+   "horizon": 1380.01,
+   "bench": 37.06,
+   "by_week": [
+    116.55,
+    117.86,
+    113.58,
+    116.12,
+    111.63,
+    118.19,
+    112.26,
+    117.81,
+    108.65,
+    112.31,
+    118.0,
+    117.05
+   ]
+  }
+ },
+ "fit": {
+  "this_week": {
+   "mine": 0.59,
+   "theirs": 5.52
+  },
+  "window": {
+   "mine": 29.85,
+   "theirs": -0.25
+  },
+  "next_4": {
+   "mine": 29.85,
+   "theirs": -0.25
+  },
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+0.6** this week and **+29.9** over weeks 5–16; them **+5.5** and **−0.2**."
+ },
+ "interest": {
+  "score": 24,
+  "label": "Makes their lineup weaker",
+  "their_gain": -0.25,
+  "you": 29.85,
+  "caption": "their starters over weeks 5–16, against realistic replacements",
+  "title": "Effect on their starters",
+  "need": "puts Wilson at their FLEX in place of Meyers"
+ },
+ "sanity": null,
+ "market": {
+  "give": 60,
+  "get": 74,
+  "season_points_give": 266,
+  "season_points_get": 177,
+  "unknown": [],
+  "replacement": {
+   "DEF": {
+    "season_points": 105,
+    "player_name": "Washington Commanders"
+   },
+   "K": {
+    "season_points": 121,
+    "player_name": "Cameron Dicker"
+   },
+   "QB": {
+    "season_points": 239,
+    "player_name": "Kyler Murray"
+   },
+   "RB": {
+    "season_points": 103,
+    "player_name": "Keaton Mitchell"
+   },
+   "TE": {
+    "season_points": 104,
+    "player_name": "T.J. Hockenson"
+   },
+   "WR": {
+    "season_points": 117,
+    "player_name": "KC Concepcion"
+   }
+  },
+  "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **60**, you get **74**: you get 14 more.",
+  "players": [
+   {
+    "sleeper_id": "10232",
+    "gsis_id": "00-0038559",
+    "player_name": "Michael Wilson",
+    "position": "WR",
+    "team": "ARI",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+    "this_week": 14.14,
+    "cannot_play": null,
+    "market_price": 60,
+    "season_points": 177,
+    "roster_id": 2,
+    "goes_to": "Scrote Squad"
+   },
+   {
+    "sleeper_id": "BUF",
+    "gsis_id": null,
+    "player_name": "Buffalo Bills",
+    "position": "DEF",
+    "team": "BUF",
+    "headshot_url": null,
+    "this_week": 4.48,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 89,
+    "roster_id": 2,
+    "goes_to": "Scrote Squad"
+   },
+   {
+    "sleeper_id": "7594",
+    "gsis_id": "00-0036555",
+    "player_name": "Chuba Hubbard",
+    "position": "RB",
+    "team": "CAR",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rzsvnt0pxsaize2ndhxm",
+    "this_week": null,
+    "cannot_play": "bye",
+    "market_price": 74,
+    "season_points": 177,
+    "roster_id": 4,
+    "goes_to": "You"
+   }
+  ]
+ },
+ "verdict": "Helps your lineup +0.6 this week (+29.9 over weeks 5–16), them +5.5 but −0.2 over weeks 5–16; you get more season value: a lineup loss for them.",
+ "headline": "**You give [Michael Wilson](/player/00-0038559) and Buffalo Bills; you get [Chuba Hubbard](/player/00-0036555).** Helps your lineup +0.6 this week (+29.9 over weeks 5–16), them +5.5 but −0.2 over weeks 5–16; you get more season value: a lineup loss for them.",
+ "ros": {
+  "give": 243,
+  "get": 164,
+  "window": "weeks 4–16",
+  "words": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 243, you get 164.",
+  "label": "Rest-of-season projected points",
+  "fairness": false
+ },
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    10,
+    10
+   ],
+   "theirs": [
+    7,
+    5
+   ],
+   "n": 10
+  },
+  "bench_value": {
+   "mine": [
+    6,
+    9
+   ],
+   "theirs": [
+    7,
+    6
+   ],
+   "n": 10
+  },
+  "words": "League rank, week 5: you 10th → **10th** of 10, Scrote Squad 7th → 5th; depth: you 6th → **9th** of 10, Scrote Squad 7th → 6th."
+ },
+ "size_words": "Roster size: you open a spot: the best free agent for it is Washington Commanders (DEF, +88.3 over weeks 5–16); they must cut [DJ Moore](/player/00-0034827) (WR, 95 season points; costs 0.0 over weeks 5–16) to stay at 15 players.",
+ "sides": {
+  "mine": {
+   "roster_id": 2,
+   "team_name": "MacZaddy",
+   "gives": [
+    {
+     "sleeper_id": "10232",
+     "gsis_id": "00-0038559",
+     "player_name": "Michael Wilson",
+     "position": "WR",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+     "this_week": 14.14,
+     "cannot_play": null,
+     "market_price": 60,
+     "season_points": 177,
+     "roster_id": 2
+    },
+    {
+     "sleeper_id": "BUF",
+     "gsis_id": null,
+     "player_name": "Buffalo Bills",
+     "position": "DEF",
+     "team": "BUF",
+     "headshot_url": null,
+     "this_week": 4.48,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 89,
+     "roster_id": 2
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "7594",
+     "gsis_id": "00-0036555",
+     "player_name": "Chuba Hubbard",
+     "position": "RB",
+     "team": "CAR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rzsvnt0pxsaize2ndhxm",
+     "this_week": null,
+     "cannot_play": "bye",
+     "market_price": 74,
+     "season_points": 177,
+     "roster_id": 4
+    }
+   ],
+   "weeks": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ],
+   "before": {
+    "this_week": 97.54,
+    "horizon": 1402.84,
+    "bench": 31.9,
+    "by_week": [
+     97.54,
+     123.06,
+     105.63,
+     122.52,
+     123.11,
+     122.25,
+     101.33,
+     123.5,
+     121.47,
+     118.56,
+     122.27,
+     121.6
+    ]
+   },
+   "after": {
+    "this_week": 88.78,
+    "horizon": 1336.08,
+    "bench": 22.04,
+    "by_week": [
+     88.78,
+     116.51,
+     112.34,
+     116.44,
+     115.88,
+     115.13,
+     94.02,
+     116.2,
+     114.3,
+     115.33,
+     115.47,
+     115.68
+    ]
+   },
+   "gain_week": -8.76,
+   "gain_horizon": -66.76,
+   "cuts": [],
+   "limit": 15,
+   "size_before": 15,
+   "size_after": 14,
+   "opened": 1,
+   "fill": {
+    "sleeper_id": "WAS",
+    "week_gains": [
+     9.35,
+     7.92,
+     0.0,
+     8.03,
+     7.21,
+     8.03,
+     8.0,
+     7.48,
+     7.89,
+     8.02,
+     8.3,
+     8.04
+    ],
+    "horizon_gain": 88.27
+   },
+   "price_out": 60,
+   "price_in": 74,
+   "points_out": 266,
+   "points_in": 177,
+   "starts": [
+    {
+     "sleeper_id": "13346",
+     "gsis_id": "00-0041037",
+     "player_name": "Denzel Boston",
+     "position": "WR",
+     "team": "CLE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+     "this_week": 9.86,
+     "cannot_play": null,
+     "market_price": 19,
+     "season_points": 135,
+     "roster_id": 2
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "10232",
+     "gsis_id": "00-0038559",
+     "player_name": "Michael Wilson",
+     "position": "WR",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+     "this_week": 14.14,
+     "cannot_play": null,
+     "market_price": 60,
+     "season_points": 177,
+     "roster_id": 2
+    },
+    {
+     "sleeper_id": "BUF",
+     "gsis_id": null,
+     "player_name": "Buffalo Bills",
+     "position": "DEF",
+     "team": "BUF",
+     "headshot_url": null,
+     "this_week": 4.48,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 89,
+     "roster_id": 2
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 4,
+   "team_name": "Scrote Squad",
+   "gives": [
+    {
+     "sleeper_id": "7594",
+     "gsis_id": "00-0036555",
+     "player_name": "Chuba Hubbard",
+     "position": "RB",
+     "team": "CAR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rzsvnt0pxsaize2ndhxm",
+     "this_week": null,
+     "cannot_play": "bye",
+     "market_price": 74,
+     "season_points": 177,
+     "roster_id": 4
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "10232",
+     "gsis_id": "00-0038559",
+     "player_name": "Michael Wilson",
+     "position": "WR",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+     "this_week": 14.14,
+     "cannot_play": null,
+     "market_price": 60,
+     "season_points": 177,
+     "roster_id": 2
+    },
+    {
+     "sleeper_id": "BUF",
+     "gsis_id": null,
+     "player_name": "Buffalo Bills",
+     "position": "DEF",
+     "team": "BUF",
+     "headshot_url": null,
+     "this_week": 4.48,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 89,
+     "roster_id": 2
+    }
+   ],
+   "weeks": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ],
+   "before": {
+    "this_week": 111.03,
+    "horizon": 1362.73,
+    "bench": 31.39,
+    "by_week": [
+     111.03,
+     117.91,
+     113.56,
+     117.25,
+     111.61,
+     117.35,
+     111.19,
+     117.52,
+     93.01,
+     117.71,
+     117.17,
+     117.42
+    ]
+   },
+   "after": {
+    "this_week": 116.55,
+    "horizon": 1355.47,
+    "bench": 37.06,
+    "by_week": [
+     116.55,
+     117.86,
+     113.58,
+     116.12,
+     104.0,
+     118.19,
+     112.26,
+     117.81,
+     91.74,
+     112.31,
+     118.0,
+     117.05
+    ]
+   },
+   "gain_week": 5.52,
+   "gain_horizon": -7.26,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "4983",
+      "gsis_id": "00-0034827",
+      "player_name": "DJ Moore",
+      "position": "WR",
+      "team": "BUF",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lsavpxtqoqu25emwcnvy",
+      "this_week": 7.43,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 95,
+      "roster_id": 4
+     },
+     "horizon_loss": 0.0,
+     "season_points": 95
+    }
+   ],
+   "limit": 15,
+   "size_before": 15,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 74,
+   "price_in": 60,
+   "points_out": 177,
+   "points_in": 266,
+   "starts": [
+    {
+     "sleeper_id": "10232",
+     "gsis_id": "00-0038559",
+     "player_name": "Michael Wilson",
+     "position": "WR",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+     "this_week": 14.14,
+     "cannot_play": null,
+     "market_price": 60,
+     "season_points": 177,
+     "roster_id": 2
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "5947",
+     "gsis_id": "00-0034960",
+     "player_name": "Jakobi Meyers",
+     "position": "WR",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zrs4ij8mvw7wr1uujwew",
+     "this_week": 8.62,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 111,
+     "roster_id": 4
+    }
+   ]
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Jacoby Brissett (free agent for the week)",
+     "gsis_id": "00-0033119",
+     "value": 20.9,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": true
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Kyren Williams",
+     "gsis_id": "00-0037840",
+     "value": 19.25,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Omarion Hampton",
+     "gsis_id": "00-0040666",
+     "value": 11.92,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Puka Nacua",
+     "gsis_id": "00-0039075",
+     "value": 17.6,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 11.42,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "TE",
+     "player_name": "T.J. Hockenson (free agent for the week)",
+     "gsis_id": "00-0035229",
+     "value": 8.68,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": true
+    },
+    {
+     "slot": "FLEX1",
+     "player_name": "Justin Jefferson",
+     "gsis_id": "00-0036322",
+     "value": 10.22,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "FLEX2",
+     "player_name": "Denzel Boston",
+     "gsis_id": "00-0041037",
+     "value": 9.86,
+     "change": 9.86,
+     "no_projection": false,
+     "status": "in",
+     "fill": false
+    },
+    {
+     "slot": "K",
+     "player_name": "Nick Folk",
+     "gsis_id": "00-0025565",
+     "value": 8.51,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Washington Commanders (free agent for the week)",
+     "gsis_id": null,
+     "value": 9.35,
+     "change": 9.35,
+     "no_projection": false,
+     "status": "in",
+     "fill": true
+    }
+   ],
+   "notes": [
+    "Denzel Boston (from the bench) starts at WR in place of Michael Wilson (traded).",
+    "Washington Commanders (a free agent for the week) starts at DEF in place of Buffalo Bills (traded)."
+   ],
+   "closest_call": "Denzel Boston at FLEX2, 0.28 ahead of the next option",
+   "out": [
+    {
+     "slot": "WR",
+     "player_name": "Michael Wilson",
+     "gsis_id": "00-0038559",
+     "value": 14.14,
+     "change": -14.14,
+     "why": "traded"
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Buffalo Bills",
+     "gsis_id": null,
+     "value": 4.48,
+     "change": -4.48,
+     "why": "traded"
+    }
+   ],
+   "reshuffled": [],
+   "total": {
+    "before": 127.12,
+    "after": 127.71,
+    "change": 0.59
+   }
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Lamar Jackson",
+     "gsis_id": "00-0034796",
+     "value": 17.33,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Jaylen Warren",
+     "gsis_id": "00-0037228",
+     "value": 14.06,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Ashton Jeanty",
+     "gsis_id": "00-0040122",
+     "value": 13.4,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Jaxon Smith-Njigba",
+     "gsis_id": "00-0038543",
+     "value": 14.68,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Michael Wilson (new)",
+     "gsis_id": "00-0038559",
+     "value": 14.14,
+     "change": 14.14,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
+    },
+    {
+     "slot": "TE",
+     "player_name": "Brock Bowers",
+     "gsis_id": "00-0039338",
+     "value": 10.23,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "FLEX1",
+     "player_name": "Stefon Diggs",
+     "gsis_id": "00-0031588",
+     "value": 9.64,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "FLEX2",
+     "player_name": "Malik Nabers",
+     "gsis_id": "00-0039337",
+     "value": 9.25,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "K",
+     "player_name": "Tyler Loop",
+     "gsis_id": "00-0040074",
+     "value": 7.77,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Las Vegas Raiders",
+     "gsis_id": null,
+     "value": 6.05,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    }
+   ],
+   "notes": [
+    "Michael Wilson (from the trade) starts at FLEX in place of Jakobi Meyers (to the bench)."
+   ],
+   "closest_call": "Malik Nabers at FLEX2, 0.63 ahead of the next option",
+   "out": [
+    {
+     "slot": "FLEX",
+     "player_name": "Jakobi Meyers",
+     "gsis_id": "00-0034960",
+     "value": 8.62,
+     "change": -8.62,
+     "why": "to the bench"
+    }
+   ],
+   "reshuffled": [],
+   "total": {
+    "before": 111.03,
+    "after": 116.55,
+    "change": 5.52
+   }
+  }
+ },
+ "fill_players": {
+  "WAS": {
+   "player_name": "Washington Commanders",
+   "position": "DEF",
+   "gsis_id": null,
+   "sleeper_id": "WAS"
+  }
+ },
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)",
+ "starters_in": [
+  {
+   "player": {
+    "sleeper_id": "13346",
+    "gsis_id": "00-0041037",
+    "player_name": "Denzel Boston",
+    "position": "WR",
+    "team": "CLE",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+    "this_week": 9.86,
+    "cannot_play": null,
+    "market_price": 19,
+    "season_points": 135,
+    "roster_id": 2
+   },
+   "slot": "WR",
+   "value": 9.86,
+   "how": "bench"
+  },
+  {
+   "player": {
+    "sleeper_id": "WAS",
+    "gsis_id": null,
+    "player_name": "Washington Commanders",
+    "position": "DEF"
+   },
+   "slot": "DEF",
+   "value": 9.35,
+   "how": "free_agent"
+  }
+ ],
+ "starters_out": [
+  {
+   "player": {
+    "sleeper_id": "10232",
+    "gsis_id": "00-0038559",
+    "player_name": "Michael Wilson",
+    "position": "WR",
+    "team": "ARI",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+    "this_week": 14.14,
+    "cannot_play": null,
+    "market_price": 60,
+    "season_points": 177,
+    "roster_id": 2
+   },
+   "slot": "WR",
+   "value": 14.14,
+   "why": "traded"
+  },
+  {
+   "player": {
+    "sleeper_id": "BUF",
+    "gsis_id": null,
+    "player_name": "Buffalo Bills",
+    "position": "DEF",
+    "team": "BUF",
+    "headshot_url": null,
+    "this_week": 4.48,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 89,
+    "roster_id": 2
+   },
+   "slot": "DEF",
+   "value": 4.48,
+   "why": "traded"
+  }
+ ],
+ "cut": [],
+ "effect_words": "Your starting lineup: about 0.6 more points this week, about 30 more in total over weeks 5–16.",
+ "lineup_words": "Denzel Boston (from the bench) starts at WR in place of Michael Wilson (traded); Washington Commanders (a free agent for the week) starts at DEF in place of Buffalo Bills (traded).",
+ "backup_words": null,
+ "their_change": {
+  "gain_week": 5.52,
+  "gain_window": -0.25,
+  "starters_in": [
+   {
+    "player": {
+     "sleeper_id": "10232",
+     "gsis_id": "00-0038559",
+     "player_name": "Michael Wilson",
+     "position": "WR",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+     "this_week": 14.14,
+     "cannot_play": null,
+     "market_price": 60,
+     "season_points": 177,
+     "roster_id": 2
+    },
+    "slot": "FLEX",
+    "value": 14.14,
+    "how": "trade"
+   }
+  ],
+  "starters_out": [
+   {
+    "player": {
+     "sleeper_id": "5947",
+     "gsis_id": "00-0034960",
+     "player_name": "Jakobi Meyers",
+     "position": "WR",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zrs4ij8mvw7wr1uujwew",
+     "this_week": 8.62,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 111,
+     "roster_id": 4
+    },
+    "slot": "FLEX",
+    "value": 8.62,
+    "why": "bench"
+   }
+  ],
+  "effect_words": "Scrote Squad's starting lineup: about 5.5 more points this week, about 0.2 fewer points in total over weeks 5–16.",
+  "lineup_words": "Michael Wilson (from the trade) starts at FLEX in place of Jakobi Meyers (to the bench)."
+ },
+ "window_words": "over weeks 5–16 in total",
+ "hold_words": "+29.9 over weeks 5–16, 15.6 more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+ "hold": {
+  "hold": null,
+  "waiver": "+29.9 over weeks 5–16, 15.6 more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+  "waiver_gain": 14.21
+ },
+ "how": {
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+0.6** this week and **+29.9** over weeks 5–16; them **+5.5** and **−0.2**.",
+  "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **60**, you get **74**: you get 14 more.",
+  "ros": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 243, you get 164.",
+  "size": "Roster size: you open a spot: the best free agent for it is Washington Commanders (DEF, +88.3 over weeks 5–16); they must cut [DJ Moore](/player/00-0034827) (WR, 95 season points; costs 0.0 over weeks 5–16) to stay at 15 players.",
+  "ranks": "League rank, week 5: you 10th → **10th** of 10, Scrote Squad 7th → 5th; depth: you 6th → **9th** of 10, Scrote Squad 7th → 6th.",
+  "season_value": "Season value above replacement: you give 60, you get 74 (you get 14 more). You give 2 players for 1: 1 roster spot freed."
+ },
+ "alternative": {
+  "kind": "waiver",
+  "player": {
+   "sleeper_id": "WAS",
+   "gsis_id": null,
+   "player_name": "Washington Commanders",
+   "position": "DEF"
+  },
+  "drop": {
+   "sleeper_id": "9228",
+   "gsis_id": "00-0039150",
+   "player_name": "Bryce Young",
+   "position": "QB"
+  },
+  "open_spot": false,
+  "gain_week": 4.87,
+  "gain_window": 14.21,
+  "by_week": [
+   4.87,
+   1.05,
+   0.0,
+   0.79,
+   0.0,
+   0.48,
+   0.99,
+   0.47,
+   0.9,
+   1.38,
+   1.53,
+   1.75
+  ],
+  "weeks": [
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ],
+  "span": "weeks 5–16",
+  "source": "basis search",
+  "note": null,
+  "covered_by_week": [
+   4.87,
+   1.05,
+   0.0,
+   0.79,
+   0.0,
+   0.48,
+   0.99,
+   0.47,
+   0.9,
+   1.38,
+   1.53,
+   1.75
+  ],
+  "covered_window": 14.21,
+  "covered_week": 4.87,
+  "drop_cost": {
+   "lineup_loss": 0.0,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 0.0,
+   "piece": null,
+   "excess": 0.0,
+   "net_week": 4.87,
+   "net_window": 14.21
+  },
+  "availability": "claim",
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "words": "add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "roster_only_pick": {
+   "player": {
+    "sleeper_id": "3257",
+    "gsis_id": "00-0033119",
+    "player_name": "Jacoby Brissett",
+    "position": "QB"
+   },
+   "drop": {
+    "sleeper_id": "9228",
+    "gsis_id": "00-0039150",
+    "player_name": "Bryce Young",
+    "position": "QB"
+   },
+   "gain_window": 20.9,
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
+  }
+ },
+ "beyond_alternative": 15.64,
+ "beats_alternative": true,
+ "alternative_words": "+29.9 over weeks 5–16, 15.6 more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+ "other_objective": null,
+ "strip": {
+  "weeks": [
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ],
+  "mine": [
+   0.59,
+   2.37,
+   6.71,
+   2.16,
+   1.65,
+   1.74,
+   1.42,
+   1.02,
+   1.17,
+   5.7,
+   2.13,
+   3.19
+  ],
+  "theirs": [
+   5.52,
+   -0.05,
+   0.02,
+   -1.13,
+   0.02,
+   0.84,
+   1.07,
+   0.29,
+   -1.89,
+   -5.4,
+   0.83,
+   -0.37
+  ]
+ },
+ "story": {
+  "this_week": {
+   "week": 5,
+   "change": 0.59,
+   "kind": "gain"
+  },
+  "window": {
+   "change": 29.85,
+   "kind": "gain"
+  },
+  "by_week": [
+   {
+    "week": 5,
+    "change": 0.59
+   },
+   {
+    "week": 6,
+    "change": 2.37
+   },
+   {
+    "week": 7,
+    "change": 6.71
+   },
+   {
+    "week": 8,
+    "change": 2.16
+   },
+   {
+    "week": 9,
+    "change": 1.65
+   },
+   {
+    "week": 10,
+    "change": 1.74
+   },
+   {
+    "week": 11,
+    "change": 1.42
+   },
+   {
+    "week": 12,
+    "change": 1.02
+   },
+   {
+    "week": 13,
+    "change": 1.17
+   },
+   {
+    "week": 14,
+    "change": 5.7
+   },
+   {
+    "week": 15,
+    "change": 2.13
+   },
+   {
+    "week": 16,
+    "change": 3.19
+   }
+  ],
+  "words": "Your lineup gains 0.6 this week and 29.9 over weeks 5–16 in total."
+ },
+ "values": {
+  "projected_points": {
+   "label": "Projected points",
+   "words": "One player's forecast for one week, in this league's scoring (the lineup tables)."
+  },
+  "starter_points": {
+   "label": "Starter points",
+   "mine": 29.85,
+   "theirs": -0.25,
+   "this_week": {
+    "mine": 0.59,
+    "theirs": 5.52
+   },
+   "words": "Your starting lineup: about 0.6 more points this week, about 30 more in total over weeks 5–16."
+  },
+  "depth": {
+   "label": "Backup coverage",
+   "mine": {
+    "before": 31.9,
+    "after": 22.04
+   },
+   "theirs": {
+    "before": 31.39,
+    "after": 37.06
+   },
+   "words": null
+  },
+  "season_value": {
+   "label": "Season value above replacement",
+   "give": 60,
+   "get": 74,
+   "unknown": [],
+   "fairness": true,
+   "words": "Season value above replacement: you give 60, you get 74 (you get 14 more). You give 2 players for 1: 1 roster spot freed."
+  },
+  "ros_points": {
+   "label": "Rest-of-season projected points",
+   "give": 243,
+   "get": 164,
+   "window": "weeks 4–16",
+   "fairness": false,
+   "words": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 243, you get 164."
+  }
+ },
+ "card": {
+  "give": [
+   {
+    "sleeper_id": "10232",
+    "gsis_id": "00-0038559",
+    "player_name": "Michael Wilson",
+    "position": "WR",
+    "team": "ARI",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+    "this_week": 14.14,
+    "cannot_play": null,
+    "market_price": 60,
+    "season_points": 177,
+    "roster_id": 2
+   },
+   {
+    "sleeper_id": "BUF",
+    "gsis_id": null,
+    "player_name": "Buffalo Bills",
+    "position": "DEF",
+    "team": "BUF",
+    "headshot_url": null,
+    "this_week": 4.48,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 89,
+    "roster_id": 2
+   }
+  ],
+  "get": [
+   {
+    "sleeper_id": "7594",
+    "gsis_id": "00-0036555",
+    "player_name": "Chuba Hubbard",
+    "position": "RB",
+    "team": "CAR",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rzsvnt0pxsaize2ndhxm",
+    "this_week": null,
+    "cannot_play": "bye",
+    "market_price": 74,
+    "season_points": 177,
+    "roster_id": 4
+   }
+  ],
+  "partner": 4,
+  "drops": {
+   "mine": [],
+   "theirs": [
+    {
+     "player": {
+      "sleeper_id": "4983",
+      "gsis_id": "00-0034827",
+      "player_name": "DJ Moore",
+      "position": "WR",
+      "team": "BUF",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lsavpxtqoqu25emwcnvy",
+      "this_week": 7.43,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 95,
+      "roster_id": 4
+     },
+     "words": "They must cut DJ Moore."
+    }
+   ]
+  },
+  "your_effect": {
+   "this_week": 0.59,
+   "window": 29.85,
+   "by_week": [
+    0.59,
+    2.37,
+    6.71,
+    2.16,
+    1.65,
+    1.74,
+    1.42,
+    1.02,
+    1.17,
+    5.7,
+    2.13,
+    3.19
+   ],
+   "raw_window": -66.76,
+   "words": "Your starters: +0.6 this week, +29.9 over weeks 5–16 (−66.8 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+  },
+  "their_effect": {
+   "this_week": 5.52,
+   "window": -0.25,
+   "by_week": [
+    5.52,
+    -0.05,
+    0.02,
+    -1.13,
+    0.02,
+    0.84,
+    1.07,
+    0.29,
+    -1.89,
+    -5.4,
+    0.83,
+    -0.37
+   ],
+   "raw_window": -7.26,
+   "words": "Scrote Squad's starters: +5.5 this week, −0.2 over weeks 5–16 (−7.3 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+  },
+  "depth_cost": {
+   "mine": "You free 1 roster spot.",
+   "theirs": "they lose Chuba Hubbard, an RB who cannot play in week 5 (on a bye): no RB left on their bench who can play in week 5; they lose DJ Moore, a backup WR: 1 WR left on their bench who can play in week 5 (Tyreek Hill with no NFL team cannot)",
+   "roster_spots": -1,
+   "season_value": {
+    "give": 60,
+    "get": 74
+   },
+   "horizon": null
+  },
+  "waiver_alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "WAS",
+     "gsis_id": null,
+     "player_name": "Washington Commanders",
+     "position": "DEF"
+    },
+    "drop": {
+     "sleeper_id": "9228",
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB"
+    },
+    "open_spot": false,
+    "gain_week": 4.87,
+    "gain_window": 14.21,
+    "by_week": [
+     4.87,
+     1.05,
+     0.0,
+     0.79,
+     0.0,
+     0.48,
+     0.99,
+     0.47,
+     0.9,
+     1.38,
+     1.53,
+     1.75
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16
+    ],
+    "span": "weeks 5–16",
+    "source": "basis search",
+    "note": null,
+    "covered_by_week": [
+     4.87,
+     1.05,
+     0.0,
+     0.79,
+     0.0,
+     0.48,
+     0.99,
+     0.47,
+     0.9,
+     1.38,
+     1.53,
+     1.75
+    ],
+    "covered_window": 14.21,
+    "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 14.21
+    },
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young)",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "3257",
+      "gsis_id": "00-0033119",
+      "player_name": "Jacoby Brissett",
+      "position": "QB"
+     },
+     "drop": {
+      "sleeper_id": "9228",
+      "gsis_id": "00-0039150",
+      "player_name": "Bryce Young",
+      "position": "QB"
+     },
+     "gain_window": 20.9,
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
+    }
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "8259",
+     "gsis_id": "00-0037224",
+     "player_name": "Cameron Dicker",
+     "position": "K"
+    },
+    "drop": {
+     "sleeper_id": "4983",
+     "gsis_id": "00-0034827",
+     "player_name": "DJ Moore",
+     "position": "WR"
+    },
+    "open_spot": false,
+    "gain_week": 1.57,
+    "gain_window": 28.12,
+    "by_week": [
+     1.57,
+     1.27,
+     0.0,
+     2.1,
+     2.66,
+     1.39,
+     2.09,
+     2.55,
+     8.52,
+     2.39,
+     2.32,
+     1.26
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16
+    ],
+    "span": "weeks 5–16",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Cameron Dicker claim gives +28.1 over weeks 5–16 (drop DJ Moore)",
+    "covered_by_week": [
+     1.57,
+     1.27,
+     0.0,
+     2.1,
+     2.66,
+     1.39,
+     2.09,
+     2.55,
+     -0.67,
+     2.39,
+     2.32,
+     1.26
+    ],
+    "covered_window": 19.6,
+    "covered_week": 1.57,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 1.57,
+     "net_window": 19.6
+    },
+    "covered_gross_window": 19.6
+   },
+   "words": "Yours: add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop DJ Moore: +19.6 over weeks 5–16 (+28.1 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+  },
+  "beyond": {
+   "mine": 15.64,
+   "theirs": -19.85,
+   "margin": 1.0
+  },
+  "why_consider": [
+   "Buffalo Bills and Michael Wilson start for them in weeks 5, 6, 7, 8, 9, 10, 11, 12, 13, 15 and 16."
+  ],
+  "why_refuse": [
+   "It does not improve their starters over weeks 5–16 (−0.2).",
+   "They must cut DJ Moore to make room.",
+   "They lose Chuba Hubbard, an RB who cannot play in week 5 (on a bye): no RB left on their bench who can play in week 5; they lose DJ Moore, a backup WR: 1 WR left on their bench who can play in week 5 (Tyreek Hill with no NFL team cannot).",
+   "Our numbers only: no market price for Buffalo Bills, Chuba Hubbard: this is how the rosters fit, not what the players would fetch."
+  ],
+  "plausibility": {
+   "key": "roster_fit",
+   "label": "A roster-fit idea",
+   "reasons": [
+    "no market price for Buffalo Bills, Chuba Hubbard: this is how the rosters fit, not what the players would fetch"
+   ]
+  },
+  "guardrails": [],
+  "legal": {
+   "ok": true,
+   "notes": [
+    "You would have nobody for DEF in weeks 5, 6, 8, 9, 10, 11, 12, 13, 14, 15 and 16: counted with the best free agent there, not as an empty slot.",
+    "Scrote Squad must cut DJ Moore to make room.",
+    "Scrote Squad would have nobody for RB in weeks 9 and 13: counted with the best free agent there, not as an empty slot."
+   ],
+   "checks": [
+    "ownership (trades.clean_package)",
+    "roster limits and required cuts (trades._after)",
+    "locked players (RosterBoard.is_locked)",
+    "position requirements (lineup.solve)",
+    "trade deadline (league settings)"
+   ]
+  },
+  "credible": false,
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "words": "Not worth proposing: Scrote Squad's starters end 19.9 behind their own best move over weeks 5–16.",
+   "plausibility": "A roster-fit idea"
+  }
+ },
+ "decision": {
+  "basis": "replacement",
+  "basis_label": "Against realistic replacements",
+  "basis_words": "Every number here fills an empty starting slot (a bye, a cut, a player traded away) with the best free agent who can play it that week, for both teams and never the same free agent for both, and compares the trade with each team's best waiver move.",
+  "weeks": [
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ],
+  "span": "weeks 5–16",
+  "window": "ros",
+  "this_week": 5,
+  "mine": {
+   "before": {
+    "this_week": 127.12,
+    "window": 1450.29,
+    "by_week": [
+     127.12,
+     123.06,
+     113.83,
+     122.52,
+     123.11,
+     122.25,
+     111.0,
+     123.5,
+     121.47,
+     118.56,
+     122.27,
+     121.6
+    ]
+   },
+   "after": {
+    "this_week": 127.71,
+    "window": 1480.14,
+    "by_week": [
+     127.71,
+     125.43,
+     120.54,
+     124.68,
+     124.76,
+     123.99,
+     112.42,
+     124.52,
+     122.64,
+     124.26,
+     124.4,
+     124.79
+    ]
+   },
+   "gain_week": 0.59,
+   "gain_window": 29.85,
+   "by_week": [
+    0.59,
+    2.37,
+    6.71,
+    2.16,
+    1.65,
+    1.74,
+    1.42,
+    1.02,
+    1.17,
+    5.7,
+    2.13,
+    3.19
+   ],
+   "cuts": []
+  },
+  "theirs": {
+   "before": {
+    "this_week": 111.03,
+    "window": 1380.26,
+    "by_week": [
+     111.03,
+     117.91,
+     113.56,
+     117.25,
+     111.61,
+     117.35,
+     111.19,
+     117.52,
+     110.54,
+     117.71,
+     117.17,
+     117.42
+    ]
+   },
+   "after": {
+    "this_week": 116.55,
+    "window": 1380.01,
+    "by_week": [
+     116.55,
+     117.86,
+     113.58,
+     116.12,
+     111.63,
+     118.19,
+     112.26,
+     117.81,
+     108.65,
+     112.31,
+     118.0,
+     117.05
+    ]
+   },
+   "gain_week": 5.52,
+   "gain_window": -0.25,
+   "by_week": [
+    5.52,
+    -0.05,
+    0.02,
+    -1.13,
+    0.02,
+    0.84,
+    1.07,
+    0.29,
+    -1.89,
+    -5.4,
+    0.83,
+    -0.37
+   ],
+   "cuts": [
+    {
+     "sleeper_id": "4983",
+     "gsis_id": "00-0034827",
+     "player_name": "DJ Moore",
+     "position": "WR",
+     "team": "BUF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lsavpxtqoqu25emwcnvy",
+     "this_week": 7.43,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 95,
+     "roster_id": 4
+    }
+   ]
+  },
+  "dial": {
+   "score": 24,
+   "label": "Makes their lineup weaker",
+   "their_gain": -0.25,
+   "you": 29.85,
+   "caption": "their starters over weeks 5–16, against realistic replacements",
+   "title": "Effect on their starters",
+   "need": "puts Wilson at their FLEX in place of Meyers"
+  },
+  "verdict": "Helps your lineup +0.6 this week (+29.9 over weeks 5–16), them +5.5 but −0.2 over weeks 5–16; you get more season value: a lineup loss for them.",
+  "headline": "**You give [Michael Wilson](/player/00-0038559) and Buffalo Bills; you get [Chuba Hubbard](/player/00-0036555).** Helps your lineup +0.6 this week (+29.9 over weeks 5–16), them +5.5 but −0.2 over weeks 5–16; you get more season value: a lineup loss for them.",
+  "effect_words": "Your starting lineup: about 0.6 more points this week, about 30 more in total over weeks 5–16.",
+  "their_effect_words": "Scrote Squad's starting lineup: about 5.5 more points this week, about 0.2 fewer points in total over weeks 5–16.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+0.6** this week and **+29.9** over weeks 5–16; them **+5.5** and **−0.2**.",
+  "strip": {
+   "weeks": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ],
+   "mine": [
+    0.59,
+    2.37,
+    6.71,
+    2.16,
+    1.65,
+    1.74,
+    1.42,
+    1.02,
+    1.17,
+    5.7,
+    2.13,
+    3.19
+   ],
+   "theirs": [
+    5.52,
+    -0.05,
+    0.02,
+    -1.13,
+    0.02,
+    0.84,
+    1.07,
+    0.29,
+    -1.89,
+    -5.4,
+    0.83,
+    -0.37
+   ]
+  },
+  "story": {
+   "this_week": {
+    "week": 5,
+    "change": 0.59,
+    "kind": "gain"
+   },
+   "window": {
+    "change": 29.85,
+    "kind": "gain"
+   },
+   "by_week": [
+    {
+     "week": 5,
+     "change": 0.59
+    },
+    {
+     "week": 6,
+     "change": 2.37
+    },
+    {
+     "week": 7,
+     "change": 6.71
+    },
+    {
+     "week": 8,
+     "change": 2.16
+    },
+    {
+     "week": 9,
+     "change": 1.65
+    },
+    {
+     "week": 10,
+     "change": 1.74
+    },
+    {
+     "week": 11,
+     "change": 1.42
+    },
+    {
+     "week": 12,
+     "change": 1.02
+    },
+    {
+     "week": 13,
+     "change": 1.17
+    },
+    {
+     "week": 14,
+     "change": 5.7
+    },
+    {
+     "week": 15,
+     "change": 2.13
+    },
+    {
+     "week": 16,
+     "change": 3.19
+    }
+   ],
+   "words": "Your lineup gains 0.6 this week and 29.9 over weeks 5–16 in total."
+  },
+  "alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "WAS",
+     "gsis_id": null,
+     "player_name": "Washington Commanders",
+     "position": "DEF"
+    },
+    "drop": {
+     "sleeper_id": "9228",
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB"
+    },
+    "open_spot": false,
+    "gain_week": 4.87,
+    "gain_window": 14.21,
+    "by_week": [
+     4.87,
+     1.05,
+     0.0,
+     0.79,
+     0.0,
+     0.48,
+     0.99,
+     0.47,
+     0.9,
+     1.38,
+     1.53,
+     1.75
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16
+    ],
+    "span": "weeks 5–16",
+    "source": "basis search",
+    "note": null,
+    "covered_by_week": [
+     4.87,
+     1.05,
+     0.0,
+     0.79,
+     0.0,
+     0.48,
+     0.99,
+     0.47,
+     0.9,
+     1.38,
+     1.53,
+     1.75
+    ],
+    "covered_window": 14.21,
+    "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 14.21
+    },
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "3257",
+      "gsis_id": "00-0033119",
+      "player_name": "Jacoby Brissett",
+      "position": "QB"
+     },
+     "drop": {
+      "sleeper_id": "9228",
+      "gsis_id": "00-0039150",
+      "player_name": "Bryce Young",
+      "position": "QB"
+     },
+     "gain_window": 20.9,
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
+    }
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "8259",
+     "gsis_id": "00-0037224",
+     "player_name": "Cameron Dicker",
+     "position": "K"
+    },
+    "drop": {
+     "sleeper_id": "4983",
+     "gsis_id": "00-0034827",
+     "player_name": "DJ Moore",
+     "position": "WR"
+    },
+    "open_spot": false,
+    "gain_week": 1.57,
+    "gain_window": 28.12,
+    "by_week": [
+     1.57,
+     1.27,
+     0.0,
+     2.1,
+     2.66,
+     1.39,
+     2.09,
+     2.55,
+     8.52,
+     2.39,
+     2.32,
+     1.26
+    ],
+    "weeks": [
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16
+    ],
+    "span": "weeks 5–16",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Cameron Dicker, drop DJ Moore: +19.6 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     1.57,
+     1.27,
+     0.0,
+     2.1,
+     2.66,
+     1.39,
+     2.09,
+     2.55,
+     -0.67,
+     2.39,
+     2.32,
+     1.26
+    ],
+    "covered_window": 19.6,
+    "covered_week": 1.57,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 1.57,
+     "net_window": 19.6
+    },
+    "covered_gross_window": 19.6
+   },
+   "beyond": {
+    "mine": 15.64,
+    "theirs": -19.85
+   },
+   "beats": true,
+   "words": "+29.9 over weeks 5–16, 15.6 more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "other_objective": null
+  },
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "words": "Not worth proposing: Scrote Squad's starters end 19.9 behind their own best move over weeks 5–16.",
+   "plausibility": "A roster-fit idea"
+  },
+  "changes": {
+   "mine": [
+    {
+     "slot": "WR2",
+     "slot_type": "WR",
+     "in": "13346",
+     "out": "10232",
+     "in_from": null,
+     "out_to": null,
+     "order": 5,
+     "slot_word": "WR",
+     "in_how": "bench",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "13346",
+      "gsis_id": "00-0041037",
+      "player_name": "Denzel Boston",
+      "position": "WR",
+      "team": "CLE",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+      "this_week": 9.86,
+      "cannot_play": null,
+      "market_price": 19,
+      "season_points": 135,
+      "roster_id": 2
+     },
+     "out_player": {
+      "sleeper_id": "10232",
+      "gsis_id": "00-0038559",
+      "player_name": "Michael Wilson",
+      "position": "WR",
+      "team": "ARI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+      "this_week": 14.14,
+      "cannot_play": null,
+      "market_price": 60,
+      "season_points": 177,
+      "roster_id": 2
+     },
+     "in_value": 9.86,
+     "out_value": 14.14,
+     "words": "Denzel Boston (from the bench) starts at WR in place of Michael Wilson (traded)"
+    },
+    {
+     "slot": "DEF",
+     "slot_type": "DEF",
+     "in": "WAS",
+     "out": "BUF",
+     "in_from": null,
+     "out_to": null,
+     "order": 10,
+     "slot_word": "DEF",
+     "in_how": "free agent",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "WAS",
+      "gsis_id": null,
+      "player_name": "Washington Commanders",
+      "position": "DEF"
+     },
+     "out_player": {
+      "sleeper_id": "BUF",
+      "gsis_id": null,
+      "player_name": "Buffalo Bills",
+      "position": "DEF",
+      "team": "BUF",
+      "headshot_url": null,
+      "this_week": 4.48,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 89,
+      "roster_id": 2
+     },
+     "in_value": 9.35,
+     "out_value": 4.48,
+     "words": "Washington Commanders (a free agent for the week) starts at DEF in place of Buffalo Bills (traded)"
+    }
+   ],
+   "theirs": [
+    {
+     "slot": "FLEX2",
+     "slot_type": "FLEX",
+     "in": "10232",
+     "out": "5947",
+     "in_from": null,
+     "out_to": null,
+     "order": 8,
+     "slot_word": "FLEX",
+     "in_how": "trade",
+     "out_why": "bench",
+     "in_player": {
+      "sleeper_id": "10232",
+      "gsis_id": "00-0038559",
+      "player_name": "Michael Wilson",
+      "position": "WR",
+      "team": "ARI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+      "this_week": 14.14,
+      "cannot_play": null,
+      "market_price": 60,
+      "season_points": 177,
+      "roster_id": 2
+     },
+     "out_player": {
+      "sleeper_id": "5947",
+      "gsis_id": "00-0034960",
+      "player_name": "Jakobi Meyers",
+      "position": "WR",
+      "team": "JAX",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zrs4ij8mvw7wr1uujwew",
+      "this_week": 8.62,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 111,
+      "roster_id": 4
+     },
+     "in_value": 14.14,
+     "out_value": 8.62,
+     "words": "Michael Wilson (from the trade) starts at FLEX in place of Jakobi Meyers (to the bench)"
+    }
+   ],
+   "words": {
+    "mine": [
+     "Denzel Boston (from the bench) starts at WR in place of Michael Wilson (traded)",
+     "Washington Commanders (a free agent for the week) starts at DEF in place of Buffalo Bills (traded)"
+    ],
+    "theirs": [
+     "Michael Wilson (from the trade) starts at FLEX in place of Jakobi Meyers (to the bench)"
+    ]
+   }
+  },
+  "depth": {
+   "mine": {
+    "words": null,
+    "lost": [],
+    "joins": []
+   },
+   "theirs": {
+    "words": "they lose Chuba Hubbard, an RB who cannot play in week 5 (on a bye): no RB left on their bench who can play in week 5; they lose DJ Moore, a backup WR: 1 WR left on their bench who can play in week 5 (Tyreek Hill with no NFL team cannot); Buffalo Bills joins their bench as a backup DEF",
+    "lost": [
+     {
+      "player": {
+       "sleeper_id": "7594",
+       "gsis_id": "00-0036555",
+       "player_name": "Chuba Hubbard",
+       "position": "RB",
+       "team": "CAR",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rzsvnt0pxsaize2ndhxm",
+       "this_week": null,
+       "cannot_play": "bye",
+       "market_price": 74,
+       "season_points": 177,
+       "roster_id": 4
+      },
+      "position": "RB",
+      "usable": [],
+      "cannot_play": [],
+      "words": "they lose Chuba Hubbard, an RB who cannot play in week 5 (on a bye): no RB left on their bench who can play in week 5"
+     },
+     {
+      "player": {
+       "sleeper_id": "4983",
+       "gsis_id": "00-0034827",
+       "player_name": "DJ Moore",
+       "position": "WR",
+       "team": "BUF",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lsavpxtqoqu25emwcnvy",
+       "this_week": 7.43,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 95,
+       "roster_id": 4
+      },
+      "position": "WR",
+      "usable": [
+       "Jakobi Meyers"
+      ],
+      "cannot_play": [
+       {
+        "player_name": "Tyreek Hill",
+        "why": "with no NFL team"
+       }
+      ],
+      "words": "they lose DJ Moore, a backup WR: 1 WR left on their bench who can play in week 5 (Tyreek Hill with no NFL team cannot)"
+     }
+    ],
+    "joins": [
+     "Buffalo Bills"
+    ]
+   }
+  },
+  "fills": {
+   "mine": {
+    "rows": [
+     {
+      "week": 5,
+      "state": "before",
+      "player": {
+       "sleeper_id": "3257",
+       "gsis_id": "00-0033119",
+       "player_name": "Jacoby Brissett",
+       "position": "QB"
+      },
+      "value": 20.9
+     },
+     {
+      "week": 5,
+      "state": "before",
+      "player": {
+       "sleeper_id": "5844",
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE"
+      },
+      "value": 8.68
+     },
+     {
+      "week": 5,
+      "state": "after",
+      "player": {
+       "sleeper_id": "3257",
+       "gsis_id": "00-0033119",
+       "player_name": "Jacoby Brissett",
+       "position": "QB"
+      },
+      "value": 20.9
+     },
+     {
+      "week": 5,
+      "state": "after",
+      "player": {
+       "sleeper_id": "WAS",
+       "gsis_id": null,
+       "player_name": "Washington Commanders",
+       "position": "DEF"
+      },
+      "value": 9.35
+     },
+     {
+      "week": 5,
+      "state": "after",
+      "player": {
+       "sleeper_id": "5844",
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE"
+      },
+      "value": 8.68
+     },
+     {
+      "week": 6,
+      "state": "after",
+      "player": {
+       "sleeper_id": "NYG",
+       "gsis_id": null,
+       "player_name": "New York Giants",
+       "position": "DEF"
+      },
+      "value": 8.92
+     },
+     {
+      "week": 7,
+      "state": "before",
+      "player": {
+       "sleeper_id": "CAR",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers",
+       "position": "DEF"
+      },
+      "value": 8.2
+     },
+     {
+      "week": 7,
+      "state": "after",
+      "player": {
+       "sleeper_id": "CAR",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers",
+       "position": "DEF"
+      },
+      "value": 8.2
+     },
+     {
+      "week": 8,
+      "state": "after",
+      "player": {
+       "sleeper_id": "JAX",
+       "gsis_id": null,
+       "player_name": "Jacksonville Jaguars",
+       "position": "DEF"
+      },
+      "value": 8.24
+     },
+     {
+      "week": 9,
+      "state": "after",
+      "player": {
+       "sleeper_id": "CLE",
+       "gsis_id": null,
+       "player_name": "Cleveland Browns",
+       "position": "DEF"
+      },
+      "value": 8.88
+     },
+     {
+      "week": 10,
+      "state": "after",
+      "player": {
+       "sleeper_id": "CAR",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers",
+       "position": "DEF"
+      },
+      "value": 8.86
+     },
+     {
+      "week": 11,
+      "state": "before",
+      "player": {
+       "sleeper_id": "8259",
+       "gsis_id": "00-0037224",
+       "player_name": "Cameron Dicker",
+       "position": "K"
+      },
+      "value": 9.67
+     },
+     {
+      "week": 11,
+      "state": "after",
+      "player": {
+       "sleeper_id": "8259",
+       "gsis_id": "00-0037224",
+       "player_name": "Cameron Dicker",
+       "position": "K"
+      },
+      "value": 9.67
+     },
+     {
+      "week": 11,
+      "state": "after",
+      "player": {
+       "sleeper_id": "CHI",
+       "gsis_id": null,
+       "player_name": "Chicago Bears",
+       "position": "DEF"
+      },
+      "value": 8.73
+     },
+     {
+      "week": 12,
+      "state": "after",
+      "player": {
+       "sleeper_id": "CIN",
+       "gsis_id": null,
+       "player_name": "Cincinnati Bengals",
+       "position": "DEF"
+      },
+      "value": 8.32
+     },
+     {
+      "week": 13,
+      "state": "after",
+      "player": {
+       "sleeper_id": "LAC",
+       "gsis_id": null,
+       "player_name": "Los Angeles Chargers",
+       "position": "DEF"
+      },
+      "value": 8.34
+     },
+     {
+      "week": 14,
+      "state": "after",
+      "player": {
+       "sleeper_id": "CAR",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers",
+       "position": "DEF"
+      },
+      "value": 8.93
+     },
+     {
+      "week": 15,
+      "state": "after",
+      "player": {
+       "sleeper_id": "TB",
+       "gsis_id": null,
+       "player_name": "Tampa Bay Buccaneers",
+       "position": "DEF"
+      },
+      "value": 8.93
+     },
+     {
+      "week": 16,
+      "state": "after",
+      "player": {
+       "sleeper_id": "ARI",
+       "gsis_id": null,
+       "player_name": "Arizona Cardinals",
+       "position": "DEF"
+      },
+      "value": 9.11
+     }
+    ],
+    "words": "Assumed pickups for your empty slots: without the trade, Jacoby Brissett (QB, week 5), T.J. Hockenson (TE, week 5), Carolina Panthers (DEF, week 7) and Cameron Dicker (K, week 11); with it, Jacoby Brissett (QB, week 5), Washington Commanders (DEF, week 5), T.J. Hockenson (TE, week 5), New York Giants (DEF, week 6), Carolina Panthers (DEF, week 7), Jacksonville Jaguars (DEF, week 8), Cleveland Browns (DEF, week 9), Carolina Panthers (DEF, week 10), Cameron Dicker (K, week 11), Chicago Bears (DEF, week 11), Cincinnati Bengals (DEF, week 12), Los Angeles Chargers (DEF, week 13), Carolina Panthers (DEF, week 14), Tampa Bay Buccaneers (DEF, week 15) and Arizona Cardinals (DEF, week 16). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   },
+   "theirs": {
+    "rows": [
+     {
+      "week": 9,
+      "state": "after",
+      "player": {
+       "sleeper_id": "9511",
+       "gsis_id": "00-0038454",
+       "player_name": "Keaton Mitchell",
+       "position": "RB"
+      },
+      "value": 7.63
+     },
+     {
+      "week": 13,
+      "state": "before",
+      "player": {
+       "sleeper_id": "5095",
+       "gsis_id": "00-0034161",
+       "player_name": "Daniel Carlson",
+       "position": "K"
+      },
+      "value": 9.19
+     },
+     {
+      "week": 13,
+      "state": "before",
+      "player": {
+       "sleeper_id": "LAC",
+       "gsis_id": null,
+       "player_name": "Los Angeles Chargers",
+       "position": "DEF"
+      },
+      "value": 8.34
+     },
+     {
+      "week": 13,
+      "state": "after",
+      "player": {
+       "sleeper_id": "5095",
+       "gsis_id": "00-0034161",
+       "player_name": "Daniel Carlson",
+       "position": "K"
+      },
+      "value": 9.19
+     },
+     {
+      "week": 13,
+      "state": "after",
+      "player": {
+       "sleeper_id": "12504",
+       "gsis_id": "00-0040142",
+       "player_name": "Kaleb Johnson",
+       "position": "RB"
+      },
+      "value": 7.72
+     }
+    ],
+    "words": "Assumed pickups for Scrote Squad's empty slots: without the trade, Daniel Carlson (K, week 13) and Los Angeles Chargers (DEF, week 13); with it, Keaton Mitchell (RB, week 9), Daniel Carlson (K, week 13) and Kaleb Johnson (RB, week 13). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   }
+  },
+  "unfilled": {
+   "label": "If empty slots were left empty",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −8.8 this week, −66.8 over weeks 5–16; Scrote Squad's +5.5 and −7.3. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "mine": {
+    "gain_week": -8.76,
+    "gain_window": -66.76,
+    "by_week": [
+     -8.76,
+     -6.55,
+     6.71,
+     -6.08,
+     -7.23,
+     -7.12,
+     -7.31,
+     -7.3,
+     -7.17,
+     -3.23,
+     -6.8,
+     -5.92
+    ],
+    "before": {
+     "this_week": 97.54,
+     "window": 1402.84
+    },
+    "after": {
+     "this_week": 88.78,
+     "window": 1336.08
+    }
+   },
+   "theirs": {
+    "gain_week": 5.52,
+    "gain_window": -7.26,
+    "by_week": [
+     5.52,
+     -0.05,
+     0.02,
+     -1.13,
+     -7.61,
+     0.84,
+     1.07,
+     0.29,
+     -1.27,
+     -5.4,
+     0.83,
+     -0.37
+    ],
+    "before": {
+     "this_week": 111.03,
+     "window": 1362.73
+    },
+    "after": {
+     "this_week": 116.55,
+     "window": 1355.47
+    }
+   }
+  },
+  "out_indefinitely": null
+ },
+ "provenance": {
+  "model_version": "v3.0",
+  "kd_model_version": "kd1.0",
+  "published_at": "2026-10-05T12:21:31.576222+00:00",
+  "horizon": {
+   "first": 5,
+   "last": 16,
+   "market_week": 5,
+   "words": "weeks 5–16"
+  },
+  "checks": [
+   {
+    "span": "next",
+    "position": "WR",
+    "status": "graded",
+    "mae": 4.44,
+    "order": 0.618,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Receivers next week: graded (order 0.62)"
+   },
+   {
+    "span": "next",
+    "position": "DEF",
+    "status": "graded_weak",
+    "mae": 4.32,
+    "order": 0.257,
+    "ref": "docs/METRICS.md § Kickers and defenses beyond next week (IQ-4)",
+    "words": "Defenses next week: graded, weak (order 0.26)"
+   },
+   {
+    "span": "next",
+    "position": "RB",
+    "status": "graded",
+    "mae": 4.52,
+    "order": 0.686,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Running backs next week: graded (order 0.69)"
+   },
+   {
+    "span": "later",
+    "position": "WR",
+    "status": "graded",
+    "mae": 4.62,
+    "order": 0.569,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Receivers two to eight weeks ahead: graded (order 0.57)"
+   },
+   {
+    "span": "later",
+    "position": "DEF",
+    "status": "chance",
+    "mae": 4.78,
+    "order": 0.04,
+    "ref": "docs/METRICS.md § Kickers and defenses beyond next week (IQ-4)",
+    "words": "Defenses two to eight weeks ahead: no better than chance (order 0.04)"
+   },
+   {
+    "span": "later",
+    "position": "RB",
+    "status": "graded",
+    "mae": 4.73,
+    "order": 0.636,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Running backs two to eight weeks ahead: graded (order 0.64)"
+   },
+   {
+    "span": "trade_gap",
+    "position": null,
+    "status": "not_graded",
+    "mae": null,
+    "order": null,
+    "ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+    "words": "The trade's range: not graded"
+   }
+  ],
+  "status": "not_graded",
+  "beta": true,
+  "words": "Beta · Model v3.0 (kickers and defenses kd1.0), data published 5 Oct, 8:21 am ET · weeks 5–16 · checked on 2021–2025: next week graded, defenses weak; two to eight weeks ahead graded, defenses no better than chance; the trade's range not graded."
+ },
+ "caveats": [],
+ "caveat_effect": null,
+ "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+}

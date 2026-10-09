@@ -1029,6 +1029,16 @@
   ],
   "covered_window": 14.21,
   "covered_week": 4.87,
+  "drop_cost": {
+   "lineup_loss": 0.0,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 0.0,
+   "piece": null,
+   "excess": 0.0,
+   "net_week": 4.87,
+   "net_window": 14.21
+  },
   "availability": "claim",
   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
   "words": "add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
@@ -1046,7 +1056,8 @@
     "position": "QB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -11.83,
@@ -1384,6 +1395,16 @@
     ],
     "covered_window": 14.21,
     "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 14.21
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "words": "the Washington Commanders defense claim gives +14.2 over weeks 5–16 (drop Bryce Young)",
@@ -1401,7 +1422,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1470,7 +1492,18 @@
     "covered_window": 29.03,
     "covered_week": 0.96,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 2.64,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 2.64,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 0.96,
+     "net_window": 29.03
+    },
+    "covered_gross_window": 29.03
    },
    "words": "Yours: add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Joe Burrow: +29.0 over weeks 5–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
@@ -1846,6 +1879,16 @@
     ],
     "covered_window": 14.21,
     "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 14.21
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "words": "add Washington Commanders defense, drop Bryce Young: +14.2 over weeks 5–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
@@ -1863,7 +1906,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1932,7 +1976,18 @@
     "covered_window": 29.03,
     "covered_week": 0.96,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 2.64,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 2.64,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 0.96,
+     "net_window": 29.03
+    },
+    "covered_gross_window": 29.03
    },
    "beyond": {
     "mine": -11.83,

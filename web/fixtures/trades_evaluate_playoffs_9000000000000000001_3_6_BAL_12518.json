@@ -1,0 +1,1935 @@
+{
+ "league_id": "9000000000000000001",
+ "source": "sleeper",
+ "roster_id": 3,
+ "partner": 6,
+ "partner_team": "Two-Point Tries",
+ "week": 4,
+ "weeks": [
+  15,
+  16,
+  17
+ ],
+ "span": "weeks 15–17",
+ "window": "playoffs",
+ "window_label": "Playoffs",
+ "window_why": "the weeks of this league's playoffs: what the trade does when it counts most",
+ "give": [
+  {
+   "sleeper_id": "BAL",
+   "gsis_id": null,
+   "player_name": "Baltimore Ravens",
+   "position": "DEF",
+   "team": "BAL",
+   "headshot_url": null,
+   "this_week": 12.22,
+   "cannot_play": null,
+   "market_price": 0,
+   "season_points": 138,
+   "roster_id": 3
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "12518",
+   "gsis_id": "00-0040128",
+   "player_name": "Tyler Warren",
+   "position": "TE",
+   "team": "IND",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+   "this_week": 13.4,
+   "cannot_play": null,
+   "market_price": 22,
+   "season_points": 162,
+   "roster_id": 6
+  }
+ ],
+ "before": {
+  "mine": {
+   "this_week": 124.49,
+   "horizon": 356.86,
+   "bench": 66.92,
+   "by_week": [
+    118.26,
+    120.93,
+    117.67
+   ]
+  },
+  "theirs": {
+   "this_week": 122.87,
+   "horizon": 356.9,
+   "bench": 48.84,
+   "by_week": [
+    118.77,
+    118.33,
+    119.8
+   ]
+  }
+ },
+ "after": {
+  "mine": {
+   "this_week": 129.14,
+   "horizon": 370.67,
+   "bench": 66.92,
+   "by_week": [
+    123.09,
+    124.45,
+    123.13
+   ]
+  },
+  "theirs": {
+   "this_week": 123.7,
+   "horizon": 352.17,
+   "bench": 39.49,
+   "by_week": [
+    116.59,
+    117.63,
+    117.95
+   ]
+  }
+ },
+ "fit": {
+  "this_week": {
+   "mine": 4.65,
+   "theirs": 0.83
+  },
+  "window": {
+   "mine": 13.81,
+   "theirs": -4.73
+  },
+  "next_4": {
+   "mine": 13.81,
+   "theirs": -4.73
+  },
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.7** this week and **+13.8** over weeks 15–17; them **+0.8** and **−4.7**."
+ },
+ "interest": {
+  "score": 5,
+  "label": "Makes their lineup weaker",
+  "their_gain": -4.73,
+  "you": 13.81,
+  "caption": "their starters over weeks 15–17, against realistic replacements",
+  "title": "Effect on their starters",
+  "need": "puts Kincaid at their TE in place of Warren and puts Baltimore Ravens at their DEF in place of San Francisco 49ers"
+ },
+ "sanity": null,
+ "market": {
+  "give": 0,
+  "get": 22,
+  "season_points_give": 138,
+  "season_points_get": 162,
+  "unknown": [],
+  "replacement": {
+   "DEF": {
+    "season_points": 145,
+    "player_name": "Houston Texans"
+   },
+   "K": {
+    "season_points": 134,
+    "player_name": "Cameron Dicker"
+   },
+   "QB": {
+    "season_points": 243,
+    "player_name": "Drake Maye"
+   },
+   "RB": {
+    "season_points": 136,
+    "player_name": "Alvin Kamara"
+   },
+   "TE": {
+    "season_points": 140,
+    "player_name": "Cade Otton"
+   },
+   "WR": {
+    "season_points": 174,
+    "player_name": "Malik Washington"
+   }
+  },
+  "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **0**, you get **22**: you get 22 more.",
+  "players": [
+   {
+    "sleeper_id": "BAL",
+    "gsis_id": null,
+    "player_name": "Baltimore Ravens",
+    "position": "DEF",
+    "team": "BAL",
+    "headshot_url": null,
+    "this_week": 12.22,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 138,
+    "roster_id": 3,
+    "goes_to": "Two-Point Tries"
+   },
+   {
+    "sleeper_id": "12518",
+    "gsis_id": "00-0040128",
+    "player_name": "Tyler Warren",
+    "position": "TE",
+    "team": "IND",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+    "this_week": 13.4,
+    "cannot_play": null,
+    "market_price": 22,
+    "season_points": 162,
+    "roster_id": 6,
+    "goes_to": "You"
+   }
+  ]
+ },
+ "verdict": "Helps your lineup +4.7 this week (+13.8 over weeks 15–17), them +0.8 but −4.7 over weeks 15–17; you get more season value: a lineup loss for them.",
+ "headline": "**You give Baltimore Ravens; you get [Tyler Warren](/player/00-0040128).** Helps your lineup +4.7 this week (+13.8 over weeks 15–17), them +0.8 but −4.7 over weeks 15–17; you get more season value: a lineup loss for them.",
+ "ros": {
+  "give": 128,
+  "get": 150,
+  "window": "weeks 4–17",
+  "words": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 128, you get 150.",
+  "label": "Rest-of-season projected points",
+  "fairness": false
+ },
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    3,
+    6
+   ],
+   "theirs": [
+    4,
+    3
+   ],
+   "n": 10
+  },
+  "bench_value": {
+   "mine": [
+    1,
+    1
+   ],
+   "theirs": [
+    4,
+    6
+   ],
+   "n": 10
+  },
+  "words": "League rank, week 4: you 3rd → **6th** of 10, Two-Point Tries 4th → 3rd; depth: you 1st → **1st** of 10, Two-Point Tries 4th → 6th."
+ },
+ "size_words": "Roster size: you must cut [Pat Freiermuth](/player/00-0036894) (TE, 113 season points; costs 0.0 over weeks 15–17) to stay at 15 players; they must cut [Brian Thomas Jr.](/player/00-0039893) (WR, 115 season points; costs 0.0 over weeks 15–17) to stay at 15 players.",
+ "sides": {
+  "mine": {
+   "roster_id": 3,
+   "team_name": "Fixture Falcons",
+   "gives": [
+    {
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 138,
+     "roster_id": 3
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "12518",
+     "gsis_id": "00-0040128",
+     "player_name": "Tyler Warren",
+     "position": "TE",
+     "team": "IND",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+     "this_week": 13.4,
+     "cannot_play": null,
+     "market_price": 22,
+     "season_points": 162,
+     "roster_id": 6
+    }
+   ],
+   "weeks": [
+    15,
+    16,
+    17
+   ],
+   "before": {
+    "this_week": 118.26,
+    "horizon": 356.86,
+    "bench": 77.03,
+    "by_week": [
+     118.26,
+     120.93,
+     117.67
+    ]
+   },
+   "after": {
+    "this_week": 111.08,
+    "horizon": 334.11,
+    "bench": 78.09,
+    "by_week": [
+     111.08,
+     112.15,
+     110.88
+    ]
+   },
+   "gain_week": -7.18,
+   "gain_horizon": -22.75,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "7600",
+      "gsis_id": "00-0036894",
+      "player_name": "Pat Freiermuth",
+      "position": "TE",
+      "team": "PIT",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
+      "this_week": null,
+      "cannot_play": "game started (bench)",
+      "market_price": 0,
+      "season_points": 113,
+      "roster_id": 3
+     },
+     "horizon_loss": 0.0,
+     "season_points": 113
+    }
+   ],
+   "limit": 15,
+   "size_before": 16,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 0,
+   "price_in": 22,
+   "points_out": 138,
+   "points_in": 162,
+   "starts": [
+    {
+     "sleeper_id": "12518",
+     "gsis_id": "00-0040128",
+     "player_name": "Tyler Warren",
+     "position": "TE",
+     "team": "IND",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+     "this_week": 13.4,
+     "cannot_play": null,
+     "market_price": 22,
+     "season_points": 162,
+     "roster_id": 6
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+     "this_week": 8.76,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 128,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 138,
+     "roster_id": 3
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 6,
+   "team_name": "Two-Point Tries",
+   "gives": [
+    {
+     "sleeper_id": "12518",
+     "gsis_id": "00-0040128",
+     "player_name": "Tyler Warren",
+     "position": "TE",
+     "team": "IND",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+     "this_week": 13.4,
+     "cannot_play": null,
+     "market_price": 22,
+     "season_points": 162,
+     "roster_id": 6
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 138,
+     "roster_id": 3
+    }
+   ],
+   "weeks": [
+    15,
+    16,
+    17
+   ],
+   "before": {
+    "this_week": 118.77,
+    "horizon": 356.9,
+    "bench": 57.05,
+    "by_week": [
+     118.77,
+     118.33,
+     119.8
+    ]
+   },
+   "after": {
+    "this_week": 116.59,
+    "horizon": 352.17,
+    "bench": 57.41,
+    "by_week": [
+     116.59,
+     117.63,
+     117.95
+    ]
+   },
+   "gain_week": -2.18,
+   "gain_horizon": -4.73,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "11631",
+      "gsis_id": "00-0039893",
+      "player_name": "Brian Thomas Jr.",
+      "position": "WR",
+      "team": "JAX",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/plnekkriys4cm11rnxwl",
+      "this_week": 7.34,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 115,
+      "roster_id": 6
+     },
+     "horizon_loss": 0.0,
+     "season_points": 115
+    }
+   ],
+   "limit": 15,
+   "size_before": 16,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 22,
+   "price_in": 0,
+   "points_out": 162,
+   "points_in": 138,
+   "starts": [
+    {
+     "sleeper_id": "10236",
+     "gsis_id": "00-0038933",
+     "player_name": "Dalton Kincaid",
+     "position": "TE",
+     "team": "BUF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z7k857flehljboaixj8m",
+     "this_week": 10.03,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 133,
+     "roster_id": 6
+    },
+    {
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 138,
+     "roster_id": 3
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "12518",
+     "gsis_id": "00-0040128",
+     "player_name": "Tyler Warren",
+     "position": "TE",
+     "team": "IND",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+     "this_week": 13.4,
+     "cannot_play": null,
+     "market_price": 22,
+     "season_points": 162,
+     "roster_id": 6
+    },
+    {
+     "sleeper_id": "SF",
+     "gsis_id": null,
+     "player_name": "San Francisco 49ers",
+     "position": "DEF",
+     "team": "SF",
+     "headshot_url": null,
+     "this_week": 8.02,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 121,
+     "roster_id": 6
+    }
+   ]
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Jared Goff",
+     "gsis_id": "00-0033106",
+     "value": 20.16,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB1",
+     "player_name": "D'Andre Swift",
+     "gsis_id": "00-0036275",
+     "value": 15.2,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Bucky Irving",
+     "gsis_id": "00-0039361",
+     "value": 14.16,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Chris Olave",
+     "gsis_id": "00-0037239",
+     "value": 20.23,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Terry McLaurin",
+     "gsis_id": "00-0035659",
+     "value": 11.8,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "TE",
+     "player_name": "Tyler Warren (new)",
+     "gsis_id": "00-0040128",
+     "value": 13.4,
+     "change": 13.4,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Jeremiyah Love",
+     "gsis_id": "00-0041027",
+     "value": 14.08,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "K",
+     "player_name": "Chase McLaughlin",
+     "gsis_id": "00-0035358",
+     "value": 7.88,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Chicago Bears (free agent for the week)",
+     "gsis_id": null,
+     "value": 12.23,
+     "change": 12.23,
+     "no_projection": false,
+     "status": "in",
+     "fill": true
+    }
+   ],
+   "notes": [
+    "Tyler Warren (from the trade) starts at TE in place of Isaiah Likely (cut).",
+    "Chicago Bears (a free agent for the week) starts at DEF in place of Baltimore Ravens (traded)."
+   ],
+   "closest_call": "Terry McLaurin at WR2, 2.01 ahead of the next option",
+   "out": [
+    {
+     "slot": "TE",
+     "player_name": "Isaiah Likely",
+     "gsis_id": "00-0037838",
+     "value": 8.76,
+     "change": -8.76,
+     "why": "cut"
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Baltimore Ravens",
+     "gsis_id": null,
+     "value": 12.22,
+     "change": -12.22,
+     "why": "traded"
+    }
+   ],
+   "reshuffled": [],
+   "total": {
+    "before": 124.49,
+    "after": 129.14,
+    "change": 4.65
+   }
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Matthew Stafford",
+     "gsis_id": "00-0026498",
+     "value": 16.47,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Kenneth Walker III",
+     "gsis_id": "00-0038134",
+     "value": 19.28,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "RB2",
+     "player_name": "James Cook",
+     "gsis_id": "00-0037248",
+     "value": 18.68,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR1",
+     "player_name": "George Pickens",
+     "gsis_id": "00-0037247",
+     "value": 14.1,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Garrett Wilson",
+     "gsis_id": "00-0037740",
+     "value": 13.64,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "TE",
+     "player_name": "Dalton Kincaid",
+     "gsis_id": "00-0038933",
+     "value": 10.03,
+     "change": 10.03,
+     "no_projection": false,
+     "status": "in",
+     "fill": false
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Jaylen Waddle",
+     "gsis_id": "00-0036613",
+     "value": 11.21,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "K",
+     "player_name": "Tyler Bass",
+     "gsis_id": "00-0036162",
+     "value": 8.07,
+     "change": null,
+     "no_projection": false,
+     "status": null,
+     "fill": false
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Baltimore Ravens (new)",
+     "gsis_id": null,
+     "value": 12.22,
+     "change": 12.22,
+     "no_projection": false,
+     "status": "new",
+     "fill": false
+    }
+   ],
+   "notes": [
+    "Dalton Kincaid (from the bench) starts at TE in place of Tyler Warren (traded).",
+    "Baltimore Ravens (from the trade) starts at DEF in place of San Francisco 49ers (to the bench)."
+   ],
+   "closest_call": "Jaylen Waddle at FLEX, 2.01 ahead of the next option",
+   "out": [
+    {
+     "slot": "TE",
+     "player_name": "Tyler Warren",
+     "gsis_id": "00-0040128",
+     "value": 13.4,
+     "change": -13.4,
+     "why": "traded"
+    },
+    {
+     "slot": "DEF",
+     "player_name": "San Francisco 49ers",
+     "gsis_id": null,
+     "value": 8.02,
+     "change": -8.02,
+     "why": "to the bench"
+    }
+   ],
+   "reshuffled": [],
+   "total": {
+    "before": 122.87,
+    "after": 123.7,
+    "change": 0.83
+   }
+  }
+ },
+ "fill_players": {},
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)",
+ "starters_in": [
+  {
+   "player": {
+    "sleeper_id": "12518",
+    "gsis_id": "00-0040128",
+    "player_name": "Tyler Warren",
+    "position": "TE",
+    "team": "IND",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+    "this_week": 13.4,
+    "cannot_play": null,
+    "market_price": 22,
+    "season_points": 162,
+    "roster_id": 6
+   },
+   "slot": "TE",
+   "value": 13.4,
+   "how": "trade"
+  },
+  {
+   "player": {
+    "sleeper_id": "CHI",
+    "gsis_id": null,
+    "player_name": "Chicago Bears",
+    "position": "DEF"
+   },
+   "slot": "DEF",
+   "value": 12.23,
+   "how": "free_agent"
+  }
+ ],
+ "starters_out": [
+  {
+   "player": {
+    "sleeper_id": "8131",
+    "gsis_id": "00-0037838",
+    "player_name": "Isaiah Likely",
+    "position": "TE",
+    "team": "NYG",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+    "this_week": 8.76,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 128,
+    "roster_id": 3
+   },
+   "slot": "TE",
+   "value": 8.76,
+   "why": "cut"
+  },
+  {
+   "player": {
+    "sleeper_id": "BAL",
+    "gsis_id": null,
+    "player_name": "Baltimore Ravens",
+    "position": "DEF",
+    "team": "BAL",
+    "headshot_url": null,
+    "this_week": 12.22,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 138,
+    "roster_id": 3
+   },
+   "slot": "DEF",
+   "value": 12.22,
+   "why": "traded"
+  }
+ ],
+ "cut": [
+  {
+   "player": {
+    "sleeper_id": "7600",
+    "gsis_id": "00-0036894",
+    "player_name": "Pat Freiermuth",
+    "position": "TE",
+    "team": "PIT",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
+    "this_week": null,
+    "cannot_play": "game started (bench)",
+    "market_price": 0,
+    "season_points": 113,
+    "roster_id": 3
+   },
+   "season_points": 113,
+   "words": "You must cut Pat Freiermuth to make room (he does not start for you: no lineup points lost)."
+  }
+ ],
+ "effect_words": "Your starting lineup: about 4.7 more points this week, about 14 more in total over weeks 15–17.",
+ "lineup_words": "Tyler Warren (from the trade) starts at TE in place of Isaiah Likely (cut); Chicago Bears (a free agent for the week) starts at DEF in place of Baltimore Ravens (traded).",
+ "backup_words": null,
+ "their_change": {
+  "gain_week": 0.83,
+  "gain_window": -4.73,
+  "starters_in": [
+   {
+    "player": {
+     "sleeper_id": "10236",
+     "gsis_id": "00-0038933",
+     "player_name": "Dalton Kincaid",
+     "position": "TE",
+     "team": "BUF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z7k857flehljboaixj8m",
+     "this_week": 10.03,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 133,
+     "roster_id": 6
+    },
+    "slot": "TE",
+    "value": 10.03,
+    "how": "bench"
+   },
+   {
+    "player": {
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "team": "BAL",
+     "headshot_url": null,
+     "this_week": 12.22,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 138,
+     "roster_id": 3
+    },
+    "slot": "DEF",
+    "value": 12.22,
+    "how": "trade"
+   }
+  ],
+  "starters_out": [
+   {
+    "player": {
+     "sleeper_id": "12518",
+     "gsis_id": "00-0040128",
+     "player_name": "Tyler Warren",
+     "position": "TE",
+     "team": "IND",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+     "this_week": 13.4,
+     "cannot_play": null,
+     "market_price": 22,
+     "season_points": 162,
+     "roster_id": 6
+    },
+    "slot": "TE",
+    "value": 13.4,
+    "why": "traded"
+   },
+   {
+    "player": {
+     "sleeper_id": "SF",
+     "gsis_id": null,
+     "player_name": "San Francisco 49ers",
+     "position": "DEF",
+     "team": "SF",
+     "headshot_url": null,
+     "this_week": 8.02,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 121,
+     "roster_id": 6
+    },
+    "slot": "DEF",
+    "value": 8.02,
+    "why": "bench"
+   }
+  ],
+  "effect_words": "Two-Point Tries's starting lineup: about 0.8 more points this week, about 4.7 fewer points in total over weeks 15–17.",
+  "lineup_words": "Dalton Kincaid (from the bench) starts at TE in place of Tyler Warren (traded); Baltimore Ravens (from the trade) starts at DEF in place of San Francisco 49ers (to the bench)."
+ },
+ "window_words": "over weeks 15–17 in total",
+ "hold_words": "+13.8 over weeks 15–17, 8.2 more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+ "hold": {
+  "hold": null,
+  "waiver": "+13.8 over weeks 15–17, 8.2 more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+  "waiver_gain": 5.57
+ },
+ "how": {
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.7** this week and **+13.8** over weeks 15–17; them **+0.8** and **−4.7**.",
+  "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **0**, you get **22**: you get 22 more.",
+  "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 128, you get 150.",
+  "size": "Roster size: you must cut [Pat Freiermuth](/player/00-0036894) (TE, 113 season points; costs 0.0 over weeks 15–17) to stay at 15 players; they must cut [Brian Thomas Jr.](/player/00-0039893) (WR, 115 season points; costs 0.0 over weeks 15–17) to stay at 15 players.",
+  "ranks": "League rank, week 4: you 3rd → **6th** of 10, Two-Point Tries 4th → 3rd; depth: you 1st → **1st** of 10, Two-Point Tries 4th → 6th.",
+  "season_value": "Season value above replacement: you give 0, you get 22 (you get 22 more)."
+ },
+ "alternative": {
+  "kind": "waiver",
+  "player": {
+   "sleeper_id": "8161",
+   "gsis_id": "00-0038128",
+   "player_name": "Malik Willis",
+   "position": "QB"
+  },
+  "drop": {
+   "sleeper_id": "3163",
+   "gsis_id": "00-0033106",
+   "player_name": "Jared Goff",
+   "position": "QB"
+  },
+  "open_spot": false,
+  "gain_week": 1.48,
+  "gain_window": 5.57,
+  "by_week": [
+   1.48,
+   1.91,
+   2.18
+  ],
+  "weeks": [
+   15,
+   16,
+   17
+  ],
+  "span": "weeks 15–17",
+  "source": "fa_pool fill",
+  "note": null,
+  "words": "add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "covered_by_week": [
+   1.48,
+   1.91,
+   2.18
+  ],
+  "covered_window": 5.57,
+  "covered_week": 1.48,
+  "availability": "claim",
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "drop_cost": {
+   "lineup_loss": 2.29,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 2.29,
+   "piece": "lineup_loss",
+   "excess": 0.0,
+   "net_week": 1.48,
+   "net_window": 5.57
+  },
+  "covered_gross_window": 5.57
+ },
+ "beyond_alternative": 8.24,
+ "beats_alternative": true,
+ "alternative_words": "+13.8 over weeks 15–17, 8.2 more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+ "other_objective": null,
+ "strip": {
+  "weeks": [
+   15,
+   16,
+   17
+  ],
+  "mine": [
+   4.83,
+   3.52,
+   5.46
+  ],
+  "theirs": [
+   -2.18,
+   -0.7,
+   -1.85
+  ]
+ },
+ "story": {
+  "this_week": {
+   "week": null,
+   "change": null,
+   "kind": "unknown"
+  },
+  "window": {
+   "change": 13.81,
+   "kind": "gain"
+  },
+  "by_week": [
+   {
+    "week": 15,
+    "change": 4.83
+   },
+   {
+    "week": 16,
+    "change": 3.52
+   },
+   {
+    "week": 17,
+    "change": 5.46
+   }
+  ],
+  "words": "Your lineup gains 13.8 over weeks 15–17 in total."
+ },
+ "values": {
+  "projected_points": {
+   "label": "Projected points",
+   "words": "One player's forecast for one week, in this league's scoring (the lineup tables)."
+  },
+  "starter_points": {
+   "label": "Starter points",
+   "mine": 13.81,
+   "theirs": -4.73,
+   "this_week": {
+    "mine": 4.65,
+    "theirs": 0.83
+   },
+   "words": "Your starting lineup: about 4.7 more points this week, about 14 more in total over weeks 15–17."
+  },
+  "depth": {
+   "label": "Backup coverage",
+   "mine": {
+    "before": 66.92,
+    "after": 66.92
+   },
+   "theirs": {
+    "before": 48.84,
+    "after": 39.49
+   },
+   "words": null
+  },
+  "season_value": {
+   "label": "Season value above replacement",
+   "give": 0,
+   "get": 22,
+   "unknown": [],
+   "fairness": true,
+   "words": "Season value above replacement: you give 0, you get 22 (you get 22 more)."
+  },
+  "ros_points": {
+   "label": "Rest-of-season projected points",
+   "give": 128,
+   "get": 150,
+   "window": "weeks 4–17",
+   "fairness": false,
+   "words": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 128, you get 150."
+  }
+ },
+ "card": {
+  "give": [
+   {
+    "sleeper_id": "BAL",
+    "gsis_id": null,
+    "player_name": "Baltimore Ravens",
+    "position": "DEF",
+    "team": "BAL",
+    "headshot_url": null,
+    "this_week": 12.22,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 138,
+    "roster_id": 3
+   }
+  ],
+  "get": [
+   {
+    "sleeper_id": "12518",
+    "gsis_id": "00-0040128",
+    "player_name": "Tyler Warren",
+    "position": "TE",
+    "team": "IND",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+    "this_week": 13.4,
+    "cannot_play": null,
+    "market_price": 22,
+    "season_points": 162,
+    "roster_id": 6
+   }
+  ],
+  "partner": 6,
+  "drops": {
+   "mine": [
+    {
+     "player": {
+      "sleeper_id": "7600",
+      "gsis_id": "00-0036894",
+      "player_name": "Pat Freiermuth",
+      "position": "TE",
+      "team": "PIT",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
+      "this_week": null,
+      "cannot_play": "game started (bench)",
+      "market_price": 0,
+      "season_points": 113,
+      "roster_id": 3
+     },
+     "words": "You must cut Pat Freiermuth."
+    }
+   ],
+   "theirs": [
+    {
+     "player": {
+      "sleeper_id": "11631",
+      "gsis_id": "00-0039893",
+      "player_name": "Brian Thomas Jr.",
+      "position": "WR",
+      "team": "JAX",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/plnekkriys4cm11rnxwl",
+      "this_week": 7.34,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 115,
+      "roster_id": 6
+     },
+     "words": "They must cut Brian Thomas Jr.."
+    }
+   ]
+  },
+  "your_effect": {
+   "this_week": 4.83,
+   "window": 13.81,
+   "by_week": [
+    4.83,
+    3.52,
+    5.46
+   ],
+   "raw_window": -22.75,
+   "words": "Your starters: +4.8 this week, +13.8 over weeks 15–17 (−22.8 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+  },
+  "their_effect": {
+   "this_week": -2.18,
+   "window": -4.73,
+   "by_week": [
+    -2.18,
+    -0.7,
+    -1.85
+   ],
+   "raw_window": -4.73,
+   "words": "Two-Point Tries's starters: −2.2 this week, −4.7 over weeks 15–17."
+  },
+  "depth_cost": {
+   "mine": "You lose Pat Freiermuth, a TE who cannot play in week 4 (game started (bench)): 1 TE left on your bench who can play in week 4 (Pat Freiermuth game started (bench) cannot).",
+   "theirs": "they lose Brian Thomas Jr., a backup WR: 2 WR left on their bench who can play in week 4",
+   "roster_spots": 0,
+   "season_value": {
+    "give": 0,
+    "get": 22
+   },
+   "horizon": null
+  },
+  "waiver_alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "8161",
+     "gsis_id": "00-0038128",
+     "player_name": "Malik Willis",
+     "position": "QB"
+    },
+    "drop": {
+     "sleeper_id": "3163",
+     "gsis_id": "00-0033106",
+     "player_name": "Jared Goff",
+     "position": "QB"
+    },
+    "open_spot": false,
+    "gain_week": 1.48,
+    "gain_window": 5.57,
+    "by_week": [
+     1.48,
+     1.91,
+     2.18
+    ],
+    "weeks": [
+     15,
+     16,
+     17
+    ],
+    "span": "weeks 15–17",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Malik Willis claim gives +5.6 over weeks 15–17 (drop Jared Goff)",
+    "covered_by_week": [
+     1.48,
+     1.91,
+     2.18
+    ],
+    "covered_window": 5.57,
+    "covered_week": 1.48,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 2.29,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 2.29,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 1.48,
+     "net_window": 5.57
+    },
+    "covered_gross_window": 5.57
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "8259",
+     "gsis_id": "00-0037224",
+     "player_name": "Cameron Dicker",
+     "position": "K"
+    },
+    "drop": {
+     "sleeper_id": "7042",
+     "gsis_id": "00-0036162",
+     "player_name": "Tyler Bass",
+     "position": "K"
+    },
+    "open_spot": false,
+    "gain_week": 2.4,
+    "gain_window": 6.34,
+    "by_week": [
+     2.4,
+     1.46,
+     2.48
+    ],
+    "weeks": [
+     15,
+     16,
+     17
+    ],
+    "span": "weeks 15–17",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Cameron Dicker claim gives +6.3 over weeks 15–17 (drop Tyler Bass)",
+    "covered_by_week": [
+     2.4,
+     1.46,
+     2.48
+    ],
+    "covered_window": 6.34,
+    "covered_week": 2.4,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "words": "Yours: add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Cameron Dicker, drop Tyler Bass: +6.3 over weeks 15–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+  },
+  "beyond": {
+   "mine": 8.24,
+   "theirs": -11.07,
+   "margin": 1.0
+  },
+  "why_consider": [
+   "Baltimore Ravens starts for them in weeks 15 and 16."
+  ],
+  "why_refuse": [
+   "Their starters lose 2.2 this week.",
+   "It does not improve their starters over weeks 15–17 (−4.7).",
+   "A DEF for a starter (Tyler Warren): they have a DEF and the free pool holds one about as good, so a DEF is not worth a starter to them.",
+   "They must cut Brian Thomas Jr. to make room.",
+   "They lose Brian Thomas Jr., a backup WR: 2 WR left on their bench who can play in week 4."
+  ],
+  "plausibility": {
+   "key": "implausible",
+   "label": "Implausible",
+   "reasons": [
+    "a DEF for a starter (Tyler Warren): they have a DEF and the free pool holds one about as good, so a DEF is not worth a starter to them"
+   ]
+  },
+  "guardrails": [
+   {
+    "rule": "streamable_for_starter",
+    "positions": [
+     "DEF"
+    ],
+    "receiver": 6,
+    "starter": "12518",
+    "words": "a DEF for a starter (Tyler Warren): they have a DEF and the free pool holds one about as good, so a DEF is not worth a starter to them"
+   },
+   {
+    "rule": "value_gap_theirs",
+    "words": "they give 22 season value above replacement for 0: 22 more, over 25% of what you give"
+   }
+  ],
+  "legal": {
+   "ok": true,
+   "notes": [
+    "You must cut Pat Freiermuth to make room.",
+    "You would have nobody for DEF in weeks 15, 16 and 17: counted with the best free agent there, not as an empty slot.",
+    "Two-Point Tries must cut Brian Thomas Jr. to make room."
+   ],
+   "checks": [
+    "ownership (trades.clean_package)",
+    "roster limits and required cuts (trades._after)",
+    "locked players (RosterBoard.is_locked)",
+    "position requirements (lineup.solve)",
+    "trade deadline (league settings)"
+   ]
+  },
+  "credible": false,
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "words": "Not worth proposing: Two-Point Tries's starters end 11.1 behind their own best move over weeks 15–17; a DEF for a starter (Tyler Warren): they have a DEF and the free pool holds one about as good, so a DEF is not worth a starter to them.",
+   "plausibility": "Implausible"
+  }
+ },
+ "decision": {
+  "basis": "replacement",
+  "basis_label": "Against realistic replacements",
+  "basis_words": "Every number here fills an empty starting slot (a bye, a cut, a player traded away) with the best free agent who can play it that week, for both teams and never the same free agent for both, and compares the trade with each team's best waiver move.",
+  "weeks": [
+   15,
+   16,
+   17
+  ],
+  "span": "weeks 15–17",
+  "window": "playoffs",
+  "this_week": null,
+  "mine": {
+   "before": {
+    "this_week": 124.49,
+    "window": 356.86,
+    "by_week": [
+     118.26,
+     120.93,
+     117.67
+    ]
+   },
+   "after": {
+    "this_week": 129.14,
+    "window": 370.67,
+    "by_week": [
+     123.09,
+     124.45,
+     123.13
+    ]
+   },
+   "gain_week": 4.65,
+   "gain_window": 13.81,
+   "by_week": [
+    4.83,
+    3.52,
+    5.46
+   ],
+   "cuts": [
+    {
+     "sleeper_id": "7600",
+     "gsis_id": "00-0036894",
+     "player_name": "Pat Freiermuth",
+     "position": "TE",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
+     "this_week": null,
+     "cannot_play": "game started (bench)",
+     "market_price": 0,
+     "season_points": 113,
+     "roster_id": 3
+    }
+   ]
+  },
+  "theirs": {
+   "before": {
+    "this_week": 122.87,
+    "window": 356.9,
+    "by_week": [
+     118.77,
+     118.33,
+     119.8
+    ]
+   },
+   "after": {
+    "this_week": 123.7,
+    "window": 352.17,
+    "by_week": [
+     116.59,
+     117.63,
+     117.95
+    ]
+   },
+   "gain_week": 0.83,
+   "gain_window": -4.73,
+   "by_week": [
+    -2.18,
+    -0.7,
+    -1.85
+   ],
+   "cuts": [
+    {
+     "sleeper_id": "11631",
+     "gsis_id": "00-0039893",
+     "player_name": "Brian Thomas Jr.",
+     "position": "WR",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/plnekkriys4cm11rnxwl",
+     "this_week": 7.34,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 115,
+     "roster_id": 6
+    }
+   ]
+  },
+  "dial": {
+   "score": 5,
+   "label": "Makes their lineup weaker",
+   "their_gain": -4.73,
+   "you": 13.81,
+   "caption": "their starters over weeks 15–17, against realistic replacements",
+   "title": "Effect on their starters",
+   "need": "puts Kincaid at their TE in place of Warren and puts Baltimore Ravens at their DEF in place of San Francisco 49ers"
+  },
+  "verdict": "Helps your lineup +4.7 this week (+13.8 over weeks 15–17), them +0.8 but −4.7 over weeks 15–17; you get more season value: a lineup loss for them.",
+  "headline": "**You give Baltimore Ravens; you get [Tyler Warren](/player/00-0040128).** Helps your lineup +4.7 this week (+13.8 over weeks 15–17), them +0.8 but −4.7 over weeks 15–17; you get more season value: a lineup loss for them.",
+  "effect_words": "Your starting lineup: about 4.7 more points this week, about 14 more in total over weeks 15–17.",
+  "their_effect_words": "Two-Point Tries's starting lineup: about 0.8 more points this week, about 4.7 fewer points in total over weeks 15–17.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.7** this week and **+13.8** over weeks 15–17; them **+0.8** and **−4.7**.",
+  "strip": {
+   "weeks": [
+    15,
+    16,
+    17
+   ],
+   "mine": [
+    4.83,
+    3.52,
+    5.46
+   ],
+   "theirs": [
+    -2.18,
+    -0.7,
+    -1.85
+   ]
+  },
+  "story": {
+   "this_week": {
+    "week": null,
+    "change": null,
+    "kind": "unknown"
+   },
+   "window": {
+    "change": 13.81,
+    "kind": "gain"
+   },
+   "by_week": [
+    {
+     "week": 15,
+     "change": 4.83
+    },
+    {
+     "week": 16,
+     "change": 3.52
+    },
+    {
+     "week": 17,
+     "change": 5.46
+    }
+   ],
+   "words": "Your lineup gains 13.8 over weeks 15–17 in total."
+  },
+  "alternative": {
+   "mine": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "8161",
+     "gsis_id": "00-0038128",
+     "player_name": "Malik Willis",
+     "position": "QB"
+    },
+    "drop": {
+     "sleeper_id": "3163",
+     "gsis_id": "00-0033106",
+     "player_name": "Jared Goff",
+     "position": "QB"
+    },
+    "open_spot": false,
+    "gain_week": 1.48,
+    "gain_window": 5.57,
+    "by_week": [
+     1.48,
+     1.91,
+     2.18
+    ],
+    "weeks": [
+     15,
+     16,
+     17
+    ],
+    "span": "weeks 15–17",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     1.48,
+     1.91,
+     2.18
+    ],
+    "covered_window": 5.57,
+    "covered_week": 1.48,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "drop_cost": {
+     "lineup_loss": 2.29,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 2.29,
+     "piece": "lineup_loss",
+     "excess": 0.0,
+     "net_week": 1.48,
+     "net_window": 5.57
+    },
+    "covered_gross_window": 5.57
+   },
+   "theirs": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "8259",
+     "gsis_id": "00-0037224",
+     "player_name": "Cameron Dicker",
+     "position": "K"
+    },
+    "drop": {
+     "sleeper_id": "7042",
+     "gsis_id": "00-0036162",
+     "player_name": "Tyler Bass",
+     "position": "K"
+    },
+    "open_spot": false,
+    "gain_week": 2.4,
+    "gain_window": 6.34,
+    "by_week": [
+     2.4,
+     1.46,
+     2.48
+    ],
+    "weeks": [
+     15,
+     16,
+     17
+    ],
+    "span": "weeks 15–17",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "add Cameron Dicker, drop Tyler Bass: +6.3 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "covered_by_week": [
+     2.4,
+     1.46,
+     2.48
+    ],
+    "covered_window": 6.34,
+    "covered_week": 2.4,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "beyond": {
+    "mine": 8.24,
+    "theirs": -11.07
+   },
+   "beats": true,
+   "words": "+13.8 over weeks 15–17, 8.2 more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you).",
+   "other_objective": null
+  },
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "words": "Not worth proposing: Two-Point Tries's starters end 11.1 behind their own best move over weeks 15–17; a DEF for a starter (Tyler Warren): they have a DEF and the free pool holds one about as good, so a DEF is not worth a starter to them.",
+   "plausibility": "Implausible"
+  },
+  "changes": {
+   "mine": [
+    {
+     "slot": "TE",
+     "slot_type": "TE",
+     "in": "12518",
+     "out": "8131",
+     "in_from": null,
+     "out_to": null,
+     "order": 6,
+     "slot_word": "TE",
+     "in_how": "trade",
+     "out_why": "cut",
+     "in_player": {
+      "sleeper_id": "12518",
+      "gsis_id": "00-0040128",
+      "player_name": "Tyler Warren",
+      "position": "TE",
+      "team": "IND",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+      "this_week": 13.4,
+      "cannot_play": null,
+      "market_price": 22,
+      "season_points": 162,
+      "roster_id": 6
+     },
+     "out_player": {
+      "sleeper_id": "8131",
+      "gsis_id": "00-0037838",
+      "player_name": "Isaiah Likely",
+      "position": "TE",
+      "team": "NYG",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+      "this_week": 8.76,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 128,
+      "roster_id": 3
+     },
+     "in_value": 13.4,
+     "out_value": 8.76,
+     "words": "Tyler Warren (from the trade) starts at TE in place of Isaiah Likely (cut)"
+    },
+    {
+     "slot": "DEF",
+     "slot_type": "DEF",
+     "in": "CHI",
+     "out": "BAL",
+     "in_from": null,
+     "out_to": null,
+     "order": 9,
+     "slot_word": "DEF",
+     "in_how": "free agent",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "CHI",
+      "gsis_id": null,
+      "player_name": "Chicago Bears",
+      "position": "DEF"
+     },
+     "out_player": {
+      "sleeper_id": "BAL",
+      "gsis_id": null,
+      "player_name": "Baltimore Ravens",
+      "position": "DEF",
+      "team": "BAL",
+      "headshot_url": null,
+      "this_week": 12.22,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 138,
+      "roster_id": 3
+     },
+     "in_value": 12.23,
+     "out_value": 12.22,
+     "words": "Chicago Bears (a free agent for the week) starts at DEF in place of Baltimore Ravens (traded)"
+    }
+   ],
+   "theirs": [
+    {
+     "slot": "TE",
+     "slot_type": "TE",
+     "in": "10236",
+     "out": "12518",
+     "in_from": null,
+     "out_to": null,
+     "order": 6,
+     "slot_word": "TE",
+     "in_how": "bench",
+     "out_why": "traded",
+     "in_player": {
+      "sleeper_id": "10236",
+      "gsis_id": "00-0038933",
+      "player_name": "Dalton Kincaid",
+      "position": "TE",
+      "team": "BUF",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z7k857flehljboaixj8m",
+      "this_week": 10.03,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 133,
+      "roster_id": 6
+     },
+     "out_player": {
+      "sleeper_id": "12518",
+      "gsis_id": "00-0040128",
+      "player_name": "Tyler Warren",
+      "position": "TE",
+      "team": "IND",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+      "this_week": 13.4,
+      "cannot_play": null,
+      "market_price": 22,
+      "season_points": 162,
+      "roster_id": 6
+     },
+     "in_value": 10.03,
+     "out_value": 13.4,
+     "words": "Dalton Kincaid (from the bench) starts at TE in place of Tyler Warren (traded)"
+    },
+    {
+     "slot": "DEF",
+     "slot_type": "DEF",
+     "in": "BAL",
+     "out": "SF",
+     "in_from": null,
+     "out_to": null,
+     "order": 9,
+     "slot_word": "DEF",
+     "in_how": "trade",
+     "out_why": "bench",
+     "in_player": {
+      "sleeper_id": "BAL",
+      "gsis_id": null,
+      "player_name": "Baltimore Ravens",
+      "position": "DEF",
+      "team": "BAL",
+      "headshot_url": null,
+      "this_week": 12.22,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 138,
+      "roster_id": 3
+     },
+     "out_player": {
+      "sleeper_id": "SF",
+      "gsis_id": null,
+      "player_name": "San Francisco 49ers",
+      "position": "DEF",
+      "team": "SF",
+      "headshot_url": null,
+      "this_week": 8.02,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 121,
+      "roster_id": 6
+     },
+     "in_value": 12.22,
+     "out_value": 8.02,
+     "words": "Baltimore Ravens (from the trade) starts at DEF in place of San Francisco 49ers (to the bench)"
+    }
+   ],
+   "words": {
+    "mine": [
+     "Tyler Warren (from the trade) starts at TE in place of Isaiah Likely (cut)",
+     "Chicago Bears (a free agent for the week) starts at DEF in place of Baltimore Ravens (traded)"
+    ],
+    "theirs": [
+     "Dalton Kincaid (from the bench) starts at TE in place of Tyler Warren (traded)",
+     "Baltimore Ravens (from the trade) starts at DEF in place of San Francisco 49ers (to the bench)"
+    ]
+   }
+  },
+  "depth": {
+   "mine": {
+    "words": null,
+    "lost": [],
+    "joins": []
+   },
+   "theirs": {
+    "words": "they lose Brian Thomas Jr., a backup WR: 2 WR left on their bench who can play in week 4",
+    "lost": [
+     {
+      "player": {
+       "sleeper_id": "11631",
+       "gsis_id": "00-0039893",
+       "player_name": "Brian Thomas Jr.",
+       "position": "WR",
+       "team": "JAX",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/plnekkriys4cm11rnxwl",
+       "this_week": 7.34,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 115,
+       "roster_id": 6
+      },
+      "position": "WR",
+      "usable": [
+       "Jordan Addison",
+       "Xavier Worthy"
+      ],
+      "cannot_play": [],
+      "words": "they lose Brian Thomas Jr., a backup WR: 2 WR left on their bench who can play in week 4"
+     }
+    ],
+    "joins": []
+   }
+  },
+  "fills": {
+   "mine": {
+    "rows": [
+     {
+      "week": 15,
+      "state": "after",
+      "player": {
+       "sleeper_id": "TB",
+       "gsis_id": null,
+       "player_name": "Tampa Bay Buccaneers",
+       "position": "DEF"
+      },
+      "value": 12.01
+     },
+     {
+      "week": 16,
+      "state": "after",
+      "player": {
+       "sleeper_id": "ARI",
+       "gsis_id": null,
+       "player_name": "Arizona Cardinals",
+       "position": "DEF"
+      },
+      "value": 12.3
+     },
+     {
+      "week": 17,
+      "state": "after",
+      "player": {
+       "sleeper_id": "ATL",
+       "gsis_id": null,
+       "player_name": "Atlanta Falcons",
+       "position": "DEF"
+      },
+      "value": 12.25
+     }
+    ],
+    "words": "Assumed pickups for your empty slots: with it, Tampa Bay Buccaneers (DEF, week 15), Arizona Cardinals (DEF, week 16) and Atlanta Falcons (DEF, week 17). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   },
+   "theirs": {
+    "rows": [],
+    "words": null
+   }
+  },
+  "unfilled": {
+   "label": "If empty slots were left empty",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −7.6 this week, −22.8 over weeks 15–17; Two-Point Tries's +0.8 and −4.7. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "mine": {
+    "gain_week": -7.58,
+    "gain_window": -22.75,
+    "by_week": [
+     -7.18,
+     -8.78,
+     -6.79
+    ],
+    "before": {
+     "this_week": 124.49,
+     "window": 356.86
+    },
+    "after": {
+     "this_week": 116.91,
+     "window": 334.11
+    }
+   },
+   "theirs": {
+    "gain_week": 0.83,
+    "gain_window": -4.73,
+    "by_week": [
+     -2.18,
+     -0.7,
+     -1.85
+    ],
+    "before": {
+     "this_week": 122.87,
+     "window": 356.9
+    },
+    "after": {
+     "this_week": 123.7,
+     "window": 352.17
+    }
+   }
+  },
+  "out_indefinitely": null
+ },
+ "provenance": {
+  "model_version": "v3.0",
+  "kd_model_version": "kd1.0",
+  "published_at": "2026-10-05T12:21:31.576222+00:00",
+  "horizon": {
+   "first": 15,
+   "last": 17,
+   "market_week": 4,
+   "words": "weeks 15–17"
+  },
+  "checks": [
+   {
+    "span": "later",
+    "position": "DEF",
+    "status": "chance",
+    "mae": 4.78,
+    "order": 0.04,
+    "ref": "docs/METRICS.md § Kickers and defenses beyond next week (IQ-4)",
+    "words": "Defenses two to eight weeks ahead: no better than chance (order 0.04)"
+   },
+   {
+    "span": "later",
+    "position": "TE",
+    "status": "graded",
+    "mae": 3.42,
+    "order": 0.545,
+    "ref": "docs/METRICS.md § v3.5 (IQ-1) and § v3.6 (IQ-3): the horizon study",
+    "words": "Tight ends two to eight weeks ahead: graded (order 0.55)"
+   },
+   {
+    "span": "trade_gap",
+    "position": null,
+    "status": "not_graded",
+    "mae": null,
+    "order": null,
+    "ref": "docs/METRICS.md § What each number has been checked against (IR-4)",
+    "words": "The trade's range: not graded"
+   }
+  ],
+  "status": "not_graded",
+  "beta": true,
+  "words": "Beta · Model v3.0 (kickers and defenses kd1.0), data published 5 Oct, 8:21 am ET · weeks 15–17 · checked on 2021–2025: two to eight weeks ahead graded, defenses no better than chance; the trade's range not graded."
+ },
+ "caveats": [],
+ "caveat_effect": null,
+ "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+}

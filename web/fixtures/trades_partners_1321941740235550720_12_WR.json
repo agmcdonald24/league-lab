@@ -68,62 +68,6 @@
    },
    "price_out": 163,
    "price_in": 132,
-   "beyond_alternative": 21.93,
-   "beats_alternative": true,
-   "alternative_words": "+21.9 over weeks 5–8, 21.9 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     5.88,
-     9.42,
-     6.63,
-     0.0
-    ],
-    "theirs": [
-     0.92,
-     -0.76,
-     -2.96,
-     5.0
-    ]
-   },
-   "rank": 1,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 5.88,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 21.93,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 5.88
-     },
-     {
-      "week": 6,
-      "change": 9.42
-     },
-     {
-      "week": 7,
-      "change": 6.63
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Your lineup gains 5.9 this week and 21.9 over weeks 5–8 in total."
-   },
    "card": {
     "give": [
      {
@@ -234,10 +178,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "waiver",
@@ -281,9 +236,20 @@
       "covered_window": 0.78,
       "covered_week": 0.0,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 0.0,
+       "net_window": 0.78
+      },
+      "covered_gross_window": 0.78
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Cooper Kupp: +0.8 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Cooper Kupp: +0.8 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
     "beyond": {
      "mine": 21.93,
@@ -322,6 +288,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     5.88,
+     9.42,
+     6.63,
+     0.0
+    ],
+    "theirs": [
+     0.92,
+     -0.76,
+     -2.96,
+     5.0
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 5.88,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 21.93,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 5.88
+     },
+     {
+      "week": 6,
+      "change": 9.42
+     },
+     {
+      "week": 7,
+      "change": 6.63
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Your lineup gains 5.9 this week and 21.9 over weeks 5–8 in total."
+   },
+   "alternative_words": "+21.9 over weeks 5–8, 21.9 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 21.93,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -335,7 +355,7 @@
     },
     "verdict": "Helps your lineup +5.9 this week (+21.9 over weeks 5–8), them +0.9 (+2.2 over weeks 5–8); you give up more season value: helps both lineups.",
     "alternative": {
-     "words": "+21.9 over weeks 5–8, 21.9 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+21.9 over weeks 5–8, 21.9 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 21.93,
@@ -371,6 +391,8 @@
      ]
     }
    },
+   "rank": 1,
+   "demoted": false,
    "tier": "credible",
    "credible_rank": 1
   },
@@ -441,62 +463,6 @@
    },
    "price_out": 195,
    "price_in": 167,
-   "beyond_alternative": 13.05,
-   "beats_alternative": true,
-   "alternative_words": "+13.1 over weeks 5–8, 13.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     1.92,
-     7.76,
-     4.33,
-     -0.96
-    ],
-    "theirs": [
-     3.23,
-     -1.12,
-     -3.92,
-     6.88
-    ]
-   },
-   "rank": 2,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 1.92,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 13.05,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 1.92
-     },
-     {
-      "week": 6,
-      "change": 7.76
-     },
-     {
-      "week": 7,
-      "change": 4.33
-     },
-     {
-      "week": 8,
-      "change": -0.96
-     }
-    ],
-    "words": "Your lineup gains 1.9 this week and 13.1 over weeks 5–8 in total (week 8 loses 1.0)."
-   },
    "card": {
     "give": [
      {
@@ -637,10 +603,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "waiver",
@@ -684,9 +661,20 @@
       "covered_window": 0.78,
       "covered_week": 0.0,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 0.0,
+       "net_window": 0.78
+      },
+      "covered_gross_window": 0.78
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Cooper Kupp: +0.8 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Michael Mayer, drop Cooper Kupp: +0.8 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
     "beyond": {
      "mine": 13.05,
@@ -728,6 +716,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     1.92,
+     7.76,
+     4.33,
+     -0.96
+    ],
+    "theirs": [
+     3.23,
+     -1.12,
+     -3.92,
+     6.88
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 1.92,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 13.05,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 1.92
+     },
+     {
+      "week": 6,
+      "change": 7.76
+     },
+     {
+      "week": 7,
+      "change": 4.33
+     },
+     {
+      "week": 8,
+      "change": -0.96
+     }
+    ],
+    "words": "Your lineup gains 1.9 this week and 13.1 over weeks 5–8 in total (week 8 loses 1.0)."
+   },
+   "alternative_words": "+13.1 over weeks 5–8, 13.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 13.05,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -741,7 +783,7 @@
     },
     "verdict": "Helps your lineup +1.9 this week (+13.1 over weeks 5–8), them +3.2 (+5.1 over weeks 5–8); you give up more season value: helps both lineups.",
     "alternative": {
-     "words": "+13.1 over weeks 5–8, 13.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+13.1 over weeks 5–8, 13.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 13.05,
@@ -777,6 +819,8 @@
      ]
     }
    },
+   "rank": 2,
+   "demoted": false,
    "tier": "credible",
    "credible_rank": 2
   },
@@ -847,62 +891,6 @@
    },
    "price_out": 163,
    "price_in": 127,
-   "beyond_alternative": 9.55,
-   "beats_alternative": true,
-   "alternative_words": "+9.6 over weeks 5–8, 9.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     2.08,
-     3.23,
-     2.54,
-     1.7
-    ],
-    "theirs": [
-     1.52,
-     5.45,
-     0.78,
-     0.76
-    ]
-   },
-   "rank": 3,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 2.08,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 9.55,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 2.08
-     },
-     {
-      "week": 6,
-      "change": 3.23
-     },
-     {
-      "week": 7,
-      "change": 2.54
-     },
-     {
-      "week": 8,
-      "change": 1.7
-     }
-    ],
-    "words": "Your lineup gains 2.1 this week and 9.6 over weeks 5–8 in total."
-   },
    "card": {
     "give": [
      {
@@ -1043,10 +1031,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "stand_pat",
@@ -1082,7 +1081,7 @@
       "availability": "guaranteed",
       "availability_words": "nothing to claim"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: no waiver claim improves their starting lineup over weeks 5–8 (nothing to claim)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: no waiver claim improves their starting lineup over weeks 5–8 (nothing to claim)."
     },
     "beyond": {
      "mine": 9.55,
@@ -1124,6 +1123,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     2.08,
+     3.23,
+     2.54,
+     1.7
+    ],
+    "theirs": [
+     1.52,
+     5.45,
+     0.78,
+     0.76
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 2.08,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 9.55,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 2.08
+     },
+     {
+      "week": 6,
+      "change": 3.23
+     },
+     {
+      "week": 7,
+      "change": 2.54
+     },
+     {
+      "week": 8,
+      "change": 1.7
+     }
+    ],
+    "words": "Your lineup gains 2.1 this week and 9.6 over weeks 5–8 in total."
+   },
+   "alternative_words": "+9.6 over weeks 5–8, 9.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 9.55,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -1137,7 +1190,7 @@
     },
     "verdict": "Helps your lineup +2.1 this week (+9.6 over weeks 5–8), them +1.5 (+8.5 over weeks 5–8); you give up more season value: helps both lineups.",
     "alternative": {
-     "words": "+9.6 over weeks 5–8, 9.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+9.6 over weeks 5–8, 9.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 9.55,
@@ -1173,6 +1226,8 @@
      ]
     }
    },
+   "rank": 3,
+   "demoted": false,
    "tier": "credible",
    "credible_rank": 3
   },
@@ -1243,62 +1298,6 @@
    },
    "price_out": 195,
    "price_in": 149,
-   "beyond_alternative": 8.27,
-   "beats_alternative": true,
-   "alternative_words": "+8.3 over weeks 5–8, 8.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     -1.24,
-     4.92,
-     2.12,
-     2.47
-    ],
-    "theirs": [
-     4.38,
-     0.37,
-     1.34,
-     5.76
-    ]
-   },
-   "rank": 4,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": -1.24,
-     "kind": "loss"
-    },
-    "window": {
-     "change": 8.27,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": -1.24
-     },
-     {
-      "week": 6,
-      "change": 4.92
-     },
-     {
-      "week": 7,
-      "change": 2.12
-     },
-     {
-      "week": 8,
-      "change": 2.47
-     }
-    ],
-    "words": "Your lineup loses 1.2 this week but gains 8.3 over weeks 5–8 in total."
-   },
    "card": {
     "give": [
      {
@@ -1439,10 +1438,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "waiver",
@@ -1483,7 +1493,7 @@
       "availability": "claim",
       "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Tyler Huntley for an open roster spot: +2.9 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Tyler Huntley for an open roster spot: +2.9 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
     "beyond": {
      "mine": 8.27,
@@ -1525,6 +1535,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     -1.24,
+     4.92,
+     2.12,
+     2.47
+    ],
+    "theirs": [
+     4.38,
+     0.37,
+     1.34,
+     5.76
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": -1.24,
+     "kind": "loss"
+    },
+    "window": {
+     "change": 8.27,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": -1.24
+     },
+     {
+      "week": 6,
+      "change": 4.92
+     },
+     {
+      "week": 7,
+      "change": 2.12
+     },
+     {
+      "week": 8,
+      "change": 2.47
+     }
+    ],
+    "words": "Your lineup loses 1.2 this week but gains 8.3 over weeks 5–8 in total."
+   },
+   "alternative_words": "+8.3 over weeks 5–8, 8.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 8.27,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -1538,7 +1602,7 @@
     },
     "verdict": "Helps your lineup +8.3 over weeks 5–8 (−1.2 this week), them +4.4 (+11.8 over weeks 5–8); you give up more season value: helps both lineups.",
     "alternative": {
-     "words": "+8.3 over weeks 5–8, 8.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+8.3 over weeks 5–8, 8.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 8.27,
@@ -1574,6 +1638,8 @@
      ]
     }
    },
+   "rank": 4,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -1644,62 +1710,6 @@
    },
    "price_out": 112,
    "price_in": 98,
-   "beyond_alternative": 6.79,
-   "beats_alternative": true,
-   "alternative_words": "+6.8 over weeks 5–8, 6.8 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     1.56,
-     0.62,
-     2.23,
-     2.38
-    ],
-    "theirs": [
-     0.88,
-     1.62,
-     1.83,
-     0.97
-    ]
-   },
-   "rank": 5,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 1.56,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 6.79,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 1.56
-     },
-     {
-      "week": 6,
-      "change": 0.62
-     },
-     {
-      "week": 7,
-      "change": 2.23
-     },
-     {
-      "week": 8,
-      "change": 2.38
-     }
-    ],
-    "words": "Your lineup gains 1.6 this week and 6.8 over weeks 5–8 in total."
-   },
    "card": {
     "give": [
      {
@@ -1840,10 +1850,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "waiver",
@@ -1854,9 +1875,9 @@
        "position": "RB"
       },
       "drop": {
-       "sleeper_id": "3161",
-       "gsis_id": "00-0032950",
-       "player_name": "Carson Wentz",
+       "sleeper_id": "11565",
+       "gsis_id": "00-0039923",
+       "player_name": "J.J. McCarthy",
        "position": "QB"
       },
       "open_spot": false,
@@ -1875,9 +1896,8 @@
        8
       ],
       "span": "weeks 5–8",
-      "source": "fa_pool fill",
+      "source": "basis search",
       "note": null,
-      "words": "the Justice Hill claim gives +3.9 over weeks 5–8 (drop Carson Wentz)",
       "covered_by_week": [
        0.04,
        0.24,
@@ -1886,10 +1906,38 @@
       ],
       "covered_window": 3.93,
       "covered_week": 0.04,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 0.04,
+       "net_window": 3.93
+      },
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "words": "the Justice Hill claim gives +3.9 over weeks 5–8 (drop J.J. McCarthy)",
+      "roster_only_pick": {
+       "player": {
+        "sleeper_id": "5995",
+        "gsis_id": "00-0034975",
+        "player_name": "Justice Hill",
+        "position": "RB"
+       },
+       "drop": {
+        "sleeper_id": "3161",
+        "gsis_id": "00-0032950",
+        "player_name": "Carson Wentz",
+        "position": "QB"
+       },
+       "gain_window": 3.93,
+       "covered_window": -6.9,
+       "covered_gross_window": 3.93
+      }
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Justice Hill, drop Carson Wentz: +3.9 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Justice Hill, drop J.J. McCarthy: +3.9 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
     "beyond": {
      "mine": 6.79,
@@ -1933,6 +1981,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     1.56,
+     0.62,
+     2.23,
+     2.38
+    ],
+    "theirs": [
+     0.88,
+     1.62,
+     1.83,
+     0.97
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 1.56,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 6.79,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 1.56
+     },
+     {
+      "week": 6,
+      "change": 0.62
+     },
+     {
+      "week": 7,
+      "change": 2.23
+     },
+     {
+      "week": 8,
+      "change": 2.38
+     }
+    ],
+    "words": "Your lineup gains 1.6 this week and 6.8 over weeks 5–8 in total."
+   },
+   "alternative_words": "+6.8 over weeks 5–8, 6.8 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 6.79,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -1946,7 +2048,7 @@
     },
     "verdict": "Helps your lineup +1.6 this week (+6.8 over weeks 5–8), them +0.9 (+5.3 over weeks 5–8); you give up more season value: helps both lineups.",
     "alternative": {
-     "words": "+6.8 over weeks 5–8, 6.8 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+6.8 over weeks 5–8, 6.8 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 6.79,
@@ -1982,6 +2084,8 @@
      ]
     }
    },
+   "rank": 5,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -2052,62 +2156,6 @@
    },
    "price_out": 80,
    "price_in": 67,
-   "beyond_alternative": 4.39,
-   "beats_alternative": true,
-   "alternative_words": "+4.4 over weeks 5–8, 4.4 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     -0.04,
-     1.58,
-     1.51,
-     1.34
-    ],
-    "theirs": [
-     6.36,
-     -1.58,
-     -0.55,
-     -1.72
-    ]
-   },
-   "rank": 6,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": -0.04,
-     "kind": "none"
-    },
-    "window": {
-     "change": 4.39,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": -0.04
-     },
-     {
-      "week": 6,
-      "change": 1.58
-     },
-     {
-      "week": 7,
-      "change": 1.51
-     },
-     {
-      "week": 8,
-      "change": 1.34
-     }
-    ],
-    "words": "Nothing changes this week; your lineup gains 4.4 over weeks 5–8 in total."
-   },
    "card": {
     "give": [
      {
@@ -2248,10 +2296,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "waiver",
@@ -2295,9 +2354,20 @@
       "covered_window": 0.91,
       "covered_week": 0.91,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 0.91,
+       "net_window": 0.91
+      },
+      "covered_gross_window": 0.91
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Xavier Hutchinson, drop Joe Flacco: +0.9 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Xavier Hutchinson, drop Joe Flacco: +0.9 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
     "beyond": {
      "mine": 4.39,
@@ -2344,6 +2414,60 @@
      "plausibility": "A roster-fit idea"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     -0.04,
+     1.58,
+     1.51,
+     1.34
+    ],
+    "theirs": [
+     6.36,
+     -1.58,
+     -0.55,
+     -1.72
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": -0.04,
+     "kind": "none"
+    },
+    "window": {
+     "change": 4.39,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": -0.04
+     },
+     {
+      "week": 6,
+      "change": 1.58
+     },
+     {
+      "week": 7,
+      "change": 1.51
+     },
+     {
+      "week": 8,
+      "change": 1.34
+     }
+    ],
+    "words": "Nothing changes this week; your lineup gains 4.4 over weeks 5–8 in total."
+   },
+   "alternative_words": "+4.4 over weeks 5–8, 4.4 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 4.39,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -2357,7 +2481,7 @@
     },
     "verdict": "Helps your lineup +0.0 this week (+4.4 over weeks 5–8), them +6.4 (+2.5 over weeks 5–8); you give up more season value: helps both lineups.",
     "alternative": {
-     "words": "+4.4 over weeks 5–8, 4.4 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+4.4 over weeks 5–8, 4.4 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 4.39,
@@ -2393,6 +2517,8 @@
      ]
     }
    },
+   "rank": 6,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -2449,62 +2575,6 @@
    },
    "price_out": 0,
    "price_in": 43,
-   "beyond_alternative": 2.59,
-   "beats_alternative": true,
-   "alternative_words": "+2.6 over weeks 5–8, 2.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.44,
-     2.15,
-     0.0,
-     0.0
-    ],
-    "theirs": [
-     0.83,
-     2.04,
-     1.04,
-     0.0
-    ]
-   },
-   "rank": 7,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.44,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 2.59,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.44
-     },
-     {
-      "week": 6,
-      "change": 2.15
-     },
-     {
-      "week": 7,
-      "change": 0.0
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Your lineup gains 0.4 this week and 2.6 over weeks 5–8 in total."
-   },
    "card": {
     "give": [
      {
@@ -2615,10 +2685,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "not_compared",
@@ -2654,7 +2735,7 @@
       "availability": "not_compared",
       "availability_words": "not compared"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade is not a plausible offer, so no move of theirs changes the answer."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade is not a plausible offer, so no move of theirs changes the answer."
     },
     "beyond": {
      "mine": 2.59,
@@ -2702,6 +2783,60 @@
      "plausibility": "Implausible"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.44,
+     2.15,
+     0.0,
+     0.0
+    ],
+    "theirs": [
+     0.83,
+     2.04,
+     1.04,
+     0.0
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.44,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 2.59,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.44
+     },
+     {
+      "week": 6,
+      "change": 2.15
+     },
+     {
+      "week": 7,
+      "change": 0.0
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Your lineup gains 0.4 this week and 2.6 over weeks 5–8 in total."
+   },
+   "alternative_words": "+2.6 over weeks 5–8, 2.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 2.59,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -2715,7 +2850,7 @@
     },
     "verdict": "Helps your lineup +0.4 this week (+2.6 over weeks 5–8), them +0.8 (+3.9 over weeks 5–8); you get more season value: helps both lineups, and they give up the value.",
     "alternative": {
-     "words": "+2.6 over weeks 5–8, 2.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+2.6 over weeks 5–8, 2.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 2.59,
@@ -2751,6 +2886,8 @@
      ]
     }
    },
+   "rank": 7,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -2821,62 +2958,6 @@
    },
    "price_out": 0,
    "price_in": 68,
-   "beyond_alternative": 2.59,
-   "beats_alternative": true,
-   "alternative_words": "+2.6 over weeks 5–8, 2.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.44,
-     2.15,
-     0.0,
-     0.0
-    ],
-    "theirs": [
-     0.83,
-     2.04,
-     1.04,
-     0.0
-    ]
-   },
-   "rank": 8,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.44,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 2.59,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.44
-     },
-     {
-      "week": 6,
-      "change": 2.15
-     },
-     {
-      "week": 7,
-      "change": 0.0
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Your lineup gains 0.4 this week and 2.6 over weeks 5–8 in total."
-   },
    "card": {
     "give": [
      {
@@ -3017,10 +3098,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "not_compared",
@@ -3056,7 +3148,7 @@
       "availability": "not_compared",
       "availability_words": "not compared"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade is not a plausible offer, so no move of theirs changes the answer."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade is not a plausible offer, so no move of theirs changes the answer."
     },
     "beyond": {
      "mine": 2.59,
@@ -3107,6 +3199,60 @@
      "plausibility": "Implausible"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.44,
+     2.15,
+     0.0,
+     0.0
+    ],
+    "theirs": [
+     0.83,
+     2.04,
+     1.04,
+     0.0
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.44,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 2.59,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.44
+     },
+     {
+      "week": 6,
+      "change": 2.15
+     },
+     {
+      "week": 7,
+      "change": 0.0
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Your lineup gains 0.4 this week and 2.6 over weeks 5–8 in total."
+   },
+   "alternative_words": "+2.6 over weeks 5–8, 2.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 2.59,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -3120,7 +3266,7 @@
     },
     "verdict": "Helps your lineup +0.4 this week (+2.6 over weeks 5–8), them +0.8 (+3.9 over weeks 5–8); you get more season value: helps both lineups, and they give up the value.",
     "alternative": {
-     "words": "+2.6 over weeks 5–8, 2.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+2.6 over weeks 5–8, 2.6 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 2.59,
@@ -3156,6 +3302,8 @@
      ]
     }
    },
+   "rank": 8,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -3212,62 +3360,6 @@
    },
    "price_out": 26,
    "price_in": 31,
-   "beyond_alternative": 1.46,
-   "beats_alternative": true,
-   "alternative_words": "+1.5 over weeks 5–8, 1.5 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.0,
-     1.46,
-     0.0,
-     0.0
-    ],
-    "theirs": [
-     2.1,
-     -1.17,
-     5.34,
-     2.09
-    ]
-   },
-   "rank": 9,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.0,
-     "kind": "none"
-    },
-    "window": {
-     "change": 1.46,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.0
-     },
-     {
-      "week": 6,
-      "change": 1.46
-     },
-     {
-      "week": 7,
-      "change": 0.0
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Nothing changes this week; your lineup gains 1.5 over weeks 5–8 in total."
-   },
    "card": {
     "give": [
      {
@@ -3378,10 +3470,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "waiver",
@@ -3392,9 +3495,9 @@
        "position": "RB"
       },
       "drop": {
-       "sleeper_id": "3161",
-       "gsis_id": "00-0032950",
-       "player_name": "Carson Wentz",
+       "sleeper_id": "11565",
+       "gsis_id": "00-0039923",
+       "player_name": "J.J. McCarthy",
        "position": "QB"
       },
       "open_spot": false,
@@ -3413,9 +3516,8 @@
        8
       ],
       "span": "weeks 5–8",
-      "source": "fa_pool fill",
+      "source": "basis search",
       "note": null,
-      "words": "the Justice Hill claim gives +3.9 over weeks 5–8 (drop Carson Wentz)",
       "covered_by_week": [
        0.04,
        0.24,
@@ -3424,10 +3526,38 @@
       ],
       "covered_window": 3.93,
       "covered_week": 0.04,
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 0.04,
+       "net_window": 3.93
+      },
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "words": "the Justice Hill claim gives +3.9 over weeks 5–8 (drop J.J. McCarthy)",
+      "roster_only_pick": {
+       "player": {
+        "sleeper_id": "5995",
+        "gsis_id": "00-0034975",
+        "player_name": "Justice Hill",
+        "position": "RB"
+       },
+       "drop": {
+        "sleeper_id": "3161",
+        "gsis_id": "00-0032950",
+        "player_name": "Carson Wentz",
+        "position": "QB"
+       },
+       "gain_window": 3.93,
+       "covered_window": -6.9,
+       "covered_gross_window": 3.93
+      }
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Justice Hill, drop Carson Wentz: +3.9 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Justice Hill, drop J.J. McCarthy: +3.9 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
     "beyond": {
      "mine": 1.46,
@@ -3467,6 +3597,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.0,
+     1.46,
+     0.0,
+     0.0
+    ],
+    "theirs": [
+     2.1,
+     -1.17,
+     5.34,
+     2.09
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.0,
+     "kind": "none"
+    },
+    "window": {
+     "change": 1.46,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.0
+     },
+     {
+      "week": 6,
+      "change": 1.46
+     },
+     {
+      "week": 7,
+      "change": 0.0
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Nothing changes this week; your lineup gains 1.5 over weeks 5–8 in total."
+   },
+   "alternative_words": "+1.5 over weeks 5–8, 1.5 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 1.46,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -3480,7 +3664,7 @@
     },
     "verdict": "Helps your lineup +0.0 this week (+1.5 over weeks 5–8), them +2.1 (+8.4 over weeks 5–8); about even by season value: helps both lineups.",
     "alternative": {
-     "words": "+1.5 over weeks 5–8, 1.5 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+1.5 over weeks 5–8, 1.5 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 1.46,
@@ -3516,6 +3700,8 @@
      ]
     }
    },
+   "rank": 9,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -3578,62 +3764,6 @@
      "Jordan Addison"
     ],
     "words": "Same gain for you without Isaiah Likely."
-   },
-   "beyond_alternative": 1.06,
-   "beats_alternative": true,
-   "alternative_words": "+1.1 over weeks 5–8, 1.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.0,
-     1.06,
-     0.0,
-     0.0
-    ],
-    "theirs": [
-     0.52,
-     -1.72,
-     0.86,
-     2.61
-    ]
-   },
-   "rank": 10,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.0,
-     "kind": "none"
-    },
-    "window": {
-     "change": 1.06,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.0
-     },
-     {
-      "week": 6,
-      "change": 1.06
-     },
-     {
-      "week": 7,
-      "change": 0.0
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Nothing changes this week; your lineup gains 1.1 over weeks 5–8 in total."
    },
    "card": {
     "give": [
@@ -3745,10 +3875,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "stand_pat",
@@ -3784,7 +3925,7 @@
       "availability": "guaranteed",
       "availability_words": "nothing to claim"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: no waiver claim improves their starting lineup over weeks 5–8 (nothing to claim)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: no waiver claim improves their starting lineup over weeks 5–8 (nothing to claim)."
     },
     "beyond": {
      "mine": 1.06,
@@ -3822,6 +3963,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.0,
+     1.06,
+     0.0,
+     0.0
+    ],
+    "theirs": [
+     0.52,
+     -1.72,
+     0.86,
+     2.61
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.0,
+     "kind": "none"
+    },
+    "window": {
+     "change": 1.06,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.0
+     },
+     {
+      "week": 6,
+      "change": 1.06
+     },
+     {
+      "week": 7,
+      "change": 0.0
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Nothing changes this week; your lineup gains 1.1 over weeks 5–8 in total."
+   },
+   "alternative_words": "+1.1 over weeks 5–8, 1.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 1.06,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -3835,7 +4030,7 @@
     },
     "verdict": "Helps your lineup +0.0 this week (+1.1 over weeks 5–8), them +0.5 (+2.3 over weeks 5–8); about even by season value: helps both lineups.",
     "alternative": {
-     "words": "+1.1 over weeks 5–8, 1.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+1.1 over weeks 5–8, 1.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 1.06,
@@ -3871,6 +4066,8 @@
      ]
     }
    },
+   "rank": 10,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -3946,62 +4143,6 @@
     "player_name": "Isaiah Likely",
     "season_points": 119,
     "words": "Adding Isaiah Likely does not change your gain; it costs you TE depth (Isaiah Likely: 119 season points)."
-   },
-   "beyond_alternative": 1.06,
-   "beats_alternative": true,
-   "alternative_words": "+1.1 over weeks 5–8, 1.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.0,
-     1.06,
-     0.0,
-     0.0
-    ],
-    "theirs": [
-     0.76,
-     -1.06,
-     0.86,
-     2.61
-    ]
-   },
-   "rank": 11,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.0,
-     "kind": "none"
-    },
-    "window": {
-     "change": 1.06,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.0
-     },
-     {
-      "week": 6,
-      "change": 1.06
-     },
-     {
-      "week": 7,
-      "change": 0.0
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Nothing changes this week; your lineup gains 1.1 over weeks 5–8 in total."
    },
    "card": {
     "give": [
@@ -4143,10 +4284,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "stand_pat",
@@ -4182,7 +4334,7 @@
       "availability": "guaranteed",
       "availability_words": "nothing to claim"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: no waiver claim improves their starting lineup over weeks 5–8 (nothing to claim)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: no waiver claim improves their starting lineup over weeks 5–8 (nothing to claim)."
     },
     "beyond": {
      "mine": 1.06,
@@ -4225,6 +4377,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.0,
+     1.06,
+     0.0,
+     0.0
+    ],
+    "theirs": [
+     0.76,
+     -1.06,
+     0.86,
+     2.61
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.0,
+     "kind": "none"
+    },
+    "window": {
+     "change": 1.06,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.0
+     },
+     {
+      "week": 6,
+      "change": 1.06
+     },
+     {
+      "week": 7,
+      "change": 0.0
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Nothing changes this week; your lineup gains 1.1 over weeks 5–8 in total."
+   },
+   "alternative_words": "+1.1 over weeks 5–8, 1.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 1.06,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -4238,7 +4444,7 @@
     },
     "verdict": "Helps your lineup +0.0 this week (+1.1 over weeks 5–8), them +0.8 (+3.2 over weeks 5–8); about even by season value: helps both lineups.",
     "alternative": {
-     "words": "+1.1 over weeks 5–8, 1.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+1.1 over weeks 5–8, 1.1 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 1.06,
@@ -4274,6 +4480,8 @@
      ]
     }
    },
+   "rank": 11,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -4336,62 +4544,6 @@
      "Ollie Gordon II"
     ],
     "words": "Same gain for you without Isaiah Likely."
-   },
-   "beyond_alternative": 1.0,
-   "beats_alternative": true,
-   "alternative_words": "+1.0 over weeks 5–8, 1.0 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.2,
-     2.34,
-     -1.54,
-     0.0
-    ],
-    "theirs": [
-     0.0,
-     0.0,
-     2.01,
-     0.53
-    ]
-   },
-   "rank": 12,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.2,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 1.0,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.2
-     },
-     {
-      "week": 6,
-      "change": 2.34
-     },
-     {
-      "week": 7,
-      "change": -1.54
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Your lineup gains 0.2 this week and 1.0 over weeks 5–8 in total (week 7 loses 1.5)."
    },
    "card": {
     "give": [
@@ -4503,10 +4655,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "stand_pat",
@@ -4542,7 +4705,7 @@
       "availability": "guaranteed",
       "availability_words": "nothing to claim"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: no waiver claim improves their starting lineup over weeks 5–8 (nothing to claim)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: no waiver claim improves their starting lineup over weeks 5–8 (nothing to claim)."
     },
     "beyond": {
      "mine": 1.0,
@@ -4582,6 +4745,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.2,
+     2.34,
+     -1.54,
+     0.0
+    ],
+    "theirs": [
+     0.0,
+     0.0,
+     2.01,
+     0.53
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.2,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 1.0,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.2
+     },
+     {
+      "week": 6,
+      "change": 2.34
+     },
+     {
+      "week": 7,
+      "change": -1.54
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Your lineup gains 0.2 this week and 1.0 over weeks 5–8 in total (week 7 loses 1.5)."
+   },
+   "alternative_words": "+1.0 over weeks 5–8, 1.0 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 1.0,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -4595,7 +4812,7 @@
     },
     "verdict": "Helps your lineup +0.2 this week (+1.0 over weeks 5–8), them +0.0 (+2.5 over weeks 5–8); about even by season value: helps both lineups.",
     "alternative": {
-     "words": "+1.0 over weeks 5–8, 1.0 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+1.0 over weeks 5–8, 1.0 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 1.0,
@@ -4631,6 +4848,8 @@
      ]
     }
    },
+   "rank": 12,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -4706,62 +4925,6 @@
     "player_name": "Isaiah Likely",
     "season_points": 119,
     "words": "Adding Isaiah Likely does not change your gain; it costs you TE depth (Isaiah Likely: 119 season points)."
-   },
-   "beyond_alternative": 1.0,
-   "beats_alternative": true,
-   "alternative_words": "+1.0 over weeks 5–8, 1.0 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.2,
-     2.34,
-     -1.54,
-     0.0
-    ],
-    "theirs": [
-     0.0,
-     0.38,
-     2.01,
-     0.53
-    ]
-   },
-   "rank": 13,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.2,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 1.0,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.2
-     },
-     {
-      "week": 6,
-      "change": 2.34
-     },
-     {
-      "week": 7,
-      "change": -1.54
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Your lineup gains 0.2 this week and 1.0 over weeks 5–8 in total (week 7 loses 1.5)."
    },
    "card": {
     "give": [
@@ -4903,10 +5066,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "stand_pat",
@@ -4942,7 +5116,7 @@
       "availability": "guaranteed",
       "availability_words": "nothing to claim"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: no waiver claim improves their starting lineup over weeks 5–8 (nothing to claim)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: no waiver claim improves their starting lineup over weeks 5–8 (nothing to claim)."
     },
     "beyond": {
      "mine": 1.0,
@@ -4985,6 +5159,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.2,
+     2.34,
+     -1.54,
+     0.0
+    ],
+    "theirs": [
+     0.0,
+     0.38,
+     2.01,
+     0.53
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.2,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 1.0,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.2
+     },
+     {
+      "week": 6,
+      "change": 2.34
+     },
+     {
+      "week": 7,
+      "change": -1.54
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Your lineup gains 0.2 this week and 1.0 over weeks 5–8 in total (week 7 loses 1.5)."
+   },
+   "alternative_words": "+1.0 over weeks 5–8, 1.0 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 1.0,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -4998,7 +5226,7 @@
     },
     "verdict": "Helps your lineup +0.2 this week (+1.0 over weeks 5–8), them +0.0 (+2.9 over weeks 5–8); about even by season value: helps both lineups.",
     "alternative": {
-     "words": "+1.0 over weeks 5–8, 1.0 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+1.0 over weeks 5–8, 1.0 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 1.0,
@@ -5034,6 +5262,8 @@
      ]
     }
    },
+   "rank": 13,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -5090,62 +5320,6 @@
    },
    "price_out": 48,
    "price_in": 39,
-   "beyond_alternative": 0.78,
-   "beats_alternative": true,
-   "alternative_words": "+0.8 over weeks 5–8, 0.8 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.14,
-     1.84,
-     -0.82,
-     -0.38
-    ],
-    "theirs": [
-     -0.18,
-     -0.95,
-     1.78,
-     0.77
-    ]
-   },
-   "rank": 14,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.14,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 0.78,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.14
-     },
-     {
-      "week": 6,
-      "change": 1.84
-     },
-     {
-      "week": 7,
-      "change": -0.82
-     },
-     {
-      "week": 8,
-      "change": -0.38
-     }
-    ],
-    "words": "Your lineup gains 0.1 this week and 0.8 over weeks 5–8 in total (week 7 loses 0.8)."
-   },
    "card": {
     "give": [
      {
@@ -5256,10 +5430,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "waiver",
@@ -5303,9 +5488,20 @@
       "covered_window": 0.91,
       "covered_week": 0.91,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.0,
+       "cost": 0.0,
+       "piece": null,
+       "excess": 0.0,
+       "net_week": 0.91,
+       "net_window": 0.91
+      },
+      "covered_gross_window": 0.91
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Xavier Hutchinson, drop Joe Flacco: +0.9 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: add Xavier Hutchinson, drop Joe Flacco: +0.9 over weeks 5–8 (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
     },
     "beyond": {
      "mine": 0.78,
@@ -5346,6 +5542,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.14,
+     1.84,
+     -0.82,
+     -0.38
+    ],
+    "theirs": [
+     -0.18,
+     -0.95,
+     1.78,
+     0.77
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.14,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 0.78,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.14
+     },
+     {
+      "week": 6,
+      "change": 1.84
+     },
+     {
+      "week": 7,
+      "change": -0.82
+     },
+     {
+      "week": 8,
+      "change": -0.38
+     }
+    ],
+    "words": "Your lineup gains 0.1 this week and 0.8 over weeks 5–8 in total (week 7 loses 0.8)."
+   },
+   "alternative_words": "+0.8 over weeks 5–8, 0.8 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 0.78,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -5359,7 +5609,7 @@
     },
     "verdict": "Helps your lineup +0.1 this week (+0.8 over weeks 5–8), them +1.4 over weeks 5–8 (−0.2 this week); about even by season value: helps both lineups.",
     "alternative": {
-     "words": "+0.8 over weeks 5–8, 0.8 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+0.8 over weeks 5–8, 0.8 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 0.78,
@@ -5395,6 +5645,8 @@
      ]
     }
    },
+   "rank": 14,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -5465,62 +5717,6 @@
    },
    "price_out": 21,
    "price_in": 19,
-   "beyond_alternative": 0.69,
-   "beats_alternative": true,
-   "alternative_words": "+0.7 over weeks 5–8, 0.7 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.0,
-     0.69,
-     0.0,
-     0.0
-    ],
-    "theirs": [
-     1.14,
-     0.55,
-     0.51,
-     0.38
-    ]
-   },
-   "rank": 15,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.0,
-     "kind": "none"
-    },
-    "window": {
-     "change": 0.69,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.0
-     },
-     {
-      "week": 6,
-      "change": 0.69
-     },
-     {
-      "week": 7,
-      "change": 0.0
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Nothing changes this week; your lineup gains 0.7 over weeks 5–8 in total."
-   },
    "card": {
     "give": [
      {
@@ -5661,10 +5857,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "not_compared",
@@ -5700,7 +5907,7 @@
       "availability": "not_compared",
       "availability_words": "not compared"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade does not beat your own best alternative by a point, so no move of theirs changes the answer."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade does not beat your own best alternative by a point, so no move of theirs changes the answer."
     },
     "beyond": {
      "mine": 0.69,
@@ -5743,6 +5950,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.0,
+     0.69,
+     0.0,
+     0.0
+    ],
+    "theirs": [
+     1.14,
+     0.55,
+     0.51,
+     0.38
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.0,
+     "kind": "none"
+    },
+    "window": {
+     "change": 0.69,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.0
+     },
+     {
+      "week": 6,
+      "change": 0.69
+     },
+     {
+      "week": 7,
+      "change": 0.0
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Nothing changes this week; your lineup gains 0.7 over weeks 5–8 in total."
+   },
+   "alternative_words": "+0.7 over weeks 5–8, 0.7 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 0.69,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -5756,7 +6017,7 @@
     },
     "verdict": "Helps your lineup +0.0 this week (+0.7 over weeks 5–8), them +1.1 (+2.6 over weeks 5–8); about even by season value: helps both lineups.",
     "alternative": {
-     "words": "+0.7 over weeks 5–8, 0.7 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+0.7 over weeks 5–8, 0.7 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 0.69,
@@ -5792,6 +6053,8 @@
      ]
     }
    },
+   "rank": 15,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -5854,62 +6117,6 @@
      "Caleb Douglas"
     ],
     "words": "Same gain for you without Isaiah Likely."
-   },
-   "beyond_alternative": 0.34,
-   "beats_alternative": true,
-   "alternative_words": "+0.3 over weeks 5–8, 0.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.0,
-     0.34,
-     0.0,
-     0.0
-    ],
-    "theirs": [
-     -0.07,
-     -0.63,
-     1.3,
-     0.91
-    ]
-   },
-   "rank": 16,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.0,
-     "kind": "none"
-    },
-    "window": {
-     "change": 0.34,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.0
-     },
-     {
-      "week": 6,
-      "change": 0.34
-     },
-     {
-      "week": 7,
-      "change": 0.0
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Nothing changes this week; your lineup gains 0.3 over weeks 5–8 in total."
    },
    "card": {
     "give": [
@@ -6038,10 +6245,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "not_compared",
@@ -6077,7 +6295,7 @@
       "availability": "not_compared",
       "availability_words": "not compared"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade does not beat your own best alternative by a point, so no move of theirs changes the answer."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade does not beat your own best alternative by a point, so no move of theirs changes the answer."
     },
     "beyond": {
      "mine": 0.34,
@@ -6119,6 +6337,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.0,
+     0.34,
+     0.0,
+     0.0
+    ],
+    "theirs": [
+     -0.07,
+     -0.63,
+     1.3,
+     0.91
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.0,
+     "kind": "none"
+    },
+    "window": {
+     "change": 0.34,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.0
+     },
+     {
+      "week": 6,
+      "change": 0.34
+     },
+     {
+      "week": 7,
+      "change": 0.0
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Nothing changes this week; your lineup gains 0.3 over weeks 5–8 in total."
+   },
+   "alternative_words": "+0.3 over weeks 5–8, 0.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 0.34,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -6132,7 +6404,7 @@
     },
     "verdict": "Helps your lineup +0.0 this week (+0.3 over weeks 5–8), them +1.5 over weeks 5–8 (−0.1 this week); about even by season value: helps both lineups.",
     "alternative": {
-     "words": "+0.3 over weeks 5–8, 0.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+0.3 over weeks 5–8, 0.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 0.34,
@@ -6168,6 +6440,8 @@
      ]
     }
    },
+   "rank": 16,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -6243,62 +6517,6 @@
     "player_name": "Isaiah Likely",
     "season_points": 119,
     "words": "Adding Isaiah Likely does not change your gain; it costs you TE depth (Isaiah Likely: 119 season points)."
-   },
-   "beyond_alternative": 0.34,
-   "beats_alternative": true,
-   "alternative_words": "+0.3 over weeks 5–8, 0.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     0.0,
-     0.34,
-     0.0,
-     0.0
-    ],
-    "theirs": [
-     0.01,
-     0.1,
-     1.3,
-     0.91
-    ]
-   },
-   "rank": 17,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 0.0,
-     "kind": "none"
-    },
-    "window": {
-     "change": 0.34,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 0.0
-     },
-     {
-      "week": 6,
-      "change": 0.34
-     },
-     {
-      "week": 7,
-      "change": 0.0
-     },
-     {
-      "week": 8,
-      "change": 0.0
-     }
-    ],
-    "words": "Nothing changes this week; your lineup gains 0.3 over weeks 5–8 in total."
    },
    "card": {
     "give": [
@@ -6440,10 +6658,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "not_compared",
@@ -6479,7 +6708,7 @@
       "availability": "not_compared",
       "availability_words": "not compared"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade does not beat your own best alternative by a point, so no move of theirs changes the answer."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade does not beat your own best alternative by a point, so no move of theirs changes the answer."
     },
     "beyond": {
      "mine": 0.34,
@@ -6522,6 +6751,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     0.0,
+     0.34,
+     0.0,
+     0.0
+    ],
+    "theirs": [
+     0.01,
+     0.1,
+     1.3,
+     0.91
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 0.0,
+     "kind": "none"
+    },
+    "window": {
+     "change": 0.34,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 0.0
+     },
+     {
+      "week": 6,
+      "change": 0.34
+     },
+     {
+      "week": 7,
+      "change": 0.0
+     },
+     {
+      "week": 8,
+      "change": 0.0
+     }
+    ],
+    "words": "Nothing changes this week; your lineup gains 0.3 over weeks 5–8 in total."
+   },
+   "alternative_words": "+0.3 over weeks 5–8, 0.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 0.34,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -6535,7 +6818,7 @@
     },
     "verdict": "Helps your lineup +0.0 this week (+0.3 over weeks 5–8), them +0.0 (+2.3 over weeks 5–8); about even by season value: helps both lineups.",
     "alternative": {
-     "words": "+0.3 over weeks 5–8, 0.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+0.3 over weeks 5–8, 0.3 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 0.34,
@@ -6571,6 +6854,8 @@
      ]
     }
    },
+   "rank": 17,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   },
@@ -6627,62 +6912,6 @@
    },
    "price_out": 48,
    "price_in": 41,
-   "beyond_alternative": 0.2,
-   "beats_alternative": true,
-   "alternative_words": "+0.2 over weeks 5–8, 0.2 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
-   "other_objective": null,
-   "strip": {
-    "weeks": [
-     5,
-     6,
-     7,
-     8
-    ],
-    "mine": [
-     1.07,
-     0.0,
-     -0.49,
-     -0.38
-    ],
-    "theirs": [
-     -1.11,
-     0.0,
-     0.49,
-     0.73
-    ]
-   },
-   "rank": 18,
-   "demoted": false,
-   "story": {
-    "this_week": {
-     "week": 5,
-     "change": 1.07,
-     "kind": "gain"
-    },
-    "window": {
-     "change": 0.2,
-     "kind": "gain"
-    },
-    "by_week": [
-     {
-      "week": 5,
-      "change": 1.07
-     },
-     {
-      "week": 6,
-      "change": 0.0
-     },
-     {
-      "week": 7,
-      "change": -0.49
-     },
-     {
-      "week": 8,
-      "change": -0.38
-     }
-    ],
-    "words": "Your lineup gains 1.1 this week and 0.2 over weeks 5–8 in total (week 7 loses 0.5)."
-   },
    "card": {
     "give": [
      {
@@ -6793,10 +7022,21 @@
        0.0,
        0.0
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": -0.06,
+      "covered_week": -0.06,
       "availability": "claim",
-      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+      "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+      "drop_cost": {
+       "lineup_loss": 0.0,
+       "season_value": 0.0,
+       "depth_lost": 0.06,
+       "cost": 0.06,
+       "piece": "depth_lost",
+       "excess": 0.06,
+       "net_week": -0.06,
+       "net_window": -0.06
+      },
+      "covered_gross_window": 0.0
      },
      "theirs": {
       "kind": "not_compared",
@@ -6832,7 +7072,7 @@
       "availability": "not_compared",
       "availability_words": "not compared"
      },
-     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade adds +0.1 to their starters over weeks 5–8, under the 1-point bar, so no move of theirs changes the answer."
+     "words": "Yours: add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 (+9.0 if empty slots were left empty) (a waiver claim (FAAB blind bids): it can be lost to a team ahead of you). Theirs: their own best waiver move was not compared: the trade adds +0.1 to their starters over weeks 5–8, under the 1-point bar, so no move of theirs changes the answer."
     },
     "beyond": {
      "mine": 0.2,
@@ -6872,6 +7112,60 @@
      "plausibility": "Plausible offer"
     }
    },
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     1.07,
+     0.0,
+     -0.49,
+     -0.38
+    ],
+    "theirs": [
+     -1.11,
+     0.0,
+     0.49,
+     0.73
+    ]
+   },
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 1.07,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 0.2,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 1.07
+     },
+     {
+      "week": 6,
+      "change": 0.0
+     },
+     {
+      "week": 7,
+      "change": -0.49
+     },
+     {
+      "week": 8,
+      "change": -0.38
+     }
+    ],
+    "words": "Your lineup gains 1.1 this week and 0.2 over weeks 5–8 in total (week 7 loses 0.5)."
+   },
+   "alternative_words": "+0.2 over weeks 5–8, 0.2 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+   "beyond_alternative": 0.2,
+   "beats_alternative": true,
+   "other_objective": null,
    "decision": {
     "basis": "replacement",
     "dial": {
@@ -6885,7 +7179,7 @@
     },
     "verdict": "Helps your lineup +1.1 this week (+0.2 over weeks 5–8), them +0.1 over weeks 5–8 (−1.1 this week); about even by season value: helps both lineups.",
     "alternative": {
-     "words": "+0.2 over weeks 5–8, 0.2 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
+     "words": "+0.2 over weeks 5–8, 0.2 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you).",
      "beats": true,
      "beyond": {
       "mine": 0.2,
@@ -6921,6 +7215,8 @@
      ]
     }
    },
+   "rank": 18,
+   "demoted": false,
    "tier": "explore",
    "credible_rank": null
   }
@@ -6972,7 +7268,7 @@
  "words": {
   "headline": "**Best partner: Ward of the Rings (misles7).** Your [Michael Penix Jr.](/player/00-0039917) for their [Chris Olave](/player/00-0037239): you **+5.9** this week and **+21.9** over weeks 5–8, them **+0.9** and **+2.2**.",
   "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
-  "alternative": "+21.9 over weeks 5–8, 21.9 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr.: +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
+  "alternative": "+21.9 over weeks 5–8, 21.9 more than your best waiver move (add Michael Mayer, drop Chris Godwin Jr. (netted: his backup cover, 0.1): +0.0 over weeks 5–8 on the same basis; a waiver claim (FAAB blind bids): it can be lost to a team ahead of you)."
  },
  "verdict": {
   "kind": "compelling",
@@ -7016,17 +7312,28 @@
   "span": "weeks 5–8",
   "source": "fa_pool fill",
   "note": null,
-  "words": "the Michael Mayer claim gives +0.0 over weeks 5–8 (drop Chris Godwin Jr.)",
+  "words": "the Michael Mayer claim gives +0.0 over weeks 5–8 (drop Chris Godwin Jr.; netted: his backup cover, 0.1)",
   "covered_by_week": [
    0.0,
    0.0,
    0.0,
    0.0
   ],
-  "covered_window": 0.0,
-  "covered_week": 0.0,
+  "covered_window": -0.06,
+  "covered_week": -0.06,
   "availability": "claim",
-  "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+  "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+  "drop_cost": {
+   "lineup_loss": 0.0,
+   "season_value": 0.0,
+   "depth_lost": 0.06,
+   "cost": 0.06,
+   "piece": "depth_lost",
+   "excess": 0.06,
+   "net_week": -0.06,
+   "net_window": -0.06
+  },
+  "covered_gross_window": 0.0
  },
  "alternatives": [
   {
@@ -7085,17 +7392,28 @@
    "span": "weeks 5–8",
    "source": "fa_pool fill",
    "note": null,
-   "words": "the Michael Mayer claim gives +0.0 over weeks 5–8 (drop Chris Godwin Jr.)",
+   "words": "the Michael Mayer claim gives +0.0 over weeks 5–8 (drop Chris Godwin Jr.; netted: his backup cover, 0.1)",
    "covered_by_week": [
     0.0,
     0.0,
     0.0,
     0.0
    ],
-   "covered_window": 0.0,
-   "covered_week": 0.0,
+   "covered_window": -0.06,
+   "covered_week": -0.06,
    "availability": "claim",
-   "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you"
+   "availability_words": "a waiver claim (FAAB blind bids): it can be lost to a team ahead of you",
+   "drop_cost": {
+    "lineup_loss": 0.0,
+    "season_value": 0.0,
+    "depth_lost": 0.06,
+    "cost": 0.06,
+    "piece": "depth_lost",
+    "excess": 0.06,
+    "net_week": -0.06,
+    "net_window": -0.06
+   },
+   "covered_gross_window": 0.0
   }
  ],
  "ordering": {
@@ -7103,10 +7421,11 @@
   "words": "Ranked by gain beyond your best waiver move over weeks 5–8 (Michael Mayer, +0.0); trades that do not beat it come last."
  },
  "search": {
+  "search_basis": "replacement",
   "bar_sets": 77,
   "candidates": 5302,
   "evaluated": 539,
-  "seconds": 1.126,
+  "seconds": 1.35,
   "dropped_on_the_basis": 0
  }
 }

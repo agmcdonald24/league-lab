@@ -1032,10 +1032,10 @@
   "lineup_words": "Kyren Williams (from the trade) starts at RB in place of Christian McCaffrey (traded); Emeka Egbuka (from the bench) starts at FLEX in place of TreVeyon Henderson; TreVeyon Henderson moves from FLEX to RB in place of Cam Skattebo (traded)."
  },
  "window_words": "over weeks 5–8 in total",
- "hold_words": "+4.2 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points. It brings in more season value above replacement: 166 for 101 — the season beyond these weeks.",
+ "hold_words": "+4.2 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points. It brings in more season value above replacement: 166 for 101 — the season beyond these weeks.",
  "hold": {
   "hold": null,
-  "waiver": "+4.2 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points. It brings in more season value above replacement: 166 for 101 — the season beyond these weeks.",
+  "waiver": "+4.2 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points. It brings in more season value above replacement: 166 for 101 — the season beyond these weeks.",
   "waiver_gain": 6.71
  },
  "how": {
@@ -1055,10 +1055,10 @@
    "position": "DEF"
   },
   "drop": {
-   "sleeper_id": "12533",
-   "gsis_id": "00-0040242",
-   "player_name": "Jacory Croskey-Merritt",
-   "position": "RB"
+   "sleeper_id": "9228",
+   "gsis_id": "00-0039150",
+   "player_name": "Bryce Young",
+   "position": "QB"
   },
   "open_spot": false,
   "gain_week": 4.87,
@@ -1086,9 +1086,19 @@
   ],
   "covered_window": 6.71,
   "covered_week": 4.87,
+  "drop_cost": {
+   "lineup_loss": 0.0,
+   "season_value": 0.0,
+   "depth_lost": 0.0,
+   "cost": 0.0,
+   "piece": null,
+   "excess": 0.0,
+   "net_week": 4.87,
+   "net_window": 6.71
+  },
   "availability": "claim",
   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-  "words": "add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "words": "add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
   "roster_only_pick": {
    "player": {
     "sleeper_id": "3257",
@@ -1103,12 +1113,13 @@
     "position": "QB"
    },
    "gain_window": 20.9,
-   "covered_window": 0.0
+   "covered_window": 0.0,
+   "covered_gross_window": 0.0
   }
  },
  "beyond_alternative": -2.47,
  "beats_alternative": false,
- "alternative_words": "+4.2 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points. It brings in more season value above replacement: 166 for 101 — the season beyond these weeks.",
+ "alternative_words": "+4.2 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points. It brings in more season value above replacement: 166 for 101 — the season beyond these weeks.",
  "other_objective": {
   "kind": "season_value",
   "words": "It brings in more season value above replacement: 166 for 101 — the season beyond these weeks."
@@ -1317,10 +1328,10 @@
      "position": "DEF"
     },
     "drop": {
-     "sleeper_id": "12533",
-     "gsis_id": "00-0040242",
-     "player_name": "Jacory Croskey-Merritt",
-     "position": "RB"
+     "sleeper_id": "9228",
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB"
     },
     "open_spot": false,
     "gain_week": 4.87,
@@ -1348,9 +1359,19 @@
     ],
     "covered_window": 6.71,
     "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 6.71
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-    "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)",
+    "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Bryce Young)",
     "roster_only_pick": {
      "player": {
       "sleeper_id": "3257",
@@ -1365,7 +1386,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1408,6 +1430,16 @@
     ],
     "covered_window": 4.59,
     "covered_week": 3.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 3.87,
+     "net_window": 4.59
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "words": "the Washington Commanders defense claim gives +4.6 over weeks 5–8 (drop Colston Loveland)",
@@ -1425,10 +1457,11 @@
       "position": "RB"
      },
      "gain_window": 11.32,
-     "covered_window": 1.9
+     "covered_window": 1.98,
+     "covered_gross_window": 1.98
     }
    },
-   "words": "Yours: add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Washington Commanders defense, drop Colston Loveland: +4.6 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+   "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Washington Commanders defense, drop Colston Loveland: +4.6 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
    "mine": -2.47,
@@ -1642,10 +1675,10 @@
      "position": "DEF"
     },
     "drop": {
-     "sleeper_id": "12533",
-     "gsis_id": "00-0040242",
-     "player_name": "Jacory Croskey-Merritt",
-     "position": "RB"
+     "sleeper_id": "9228",
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB"
     },
     "open_spot": false,
     "gain_week": 4.87,
@@ -1673,9 +1706,19 @@
     ],
     "covered_window": 6.71,
     "covered_week": 4.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 4.87,
+     "net_window": 6.71
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
-    "words": "add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "roster_only_pick": {
      "player": {
       "sleeper_id": "3257",
@@ -1690,7 +1733,8 @@
       "position": "QB"
      },
      "gain_window": 20.9,
-     "covered_window": 0.0
+     "covered_window": 0.0,
+     "covered_gross_window": 0.0
     }
    },
    "theirs": {
@@ -1733,6 +1777,16 @@
     ],
     "covered_window": 4.59,
     "covered_week": 3.87,
+    "drop_cost": {
+     "lineup_loss": 0.0,
+     "season_value": 0.0,
+     "depth_lost": 0.0,
+     "cost": 0.0,
+     "piece": null,
+     "excess": 0.0,
+     "net_week": 3.87,
+     "net_window": 4.59
+    },
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "words": "add Washington Commanders defense, drop Colston Loveland: +4.6 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
@@ -1750,7 +1804,8 @@
       "position": "RB"
      },
      "gain_window": 11.32,
-     "covered_window": 1.9
+     "covered_window": 1.98,
+     "covered_gross_window": 1.98
     }
    },
    "beyond": {
@@ -1758,7 +1813,7 @@
     "theirs": -6.45
    },
    "beats": false,
-   "words": "+4.2 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points. It brings in more season value above replacement: 166 for 101 — the season beyond these weeks.",
+   "words": "+4.2 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points. It brings in more season value above replacement: 166 for 101 — the season beyond these weeks.",
    "other_objective": {
     "kind": "season_value",
     "words": "It brings in more season value above replacement: 166 for 101 — the season beyond these weeks."

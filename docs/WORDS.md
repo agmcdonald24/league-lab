@@ -920,3 +920,13 @@ sentence of its own, only where they appear.
 | The card's points chart, a week he sits | Week 5 vs CIN: not played yet · 0, he sits: IR (knee - acl) · Sleeper, Sep 28 |
 | My Week, Team, Waivers: a projection and a margin | one decimal (19.3, "margin 10.3 over Croskey-Merritt"), as Rankings, the card and Waivers' projections print them |
 <!-- ---- end IU-3 -->
+<!-- ---- IU-1 -->
+## The Trade Finder searches on the basis; a waiver move says what it drops (Wave I-U, IU-1)
+
+| Where | Words |
+|---|---|
+| Every verdict's waiver move and the Finder's "Your best move", a drop that costs more than its starts | the Washington Commanders defense claim gives +1.5 over weeks 5–8 (drop Jacory Croskey-Merritt; netted: his season value above replacement, 5.2) — the gain is net of what the drop costs beyond the lineup points already in it (`waivers.choose_drops`' rule, on the same basis as the trades). The pieces: "his starts", "his season value above replacement", "his backup cover". |
+| The same, a drop that costs nothing more | the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Bryce Young) |
+| The calculator's alternative line | add Cameron Dicker, drop Rhamondre Stevenson (netted: his season value above replacement, 20.0): +0.0 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you |
+| A Finder row's reason, a player who cannot play this week | Ja'Marr Chase cannot play this week (Out · Sleeper, Oct 3): the gain comes after it. — the note in brackets is the league screens' one note (`league_gate.note`), no longer the old `cannot_play` field. |
+<!-- ---- end IU-1 -->

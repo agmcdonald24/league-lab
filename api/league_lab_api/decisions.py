@@ -1443,8 +1443,18 @@ def evaluate(league_id: str, team: int, partner: int | None, give, get, *, sourc
 SAME_GAIN = 0.05
 
 
-def _ie1_cheaper(ctx, board, weeks, found, rows: list[dict], starts_now: bool, span: str) -> dict[int, T.Package]:
+def _ie1_cheaper(ctx, board, weeks, found, rows: list[dict], starts_now: bool, span: str,
+                 free=None) -> dict[int, T.Package]:
     out: dict[int, T.Package] = {}
+    cache = ctx.window_cache.setdefault(("iu1_one_of_two", tuple(weeks), free is not None), {})
+
+    def gains(give: tuple, get: tuple) -> T.Package:
+        """IU-1: on the frame the search proposed on (the replacement frame when ``free``), kept on the context."""
+        k = (tuple(give), tuple(get))
+        if k not in cache:
+            cache[k] = (T.package_gains_covered(board, give, get, weeks, free) if free is not None
+                        else T.package_gains(board, give, get, weeks))
+        return cache[k]
     for p in found:
         two = p.two_for_one
         if two is None or len(two.give) != 2 or len(two.get) != 1:
@@ -1453,7 +1463,7 @@ def _ie1_cheaper(ctx, board, weeks, found, rows: list[dict], starts_now: bool, s
         best_one = None
         for a in sorted(two.give, key=lambda x: (pts.get(x) is None, pts.get(x) or 0)):
             try:
-                pk = T.package_gains(board, (a,), two.get, weeks)
+                pk = gains((a,), tuple(two.get))
             except ValueError:
                 continue
             if pk.mutual and abs(pk.my_horizon - two.my_horizon) < SAME_GAIN:
@@ -1532,7 +1542,7 @@ def alternative_words(alt: dict, span: str, window: str) -> str:
     if alt.get("kind") == STAND_PAT:
         return f"no waiver claim improves your starting lineup {when}"
     g = alt["gain_week"] if window == "week" else alt["gain_window"]
-    how = "for an open spot" if alt.get("open_spot") else (f"(drop {(alt.get('drop') or {}).get('player_name')})"
+    how = "for an open spot" if alt.get("open_spot") else (f"({iu1_drop_words(alt, '; ')[2:]})"  # ---- IU-1: netting
                                                           if alt.get("drop") else "")
     words = f"the {_claim_name(alt)} claim gives {g:+.1f} {when} {how}".strip()
     # ---- PO (Wave I-T): when the basis search picked another claim than Waivers' first one, say where that one went.
@@ -1541,7 +1551,7 @@ def alternative_words(alt: dict, span: str, window: str) -> str:
     # next one. Without the sentence the two screens name two different "best" claims and neither says why.
     rop = alt.get("roster_only_pick") or {}
     rname = (rop.get("player") or {}).get("player_name")
-    covered = rop.get("covered_window")
+    covered = rop.get("covered_gross_window", rop.get("covered_window"))   # IU-1: before any netting of his drop
     if rname and rname != (alt.get("player") or {}).get("player_name") and covered is not None and abs(float(covered)) < 0.05:
         words += f"; {rname} is already counted in every number here (he fills a starting spot that is empty)"
     # ---- end PO
@@ -2058,7 +2068,7 @@ def _ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], spa
         drop = (a.get("drop") or {}).get("player_name")
         own = float(a.get("gain_week" if window == "week" else "gain_window") or 0.0)
         cov = _alt_gain(a, window)
-        return (f"add {_claim_name(a)}" + (f", drop {drop}" if drop else " for an open roster spot") +
+        return (f"add {_claim_name(a)}" + (iu1_drop_words(a) if drop else " for an open roster spot") +    # IU-1
                 f": {cov:+.1f} {when}" + ("" if abs(own - cov) < 0.05 else f" ({own:+.1f} if empty slots were left empty)"))
     alt_words = (f"Yours: {_basis_alt(alt_m, 'your')} ({alt_m['availability_words']}). "
                  f"Theirs: {_basis_alt(alt_t, 'their')} ({alt_t['availability_words']}).")
@@ -2730,7 +2740,7 @@ def ir2_decision(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, boa
             return a.get("words") or "not compared"
         p = _claim_name(a)
         drop = (a.get("drop") or {}).get("player_name")
-        plan = f"add {p}" + (f", drop {drop}" if drop else " for an open roster spot")
+        plan = f"add {p}" + (iu1_drop_words(a) if drop else " for an open roster spot")      # ---- IU-1: the netting
         return f"{plan}: {_alt_gain(a, window):+.1f} {when} on the same basis; {a.get('availability_words')}"
     alt_basis = {**alt_m, "gain_week": max(0.0, float(alt_m.get("covered_week") if alt_m.get("covered_week") is not None
                                                       else alt_m.get("gain_week") or 0.0)),
@@ -2965,31 +2975,76 @@ def it1_basis_alternative(ctx: TradeContext, board: RosterBoard, weeks: tuple[in
                           window: str, frame: dict, alt: dict) -> dict:
     """The best waiver move on the replacement frame (`trades.basis_best_move`) when it beats, on that frame, the move
     IF-1 / IF-2 chose on the roster-only numbers (re-priced): the verdict's "your best waiver move" is then the best one
-    on the same comparison. The roster-only pick is kept beside it (`roster_only_pick`) when the choice changes."""
-    try:
-        mv = T.basis_best_move(board, int(team), weeks, frame["free"], frame["pool"], ctx.market)
-    except Exception:  # noqa: BLE001 - the re-priced move stands (it is still a real move)
-        import logging
-        logging.getLogger(__name__).warning("decisions: the basis waiver search failed", exc_info=True)
-        mv = None
+    on the same comparison. The roster-only pick is kept beside it (`roster_only_pick`) when the choice changes.
+    IU-1: both moves are NETTED the same way when they need a drop (the drop's cost beyond his lineup loss —
+    `waivers.choose_drops`' rule — on this frame); the netting rides on the move (`drop_cost`) and in its words."""
+    def priced(only=None) -> tuple[tuple | None, dict]:
+        det: dict = {}
+        try:
+            mv = T.basis_best_move(board, int(team), weeks, frame["free"], frame["pool"], ctx.market, ctx.prices,
+                                   detail=det, only=only)
+        except Exception:  # noqa: BLE001 - the re-priced move stands (it is still a real move)
+            import logging
+            logging.getLogger(__name__).warning("decisions: the basis waiver search failed", exc_info=True)
+            mv = None
+        return mv, det
+
+    def net_of(det: dict) -> tuple[float, float]:
+        return float(det.get("net_week", 0.0)), float(det.get("net_window", 0.0))
+
+    # the roster-only pick, netted on this frame when it drops someone (its gain over the free fill, less the drop's
+    # cost beyond his lineup loss)
+    add0 = str(((alt.get("player") or {}).get("sleeper_id")) or "")
+    drop0 = (alt.get("drop") or {}).get("sleeper_id")
+    if alt.get("kind") != STAND_PAT and add0 and drop0 and add0 in frame["pool"]:
+        mv0, det0 = priced((add0, str(drop0)))
+        if mv0 is not None:
+            alt = dict(alt)
+            nw, nh = net_of(det0)
+            alt.update({"covered_week": T._r2(nw), "covered_window": T._r2(nh), "drop_cost": det0,
+                        "covered_gross_window": T._r2(sum(mv0[2]))})
+    mv, det = priced()
     if mv is None:
         return alt
     add, drop, by = mv
-    gain = T._r2(by[0]) if window == "week" else T._r2(sum(by))
+    nw, nh = net_of(det)
+    gain = nw if window == "week" else nh
     if gain < _alt_gain(alt, window) + 0.05:
         return alt
     meta = frame.get("meta") or {}
     new = {"kind": "waiver", "player": _alt_player(ctx, meta, add), "drop": _alt_player(ctx, meta, drop),
-           "open_spot": drop is None, "gain_week": T._r2(by[0]), "gain_window": T._r2(sum(by)),
+           "open_spot": drop is None, "gain_week": T._r2(nw), "gain_window": T._r2(nh),
            "by_week": [T._r2(x) for x in by], "weeks": list(weeks), "span": span, "source": "basis search",
-           "note": None, "covered_by_week": [T._r2(x) for x in by], "covered_window": T._r2(sum(by)),
-           "covered_week": T._r2(by[0])}
+           "note": None, "covered_by_week": [T._r2(x) for x in by], "covered_window": T._r2(nh),
+           "covered_week": T._r2(nw), "drop_cost": det if drop is not None else None}
     new["availability"], new["availability_words"] = _availability(new, frame["rules"])
     new["words"] = alternative_words(new, span, window)
     if alt.get("kind") != STAND_PAT:
         new["roster_only_pick"] = {"player": alt.get("player"), "drop": alt.get("drop"),
-                                   "gain_window": alt.get("gain_window"), "covered_window": alt.get("covered_window")}
+                                   "gain_window": alt.get("gain_window"), "covered_window": alt.get("covered_window"),
+                                   # IU-1: what he adds on the frame before his drop is netted (the PO's sentence reads it)
+                                   "covered_gross_window": alt.get("covered_gross_window", alt.get("covered_window"))}
     return new
+
+
+IU1_PIECE_WORDS = {"lineup_loss": "his starts", "season_value": "his season value above replacement",
+                   "depth_lost": "his backup cover"}
+
+
+def iu1_drop_words(a: dict, inside: str | None = None) -> str:
+    """", drop Croskey-Merritt (netted: his season value above replacement, 5.0)" — what the move drops and what that
+    costs beyond the lineup points already in its gain; ", drop X" when the drop costs nothing more; "" when it drops
+    nobody. ``inside`` (e.g. "; ") puts the netting after that separator instead of in its own parentheses, for a
+    sentence that already wraps the drop in parentheses ("(drop X; netted: …)")."""
+    d = (a.get("drop") or {}).get("player_name")
+    if not d:
+        return ""
+    dc = a.get("drop_cost") or {}
+    ex = float(dc.get("excess") or 0.0)
+    if ex < 0.05 or not dc.get("piece"):
+        return f", drop {d}"
+    net = f"netted: {IU1_PIECE_WORDS.get(dc['piece'], dc['piece'])}, {float(dc['cost']):.1f}"
+    return f", drop {d}{inside}{net}" if inside else f", drop {d} ({net})"
 
 
 def it1_row_decision(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span: str, window: str, frame: dict,
@@ -3042,6 +3097,16 @@ def it1_finder_alternative(ctx: TradeContext, board: RosterBoard, weeks: tuple[i
            "gain_window": _alt_gain(a, window)}
     out["words"] = it1_minus(alternative_words(out, span, window))
     return out
+
+
+IU1_SEARCH_ENV = "LEAGUE_LAB_FINDER_SEARCH"
+
+
+def iu1_search_on_basis() -> bool:
+    """IU-1: the Finder proposes on the replacement frame (default); ``LEAGUE_LAB_FINDER_SEARCH=roster`` restores the
+    roster-only search (the before / after comparison)."""
+    import os
+    return str(os.environ.get(IU1_SEARCH_ENV, "basis")).strip().lower() != "roster"
 
 
 def it1_row_notes(ctx: TradeContext, rows: list[dict]) -> None:
@@ -3134,12 +3199,15 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
         ros, ours, mkt = sanity_inputs(ctx)
         stats: dict = {}
         rejected: list = []
-        found = T.partners(board, int(team), weeks=weeks, stats=stats, want=want, rejected=rejected,
+        # ---- IU-1: the packages are proposed on the frame the verdict judges them on (the replacement frame)
+        free = ii1_frame(ctx, board, tuple(weeks), window)["free"] if iu1_search_on_basis() else None
+        stats["search_basis"] = "replacement" if free is not None else "roster"
+        found = T.partners(board, int(team), weeks=weeks, stats=stats, want=want, rejected=rejected, free=free,
                            allow=lambda pk: T.sanity(pk.give, pk.get, ros=ros, ours=ours, market=mkt, name=ctx.name,
                                                      values=ctx.prices))          # ---- IG-1: rule (a) on season value
         return ctx, found, stats, (board, weeks, span), rejected, (ros, mkt)
     ctx, found, stats, (board, weeks, span), rejected, (ros, mkt) = (
-        search() if as_of is not None else _memo(("partners", str(league_id), int(team), want, is_house, window), is_house, search))
+        search() if as_of is not None else _memo(("partners", str(league_id), int(team), want, is_house, window, iu1_search_on_basis()), is_house, search))
     starts_now = weeks[0] == ctx.this_week
     rows = []
     for p in found:
@@ -3153,13 +3221,13 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
                          "they_gain_week": pk.their_week if starts_now else None, "they_gain_horizon": pk.their_horizon,
                          "interest": interest(pk.their_horizon, pk.my_horizon, span),
                          "price_out": known_value(ctx.prices, pk.give), "price_in": known_value(ctx.prices, pk.get)})  # IG-1
-    _ie1_cheaper(ctx, board, weeks, found, rows, starts_now, span)                     # ---- IE-1: least costly first
+    _ie1_cheaper(ctx, board, weeks, found, rows, starts_now, span,                      # ---- IE-1: least costly first
+                 free=ii1_frame(ctx, board, tuple(weeks), window)["free"] if stats.get("search_basis") == "replacement" else None)
     # ---- IF-2: the ladder (standing pat, the best waiver move, the trades), the rows ranked by the gain beyond it; the
     # headline is the first card, always
     alt = best_alternative(ctx, board, tuple(weeks), int(team), span, window, source=source, as_of=as_of)
-    rows = rank_partners(ctx, board, tuple(weeks), rows, alt, span, window)
-    for r in rows:                     # ---- II-0: the row's words from the strip's own numbers (one frame, one story)
-        r["story"] = row_story(r, weeks, span, ctx.this_week if starts_now else None)
+    # ---- IU-1: IF-2's roster-only ladder (`rank_partners`: a strip and a comparison per row, re-solved on every call) is
+    # no longer computed — every row's strip, story, comparison and order are its decision's (IT-1, below)
     # ---- II-1: the card on every row (both teams' alternatives, plausibility, legality), the threshold, the empty state
     frame = ii1_frame(ctx, board, tuple(weeks), window)
     compare = (il4_partners_to_compare(ctx, board, tuple(weeks), span, window, frame, int(team), rows,  # ---- IL-4
