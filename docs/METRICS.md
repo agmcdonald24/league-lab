@@ -5643,7 +5643,9 @@ scale him (by about 0.62, the played share × the when-played ratio) is the PO's
 * **What a Saturday re-projection of a Sunday game would change** (the model's inputs for week W are as-of week W,
   `assert_features_never_peek`): Thursday's game does **not** enter a Sunday player's season-to-date features (they
   stop at week W−1). What does change between Thursday and Sunday: the week's **injury report** (`report_status`, the
-  `questionable` input; Friday's final), the **market** (`implied_team_total`, `spread_line` as lines move), the
+  `questionable` input; Friday's final — and through it the personnel inputs of v3: `pn_top_target_out`,
+  `pn_top_rusher_out`, `pn_teammate_share_out`, `pn_absence_beneficiary` for RB / WR / TE, the line starters out, and
+  QB `pn_qb_*` (who starts), all read from week W's report and the reserve lists), the **market** (`implied_team_total`, `spread_line` as lines move), the
   **roster file / depth chart / starter overrides** (`int_depth_chart_current`, IQ-2's seed: who starts), the gate's
   word (Sleeper / ESPN / the report: a player who sits is 0). And one thing that must **not** move: the fit itself
   (tonight's models on the same training seasons — the coefficients of a re-run are the same up to the rows the
@@ -5672,6 +5674,35 @@ scale him (by about 0.62, the played share × the when-played ratio) is the PO's
    night).
 5. **What moves with `game` and what does not**: the injury report, the gate (Sleeper / ESPN / report), the market
    lines, IQ-2's starter override and the depth chart move a re-projection to the extent the model reads them (the
-   override and the depth chart through who is the listed starter; the report through `questionable` and the gate);
-   a backup's bigger role moves only as far as those inputs encode it — the model has no "teammate out this week"
-   feature, so a starter's absence reaches his backup through the depth chart / override, not by itself.
+   override and the depth chart through who is the listed starter; the report through `questionable`, the gate and
+   the personnel inputs). *Corrected 12:15 ET, before any code or number:* the first text of this point said the
+   model has no "teammate out this week" feature — wrong: projection v3 reads `pn_top_target_out` /
+   `pn_top_rusher_out` / `pn_teammate_share_out` / `pn_absence_beneficiary` (RB / WR / TE) and `pn_qb_*` (QB) from
+   week W's report, so a starter ruled Out on Friday moves his teammates' numbers in a Saturday re-projection, by
+   as much as the model learned those inputs to be worth. The shadow names the teammate who sits when it can.
+6. **Housekeeping of the overlay** (precision of point 2, before the code): a run deletes and rewrites the live rows
+   of the games that have not kicked off; a game that kicked off since the last run keeps the live rows it had (the
+   number at its own kickoff) until the week is over; with no week under way, or with the switch `week`, the
+   overlay is emptied. Kicker and defense rows follow the same rule (their team's game).   overlay is emptied. Kicker and defense rows follow the same rule (their team's game).
+
+**The evidence on the past — the rule, committed before its numbers (12:30 ET).** The warehouse dates one piece of
+Saturday's news: week W's final injury report (nflverse; Friday's designations). It holds no Thursday copy of the
+market lines, the depth chart or the report, so a "Thursday board" can only be rebuilt as the same model without
+Friday's designations. Study:
+
+* **Boards.** *Thursday* T: the model's number for every QB / RB / WR / TE player-week (a fit on the seasons before,
+  as `project` fits: 2025 from a 2016–2024 fit, 2026 from the 2016–2025 fit), the week's features as built.
+  *Saturday* S: T with every player whose final report says Out or Doubtful (or who is on a reserve list) set to 0 —
+  the gate's part of a re-projection. 2026 week 4 also with its real kickoff board (`frozen_source = 'kickoff'`, v3.0)
+  as T. The features as built already carry the final report (`questionable`, the personnel inputs), so T is more
+  informed than a real Thursday board: the measured gain is a lower bound for the gate's part and says nothing about
+  the teammates', the market's or the depth chart's part.
+* **Population.** Players of the games after the week's first kickoff; weeks 1–18 of 2025 and 2026 weeks 2–4 (weeks
+  2–3 of 2026 have no kickoff board, so only the rebuilt T there). Scored on the points they scored in the reference
+  scoring (`ppr`), 0 when they did not play. (a) All of them; (b) those whose status changed: Out / Doubtful on the
+  final report and not already on a reserve list at the week's start.
+* **Metrics.** MAE (points), and Spearman within week × position averaged over week × position cells with 8 or more
+  players.
+* **Decision.** S is "better" if its MAE is lower in (a) in 2025 and in 2026 weeks 2–4 and its Spearman is not lower
+  by more than 0.005 in either. Better → the hand-back recommends `game` after one weekend of the shadow; not better →
+  the switch stays `week` and the shadow is the deliverable. Either way the number is the gate's part only.
