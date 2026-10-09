@@ -139,7 +139,8 @@ async function inert(page: Page, scope: string) {
     for (const a of Array.from(root.querySelectorAll("a"))) {
       const h = a.getAttribute("href") ?? "";
       if (!(h.startsWith("/") && !h.startsWith("//")) && !h.startsWith("https://")) out.push(`link ${h}`);
-      if (h.startsWith("https://") && !/^https:\/\/([a-z0-9-]+\.)*(isuckatfantasy\.io|espn\.com|sleeper\.com|sleeper\.app|myfantasyleague\.com|yahoo\.com|nfl\.com|draftkings\.com|fanduel\.com)\//.test(h))
+      // IU-6: a post may link any https site — marked as the writer's (rel), in a new tab
+      if (h.startsWith("https://") && !/^https:\/\/([a-z0-9-]+\.)*(isuckatfantasy\.io|espn\.com|sleeper\.com|sleeper\.app|myfantasyleague\.com|yahoo\.com|nfl\.com|draftkings\.com|fanduel\.com)\//.test(h) && a.getAttribute("rel") !== "noopener noreferrer nofollow ugc")
         out.push(`outside link ${h}`);
     }
     for (const i of Array.from(root.querySelectorAll("img"))) if (!(i.getAttribute("src") ?? "").startsWith("/blog/img/")) out.push(`img ${i.getAttribute("src")}`);
