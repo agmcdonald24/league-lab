@@ -164,11 +164,24 @@ def finder() -> None:
         f.write_text(json.dumps(saved, indent=1) + "\n")
 
 
+def package_labels() -> None:
+    """ia2_packages.json's labels from the re-saved answers (the tick's from / to: the dial's label must change)."""
+    pk = json.loads((OUT / "ia2_packages.json").read_text())
+    for lg, v in pk.items():
+        me = sdf.MINE[lg]
+        for side in ("from", "to"):
+            d = json.loads((OUT / evaluate_name(lg, me, v["partner"], v[side]["give"], v[side]["get"])).read_text())
+            v[side]["label"] = d["decision"]["dial"]["label"]
+        print("tick", lg, v["from"]["label"], "->", v["to"]["label"], "" if v["from"]["label"] != v["to"]["label"] else "SAME")
+    (OUT / "ia2_packages.json").write_text(json.dumps(pk, indent=1) + "\n")
+
+
 if __name__ == "__main__":
     if "--finder" in sys.argv:
         finder()
         top_level()
         recorded()
+        package_labels()
         sys.exit(0)
     if "--scrubs" in sys.argv:
         scrubs_package()

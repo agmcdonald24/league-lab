@@ -82,3 +82,21 @@ def test_the_finder_orders_and_tiers_on_the_decision(client, league, team):
         assert r["interest"]["caption"].endswith("against realistic replacements")
         if r.get("tier") == "credible":
             assert r["decision"]["recommendation"]["credible"]
+
+
+@needs_db
+def test_a_finder_row_player_who_sits_carries_the_league_screens_note(client, monkeypatch):
+    """Item 5: each row's players carry `league_gate.note` (the reason, its source and date; `sits`) — the cell My Week
+    and the Team Hub draw. The status itself is the gate's (a block handed in here), never a code tested in this path."""
+    rows = client.get("/api/trades/partners", params={"league": SCRUBS, "team": 2}).json()["partners"]
+    p0 = rows[0]["get"][0]
+    assert "availability" in p0                              # every row player: a note or None (no word)
+    blk = {"why": "IR (knee) · Sleeper, Oct 2", "status": "IR", "cannot_play": True, "unlikely": False,
+           "out_indefinitely": True, "week_words": "on injured reserve", "ros_words": "on injured reserve: no return date"}
+    monkeypatch.setattr(decisions.LG, "blocks", lambda ids, *a, **k: {g: blk for g in ids if g == p0["gsis_id"]})
+    decisions.clear_memo()
+    rows = client.get("/api/trades/partners", params={"league": SCRUBS, "team": 2}).json()["partners"]
+    hit = [x for r in rows for x in (*r["give"], *r["get"]) if x["gsis_id"] == p0["gsis_id"]]
+    assert hit and all(x["availability"]["sits"] and x["availability"]["why"] == blk["why"] for x in hit)
+    others = [x for r in rows for x in (*r["give"], *r["get"]) if x["gsis_id"] != p0["gsis_id"]]
+    assert all(x["availability"] is None for x in others)
