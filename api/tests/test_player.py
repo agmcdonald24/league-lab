@@ -28,7 +28,12 @@ def test_player_card_numbers(client, sql, league, team, gsis):
     proj = sql("""select proj_points, p10, p25, p75, p90 from analytics.mart_player_week_projections
                   where league_id = %s and gsis_id = %s and season = %s and week = %s""", (league, gsis, d["season"], d["week"]))
     m = blocks(d["sections"]["projection"], "metrics")
-    if proj:
+    sits = bool((d.get("availability") or {}).get("sits"))
+    if sits:
+        # IS-2 + PO (Wave I-S): a player who sits this week (the one definition; here "Out" on this week's own injury
+        # report) is shown no projection the mart may still hold: 0, the reason, no metrics
+        assert not m and blocks(d["sections"]["projection"], "unavailable") and d["proj_points"] == 0.0
+    elif proj:
         p = proj[0]
         # the 50% range (plan D6) sits between the projection and the floor; weeks frozen before it existed have none
         mid = [("Most weeks", f"{float(p['p25']):.0f}–{float(p['p75']):.0f}")] if p["p25"] is not None and p["p75"] is not None else []
