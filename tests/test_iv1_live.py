@@ -64,7 +64,30 @@ def test_active_reads_which_overlays_exist_and_hold_rows():
             return (False, True, True, False, True)
         return {"h0": True, "h1": False, "h2": True}           # a dict row (the API's row factory) works too
     got = LW.active(execute)
-    assert got == {"ops.projection_lines", "ops.kd_ranges"} and len(calls) == 2
+    assert got == {"ops.projection_lines", "ops.kd_ranges"} and len(calls) == 3   # PO: the third asks the columns
+    assert got.cols == {}                                         # an answer it cannot read: the JSON form
+
+
+def test_po_the_overlay_rows_are_named_when_the_overlay_has_every_column():
+    """PO (Wave I-V): with the stored table's columns known and all in the overlay the relation selects them by name
+    (no JSON); an overlay that lacks one, or an odd name, falls back to the cast by name."""
+    def execute(q):
+        if "to_regclass" in q:
+            return (False, True, False, False, True)
+        if "information_schema" in q:
+            return ({"projection_lines": ["season", "week", "gsis_id", "proj_x"],
+                     "projection_lines_live": ["season", "week", "gsis_id", "proj_x", "team", "game_kickoff"],
+                     "kd_ranges": ["season", "week", "unit_id", "new_col"],
+                     "kd_ranges_live": ["season", "week", "unit_id", "team"]},)
+        return (True, True)
+    act = LW.active(execute)
+    assert act == {"ops.projection_lines", "ops.kd_ranges"}
+    assert act.cols == {"ops.projection_lines": ("season", "week", "gsis_id", "proj_x")}      # kd_ranges: new_col missing
+    out = LW.sql("select * from ops.projection_lines l join ops.kd_ranges k on true", act)
+    assert "union all select v.season, v.week, v.gsis_id, v.proj_x from ops.projection_lines_live as v) l" in out
+    assert "jsonb_populate_record(null::ops.kd_ranges, to_jsonb(v)) as r from ops.kd_ranges_live as v offset 0" in out
+    assert "jsonb_populate_record(null::ops.projection_lines" not in out
+    assert LW.sql("select 1 from ops.projection_lines", {"ops.projection_lines"}).count("jsonb_populate_record") == 1
     assert LW.active(lambda q: (False,) * 5) == frozenset()
 
 

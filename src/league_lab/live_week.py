@@ -35,13 +35,28 @@ _FROM = re.compile(
     re.IGNORECASE)
 
 
-def relation(table: str) -> str:
+class Active(frozenset):
+    """``active``'s answer: the stored tables whose overlay holds rows, and (``cols``) for each of them the stored
+    table's columns in order when its overlay has them all — the relation then names them and no row goes through
+    JSON. A plain set of names works wherever this does (``cols`` absent: the JSON form)."""
+    cols: dict[str, tuple[str, ...]] = {}
+
+
+def relation(table: str, cols: tuple[str, ...] | None = None) -> str:
     """The live relation for ``table`` (an ``OVERLAYS`` key): its rows without an overlay row, plus the overlay's rows
-    as rows of ``table`` (no alias: the caller's)."""
+    as rows of ``table`` (no alias: the caller's). ---- PO (Wave I-V): with ``cols`` (the stored table's columns, all
+    of them in the overlay) the overlay's rows are selected by name — a plain scan the planner filters like the stored
+    table's; without, each overlay row is cast once through JSON by name (``offset 0``: once a row, not once a column
+    — the first form, ``(jsonb_populate_record(...)).*``, ran the cast for every column: 77–160 ms a statement on the
+    copy against 8–35 ms for this one and 1–3 ms with ``cols``)."""
     live, keys = OVERLAYS[table]
     match = " and ".join(f"v.{k} = s.{k}" for k in keys)
-    return (f"(select s.* from {table} as s where not exists (select 1 from {live} as v where {match}) "
-            f"union all select (jsonb_populate_record(null::{table}, to_jsonb(v))).* from {live} as v)")
+    if cols:
+        tail = f"select {', '.join('v.' + c for c in cols)} from {live} as v"
+    else:
+        tail = (f"select (q.r).* from (select jsonb_populate_record(null::{table}, to_jsonb(v)) as r from {live} as v "
+                f"offset 0) as q")
+    return f"(select s.* from {table} as s where not exists (select 1 from {live} as v where {match}) union all {tail})"
 
 
 def sql(text: str, active: Iterable[str] | None) -> str:
@@ -50,13 +65,14 @@ def sql(text: str, active: Iterable[str] | None) -> str:
     act = frozenset(active or ())
     if not act or "ops." not in text:
         return text
+    cols = getattr(active, "cols", None) or {}
 
     def sub(m: re.Match) -> str:
         t = m.group("table").lower()
         if t not in act:
             return m.group(0)
         alias = m.group("alias") or f" as {t.split('.', 1)[1]}"
-        return f"{m.group('kw')}{m.group('ws')}{relation(t)}{alias}"
+        return f"{m.group('kw')}{m.group('ws')}{relation(t, cols.get(t))}{alias}"
 
     return _FROM.sub(sub, text)
 
@@ -77,7 +93,35 @@ def active(execute) -> frozenset[str]:
         return frozenset()
     rows = _values(execute("select " + ", ".join(f"exists (select 1 from {OVERLAYS[b][0]}) as h{i}"
                                                  for i, b in enumerate(present))))
-    return frozenset(b for b, h in zip(present, rows, strict=True) if h)
+    act = Active(b for b, h in zip(present, rows, strict=True) if h)
+    act.cols = _columns(execute, act) if act else {}
+    return act
+
+
+_NAME = re.compile(r"^[a-z_][a-z0-9_]*$")
+
+
+def _columns(execute, act: Iterable[str]) -> dict[str, tuple[str, ...]]:
+    """PO (Wave I-V): for each active stored table, its columns in order when its overlay has every one of them (then
+    ``relation`` names them); a table whose overlay lacks one, a name that is not a plain identifier, or any failure
+    here: no entry, and ``relation`` casts by name through JSON. One catalog statement, asked with ``active``."""
+    try:
+        names = sorted({t.split(".", 1)[1] for b in act for t in (b, OVERLAYS[b][0])})
+        got = _values(execute(
+            "select coalesce(jsonb_object_agg(t, c), '{}'::jsonb) as cols from (select table_name::text as t, "
+            "jsonb_agg(column_name::text order by ordinal_position) as c from information_schema.columns "
+            "where table_schema = 'ops' and table_name in (" + ", ".join(f"'{n}'" for n in names) + ") group by 1) as x"))[0]
+        if isinstance(got, str):
+            import json
+            got = json.loads(got)
+        out: dict[str, tuple[str, ...]] = {}
+        for b in act:
+            base, live = got.get(b.split(".", 1)[1]) or [], set(got.get(OVERLAYS[b][0].split(".", 1)[1]) or [])
+            if base and all(isinstance(c, str) and _NAME.match(c) and c in live for c in base):
+                out[b] = tuple(base)
+        return out
+    except Exception:  # noqa: BLE001 - never a failed read for a faster one: the JSON form
+        return {}
 
 
 def active_on(conn) -> frozenset[str]:
