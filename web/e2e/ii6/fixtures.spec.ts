@@ -96,7 +96,7 @@ const SCRUBS_FINDER = `/api/trades/partners?league=${SCRUBS}&team=2`;
 
 test("Trades: 'No compelling trade found' is said once — the answer says it, the Finder does not repeat it (Any, and a position)", async ({ page, context, isMobile }, info) => {
   test.skip(!ii1[SCRUBS_FINDER], "no II-1 recording");
-  // the recorded Scrubs roster 2 answer (no credible trade; 18 behind Explore); for a position the same rows stand in
+  // the recorded Scrubs roster 2 answer (no credible trade; the rest behind Explore); for a position the same rows stand in
   // for that position's answer (the rendering rule is what is checked here, not the API's filter)
   await context.route(/\/api\/trades\/(partners|lists)/, (route) => {
     const u = new URL(route.request().url());
@@ -108,7 +108,9 @@ test("Trades: 'No compelling trade found' is said once — the answer says it, t
   const head = page.getByTestId("best-partner");
   await expect(head.getByTestId("no-compelling")).toHaveText("No compelling trade found.");
   await expect(head).toContainText("is worth proposing");
-  await expect(head).toContainText("Your best move: the Tyler Allgeier claim");
+  // IT-1 (re-saved on the calculator's basis): the best move is the answer's own (searched on the same basis)
+  const bestMove = (ii1[SCRUBS_FINDER].body as { best_alternative: { words: string } }).best_alternative.words;
+  await expect(head).toContainText(`Your best move: ${bestMove}`);
   const explore = page.getByTestId("explore");
   await expect(explore).toBeVisible();
   await expect(page.getByTestId("finder-none")).toHaveCount(0);
@@ -123,7 +125,10 @@ test("Trades: 'No compelling trade found' is said once — the answer says it, t
   await tap(page, page.getByTestId("want-WR"), isMobile);
   await expect(page).toHaveURL(/want=WR/);
   const why = page.getByTestId("finder-none-why");
-  await expect(why).toHaveText(/^For a WR: none of the 18 trades that raise both starting lineups over weeks 4–7 is worth proposing: .*\.$/);
+  // IT-1 (re-saved): the count and the weeks are the saved answer's (the same rows stand in for the WR answer)
+  const sb = ii1[SCRUBS_FINDER].body as { partners: unknown[]; span: string };
+  const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  await expect(why).toHaveText(new RegExp(`^For a WR: none of the ${sb.partners.length} trades? that raises? both starting lineups over ${esc(sb.span)} is worth proposing: .*\\.$`));
   await expect(why).not.toContainText("Your best move");
   expect(await count("No compelling trade found")).toBe(1);
   expect(await count("Your best move:")).toBe(1);

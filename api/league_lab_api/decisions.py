@@ -3019,6 +3019,20 @@ def it1_apply_row(row: dict, d: dict, starts_now: bool) -> None:
         card["recommendation"] = d["recommendation"]
 
 
+def it1_finder_alternative(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], team: int, span: str,
+                           window: str, frame: dict, *, source=None, as_of=None) -> dict:
+    """The Finder's "your best move" (its reason, its ordering words, `best_alternative`): the same move and the same
+    numbers as every row's verdict — the frame's alternative for your roster, its gains on the basis."""
+    a = ii1_alternative(ctx, board, weeks, int(team), span, window, frame, source=source, as_of=as_of)
+    if a.get("kind") == STAND_PAT:
+        return a
+    out = {**a, "gain_week": max(0.0, float(a.get("covered_week") if a.get("covered_week") is not None
+                                             else a.get("gain_week") or 0.0)),
+           "gain_window": _alt_gain(a, window)}
+    out["words"] = it1_minus(alternative_words(out, span, window))
+    return out
+
+
 def it1_row_notes(ctx: TradeContext, rows: list[dict]) -> None:
     """Each Finder row's players carry the league screens' one status note (`league_gate.note`: the reason, its source
     and date; `sits`): the same cell My Week and the Team Hub draw. One request-time read for every row."""
@@ -3152,6 +3166,7 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
     stats["dropped_on_the_basis"] = len(rows) - len(kept)
     rows = it1_rank(kept)                                                               # ---- IT-1: the basis's order
     it1_row_notes(ctx, rows)                                                            # ---- IT-1: the reason beside a player
+    alt = it1_finder_alternative(ctx, board, tuple(weeks), int(team), span, window, frame, source=source, as_of=as_of)
     ii1 = ii1_verdict(rows, alt, span, window)
     rows, verdict = ii1["rows"], ii1["verdict"]
     # ---- end II-1

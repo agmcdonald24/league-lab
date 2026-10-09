@@ -119,7 +119,7 @@
    "mine": -2.83,
    "theirs": 22.48
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.8** this week and **-2.8** over weeks 4–7; them **+3.2** and **+22.5**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.8** this week and **−2.8** over weeks 4–7; them **+3.2** and **+22.5**."
  },
  "interest": {
   "score": 100,
@@ -209,8 +209,8 @@
    }
   ]
  },
- "verdict": "Does not help your lineup (-2.8 this week, -2.8 over weeks 4–7), them +3.2 (+22.5 over weeks 4–7); you give up more season value: not worth it for your lineup.",
- "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Does not help your lineup (-2.8 this week, -2.8 over weeks 4–7), them +3.2 (+22.5 over weeks 4–7); you give up more season value: not worth it for your lineup.",
+ "verdict": "Does not help your lineup (−2.8 this week, −2.8 over weeks 4–7), them +3.2 (+22.5 over weeks 4–7); you give up more season value: not worth it for your lineup.",
+ "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Does not help your lineup (−2.8 this week, −2.8 over weeks 4–7), them +3.2 (+22.5 over weeks 4–7); you give up more season value: not worth it for your lineup.",
  "ros": {
   "give": 176,
   "get": 280,
@@ -885,14 +885,14 @@
   "lineup_words": "Jeremiyah Love (from the trade) starts at RB in place of Bhayshul Tuten (to the bench)."
  },
  "window_words": "over weeks 4–7 in total",
- "hold_words": "-2.8 over weeks 4–7; no waiver claim improves your starting lineup over weeks 4–7: the trade does not beat standing pat.",
+ "hold_words": "−2.8 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "hold": {
   "hold": null,
-  "waiver": "-2.8 over weeks 4–7; no waiver claim improves your starting lineup over weeks 4–7: the trade does not beat standing pat.",
-  "waiver_gain": 0.0
+  "waiver": "−2.8 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver_gain": 4.54
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.8** this week and **-2.8** over weeks 4–7; them **+3.2** and **+22.5**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.8** this week and **−2.8** over weeks 4–7; them **+3.2** and **+22.5**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **53**, you get **18**: you give 35 more.",
   "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 176, you get 280.",
   "size": "Roster size: you must cut [Ladd McConkey](/player/00-0039915) (WR, 128 season points; costs 0.0 over weeks 4–7) to stay at 15 players; you must cut [TreVeyon Henderson](/player/00-0040734) (RB, 130 season points; costs 0.0 over weeks 4–7) to stay at 15 players.",
@@ -900,15 +900,28 @@
   "season_value": "Season value above replacement: you give 53, you get 18 (you give 35 more). You get 2 players for 1: 1 more roster spot used."
  },
  "alternative": {
-  "kind": "stand_pat",
-  "player": null,
-  "drop": null,
+  "kind": "waiver",
+  "player": {
+   "sleeper_id": "5095",
+   "gsis_id": "00-0034161",
+   "player_name": "Daniel Carlson",
+   "position": "K"
+  },
+  "drop": {
+   "sleeper_id": "11635",
+   "gsis_id": "00-0039915",
+   "player_name": "Ladd McConkey",
+   "position": "WR"
+  },
   "open_spot": false,
-  "gain_week": 0.0,
-  "gain_window": 0.0,
-  "starter_gain_week": 0.0,
-  "starter_gain_window": 0.0,
-  "by_week": [],
+  "gain_week": 2.53,
+  "gain_window": 4.54,
+  "by_week": [
+   2.53,
+   0.21,
+   0.0,
+   1.8
+  ],
   "weeks": [
    4,
    5,
@@ -916,23 +929,23 @@
    7
   ],
   "span": "weeks 4–7",
-  "drop_cost": null,
-  "words": "no waiver claim improves your starting lineup over weeks 4–7",
-  "source": "waivers.best_waiver_move",
+  "source": "basis search",
+  "note": null,
   "covered_by_week": [
+   2.53,
+   0.21,
    0.0,
-   0.0,
-   0.0,
-   0.0
+   1.8
   ],
-  "covered_window": 0.0,
-  "covered_week": 0.0,
-  "availability": "guaranteed",
-  "availability_words": "nothing to claim"
+  "covered_window": 4.54,
+  "covered_week": 2.53,
+  "availability": "claim",
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "words": "add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you"
  },
- "beyond_alternative": -2.83,
+ "beyond_alternative": -7.37,
  "beats_alternative": false,
- "alternative_words": "-2.8 over weeks 4–7; no waiver claim improves your starting lineup over weeks 4–7: the trade does not beat standing pat.",
+ "alternative_words": "−2.8 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -1120,7 +1133,7 @@
     0.03
    ],
    "raw_window": -2.83,
-   "words": "Your starters: -2.8 this week, -2.8 over weeks 4–7."
+   "words": "Your starters: −2.8 this week, −2.8 over weeks 4–7."
   },
   "their_effect": {
    "this_week": 3.24,
@@ -1146,15 +1159,28 @@
   },
   "waiver_alternative": {
    "mine": {
-    "kind": "stand_pat",
-    "player": null,
-    "drop": null,
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "5095",
+     "gsis_id": "00-0034161",
+     "player_name": "Daniel Carlson",
+     "position": "K"
+    },
+    "drop": {
+     "sleeper_id": "11635",
+     "gsis_id": "00-0039915",
+     "player_name": "Ladd McConkey",
+     "position": "WR"
+    },
     "open_spot": false,
-    "gain_week": 0.0,
-    "gain_window": 0.0,
-    "starter_gain_week": 0.0,
-    "starter_gain_window": 0.0,
-    "by_week": [],
+    "gain_week": 2.53,
+    "gain_window": 4.54,
+    "by_week": [
+     2.53,
+     0.21,
+     0.0,
+     1.8
+    ],
     "weeks": [
      4,
      5,
@@ -1162,30 +1188,43 @@
      7
     ],
     "span": "weeks 4–7",
-    "drop_cost": null,
-    "words": "no waiver claim improves your starting lineup over weeks 4–7",
-    "source": "waivers.best_waiver_move",
+    "source": "basis search",
+    "note": null,
     "covered_by_week": [
+     2.53,
+     0.21,
      0.0,
-     0.0,
-     0.0,
-     0.0
+     1.8
     ],
-    "covered_window": 0.0,
-    "covered_week": 0.0,
-    "availability": "guaranteed",
-    "availability_words": "nothing to claim"
+    "covered_window": 4.54,
+    "covered_week": 2.53,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "the Daniel Carlson claim gives +4.5 over weeks 4–7 (drop Ladd McConkey)"
    },
    "theirs": {
-    "kind": "stand_pat",
-    "player": null,
-    "drop": null,
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "4035",
+     "gsis_id": "00-0033906",
+     "player_name": "Alvin Kamara",
+     "position": "RB"
+    },
+    "drop": {
+     "sleeper_id": "11560",
+     "gsis_id": "00-0039918",
+     "player_name": "Caleb Williams",
+     "position": "QB"
+    },
     "open_spot": false,
     "gain_week": 0.0,
-    "gain_window": 0.0,
-    "starter_gain_week": 0.0,
-    "starter_gain_window": 0.0,
-    "by_week": [],
+    "gain_window": 9.67,
+    "by_week": [
+     0.0,
+     0.0,
+     0.0,
+     9.67
+    ],
     "weeks": [
      4,
      5,
@@ -1193,29 +1232,29 @@
      7
     ],
     "span": "weeks 4–7",
-    "drop_cost": null,
-    "words": "no waiver claim improves your starting lineup over weeks 4–7",
-    "source": "waivers.best_waiver_move",
+    "source": "basis search",
+    "note": null,
     "covered_by_week": [
      0.0,
      0.0,
      0.0,
-     0.0
+     9.67
     ],
-    "covered_window": 0.0,
+    "covered_window": 9.67,
     "covered_week": 0.0,
-    "availability": "guaranteed",
-    "availability_words": "nothing to claim"
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "the Alvin Kamara claim gives +9.7 over weeks 4–7 (drop Caleb Williams)"
    },
-   "words": "Yours: no waiver claim improves your starting lineup over weeks 4–7 (nothing to claim). Theirs: no waiver claim improves their starting lineup over weeks 4–7 (nothing to claim)."
+   "words": "Yours: add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Alvin Kamara, drop Caleb Williams: +9.7 over weeks 4–7 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
-   "mine": -2.83,
-   "theirs": 22.48,
+   "mine": -7.37,
+   "theirs": 12.81,
    "margin": 1.0
   },
   "why_consider": [
-   "Their starters gain +22.5 over weeks 4–7, 22.5 more than standing pat.",
+   "Their starters gain +22.5 over weeks 4–7, 12.8 more than their best waiver move (+9.7 once empty slots are filled from the free pool).",
    "Jeremiyah Love starts for them in weeks 4, 5, 6 and 7.",
    "They get more season value above replacement: 53 for 18.",
    "It frees 1 roster spot for them."
@@ -1251,7 +1290,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -2.8 beyond your best waiver move over weeks 4–7 (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 7.4 behind your best waiver move over weeks 4–7 (the bar is 1 point).",
    "plausibility": "A roster-fit idea"
   }
  },
@@ -1366,11 +1405,11 @@
    "title": "Effect on their starters",
    "need": "puts Love at their RB in place of Tuten"
   },
-  "verdict": "Does not help your lineup (-2.8 this week, -2.8 over weeks 4–7), them +3.2 (+22.5 over weeks 4–7); you give up more season value: not worth it for your lineup.",
-  "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Does not help your lineup (-2.8 this week, -2.8 over weeks 4–7), them +3.2 (+22.5 over weeks 4–7); you give up more season value: not worth it for your lineup.",
+  "verdict": "Does not help your lineup (−2.8 this week, −2.8 over weeks 4–7), them +3.2 (+22.5 over weeks 4–7); you give up more season value: not worth it for your lineup.",
+  "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Does not help your lineup (−2.8 this week, −2.8 over weeks 4–7), them +3.2 (+22.5 over weeks 4–7); you give up more season value: not worth it for your lineup.",
   "effect_words": "Your starting lineup: about 2.8 fewer points this week, about 2.8 fewer points in total over weeks 4–7.",
   "their_effect_words": "Goal Line Stand's starting lineup: about 3.2 more points this week, about 22 more in total over weeks 4–7.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.8** this week and **-2.8** over weeks 4–7; them **+3.2** and **+22.5**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.8** this week and **−2.8** over weeks 4–7; them **+3.2** and **+22.5**.",
   "strip": {
    "weeks": [
     4,
@@ -1423,15 +1462,28 @@
   },
   "alternative": {
    "mine": {
-    "kind": "stand_pat",
-    "player": null,
-    "drop": null,
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "5095",
+     "gsis_id": "00-0034161",
+     "player_name": "Daniel Carlson",
+     "position": "K"
+    },
+    "drop": {
+     "sleeper_id": "11635",
+     "gsis_id": "00-0039915",
+     "player_name": "Ladd McConkey",
+     "position": "WR"
+    },
     "open_spot": false,
-    "gain_week": 0.0,
-    "gain_window": 0.0,
-    "starter_gain_week": 0.0,
-    "starter_gain_window": 0.0,
-    "by_week": [],
+    "gain_week": 2.53,
+    "gain_window": 4.54,
+    "by_week": [
+     2.53,
+     0.21,
+     0.0,
+     1.8
+    ],
     "weeks": [
      4,
      5,
@@ -1439,30 +1491,43 @@
      7
     ],
     "span": "weeks 4–7",
-    "drop_cost": null,
-    "words": "no waiver claim improves your starting lineup over weeks 4–7",
-    "source": "waivers.best_waiver_move",
+    "source": "basis search",
+    "note": null,
     "covered_by_week": [
+     2.53,
+     0.21,
      0.0,
-     0.0,
-     0.0,
-     0.0
+     1.8
     ],
-    "covered_window": 0.0,
-    "covered_week": 0.0,
-    "availability": "guaranteed",
-    "availability_words": "nothing to claim"
+    "covered_window": 4.54,
+    "covered_week": 2.53,
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you"
    },
    "theirs": {
-    "kind": "stand_pat",
-    "player": null,
-    "drop": null,
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "4035",
+     "gsis_id": "00-0033906",
+     "player_name": "Alvin Kamara",
+     "position": "RB"
+    },
+    "drop": {
+     "sleeper_id": "11560",
+     "gsis_id": "00-0039918",
+     "player_name": "Caleb Williams",
+     "position": "QB"
+    },
     "open_spot": false,
     "gain_week": 0.0,
-    "gain_window": 0.0,
-    "starter_gain_week": 0.0,
-    "starter_gain_window": 0.0,
-    "by_week": [],
+    "gain_window": 9.67,
+    "by_week": [
+     0.0,
+     0.0,
+     0.0,
+     9.67
+    ],
     "weeks": [
      4,
      5,
@@ -1470,33 +1535,33 @@
      7
     ],
     "span": "weeks 4–7",
-    "drop_cost": null,
-    "words": "no waiver claim improves their starting lineup over weeks 4–7",
-    "source": "waivers.best_waiver_move",
+    "source": "basis search",
+    "note": null,
     "covered_by_week": [
      0.0,
      0.0,
      0.0,
-     0.0
+     9.67
     ],
-    "covered_window": 0.0,
+    "covered_window": 9.67,
     "covered_week": 0.0,
-    "availability": "guaranteed",
-    "availability_words": "nothing to claim"
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Alvin Kamara, drop Caleb Williams: +9.7 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you"
    },
    "beyond": {
-    "mine": -2.83,
-    "theirs": 22.48
+    "mine": -7.37,
+    "theirs": 12.81
    },
    "beats": false,
-   "words": "-2.8 over weeks 4–7; no waiver claim improves your starting lineup over weeks 4–7: the trade does not beat standing pat.",
+   "words": "−2.8 over weeks 4–7, not more than your best waiver move (add Daniel Carlson, drop Ladd McConkey: +4.5 over weeks 4–7 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
    "other_objective": null
   },
   "recommendation": {
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -2.8 beyond your best waiver move over weeks 4–7 (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 7.4 behind your best waiver move over weeks 4–7 (the bar is 1 point).",
    "plausibility": "A roster-fit idea"
   },
   "changes": {
@@ -1750,7 +1815,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -2.8 this week, -2.8 over weeks 4–7; Goal Line Stand's +3.2 and +22.5. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −2.8 this week, −2.8 over weeks 4–7; Goal Line Stand's +3.2 and +22.5. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -2.75,
     "gain_window": -2.83,

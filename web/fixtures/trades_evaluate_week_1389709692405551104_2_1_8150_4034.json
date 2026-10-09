@@ -91,7 +91,7 @@
    "mine": -3.78,
    "theirs": 3.78
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **-3.8** over week 5; them **+3.8** and **+3.8**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.8** this week and **−3.8** over week 5; them **+3.8** and **+3.8**."
  },
  "interest": {
   "score": 61,
@@ -119,8 +119,8 @@
     "player_name": "Cameron Dicker"
    },
    "QB": {
-    "season_points": 231,
-    "player_name": "Malik Willis"
+    "season_points": 239,
+    "player_name": "Kyler Murray"
    },
    "RB": {
     "season_points": 103,
@@ -167,8 +167,8 @@
    }
   ]
  },
- "verdict": "Does not help your lineup (-3.8 this week, -3.8 over week 5), them +3.8 (+3.8 over week 5); about even by season value: not worth it for your lineup.",
- "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280).** Does not help your lineup (-3.8 this week, -3.8 over week 5), them +3.8 (+3.8 over week 5); about even by season value: not worth it for your lineup.",
+ "verdict": "Does not help your lineup (−3.8 this week, −3.8 over week 5), them +3.8 (+3.8 over week 5); about even by season value: not worth it for your lineup.",
+ "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280).** Does not help your lineup (−3.8 this week, −3.8 over week 5), them +3.8 (+3.8 over week 5); about even by season value: not worth it for your lineup.",
  "ros": {
   "give": 186,
   "get": 190,
@@ -738,14 +738,14 @@
   "lineup_words": "Kyren Williams (from the trade) starts at RB in place of Christian McCaffrey (traded)."
  },
  "window_words": "this week",
- "hold_words": "-3.8 this week, not more than your best waiver move (add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "hold_words": "−3.8 this week, not more than your best waiver move (add Washington Commanders defense, drop Jaylen Wright: +4.9 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "hold": {
   "hold": null,
-  "waiver": "-3.8 this week, not more than your best waiver move (add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
-  "waiver_gain": 0.0
+  "waiver": "−3.8 this week, not more than your best waiver move (add Washington Commanders defense, drop Jaylen Wright: +4.9 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver_gain": 4.87
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **-3.8** over week 5; them **+3.8** and **+3.8**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.8** this week and **−3.8** over week 5; them **+3.8** and **+3.8**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **101**, you get **99**: about even.",
   "ros": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 186, you get 190.",
   "size": "Roster size: no change (1 for 1).",
@@ -755,10 +755,10 @@
  "alternative": {
   "kind": "waiver",
   "player": {
-   "sleeper_id": "3257",
-   "gsis_id": "00-0033119",
-   "player_name": "Jacoby Brissett",
-   "position": "QB"
+   "sleeper_id": "WAS",
+   "gsis_id": null,
+   "player_name": "Washington Commanders",
+   "position": "DEF"
   },
   "drop": {
    "sleeper_id": "11643",
@@ -767,29 +767,45 @@
    "position": "RB"
   },
   "open_spot": false,
-  "gain_week": 0.0,
-  "gain_window": 0.0,
+  "gain_week": 4.87,
+  "gain_window": 4.87,
   "by_week": [
-   20.9
+   4.87
   ],
   "weeks": [
    5
   ],
   "span": "week 5",
-  "source": "fa_pool fill",
+  "source": "basis search",
   "note": null,
-  "words": "add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
   "covered_by_week": [
-   0.0
+   4.87
   ],
-  "covered_window": 0.0,
-  "covered_week": 0.0,
+  "covered_window": 4.87,
+  "covered_week": 4.87,
   "availability": "claim",
-  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "words": "add Washington Commanders defense, drop Jaylen Wright: +4.9 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "roster_only_pick": {
+   "player": {
+    "sleeper_id": "3257",
+    "gsis_id": "00-0033119",
+    "player_name": "Jacoby Brissett",
+    "position": "QB"
+   },
+   "drop": {
+    "sleeper_id": "11643",
+    "gsis_id": "00-0039874",
+    "player_name": "Jaylen Wright",
+    "position": "RB"
+   },
+   "gain_window": 20.9,
+   "covered_window": 0.0
+  }
  },
- "beyond_alternative": -3.78,
+ "beyond_alternative": -8.65,
  "beats_alternative": false,
- "alternative_words": "-3.8 this week, not more than your best waiver move (add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "alternative_words": "−3.8 this week, not more than your best waiver move (add Washington Commanders defense, drop Jaylen Wright: +4.9 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -907,7 +923,7 @@
     -3.78
    ],
    "raw_window": -3.78,
-   "words": "Your starters: -3.8 this week."
+   "words": "Your starters: −3.8 this week."
   },
   "their_effect": {
    "this_week": 3.78,
@@ -932,10 +948,10 @@
    "mine": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "3257",
-     "gsis_id": "00-0033119",
-     "player_name": "Jacoby Brissett",
-     "position": "QB"
+     "sleeper_id": "WAS",
+     "gsis_id": null,
+     "player_name": "Washington Commanders",
+     "position": "DEF"
     },
     "drop": {
      "sleeper_id": "11643",
@@ -944,73 +960,107 @@
      "position": "RB"
     },
     "open_spot": false,
-    "gain_week": 20.9,
-    "gain_window": 20.9,
+    "gain_week": 4.87,
+    "gain_window": 4.87,
     "by_week": [
-     20.9
+     4.87
     ],
     "weeks": [
      5
     ],
     "span": "week 5",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "the Jacoby Brissett claim gives +20.9 this week (drop Jaylen Wright)",
     "covered_by_week": [
-     0.0
+     4.87
     ],
-    "covered_window": 0.0,
-    "covered_week": 0.0,
+    "covered_window": 4.87,
+    "covered_week": 4.87,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "the Washington Commanders defense claim gives +4.9 this week (drop Jaylen Wright)",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "3257",
+      "gsis_id": "00-0033119",
+      "player_name": "Jacoby Brissett",
+      "position": "QB"
+     },
+     "drop": {
+      "sleeper_id": "11643",
+      "gsis_id": "00-0039874",
+      "player_name": "Jaylen Wright",
+      "position": "RB"
+     },
+     "gain_window": 20.9,
+     "covered_window": 0.0
+    }
    },
    "theirs": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "3451",
-     "gsis_id": "00-0032726",
-     "player_name": "Ka'imi Fairbairn",
-     "position": "K"
+     "sleeper_id": "WAS",
+     "gsis_id": null,
+     "player_name": "Washington Commanders",
+     "position": "DEF"
     },
     "drop": {
-     "sleeper_id": "4227",
-     "gsis_id": "00-0033303",
-     "player_name": "Harrison Butker",
-     "position": "K"
+     "sleeper_id": "12517",
+     "gsis_id": "00-0040126",
+     "player_name": "Colston Loveland",
+     "position": "TE"
     },
     "open_spot": false,
-    "gain_week": 9.42,
-    "gain_window": 9.42,
+    "gain_week": 3.87,
+    "gain_window": 3.87,
     "by_week": [
-     9.42
+     3.87
     ],
     "weeks": [
      5
     ],
     "span": "week 5",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "the Ka'imi Fairbairn claim gives +9.4 this week (drop Harrison Butker)",
     "covered_by_week": [
-     0.0
+     3.87
     ],
-    "covered_window": 0.0,
-    "covered_week": 0.0,
+    "covered_window": 3.87,
+    "covered_week": 3.87,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "the Washington Commanders defense claim gives +3.9 this week (drop Colston Loveland)",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "3451",
+      "gsis_id": "00-0032726",
+      "player_name": "Ka'imi Fairbairn",
+      "position": "K"
+     },
+     "drop": {
+      "sleeper_id": "4227",
+      "gsis_id": "00-0033303",
+      "player_name": "Harrison Butker",
+      "position": "K"
+     },
+     "gain_window": 9.42,
+     "covered_window": 0.0
+    }
    },
-   "words": "Yours: add Jacoby Brissett, drop Jaylen Wright: +0.0 this week (+20.9 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Ka'imi Fairbairn, drop Harrison Butker: +0.0 this week (+9.4 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+   "words": "Yours: add Washington Commanders defense, drop Jaylen Wright: +4.9 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Washington Commanders defense, drop Colston Loveland: +3.9 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
-   "mine": -3.78,
-   "theirs": 3.78,
+   "mine": -8.65,
+   "theirs": -0.09,
    "margin": 1.0
   },
   "why_consider": [
-   "Their starters gain +3.8 this week, 3.8 more than their best waiver move (+0.0 once empty slots are filled from the free pool).",
+   "Their starters gain +3.8 this week.",
    "Kyren Williams starts for them in week 5."
   ],
-  "why_refuse": [],
+  "why_refuse": [
+   "Their best waiver move (Washington Commanders defense, +3.9) does about as much or more for them this week."
+  ],
   "plausibility": {
    "key": "plausible",
    "label": "Plausible offer",
@@ -1033,7 +1083,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters end 3.8 behind your best waiver move this week (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 8.7 behind your best waiver move this week (the bar is 1 point); Daejon Loves PR team's starters end 0.1 behind their own best move this week.",
    "plausibility": "Plausible offer"
   }
  },
@@ -1100,11 +1150,11 @@
    "title": "Effect on their starters",
    "need": "puts Williams at their RB in place of McCaffrey"
   },
-  "verdict": "Does not help your lineup (-3.8 this week, -3.8 over week 5), them +3.8 (+3.8 over week 5); about even by season value: not worth it for your lineup.",
-  "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280).** Does not help your lineup (-3.8 this week, -3.8 over week 5), them +3.8 (+3.8 over week 5); about even by season value: not worth it for your lineup.",
+  "verdict": "Does not help your lineup (−3.8 this week, −3.8 over week 5), them +3.8 (+3.8 over week 5); about even by season value: not worth it for your lineup.",
+  "headline": "**You give [Kyren Williams](/player/00-0037840); you get [Christian McCaffrey](/player/00-0033280).** Does not help your lineup (−3.8 this week, −3.8 over week 5), them +3.8 (+3.8 over week 5); about even by season value: not worth it for your lineup.",
   "effect_words": "Your starting lineup: about 3.8 fewer points this week.",
   "their_effect_words": "Daejon Loves PR team's starting lineup: about 3.8 more points this week.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **-3.8** over week 5; them **+3.8** and **+3.8**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.8** this week and **−3.8** over week 5; them **+3.8** and **+3.8**.",
   "strip": {
    "weeks": [
     5
@@ -1138,10 +1188,10 @@
    "mine": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "3257",
-     "gsis_id": "00-0033119",
-     "player_name": "Jacoby Brissett",
-     "position": "QB"
+     "sleeper_id": "WAS",
+     "gsis_id": null,
+     "player_name": "Washington Commanders",
+     "position": "DEF"
     },
     "drop": {
      "sleeper_id": "11643",
@@ -1150,74 +1200,106 @@
      "position": "RB"
     },
     "open_spot": false,
-    "gain_week": 0.0,
-    "gain_window": 0.0,
+    "gain_week": 4.87,
+    "gain_window": 4.87,
     "by_week": [
-     20.9
+     4.87
     ],
     "weeks": [
      5
     ],
     "span": "week 5",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "covered_by_week": [
-     0.0
+     4.87
     ],
-    "covered_window": 0.0,
-    "covered_week": 0.0,
+    "covered_window": 4.87,
+    "covered_week": 4.87,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Washington Commanders defense, drop Jaylen Wright: +4.9 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "3257",
+      "gsis_id": "00-0033119",
+      "player_name": "Jacoby Brissett",
+      "position": "QB"
+     },
+     "drop": {
+      "sleeper_id": "11643",
+      "gsis_id": "00-0039874",
+      "player_name": "Jaylen Wright",
+      "position": "RB"
+     },
+     "gain_window": 20.9,
+     "covered_window": 0.0
+    }
    },
    "theirs": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "3451",
-     "gsis_id": "00-0032726",
-     "player_name": "Ka'imi Fairbairn",
-     "position": "K"
+     "sleeper_id": "WAS",
+     "gsis_id": null,
+     "player_name": "Washington Commanders",
+     "position": "DEF"
     },
     "drop": {
-     "sleeper_id": "4227",
-     "gsis_id": "00-0033303",
-     "player_name": "Harrison Butker",
-     "position": "K"
+     "sleeper_id": "12517",
+     "gsis_id": "00-0040126",
+     "player_name": "Colston Loveland",
+     "position": "TE"
     },
     "open_spot": false,
-    "gain_week": 9.42,
-    "gain_window": 9.42,
+    "gain_week": 3.87,
+    "gain_window": 3.87,
     "by_week": [
-     9.42
+     3.87
     ],
     "weeks": [
      5
     ],
     "span": "week 5",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "add Ka'imi Fairbairn, drop Harrison Butker: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "covered_by_week": [
-     0.0
+     3.87
     ],
-    "covered_window": 0.0,
-    "covered_week": 0.0,
+    "covered_window": 3.87,
+    "covered_week": 3.87,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Washington Commanders defense, drop Colston Loveland: +3.9 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "3451",
+      "gsis_id": "00-0032726",
+      "player_name": "Ka'imi Fairbairn",
+      "position": "K"
+     },
+     "drop": {
+      "sleeper_id": "4227",
+      "gsis_id": "00-0033303",
+      "player_name": "Harrison Butker",
+      "position": "K"
+     },
+     "gain_window": 9.42,
+     "covered_window": 0.0
+    }
    },
    "beyond": {
-    "mine": -3.78,
-    "theirs": 3.78
+    "mine": -8.65,
+    "theirs": -0.09
    },
    "beats": false,
-   "words": "-3.8 this week, not more than your best waiver move (add Jacoby Brissett, drop Jaylen Wright: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "words": "−3.8 this week, not more than your best waiver move (add Washington Commanders defense, drop Jaylen Wright: +4.9 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
    "other_objective": null
   },
   "recommendation": {
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters end 3.8 behind your best waiver move this week (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 8.7 behind your best waiver move this week (the bar is 1 point); Daejon Loves PR team's starters end 0.1 behind their own best move this week.",
    "plausibility": "Plausible offer"
   },
   "changes": {
@@ -1408,7 +1490,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -3.8 this week; Daejon Loves PR team's +3.8. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −3.8 this week; Daejon Loves PR team's +3.8. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -3.78,
     "gain_window": -3.78,

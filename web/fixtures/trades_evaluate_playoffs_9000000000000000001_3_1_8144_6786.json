@@ -101,7 +101,7 @@
    "mine": -3.91,
    "theirs": 3.91
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.9** this week and **-3.9** over weeks 15–17; them **+3.9** and **+3.9**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.9** this week and **−3.9** over weeks 15–17; them **+3.9** and **+3.9**."
  },
  "interest": {
   "score": 62,
@@ -177,8 +177,8 @@
    }
   ]
  },
- "verdict": "Does not help your lineup (-3.9 this week, -3.9 over weeks 15–17), them +3.9 (+3.9 over weeks 15–17); you give up more season value: not worth it for your lineup.",
- "headline": "**You give [Chris Olave](/player/00-0037239); you get [CeeDee Lamb](/player/00-0036358).** Does not help your lineup (-3.9 this week, -3.9 over weeks 15–17), them +3.9 (+3.9 over weeks 15–17); you give up more season value: not worth it for your lineup.",
+ "verdict": "Does not help your lineup (−3.9 this week, −3.9 over weeks 15–17), them +3.9 (+3.9 over weeks 15–17); you give up more season value: not worth it for your lineup.",
+ "headline": "**You give [Chris Olave](/player/00-0037239); you get [CeeDee Lamb](/player/00-0036358).** Does not help your lineup (−3.9 this week, −3.9 over weeks 15–17), them +3.9 (+3.9 over weeks 15–17); you give up more season value: not worth it for your lineup.",
  "ros": {
   "give": 249,
   "get": 233,
@@ -794,14 +794,14 @@
   "lineup_words": "Chris Olave (from the trade) starts at WR in place of CeeDee Lamb (traded)."
  },
  "window_words": "over weeks 15–17 in total",
- "hold_words": "-3.9 over weeks 15–17, not more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "hold_words": "−3.9 over weeks 15–17, not more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "hold": {
   "hold": null,
-  "waiver": "-3.9 over weeks 15–17, not more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver": "−3.9 over weeks 15–17, not more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
   "waiver_gain": 5.57
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.9** this week and **-3.9** over weeks 15–17; them **+3.9** and **+3.9**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.9** this week and **−3.9** over weeks 15–17; them **+3.9** and **+3.9**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **95**, you get **78**: you give 17 more.",
   "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 249, you get 233.",
   "size": "Roster size: you must cut [Pat Freiermuth](/player/00-0036894) (TE, 113 season points; costs 0.0 over weeks 15–17) to stay at 15 players; they must cut [DJ Moore](/player/00-0034827) (WR, 129 season points; costs 0.0 over weeks 15–17) to stay at 15 players.",
@@ -851,7 +851,7 @@
  },
  "beyond_alternative": -9.48,
  "beats_alternative": false,
- "alternative_words": "-3.9 over weeks 15–17, not more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "alternative_words": "−3.9 over weeks 15–17, not more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -1019,7 +1019,7 @@
     -1.28
    ],
    "raw_window": -3.91,
-   "words": "Your starters: -1.3 this week, -3.9 over weeks 15–17."
+   "words": "Your starters: −1.3 this week, −3.9 over weeks 15–17."
   },
   "their_effect": {
    "this_week": 1.32,
@@ -1170,7 +1170,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -9.5 beyond your best waiver move over weeks 15–17 (the bar is 1 point); Bench Mob's starters gain -1.3 beyond their own best move over weeks 15–17.",
+   "words": "Not worth proposing: your starters end 9.5 behind your best waiver move over weeks 15–17 (the bar is 1 point); Bench Mob's starters end 1.3 behind their own best move over weeks 15–17.",
    "plausibility": "A roster-fit idea"
   }
  },
@@ -1279,11 +1279,11 @@
    "title": "Effect on their starters",
    "need": "puts Olave at their WR in place of Lamb"
   },
-  "verdict": "Does not help your lineup (-3.9 this week, -3.9 over weeks 15–17), them +3.9 (+3.9 over weeks 15–17); you give up more season value: not worth it for your lineup.",
-  "headline": "**You give [Chris Olave](/player/00-0037239); you get [CeeDee Lamb](/player/00-0036358).** Does not help your lineup (-3.9 this week, -3.9 over weeks 15–17), them +3.9 (+3.9 over weeks 15–17); you give up more season value: not worth it for your lineup.",
+  "verdict": "Does not help your lineup (−3.9 this week, −3.9 over weeks 15–17), them +3.9 (+3.9 over weeks 15–17); you give up more season value: not worth it for your lineup.",
+  "headline": "**You give [Chris Olave](/player/00-0037239); you get [CeeDee Lamb](/player/00-0036358).** Does not help your lineup (−3.9 this week, −3.9 over weeks 15–17), them +3.9 (+3.9 over weeks 15–17); you give up more season value: not worth it for your lineup.",
   "effect_words": "Your starting lineup: about 3.9 fewer points this week, about 3.9 fewer points in total over weeks 15–17.",
   "their_effect_words": "Bench Mob's starting lineup: about 3.9 more points this week, about 3.9 more points in total over weeks 15–17.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.9** this week and **-3.9** over weeks 15–17; them **+3.9** and **+3.9**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.9** this week and **−3.9** over weeks 15–17; them **+3.9** and **+3.9**.",
   "strip": {
    "weeks": [
     15,
@@ -1415,14 +1415,14 @@
     "theirs": -1.32
    },
    "beats": false,
-   "words": "-3.9 over weeks 15–17, not more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "words": "−3.9 over weeks 15–17, not more than your best waiver move (add Malik Willis, drop Jared Goff: +5.6 over weeks 15–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
    "other_objective": null
   },
   "recommendation": {
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -9.5 beyond your best waiver move over weeks 15–17 (the bar is 1 point); Bench Mob's starters gain -1.3 beyond their own best move over weeks 15–17.",
+   "words": "Not worth proposing: your starters end 9.5 behind your best waiver move over weeks 15–17 (the bar is 1 point); Bench Mob's starters end 1.3 behind their own best move over weeks 15–17.",
    "plausibility": "A roster-fit idea"
   },
   "changes": {
@@ -1595,7 +1595,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -3.9 this week, -3.9 over weeks 15–17; Bench Mob's +3.9 and +3.9. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −3.9 this week, −3.9 over weeks 15–17; Bench Mob's +3.9 and +3.9. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -3.88,
     "gain_window": -3.91,

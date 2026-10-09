@@ -74,7 +74,8 @@ const evalFile = (league: string, team: number, partner: number, give: string[],
   `trades_evaluate_${league}_${team}_${partner}_${[...give].sort().join("-")}_${[...get].sort().join("-")}.json`;
 const bestOf = (league: string, team: number) => {
   const all = fx(`trades_partners_${league}_${team}_ALL.json`);
-  return all.partners.find((p: { is_best: boolean }) => p.is_best) ?? all.partners[0];
+  // IT-1: the screen's "Try it" is the first credible row when the answer has one (the Finder on the calculator's basis)
+  return all.partners.find((p: { tier?: string }) => p.tier === "credible") ?? all.partners.find((p: { is_best: boolean }) => p.is_best) ?? all.partners[0];
 };
 
 for (const scheme of SCHEMES) {
@@ -257,14 +258,25 @@ for (const scheme of SCHEMES) {
       await page.goto(`/trades?league=${DYNASTY}&team=12`);
       await page.getByTestId("want-RB").click();
       await expect(page).toHaveURL(/want=RB/);
-      await expect(page.getByTestId("partner-row")).toHaveCount(Math.min(12, rb.partners.length));
-      await expect(page.getByTestId("partner-row").first()).toContainText(rb.partners[0].partner_team);
+      // IT-1 (re-saved on the calculator's basis): the credible cards, then up to 12 behind "Explore alternatives"
+      const credRb = rb.partners.filter((p: { tier?: string }) => p.tier === "credible");
+      const explRb = rb.partners.filter((p: { tier?: string }) => p.tier !== "credible");
+      await expect(page.getByTestId("partner-row")).toHaveCount(credRb.length + Math.min(12, explRb.length));
+      await expect(page.getByTestId("partner-row").first()).toContainText((credRb[0] ?? rb.partners[0]).partner_team);
       await noSidewaysScroll(page);
       // the Test League (on demand): the best partner's trade
-      const tb = bestOf(TEST_LEAGUE, 3);
+      // IT-1 (re-saved on the calculator's basis): nothing is worth proposing for team 3 today, so the trade opened is
+      // the first suggestion behind "Explore alternatives" (its Try it); with a credible trade, the headline's
+      const tall = fx(`trades_partners_${TEST_LEAGUE}_3_ALL.json`);
+      const tcred = tall.partners.filter((p: { tier?: string }) => p.tier === "credible");
+      const tb = tcred[0] ?? tall.partners[0];
       const tev = fx(evalFile(TEST_LEAGUE, 3, tb.partner, ids(tb.give), ids(tb.get)));
       await page.goto(`/trades?league=${TEST_LEAGUE}&team=3`);
-      await page.getByTestId("try-best").click();
+      if (tcred.length) await page.getByTestId("try-best").click();
+      else {
+        await page.getByTestId("explore").locator("summary").first().click();
+        await page.getByTestId("partner-row").first().getByTestId("try-partner").click();
+      }
       await expect(page.getByTestId("verdict")).toHaveText(tev.verdict);
       await shot(page, "trades_test", info, scheme);
       await context.close();

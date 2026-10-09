@@ -114,7 +114,7 @@
    "mine": 9.23,
    "theirs": 21.09
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-0.6** this week and **+9.2** over weeks 15–17; them **+10.3** and **+21.1**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−0.6** this week and **+9.2** over weeks 15–17; them **+10.3** and **+21.1**."
  },
  "interest": {
   "score": 100,
@@ -196,8 +196,8 @@
    }
   ]
  },
- "verdict": "Helps your lineup +9.2 over weeks 15–17 (-0.6 this week), them +10.3 (+21.1 over weeks 15–17); you give up more season value: helps both lineups.",
- "headline": "**You give [Bo Nix](/player/00-0039732); you get [David Montgomery](/player/00-0035685) and [Breece Hall](/player/00-0038120).** Helps your lineup +9.2 over weeks 15–17 (-0.6 this week), them +10.3 (+21.1 over weeks 15–17); you give up more season value: helps both lineups.",
+ "verdict": "Helps your lineup +9.2 over weeks 15–17 (−0.6 this week), them +10.3 (+21.1 over weeks 15–17); you give up more season value: helps both lineups.",
+ "headline": "**You give [Bo Nix](/player/00-0039732); you get [David Montgomery](/player/00-0035685) and [Breece Hall](/player/00-0038120).** Helps your lineup +9.2 over weeks 15–17 (−0.6 this week), them +10.3 (+21.1 over weeks 15–17); you give up more season value: helps both lineups.",
  "ros": {
   "give": 271,
   "get": 305,
@@ -916,7 +916,7 @@
   "waiver_gain": 0.06
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-0.6** this week and **+9.2** over weeks 15–17; them **+10.3** and **+21.1**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−0.6** this week and **+9.2** over weeks 15–17; them **+10.3** and **+21.1**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **195**, you get **149**: you give 46 more.",
   "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 271, you get 305.",
   "size": "Roster size: you must cut [Jaylen Wright](/player/00-0039874) (RB, 50 season points; costs 0.0 over weeks 15–17) to stay at 21 players; you must cut [Tory Horton](/player/00-0040648) (WR, 62 season points; costs 0.0 over weeks 15–17) to stay at 21 players; they open a spot: no free agent would add to that lineup over weeks 15–17.",
@@ -1391,11 +1391,11 @@
    "title": "Effect on their starters",
    "need": "puts Nix at their Superflex in place of Judkins and moves Judkins from Superflex to RB"
   },
-  "verdict": "Helps your lineup +9.2 over weeks 15–17 (-0.6 this week), them +10.3 (+21.1 over weeks 15–17); you give up more season value: helps both lineups.",
-  "headline": "**You give [Bo Nix](/player/00-0039732); you get [David Montgomery](/player/00-0035685) and [Breece Hall](/player/00-0038120).** Helps your lineup +9.2 over weeks 15–17 (-0.6 this week), them +10.3 (+21.1 over weeks 15–17); you give up more season value: helps both lineups.",
+  "verdict": "Helps your lineup +9.2 over weeks 15–17 (−0.6 this week), them +10.3 (+21.1 over weeks 15–17); you give up more season value: helps both lineups.",
+  "headline": "**You give [Bo Nix](/player/00-0039732); you get [David Montgomery](/player/00-0035685) and [Breece Hall](/player/00-0038120).** Helps your lineup +9.2 over weeks 15–17 (−0.6 this week), them +10.3 (+21.1 over weeks 15–17); you give up more season value: helps both lineups.",
   "effect_words": "Your starting lineup: about 0.6 fewer points this week, about 9.2 more points in total over weeks 15–17.",
   "their_effect_words": "The72Repeat's starting lineup: about 10.3 more points this week, about 21 more in total over weeks 15–17.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-0.6** this week and **+9.2** over weeks 15–17; them **+10.3** and **+21.1**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−0.6** this week and **+9.2** over weeks 15–17; them **+10.3** and **+21.1**.",
   "strip": {
    "weeks": [
     15,
@@ -1796,7 +1796,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -0.6 this week, +9.2 over weeks 15–17; The72Repeat's +10.3 and +21.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −0.6 this week, +9.2 over weeks 15–17; The72Repeat's +10.3 and +21.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -0.56,
     "gain_window": 9.23,

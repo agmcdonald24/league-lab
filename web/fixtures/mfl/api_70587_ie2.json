@@ -1568,7 +1568,7 @@
      "mine": 13.62,
      "theirs": -11.06
     },
-    "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.6** this week and **+13.6** over weeks 4\u20137; them **-4.8** and **-11.1**."
+    "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.6** this week and **+13.6** over weeks 4\u20137; them **\u22124.8** and **\u221211.1**."
    },
    "interest": {
     "score": 0,
@@ -2204,14 +2204,14 @@
     "lineup_words": "Tre Tucker (from the bench) starts at WR/TE in place of Rashee Rice (traded)."
    },
    "window_words": "over weeks 4\u20137 in total",
-   "hold_words": "+13.6 over weeks 4\u20137, 13.6 more than your best waiver move (add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
+   "hold_words": "+13.6 over weeks 4\u20137, 2.8 more than your best waiver move (add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
    "hold": {
     "hold": null,
-    "waiver": "+13.6 over weeks 4\u20137, 13.6 more than your best waiver move (add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
-    "waiver_gain": 0.0
+    "waiver": "+13.6 over weeks 4\u20137, 2.8 more than your best waiver move (add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
+    "waiver_gain": 10.84
    },
    "how": {
-    "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.6** this week and **+13.6** over weeks 4\u20137; them **-4.8** and **-11.1**.",
+    "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.6** this week and **+13.6** over weeks 4\u20137; them **\u22124.8** and **\u221211.1**.",
     "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **15**, you get **40**: you get 25 more.",
     "ros": "Rest-of-season projected points (weeks 4\u201318), all positions added up \u2014 not a fairness test: you give 142, you get 165.",
     "size": "Roster size: no change (1 for 1).",
@@ -2221,24 +2221,20 @@
    "alternative": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "CHI",
+     "sleeper_id": "mfl:TMQB-ARI",
      "gsis_id": null,
-     "player_name": "Chicago Bears",
-     "position": "DEF",
-     "team": "CHI",
-     "headshot_url": null
+     "player_name": "Arizona Cardinals QB",
+     "position": "TMQB"
     },
     "drop": null,
     "open_spot": true,
-    "gain_week": 2.08,
-    "gain_window": 0.0,
-    "starter_gain_week": 2.08,
-    "starter_gain_window": 11.89,
+    "gain_week": 0.0,
+    "gain_window": 10.84,
     "by_week": [
-     2.08,
      0.0,
-     0.0,
-     9.81
+     9.26,
+     0.66,
+     0.92
     ],
     "weeks": [
      4,
@@ -2247,23 +2243,36 @@
      7
     ],
     "span": "weeks 4\u20137",
-    "drop_cost": null,
-    "words": "add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else",
-    "source": "waivers.best_waiver_move",
+    "source": "basis search",
+    "note": null,
     "covered_by_week": [
-     2.08,
      0.0,
-     0.0,
-     -2.08
+     9.26,
+     0.66,
+     0.92
     ],
-    "covered_window": 0.0,
-    "covered_week": 2.08,
+    "covered_window": 10.84,
+    "covered_week": 0.0,
     "availability": "guaranteed",
-    "availability_words": "first come, first served: he is yours if you add him before anyone else"
+    "availability_words": "first come, first served: he is yours if you add him before anyone else",
+    "words": "add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "CHI",
+      "gsis_id": null,
+      "player_name": "Chicago Bears",
+      "position": "DEF",
+      "team": "CHI",
+      "headshot_url": null
+     },
+     "drop": null,
+     "gain_window": 11.89,
+     "covered_window": 0.0
+    }
    },
-   "beyond_alternative": 13.62,
+   "beyond_alternative": 2.78,
    "beats_alternative": true,
-   "alternative_words": "+13.6 over weeks 4\u20137, 13.6 more than your best waiver move (add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
+   "alternative_words": "+13.6 over weeks 4\u20137, 2.8 more than your best waiver move (add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
    "other_objective": null,
    "strip": {
     "weeks": [
@@ -2417,7 +2426,7 @@
       -4.23
      ],
      "raw_window": -11.06,
-     "words": "Madeyes Revenge's starters: -4.8 this week, -11.1 over weeks 4\u20137."
+     "words": "Madeyes Revenge's starters: \u22124.8 this week, \u221211.1 over weeks 4\u20137."
     },
     "depth_cost": {
      "mine": "You lose Bhayshul Tuten, a backup RB: 1 RB left on your bench who can play in week 4.",
@@ -2433,24 +2442,20 @@
      "mine": {
       "kind": "waiver",
       "player": {
-       "sleeper_id": "CHI",
+       "sleeper_id": "mfl:TMQB-ARI",
        "gsis_id": null,
-       "player_name": "Chicago Bears",
-       "position": "DEF",
-       "team": "CHI",
-       "headshot_url": null
+       "player_name": "Arizona Cardinals QB",
+       "position": "TMQB"
       },
       "drop": null,
       "open_spot": true,
-      "gain_week": 2.08,
-      "gain_window": 11.89,
-      "starter_gain_week": 2.08,
-      "starter_gain_window": 11.89,
+      "gain_week": 0.0,
+      "gain_window": 10.84,
       "by_week": [
-       2.08,
        0.0,
-       0.0,
-       9.81
+       9.26,
+       0.66,
+       0.92
       ],
       "weeks": [
        4,
@@ -2459,48 +2464,55 @@
        7
       ],
       "span": "weeks 4\u20137",
-      "drop_cost": null,
-      "words": "the Chicago Bears defense claim gives +11.9 over weeks 4\u20137 for an open spot",
-      "source": "waivers.best_waiver_move",
+      "source": "basis search",
+      "note": null,
       "covered_by_week": [
-       2.08,
        0.0,
-       0.0,
-       -2.08
+       9.26,
+       0.66,
+       0.92
       ],
-      "covered_window": 0.0,
-      "covered_week": 2.08,
+      "covered_window": 10.84,
+      "covered_week": 0.0,
       "availability": "guaranteed",
-      "availability_words": "first come, first served: he is yours if you add him before anyone else"
+      "availability_words": "first come, first served: he is yours if you add him before anyone else",
+      "words": "the Arizona Cardinals QB claim gives +10.8 over weeks 4\u20137 for an open spot",
+      "roster_only_pick": {
+       "player": {
+        "sleeper_id": "CHI",
+        "gsis_id": null,
+        "player_name": "Chicago Bears",
+        "position": "DEF",
+        "team": "CHI",
+        "headshot_url": null
+       },
+       "drop": null,
+       "gain_window": 11.89,
+       "covered_window": 0.0
+      }
      },
      "theirs": {
       "kind": "waiver",
       "player": {
-       "sleeper_id": "mfl:TMQB-ARI",
+       "sleeper_id": "mfl:TMPK-NO",
        "gsis_id": null,
-       "player_name": "Arizona Cardinals QB",
-       "position": "TMQB",
-       "team": "ARI",
-       "headshot_url": null
+       "player_name": "New Orleans Saints K",
+       "position": "TMPK"
       },
       "drop": {
        "sleeper_id": "12489",
        "gsis_id": "00-0040730",
        "player_name": "RJ Harvey",
-       "position": "RB",
-       "team": null,
-       "headshot_url": null
+       "position": "RB"
       },
       "open_spot": false,
-      "gain_week": 0.0,
-      "gain_window": 36.66,
-      "starter_gain_week": 0.0,
-      "starter_gain_window": 36.66,
+      "gain_week": 3.33,
+      "gain_window": 10.63,
       "by_week": [
-       0.0,
-       36.66,
-       0.0,
-       0.0
+       3.33,
+       0.89,
+       1.47,
+       4.94
       ],
       "weeks": [
        4,
@@ -2509,37 +2521,45 @@
        7
       ],
       "span": "weeks 4\u20137",
-      "drop_cost": {
-       "lineup_loss": 0.0,
-       "depth_lost": 0.0,
-       "future_starts": 0.0,
-       "future_start_weeks": 0,
-       "season_value": 0.0,
-       "season_points": 102.51,
-       "replacement_points": 127.28,
-       "upside": null,
-       "cost": 0.0,
-       "piece": null,
-       "is_incumbent": false
-      },
-      "words": "the Arizona Cardinals QB claim gives +36.7 over weeks 4\u20137 (drop RJ Harvey)",
-      "source": "waivers.best_waiver_move",
+      "source": "basis search",
+      "note": null,
       "covered_by_week": [
-       0.0,
-       0.0,
-       0.0,
-       0.0
+       3.33,
+       0.89,
+       1.47,
+       4.94
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": 10.63,
+      "covered_week": 3.33,
       "availability": "guaranteed",
-      "availability_words": "first come, first served: he is yours if you add him before anyone else"
+      "availability_words": "first come, first served: he is yours if you add him before anyone else",
+      "words": "the New Orleans Saints K claim gives +10.6 over weeks 4\u20137 (drop RJ Harvey)",
+      "roster_only_pick": {
+       "player": {
+        "sleeper_id": "mfl:TMQB-ARI",
+        "gsis_id": null,
+        "player_name": "Arizona Cardinals QB",
+        "position": "TMQB",
+        "team": "ARI",
+        "headshot_url": null
+       },
+       "drop": {
+        "sleeper_id": "12489",
+        "gsis_id": "00-0040730",
+        "player_name": "RJ Harvey",
+        "position": "RB",
+        "team": null,
+        "headshot_url": null
+       },
+       "gain_window": 36.66,
+       "covered_window": 0.0
+      }
      },
-     "words": "Yours: add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 (+11.9 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else). Theirs: add Arizona Cardinals QB, drop RJ Harvey: +0.0 over weeks 4\u20137 (+36.7 if empty slots were left empty) (first come, first served: he is yours if you add him before anyone else)."
+     "words": "Yours: add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else). Theirs: add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 (first come, first served: he is yours if you add him before anyone else)."
     },
     "beyond": {
-     "mine": 13.62,
-     "theirs": -11.06,
+     "mine": 2.78,
+     "theirs": -21.69,
      "margin": 1.0
     },
     "why_consider": [
@@ -2547,7 +2567,7 @@
     ],
     "why_refuse": [
      "Their starters lose 4.8 this week.",
-     "It does not improve their starters over weeks 4\u20137 (-11.1).",
+     "It does not improve their starters over weeks 4\u20137 (\u221211.1).",
      "They give 40 season value above replacement for 15: 25 more, over 25% of what you give."
     ],
     "plausibility": {
@@ -2579,7 +2599,7 @@
      "credible": false,
      "key": "not_worth_proposing",
      "label": "Not worth proposing",
-     "words": "Not worth proposing: Madeyes Revenge's starters gain -11.1 beyond their own best move over weeks 4\u20137; they give 40 season value above replacement for 15: 25 more, over 25% of what you give.",
+     "words": "Not worth proposing: Madeyes Revenge's starters end 21.7 behind their own best move over weeks 4\u20137; they give 40 season value above replacement for 15: 25 more, over 25% of what you give.",
      "plausibility": "Implausible"
     }
    },
@@ -2671,7 +2691,7 @@
     "headline": "**You give [Bhayshul Tuten](/player/00-0040719); you get [Rashee Rice](/player/00-0039067).** Helps your lineup +4.6 this week (+13.6 over weeks 4\u20137), costs their lineup 4.8 (11.1 over weeks 4\u20137); you get more season value: a lineup loss for them.",
     "effect_words": "Your starting lineup: about 4.6 more points this week, about 14 more in total over weeks 4\u20137.",
     "their_effect_words": "Madeyes Revenge's starting lineup: about 4.8 fewer points this week, about 11 fewer in total over weeks 4\u20137.",
-    "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.6** this week and **+13.6** over weeks 4\u20137; them **-4.8** and **-11.1**.",
+    "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+4.6** this week and **+13.6** over weeks 4\u20137; them **\u22124.8** and **\u221211.1**.",
     "strip": {
      "weeks": [
       4,
@@ -2726,24 +2746,20 @@
      "mine": {
       "kind": "waiver",
       "player": {
-       "sleeper_id": "CHI",
+       "sleeper_id": "mfl:TMQB-ARI",
        "gsis_id": null,
-       "player_name": "Chicago Bears",
-       "position": "DEF",
-       "team": "CHI",
-       "headshot_url": null
+       "player_name": "Arizona Cardinals QB",
+       "position": "TMQB"
       },
       "drop": null,
       "open_spot": true,
-      "gain_week": 2.08,
-      "gain_window": 0.0,
-      "starter_gain_week": 2.08,
-      "starter_gain_window": 11.89,
+      "gain_week": 0.0,
+      "gain_window": 10.84,
       "by_week": [
-       2.08,
        0.0,
-       0.0,
-       9.81
+       9.26,
+       0.66,
+       0.92
       ],
       "weeks": [
        4,
@@ -2752,48 +2768,55 @@
        7
       ],
       "span": "weeks 4\u20137",
-      "drop_cost": null,
-      "words": "add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else",
-      "source": "waivers.best_waiver_move",
+      "source": "basis search",
+      "note": null,
       "covered_by_week": [
-       2.08,
        0.0,
-       0.0,
-       -2.08
+       9.26,
+       0.66,
+       0.92
       ],
-      "covered_window": 0.0,
-      "covered_week": 2.08,
+      "covered_window": 10.84,
+      "covered_week": 0.0,
       "availability": "guaranteed",
-      "availability_words": "first come, first served: he is yours if you add him before anyone else"
+      "availability_words": "first come, first served: he is yours if you add him before anyone else",
+      "words": "add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else",
+      "roster_only_pick": {
+       "player": {
+        "sleeper_id": "CHI",
+        "gsis_id": null,
+        "player_name": "Chicago Bears",
+        "position": "DEF",
+        "team": "CHI",
+        "headshot_url": null
+       },
+       "drop": null,
+       "gain_window": 11.89,
+       "covered_window": 0.0
+      }
      },
      "theirs": {
       "kind": "waiver",
       "player": {
-       "sleeper_id": "mfl:TMQB-ARI",
+       "sleeper_id": "mfl:TMPK-NO",
        "gsis_id": null,
-       "player_name": "Arizona Cardinals QB",
-       "position": "TMQB",
-       "team": "ARI",
-       "headshot_url": null
+       "player_name": "New Orleans Saints K",
+       "position": "TMPK"
       },
       "drop": {
        "sleeper_id": "12489",
        "gsis_id": "00-0040730",
        "player_name": "RJ Harvey",
-       "position": "RB",
-       "team": null,
-       "headshot_url": null
+       "position": "RB"
       },
       "open_spot": false,
-      "gain_week": 0.0,
-      "gain_window": 36.66,
-      "starter_gain_week": 0.0,
-      "starter_gain_window": 36.66,
+      "gain_week": 3.33,
+      "gain_window": 10.63,
       "by_week": [
-       0.0,
-       36.66,
-       0.0,
-       0.0
+       3.33,
+       0.89,
+       1.47,
+       4.94
       ],
       "weeks": [
        4,
@@ -2802,45 +2825,53 @@
        7
       ],
       "span": "weeks 4\u20137",
-      "drop_cost": {
-       "lineup_loss": 0.0,
-       "depth_lost": 0.0,
-       "future_starts": 0.0,
-       "future_start_weeks": 0,
-       "season_value": 0.0,
-       "season_points": 102.51,
-       "replacement_points": 127.28,
-       "upside": null,
-       "cost": 0.0,
-       "piece": null,
-       "is_incumbent": false
-      },
-      "words": "add Arizona Cardinals QB, drop RJ Harvey: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else",
-      "source": "waivers.best_waiver_move",
+      "source": "basis search",
+      "note": null,
       "covered_by_week": [
-       0.0,
-       0.0,
-       0.0,
-       0.0
+       3.33,
+       0.89,
+       1.47,
+       4.94
       ],
-      "covered_window": 0.0,
-      "covered_week": 0.0,
+      "covered_window": 10.63,
+      "covered_week": 3.33,
       "availability": "guaranteed",
-      "availability_words": "first come, first served: he is yours if you add him before anyone else"
+      "availability_words": "first come, first served: he is yours if you add him before anyone else",
+      "words": "add New Orleans Saints K, drop RJ Harvey: +10.6 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else",
+      "roster_only_pick": {
+       "player": {
+        "sleeper_id": "mfl:TMQB-ARI",
+        "gsis_id": null,
+        "player_name": "Arizona Cardinals QB",
+        "position": "TMQB",
+        "team": "ARI",
+        "headshot_url": null
+       },
+       "drop": {
+        "sleeper_id": "12489",
+        "gsis_id": "00-0040730",
+        "player_name": "RJ Harvey",
+        "position": "RB",
+        "team": null,
+        "headshot_url": null
+       },
+       "gain_window": 36.66,
+       "covered_window": 0.0
+      }
      },
      "beyond": {
-      "mine": 13.62,
-      "theirs": -11.06
+      "mine": 2.78,
+      "theirs": -21.69
      },
      "beats": true,
-     "words": "+13.6 over weeks 4\u20137, 13.6 more than your best waiver move (add Chicago Bears defense for an open roster spot: +0.0 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
+     "words": "+13.6 over weeks 4\u20137, 2.8 more than your best waiver move (add Arizona Cardinals QB for an open roster spot: +10.8 over weeks 4\u20137 on the same basis; first come, first served: he is yours if you add him before anyone else).",
      "other_objective": null
     },
     "recommendation": {
      "credible": false,
      "key": "not_worth_proposing",
      "label": "Not worth proposing",
-     "words": "Not worth proposing: Madeyes Revenge's starters gain -11.1 beyond their own best move over weeks 4\u20137; they give 40 season value above replacement for 15: 25 more, over 25% of what you give.",
+     "words": "Not worth proposing: Madeyes Revenge's starters end 21.7 behind their own best move over weeks 4\u20137; they give 40 season value above replacement for 15: 25 more, over 25% of what you give.",
      "plausibility": "Implausible"
     },
     "changes": {
@@ -3033,7 +3064,7 @@
     },
     "unfilled": {
      "label": "If empty slots were left empty",
-     "words": "With nobody added for an empty slot (it counts 0): your starters +4.6 this week, +13.6 over weeks 4\u20137; Madeyes Revenge's -4.8 and -11.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+     "words": "With nobody added for an empty slot (it counts 0): your starters +4.6 this week, +13.6 over weeks 4\u20137; Madeyes Revenge's \u22124.8 and \u221211.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
      "mine": {
       "gain_week": 4.56,
       "gain_window": 13.62,
@@ -3075,13 +3106,13 @@
    },
    "timings_ms": {
     "context": 0.0,
-    "evaluate": 5.0,
-    "words": 34.3,
-    "total": 39.3,
-    "league.sleeper": 3.4,
-    "league.price": 1326.5,
-    "league.solve": 141.6,
-    "league.total": 1471.5
+    "evaluate": 3.4,
+    "words": 27.2,
+    "total": 30.7,
+    "league.sleeper": 2.9,
+    "league.price": 1136.3,
+    "league.solve": 118.5,
+    "league.total": 1257.7
    },
    "provenance": {
     "model_version": "v3.0",

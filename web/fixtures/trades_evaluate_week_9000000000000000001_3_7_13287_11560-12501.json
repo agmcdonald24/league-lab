@@ -104,7 +104,7 @@
    "mine": -2.75,
    "theirs": 3.24
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.8** this week and **-2.8** over week 4; them **+3.2** and **+3.2**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.8** this week and **−2.8** over week 4; them **+3.2** and **+3.2**."
  },
  "interest": {
   "score": 58,
@@ -194,8 +194,8 @@
    }
   ]
  },
- "verdict": "Does not help your lineup (-2.8 this week, -2.8 over week 4), them +3.2 (+3.2 over week 4); you give up more season value: not worth it for your lineup.",
- "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Does not help your lineup (-2.8 this week, -2.8 over week 4), them +3.2 (+3.2 over week 4); you give up more season value: not worth it for your lineup.",
+ "verdict": "Does not help your lineup (−2.8 this week, −2.8 over week 4), them +3.2 (+3.2 over week 4); you give up more season value: not worth it for your lineup.",
+ "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Does not help your lineup (−2.8 this week, −2.8 over week 4), them +3.2 (+3.2 over week 4); you give up more season value: not worth it for your lineup.",
  "ros": {
   "give": 176,
   "get": 280,
@@ -841,14 +841,14 @@
   "lineup_words": "Jeremiyah Love (from the trade) starts at RB in place of Bhayshul Tuten (to the bench)."
  },
  "window_words": "this week",
- "hold_words": "-2.8 this week, not more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "hold_words": "−2.8 this week, not more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "hold": {
   "hold": null,
-  "waiver": "-2.8 this week, not more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver": "−2.8 this week, not more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
   "waiver_gain": 2.53
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.8** this week and **-2.8** over week 4; them **+3.2** and **+3.2**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.8** this week and **−2.8** over week 4; them **+3.2** and **+3.2**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **53**, you get **18**: you give 35 more.",
   "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 176, you get 280.",
   "size": "Roster size: you must cut [Ladd McConkey](/player/00-0039915) (WR, 128 season points; costs 0.0 over week 4) to stay at 15 players; you must cut [TreVeyon Henderson](/player/00-0040734) (RB, 130 season points; costs 0.0 over week 4) to stay at 15 players.",
@@ -892,7 +892,7 @@
  },
  "beyond_alternative": -5.28,
  "beats_alternative": false,
- "alternative_words": "-2.8 this week, not more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "alternative_words": "−2.8 this week, not more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -1056,7 +1056,7 @@
     -2.75
    ],
    "raw_window": -2.75,
-   "words": "Your starters: -2.8 this week."
+   "words": "Your starters: −2.8 this week."
   },
   "their_effect": {
    "this_week": 3.24,
@@ -1116,52 +1116,69 @@
    "theirs": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "CHI",
-     "gsis_id": null,
-     "player_name": "Chicago Bears",
-     "position": "DEF"
+     "sleeper_id": "5095",
+     "gsis_id": "00-0034161",
+     "player_name": "Daniel Carlson",
+     "position": "K"
     },
     "drop": {
-     "sleeper_id": "12501",
-     "gsis_id": "00-0040667",
-     "player_name": "Matthew Golden",
-     "position": "WR"
+     "sleeper_id": "11560",
+     "gsis_id": "00-0039918",
+     "player_name": "Caleb Williams",
+     "position": "QB"
     },
     "open_spot": false,
-    "gain_week": 12.23,
-    "gain_window": 12.23,
+    "gain_week": 2.73,
+    "gain_window": 2.73,
     "by_week": [
-     12.23
+     2.73
     ],
     "weeks": [
      4
     ],
     "span": "week 4",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "the Chicago Bears defense claim gives +12.2 this week (drop Matthew Golden)",
     "covered_by_week": [
-     0.0
+     2.73
     ],
-    "covered_window": 0.0,
-    "covered_week": 0.0,
+    "covered_window": 2.73,
+    "covered_week": 2.73,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "the Daniel Carlson claim gives +2.7 this week (drop Caleb Williams)",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "CHI",
+      "gsis_id": null,
+      "player_name": "Chicago Bears",
+      "position": "DEF"
+     },
+     "drop": {
+      "sleeper_id": "12501",
+      "gsis_id": "00-0040667",
+      "player_name": "Matthew Golden",
+      "position": "WR"
+     },
+     "gain_window": 12.23,
+     "covered_window": 0.0
+    }
    },
-   "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Chicago Bears defense, drop Matthew Golden: +0.0 this week (+12.2 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+   "words": "Yours: add Daniel Carlson, drop Chase McLaughlin: +2.5 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Daniel Carlson, drop Caleb Williams: +2.7 this week (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
    "mine": -5.28,
-   "theirs": 3.24,
+   "theirs": 0.51,
    "margin": 1.0
   },
   "why_consider": [
-   "Their starters gain +3.2 this week, 3.2 more than their best waiver move (+0.0 once empty slots are filled from the free pool).",
+   "Their starters gain +3.2 this week.",
    "Jeremiyah Love starts for them in week 4.",
    "They get more season value above replacement: 53 for 18.",
    "It frees 1 roster spot for them."
   ],
   "why_refuse": [
+   "Their best waiver move (Daniel Carlson, +2.7) does about as much or more for them this week.",
    "They lose Matthew Golden, a backup WR: 2 WR left on their bench who can play in week 4; they lose Caleb Williams, a QB who cannot play in week 4 (Out): no QB left on their bench who can play in week 4.",
    "Our numbers only: no market price for Jeremiyah Love, Matthew Golden, Caleb Williams: this is how the rosters fit, not what the players would fetch."
   ],
@@ -1192,7 +1209,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -5.3 beyond your best waiver move this week (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 5.3 behind your best waiver move this week (the bar is 1 point); Goal Line Stand's starters gain +0.5 beyond their own best move this week.",
    "plausibility": "A roster-fit idea"
   }
  },
@@ -1286,11 +1303,11 @@
    "title": "Effect on their starters",
    "need": "puts Love at their RB in place of Tuten"
   },
-  "verdict": "Does not help your lineup (-2.8 this week, -2.8 over week 4), them +3.2 (+3.2 over week 4); you give up more season value: not worth it for your lineup.",
-  "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Does not help your lineup (-2.8 this week, -2.8 over week 4), them +3.2 (+3.2 over week 4); you give up more season value: not worth it for your lineup.",
+  "verdict": "Does not help your lineup (−2.8 this week, −2.8 over week 4), them +3.2 (+3.2 over week 4); you give up more season value: not worth it for your lineup.",
+  "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Does not help your lineup (−2.8 this week, −2.8 over week 4), them +3.2 (+3.2 over week 4); you give up more season value: not worth it for your lineup.",
   "effect_words": "Your starting lineup: about 2.8 fewer points this week.",
   "their_effect_words": "Goal Line Stand's starting lineup: about 3.2 more points this week.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.8** this week and **-2.8** over week 4; them **+3.2** and **+3.2**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.8** this week and **−2.8** over week 4; them **+3.2** and **+3.2**.",
   "strip": {
    "weeks": [
     4
@@ -1359,51 +1376,67 @@
    "theirs": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "CHI",
-     "gsis_id": null,
-     "player_name": "Chicago Bears",
-     "position": "DEF"
+     "sleeper_id": "5095",
+     "gsis_id": "00-0034161",
+     "player_name": "Daniel Carlson",
+     "position": "K"
     },
     "drop": {
-     "sleeper_id": "12501",
-     "gsis_id": "00-0040667",
-     "player_name": "Matthew Golden",
-     "position": "WR"
+     "sleeper_id": "11560",
+     "gsis_id": "00-0039918",
+     "player_name": "Caleb Williams",
+     "position": "QB"
     },
     "open_spot": false,
-    "gain_week": 12.23,
-    "gain_window": 12.23,
+    "gain_week": 2.73,
+    "gain_window": 2.73,
     "by_week": [
-     12.23
+     2.73
     ],
     "weeks": [
      4
     ],
     "span": "week 4",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "add Chicago Bears defense, drop Matthew Golden: +0.0 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "covered_by_week": [
-     0.0
+     2.73
     ],
-    "covered_window": 0.0,
-    "covered_week": 0.0,
+    "covered_window": 2.73,
+    "covered_week": 2.73,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Daniel Carlson, drop Caleb Williams: +2.7 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "CHI",
+      "gsis_id": null,
+      "player_name": "Chicago Bears",
+      "position": "DEF"
+     },
+     "drop": {
+      "sleeper_id": "12501",
+      "gsis_id": "00-0040667",
+      "player_name": "Matthew Golden",
+      "position": "WR"
+     },
+     "gain_window": 12.23,
+     "covered_window": 0.0
+    }
    },
    "beyond": {
     "mine": -5.28,
-    "theirs": 3.24
+    "theirs": 0.51
    },
    "beats": false,
-   "words": "-2.8 this week, not more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "words": "−2.8 this week, not more than your best waiver move (add Daniel Carlson, drop Chase McLaughlin: +2.5 this week on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
    "other_objective": null
   },
   "recommendation": {
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -5.3 beyond your best waiver move this week (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 5.3 behind your best waiver move this week (the bar is 1 point); Goal Line Stand's starters gain +0.5 beyond their own best move this week.",
    "plausibility": "A roster-fit idea"
   },
   "changes": {
@@ -1635,7 +1668,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -2.8 this week; Goal Line Stand's +3.2. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −2.8 this week; Goal Line Stand's +3.2. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -2.75,
     "gain_window": -2.75,

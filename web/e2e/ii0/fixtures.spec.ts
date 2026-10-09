@@ -81,9 +81,16 @@ test("Team: strength by slot, each slot apart, the bar and the league on one met
 
 test("Trades: a partner card whose week loses says so", async ({ page }, info) => {
   await page.goto(`/trades?league=${SCRUBS}&team=2`);
+  // IT-1 (re-saved on the calculator's basis): the screen shows the credible cards, then — behind "Explore
+  // alternatives", opened here — the rest (12 at most), each with the decision's story
+  const all = partners().partners as (Partner & { tier?: string })[];
+  const credRows = all.filter((p) => p.tier === "credible");
+  const explore = all.filter((p) => p.tier !== "credible").slice(0, 12);
+  await expect(page.getByTestId("best-partner")).toBeVisible();
+  if (explore.length) await page.getByTestId("explore").locator("summary").first().click();
   const cards = page.getByTestId("partner-row");
   await expect(cards.first()).toBeVisible();
-  const rows = partners().partners.slice(0, 12);
+  const rows = [...credRows, ...explore];
   const losing = rows.filter((p) => (p.strip.mine[0] ?? 0) <= -0.05);
   expect(losing.length).toBeGreaterThan(0); // the recording's week 4: every top package costs a little now
   const reasons = await page.getByTestId("partner-reason").allTextContents();
@@ -91,6 +98,12 @@ test("Trades: a partner card whose week loses says so", async ({ page }, info) =
   for (const [i, p] of rows.entries()) {
     if ((p.strip.mine[0] ?? 0) > -0.05) continue;
     expect(reasons[i]).not.toContain("Nothing changes this week");
+    // IT-1 (re-saved): a card whose incoming player cannot play this week says that first (the screen's one reason)
+    const out = (p as Partner & { get?: { player_name: string; cannot_play?: string | null }[] }).get?.find((x) => x.cannot_play);
+    if (out) {
+      expect(reasons[i]).toContain(`${out.player_name} cannot play this week`);
+      continue;
+    }
     expect(reasons[i]).toBe(p.story.words); // the strip's own numbers (trades.week_story)
   }
   await noSidewaysScroll(page);

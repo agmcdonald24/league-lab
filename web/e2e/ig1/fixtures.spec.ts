@@ -115,7 +115,13 @@ test("the team QB is counted in the season value, and the Finder leaves out trad
   await shot(page, "team8-calc", info.project.name);
 
   await page.goto(`/trades?league=${encodeURIComponent(MFL)}&team=8`);
-  await expect(page.getByTestId("best-partner")).toContainText("Chicago Bears QB", { timeout: 90_000 });
+  // IT-1 (re-saved on the calculator's basis): the answer's own first line (today: no trade worth proposing — the
+  // Chicago Bears QB package is behind Explore), then the trades left out on the value gap
+  const fa = Object.entries(saved).find(([k]) => k.includes("/api/trades/partners") && k.includes("team=8"))![1].body as {
+    verdict: { kind: string; headline: string | null }; partners: { partner_team: string; tier?: string }[]; rejected_count: number };
+  const cred = fa.partners.find((r) => r.tier === "credible");
+  await expect(page.getByTestId("best-partner")).toContainText(cred ? `Best partner: ${cred.partner_team}` : fa.verdict.headline!, { timeout: 90_000 });
+  expect(fa.rejected_count).toBeGreaterThan(0);
   const left = page.getByTestId("rejected");
   await left.locator("summary").first().click();
   await expect(page.getByTestId("rejected-rule")).toContainText("season value above replacement");

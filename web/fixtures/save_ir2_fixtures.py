@@ -136,6 +136,10 @@ def finder() -> None:
             for row in [rows[0]] if rows else []:
                 leads.add((league, team, row["partner"], tuple(x["sleeper_id"] for x in row["give"]),
                            tuple(x["sleeper_id"] for x in row["get"])))
+            best = next((x for x in rows if x.get("is_best")), None)          # e2e/decisions: the first "best" row
+            if best is not None:
+                leads.add((league, team, best["partner"], tuple(x["sleeper_id"] for x in best["give"]),
+                           tuple(x["sleeper_id"] for x in best["get"])))
             cred = next((x for x in rows if x.get("tier") == "credible"), None)
             if cred is not None:
                 leads.add((league, team, cred["partner"], tuple(x["sleeper_id"] for x in cred["give"]),

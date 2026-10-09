@@ -3,290 +3,684 @@
  "source": "database",
  "roster_id": 2,
  "want": "TE",
- "week": 4,
- "span": "weeks 4–7",
+ "week": 5,
+ "span": "weeks 5–8",
  "weeks": [
-  4,
   5,
   6,
-  7
+  7,
+  8
  ],
  "window": "next4",
  "window_label": "Next 4",
  "window_why": "the next four weeks: far enough to matter, near enough to trust",
  "partners": [
   {
-   "partner": 4,
-   "partner_team": "Scrote Squad",
-   "shape": "1-for-1",
-   "kind": "1-for-1",
+   "partner": 9,
+   "partner_team": "Negrodamus",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
    "is_best": true,
    "give": [
     {
-     "sleeper_id": "12490",
-     "gsis_id": "00-0040719",
-     "player_name": "Bhayshul Tuten",
-     "position": "RB",
-     "team": "JAX",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
-     "this_week": 9.72,
-     "cannot_play": null,
-     "market_price": 9,
-     "season_points": 137,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "8131",
-     "gsis_id": "00-0037838",
-     "player_name": "Isaiah Likely",
+     "sleeper_id": "1466",
+     "gsis_id": "00-0030506",
+     "player_name": "Travis Kelce",
      "position": "TE",
-     "team": "NYG",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
-     "this_week": 7.38,
-     "cannot_play": null,
-     "market_price": 1,
-     "season_points": 110,
-     "roster_id": 4
-    }
-   ],
-   "you_gain_week": -0.53,
-   "you_gain_horizon": 3.28,
-   "they_gain_week": 1.83,
-   "they_gain_horizon": 2.32,
-   "interest": {
-    "score": 52,
-    "label": "Likely",
-    "their_gain": 2.32,
-    "you": 3.28,
-    "caption": "by our numbers over weeks 4–7"
-   },
-   "price_out": 9,
-   "price_in": 1
-  },
-  {
-   "partner": 4,
-   "partner_team": "Scrote Squad",
-   "shape": "1-for-2",
-   "kind": "2-for-1",
-   "is_best": false,
-   "give": [
-    {
-     "sleeper_id": "12490",
-     "gsis_id": "00-0040719",
-     "player_name": "Bhayshul Tuten",
-     "position": "RB",
-     "team": "JAX",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
-     "this_week": 9.72,
-     "cannot_play": null,
-     "market_price": 9,
-     "season_points": 137,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "8131",
-     "gsis_id": "00-0037838",
-     "player_name": "Isaiah Likely",
-     "position": "TE",
-     "team": "NYG",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
-     "this_week": 7.38,
-     "cannot_play": null,
-     "market_price": 1,
-     "season_points": 110,
-     "roster_id": 4
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+     "this_week": null,
+     "cannot_play": "bye",
+     "market_price": 3,
+     "season_points": 107,
+     "roster_id": 2,
+     "availability": null
     },
     {
-     "sleeper_id": "11604",
-     "gsis_id": "00-0039338",
-     "player_name": "Brock Bowers",
-     "position": "TE",
-     "team": "LV",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/waorceny0ggpaeckaol8",
-     "this_week": 6.02,
+     "sleeper_id": "13346",
+     "gsis_id": "00-0041037",
+     "player_name": "Denzel Boston",
+     "position": "WR",
+     "team": "CLE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+     "this_week": 9.86,
      "cannot_play": null,
-     "market_price": 0,
-     "season_points": 84,
-     "roster_id": 4
-    }
-   ],
-   "you_gain_week": -0.53,
-   "you_gain_horizon": 3.28,
-   "they_gain_week": 1.83,
-   "they_gain_horizon": 2.32,
-   "interest": {
-    "score": 52,
-    "label": "Likely",
-    "their_gain": 2.32,
-    "you": 3.28,
-    "caption": "by our numbers over weeks 4–7"
-   },
-   "price_out": 9,
-   "price_in": 1
-  },
-  {
-   "partner": 7,
-   "partner_team": "PSYCHO SILVERBACKS",
-   "shape": "1-for-1",
-   "kind": "1-for-1",
-   "is_best": true,
-   "give": [
-    {
-     "sleeper_id": "12490",
-     "gsis_id": "00-0040719",
-     "player_name": "Bhayshul Tuten",
-     "position": "RB",
-     "team": "JAX",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
-     "this_week": 9.72,
-     "cannot_play": null,
-     "market_price": 9,
-     "season_points": 137,
-     "roster_id": 2
+     "market_price": 19,
+     "season_points": 135,
+     "roster_id": 2,
+     "availability": null
     }
    ],
    "get": [
     {
-     "sleeper_id": "9484",
-     "gsis_id": "00-0038996",
-     "player_name": "Tucker Kraft",
+     "sleeper_id": "10859",
+     "gsis_id": "00-0039065",
+     "player_name": "Sam LaPorta",
      "position": "TE",
-     "team": "GB",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/n6vu44jbq31rydoaadaq",
-     "this_week": 7.96,
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+     "this_week": 12.27,
      "cannot_play": null,
-     "market_price": 0,
-     "season_points": 106,
-     "roster_id": 7
+     "market_price": 18,
+     "season_points": 123,
+     "roster_id": 9,
+     "availability": null
     }
    ],
-   "you_gain_week": -0.53,
-   "you_gain_horizon": 2.17,
-   "they_gain_week": 0.59,
-   "they_gain_horizon": 1.58,
+   "you_gain_week": 3.59,
+   "you_gain_horizon": 2.66,
+   "they_gain_week": -2.54,
+   "they_gain_horizon": 1.94,
    "interest": {
-    "score": 45,
-    "label": "Maybe",
-    "their_gain": 1.58,
-    "you": 2.17,
-    "caption": "by our numbers over weeks 4–7"
+    "score": 49,
+    "label": "About even",
+    "their_gain": 1.94,
+    "you": 2.66,
+    "caption": "their starters over weeks 5–8, against realistic replacements",
+    "title": "Effect on their starters",
+    "need": "puts T.J. Hockenson at their TE in place of LaPorta and puts Boston at their FLEX in place of Kamara"
    },
-   "price_out": 9,
-   "price_in": 0
-  },
-  {
-   "partner": 10,
-   "partner_team": "GIBB ME ANOTA ONE",
-   "shape": "1-for-1",
-   "kind": "1-for-1",
-   "is_best": true,
-   "give": [
-    {
-     "sleeper_id": "12533",
-     "gsis_id": "00-0040242",
-     "player_name": "Jacory Croskey-Merritt",
-     "position": "RB",
-     "team": "WAS",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
-     "this_week": 9.19,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 122,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "7600",
-     "gsis_id": "00-0036894",
-     "player_name": "Pat Freiermuth",
-     "position": "TE",
-     "team": "PIT",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
-     "this_week": 6.19,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 93,
-     "roster_id": 10
-    }
-   ],
-   "you_gain_week": 0.0,
-   "you_gain_horizon": 1.6,
-   "they_gain_week": 0.0,
-   "they_gain_horizon": 0.55,
-   "interest": {
-    "score": 32,
-    "label": "Maybe",
-    "their_gain": 0.55,
-    "you": 1.6,
-    "caption": "by our numbers over weeks 4–7"
+   "price_out": 22,
+   "price_in": 18,
+   "beyond_alternative": -4.05,
+   "beats_alternative": false,
+   "alternative_words": "+2.7 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "other_objective": null,
+   "strip": {
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "mine": [
+     3.59,
+     -2.33,
+     0.85,
+     0.55
+    ],
+    "theirs": [
+     -2.54,
+     2.3,
+     0.58,
+     1.6
+    ]
    },
-   "price_out": 0,
-   "price_in": 0
+   "rank": 1,
+   "demoted": true,
+   "story": {
+    "this_week": {
+     "week": 5,
+     "change": 3.59,
+     "kind": "gain"
+    },
+    "window": {
+     "change": 2.66,
+     "kind": "gain"
+    },
+    "by_week": [
+     {
+      "week": 5,
+      "change": 3.59
+     },
+     {
+      "week": 6,
+      "change": -2.33
+     },
+     {
+      "week": 7,
+      "change": 0.85
+     },
+     {
+      "week": 8,
+      "change": 0.55
+     }
+    ],
+    "words": "Your lineup gains 3.6 this week and 2.7 over weeks 5–8 in total (week 6 loses 2.3)."
+   },
+   "card": {
+    "give": [
+     {
+      "sleeper_id": "1466",
+      "gsis_id": "00-0030506",
+      "player_name": "Travis Kelce",
+      "position": "TE",
+      "team": "KC",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+      "this_week": null,
+      "cannot_play": "bye",
+      "market_price": 3,
+      "season_points": 107,
+      "roster_id": 2
+     },
+     {
+      "sleeper_id": "13346",
+      "gsis_id": "00-0041037",
+      "player_name": "Denzel Boston",
+      "position": "WR",
+      "team": "CLE",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+      "this_week": 9.86,
+      "cannot_play": null,
+      "market_price": 19,
+      "season_points": 135,
+      "roster_id": 2
+     }
+    ],
+    "get": [
+     {
+      "sleeper_id": "10859",
+      "gsis_id": "00-0039065",
+      "player_name": "Sam LaPorta",
+      "position": "TE",
+      "team": "DET",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+      "this_week": 12.27,
+      "cannot_play": null,
+      "market_price": 18,
+      "season_points": 123,
+      "roster_id": 9
+     }
+    ],
+    "partner": 9,
+    "drops": {
+     "mine": [],
+     "theirs": [
+      {
+       "player": {
+        "sleeper_id": "7049",
+        "gsis_id": "00-0036259",
+        "player_name": "Jauan Jennings",
+        "position": "WR",
+        "team": "MIN",
+        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ben8kbygzzlid6ltmdum",
+        "this_week": 5.32,
+        "cannot_play": null,
+        "market_price": 0,
+        "season_points": 67,
+        "roster_id": 9
+       },
+       "words": "They must cut Jauan Jennings."
+      }
+     ]
+    },
+    "your_effect": {
+     "this_week": 3.59,
+     "window": 2.66,
+     "by_week": [
+      3.59,
+      -2.33,
+      0.85,
+      0.55
+     ],
+     "raw_window": 3.52,
+     "words": "Your starters: +3.6 this week, +2.7 over weeks 5–8 (+3.5 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+    },
+    "their_effect": {
+     "this_week": -2.54,
+     "window": 1.94,
+     "by_week": [
+      -2.54,
+      2.3,
+      0.58,
+      1.6
+     ],
+     "raw_window": 1.08,
+     "words": "Negrodamus's starters: −2.5 this week, +1.9 over weeks 5–8 (+1.1 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+    },
+    "depth_cost": {
+     "mine": "You lose Travis Kelce, a TE who cannot play in week 5 (on a bye): no TE left on your bench who can play in week 5; you lose Denzel Boston, a backup WR: 1 WR left on your bench who can play in week 5. You free 1 roster spot.",
+     "theirs": "they lose Jauan Jennings, a backup WR: 1 WR left on their bench who can play in week 5 (Alec Pierce in the IR slot and Xavier Worthy on a bye cannot)",
+     "roster_spots": -1,
+     "season_value": {
+      "give": 22,
+      "get": 18
+     },
+     "horizon": null
+    },
+    "waiver_alternative": {
+     "mine": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "WAS",
+       "gsis_id": null,
+       "player_name": "Washington Commanders",
+       "position": "DEF"
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB"
+      },
+      "open_spot": false,
+      "gain_week": 4.87,
+      "gain_window": 6.71,
+      "by_week": [
+       4.87,
+       1.05,
+       0.0,
+       0.79
+      ],
+      "weeks": [
+       5,
+       6,
+       7,
+       8
+      ],
+      "span": "weeks 5–8",
+      "source": "basis search",
+      "note": null,
+      "covered_by_week": [
+       4.87,
+       1.05,
+       0.0,
+       0.79
+      ],
+      "covered_window": 6.71,
+      "covered_week": 4.87,
+      "availability": "claim",
+      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+      "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)",
+      "roster_only_pick": {
+       "player": {
+        "sleeper_id": "3257",
+        "gsis_id": "00-0033119",
+        "player_name": "Jacoby Brissett",
+        "position": "QB"
+       },
+       "drop": {
+        "sleeper_id": "9228",
+        "gsis_id": "00-0039150",
+        "player_name": "Bryce Young",
+        "position": "QB"
+       },
+       "gain_window": 20.9,
+       "covered_window": 0.0
+      }
+     },
+     "theirs": {
+      "kind": "waiver",
+      "player": {
+       "sleeper_id": "5849",
+       "gsis_id": "00-0035228",
+       "player_name": "Kyler Murray",
+       "position": "QB"
+      },
+      "drop": {
+       "sleeper_id": "7049",
+       "gsis_id": "00-0036259",
+       "player_name": "Jauan Jennings",
+       "position": "WR"
+      },
+      "open_spot": false,
+      "gain_week": 0.0,
+      "gain_window": 13.33,
+      "by_week": [
+       0.0,
+       0.0,
+       10.9,
+       2.43
+      ],
+      "weeks": [
+       5,
+       6,
+       7,
+       8
+      ],
+      "span": "weeks 5–8",
+      "source": "fa_pool fill",
+      "note": null,
+      "words": "the Kyler Murray claim gives +13.3 over weeks 5–8 (drop Jauan Jennings)",
+      "covered_by_week": [
+       0.0,
+       0.0,
+       10.9,
+       2.43
+      ],
+      "covered_window": 13.33,
+      "covered_week": 0.0,
+      "availability": "claim",
+      "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+     },
+     "words": "Yours: add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Jauan Jennings: +13.3 over weeks 5–8 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+    },
+    "beyond": {
+     "mine": -4.05,
+     "theirs": -11.39,
+     "margin": 1.0
+    },
+    "why_consider": [
+     "Their starters gain +1.9 over weeks 5–8.",
+     "Denzel Boston and Travis Kelce start for them in weeks 5, 6, 7 and 8."
+    ],
+    "why_refuse": [
+     "Their starters lose 2.5 this week.",
+     "Their best waiver move (Kyler Murray, +13.3) does about as much or more for them over weeks 5–8.",
+     "They must cut Jauan Jennings to make room.",
+     "They lose Jauan Jennings, a backup WR: 1 WR left on their bench who can play in week 5 (Alec Pierce in the IR slot and Xavier Worthy on a bye cannot).",
+     "Our numbers only: no market price for Travis Kelce: this is how the rosters fit, not what the players would fetch."
+    ],
+    "plausibility": {
+     "key": "roster_fit",
+     "label": "A roster-fit idea",
+     "reasons": [
+      "no market price for Travis Kelce: this is how the rosters fit, not what the players would fetch"
+     ]
+    },
+    "guardrails": [],
+    "legal": {
+     "ok": true,
+     "notes": [
+      "You would have nobody for TE in week 6: counted with the best free agent there, not as an empty slot.",
+      "Negrodamus must cut Jauan Jennings to make room.",
+      "Negrodamus would have nobody for TE in week 5: counted with the best free agent there, not as an empty slot."
+     ],
+     "checks": [
+      "ownership (trades.clean_package)",
+      "roster limits and required cuts (trades._after)",
+      "locked players (RosterBoard.is_locked)",
+      "position requirements (lineup.solve)",
+      "trade deadline (league settings)"
+     ]
+    },
+    "credible": false,
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: your starters end 4.0 behind your best waiver move over weeks 5–8 (the bar is 1 point); Negrodamus's starters end 11.4 behind their own best move over weeks 5–8.",
+     "plausibility": "A roster-fit idea"
+    }
+   },
+   "decision": {
+    "basis": "replacement",
+    "dial": {
+     "score": 49,
+     "label": "About even",
+     "their_gain": 1.94,
+     "you": 2.66,
+     "caption": "their starters over weeks 5–8, against realistic replacements",
+     "title": "Effect on their starters",
+     "need": "puts T.J. Hockenson at their TE in place of LaPorta and puts Boston at their FLEX in place of Kamara"
+    },
+    "verdict": "Helps your lineup +3.6 this week (+2.7 over weeks 5–8), them +1.9 over weeks 5–8 (−2.5 this week); about even by season value: helps both lineups.",
+    "alternative": {
+     "words": "+2.7 over weeks 5–8, not more than your best waiver move (add Washington Commanders defense, drop Jacory Croskey-Merritt: +6.7 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+     "beats": false,
+     "beyond": {
+      "mine": -4.05,
+      "theirs": -11.39
+     }
+    },
+    "recommendation": {
+     "credible": false,
+     "key": "not_worth_proposing",
+     "label": "Not worth proposing",
+     "words": "Not worth proposing: your starters end 4.0 behind your best waiver move over weeks 5–8 (the bar is 1 point); Negrodamus's starters end 11.4 behind their own best move over weeks 5–8.",
+     "plausibility": "A roster-fit idea"
+    },
+    "caveat": null,
+    "mine": {
+     "gain_week": 3.59,
+     "gain_window": 2.66,
+     "by_week": [
+      3.59,
+      -2.33,
+      0.85,
+      0.55
+     ]
+    },
+    "theirs": {
+     "gain_week": -2.54,
+     "gain_window": 1.94,
+     "by_week": [
+      -2.54,
+      2.3,
+      0.58,
+      1.6
+     ]
+    }
+   },
+   "tier": "explore",
+   "credible_rank": null
   }
  ],
  "no_trade_with": [
-  "Daejon Loves PR team",
-  "Run Bijan Run",
-  "Victory is Mine!",
+  "MARTIN LUTHER BURDEN",
   "GoodGameBuddy",
-  "MikeDaddy",
-  "Negrodamus"
+  "Victory is Mine!",
+  "Daejon Loves PR team",
+  "PSYCHO SILVERBACKS",
+  "Run Bijan Run",
+  "Scrote Squad",
+  "MikeDaddy"
  ],
  "rejected": [
   {
-   "partner_team": "Daejon Loves PR team",
+   "partner_team": "Scrote Squad",
    "give": [
-    "Bryce Young",
-    "Terrance Ferguson"
+    "Jaylen Wright",
+    "Malik Washington"
    ],
    "get": [
-    "Colston Loveland"
+    "Isaiah Likely"
    ],
-   "why": "you give 247 rest-of-season points for 80: 167 more, over 25% of what you give"
+   "why": "the market disagrees with our number on Jaylen Wright (ours 3.5 this week, Sleeper's 7.5)"
   },
   {
    "partner_team": "Daejon Loves PR team",
    "give": [
-    "Jacory Croskey-Merritt",
-    "Terrance Ferguson"
+    "Justin Jefferson"
    ],
    "get": [
     "Colston Loveland"
    ],
-   "why": "you give 178 rest-of-season points for 80: 99 more, over 25% of what you give"
+   "why": "you give 18 season value above replacement for 0: 18 more, over 25% of what you give"
   },
   {
-   "partner_team": "Victory is Mine!",
+   "partner_team": "Daejon Loves PR team",
    "give": [
-    "Jacory Croskey-Merritt"
+    "Denzel Boston"
    ],
    "get": [
-    "Jake Ferguson"
+    "Kenyon Sadiq"
    ],
-   "why": "you give 105 rest-of-season points for 71: 34 more, over 25% of what you give"
+   "why": "you give 19 season value above replacement for 0: 19 more, over 25% of what you give"
   }
  ],
- "rejected_count": 7,
+ "rejected_count": 86,
  "sanity": {
   "ros_gap_share": 0.25,
   "market_share": 0.65,
-  "ros_players": 155,
-  "market_players": 0,
-  "market_note": "Sleeper's week-4 projections are not in the database: the market check is not applied"
+  "ros_players": 156,
+  "market_players": 127,
+  "market_note": null,
+  "rule": "season_value",
+  "value_players": 156,
+  "words": "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's. A player with no season projection is not judged."
  },
  "words": {
-  "headline": "**Best partner: Scrote Squad (nirajp75).** Your [Bhayshul Tuten](/player/00-0040719) for their [Isaiah Likely](/player/00-0037838): you **-0.5** this week and **+3.3** over weeks 4–7, them **+1.8** and **+2.3**.",
-  "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"
+  "headline": "**No compelling trade found.** None of the 1 trade that raise both starting lineups over weeks 5–8 is worth proposing: 1 does not beat your own best alternative by a point and 1 does not beat the other team's. Your best move: the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt).",
+  "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
+  "alternative": null
+ },
+ "verdict": {
+  "kind": "none",
+  "headline": "No compelling trade found",
+  "reason": "None of the 1 trade that raise both starting lineups over weeks 5–8 is worth proposing: 1 does not beat your own best alternative by a point and 1 does not beat the other team's. Your best move: the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)."
+ },
+ "credible_count": 0,
+ "headline_rank": null,
+ "explore_count": 1,
+ "guard_positions": {
+  "DEF": {
+   "free_best": 8.68,
+   "weakest_starter": 6.05,
+   "streamable": true
+  },
+  "K": {
+   "free_best": 9.45,
+   "weakest_starter": 7.43,
+   "streamable": true
+  }
+ },
+ "margin": 1.0,
+ "best_alternative": {
+  "kind": "waiver",
+  "player": {
+   "sleeper_id": "WAS",
+   "gsis_id": null,
+   "player_name": "Washington Commanders",
+   "position": "DEF"
+  },
+  "drop": {
+   "sleeper_id": "12533",
+   "gsis_id": "00-0040242",
+   "player_name": "Jacory Croskey-Merritt",
+   "position": "RB"
+  },
+  "open_spot": false,
+  "gain_week": 4.87,
+  "gain_window": 6.71,
+  "by_week": [
+   4.87,
+   1.05,
+   0.0,
+   0.79
+  ],
+  "weeks": [
+   5,
+   6,
+   7,
+   8
+  ],
+  "span": "weeks 5–8",
+  "source": "basis search",
+  "note": null,
+  "covered_by_week": [
+   4.87,
+   1.05,
+   0.0,
+   0.79
+  ],
+  "covered_window": 6.71,
+  "covered_week": 4.87,
+  "availability": "claim",
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)",
+  "roster_only_pick": {
+   "player": {
+    "sleeper_id": "3257",
+    "gsis_id": "00-0033119",
+    "player_name": "Jacoby Brissett",
+    "position": "QB"
+   },
+   "drop": {
+    "sleeper_id": "9228",
+    "gsis_id": "00-0039150",
+    "player_name": "Bryce Young",
+    "position": "QB"
+   },
+   "gain_window": 20.9,
+   "covered_window": 0.0
+  }
+ },
+ "alternatives": [
+  {
+   "kind": "stand_pat",
+   "player": null,
+   "drop": null,
+   "open_spot": false,
+   "gain_week": 0.0,
+   "gain_window": 0.0,
+   "by_week": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "weeks": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "span": "weeks 5–8",
+   "source": "stand pat",
+   "note": null,
+   "words": "standing pat: your lineup as it is (0)"
+  },
+  {
+   "kind": "waiver",
+   "player": {
+    "sleeper_id": "WAS",
+    "gsis_id": null,
+    "player_name": "Washington Commanders",
+    "position": "DEF"
+   },
+   "drop": {
+    "sleeper_id": "12533",
+    "gsis_id": "00-0040242",
+    "player_name": "Jacory Croskey-Merritt",
+    "position": "RB"
+   },
+   "open_spot": false,
+   "gain_week": 4.87,
+   "gain_window": 6.71,
+   "by_week": [
+    4.87,
+    1.05,
+    0.0,
+    0.79
+   ],
+   "weeks": [
+    5,
+    6,
+    7,
+    8
+   ],
+   "span": "weeks 5–8",
+   "source": "basis search",
+   "note": null,
+   "covered_by_week": [
+    4.87,
+    1.05,
+    0.0,
+    0.79
+   ],
+   "covered_window": 6.71,
+   "covered_week": 4.87,
+   "availability": "claim",
+   "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+   "words": "the Washington Commanders defense claim gives +6.7 over weeks 5–8 (drop Jacory Croskey-Merritt)",
+   "roster_only_pick": {
+    "player": {
+     "sleeper_id": "3257",
+     "gsis_id": "00-0033119",
+     "player_name": "Jacoby Brissett",
+     "position": "QB"
+    },
+    "drop": {
+     "sleeper_id": "9228",
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB"
+    },
+    "gain_window": 20.9,
+    "covered_window": 0.0
+   }
+  }
+ ],
+ "ordering": {
+  "key": "beyond_alternative",
+  "words": "Ranked by gain beyond your best waiver move over weeks 5–8 (Washington Commanders defense, +6.7); trades that do not beat it come last."
  },
  "search": {
   "bar_sets": 31,
-  "candidates": 1394,
-  "evaluated": 35,
-  "seconds": 0.42
+  "candidates": 1314,
+  "evaluated": 137,
+  "seconds": 0.259,
+  "dropped_on_the_basis": 9
  }
 }

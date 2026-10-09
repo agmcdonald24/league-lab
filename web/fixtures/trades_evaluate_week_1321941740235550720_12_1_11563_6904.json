@@ -91,7 +91,7 @@
    "mine": -2.14,
    "theirs": 2.14
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.1** this week and **-2.1** over week 5; them **+2.1** and **+2.1**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.1** this week and **−2.1** over week 5; them **+2.1** and **+2.1**."
  },
  "interest": {
   "score": 51,
@@ -159,8 +159,8 @@
    }
   ]
  },
- "verdict": "Does not help your lineup (-2.1 this week, -2.1 over week 5), them +2.1 (+2.1 over week 5); about even by season value: not worth it for your lineup.",
- "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (-2.1 this week, -2.1 over week 5), them +2.1 (+2.1 over week 5); about even by season value: not worth it for your lineup.",
+ "verdict": "Does not help your lineup (−2.1 this week, −2.1 over week 5), them +2.1 (+2.1 over week 5); about even by season value: not worth it for your lineup.",
+ "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (−2.1 this week, −2.1 over week 5), them +2.1 (+2.1 over week 5); about even by season value: not worth it for your lineup.",
  "ros": {
   "give": 271,
   "get": 270,
@@ -690,14 +690,14 @@
   "lineup_words": "Bo Nix (from the trade) starts at Superflex in place of Jalen Hurts (traded)."
  },
  "window_words": "this week",
- "hold_words": "-2.1 this week; no waiver claim improves your starting lineup this week: the trade does not beat standing pat.",
+ "hold_words": "−2.1 this week; no waiver claim improves your starting lineup this week: the trade does not beat standing pat.",
  "hold": {
   "hold": null,
-  "waiver": "-2.1 this week; no waiver claim improves your starting lineup this week: the trade does not beat standing pat.",
+  "waiver": "−2.1 this week; no waiver claim improves your starting lineup this week: the trade does not beat standing pat.",
   "waiver_gain": 0.0
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.1** this week and **-2.1** over week 5; them **+2.1** and **+2.1**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.1** this week and **−2.1** over week 5; them **+2.1** and **+2.1**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **195**, you get **194**: about even.",
   "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 271, you get 270.",
   "size": "Roster size: no change (1 for 1).",
@@ -731,7 +731,7 @@
  },
  "beyond_alternative": -2.14,
  "beats_alternative": false,
- "alternative_words": "-2.1 this week; no waiver claim improves your starting lineup this week: the trade does not beat standing pat.",
+ "alternative_words": "−2.1 this week; no waiver claim improves your starting lineup this week: the trade does not beat standing pat.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -849,7 +849,7 @@
     -2.14
    ],
    "raw_window": -2.14,
-   "words": "Your starters: -2.1 this week."
+   "words": "Your starters: −2.1 this week."
   },
   "their_effect": {
    "this_week": 2.14,
@@ -965,7 +965,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -2.1 beyond your best waiver move this week (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 2.1 behind your best waiver move this week (the bar is 1 point).",
    "plausibility": "Plausible offer"
   }
  },
@@ -1032,11 +1032,11 @@
    "title": "Effect on their starters",
    "need": "puts Nix at their Superflex in place of Hurts"
   },
-  "verdict": "Does not help your lineup (-2.1 this week, -2.1 over week 5), them +2.1 (+2.1 over week 5); about even by season value: not worth it for your lineup.",
-  "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (-2.1 this week, -2.1 over week 5), them +2.1 (+2.1 over week 5); about even by season value: not worth it for your lineup.",
+  "verdict": "Does not help your lineup (−2.1 this week, −2.1 over week 5), them +2.1 (+2.1 over week 5); about even by season value: not worth it for your lineup.",
+  "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (−2.1 this week, −2.1 over week 5), them +2.1 (+2.1 over week 5); about even by season value: not worth it for your lineup.",
   "effect_words": "Your starting lineup: about 2.1 fewer points this week.",
   "their_effect_words": "Pitts n’ Titts's starting lineup: about 2.1 more points this week.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-2.1** this week and **-2.1** over week 5; them **+2.1** and **+2.1**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−2.1** this week and **−2.1** over week 5; them **+2.1** and **+2.1**.",
   "strip": {
    "weeks": [
     5
@@ -1132,14 +1132,14 @@
     "theirs": 1.21
    },
    "beats": false,
-   "words": "-2.1 this week; no waiver claim improves your starting lineup this week: the trade does not beat standing pat.",
+   "words": "−2.1 this week; no waiver claim improves your starting lineup this week: the trade does not beat standing pat.",
    "other_objective": null
   },
   "recommendation": {
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -2.1 beyond your best waiver move this week (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 2.1 behind your best waiver move this week (the bar is 1 point).",
    "plausibility": "Plausible offer"
   },
   "changes": {
@@ -1262,7 +1262,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -2.1 this week; Pitts n’ Titts's +2.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −2.1 this week; Pitts n’ Titts's +2.1. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -2.14,
     "gain_window": -2.14,

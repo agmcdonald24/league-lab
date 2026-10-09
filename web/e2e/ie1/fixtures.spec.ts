@@ -178,11 +178,20 @@ test("the dial is the effect on their starters: outcome words, no 0–100, no in
 });
 
 test("the Finder leads with the cheaper package and names the extra player as optional", async ({ page }, info) => {
+  // IT-1 (re-saved on the calculator's basis): the cheaper package and its optional extra are read from the saved
+  // answer (today: Millertime, Kelce for Coker, + RJ Harvey optional); not worth proposing, so behind Explore
+  type Row = { partner_team: string; tier?: string; cheaper_than?: { words: string } | null; optional?: { words: string } | null };
+  const ans = Object.entries(saved).find(([k]) => k.includes("/api/trades/partners") && k.includes("team=12"))![1].body as { partners: Row[] };
+  const lead = ans.partners.find((r) => r.cheaper_than)!;
+  const extra = ans.partners.find((r) => r.optional && r.partner_team === lead.partner_team)!;
   await page.goto(`/trades?league=${encodeURIComponent(MFL)}&team=12`);
-  const rows = page.getByTestId("partner-row").filter({ hasText: "Knight Train" });
+  await expect(page.getByTestId("best-partner")).toBeVisible();
+  if (lead.tier !== "credible") await page.getByTestId("explore").locator("summary").first().click();
+  const rows = page.getByTestId("partner-row").filter({ hasText: lead.partner_team });
   await expect(rows.first()).toBeVisible();
-  await expect(rows.first().getByTestId("partner-cheaper")).toHaveText("Same gain for you without RJ Harvey.");
-  await expect(page.getByTestId("partner-optional").first()).toContainText("Adding RJ Harvey does not change your gain; it costs you RB depth");
+  await expect(rows.filter({ has: page.getByTestId("partner-cheaper") }).first().getByTestId("partner-cheaper")).toHaveText(lead.cheaper_than!.words);
+  await expect(page.getByTestId("partner-optional").first()).toContainText(extra.optional!.words);
+  expect(extra.optional!.words).toContain("does not change your gain");
   await expect(rows.first().getByTestId("partner-label")).toContainText("Their starters");
   for (const t of await page.getByTestId("partner-label").allTextContents()) expect(EFFECT.some((e) => t.includes(e)), t).toBe(true);
   await noSidewaysScroll(page);

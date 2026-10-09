@@ -23,7 +23,7 @@
    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
    "this_week": null,
    "cannot_play": "bye",
-   "market_price": 20,
+   "market_price": 12,
    "season_points": 251,
    "roster_id": 2
   }
@@ -96,7 +96,7 @@
    "mine": -6.31,
    "theirs": 6.31
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **-6.3** over weeks 15–16; them **+3.8** and **+6.3**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.8** this week and **−6.3** over weeks 15–16; them **+3.8** and **+6.3**."
  },
  "interest": {
   "score": 76,
@@ -107,9 +107,9 @@
   "title": "Effect on their starters",
   "need": "puts Jacoby Brissett at their QB in place of Hurts"
  },
- "sanity": "you give 20 season value above replacement for 0: 20 more, over 25% of what you give",
+ "sanity": "you give 12 season value above replacement for 0: 12 more, over 25% of what you give",
  "market": {
-  "give": 20,
+  "give": 12,
   "get": 0,
   "season_points_give": 251,
   "season_points_get": 219,
@@ -124,8 +124,8 @@
     "player_name": "Cameron Dicker"
    },
    "QB": {
-    "season_points": 231,
-    "player_name": "Malik Willis"
+    "season_points": 239,
+    "player_name": "Kyler Murray"
    },
    "RB": {
     "season_points": 103,
@@ -140,7 +140,7 @@
     "player_name": "KC Concepcion"
    }
   },
-  "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **20**, you get **0**: you give 20 more.",
+  "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **12**, you get **0**: you give 12 more.",
   "players": [
    {
     "sleeper_id": "4046",
@@ -151,7 +151,7 @@
     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
     "this_week": null,
     "cannot_play": "bye",
-    "market_price": 20,
+    "market_price": 12,
     "season_points": 251,
     "roster_id": 2,
     "goes_to": "Daejon Loves PR team"
@@ -172,8 +172,8 @@
    }
   ]
  },
- "verdict": "Does not help your lineup (-3.8 this week, -6.3 over weeks 15–16), them +3.8 (+6.3 over weeks 15–16); you give up more season value: not worth it for your lineup.",
- "headline": "**You give [Patrick Mahomes](/player/00-0033873); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (-3.8 this week, -6.3 over weeks 15–16), them +3.8 (+6.3 over weeks 15–16); you give up more season value: not worth it for your lineup.",
+ "verdict": "Does not help your lineup (−3.8 this week, −6.3 over weeks 15–16), them +3.8 (+6.3 over weeks 15–16); you give up more season value: not worth it for your lineup.",
+ "headline": "**You give [Patrick Mahomes](/player/00-0033873); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (−3.8 this week, −6.3 over weeks 15–16), them +3.8 (+6.3 over weeks 15–16); you give up more season value: not worth it for your lineup.",
  "ros": {
   "give": 232,
   "get": 202,
@@ -222,7 +222,7 @@
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
      "this_week": null,
      "cannot_play": "bye",
-     "market_price": 20,
+     "market_price": 12,
      "season_points": 251,
      "roster_id": 2
     }
@@ -272,7 +272,7 @@
    "size_after": 15,
    "opened": 0,
    "fill": null,
-   "price_out": 20,
+   "price_out": 12,
    "price_in": 0,
    "points_out": 251,
    "points_in": 219,
@@ -301,7 +301,7 @@
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
      "this_week": null,
      "cannot_play": "bye",
-     "market_price": 20,
+     "market_price": 12,
      "season_points": 251,
      "roster_id": 2
     }
@@ -335,7 +335,7 @@
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
      "this_week": null,
      "cannot_play": "bye",
-     "market_price": 20,
+     "market_price": 12,
      "season_points": 251,
      "roster_id": 2
     }
@@ -371,7 +371,7 @@
    "opened": 0,
    "fill": null,
    "price_out": 0,
-   "price_in": 20,
+   "price_in": 12,
    "points_out": 219,
    "points_in": 251,
    "starts": [
@@ -384,7 +384,7 @@
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
      "this_week": null,
      "cannot_play": "bye",
-     "market_price": 20,
+     "market_price": 12,
      "season_points": 251,
      "roster_id": 2
     }
@@ -735,19 +735,19 @@
   "lineup_words": "Jacoby Brissett (a free agent for the week) starts at QB in place of Jalen Hurts (traded)."
  },
  "window_words": "over weeks 15–16 in total",
- "hold_words": "-6.3 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "hold_words": "−6.3 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "hold": {
   "hold": null,
-  "waiver": "-6.3 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver": "−6.3 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
   "waiver_gain": 3.85
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **-6.3** over weeks 15–16; them **+3.8** and **+6.3**.",
-  "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **20**, you get **0**: you give 20 more.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.8** this week and **−6.3** over weeks 15–16; them **+3.8** and **+6.3**.",
+  "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **12**, you get **0**: you give 12 more.",
   "ros": "Rest-of-season projected points (weeks 4–16), all positions added up — not a fairness test: you give 232, you get 202.",
   "size": "Roster size: no change (1 for 1).",
   "ranks": "League rank, week 5: you 10th → **5th** of 10, Daejon Loves PR team 9th → 10th; depth: you 6th → **6th** of 10, Daejon Loves PR team 5th → 5th.",
-  "season_value": "Season value above replacement: you give 20, you get 0 (you give 20 more)."
+  "season_value": "Season value above replacement: you give 12, you get 0 (you give 12 more)."
  },
  "alternative": {
   "kind": "waiver",
@@ -789,7 +789,7 @@
  },
  "beyond_alternative": -10.16,
  "beats_alternative": false,
- "alternative_words": "-6.3 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "alternative_words": "−6.3 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -856,11 +856,11 @@
   },
   "season_value": {
    "label": "Season value above replacement",
-   "give": 20,
+   "give": 12,
    "get": 0,
    "unknown": [],
    "fairness": true,
-   "words": "Season value above replacement: you give 20, you get 0 (you give 20 more)."
+   "words": "Season value above replacement: you give 12, you get 0 (you give 12 more)."
   },
   "ros_points": {
    "label": "Rest-of-season projected points",
@@ -882,7 +882,7 @@
     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
     "this_week": null,
     "cannot_play": "bye",
-    "market_price": 20,
+    "market_price": 12,
     "season_points": 251,
     "roster_id": 2
    }
@@ -915,7 +915,7 @@
     -2.72
    ],
    "raw_window": -6.31,
-   "words": "Your starters: -3.6 this week, -6.3 over weeks 15–16."
+   "words": "Your starters: −3.6 this week, −6.3 over weeks 15–16."
   },
   "their_effect": {
    "this_week": 3.59,
@@ -932,7 +932,7 @@
    "theirs": null,
    "roster_spots": 0,
    "season_value": {
-    "give": 20,
+    "give": 12,
     "get": 0
    },
    "horizon": null
@@ -979,9 +979,9 @@
    "theirs": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "8161",
-     "gsis_id": "00-0038128",
-     "player_name": "Malik Willis",
+     "sleeper_id": "5849",
+     "gsis_id": "00-0035228",
+     "player_name": "Kyler Murray",
      "position": "QB"
     },
     "drop": {
@@ -991,11 +991,11 @@
      "position": "QB"
     },
     "open_spot": false,
-    "gain_week": 1.78,
-    "gain_window": 3.62,
+    "gain_week": 4.03,
+    "gain_window": 6.65,
     "by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
     "weeks": [
      15,
@@ -1004,29 +1004,30 @@
     "span": "weeks 15–16",
     "source": "fa_pool fill",
     "note": null,
-    "words": "the Malik Willis claim gives +3.6 over weeks 15–16 (drop Jalen Hurts)",
+    "words": "the Kyler Murray claim gives +6.7 over weeks 15–16 (drop Jalen Hurts)",
     "covered_by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
-    "covered_window": 3.62,
-    "covered_week": 1.78,
+    "covered_window": 6.65,
+    "covered_week": 4.03,
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
    },
-   "words": "Yours: add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop Jalen Hurts: +3.6 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+   "words": "Yours: add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Jalen Hurts: +6.7 over weeks 15–16 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
    "mine": -10.16,
-   "theirs": 2.69,
+   "theirs": -0.34,
    "margin": 1.0
   },
   "why_consider": [
-   "Their starters gain +6.3 over weeks 15–16, 2.7 more than their best waiver move (+3.6 once empty slots are filled from the free pool).",
+   "Their starters gain +6.3 over weeks 15–16.",
    "Patrick Mahomes starts for them in weeks 15 and 16.",
-   "They get more season value above replacement: 20 for 0."
+   "They get more season value above replacement: 12 for 0."
   ],
   "why_refuse": [
+   "Their best waiver move (Kyler Murray, +6.7) does about as much or more for them over weeks 15–16.",
    "Our numbers only: no market price for Patrick Mahomes: this is how the rosters fit, not what the players would fetch."
   ],
   "plausibility": {
@@ -1053,7 +1054,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -10.2 beyond your best waiver move over weeks 15–16 (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 10.2 behind your best waiver move over weeks 15–16 (the bar is 1 point); Daejon Loves PR team's starters end 0.3 behind their own best move over weeks 15–16.",
    "plausibility": "A roster-fit idea"
   }
  },
@@ -1127,11 +1128,11 @@
    "title": "Effect on their starters",
    "need": "puts Jacoby Brissett at their QB in place of Hurts"
   },
-  "verdict": "Does not help your lineup (-3.8 this week, -6.3 over weeks 15–16), them +3.8 (+6.3 over weeks 15–16); you give up more season value: not worth it for your lineup.",
-  "headline": "**You give [Patrick Mahomes](/player/00-0033873); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (-3.8 this week, -6.3 over weeks 15–16), them +3.8 (+6.3 over weeks 15–16); you give up more season value: not worth it for your lineup.",
+  "verdict": "Does not help your lineup (−3.8 this week, −6.3 over weeks 15–16), them +3.8 (+6.3 over weeks 15–16); you give up more season value: not worth it for your lineup.",
+  "headline": "**You give [Patrick Mahomes](/player/00-0033873); you get [Jalen Hurts](/player/00-0036389).** Does not help your lineup (−3.8 this week, −6.3 over weeks 15–16), them +3.8 (+6.3 over weeks 15–16); you give up more season value: not worth it for your lineup.",
   "effect_words": "Your starting lineup: about 3.8 fewer points this week, about 6.3 fewer points in total over weeks 15–16.",
   "their_effect_words": "Daejon Loves PR team's starting lineup: about 3.8 more points this week, about 6.3 more points in total over weeks 15–16.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.8** this week and **-6.3** over weeks 15–16; them **+3.8** and **+6.3**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.8** this week and **−6.3** over weeks 15–16; them **+3.8** and **+6.3**.",
   "strip": {
    "weeks": [
     15,
@@ -1210,9 +1211,9 @@
    "theirs": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "8161",
-     "gsis_id": "00-0038128",
-     "player_name": "Malik Willis",
+     "sleeper_id": "5849",
+     "gsis_id": "00-0035228",
+     "player_name": "Kyler Murray",
      "position": "QB"
     },
     "drop": {
@@ -1222,11 +1223,11 @@
      "position": "QB"
     },
     "open_spot": false,
-    "gain_week": 1.78,
-    "gain_window": 3.62,
+    "gain_week": 4.03,
+    "gain_window": 6.65,
     "by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
     "weeks": [
      15,
@@ -1235,29 +1236,29 @@
     "span": "weeks 15–16",
     "source": "fa_pool fill",
     "note": null,
-    "words": "add Malik Willis, drop Jalen Hurts: +3.6 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Kyler Murray, drop Jalen Hurts: +6.7 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "covered_by_week": [
-     1.78,
-     1.84
+     4.03,
+     2.62
     ],
-    "covered_window": 3.62,
-    "covered_week": 1.78,
+    "covered_window": 6.65,
+    "covered_week": 4.03,
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
    },
    "beyond": {
     "mine": -10.16,
-    "theirs": 2.69
+    "theirs": -0.34
    },
    "beats": false,
-   "words": "-6.3 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "words": "−6.3 over weeks 15–16, not more than your best waiver move (add Arizona Cardinals defense, drop Justin Jefferson: +3.9 over weeks 15–16 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
    "other_objective": null
   },
   "recommendation": {
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -10.2 beyond your best waiver move over weeks 15–16 (the bar is 1 point).",
+   "words": "Not worth proposing: your starters end 10.2 behind your best waiver move over weeks 15–16 (the bar is 1 point); Daejon Loves PR team's starters end 0.3 behind their own best move over weeks 15–16.",
    "plausibility": "A roster-fit idea"
   },
   "changes": {
@@ -1356,7 +1357,7 @@
        "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
        "this_week": null,
        "cannot_play": "bye",
-       "market_price": 20,
+       "market_price": 12,
        "season_points": 251,
        "roster_id": 2
       },
@@ -1391,7 +1392,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters +17.1 this week, -6.3 over weeks 15–16; Daejon Loves PR team's -17.1 and +6.3. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters +17.1 this week, −6.3 over weeks 15–16; Daejon Loves PR team's −17.1 and +6.3. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": 17.07,
     "gain_window": -6.31,

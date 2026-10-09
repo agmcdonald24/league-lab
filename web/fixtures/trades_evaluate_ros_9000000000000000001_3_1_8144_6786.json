@@ -156,7 +156,7 @@
    "mine": -16.27,
    "theirs": 16.17
   },
-  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.9** this week and **-16.3** over weeks 4–17; them **+3.9** and **+16.2**."
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.9** this week and **−16.3** over weeks 4–17; them **+3.9** and **+16.2**."
  },
  "interest": {
   "score": 100,
@@ -232,8 +232,8 @@
    }
   ]
  },
- "verdict": "Does not help your lineup (-3.9 this week, -16.3 over weeks 4–17), them +3.9 (+16.2 over weeks 4–17); you give up more season value: not worth it for your lineup.",
- "headline": "**You give [Chris Olave](/player/00-0037239); you get [CeeDee Lamb](/player/00-0036358).** Does not help your lineup (-3.9 this week, -16.3 over weeks 4–17), them +3.9 (+16.2 over weeks 4–17); you give up more season value: not worth it for your lineup.",
+ "verdict": "Does not help your lineup (−3.9 this week, −16.3 over weeks 4–17), them +3.9 (+16.2 over weeks 4–17); you give up more season value: not worth it for your lineup.",
+ "headline": "**You give [Chris Olave](/player/00-0037239); you get [CeeDee Lamb](/player/00-0036358).** Does not help your lineup (−3.9 this week, −16.3 over weeks 4–17), them +3.9 (+16.2 over weeks 4–17); you give up more season value: not worth it for your lineup.",
  "ros": {
   "give": 249,
   "get": 233,
@@ -915,14 +915,14 @@
   "lineup_words": "Chris Olave (from the trade) starts at WR in place of CeeDee Lamb (traded)."
  },
  "window_words": "over weeks 4–17 in total",
- "hold_words": "-16.3 over weeks 4–17, not more than your best waiver move (add Houston Texans defense, drop Ladd McConkey: +9.0 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "hold_words": "−16.3 over weeks 4–17, not more than your best waiver move (add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "hold": {
   "hold": null,
-  "waiver": "-16.3 over weeks 4–17, not more than your best waiver move (add Houston Texans defense, drop Ladd McConkey: +9.0 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
-  "waiver_gain": 9.01
+  "waiver": "−16.3 over weeks 4–17, not more than your best waiver move (add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver_gain": 18.5
  },
  "how": {
-  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.9** this week and **-16.3** over weeks 4–17; them **+3.9** and **+16.2**.",
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.9** this week and **−16.3** over weeks 4–17; them **+3.9** and **+16.2**.",
   "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **95**, you get **78**: you give 17 more.",
   "ros": "Rest-of-season projected points (weeks 4–17), all positions added up — not a fairness test: you give 249, you get 233.",
   "size": "Roster size: you must cut [Ladd McConkey](/player/00-0039915) (WR, 128 season points; costs 0.0 over weeks 4–17) to stay at 15 players; they must cut [DJ Moore](/player/00-0034827) (WR, 129 season points; costs 0.0 over weeks 4–17) to stay at 15 players.",
@@ -932,10 +932,10 @@
  "alternative": {
   "kind": "waiver",
   "player": {
-   "sleeper_id": "HOU",
-   "gsis_id": null,
-   "player_name": "Houston Texans",
-   "position": "DEF"
+   "sleeper_id": "8161",
+   "gsis_id": "00-0038128",
+   "player_name": "Malik Willis",
+   "position": "QB"
   },
   "drop": {
    "sleeper_id": "11635",
@@ -945,22 +945,22 @@
   },
   "open_spot": false,
   "gain_week": 0.0,
-  "gain_window": 9.01,
+  "gain_window": 18.5,
   "by_week": [
    0.0,
-   2.4,
-   0.0,
-   1.18,
-   0.0,
-   2.34,
-   1.21,
-   0.9,
-   1.05,
-   10.65,
    0.0,
    0.0,
-   0.34,
-   0.25
+   0.54,
+   1.55,
+   2.95,
+   1.63,
+   1.71,
+   1.31,
+   1.64,
+   1.6,
+   1.48,
+   1.91,
+   2.18
   ],
   "weeks": [
    4,
@@ -979,33 +979,49 @@
    17
   ],
   "span": "weeks 4–17",
-  "source": "fa_pool fill",
+  "source": "basis search",
   "note": null,
-  "words": "add Houston Texans defense, drop Ladd McConkey: +9.0 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
   "covered_by_week": [
    0.0,
-   2.4,
-   0.0,
-   1.18,
-   0.0,
-   2.34,
-   1.21,
-   0.9,
-   1.05,
-   -0.66,
    0.0,
    0.0,
-   0.34,
-   0.25
+   0.54,
+   1.55,
+   2.95,
+   1.63,
+   1.71,
+   1.31,
+   1.64,
+   1.6,
+   1.48,
+   1.91,
+   2.18
   ],
-  "covered_window": 9.01,
+  "covered_window": 18.5,
   "covered_week": 0.0,
   "availability": "claim",
-  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "words": "add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "roster_only_pick": {
+   "player": {
+    "sleeper_id": "HOU",
+    "gsis_id": null,
+    "player_name": "Houston Texans",
+    "position": "DEF"
+   },
+   "drop": {
+    "sleeper_id": "11635",
+    "gsis_id": "00-0039915",
+    "player_name": "Ladd McConkey",
+    "position": "WR"
+   },
+   "gain_window": 20.32,
+   "covered_window": 9.01
+  }
  },
- "beyond_alternative": -25.28,
+ "beyond_alternative": -34.77,
  "beats_alternative": false,
- "alternative_words": "-16.3 over weeks 4–17, not more than your best waiver move (add Houston Texans defense, drop Ladd McConkey: +9.0 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "alternative_words": "−16.3 over weeks 4–17, not more than your best waiver move (add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
  "other_objective": null,
  "strip": {
   "weeks": [
@@ -1261,7 +1277,7 @@
     -1.28
    ],
    "raw_window": -16.27,
-   "words": "Your starters: -3.9 this week, -16.3 over weeks 4–17."
+   "words": "Your starters: −3.9 this week, −16.3 over weeks 4–17."
   },
   "their_effect": {
    "this_week": 3.88,
@@ -1299,10 +1315,10 @@
    "mine": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "HOU",
-     "gsis_id": null,
-     "player_name": "Houston Texans",
-     "position": "DEF"
+     "sleeper_id": "8161",
+     "gsis_id": "00-0038128",
+     "player_name": "Malik Willis",
+     "position": "QB"
     },
     "drop": {
      "sleeper_id": "11635",
@@ -1312,22 +1328,22 @@
     },
     "open_spot": false,
     "gain_week": 0.0,
-    "gain_window": 20.32,
+    "gain_window": 18.5,
     "by_week": [
      0.0,
-     2.4,
-     0.0,
-     1.18,
-     0.0,
-     2.34,
-     1.21,
-     0.9,
-     1.05,
-     10.65,
      0.0,
      0.0,
-     0.34,
-     0.25
+     0.54,
+     1.55,
+     2.95,
+     1.63,
+     1.71,
+     1.31,
+     1.64,
+     1.6,
+     1.48,
+     1.91,
+     2.18
     ],
     "weeks": [
      4,
@@ -1346,29 +1362,45 @@
      17
     ],
     "span": "weeks 4–17",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "the Houston Texans defense claim gives +20.3 over weeks 4–17 (drop Ladd McConkey)",
     "covered_by_week": [
      0.0,
-     2.4,
-     0.0,
-     1.18,
-     0.0,
-     2.34,
-     1.21,
-     0.9,
-     1.05,
-     -0.66,
      0.0,
      0.0,
-     0.34,
-     0.25
+     0.54,
+     1.55,
+     2.95,
+     1.63,
+     1.71,
+     1.31,
+     1.64,
+     1.6,
+     1.48,
+     1.91,
+     2.18
     ],
-    "covered_window": 9.01,
+    "covered_window": 18.5,
     "covered_week": 0.0,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "the Malik Willis claim gives +18.5 over weeks 4–17 (drop Ladd McConkey)",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "HOU",
+      "gsis_id": null,
+      "player_name": "Houston Texans",
+      "position": "DEF"
+     },
+     "drop": {
+      "sleeper_id": "11635",
+      "gsis_id": "00-0039915",
+      "player_name": "Ladd McConkey",
+      "position": "WR"
+     },
+     "gain_window": 20.32,
+     "covered_window": 9.01
+    }
    },
    "theirs": {
     "kind": "waiver",
@@ -1444,10 +1476,10 @@
     "availability": "claim",
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
    },
-   "words": "Yours: add Houston Texans defense, drop Ladd McConkey: +9.0 over weeks 4–17 (+20.3 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop DJ Moore: +17.0 over weeks 4–17 (+34.7 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+   "words": "Yours: add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Malik Willis, drop DJ Moore: +17.0 over weeks 4–17 (+34.7 if empty slots were left empty) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
   },
   "beyond": {
-   "mine": -25.28,
+   "mine": -34.77,
    "theirs": -0.8,
    "margin": 1.0
   },
@@ -1489,7 +1521,7 @@
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -25.3 beyond your best waiver move over weeks 4–17 (the bar is 1 point); Bench Mob's starters gain -0.8 beyond their own best move over weeks 4–17.",
+   "words": "Not worth proposing: your starters end 34.8 behind your best waiver move over weeks 4–17 (the bar is 1 point); Bench Mob's starters end 0.8 behind their own best move over weeks 4–17.",
    "plausibility": "A roster-fit idea"
   }
  },
@@ -1675,11 +1707,11 @@
    "title": "Effect on their starters",
    "need": "puts Olave at their WR in place of Lamb"
   },
-  "verdict": "Does not help your lineup (-3.9 this week, -16.3 over weeks 4–17), them +3.9 (+16.2 over weeks 4–17); you give up more season value: not worth it for your lineup.",
-  "headline": "**You give [Chris Olave](/player/00-0037239); you get [CeeDee Lamb](/player/00-0036358).** Does not help your lineup (-3.9 this week, -16.3 over weeks 4–17), them +3.9 (+16.2 over weeks 4–17); you give up more season value: not worth it for your lineup.",
+  "verdict": "Does not help your lineup (−3.9 this week, −16.3 over weeks 4–17), them +3.9 (+16.2 over weeks 4–17); you give up more season value: not worth it for your lineup.",
+  "headline": "**You give [Chris Olave](/player/00-0037239); you get [CeeDee Lamb](/player/00-0036358).** Does not help your lineup (−3.9 this week, −16.3 over weeks 4–17), them +3.9 (+16.2 over weeks 4–17); you give up more season value: not worth it for your lineup.",
   "effect_words": "Your starting lineup: about 3.9 fewer points this week, about 16 fewer in total over weeks 4–17.",
   "their_effect_words": "Bench Mob's starting lineup: about 3.9 more points this week, about 16 more in total over weeks 4–17.",
-  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **-3.9** this week and **-16.3** over weeks 4–17; them **+3.9** and **+16.2**.",
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **−3.9** this week and **−16.3** over weeks 4–17; them **+3.9** and **+16.2**.",
   "strip": {
    "weeks": [
     4,
@@ -1804,10 +1836,10 @@
    "mine": {
     "kind": "waiver",
     "player": {
-     "sleeper_id": "HOU",
-     "gsis_id": null,
-     "player_name": "Houston Texans",
-     "position": "DEF"
+     "sleeper_id": "8161",
+     "gsis_id": "00-0038128",
+     "player_name": "Malik Willis",
+     "position": "QB"
     },
     "drop": {
      "sleeper_id": "11635",
@@ -1817,22 +1849,22 @@
     },
     "open_spot": false,
     "gain_week": 0.0,
-    "gain_window": 9.01,
+    "gain_window": 18.5,
     "by_week": [
      0.0,
-     2.4,
-     0.0,
-     1.18,
-     0.0,
-     2.34,
-     1.21,
-     0.9,
-     1.05,
-     10.65,
      0.0,
      0.0,
-     0.34,
-     0.25
+     0.54,
+     1.55,
+     2.95,
+     1.63,
+     1.71,
+     1.31,
+     1.64,
+     1.6,
+     1.48,
+     1.91,
+     2.18
     ],
     "weeks": [
      4,
@@ -1851,29 +1883,45 @@
      17
     ],
     "span": "weeks 4–17",
-    "source": "fa_pool fill",
+    "source": "basis search",
     "note": null,
-    "words": "add Houston Texans defense, drop Ladd McConkey: +9.0 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
     "covered_by_week": [
      0.0,
-     2.4,
-     0.0,
-     1.18,
-     0.0,
-     2.34,
-     1.21,
-     0.9,
-     1.05,
-     -0.66,
      0.0,
      0.0,
-     0.34,
-     0.25
+     0.54,
+     1.55,
+     2.95,
+     1.63,
+     1.71,
+     1.31,
+     1.64,
+     1.6,
+     1.48,
+     1.91,
+     2.18
     ],
-    "covered_window": 9.01,
+    "covered_window": 18.5,
     "covered_week": 0.0,
     "availability": "claim",
-    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "words": "add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "roster_only_pick": {
+     "player": {
+      "sleeper_id": "HOU",
+      "gsis_id": null,
+      "player_name": "Houston Texans",
+      "position": "DEF"
+     },
+     "drop": {
+      "sleeper_id": "11635",
+      "gsis_id": "00-0039915",
+      "player_name": "Ladd McConkey",
+      "position": "WR"
+     },
+     "gain_window": 20.32,
+     "covered_window": 9.01
+    }
    },
    "theirs": {
     "kind": "waiver",
@@ -1950,18 +1998,18 @@
     "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
    },
    "beyond": {
-    "mine": -25.28,
+    "mine": -34.77,
     "theirs": -0.8
    },
    "beats": false,
-   "words": "-16.3 over weeks 4–17, not more than your best waiver move (add Houston Texans defense, drop Ladd McConkey: +9.0 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+   "words": "−16.3 over weeks 4–17, not more than your best waiver move (add Malik Willis, drop Ladd McConkey: +18.5 over weeks 4–17 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
    "other_objective": null
   },
   "recommendation": {
    "credible": false,
    "key": "not_worth_proposing",
    "label": "Not worth proposing",
-   "words": "Not worth proposing: your starters gain -25.3 beyond your best waiver move over weeks 4–17 (the bar is 1 point); Bench Mob's starters gain -0.8 beyond their own best move over weeks 4–17.",
+   "words": "Not worth proposing: your starters end 34.8 behind your best waiver move over weeks 4–17 (the bar is 1 point); Bench Mob's starters end 0.8 behind their own best move over weeks 4–17.",
    "plausibility": "A roster-fit idea"
   },
   "changes": {
@@ -2224,7 +2272,7 @@
   },
   "unfilled": {
    "label": "If empty slots were left empty",
-   "words": "With nobody added for an empty slot (it counts 0): your starters -3.9 this week, -16.3 over weeks 4–17; Bench Mob's +3.9 and +16.2. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
+   "words": "With nobody added for an empty slot (it counts 0): your starters −3.9 this week, −16.3 over weeks 4–17; Bench Mob's +3.9 and +16.2. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict.",
    "mine": {
     "gain_week": -3.88,
     "gain_window": -16.27,
