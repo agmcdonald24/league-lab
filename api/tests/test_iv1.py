@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import psycopg
 import pytest
-
 from league_lab import live_week as LW
+
 from league_lab_api import db
 
 Q = "select proj_points from ops.projection_ranges where season = %s and week = %s"
