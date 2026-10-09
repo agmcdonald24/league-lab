@@ -288,6 +288,11 @@ RECORD_TABLES="$RECORD_TABLES ops.context_record"
 STATE_TABLES="$STATE_TABLES ops.horizon_record"
 RECORD_TABLES="$RECORD_TABLES ops.horizon_record"
 # ---- end IU-5
+# ---- IV-1 (Wave I-V): fr1.1, the live week's overlays (LEAGUE_LAB_FREEZE=game): a game that kicked off keeps the last
+# live number written before its kickoff until the week is over, so they are state (not record: no grade reads them).
+# `db migrate` creates them; a copy that does not have them yet is "not published there"; empty with the switch unset.
+STATE_TABLES="$STATE_TABLES ops.projection_live ops.projection_lines_live ops.projection_ranges_live ops.kd_lines_live ops.kd_ranges_live"
+# ---- end IV-1
 
 is_record() { case " $RECORD_TABLES " in *" $1 "*) return 0;; esac; return 1; }
 

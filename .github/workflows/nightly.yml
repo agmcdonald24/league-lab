@@ -211,6 +211,11 @@ jobs:
           # keeps nothing and the same run publishes by the drop path, as before. Rollback = delete these two lines.
           LEAGUE_LAB_HOSTED_PUBLISH: auto
           LEAGUE_LAB_HOSTED_CAP_MB: "800"
+          # Wave I-V (IV-1): the live week (fr1.1; docs/METRICS.md § "The live week after its first kickoff"). `project`
+          # re-projects the week under way's games that have not kicked off into the overlays (ops.*_live); every request
+          # follows what is stored, so Render needs no setting. Rollback = delete these lines: the next nightly's
+          # `project` empties every overlay and every screen reads the kickoff board again (as before IU-2).
+          LEAGUE_LAB_FREEZE: game
         run: ./scripts/nightly.sh ${{ inputs.full && '--full' || '' }}
 
       # Save the archive only when its content changed (the key is a fingerprint of every data
