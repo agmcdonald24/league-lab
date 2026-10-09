@@ -3966,6 +3966,89 @@ market week's starter still starts h weeks out, and that a backup does — the l
 class with a player effect on the components (pe1.0, a residual player effect on the trees, was the light version and
 did not pass); the team's pass rate and pace for weeks without a line.
 
+### v3.7: the role forecast (IT-5) (Wave I-T, 2026-10-09; `scripts/analysis/it5_role.py`)
+
+**The question.** Two to eight weeks out the quarterback model assumes the market week's listed starter is still the
+starter (and a backup still a backup). On the study's scored later-week rows 18 % (2021–2025) have a different listed
+role in the target week than in the market week; IQ-3's ceiling split put the role at 0.47 points of MAE. Does a
+forecast of the role, mixed into the line, beat v3.6?
+
+**The rows** (the same as IQ-3's): `iq3_qb.py`'s cache rebuilt (`it5_role.py cache`, the same construction plus six
+market-week columns the forecast reads): per season S the production QB component models fitted on 2016..S−1, the
+horizon rows as of W = 3, 5, 7, 9 with v3.5's later-week inputs (`iq1_horizon.future_rows`, `impute_lines`,
+`market_personnel`); seasons 2021–2025; both house scorings; scored per league × season × W × target week × horizon on
+the QBs who played with the 12 outcomes known (≥ 8 a cell), pooled over horizons 2–8 (cells → league × season × h →
+h → leagues), the season the paired unit, pooled = the mean over seasons.
+
+**v3.6's own numbers on these rows** (`it5_role.py v36`, 03:19 ET, 12 s; reproduces IQ-3's table exactly):
+
+| season | 2021 | 2022 | 2023 | 2024 | 2025 | pooled |
+|---|---|---|---|---|---|---|
+| v3.6 MAE 2–8 weeks | 7.328 | 6.894 | 7.398 | 7.620 | 7.790 | **7.406** |
+| v3.6 Spearman 2–8 weeks | 0.519 | 0.533 | 0.518 | 0.478 | 0.426 | **0.4948** |
+| v3.6 1 week (the market week) MAE / ρ | 6.499 / 0.605 | 6.168 / 0.593 | 6.264 / 0.608 | 6.779 / 0.573 | 6.394 / 0.602 | 6.421 / 0.596 |
+
+By horizon (seasons averaged, MAE / Spearman): h2 7.178 / 0.544, h3 6.768 / 0.527, h4 7.391 / 0.471, h5 7.395 / 0.523,
+h6 7.705 / 0.466, h7 7.535 / 0.471, h8 7.871 / 0.462.
+
+**The useful-decision grade for quarterbacks re-graded on v3.6's rows** (ud1.0 as defined in § "The useful decision
+grade": Half PPR, as of W = 3, 5, 7, 9, the four weeks W+1 … W+4, the top 24 by the calculator's own number, close pairs
+within 20 %; computed on the cache's rows with `ir4_useful.pair_rates`). The same code on the model alone (IR-4's
+v3.5-era rows) reproduces IR-4 exactly: 3,680 pairs, 0.594 against his own record's 0.615.
+
+| line | pairs | 2021 | 2022 | 2023 | 2024 | 2025 | pooled | his own record (pooled) | seasons above both |
+|---|---|---|---|---|---|---|---|---|---|
+| the model alone (IR-4's rows) | 3,680 | .580 | .578 | .632 | .593 | .586 | 0.594 | 0.615 | 0 of 5 |
+| v3.5 (+ pt1.0) | 3,776 | .581 | .580 | .630 | .609 | .586 | 0.597 | 0.617 | 1 of 5 |
+| **v3.6 (+ hb1.0)** | 3,999 | .601 | .590 | .655 | .625 | .595 | **0.613** | 0.595 | **4 of 5** |
+
+So on v3.6's rows the calculator is "useful" at quarterback too by ud1.0's reading (above 50 % and above his own record
+in 4 of 5 seasons; 2022 is the one below). The pairs differ from IR-4's because the top 24 and the close pairs follow
+each calculator's own number (the definition).
+
+**The rule — written at 03:20 ET on 2026-10-09 and committed before any candidate's number was computed.** v3.6 is the
+base. A candidate ships only if **all** of:
+
+* **(a)** the market week is unchanged: 0 cells (the 1-week board rows and the h = 1 horizon rows).
+* **(b)** quarterback MAE 2–8 weeks is lower than v3.6's **7.406** pooled **and** lower than v3.6's in at least 4 of
+  the 5 seasons (7.328 / 6.894 / 7.398 / 7.620 / 7.790).
+* **(c)** Spearman 2–8 weeks pooled is not lower than v3.6's **0.4948** (compared at full precision).
+* **(d)** ud1.0 for quarterbacks (pooled over seasons) is not lower than v3.6's **0.613** on the same decisions.
+* **(e)** no other position's rows move (0 cells); a receivers' change would be proposed separately with its own grade
+  (none is).
+
+Then face validity: the rest-of-season QB top 20 on `league_lab_im1` before and after, against points per game and
+each team's situation this week; a list that passes the rule and looks wrong is not shipped. Seasons, boards and
+clauses are fixed here; nothing is tuned on 2021–2025's outcomes (every fit below is on earlier seasons).
+
+**The candidates, defined here before their run** (`it5_role.py study`):
+
+* **rf1.0** (the one eligible to ship) — for a horizon row h ≥ 2, p = the probability that the player is the listed
+  starter in week T, given his market-week role: one logistic regression per market-week role (starter / not),
+  standardised inputs, C = 1, fitted walk-forward on the horizon rows of 2018..S−1 (every earlier season in the cache;
+  every row that has a week-T row, played or not: the unconditional probability). Inputs, all from the market week's
+  row (known at W): the horizon (one column per h), the injury designation (`questionable`), his snap share this
+  season, his games with the team's skill players (log; the nearest thing to tenure the frame holds), a changed starter
+  (`pn_qb_changed`), rookie or backup (`pn_qb_is_rookie_or_backup`), `pn_qb_prev_ppg_diff`, his points per game this
+  season and last, his games this season and last. **The line**: the market week's starter: p × his v3.6 line + (1 − p) ×
+  a backup's line (the non-starters' mean per component, the scored board rows of the 3 seasons before — the role
+  prior hb1.0's naive line uses); the market week's non-starter: p × his starter line (B1r with the starters' prior: his
+  per-game line this season and last shrunk toward the starters' mean by v3.6's own λ and k) + (1 − p) × his v3.6 line.
+  Per component, before pricing (lines, projections and ranges stay one number). h = 1 and the board untouched.
+* **rf1.1** (graded, **not eligible**) — rf1.0 with p fitted on the rows where he played in week T (the probability
+  that he starts given that he plays). It reads the convention the trees are trained on (a line is "if he plays"),
+  but production sums a backup's later weeks with no probability of playing, so a backup's rest of season would rise
+  toward a starter's for weeks he will mostly not play. Reported as what the role is worth on the graded rows.
+* **Baselines beside them**: v3.6 as is; **"the starter always keeps the job"** (p = 1 for the market week's starter,
+  0 for the rest — today's assumption; by construction equal to v3.6, printed as a check of the mixture code); **the
+  oracle that knows who started** (p = 1 when he was the listed starter in week T, else 0; the ceiling of this mixture).
+* **Calibration first**: the reliability table of p by decile (2021–2025, out of sample), Brier score against the base
+  rate, and by horizon, read before any points. The logistic fit is the calibration; nothing is refitted on the test
+  seasons.
+* **Not usable tonight** (not in the frame): age; tenure as the starter (only games with the team's skill players);
+  a hand-set or disputed starter (the override list has no history); the team's record; a rookie behind him (the depth
+  chart's second QB is not a column).
+
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
 **Why.** A projected line is a set of means. A linear rule (points per yard, per catch, per TD) prices a mean
