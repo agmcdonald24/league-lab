@@ -153,7 +153,9 @@ def _ddl_columns(text: str) -> list[str]:
 
 
 def test_nfl_wide_ddl_carries_the_freeze_labels_and_the_written_columns():
-    from league_lab import live_week   # ---- IV-1: the overlays are `like` the table they overlay (tests/test_iu2_freeze.py)
+    from league_lab import (
+        live_week,  # ---- IV-1: the overlays are `like` the table they overlay (tests/test_iu2_freeze.py)
+    )
     cols = {t: _ddl_columns(ddl) for t, ddl in NFL_DDL.items() if t not in live_week.LIVE_TABLES or t == projections.LIVE_TABLE}
     for t, c in cols.items():
         assert c[-2:] == ["frozen_at", "frozen_source"], t

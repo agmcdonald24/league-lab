@@ -88,7 +88,7 @@ TEAMS = pd.DataFrame({"team": ["BAL", "ATL"], "game_kickoff": [SUN, SUN]})
 
 def _lines():
     rows = []
-    for g, pos, team in (("lamar", "QB", "BAL"), ("huntley", "QB", "BAL"), ("flowers", "WR", "BAL"), ("dal_wr", "WR", "DAL")):
+    for g, pos in (("lamar", "QB"), ("huntley", "QB"), ("flowers", "WR"), ("dal_wr", "WR")):
         rows.append({"model_version": "v3.6", "fitted_at": SUN, "train_seasons": "2016-2025", "season": 2026, "week": 5,
                      "gsis_id": g, "position": pos, **{f"proj_{c}": 10.0 for c in P.ALL_COMPONENTS}})
         rows.append({**rows[-1], "week": 6})
