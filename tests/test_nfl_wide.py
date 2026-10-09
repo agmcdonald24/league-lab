@@ -153,7 +153,8 @@ def _ddl_columns(text: str) -> list[str]:
 
 
 def test_nfl_wide_ddl_carries_the_freeze_labels_and_the_written_columns():
-    cols = {t: _ddl_columns(ddl) for t, ddl in NFL_DDL.items()}
+    from league_lab import live_week   # ---- IV-1: the overlays are `like` the table they overlay (tests/test_iu2_freeze.py)
+    cols = {t: _ddl_columns(ddl) for t, ddl in NFL_DDL.items() if t not in live_week.LIVE_TABLES or t == projections.LIVE_TABLE}
     for t, c in cols.items():
         assert c[-2:] == ["frozen_at", "frozen_source"], t
         assert "fitted_at" in c and "season" in c and "week" in c, t
@@ -167,7 +168,8 @@ def test_nfl_wide_ddl_carries_the_freeze_labels_and_the_written_columns():
     nightly = (ROOT / "scripts/nightly.sh").read_text()
     state = re.search(r'^STATE_TABLES="(.*)"', nightly, re.M).group(1).split()
     # ---- IU-2: ops.projection_live is the live overlay (fr1.0), not state: empty with the default switch
-    assert {t for t in NFL_DDL if t != projections.LIVE_TABLE} <= set(state)
+    # ---- IV-1: the overlays are state too (fr1.1: a game that kicked off keeps its last live number): the PO's line
+    assert {t for t in NFL_DDL if t not in live_week.LIVE_TABLES} <= set(state)
 
 
 def test_freeze_plan_works_on_a_whole_week_unit():

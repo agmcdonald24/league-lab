@@ -658,7 +658,13 @@ def _num(v) -> float | None:
     return None if v is None else float(v)
 
 
-def load_inputs(conn: psycopg.Connection, season: int) -> LineupInputs:
+def load_inputs(conn: psycopg.Connection, season: int, live: bool = True) -> LineupInputs:
+    # ---- IV-1 (Wave I-V): the projections read through league_lab.live_week (the overlay of the week under way, for
+    # players whose game has not kicked off, when project wrote one; none: the SQL unchanged). live=False: the
+    # kickoff board alone (the decision record's reconstruction)
+    from . import live_week as _LW
+    act = _LW.active_on(conn) if live else frozenset()
+    # ---- end IV-1
     with conn.cursor() as cur:
         leagues = _frame(cur, """
             select l.league_id, l.roster_positions, coalesce(l.last_scored_leg, 0) as last_scored_leg,
@@ -666,13 +672,13 @@ def load_inputs(conn: psycopg.Connection, season: int) -> LineupInputs:
             from analytics.dim_league_season l where l.season = %s and l.is_current_season order by l.league_id""", (season,))
         ids = [lg["league_id"] for lg in leagues]
         # fresh projections (see module docstring) with the as-of status the mart shows next to them
-        proj_rows = _frame(cur, """
+        proj_rows = _frame(cur, _LW.sql("""
             select p.league_id, p.week, p.gsis_id, round(p.proj_points::numeric, 2) as proj_points, p.model_version,
                    f.team, f.report_status, f.roster_status,
                    to_jsonb(p) ->> 'availability' as availability   -- ---- IS-2: the gate's stored record (may not exist)
             from ops.projections as p
             join analytics.mart_player_week_features as f using (gsis_id, season, week)
-            where p.season = %s and p.league_id = any(%s)""", (season, ids))
+            where p.season = %s and p.league_id = any(%s)""", act), (season, ids))   # ---- IV-1: _LW.sql
         weekly_rows = _frame(cur, """
             select league_id, week, roster_id, sleeper_player_id, gsis_id, player_name, position, is_starter, slot,
                    points_observed, is_scored_week
@@ -696,7 +702,7 @@ def load_inputs(conn: psycopg.Connection, season: int) -> LineupInputs:
         game_rows = _frame(cur, """
             select week, home_team, away_team, kickoff_at from analytics.dim_game
             where season = %s and season_type = 'REG'""", (season,))
-        kd_rows = _load_kd_projections(cur, season, ids)
+        kd_rows = _load_kd_projections(cur, season, ids, act)   # ---- IV-1: act
 
     proj: dict[tuple[str, int, str], dict] = {}
     weeks: dict[str, set[int]] = defaultdict(set)
@@ -734,19 +740,20 @@ def load_inputs(conn: psycopg.Connection, season: int) -> LineupInputs:
     )
 
 
-def _load_kd_projections(cur: psycopg.Cursor, season: int, ids: list[str]) -> list[dict]:
+def _load_kd_projections(cur: psycopg.Cursor, season: int, ids: list[str], act: frozenset = frozenset()) -> list[dict]:
     """K / DEF rows of ops.projections (plan R-13) with the unit's team and status for the week
     (``mart_kd_week``); none on a database that has not built that mart yet."""
     cur.execute("select to_regclass('analytics.mart_kd_week') is not null")
     if not cur.fetchone()[0]:
         return []
-    return _frame(cur, """
+    from . import live_week as _LW  # ---- IV-1
+    return _frame(cur, _LW.sql("""
         select p.league_id, p.week, p.position, p.gsis_id as unit_id, round(p.proj_points::numeric, 2) as proj_points,
                u.team, u.report_status, u.roster_status
         from ops.projections as p
         join analytics.mart_kd_week as u
           on u.position = p.position and u.unit_id = p.gsis_id and u.season = p.season and u.week = p.week
-        where p.season = %s and p.league_id = any(%s) and p.position in ('K', 'DEF')""", (season, ids))
+        where p.season = %s and p.league_id = any(%s) and p.position in ('K', 'DEF')""", act), (season, ids))   # ---- IV-1
 
 
 def _kd_maps(rows: list[dict]) -> dict[str, dict]:
@@ -1023,7 +1030,10 @@ def lineups(conn: psycopg.Connection, season: int | None = None, as_of: datetime
         log.warning("lineups: no current league plays season %s; nothing written", season)
     rows, totals, solve_s = build(inp, as_of=as_of)
     _write(conn, season, rows, totals)
-    record_after_lineups(conn, inp, rows, totals, as_of)       # ---- V-1 (Wave I-G): the decision record, never fatal
+    # ---- IV-1: the record's reconstruction reads the kickoff board, never the overlay (the solves above read it)
+    from . import live_week as _LW
+    rec_inp = load_inputs(conn, season, live=False) if _LW.active_on(conn) else inp
+    record_after_lineups(conn, rec_inp, rows, totals, as_of)   # ---- V-1 (Wave I-G): the decision record, never fatal
     upcoming = sorted(w for w, teams in inp.games.items() if any(k is not None and k > as_of for k in teams.values()))
     run = LineupRun(season, pd.DataFrame(rows, columns=LINEUP_COLUMNS), pd.DataFrame(totals, columns=TOTALS_COLUMNS),
                     time.perf_counter() - t0, solve_s, upcoming[0] if upcoming else None)
