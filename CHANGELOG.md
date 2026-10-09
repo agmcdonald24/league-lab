@@ -2,6 +2,14 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-09 — Wave I-T
+
+- **IT-1 — one basis on every trade screen.** The Trade Finder's suggestions are now the trade calculator's own answer
+  for each package (the same label, gains, sentences and recommendation, the starter rule included), and "your best
+  waiver move" is searched on the same comparison as the trades. One minus sign in every sentence; the calculator's
+  tiles name the roster-only total other screens show; a player who sits shows why on the trade rosters.
+  docs/handbacks/IT-1.md.
+
 ## 2026-10-08 — Wave I-S (dependability, second round)
 
 - **PO — the merge, the lineup's second source, the caches, the workflow lines.** `availability_gate.sits` /

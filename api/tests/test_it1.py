@@ -12,10 +12,12 @@ import pytest
 
 from league_lab_api import decisions
 
-from .conftest import SCRUBS, needs_db
+from .conftest import DYNASTY, SCRUBS, needs_db
 
 TEST_LEAGUE = "9000000000000000001"
-CASES = [(SCRUBS, 2), (TEST_LEAGUE, 3)]
+# Scrubs and the Test League have nothing worth proposing at the pinned moment; Forever Unclean Dynasty's roster 12 has
+# three — its rows are compared word for word with the calculator, the partner's own move compared
+CASES = [(SCRUBS, 2), (TEST_LEAGUE, 3), (DYNASTY, 12)]
 
 
 @pytest.fixture(autouse=True)
@@ -42,7 +44,7 @@ def _compare(row: dict, ev: dict) -> None:
     rr, er = rd["recommendation"], d["recommendation"]
     assert (rr["key"], rr["credible"], rr["label"]) == (er["key"], er["credible"], er["label"])
     assert row["card"]["credible"] == er["credible"]
-    assert (row.get("tier") == "credible") == er["credible"]
+    assert (row.get("tier") == "credible") <= er["credible"]       # promoted only when worth proposing (at most three)
     assert rd.get("caveat") == d.get("caveat")
     alt_t = row["card"]["waiver_alternative"]["theirs"]
     if alt_t.get("kind") != decisions.IL4_NOT_COMPARED:
@@ -53,7 +55,7 @@ def _compare(row: dict, ev: dict) -> None:
 
 
 @needs_db
-@pytest.mark.parametrize("league,team", CASES, ids=["scrubs", "test-league"])
+@pytest.mark.parametrize("league,team", CASES, ids=["scrubs", "test-league", "dynasty"])
 def test_three_finder_rows_are_the_calculators_answer(client, league, team):
     p = client.get("/api/trades/partners", params={"league": league, "team": team})
     assert p.status_code == 200, p.text
@@ -70,7 +72,7 @@ def test_three_finder_rows_are_the_calculators_answer(client, league, team):
 
 
 @needs_db
-@pytest.mark.parametrize("league,team", CASES, ids=["scrubs", "test-league"])
+@pytest.mark.parametrize("league,team", CASES, ids=["scrubs", "test-league", "dynasty"])
 def test_the_finder_orders_and_tiers_on_the_decision(client, league, team):
     rows = client.get("/api/trades/partners", params={"league": league, "team": team}).json()["partners"]
     keys = [(not r["beats_alternative"], -r["beyond_alternative"]) for r in rows if not r.get("optional")]

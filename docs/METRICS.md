@@ -5395,3 +5395,24 @@ The Questionable group is off by far more than 10 % once the games he sits count
 ≈ +58 % (history) / +75 % (2026, n = 55)**. Per the rule nothing is scaled: a Questionable player stays ranked,
 flagged, with "players listed questionable have played about 67 in 100 times; ranked as if he plays." Whether to
 scale him (by about 0.62, the played share × the when-played ratio) is the PO's and Andrew's decision.
+
+<!-- ---- IT-1 -->
+### One basis on every trade screen (ct1.2, IT-1, Wave I-T, 2026-10-09; `decisions.it1_*`, `trades.basis_best_move`)
+
+* **The Finder's rows are the calculator's answer** (`it1_row_decision`): each row's package goes through `ir2_decision`
+  on the row's own card (the covered pair the card priced), then `provenance.with_trade` / `rule_trade` exactly as
+  `POST /api/trades/evaluate` (a withheld verdict is not credible in the Finder either). The row's label, gains, strip,
+  story, alternative line, tier and order (beats your best waiver move first, then the gain beyond it; IE-1's cheaper
+  package never below its extra-asset twin) are copied from it; a compact copy rides on the row (`decision`). The
+  search that proposes the packages is still `trades.partners` (roster-only gains); a package whose decision does not
+  raise both lineups is not listed (`search.dropped_on_the_basis` counts them). A row whose partner's own move was not
+  compared (IL-4) says so in its card and recommendation; its key and label are the calculator's.
+* **The best waiver move on the basis** (`trades.basis_best_move`, used by `ii1_alternative` for both teams): each week's
+  pool is the roster with its empty starting slots filled from that week's free pool; an add is worth what it raises
+  that lineup (`best_fill`'s entry bar). Moves tried: an open spot, else a drop of the bench player with the fewest
+  rest-of-season points (a starter only when the bench is empty: dropping a starter would let the free pool refill his
+  slot weekly — a second pickup). Free agents used as a fill are not candidates. The basis move replaces the IF-1 / IF-2
+  pick when it adds more on the basis (`roster_only_pick` keeps the other). The Finder's "Your best move" is the same.
+* **One minus sign**: `it1_minus` on every sentence of the decision, the card and the Finder's headline.
+* Not graded: whether the basis's pickups are available (another team can add the player first) — said on the card.
+<!-- ---- end IT-1 -->

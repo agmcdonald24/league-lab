@@ -255,7 +255,9 @@
         {/if}
         {#if exploreRows.length}
           <Expander title={`Explore alternatives · ${exploreRows.length} ${exploreRows.length === 1 ? "trade" : "trades"} that did not pass`} testid="explore">
-            <p class="mb-2 text-sm text-ink-2" data-testid="explore-why">Each raises both starting lineups, but does not beat both teams' own best alternative by {finder.margin ?? 1} point, or is not a plausible offer: ideas to look at, not trades to propose.</p>
+            {@const moreCredible = exploreRows.filter((x) => x.card?.credible).length}
+            <!-- IT-1: the Finder promotes three; a trade past them that is also worth proposing is said to be one -->
+            <p class="mb-2 text-sm text-ink-2" data-testid="explore-why">{#if moreCredible}{moreCredible} more {moreCredible === 1 ? "is" : "are"} worth proposing (after the first three, marked on {moreCredible === 1 ? "its" : "their"} card). The others raise both starting lineups, but do not beat both teams' own best alternative by {finder.margin ?? 1} point, or are not a plausible offer: ideas to look at, not trades to propose.{:else}Each raises both starting lineups, but does not beat both teams' own best alternative by {finder.margin ?? 1} point, or is not a plausible offer: ideas to look at, not trades to propose.{/if}</p>
             <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
               {#each exploreRows.slice(0, 12) as p, i (`x-${p.partner}-${p.shape}-${i}`)}{@render partnerCard(p, true)}{/each}
             </div>
