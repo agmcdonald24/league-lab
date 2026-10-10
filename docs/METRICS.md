@@ -5486,6 +5486,17 @@ Case Keenum started) and Green Bay 2025 wk 18 (Jordan Love picked; Clayton Tune 
 (Arizona wk 6, Atlanta wk 8, Buffalo, the Chargers and Philadelphia wk 18, Pittsburgh wk 12) and those two. Live, for
 Chicago week 5 (listing Keenum, the chart Caleb Williams first, week 4's snaps Bagent), S7 would pick Williams.
 
+**The PO's decision (round 3, 16:53 ET, 2026-10-10) — sq1.1: S7 ships, S4 is recorded beside it.**
+
+S7 did not meet the PO's bar (10 of 12 stale listings fixed; the bar was 11) and met the accuracy bar by nothing (two
+team-games behind S4). The PO ships it anyway, and this is a product decision, not a finding. The clause S7 adds to S4 —
+drop a listing that neither the depth chart nor the newest game's snaps supports — changed two games of the 670, both
+wrong, on a base that has been corrected after the games: in history an unsupported listing is usually the answer
+written in afterwards; live it has been a stale name both times it has happened this season (Seattle before week 4,
+Chicago in week 5), and S4 would project Case Keenum as Chicago's starter this week. The past cannot test the clause, so
+the season will: S4's pick is recorded beside S7's at every kickoff and both are graded against who took the snaps. The
+PO reads the two records after four graded weeks and keeps the better.
+
 ## Who cannot play (av1.0, IR-1, Wave I-R, 2026-10-08; `src/league_lab/availability_gate.py`, `api/league_lab_api/availability.py` § IR-1)
 
 Andrew, 2026-10-08: De'Von Achane (IR, torn ACL) was the 21st running back on Rankings at 10.93 while his card said
