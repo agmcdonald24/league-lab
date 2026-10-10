@@ -5477,6 +5477,15 @@ stays in the code, unused. Kill switch: `--vars '{starter_from_data: false}'`.
 * **A Questionable starter**: available (the gate says he does not sit), so he is the pick when the rule names him, and
   his row carries its Questionable words as today; when he is ruled out, the next refresh moves the pick.
 
+**Round 2's result (`iq2_starter_source.py study`, 16:50 ET, after `09d75f6`)**: S7 on the same 670 team-games: 639
+right (0.9537) against S4's 641 (0.9567) — inside the 0.003 allowance by the width of a rounding — and **10 of 12** stale
+listings fixed, the same 10 as S4 (it still misses Seattle 2026 wk 3 and Chicago 2026 wk 4, where the listed quarterback
+had led the newest game: supported by one source, so kept). **S7 does not meet the ship rule (11 of 12); it is not
+shipped; the PO decides.** It differs from S4 in two games, both newly broken: Chicago 2026 wk 3 (Tyson Bagent picked;
+Case Keenum started) and Green Bay 2025 wk 18 (Jordan Love picked; Clayton Tune started). Its 8 newly broken: S4's 6
+(Arizona wk 6, Atlanta wk 8, Buffalo, the Chargers and Philadelphia wk 18, Pittsburgh wk 12) and those two. Live, for
+Chicago week 5 (listing Keenum, the chart Caleb Williams first, week 4's snaps Bagent), S7 would pick Williams.
+
 ## Who cannot play (av1.0, IR-1, Wave I-R, 2026-10-08; `src/league_lab/availability_gate.py`, `api/league_lab_api/availability.py` § IR-1)
 
 Andrew, 2026-10-08: De'Von Achane (IR, torn ACL) was the 21st running back on Rankings at 10.93 while his card said

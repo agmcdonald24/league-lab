@@ -28,10 +28,10 @@ SEASONS = (2021, 2026)
 DEPTH_FROM = 2025                      # the first season with stored depth charts (nflverse daily snapshots)
 OUT_REPORT = {"Out", "Doubtful"}
 AVAILABLE_ROSTER = {"ACT", "INA", "DEV"}   # INA (game-day inactive, 90 minutes before kickoff) is never read as out
-CANDIDATES = ("S1", "S2", "S3", "S4", "S5", "S6")
+CANDIDATES = ("S1", "S2", "S3", "S4", "S5", "S6", "S7")
 NAMES = {"S0": "listing (base)", "S1": "depth chart QB1", "S2": "depth chart, first available",
          "S3": "listing unless ruled out", "S4": "two sources agree (own)",
-         "S5": "the snaps first (IW-1)", "S6": "two of three (IW-1)"}
+         "S5": "the snaps first (IW-1)", "S6": "two of three (IW-1)", "S7": "S4 + an unsupported listing dropped (IW-1 r2)"}
 
 GAMES_SQL = """
 select g.season, g.week, g.game_id, g.kickoff_at, t.team, nullif(t.qb, '') as listed_id
@@ -175,7 +175,28 @@ def picks(g: pd.DataFrame, out_fn) -> pd.DataFrame:
     # ---- IW-1 (Wave I-W): S5, S6 (docs/METRICS.md § "Who starts, decided by the data", written before their numbers)
     pairs = [pick_s5_s6(r.listed_id, r.depth, r.last_id, lambda q, r=r: out_fn(r.season, r.week, q)) for r in g.itertuples()]
     out["S5"], out["S6"] = [a for a, _ in pairs], [b for _, b in pairs]
+    # ---- IW-1 round 2: S7 (written before its numbers, METRICS § "Who starts, decided by the data", round 2)
+    out["S7"] = [pick_s7(r.listed_id, r.depth, r.last_id, p4, lambda q, r=r: out_fn(r.season, r.week, q))
+                 for r, p4 in zip(g.itertuples(), s4, strict=True)]
     return out
+
+
+def pick_s7(listed, depth, last, s4_pick, is_out) -> str | None:
+    """S7: S4, and when neither the chart's first available quarterback nor the newest game's dropback leader names the
+    listed quarterback, the listing is dropped: the chart's first available (no chart: the newest leader if available;
+    else the listing)."""
+    def ok(q):
+        return isinstance(q, str) and not is_out(q)
+    L = listed if isinstance(listed, str) else None
+    n = last if isinstance(last, str) else None
+    if depth is not None:
+        d = next((q for q in depth if ok(q)), None)
+        if L is not None and d != L and n != L:
+            return d if d is not None else L
+        return s4_pick
+    if L is not None and n != L:
+        return n if ok(n) else L
+    return L
 
 
 def pick_s5_s6(listed, depth, last, is_out) -> tuple[str | None, str | None]:
@@ -311,7 +332,7 @@ def study(csv: str | None) -> None:
     rows = []
     for wname, w in windows.items():
         for c in CANDIDATES:
-            if wname.startswith("2021") and c not in ("S3", "S5"):   # ---- IW-1: S5 needs no chart (falls to the listing)
+            if wname.startswith("2021") and c not in ("S3", "S5", "S7"):   # ---- IW-1: S5 / S7 need no chart
                 continue
             r = score(w, c)
             r["window"] = wname
