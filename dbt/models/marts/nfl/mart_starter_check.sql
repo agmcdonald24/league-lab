@@ -21,7 +21,8 @@ with season as (
 
 next_game as (
     select distinct on (t.team) t.season, t.week, t.game_id, t.team, t.opponent, t.kickoff_at, t.listed_qb_id,
-           t.starting_qb_id as projected_qb_id, t.starter_source
+           t.starting_qb_id as projected_qb_id, t.starter_source,
+           t.starter_reason, t.s4_qb_id, t.s7_qb_id                         -- ---- IW-1 round 3
     from {{ ref('int_pn_team_game') }} as t
     join season as s on s.season = t.season
     where not t.is_played
@@ -120,6 +121,7 @@ select
     o.override_qb_id, nov.player_name as override_name, o.override_added_on, o.override_led_since_week,
     o.override_reason,
     n.projected_qb_id, npj.player_name as projected_name, n.starter_source,
+    n.starter_reason, n.s4_qb_id, n.s7_qb_id,                               -- ---- IW-1 round 3: why, and both rules
     coalesce(n.listed_qb_id = d.depth_qb_id and d.depth_qb_id = ll.last_qb_id, false) as agree,
     -- U1, the "starter unclear" trigger kept by the rule (METRICS § "Who starts"): the listing is not the depth
     -- chart's first available quarterback (the screens drop a team the override list corrects)

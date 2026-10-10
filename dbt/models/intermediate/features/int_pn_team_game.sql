@@ -275,7 +275,18 @@ sq_pick as (
                 when lo.gsis_id is not null then coalesce(dq.depth_qb_id, g.listing_qb_id)
                 when dq.depth_qb_id is not null and dq.depth_qb_id = sl.last_qb_id and sl.last_qb_id <> g.listing_qb_id
                      then sl.last_qb_id
-                else g.listing_qb_id end                                     as s7_qb_id
+                else g.listing_qb_id end                                     as s7_qb_id,
+           -- why each rule moved off the listing (the row's sentence): listing_out | two_sources | unsupported
+           case when g.listing_qb_id is null then null
+                when lo.gsis_id is not null then 'listing_out'
+                when dq.depth_qb_id is not null and dq.depth_qb_id = sl.last_qb_id and sl.last_qb_id <> g.listing_qb_id
+                     then 'two_sources' end                                  as s4_reason,
+           case when g.listing_qb_id is null then null
+                when lo.gsis_id is not null then 'listing_out'
+                when dq.depth_qb_id is not null and dq.depth_qb_id = sl.last_qb_id and sl.last_qb_id <> g.listing_qb_id
+                     then 'two_sources'
+                when dq.depth_qb_id is distinct from g.listing_qb_id and sl.last_qb_id is distinct from g.listing_qb_id
+                     then 'unsupported' end                                  as s7_reason
     from sq_games as g
     left join sq_depth as dq on dq.game_id = g.game_id and dq.team = g.team
     left join sq_last as sl on sl.game_id = g.game_id and sl.team = g.team
@@ -297,7 +308,8 @@ select
               and {{ 'sq.s7_qb_id' if sq_rule == 's7' else ('sq.s4_qb_id' if sq_rule == 's4' else 'null') }}
                   is distinct from p.starting_qb_id then 'data'
          else 'schedule' end                                                 as starter_source,
-    sq.s4_qb_id, sq.s7_qb_id                                                 -- ---- IW-1 round 3: both rules, recorded
+    sq.s4_qb_id, sq.s7_qb_id,                                                -- ---- IW-1 round 3: both rules, recorded
+    {{ 'sq.s7_reason' if sq_rule == 's7' else ('sq.s4_reason' if sq_rule == 's4' else 'null') }} as starter_reason
 from picked as p
 left join override_pick as op on op.game_id = p.game_id and op.team = p.team
 left join sq_pick as sq on sq.game_id = p.game_id and sq.team = p.team

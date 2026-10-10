@@ -197,3 +197,13 @@ def test_rankings_without_the_mart_no_5xx_and_no_sentence(client, monkeypatch):
         assert not any(x.get("starter_corrected") for x in r.json()["rows"])
     r = client.get(START, params={"league": "ref:half", "ids": f"{SEA_DARNOLD},{SEA_LOCK}"})
     assert r.status_code == 200 and all(not p.get("starter_corrected") for p in r.json()["players"])
+
+
+def test_s7s_sentence_for_an_unsupported_listing():
+    """IW-1 round 3 (sq1.1): the listing neither the chart nor the newest game's snaps names is dropped."""
+    assert S.projected_words("CHI", "Caleb Williams", "Case Keenum", "Caleb Williams", "Tyson Bagent", 4, "unsupported") == (
+        "Chicago: we project Caleb Williams to start — the depth chart lists him first; the schedule still lists Case "
+        "Keenum; Tyson Bagent took the snaps in week 4.")
+    assert S.projected_words("CHI", "Tyson Bagent", "Case Keenum", "Caleb Williams", "Tyson Bagent", 4, "two_sources") == (
+        "Chicago: we project Tyson Bagent to start — he led the team's dropbacks in week 4; the schedule lists Case Keenum "
+        "and the depth chart lists Caleb Williams first.")
