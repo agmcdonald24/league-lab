@@ -3,6 +3,34 @@
 **Start 15:34 ET, Saturday 2026-10-10; end 16:49.** Branch `dev/IW1` (from `main` 5a0b9ac), `/home/claude/wt-iq4`,
 database `league_lab_iq4`. The rule: docs/METRICS.md § "Who starts, decided by the data" (sq1.0).
 
+## Round 2 (start 16:49 ET, stopped 16:52 by the PO's rule)
+
+* **S7's rule committed first** (`09d75f6`, 16:49): S4 + an unsupported listing dropped; the PO's product ship rule
+  (≥ 11 of 12 stale fixed, accuracy ≥ S4 − 0.003); history flatters the listing; a Questionable starter stated.
+* **S7's numbers** (`e87a49a`, 16:50), the same 670 team-games:
+
+| | Right | Accuracy | Stale fixed | Newly broken |
+|---|---:|---:|---:|---:|
+| S4 (shipped) | 641 | 0.9567 | 10 of 12 | 6 |
+| S7 | 639 | 0.9537 (allowance ≥ 0.9537: met by a hair) | **10 of 12** (rule: 11) | 8 |
+
+  S7 differs from S4 in two games, both newly broken: Chicago 2026 wk 3 (Tyson Bagent picked; Case Keenum started) and
+  Green Bay 2025 wk 18 (Jordan Love picked; Clayton Tune started). Its 8 newly broken = S4's 6 (Arizona 2025 wk 6
+  Murray / Brissett, Atlanta wk 8 Penix / Cousins, Buffalo wk 18 Allen / Trubisky, Chargers wk 18 Herbert / Lance,
+  Philadelphia wk 18 Hurts / McKee, Pittsburgh wk 12 Rodgers / Rudolph) + those two. The two stale listings both still
+  miss — Seattle 2026 wk 3 and Chicago 2026 wk 4 — had the listed quarterback leading the newest game (one source backs
+  him). History flatters the listing (corrected after the games), so a rule that distrusts an unsupported listing looks
+  worse in history than live; live, S7 would pick Caleb Williams for Chicago week 5.
+* **Verdict by the PO's rule: S7 does not ship** (10 < 11). Per the instruction, I stopped there: items 2–5 of round 2
+  (the Questionable cases, the self-grading record, the 375 px "Not playing" fix, the final chain and tests) were not
+  started. S4 stays shipped; Chicago on the copy stays Case Keenum ("Starter unclear").
+* **`trades.MARKET_SQL` outside `db._run`**: the live site's trade engine and Finder read it through `db._run`
+  (`decisions.py` 732, 5109), so they and the season list agree. One production path does not: `project`'s waiver solve,
+  `waivers.py:722` (`_frame(cur, MARKET_SQL, …)`, the stored waiver moves' rest-of-season market reads the kickoff board
+  for the week under way). One-line fix: `_frame(cur, live_week.sql(MARKET_SQL, live_week.active_on(cur.connection)), …)`
+  (and the same for `REPLACEMENT_SQL` on the next line). Also `reports.py:418` (the CLI's report pack, not the site).
+  The failing `test_ros` reads on its own connection by design (a test).
+
 ## 1. Done / not done / cut
 
 * **Read first** (item 1) — what each source knew on the copy:
