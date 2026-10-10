@@ -386,6 +386,23 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-W (2026-10-10, Saturday; STATUS § "Wave I-W (Iteration 33)") — READ THIS ONE FIRST: the owner reset the
+  roadmap.** Andrew: "you really need to get this an effective and useful product. I don't care about a lot of these
+  non needle moving shit." and "Having to hand set (and tell people it was set by hand) is not acceptable." The
+  site's own record backs him: our lineup against the ones managers started is +0.7 points per team per week; we have
+  never scored ourselves against Sleeper's free projections. **The roadmap is three things: starters from the data
+  (done here), a head-to-head against Sleeper's projections and fixing or borrowing where we lose, a refresh after
+  each window's inactives. Before proposing anything else, say what it adds for a manager setting a lineup; if the
+  answer is "consistency", "wording" or "a record of our own work", it waits.** Cut by him: defensive absences, the
+  backup play probability, the blog, publishing checks. **Starters**: an unplayed game's quarterback is the rule's
+  pick in `int_pn_team_game` (S7: the listing unless ruled out, or the depth chart and the last game's snaps agree on
+  another, or neither names him; dbt var `starter_from_data` = `s7` | `s4` | `false` is the way back); the hand list
+  is empty and stays empty; no screen says "set by hand". S7 is **the PO's product decision, not a study result**
+  (it missed the PO's own bar; METRICS says so): `ops.starter_record` grades S7 and S4 every week — read both after
+  four graded weeks and keep the better. **Game-day refreshes** come from the Cloudflare Worker (`GAME_SLOTS_ET`,
+  crons :37 and :52), never from GitHub's schedule (hours late); only Andrew deploys the Worker (`npx wrangler
+  deploy` in `ops/nightly-trigger`). **An agent the user stopped is not resumed**, and a spawn he rejects is a
+  message: stop and read what he says next before starting anything else.
 * **Wave I-V (2026-10-09, Friday evening; STATUS § "Wave I-V (Iteration 32)")**: **the live week is on**
   (`LEAGUE_LAB_FREEZE: game` in `nightly.yml`; fr1.1). A week's first kickoff still freezes **the record** — the
   kickoff board, which every grade reads and nothing rewrites — but the screens read tonight's number for every game

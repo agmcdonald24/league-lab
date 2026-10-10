@@ -136,17 +136,58 @@ function hours(s, fallback) {
   return v.length ? v : fallback;
 }
 
+// ---- PO (Wave I-W): game-day refreshes. The morning run is seven hours old when Sunday's lineups are set, and the
+// inactives come out 90 minutes before each kickoff. GAME_SLOTS_ET lists New York weekday + time slots at which the
+// nightly is dispatched again whatever ran today (default: after the inactives of Sunday's three windows and of the
+// Monday and Thursday games). The Worker's crons are :37 and :52 of every hour (wrangler.jsonc), so a slot's minute is
+// 37 or 52; the morning run and its re-checks answer only the :37 cron. "" turns the slots off (the off-season).
+const MORNING_MINUTE = 37;
+export const DEFAULT_GAME_SLOTS = "Sun 11:52,Sun 15:37,Sun 18:52,Mon 18:52,Thu 18:52";
+
+function etClock(d) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(d).map((x) => [x.type, x.value]));
+  return { weekday: p.weekday, hour: Number(p.hour) % 24, minute: Number(p.minute) };
+}
+
+/** The game slot `now` falls on ("Sun 11:52"), or null. `spec` undefined = the default; "" = none. */
+export function gameSlot(now, spec) {
+  const c = etClock(now);
+  const slots = String(spec === undefined || spec === null ? DEFAULT_GAME_SLOTS : spec).split(",").map((x) => x.trim()).filter(Boolean);
+  for (const slot of slots) {
+    const m = /^(Sun|Mon|Tue|Wed|Thu|Fri|Sat) (\d{1,2}):(\d{2})$/.exec(slot);
+    if (m && m[1] === c.weekday && Number(m[2]) === c.hour && Number(m[3]) === c.minute) return slot;
+  }
+  return null;
+}
+// ---- end PO
+
 export default {
   async scheduled(event, env, ctx) {
     const now = new Date(event.scheduledTime);
     const h = etHour(now);
-    const fire = hours(env.FIRE_HOUR_ET, [7]);
-    const check = hours(env.CHECK_HOURS_ET, [9, 11]);
+    const minute = now.getUTCMinutes();                    // New York is a whole number of hours from UTC
+    const slot = gameSlot(now, env.GAME_SLOTS_ET);         // ---- PO (Wave I-W)
+    const morning = minute === MORNING_MINUTE;             // the morning run and its re-checks: the :37 cron only
+    const fire = morning ? hours(env.FIRE_HOUR_ET, [7]) : [];
+    const check = morning ? hours(env.CHECK_HOURS_ET, [9, 11]) : [];
     if (!env.GITHUB_TOKEN) {
       console.error("no GITHUB_TOKEN secret: nothing dispatched");
-      if (fire.includes(h) || check.includes(h)) await remember(env, { at: now.toISOString(), hour_et: h, why: "a trigger hour", ok: false, status: null, error: "no GITHUB_TOKEN secret" }); // ---- IH-1
+      if (fire.includes(h) || check.includes(h) || slot) await remember(env, { at: now.toISOString(), hour_et: h, why: "a trigger hour", ok: false, status: null, error: "no GITHUB_TOKEN secret" }); // ---- IH-1
       return;
     }
+    // ---- PO (Wave I-W): a game-day slot dispatches whatever ran today, unless a run is going or queued right now
+    if (slot && !fire.includes(h)) {
+      const runs = await todaysRuns(env, now);
+      if (runs.some((r) => r.status === "in_progress" || r.status === "queued")) {
+        console.log(`${etStamp(now)}: a nightly is running; the game-day refresh (${slot}) is left to it`);
+        return;
+      }
+      await dispatchAndRecord(env, now, `a game-day refresh (${slot}): after the window's inactives`);
+      console.log(`${etStamp(now)}: dispatched ${env.WORKFLOW_FILE} (a game-day refresh, ${slot})`);
+      return;
+    }
+    // ---- end PO
     if (fire.includes(h)) {
       await dispatchAndRecord(env, now, "the morning run"); // ---- IH-1: recorded in STATE when bound
       console.log(`${etStamp(now)}: dispatched ${env.WORKFLOW_FILE} (the morning run)`);
@@ -169,6 +210,7 @@ export default {
       `isuckatfantasy nightly trigger: dispatches ${env.GITHUB_REPO} / ${env.WORKFLOW_FILE} at ` +
         `${hours(env.FIRE_HOUR_ET, [7]).map((x) => `${x}:37`).join(", ")} America/New_York; re-checks at ` +
         `${hours(env.CHECK_HOURS_ET, [9, 11]).map((x) => `${x}:37`).join(", ")} (dispatches only when nothing succeeded or is running since 07:30 New York).`,
+      `game-day refreshes (always, unless a run is going): ${String(env.GAME_SLOTS_ET === undefined || env.GAME_SLOTS_ET === null ? DEFAULT_GAME_SLOTS : env.GAME_SLOTS_ET) || "none"} America/New_York.`, // ---- PO (Wave I-W)
       `now: ${etStamp(now)}; token: ${env.GITHUB_TOKEN ? "set" : "MISSING"}`,
       (await lastDispatch(env)).line, // ---- IH-1
     ];

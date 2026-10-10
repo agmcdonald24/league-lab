@@ -5,7 +5,7 @@
 // Worker's own log marks the invocation failed); a re-check hour with a success today dispatches nothing and records
 // nothing; no token at a trigger hour is recorded as such.
 import assert from "node:assert/strict";
-import worker, { morningSince } from "./src/index.js";
+import worker, { gameSlot, morningSince } from "./src/index.js";
 
 const ENV = { GITHUB_REPO: "owner/league-lab", WORKFLOW_FILE: "nightly.yml", GIT_REF: "main", FIRE_HOUR_ET: "7", CHECK_HOURS_ET: "9,11", GITHUB_TOKEN: "t" };
 // 07:37 EDT = 11:37 UTC; 09:37 EDT = 13:37 UTC (2026-10-05, a Monday)
@@ -90,8 +90,33 @@ try {
   await worker.scheduled({ scheduledTime: MORNING }, { ...ENV, STATE: broken }, {});
   assert.match(await page({ ...ENV, STATE: broken }), /last dispatch: could not read STATE \(kv down\)/);
 
+  // 8. PO (Wave I-W): game-day slots. Sunday 2026-10-11: 11:52 EDT = 15:52 UTC dispatches although the morning run
+  // succeeded; the :52 cron at 07:52 is not a second morning run; a run in progress leaves the slot to it; "" = none
+  runs = [{ run_number: 12, event: "workflow_dispatch", status: "completed", conclusion: "success", created_at: "2026-10-11T11:37:40Z" }];
+  const s3 = kv();
+  let p0 = calls.filter((c) => c.startsWith("POST")).length;
+  await worker.scheduled({ scheduledTime: Date.UTC(2026, 9, 11, 15, 52) }, { ...ENV, STATE: s3 }, {});
+  assert.equal(calls.filter((c) => c.startsWith("POST")).length, p0 + 1);
+  assert.match(JSON.parse(s3.m.get("last_dispatch")).why, /a game-day refresh \(Sun 11:52\)/);
+  p0 += 1;
+  await worker.scheduled({ scheduledTime: Date.UTC(2026, 9, 11, 11, 52) }, { ...ENV, STATE: s3 }, {});   // 07:52: nothing
+  await worker.scheduled({ scheduledTime: Date.UTC(2026, 9, 11, 15, 37) }, { ...ENV, STATE: s3 }, {});   // 11:37 re-check: a success today
+  await worker.scheduled({ scheduledTime: Date.UTC(2026, 9, 13, 15, 52) }, { ...ENV, STATE: s3 }, {});   // Tuesday 11:52: no slot
+  assert.equal(calls.filter((c) => c.startsWith("POST")).length, p0);
+  runs = [{ run_number: 13, event: "workflow_dispatch", status: "in_progress", conclusion: null, created_at: "2026-10-11T19:30:00Z" }];
+  await worker.scheduled({ scheduledTime: Date.UTC(2026, 9, 11, 19, 37) }, { ...ENV, STATE: s3 }, {});   // Sun 15:37 with a run going
+  assert.equal(calls.filter((c) => c.startsWith("POST")).length, p0);
+  runs = [];
+  await worker.scheduled({ scheduledTime: Date.UTC(2026, 9, 11, 19, 37) }, { ...ENV, GAME_SLOTS_ET: "", STATE: s3 }, {});
+  assert.equal(calls.filter((c) => c.startsWith("POST")).length, p0);
+  assert.equal(gameSlot(new Date(Date.UTC(2026, 9, 12, 22, 52))), "Mon 18:52");                     // EDT
+  assert.equal(gameSlot(new Date(Date.UTC(2026, 11, 3, 23, 52))), "Thu 18:52");                     // EST: 18:52 = 23:52 UTC
+  assert.equal(gameSlot(new Date(Date.UTC(2026, 11, 6, 16, 52))), "Sun 11:52");                     // EST Sunday
+  assert.equal(gameSlot(new Date(Date.UTC(2026, 11, 6, 15, 52))), null);                            // 10:52 EST: not a slot
+  assert.match(await page({ ...ENV }), /game-day refreshes \(always, unless a run is going\): Sun 11:52,Sun 15:37,Sun 18:52,Mon 18:52,Thu 18:52/);
+
   console.log = quiet.log;
-  console.log("nightly-trigger: 7 checks passed");
+  console.log("nightly-trigger: 8 checks passed");
 } catch (e) {
   console.log = quiet.log;
   console.error = quiet.error;

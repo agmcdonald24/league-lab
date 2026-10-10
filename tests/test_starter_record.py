@@ -1,5 +1,5 @@
 """IW-1 round 3: the starter record (league_lab.starter_record): the words of About's line, the freeze at kickoff and
-the grade, as statements (the plumbing on a database is shown in docs/handbacks/IW-1.md on a pretend week)."""
+the grade, as statements (the plumbing on a database is shown in docs/STATUS.md § "Wave I-W" (IW-1) on a pretend week)."""
 
 from __future__ import annotations
 

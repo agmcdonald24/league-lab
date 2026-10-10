@@ -598,6 +598,19 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 33 — Wave I-W, starters from the data; the roadmap reset (2026-10-10, Saturday 15:00 – evening ET)
+
+Andrew rejected the PO's roadmap as "non needle moving" and named what was wrong on the screen: a starter set by
+hand, and said so. One package, **IW-1**: an unplayed game's quarterback is a rule's pick (the listing unless he is
+ruled out, the depth chart and the last game's snaps agree on someone else, or neither names him), the hand list is
+emptied, no screen says "set by hand", the site records and grades its own pick each week, the waiver solve reads
+the live week, Rankings' "Not playing" rows fit a phone. The PO shipped S7 over the study's S4 as a product decision
+and wrote down that it is one. The PO's glue: the starter record kept across nights and written by the nightly; the
+Worker's game-day slots (a refresh after each window's inactives; Andrew deploys it). Acceptance and evidence:
+`docs/STATUS.md` § "Wave I-W". **The roadmap from here, and nothing else until Andrew says so**: the head-to-head
+against Sleeper's projections (week 5's lands Tuesday; two past seasons need a fetch) and fixing or borrowing where we
+lose; the game-day refreshes live; then S7 against S4 after four graded weeks.
+
 ### Iteration 32 — Wave I-V, the live week switched on (2026-10-09, Friday 16:35 – evening ET)
 
 Wave I-U's shadow step said on its first night that 16 house-league rows of the frozen week 5 would move by 2 points

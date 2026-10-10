@@ -4,6 +4,11 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-10 — Wave I-W
 
+- **PO — the merge, and game-day refreshes.** `ops.starter_record` in `nightly.sh`'s `STATE_TABLES` and
+  `RECORD_TABLES` and the soft `starter-record` step after `context-record`. The Cloudflare Worker
+  (`ops/nightly-trigger`) dispatches the nightly again at `GAME_SLOTS_ET` (default Sun 11:52, Sun 15:37, Sun 18:52,
+  Mon 18:52, Thu 18:52 New York: after each window's inactives; crons :37 and :52; the morning run answers :37 only);
+  it takes effect when Andrew deploys the Worker. docs/STATUS.md § "Wave I-W".
 - **IW-1 — who starts at quarterback, decided by the data (sq1.0).** No hand list in force (`starter_overrides.csv`
   keeps its header) and no screen says "set by hand" or "Starter corrected". An unplayed game's starter is the
   listing unless he is ruled out (then the depth chart's first available quarterback) or the depth chart and the

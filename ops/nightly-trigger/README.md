@@ -19,6 +19,11 @@ Set-up (once):
 3. Open the Worker's URL: it prints what it does and today's runs. The next 07:37 ET shows a `workflow_dispatch` run
    in GitHub Actions within a minute.
 
+**Game-day refreshes (Wave I-W).** The Worker also dispatches at `GAME_SLOTS_ET` (default `Sun 11:52,Sun 15:37,Sun
+18:52,Mon 18:52,Thu 18:52` America/New_York: after each window's inactives), whatever ran that day, unless a run is
+going. It needs both crons (`37 * * * *` and `52 * * * *`). `""` turns the slots off. Deploy after pulling:
+`npx wrangler deploy` from this directory.
+
 Rotation: a new token → the same secret. Rollback: delete the Worker (GitHub's schedule carries on, late).
 
 **The last dispatch on the status page (Wave I-H, IH-1; optional).** A Worker keeps nothing between runs without a

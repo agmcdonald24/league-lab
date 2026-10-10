@@ -538,6 +538,19 @@ only when none has succeeded or is running. GitHub's own two cron lines stay in 
 late scheduled run is skipped by the gate once the dispatched one has succeeded. The Worker's URL prints what it does
 and today's runs; nothing dispatches over HTTP.
 
+**Game-day refreshes (Wave I-W, 2026-10-10).** The morning run is seven hours old when Sunday's lineups are set, and
+the inactives come out 90 minutes before each kickoff. With the live week on (Wave I-V) a refresh re-projects every
+game that has not kicked off, so the Worker dispatches the nightly again at `GAME_SLOTS_ET` — by default **Sun 11:52,
+Sun 15:37, Sun 18:52, Mon 18:52 and Thu 18:52 America/New_York** (after the inactives of Sunday's three windows and
+of the Monday and Thursday games), whatever ran that day, unless a run is going. Its crons are `37 * * * *` and
+`52 * * * *`; the morning run and its re-checks answer the `:37` cron only. `GAME_SLOTS_ET: ""` turns the slots off
+(the off-season). Cost: five more runs a week, about 75 Actions minutes. **It takes effect only when Andrew deploys
+the Worker** (`cd ops/nightly-trigger && npx wrangler deploy`; a Worker set up by pasting in the dashboard instead
+needs the new `src/index.js` pasted, the second cron added and the `GAME_SLOTS_ET` variable). `wrangler deploy`
+replaces the Worker's plain variables with `wrangler.jsonc`'s and keeps its secret; a KV binding added only in the
+dashboard (`STATE`) must be added again there or put in `wrangler.jsonc`. GitHub's own schedule cannot do this: on
+2026-10-10 its two scheduled runs started 4 h 45 min late.
+
 **Secret.** `GITHUB_TOKEN` on the Worker — a fine-grained personal access token scoped to the one repository with
 "Actions: Read and write" (one year; the expiry date goes in STATUS). It is the only credential outside GitHub and
 Render that can start a build; it cannot read code or secrets. Rotation: a new token into the same secret. Rollback:
