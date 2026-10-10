@@ -741,7 +741,7 @@
 "listed": "Drew Lock",
 "set": "Sam Darnold",
 "role": "set",
-"words": "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold as the starter. Set by hand on 7 Oct."
+"words": "Seattle: we project Sam Darnold to start — he led the team's dropbacks in week 4; the schedule lists Drew Lock."
 },
 "ros_games": 12,
 "ros_points_per_game": 14.86,
@@ -1687,13 +1687,7 @@
 "words": "Green Bay gives up the 12th-fewest points to quarterbacks."
 },
 "starter_unclear": null,
-"starter_corrected": {
-"team": "CHI",
-"listed": "Case Keenum",
-"set": "Tyson Bagent",
-"role": "set",
-"words": "Chicago's listing says Case Keenum; Tyson Bagent led the team's dropbacks in week 4, so we project Bagent as the starter. Set by hand on 7 Oct."
-}
+"starter_corrected": null
 },
 {
 "key": "00-0034869",
@@ -1726,7 +1720,7 @@
 "listed": "Drew Lock",
 "set": "Sam Darnold",
 "role": "set",
-"words": "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold as the starter. Set by hand on 7 Oct."
+"words": "Seattle: we project Sam Darnold to start — he led the team's dropbacks in week 4; the schedule lists Drew Lock."
 }
 },
 {
