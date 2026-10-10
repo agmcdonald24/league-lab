@@ -11,6 +11,14 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   at least 80% of the stale listings on 2025 – 2026 week 4 (0.957 against the listing's 0.951, which hindsight helps;
   10 of 12 stale fixed, 6 newly broken, named in METRICS § "Who starts, decided by the data"). Where the sources
   disagree, one sentence says whom we project and why; a decision on him stays a lean.
+- **IW-1 round 3 — the PO's decision (sq1.1): S7 ships, S4 is recorded beside it, both graded.** S7 = S4, and a
+  listing that neither the depth chart nor the newest game's snaps names is dropped for the depth chart's first
+  available quarterback (Chicago: Caleb Williams, not Case Keenum). `ops.starter_record` keeps the listing, S4's and
+  S7's picks until kickoff and grades them against the dropback leader once the game is in (`league-lab
+  starter-record`); `mart_starter_check` shows it; About says "Our projected starter was the game's quarterback in N
+  of M games since week 5" once a game is graded. The way back: `--vars '{starter_from_data: s4}'` (or `false`).
+  `project`'s waiver solve reads the live week (the market and the replacement through `live_week.sql`). Rankings'
+  "Not playing" rows stay inside a 375 px page.
 
 ## 2026-10-09 — Wave I-V
 

@@ -5461,7 +5461,7 @@ does not: the listing and the chart name the returning starter, so S4 keeps him.
 **Shipped** (`int_pn_team_game`, the IW-1 block): an unplayed game's `starting_qb_id` is S4's pick where the game has a
 listing (`starter_source` 'data' when it differs from the listing); a game more than about a week out keeps no starter,
 as before; played games keep the listing. The hand list (`starter_overrides.csv`) keeps its header only; its mechanism
-stays in the code, unused. Kill switch: `--vars '{starter_from_data: false}'`.
+stays in the code, unused. Kill switch: `--vars '{starter_from_data: false}'`. (Round 3: S7 ships instead — sq1.1 below.)
 
 **Round 2 (16:50 ET, 2026-10-10): S7 and the PO's ship rule for it — written before any S7 number.**
 
@@ -5496,6 +5496,23 @@ written in afterwards; live it has been a stale name both times it has happened 
 Chicago in week 5), and S4 would project Case Keenum as Chicago's starter this week. The past cannot test the clause, so
 the season will: S4's pick is recorded beside S7's at every kickoff and both are graded against who took the snaps. The
 PO reads the two records after four graded weeks and keeps the better.
+
+**Shipped (sq1.1, round 3).** `int_pn_team_game`'s `starting_qb_id` is S7's pick for every unplayed game with a listing;
+S4's and S7's picks are both kept (`s4_qb_id`, `s7_qb_id`) with the shipped rule's reason (`starter_reason`:
+`listing_out` — the listed quarterback is ruled out; `two_sources` — the depth chart and the newest game both name
+another; `unsupported` — S7's clause: neither names the listing) and the rule's name (`starter_rule`). The way back is
+the dbt var `starter_from_data`: `s7` (default, the PO's decision), `s4` (the rule the study picked), `false` / `off` /
+`listing` (the schedule's listing, as before IW-1); e.g. `--vars '{starter_from_data: s4}'`. The nearest week is the
+first week with a game not kicked off at the build's clock (var `starter_now`, default `now`; the unit test pins it).
+
+**The record (sq1.1, round 3; `ops.starter_record`, `league-lab starter-record`, `src/league_lab/starter_record.py`).**
+Per team-game from 2026 week 5: until kickoff, every run rewrites the listing, S4's pick, S7's pick, the projected
+quarterback and which rule shipped (`shipped`: `s7`, `s4`, `listing` or `override`); after kickoff the row is never
+rewritten (the last run before kickoff; the same freeze as `ops.lineup_record`). Once the game is in, the team's
+dropback leader (`truth_qb_id`, the leader `mart_starter_check` reads) and whether each pick was right
+(`listed_right`, `s4_right`, `s7_right`, `projected_right`). `mart_starter_check` carries the season's tallies per
+team (`record_games`, `record_projected_right`, `record_listed_right`, `record_s4_right`, `record_s7_right`); About
+says "Our projected starter was the game's quarterback in N of M games since week 5" and nothing while M is 0.
 
 ## Who cannot play (av1.0, IR-1, Wave I-R, 2026-10-08; `src/league_lab/availability_gate.py`, `api/league_lab_api/availability.py` § IR-1)
 

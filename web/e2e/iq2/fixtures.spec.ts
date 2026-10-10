@@ -1,8 +1,10 @@
 // Wave I-Q (IQ-2), Wave I-W (IW-1): who starts, decided by the data (sq1.0; no hand list). Browsing (`ref:half`), week
 // 5: the quarterback the data rule starts against the listing (Seattle → Sam Darnold) carries the chip "Who starts" and
 // one sentence ("Seattle: we project Sam Darnold to start — …; the schedule lists Drew Lock."), keeps his tier and is
-// never "Starter unclear"; Drew Lock's row says the same; Chicago, whose listing the rule keeps while the depth chart
-// names another, is "Starter unclear"; "Who should I start?" gives Darnold a call and his chance like anyone else.
+// never "Starter unclear"; Drew Lock's row says the same; Chicago (round 3, S7: a listing neither the depth chart nor
+// the last game names is dropped) → Caleb Williams, the sentence on his row and on Case Keenum's ("the depth chart lists
+// him first; the schedule still lists Case Keenum; Tyson Bagent took the snaps in week 4"); "Who should I start?" gives
+// Darnold a call and his chance like anyone else.
 // Recorded again on IW-1's copy (league_lab_iq4, the data rule in force). Phone at 375, desktop at 1300;
 // screenshots (JPEG q70) into docs/handbacks/iq2/ (SHOTS_IQ2) or e2e/.out.
 //
@@ -23,6 +25,7 @@ const SHOTS = process.env.SHOTS_IQ2 ?? join(import.meta.dirname, "..", ".out");
 type Recorded = Record<string, { status: number; body: unknown }>;
 type RankBody = { rows: Record<string, unknown>[] };
 const DARNOLD = "00-0034869";
+const WILLIAMS = "00-0039918", KEENUM = "00-0028986";   // ---- IW-1 round 3: Chicago
 const LOCK = "00-0035704";
 
 if (LIVE) test.use({ baseURL: LIVE });
@@ -109,10 +112,13 @@ test("a corrected starter: the chip, one sentence, his tier; Lock's row says the
   const lock = page.locator(`[data-testid=rankings-row][data-key="${LOCK}"]`);
   await expect(lock).toHaveAttribute("data-corrected", "1");
   await expect(lock.getByTestId("rankings-corrected-words")).toContainText("the schedule lists Drew Lock");
-  // Chicago: the rule keeps the listing (Keenum) while the depth chart puts Caleb Williams first: "Starter unclear", no
-  // sentence of a pick (IW-1); Seattle's quarterbacks are never unclear
-  await expect(page.locator(`[data-testid=rankings-row][data-key="00-0028986"]`).getByTestId("rankings-corrected-words")).toHaveCount(0);
-  for (const g of [DARNOLD, LOCK]) {
+  // Chicago (IW-1 round 3, S7): Caleb Williams, Questionable (available), first on the depth chart; the listing (Keenum)
+  // is named by neither the depth chart nor week 4's snaps (Bagent): the same sentence on Williams' row and Keenum's
+  const CHI_WORDS = "Chicago: we project Caleb Williams to start — the depth chart lists him first; the schedule still lists Case Keenum; Tyson Bagent took the snaps in week 4.";
+  for (const g of [WILLIAMS, KEENUM]) {
+    await expect(page.locator(`[data-testid=rankings-row][data-key="${g}"]`).getByTestId("rankings-corrected-words")).toHaveText(CHI_WORDS);
+  }
+  for (const g of [DARNOLD, LOCK, WILLIAMS, KEENUM]) {
     await expect(page.locator(`[data-testid=rankings-row][data-key="${g}"][data-unclear]`)).toHaveCount(0);
   }
   // the projection reads the corrected starter: Darnold above Lock
