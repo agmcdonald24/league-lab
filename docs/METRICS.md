@@ -5463,6 +5463,20 @@ listing (`starter_source` 'data' when it differs from the listing); a game more 
 as before; played games keep the listing. The hand list (`starter_overrides.csv`) keeps its header only; its mechanism
 stays in the code, unused. Kill switch: `--vars '{starter_from_data: false}'`.
 
+**Round 2 (16:50 ET, 2026-10-10): S7 and the PO's ship rule for it — written before any S7 number.**
+
+* **S7** = S4, and in addition: when neither the depth chart's first available quarterback nor the newest game's dropback
+  leader names the listed quarterback, the listing is dropped and the pick is the depth chart's first available (no
+  depth chart: the newest game's dropback leader if available; else the listing).
+* **The PO's ship rule — a product rule, and it says so**: the visible failure is a stale listing on a screen, so S7
+  replaces S4 if, on the same 670 team-games, it fixes **at least 11 of the 12** stale listings and its accuracy is **at
+  least S4's minus 0.003** (two team-games). If it meets that, S7 ships; if not, it does not, and the table and S7's
+  newly broken games go to the PO, who decides.
+* **History flatters the listing**: nflverse corrects a played game's listing after the game, so in history a stale
+  listing is rarer than live and a rule that distrusts an unsupported listing looks worse in history than it is live.
+* **A Questionable starter**: available (the gate says he does not sit), so he is the pick when the rule names him, and
+  his row carries its Questionable words as today; when he is ruled out, the next refresh moves the pick.
+
 ## Who cannot play (av1.0, IR-1, Wave I-R, 2026-10-08; `src/league_lab/availability_gate.py`, `api/league_lab_api/availability.py` § IR-1)
 
 Andrew, 2026-10-08: De'Von Achane (IR, torn ACL) was the 21st running back on Rankings at 10.93 while his card said
