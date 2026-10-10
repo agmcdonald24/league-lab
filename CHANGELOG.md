@@ -2,6 +2,16 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-10 — Wave I-W
+
+- **IW-1 — who starts at quarterback, decided by the data (sq1.0).** No hand list in force (`starter_overrides.csv`
+  keeps its header) and no screen says "set by hand" or "Starter corrected". An unplayed game's starter is the
+  listing unless he is ruled out (then the depth chart's first available quarterback) or the depth chart and the
+  team's newest game's dropback leader both name another (then him) — S4, the most accurate of the candidates that fix
+  at least 80% of the stale listings on 2025 – 2026 week 4 (0.957 against the listing's 0.951, which hindsight helps;
+  10 of 12 stale fixed, 6 newly broken, named in METRICS § "Who starts, decided by the data"). Where the sources
+  disagree, one sentence says whom we project and why; a decision on him stays a lean.
+
 ## 2026-10-09 — Wave I-V
 
 - **PO — the live week is on.** `LEAGUE_LAB_FREEZE: game` in `nightly.yml`; the five overlays in `nightly.sh`'s
