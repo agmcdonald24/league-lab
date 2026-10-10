@@ -180,14 +180,106 @@ override_pick as (
       and coalesce(o.on_roster, false)           -- PO (Wave I-Q): a row whose quarterback is not on the team's roster is ignored (and warned), never a stop
       and {{ var('starter_overrides', true) }}   -- the kill switch: --vars '{starter_overrides: false}' = the schedule as before
     order by p.game_id, p.team, o.added_on desc, o.from_week desc, o.gsis_id
+),
+
+-- ---- end IQ-2
+
+-- ---- IW-1 (Wave I-W): sq1.0, who starts decided by the data (docs/METRICS.md § "Who starts, decided by the data": S4,
+-- the most accurate rule fixing >= 80% of stale listings on 2025 - 2026 week 4). An UNPLAYED game's starter is the
+-- listing L, unless (i) L is not available for the week -> the newest depth-chart snapshot before kickoff's first
+-- available quarterback D (none: L); or (ii) D is also the quarterback who led the team's dropbacks in its newest played
+-- game this season, and he is not L -> him. Played games keep the listing (training rows, history inputs, the record).
+-- "Available" is availability_gate's question: not Out / Doubtful on week W's report, not on a reserve list (week W's
+-- roster status outside ACT / INA / DEV), and for the nearest unplayed week not sitting by Sleeper's directory (the
+-- gate's codes; a game status dated before the previous week's last kickoff is stale). Questionable is available.
+-- A game with no listing yet (more than about a week out) stays without a starter, as before.
+sq_games as (
+    select p.season, p.week, p.game_id, p.team, p.kickoff_at, p.starting_qb_id as listing_qb_id
+    from picked as p
+    where not p.is_played
+),
+
+sq_next_week as (
+    select min(week) as week, min(season) as season from sq_games
+    where season = (select max(season) from sq_games)
+),
+
+sq_prev_end as (
+    select max(g.kickoff_at) as t from {{ ref('dim_game') }} as g, sq_next_week as n
+    where g.season = n.season and g.week = n.week - 1 and g.season_type = 'REG'
+),
+
+sq_directory_out as (
+    select coalesce(nullif(p.gsis_id, ''), m.gsis_id) as gsis_id
+    from {{ source('raw', 'sleeper_player') }} as p
+    left join {{ ref('player_id_map') }} as m on m.sleeper_id = p.player_id
+    cross join sq_prev_end as pe
+    where (upper(coalesce(p.injury_status, '')) in ('IR', 'PUP', 'NFI', 'SUS')
+           or lower(coalesce(p.status, '')) in ('injured reserve', 'physically unable to perform', 'non-football injury', 'suspended')
+           or (upper(coalesce(p.injury_status, '')) in ('OUT', 'DNR', 'COV', 'DOUBTFUL')
+               and (pe.t is null or to_timestamp(nullif(p.payload ->> 'news_updated', '')::bigint / 1000.0) >= pe.t)))
+),
+
+sq_out as (
+    select i.season, i.week, i.gsis_id from {{ ref('stg_nflverse__injuries') }} as i
+    where i.game_type = 'REG' and i.report_status in ('Out', 'Doubtful')
+    union
+    select r.season, r.week, r.gsis_id from {{ ref('stg_nflverse__rosters_weekly') }} as r
+    where r.position = 'QB' and r.roster_status not in ('ACT', 'INA', 'DEV')
+    union
+    select n.season, n.week, d.gsis_id from sq_directory_out as d cross join sq_next_week as n
+    where d.gsis_id is not null
+),
+
+sq_snap as (
+    select g.game_id, g.team, g.season, g.week,
+           (select max(d.snapshot_at) from {{ ref('stg_nflverse__depth_charts') }} as d
+            where {{ kd_team('d.team') }} = g.team and d.pos_abb = 'QB' and d.snapshot_at < g.kickoff_at) as snap_at
+    from sq_games as g
+),
+
+sq_depth as (
+    select distinct on (s.game_id, s.team) s.game_id, s.team, d.gsis_id as depth_qb_id
+    from sq_snap as s
+    join {{ ref('stg_nflverse__depth_charts') }} as d
+      on {{ kd_team('d.team') }} = s.team and d.snapshot_at = s.snap_at and d.pos_abb = 'QB'
+    where not exists (select 1 from sq_out as o where o.season = s.season and o.week = s.week and o.gsis_id = d.gsis_id)
+    order by s.game_id, s.team, d.pos_rank, d.pos_slot, d.gsis_id
+),
+
+sq_last as (
+    select g.game_id, g.team,
+           (select td.top_qb_id from picked as p2
+            join top_dropback as td on td.game_id = p2.game_id and td.team = p2.team
+            where p2.team = g.team and p2.season = g.season and p2.week < g.week and p2.is_played
+            order by p2.week desc limit 1)                                   as last_qb_id
+    from sq_games as g
+),
+
+sq_pick as (
+    select g.game_id, g.team,
+           case when g.listing_qb_id is null then null   -- no listing yet (more than about a week out): as before, unknown
+                when exists (select 1 from sq_out as o
+                             where o.season = g.season and o.week = g.week and o.gsis_id = g.listing_qb_id)
+                     then coalesce(dq.depth_qb_id, g.listing_qb_id)
+                when dq.depth_qb_id is not null and dq.depth_qb_id = sl.last_qb_id and sl.last_qb_id <> g.listing_qb_id
+                     then sl.last_qb_id
+                else g.listing_qb_id end                                     as data_qb_id
+    from sq_games as g
+    left join sq_depth as dq on dq.game_id = g.game_id and dq.team = g.team
+    left join sq_last as sl on sl.game_id = g.game_id and sl.team = g.team
+    where {{ var('starter_from_data', true) }}                  -- the kill switch: --vars '{starter_from_data: false}' = the listing
 )
 
 select
     p.season, p.week, p.game_id, p.team, p.opponent, p.kickoff_at,
-    coalesce(op.override_qb_id, p.starting_qb_id)                            as starting_qb_id,
+    coalesce(op.override_qb_id, sq.data_qb_id, p.starting_qb_id)             as starting_qb_id,
     p.listed_qb_id,
     p.is_played, p.team_snaps, p.team_targets, p.team_carries, p.game_no,
-    case when op.override_qb_id is not null then 'override' else 'schedule' end as starter_source
+    case when op.override_qb_id is not null then 'override'
+         when sq.data_qb_id is not null and sq.data_qb_id is distinct from p.starting_qb_id then 'data'
+         else 'schedule' end                                                 as starter_source
 from picked as p
 left join override_pick as op on op.game_id = p.game_id and op.team = p.team
--- ---- end IQ-2
+left join sq_pick as sq on sq.game_id = p.game_id and sq.team = p.team
+-- ---- end IW-1

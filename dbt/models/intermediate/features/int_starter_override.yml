@@ -112,6 +112,21 @@ unit_tests:
         rows: []
       - input: ref('stg_nflverse__injuries')
         rows: []
+      # ---- IW-1: the data rule's inputs (none here: every unplayed game keeps what the override or the listing says)
+      - input: ref('stg_nflverse__rosters_weekly')
+        format: sql
+        rows: |
+          select null::text as gsis_id, null::int as season, null::int as week, null::text as position, null::text as roster_status where false
+      - input: ref('stg_nflverse__depth_charts')
+        rows: []
+      - input: ref('player_id_map')
+        format: sql
+        rows: |
+          select null::text as sleeper_id, null::text as gsis_id where false
+      - input: source('raw', 'sleeper_player')
+        format: sql
+        rows: |
+          select null::text as player_id, null::text as gsis_id, null::text as injury_status, null::text as status, null::jsonb as payload where false
       - input: ref('int_starter_override')
         rows:
           - {season: 2026, team: AAA, from_week: 3, through_week: null, gsis_id: darnold, in_force: true, on_roster: true, added_on: '2026-10-07'}
@@ -134,3 +149,77 @@ unit_tests:
         - {team: BBB, week: 5, starting_qb_id: keenum, listed_qb_id: keenum, is_played: false, starter_source: schedule}
         - {team: DDD, week: 5, starting_qb_id: d_new, listed_qb_id: d1, is_played: false, starter_source: override}
 # ---- end IQ-2
+
+  # ---- IW-1 (Wave I-W): sq1.0 -- an unplayed game's starter from the data alone (no hand list): AAA (Seattle's case:
+  # the chart and the newest game's dropbacks name Darnold, the listing Lock), BBB (Chicago's: the chart's first is ruled
+  # Out on week 5's report, his backup led week 4), CCC (Baltimore's, made like the copy's: Sleeper's directory rules the
+  # listed starter Out after the previous week ended), DDD (no chart: the listing). Played games keep the listing.
+  - name: starter_from_data_decides_unplayed_games
+    model: int_pn_team_game
+    given:
+      - input: ref('dim_game')
+        rows:
+          - {game_id: g3, season: 2026, week: 3, season_type: REG, home_team: AAA, away_team: BBB, home_qb_id: lock, away_qb_id: keenum, kickoff_at: '2026-09-21 17:00:00+00'}
+          - {game_id: g4, season: 2026, week: 4, season_type: REG, home_team: BBB, away_team: AAA, home_qb_id: keenum, away_qb_id: lock, kickoff_at: '2026-09-28 17:00:00+00'}
+          - {game_id: g5, season: 2026, week: 5, season_type: REG, home_team: AAA, away_team: BBB, home_qb_id: lock, away_qb_id: keenum, kickoff_at: '2026-10-05 17:00:00+00'}
+          - {game_id: g5c, season: 2026, week: 5, season_type: REG, home_team: CCC, away_team: DDD, home_qb_id: lamar, away_qb_id: d1, kickoff_at: '2026-10-06 00:20:00+00'}
+      - input: ref('fct_team_game')
+        rows:
+          - {game_id: g3, team: AAA, season_type: REG, targets: 30, carries: 25}
+          - {game_id: g3, team: BBB, season_type: REG, targets: 30, carries: 25}
+          - {game_id: g4, team: AAA, season_type: REG, targets: 30, carries: 25}
+          - {game_id: g4, team: BBB, season_type: REG, targets: 30, carries: 25}
+      - input: ref('int_player_game_snaps')
+        rows: []
+      - input: ref('fct_player_game')
+        rows: []
+      - input: ref('fct_play')
+        format: sql
+        rows: |
+          select * from (values ('g3', 'AAA', 'darnold'), ('g3', 'BBB', 'keenum'), ('g4', 'AAA', 'darnold'), ('g4', 'BBB', 'bagent'))
+              as v(game_id, posteam, passer_player_id)
+          cross join (select null::text as rusher_player_id, 'REG'::text as season_type, true as is_dropback, false as is_no_play) as c
+      - input: ref('int_player_week_team')
+        rows: []
+      - input: ref('stg_nflverse__injuries')
+        rows:
+          - {gsis_id: caleb, season: 2026, week: 5, game_type: REG, report_status: Out}
+          - {gsis_id: darnold, season: 2026, week: 5, game_type: REG, report_status: Questionable}
+      - input: ref('stg_nflverse__rosters_weekly')
+        format: sql
+        rows: |
+          select null::text as gsis_id, null::int as season, null::int as week, null::text as position, null::text as roster_status where false
+      - input: ref('stg_nflverse__depth_charts')
+        rows:
+          - {team: AAA, snapshot_at: '2026-10-04 06:00:00+00', gsis_id: darnold, pos_abb: QB, pos_rank: 1, pos_slot: 1}
+          - {team: AAA, snapshot_at: '2026-10-04 06:00:00+00', gsis_id: lock, pos_abb: QB, pos_rank: 2, pos_slot: 1}
+          - {team: BBB, snapshot_at: '2026-10-04 06:00:00+00', gsis_id: caleb, pos_abb: QB, pos_rank: 1, pos_slot: 1}
+          - {team: BBB, snapshot_at: '2026-10-04 06:00:00+00', gsis_id: bagent, pos_abb: QB, pos_rank: 2, pos_slot: 1}
+          - {team: BBB, snapshot_at: '2026-10-04 06:00:00+00', gsis_id: keenum, pos_abb: QB, pos_rank: 3, pos_slot: 1}
+          - {team: CCC, snapshot_at: '2026-10-04 06:00:00+00', gsis_id: lamar, pos_abb: QB, pos_rank: 1, pos_slot: 1}
+          - {team: CCC, snapshot_at: '2026-10-04 06:00:00+00', gsis_id: huntley, pos_abb: QB, pos_rank: 2, pos_slot: 1}
+          - {team: AAA, snapshot_at: '2026-10-07 06:00:00+00', gsis_id: lock, pos_abb: QB, pos_rank: 1, pos_slot: 1}
+      - input: ref('player_id_map')
+        format: sql
+        rows: |
+          select null::text as sleeper_id, null::text as gsis_id where false
+      - input: source('raw', 'sleeper_player')
+        format: sql
+        rows: |
+          select '4881'::text as player_id, 'lamar'::text as gsis_id, 'Out'::text as injury_status, 'Active'::text as status, '{"news_updated": "1791158400000"}'::jsonb as payload
+      - input: ref('int_starter_override')
+        format: sql
+        rows: |
+          select null::int as season, null::text as team, null::int as from_week, null::int as through_week, null::text as gsis_id,
+                 null::boolean as in_force, null::boolean as on_roster, null::date as added_on where false
+    expect:
+      rows:
+        - {team: AAA, week: 3, starting_qb_id: lock, is_played: true, starter_source: schedule}
+        - {team: BBB, week: 3, starting_qb_id: keenum, is_played: true, starter_source: schedule}
+        - {team: AAA, week: 4, starting_qb_id: lock, is_played: true, starter_source: schedule}
+        - {team: BBB, week: 4, starting_qb_id: keenum, is_played: true, starter_source: schedule}
+        - {team: AAA, week: 5, starting_qb_id: darnold, is_played: false, starter_source: data}
+        - {team: BBB, week: 5, starting_qb_id: bagent, is_played: false, starter_source: data}
+        - {team: CCC, week: 5, starting_qb_id: huntley, is_played: false, starter_source: data}
+        - {team: DDD, week: 5, starting_qb_id: d1, is_played: false, starter_source: schedule}
+# ---- end IW-1

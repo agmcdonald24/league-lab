@@ -26,7 +26,7 @@ sched as (
     cross join lateral (values (s.home_team, s.home_qb_id), (s.away_team, s.away_qb_id)) as t(team, qb)
     -- ---- IQ-2 (Wave I-Q): a hand-kept override sets an unplayed game's starter (assert_starter_override_unplayed_only)
     left join {{ ref('int_pn_team_game') }} as o
-      on o.season = s.season and o.week = s.week and o.team = {{ kd_team('t.team') }} and o.starter_source = 'override'
+      on o.season = s.season and o.week = s.week and o.team = {{ kd_team('t.team') }} and o.starter_source in ('override', 'data')   -- ---- IW-1: or the data rule (sq1.0)
     -- ---- end IQ-2
     where s.game_type = 'REG' and s.season >= {{ var('seasons_start') }}
     {%- endif %}

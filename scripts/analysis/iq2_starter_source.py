@@ -28,9 +28,10 @@ SEASONS = (2021, 2026)
 DEPTH_FROM = 2025                      # the first season with stored depth charts (nflverse daily snapshots)
 OUT_REPORT = {"Out", "Doubtful"}
 AVAILABLE_ROSTER = {"ACT", "INA", "DEV"}   # INA (game-day inactive, 90 minutes before kickoff) is never read as out
-CANDIDATES = ("S1", "S2", "S3", "S4")
+CANDIDATES = ("S1", "S2", "S3", "S4", "S5", "S6")
 NAMES = {"S0": "listing (base)", "S1": "depth chart QB1", "S2": "depth chart, first available",
-         "S3": "listing unless ruled out", "S4": "two sources agree (own)"}
+         "S3": "listing unless ruled out", "S4": "two sources agree (own)",
+         "S5": "the snaps first (IW-1)", "S6": "two of three (IW-1)"}
 
 GAMES_SQL = """
 select g.season, g.week, g.game_id, g.kickoff_at, t.team, nullif(t.qb, '') as listed_id
@@ -171,7 +172,31 @@ def picks(g: pd.DataFrame, out_fn) -> pd.DataFrame:
         s4.append(p4)
     out = g.copy()
     out["S0"], out["S1"], out["S2"], out["S3"], out["S4"] = g["listed_id"], s1, s2, s3, s4
+    # ---- IW-1 (Wave I-W): S5, S6 (docs/METRICS.md § "Who starts, decided by the data", written before their numbers)
+    pairs = [pick_s5_s6(r.listed_id, r.depth, r.last_id, lambda q, r=r: out_fn(r.season, r.week, q)) for r in g.itertuples()]
+    out["S5"], out["S6"] = [a for a, _ in pairs], [b for _, b in pairs]
     return out
+
+
+def pick_s5_s6(listed, depth, last, is_out) -> tuple[str | None, str | None]:
+    """(S5, S6) for one team-game. ``depth``: the pre-kickoff chart's quarterbacks in order (None: no chart); ``last``:
+    the newest played game's dropback leader this season (None: no game); ``is_out(q)``: availability_gate's question.
+    S5: the newest leader if available, else the chart's first available, else the listing. S6: the quarterback at least
+    two of (listing, chart's first available, newest leader) name, if available; else the chart's first available;
+    without a chart, S5."""
+    def ok(q):
+        return isinstance(q, str) and not is_out(q)
+    d = None
+    if depth is not None:
+        d = next((q for q in depth if ok(q)), None)
+    n = last if ok(last) else None
+    s5 = n if n is not None else (d if d is not None else (listed if isinstance(listed, str) else None))
+    if depth is None:
+        return s5, s5
+    votes = [q for q in (listed if isinstance(listed, str) else None, d, last if isinstance(last, str) else None) if q]
+    two = next((q for q in votes if votes.count(q) >= 2), None)
+    s6 = two if ok(two) else (d if d is not None else s5)
+    return s5, s6
 
 
 def score(df: pd.DataFrame, cand: str) -> dict:
@@ -282,11 +307,11 @@ def asof() -> None:
 def study(csv: str | None) -> None:
     d = load()
     windows = {"2025 - 2026 wk 4 (depth charts)": d[d["season"] >= DEPTH_FROM],
-               "2021 - 2026 wk 4": d}
+               "2021 - 2026 wk 4": d, "2021 - 2024": d[d["season"] < DEPTH_FROM]}   # ---- IW-1: 2021 - 2024 apart
     rows = []
     for wname, w in windows.items():
         for c in CANDIDATES:
-            if wname.startswith("2021") and c != "S3":
+            if wname.startswith("2021") and c not in ("S3", "S5"):   # ---- IW-1: S5 needs no chart (falls to the listing)
                 continue
             r = score(w, c)
             r["window"] = wname
@@ -313,7 +338,7 @@ def study(csv: str | None) -> None:
     for c in CANDIDATES:
         bad = w[(w["listed_id"] == w["truth_id"]) & (w[c] != w["truth_id"]) & w[c].notna()]
         good = w[(w["listed_id"] != w["truth_id"]) & (w[c] == w["truth_id"])]
-        print(f"{c}: newly broken {len(bad)}: " + ", ".join(f"{r.team} {r.season} wk {r.week}" for r in bad.head(12).itertuples()))
+        print(f"{c}: newly broken {len(bad)}: " + ", ".join(f"{r.team} {r.season} wk {r.week} ({r.listed_id} -> {getattr(r, c)})" for r in bad.head(12).itertuples()))
         print(f"{c}: fixed {len(good)}: " + ", ".join(f"{r.team} {r.season} wk {r.week}" for r in good.head(12).itertuples()))
     if csv:
         d.drop(columns=["depth"]).to_csv(csv, index=False)

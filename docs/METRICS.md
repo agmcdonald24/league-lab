@@ -5435,6 +5435,34 @@ highest accuracy on all its team-games; ties → the fewer newly broken. If none
 Reported for every candidate: accuracy, stale fixed, newly broken **by name**, and 2021 – 2024 for the candidates that
 need no depth chart (S5 without D falls to the listing there).
 
+**The result** (`iq2_starter_source.py study`, run at 15:37 ET after the rule above was committed `b6dc3c1`; played
+team-games of 2025 – 2026 week 4: 670, 12 stale listings, 21 in-game changes no rule can see):
+
+| Candidate | Accuracy (listing 0.951 →) | Stale fixed | Fixed | Newly broken | Still wrong | ≥ 80% stale? |
+|---|---|---|---|---|---|---|
+| S4 two sources agree | **0.957** | 10 of 12 (83%) | 10 | 6 | 23 | yes |
+| S5 the snaps first | 0.916 | 10 of 12 (83%) | 10 | 33 | 23 | yes |
+| S6 two of three | 0.954 | 10 of 12 (83%) | 10 | 8 | 23 | yes |
+| (S2 depth, first available, IQ-2) | 0.949 | 12 of 12 | 13 | 14 | 20 | yes |
+| (S3 listing unless ruled out, IQ-2) | 0.958 | 5 of 12 | 5 | 0 | 28 | no |
+
+2021 – 2024 (no depth chart): S5 = the newest game's leader, else the listing: 0.912 against the listing's 0.956 (29 of
+37 stale fixed, 133 newly broken) — the snaps alone are worse than the listing in every window.
+
+**The pick: S4** (the most accurate of the four that fix at least 80% of the stale listings). Its 6 newly broken games,
+by name (the pick, then who started): Arizona 2025 wk 6 Kyler Murray / Jacoby Brissett; Atlanta 2025 wk 8 Michael Penix
+Jr. / Kirk Cousins; Buffalo 2025 wk 18 Josh Allen / Mitchell Trubisky; the Chargers 2025 wk 18 Justin Herbert / Trey
+Lance; Philadelphia 2025 wk 18 Jalen Hurts / Tanner McKee; Pittsburgh 2025 wk 12 Aaron Rodgers / Mason Rudolph — four
+are a healthy starter rested or held out late (week 18), named by the chart and his last game; no data before kickoff
+says it. The case to look for, a starter back from injury, is what S5 breaks (Baltimore 2025 wk 9: Tyler Huntley for
+Lamar Jackson; Washington 2025 wk 5 and 9: Marcus Mariota for Jayden Daniels; San Francisco 2025 wk 4 and 11) and S4
+does not: the listing and the chart name the returning starter, so S4 keeps him.
+
+**Shipped** (`int_pn_team_game`, the IW-1 block): an unplayed game's `starting_qb_id` is S4's pick where the game has a
+listing (`starter_source` 'data' when it differs from the listing); a game more than about a week out keeps no starter,
+as before; played games keep the listing. The hand list (`starter_overrides.csv`) keeps its header only; its mechanism
+stays in the code, unused. Kill switch: `--vars '{starter_from_data: false}'`.
+
 ## Who cannot play (av1.0, IR-1, Wave I-R, 2026-10-08; `src/league_lab/availability_gate.py`, `api/league_lab_api/availability.py` § IR-1)
 
 Andrew, 2026-10-08: De'Von Achane (IR, torn ACL) was the 21st running back on Rankings at 10.93 while his card said
