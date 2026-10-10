@@ -244,7 +244,7 @@ def block(positions: Iterable[str], first=None, last=None, market_week=None, *, 
 # ------------------------------------------------------------------------------------------------ starter uncertainty
 WITHHOLD, SOFTEN = "withhold", "soften"
 RULE_WORDS = ("A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on "
-              "a starter set by hand is a lean, never a firm call.")
+              "a starter the sources disagree on is a lean, never a firm call.")   # ---- IW-1: no hand-set branch
 UNIT_POSITIONS = ("TMQB",)
 
 
@@ -296,8 +296,8 @@ def caveats_for(players: Iterable[Mapping], season, week) -> list[dict]:
                                     "listed": u.get("listed"), "other": u.get("played")})
             cv["players"].append(_who(p))
         elif c:
-            k = ("starter_set_by_hand", str(c.get("team")))
-            cv = out.setdefault(k, {"kind": "starter_set_by_hand", "effect": SOFTEN, "team": c.get("team"), "players": [],
+            k = ("starter_projected", str(c.get("team")))                       # ---- IW-1: the data rule's pick
+            cv = out.setdefault(k, {"kind": "starter_projected", "effect": SOFTEN, "team": c.get("team"), "players": [],
                                     "listed": c.get("listed"), "set": c.get("set")})
             cv["players"].append(_who(p))
     res = []
@@ -309,8 +309,8 @@ def caveats_for(players: Iterable[Mapping], season, week) -> list[dict]:
                            f"{cv['other']} first, and this depends on {who}. The numbers assume the listing.")
         else:
             listed = f", not the listed {cv['listed']}" if cv.get("listed") else ""
-            cv["words"] = (f"{team}'s starter was set by hand ({cv['set']}{listed}); this depends on {who}, so read the "
-                           f"verdict as a lean that assumes {_last(str(cv['set']))} starts.")
+            cv["words"] = (f"We project {cv['set']} to start for {team}{listed}; this depends on {who}, so read the "
+                           f"verdict as a lean that assumes {_last(str(cv['set']))} starts.")   # ---- IW-1
         res.append(cv)
     return sorted(res, key=lambda c: (c["effect"] != WITHHOLD, str(c["team"])))
 

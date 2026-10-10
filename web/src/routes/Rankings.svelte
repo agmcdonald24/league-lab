@@ -196,7 +196,7 @@
                   <span class="flex min-w-0 items-center gap-1.5">
                     <span class="truncate font-semibold text-ink" data-testid="rankings-name">{x.player_name}</span>
                     {#if unclear}<span class="hidden shrink-0 rounded-sm bg-raised px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:inline" data-testid="rankings-unclear-chip">Starter unclear</span>{/if}
-                    {#if fixed}<span class="hidden shrink-0 rounded-sm bg-accent-soft px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:inline" data-testid="rankings-corrected-chip">Starter corrected</span>{/if}
+                    {#if fixed}<span class="hidden shrink-0 rounded-sm bg-accent-soft px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:inline" data-testid="rankings-corrected-chip">Who starts</span>{/if}
                   </span>
                   <span class="block truncate text-xs text-ink-3">
                     {x.position} · {teamLabel(x.team) ?? "—"}{#if statusOf(x)} · <span class="font-semibold text-warn">{statusOf(x)}</span>{/if}<span class="wide:hidden">
@@ -248,9 +248,9 @@
                 >
               {/if}
               {#if fixed}
-                <!-- ---- IQ-2: who starts, set by hand: one sentence under the row -->
+                <!-- ---- IQ-2 / IW-1: who starts when the sources disagree (the data rule's pick): one sentence under the row -->
                 <span class="mt-1 block pl-[4.25rem] text-xs leading-snug text-ink-2 wide:col-span-full wide:pl-[2.75rem]" data-testid="rankings-corrected-words"
-                  ><span class="mr-1 rounded-sm bg-accent-soft px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:hidden" data-testid="rankings-corrected-chip-phone">Starter corrected</span>{fixed.words}</span
+                  ><span class="mr-1 rounded-sm bg-accent-soft px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-ink-2 ring-1 ring-line-strong ring-inset wide:hidden" data-testid="rankings-corrected-chip-phone">Who starts</span>{fixed.words}</span
                 >
               {/if}
             </button>

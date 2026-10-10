@@ -36,7 +36,7 @@ def test_my_week_and_waivers_caveats_are_in_a_lineups_words(monkeypatch):
     def caveats_for(players, season, week):
         return [{"kind": "starter_unclear", "effect": P.WITHHOLD, "team": "TB", "players": ["Baker Mayfield"],
                  "listed": "Jalon Daniels", "other": "Baker Mayfield", "words": "No verdict while …"},
-                {"kind": "starter_set_by_hand", "effect": P.SOFTEN, "team": "SEA", "players": ["Sam Darnold"],
+                {"kind": "starter_projected", "effect": P.SOFTEN, "team": "SEA", "players": ["Sam Darnold"],
                  "listed": "Drew Lock", "set": "Sam Darnold", "words": "… read the verdict as a lean …"}]
     monkeypatch.setattr(P, "caveats_for", caveats_for)
     monkeypatch.setattr(ST, "team_name", lambda t: {"TB": "Tampa Bay", "SEA": "Seattle"}.get(t, t))
@@ -45,8 +45,8 @@ def test_my_week_and_waivers_caveats_are_in_a_lineups_words(monkeypatch):
     words = [c["words"] for c in m["caveats"]]
     assert words == ["Tampa Bay's starter is unclear: Jalon Daniels is listed, the depth chart puts Baker Mayfield first. "
                      "Baker Mayfield's projection assumes the listing — check who starts before kickoff.",
-                     "Seattle's starter was set by hand (Sam Darnold, not the listed Drew Lock): Sam Darnold's projection "
-                     "assumes Darnold starts."]
+                     "We project Sam Darnold to start for Seattle, not the listed Drew Lock: Sam Darnold's projection "
+                     "assumes Darnold starts."]   # ---- IW-1: no hand-set words
     assert not any("verdict" in w for w in words) and m["caveats"][0]["verdict_words"] == "No verdict while …"
     assert m["caveat_effect"] == P.WITHHOLD and "provenance" in m
 

@@ -104,12 +104,13 @@ def test_unclear_starter_withholds_corrected_softens_receivers_carry_nothing(fla
           {"gsis_id": DARNOLD, "position": "QB", "player_name": "Sam Darnold", "team": "SEA"},
           {"gsis_id": JSN, "position": "WR", "player_name": "Jaxon Smith-Njigba", "team": "SEA"}]
     cv = P.caveats_for(ps, 2026, 5)
-    assert [c["kind"] for c in cv] == ["starter_unclear", "starter_set_by_hand"]     # withhold first
+    assert [c["kind"] for c in cv] == ["starter_unclear", "starter_projected"]   # ---- IW-1     # withhold first
     assert cv[0]["effect"] == "withhold" and cv[0]["players"] == ["Jalon Daniels"]
     assert cv[0]["words"] == ("No verdict while Tampa Bay's starter is unclear: Jalon Daniels is listed, the depth chart "
                               "puts Baker Mayfield first, and this depends on Jalon Daniels. The numbers assume the listing.")
     assert cv[1]["effect"] == "soften" and cv[1]["players"] == ["Sam Darnold"]           # not the receiver
-    assert "set by hand (Sam Darnold, not the listed Drew Lock)" in cv[1]["words"]
+    assert cv[1]["words"].startswith("We project Sam Darnold to start for Seattle, not the listed Drew Lock;")   # ---- IW-1
+    assert "hand" not in cv[1]["words"]
     assert P.effect(cv) == "withhold"
     a = P.apply("Accept: you gain 6.1 points over weeks 5–8.", cv)
     assert a["verdict"] is None and a["effect"] == "withhold" and a["words"].startswith("No verdict while Tampa Bay's")

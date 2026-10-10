@@ -15,15 +15,15 @@ def test_start_sit_softens_for_a_hand_set_starter_and_withholds_for_an_unclear_o
     from league_lab_api import starters as ST
 
     def caveats_for(players, season, week):
-        return [{"kind": "starter_set_by_hand", "effect": PV.SOFTEN, "team": "SEA", "players": ["Sam Darnold"],
+        return [{"kind": "starter_projected", "effect": PV.SOFTEN, "team": "SEA", "players": ["Sam Darnold"],
                  "listed": "Drew Lock", "set": "Sam Darnold", "words": "… read the verdict as a lean …"},
                 {"kind": "starter_unclear", "effect": PV.WITHHOLD, "team": "TB", "players": ["Baker Mayfield"],
                  "listed": "Jalon Daniels", "other": "Baker Mayfield", "words": "No verdict while …"}]
     monkeypatch.setattr(PV, "caveats_for", caveats_for)
     monkeypatch.setattr(ST, "team_name", lambda t: {"TB": "Tampa Bay", "SEA": "Seattle"}.get(t, t))
     cvs = RA.start_caveats([{"gsis_id": "x"}], 2026, 5)
-    assert cvs[0]["words"] == ("Read it as a lean: Seattle's starter was set by hand (Sam Darnold, not the listed Drew "
-                               "Lock), and this call assumes Darnold starts.")
+    assert cvs[0]["words"] == ("Read it as a lean: we project Sam Darnold to start for Seattle, not the listed Drew "
+                               "Lock, and this call assumes Darnold starts.")   # ---- IW-1
     assert cvs[1]["words"].startswith("Tampa Bay's starter is unclear: Jalon Daniels is listed")
     assert all("verdict" not in c["words"] for c in cvs) and cvs[0]["verdict_words"] == "… read the verdict as a lean …"
     assert PV.effect(cvs) == PV.WITHHOLD

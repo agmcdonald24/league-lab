@@ -20,7 +20,7 @@ export function aboutSections(leagueName: string): AboutSection[] {
       text:
         "The regular-season games QBs, RBs, WRs and TEs played from 2016 to last season (over 50,000 of them), each with only what was known before kickoff: " +
         "his season and last-3-game numbers, his share of his team's targets, carries and snaps, how often he was the quarterback's first look, last season, " +
-        "the opponent's defense against his position, the Vegas line, home or away, the injury report, who starts at quarterback and whether his team's top target is out.",
+        "the opponent's defense against his position, the Vegas line, home or away, the injury report, who starts at quarterback (from the data alone: the schedule's listing, unless he is ruled out or the depth chart and the team's last game both name another) and whether his team's top target is out.",
     },
     {
       key: "predicts",

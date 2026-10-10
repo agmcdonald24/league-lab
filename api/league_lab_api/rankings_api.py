@@ -445,9 +445,9 @@ def _starters_unclear(season: int, week: int) -> dict[str, dict]:
             if isinstance(g, str) and GSIS.match(g) and isinstance(v, dict) and isinstance(v.get("words"), str)}
 
 
-# ---- IQ-2 (Wave I-Q): who starts, set by hand (starters.corrected; docs/METRICS.md § "Who starts")
+# ---- IQ-2 (Wave I-Q) / IW-1: who starts when the sources disagree (starters.corrected; docs/METRICS.md § "Who starts")
 def _starters_corrected(season: int, week: int) -> dict[str, dict]:
-    """IQ-2's ``starters.corrected`` (gsis -> {team, listed, set, role, words}): the quarterback a hand-kept row sets as
+    """IQ-2's ``starters.corrected`` (IW-1: the data rule's pick; gsis -> {team, listed, set, role, words}): the quarterback the projection starts as
     his team's starter and the listed one; {} without the module, without the mart (a deploy before the nightly) or on
     any failure. A label: the projection already reads the corrected starter, and he keeps his tier and his calls."""
     try:
@@ -749,7 +749,7 @@ def rankings(league: str, *, position: str | None = None, view: str | None = Non
 
 
 # ---- IU-3: the starter caveats in a start/sit's words (the trade's sentence kept as ``verdict_words``)
-START_SET_WORDS = "Read it as a lean: {team}'s starter was set by hand ({set}{listed}), and this call assumes {last} starts."
+START_SET_WORDS = "Read it as a lean: we project {set} to start for {team}{listed}, and this call assumes {last} starts."   # ---- IW-1
 START_UNCLEAR_WORDS = ("{team}'s starter is unclear: {listed} is listed, the depth chart puts {other} first; no call on "
                        "{who} until it is settled.")
 
@@ -763,7 +763,7 @@ def start_caveats(found: list[dict], season, week) -> list[dict]:
             from . import starters
             team = starters.team_name(str(c.get("team")))
             who = " and ".join(dict.fromkeys(str(x) for x in c.get("players") or [])) or "him"
-            if c.get("kind") == "starter_set_by_hand":
+            if c.get("kind") == "starter_projected":                            # ---- IW-1
                 listed = f", not the listed {c['listed']}" if c.get("listed") else ""
                 w = START_SET_WORDS.format(team=team, set=c.get("set"), listed=listed, last=PV._last(str(c.get("set"))))
             elif c.get("kind") == "starter_unclear":
@@ -826,7 +826,7 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
     if len(found) < H2H_MIN:
         return {**out, "notice": "Pick at least two players with a game this week."}
     # ---- IU-3: the starter rule the trade verdict follows (provenance.caveats_for / effect): unclear → no call (below,
-    # as before); set by hand → the call stands, read as a lean that says whom it assumes — in a start/sit's words
+    # as before); the sources disagree on the data rule's pick → the call stands, read as a lean that says whom it assumes — in a start/sit's words
     cvs = start_caveats(found, ctx.season, ctx.week)
     out["caveats"] = cvs
     out["caveat_effect"] = PV.effect(cvs) if cvs else None
@@ -849,7 +849,7 @@ def start(league: str, ids: str | None, *, source: str | None = None) -> dict:
         p["vs"] = {o: round(v, 4) for o, v in res["pair"][g].items()}
     out["players"].sort(key=lambda p: -p["p_best"])
     out["answer"] = call(found, res)
-    # ---- IU-3: a quarterback whose team's starter was set by hand: the call stands, as a lean that says whom it assumes
+    # ---- IU-3: a quarterback whose team's sources disagree (IW-1: the data rule's pick): the call stands, as a lean that says whom it assumes
     if out["caveat_effect"] == PV.SOFTEN:
         a = out["answer"]
         a["verdict_unqualified"], a["words_unqualified"] = a.get("verdict"), a.get("words")

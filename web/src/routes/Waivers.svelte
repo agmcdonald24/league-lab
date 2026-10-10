@@ -228,7 +228,7 @@
         </div>
         {#each rivals as r, i (i)}<p class="text-sm leading-snug font-semibold text-ink" data-testid="top-compete">{r}</p>{/each}<!-- II-4 -->
         {#if data.not_additive}<p class="text-sm leading-snug text-ink-2" data-testid="not-additive">{data.not_additive}</p>{/if}<!-- IE-1 -->
-        <!-- ---- IT-3: what the numbers are and what has been checked; a claim on a quarterback whose starter is unclear or set by hand says so -->
+        <!-- ---- IT-3: what the numbers are and what has been checked; a claim on a quarterback whose starter is unclear or disputed says so -->
         <ProvenanceLine p={prov(data)?.provenance} caveats={prov(data)?.caveats} testid="waivers-provenance" />
       </section>
     {/if}

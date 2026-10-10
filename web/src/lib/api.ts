@@ -2758,7 +2758,7 @@ export interface FreeTrade {
 }
 // ---- end IQ-4
 
-// ---- IQ-2 (Wave I-Q): who starts, set by hand (starters.corrected): the quarterback a hand-kept row sets as his team's
+// ---- IQ-2 (Wave I-Q) / IW-1: who starts when the sources disagree (starters.corrected): the quarterback the data rule sets as his team's
 // starter and the listed one carry one sentence; both keep their tiers and their start / sit calls
 export interface StarterCorrected {
   team: string | null;
@@ -2937,7 +2937,7 @@ export interface Provenance {
   words: string; // the one quiet line, printed as it is
 }
 export interface DecisionCaveat {
-  kind: "starter_unclear" | "starter_set_by_hand";
+  kind: "starter_unclear" | "starter_projected";   // ---- IW-1: the data rule's pick (was a hand-set row)
   effect: "withhold" | "soften";
   team: string;
   players: string[];

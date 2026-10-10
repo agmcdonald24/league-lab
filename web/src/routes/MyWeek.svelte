@@ -471,7 +471,7 @@
               <LineupTable rows={data.lineup} {ctx} testid="lineup" margins pane={(row) => lineupPane(row, data!.lineup_full)} /><!-- IF-4: margins -->
               <!-- ---- IG-1: the total counts a starter with no projection as 0: say how many -->
               {#if data.unvalued_words}<p class="text-sm leading-snug text-ink-3" data-testid="unvalued-words">{data.unvalued_words}</p>{/if}
-              <!-- ---- IT-3: what the numbers are and what has been checked; a quarterback whose starter is unclear or set by hand says so in a lineup's words -->
+              <!-- ---- IT-3: what the numbers are and what has been checked; a quarterback whose starter is unclear or disputed says so in a lineup's words -->
               <ProvenanceLine p={prov(data)?.provenance} caveats={prov(data)?.caveats} testid="myweek-provenance" />
             {:else}
               <p class="text-sm text-ink-3">No proposed lineup for this week yet.</p>
