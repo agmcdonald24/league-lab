@@ -5403,6 +5403,38 @@ for Seattle the weeks 3–4 "starts" still belong to Lock: Darnold's and his rec
 projection-marts selection 145 PASS (the 146th, the registry's unique metric, fixed and re-run: PASS).
 <!-- ---- end IQ-2 -->
 
+### Who starts, decided by the data (sq1.0, IW-1, Wave I-W, 2026-10-10) — the rule, written before any new number
+
+The owner's requirement (Saturday 15:21): an unplayed game's starter comes from data, automatically; no hand list is in
+force; no screen says "set by hand". This study picks the best automatic rule; it cannot decide "keep the listing".
+**Seen before this was written**: S1 – S4's numbers of 7 October (above: S4 0.957 on 670 team-games, 10 of 12 stale
+listings fixed, 6 newly broken). No number of S5 or S6 has been read.
+
+**Truth, window, as-of**: as IQ-2 (the game's dropback leader; the played team-games of 2025 – 2026 week 4, where a dated
+depth chart exists; each input as it stood before kickoff). The listing's 0.951 there is **helped by hindsight**:
+nflverse usually rewrites a played game's listing to the real starter after the game, so the live listing (Seattle:
+Drew Lock, two weeks after Sam Darnold took over) is worse than its history says.
+
+**"Available"** = `availability_gate`'s question for the week: not Out / Doubtful on week W's report, not on a reserve
+list (week W's roster status outside ACT / INA / DEV); for the week under way also Sleeper's directory word when the
+gate would make him sit (its codes, dated after the previous week's last kickoff — the gate's stale rule). Questionable
+is available. History has only the report and the reserve lists (the directory keeps no dated copy).
+
+**Candidates** (defined here; L = the listing, D = the newest depth-chart snapshot before kickoff's first available
+quarterback, N = the available quarterback who led the team's dropbacks in its newest played game this season):
+* **S4** two sources agree (IQ-2's definition, reported again).
+* **S5 the snaps first**: N; if there is no such game or he is not available, D; without a depth chart, the listing.
+* **S6 two of three**: of L, D and N, the quarterback at least two name, if he is available; otherwise (no two agree,
+  or the one two name is out) D; without a depth chart, S5.
+* **Sleeper's directory** (`depth_chart_order`) is not a candidate: the copy holds one snapshot (5 October), no dated
+  history; it can be graded from now on (the record below), not on the past.
+
+**The rule that picks one**: among the candidates that fix **at least 80%** of the stale listings of the window, the
+highest accuracy on all its team-games; ties → the fewer newly broken. If none fixes 80%: the one that fixes the most
+(ties: accuracy). The pick ships as an unplayed game's `starting_qb_id`; nothing else (the board, a margin) can veto it.
+Reported for every candidate: accuracy, stale fixed, newly broken **by name**, and 2021 – 2024 for the candidates that
+need no depth chart (S5 without D falls to the listing there).
+
 ## Who cannot play (av1.0, IR-1, Wave I-R, 2026-10-08; `src/league_lab/availability_gate.py`, `api/league_lab_api/availability.py` § IR-1)
 
 Andrew, 2026-10-08: De'Von Achane (IR, torn ACL) was the 21st running back on Rankings at 10.93 while his card said
