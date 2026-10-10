@@ -260,27 +260,44 @@ sq_last as (
 
 sq_pick as (
     select g.game_id, g.team,
+           -- S4 (sq1.0): the listing, unless he is not available -> D; or D is also the newest game's leader -> him
            case when g.listing_qb_id is null then null   -- no listing yet (more than about a week out): as before, unknown
-                when exists (select 1 from sq_out as o
-                             where o.season = g.season and o.week = g.week and o.gsis_id = g.listing_qb_id)
-                     then coalesce(dq.depth_qb_id, g.listing_qb_id)
+                when lo.gsis_id is not null then coalesce(dq.depth_qb_id, g.listing_qb_id)
                 when dq.depth_qb_id is not null and dq.depth_qb_id = sl.last_qb_id and sl.last_qb_id <> g.listing_qb_id
                      then sl.last_qb_id
-                else g.listing_qb_id end                                     as data_qb_id
+                else g.listing_qb_id end                                     as s4_qb_id,
+           -- S7 (sq1.1, the PO's product decision): S4, and a listing neither D nor the newest leader names is dropped:
+           -- D; no D: the newest leader if available; else the listing
+           case when g.listing_qb_id is null then null
+                when dq.depth_qb_id is distinct from g.listing_qb_id and sl.last_qb_id is distinct from g.listing_qb_id
+                     then coalesce(dq.depth_qb_id, case when sl.last_qb_id is not null and lso.gsis_id is null then sl.last_qb_id end,
+                                   g.listing_qb_id)
+                when lo.gsis_id is not null then coalesce(dq.depth_qb_id, g.listing_qb_id)
+                when dq.depth_qb_id is not null and dq.depth_qb_id = sl.last_qb_id and sl.last_qb_id <> g.listing_qb_id
+                     then sl.last_qb_id
+                else g.listing_qb_id end                                     as s7_qb_id
     from sq_games as g
     left join sq_depth as dq on dq.game_id = g.game_id and dq.team = g.team
     left join sq_last as sl on sl.game_id = g.game_id and sl.team = g.team
-    where {{ var('starter_from_data', true) }}                  -- the kill switch: --vars '{starter_from_data: false}' = the listing
+    left join sq_out as lo on lo.season = g.season and lo.week = g.week and lo.gsis_id = g.listing_qb_id
+    left join sq_out as lso on lso.season = g.season and lso.week = g.week and lso.gsis_id = sl.last_qb_id
 )
 
+-- the shipped rule (var starter_from_data): 's7' (default, the PO's decision), 's4' (the rule the study picked), or
+-- false / 'off' / 'listing' (the schedule's listing, as before IW-1). S4's and S7's picks are both kept (the record).
+{%- set sq_rule = (var('starter_from_data', 's7') | string | lower) %}
 select
     p.season, p.week, p.game_id, p.team, p.opponent, p.kickoff_at,
-    coalesce(op.override_qb_id, sq.data_qb_id, p.starting_qb_id)             as starting_qb_id,
+    coalesce(op.override_qb_id, {{ 'sq.s7_qb_id' if sq_rule == 's7' else ('sq.s4_qb_id' if sq_rule == 's4' else 'null') }},
+             p.starting_qb_id)                                               as starting_qb_id,
     p.listed_qb_id,
     p.is_played, p.team_snaps, p.team_targets, p.team_carries, p.game_no,
     case when op.override_qb_id is not null then 'override'
-         when sq.data_qb_id is not null and sq.data_qb_id is distinct from p.starting_qb_id then 'data'
-         else 'schedule' end                                                 as starter_source
+         when {{ 'sq.s7_qb_id' if sq_rule == 's7' else ('sq.s4_qb_id' if sq_rule == 's4' else 'null') }} is not null
+              and {{ 'sq.s7_qb_id' if sq_rule == 's7' else ('sq.s4_qb_id' if sq_rule == 's4' else 'null') }}
+                  is distinct from p.starting_qb_id then 'data'
+         else 'schedule' end                                                 as starter_source,
+    sq.s4_qb_id, sq.s7_qb_id                                                 -- ---- IW-1 round 3: both rules, recorded
 from picked as p
 left join override_pick as op on op.game_id = p.game_id and op.team = p.team
 left join sq_pick as sq on sq.game_id = p.game_id and sq.team = p.team
