@@ -199,9 +199,11 @@ sq_games as (
     where not p.is_played
 ),
 
-sq_next_week as (
-    select min(week) as week, min(season) as season from sq_games
-    where season = (select max(season) from sq_games)
+sq_next_week as (   -- the nearest week ahead: the week of the first game not yet kicked off (var starter_now: tests)
+    select g.week, g.season from sq_games as g
+    where g.kickoff_at > '{{ var("starter_now", "now") }}'::timestamptz
+    order by g.kickoff_at, g.week
+    limit 1
 ),
 
 sq_prev_end as (

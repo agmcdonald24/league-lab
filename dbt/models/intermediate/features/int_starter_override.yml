@@ -156,6 +156,8 @@ unit_tests:
   # listed starter Out after the previous week ended), DDD (no chart: the listing). Played games keep the listing.
   - name: starter_from_data_decides_unplayed_games
     model: int_pn_team_game
+    overrides:
+      vars: {starter_now: '2026-10-04 12:00:00+00'}   # Saturday before week 5's games
     given:
       - input: ref('dim_game')
         rows:
