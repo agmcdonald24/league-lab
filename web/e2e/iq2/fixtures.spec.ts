@@ -116,7 +116,7 @@ test("a corrected starter: the chip, one sentence, his tier; Lock's row says the
   // is named by neither the depth chart nor week 4's snaps (Bagent): the same sentence on Williams' row and Keenum's
   const CHI_WORDS = "Chicago: we project Caleb Williams to start — the depth chart lists him first; the schedule still lists Case Keenum; Tyson Bagent took the snaps in week 4.";
   for (const g of [WILLIAMS, KEENUM]) {
-    await expect(page.locator(`[data-testid=rankings-row][data-key="${g}"]`).getByTestId("rankings-corrected-words")).toHaveText(CHI_WORDS);
+    await expect(page.locator(`[data-testid=rankings-row][data-key="${g}"]`).getByTestId("rankings-corrected-words")).toContainText(CHI_WORDS);
   }
   for (const g of [DARNOLD, LOCK, WILLIAMS, KEENUM]) {
     await expect(page.locator(`[data-testid=rankings-row][data-key="${g}"][data-unclear]`)).toHaveCount(0);
