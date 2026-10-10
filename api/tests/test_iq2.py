@@ -80,7 +80,8 @@ def test_the_pick_s_sentence_when_the_sources_disagree():
     assert f[SEA_DARNOLD]["words"] == f[SEA_LOCK]["words"] == (
         "Seattle: we project Sam Darnold to start — he led the team's dropbacks in week 4; the schedule lists Drew Lock.")
     assert f["00-0035993"]["words"] == (
-        "Baltimore: we project Tyler Huntley to start — the depth chart lists him first; the schedule lists Lamar Jackson.")
+        "Baltimore: we project Tyler Huntley to start — Lamar Jackson, the listed starter, is ruled out and he is next on "
+        "the depth chart.")
     assert all("hand" not in v["words"] and "corrected" not in v["words"] for v in f.values())
     # IQ-2's mechanism stays (unused: the seed keeps its header only); a listing the pick agrees with says nothing
     assert S.corrected_from(rows.iloc[[2]]) == {}

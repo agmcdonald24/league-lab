@@ -239,23 +239,19 @@ def day_month(d) -> str | None:
 def projected_words(team: str, pick: str, listed: str | None, depth: str | None, last: str | None,
                     last_week: int | None) -> str:
     """IW-1 (Wave I-W): who we project to start when the sources disagree, and why — one sentence in a manager's words
-    (docs/WORDS.md § "Who starts"). The pick is the data rule's (sq1.0); never a hand-set word."""
+    (docs/WORDS.md § "Who starts"). The pick is the data rule's (sq1.0: the listing unless he is ruled out — then the
+    depth chart's next available — or the chart and the newest game both name another); never a hand-set word."""
     lead = team_name(team)
     if last and last == pick and last_week is not None:
-        why = f"he led the team's dropbacks in week {last_week}"
-    elif depth and depth == pick:
-        why = "the depth chart lists him first"
-    elif listed and listed == pick:
-        why = "the schedule lists him"
+        tail = [f"the schedule lists {listed}"] if listed and listed != pick else []
+        if depth and depth not in (pick, listed):
+            tail.append(f"the depth chart lists {depth} first")
+        why = f"he led the team's dropbacks in week {last_week}" + ("; " + " and ".join(tail) if tail else "")
+    elif listed and listed != pick:
+        why = f"{listed}, the listed starter, is ruled out and he is next on the depth chart"
     else:
-        why = "his team's sources point to him"
-    others = []
-    if listed and listed != pick:
-        others.append(f"the schedule lists {listed}")
-    if depth and depth != pick and depth != listed:
-        others.append(f"the depth chart lists {depth} first")
-    tail = ("; " + " and ".join(others)) if others else ""
-    return f"{lead}: we project {pick} to start — {why}{tail}."
+        why = "the depth chart lists him first"
+    return f"{lead}: we project {pick} to start — {why}."
 
 
 def corrected_from(chk: pd.DataFrame) -> dict[str, dict]:
