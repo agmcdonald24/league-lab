@@ -2,6 +2,24 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-10 — Wave I-W
+
+- **IW-1 — who starts at quarterback, decided by the data (sq1.0).** No hand list in force (`starter_overrides.csv`
+  keeps its header) and no screen says "set by hand" or "Starter corrected". An unplayed game's starter is the
+  listing unless he is ruled out (then the depth chart's first available quarterback) or the depth chart and the
+  team's newest game's dropback leader both name another (then him) — S4, the most accurate of the candidates that fix
+  at least 80% of the stale listings on 2025 – 2026 week 4 (0.957 against the listing's 0.951, which hindsight helps;
+  10 of 12 stale fixed, 6 newly broken, named in METRICS § "Who starts, decided by the data"). Where the sources
+  disagree, one sentence says whom we project and why; a decision on him stays a lean.
+- **IW-1 round 3 — the PO's decision (sq1.1): S7 ships, S4 is recorded beside it, both graded.** S7 = S4, and a
+  listing that neither the depth chart nor the newest game's snaps names is dropped for the depth chart's first
+  available quarterback (Chicago: Caleb Williams, not Case Keenum). `ops.starter_record` keeps the listing, S4's and
+  S7's picks until kickoff and grades them against the dropback leader once the game is in (`league-lab
+  starter-record`); `mart_starter_check` shows it; About says "Our projected starter was the game's quarterback in N
+  of M games since week 5" once a game is graded. The way back: `--vars '{starter_from_data: s4}'` (or `false`).
+  `project`'s waiver solve reads the live week (the market and the replacement through `live_week.sql`). Rankings'
+  "Not playing" rows stay inside a 375 px page.
+
 ## 2026-10-09 — Wave I-V
 
 - **PO — the live week is on.** `LEAGUE_LAB_FREEZE: game` in `nightly.yml`; the five overlays in `nightly.sh`'s

@@ -5403,6 +5403,117 @@ for Seattle the weeks 3–4 "starts" still belong to Lock: Darnold's and his rec
 projection-marts selection 145 PASS (the 146th, the registry's unique metric, fixed and re-run: PASS).
 <!-- ---- end IQ-2 -->
 
+### Who starts, decided by the data (sq1.0, IW-1, Wave I-W, 2026-10-10) — the rule, written before any new number
+
+The owner's requirement (Saturday 15:21): an unplayed game's starter comes from data, automatically; no hand list is in
+force; no screen says "set by hand". This study picks the best automatic rule; it cannot decide "keep the listing".
+**Seen before this was written**: S1 – S4's numbers of 7 October (above: S4 0.957 on 670 team-games, 10 of 12 stale
+listings fixed, 6 newly broken). No number of S5 or S6 has been read.
+
+**Truth, window, as-of**: as IQ-2 (the game's dropback leader; the played team-games of 2025 – 2026 week 4, where a dated
+depth chart exists; each input as it stood before kickoff). The listing's 0.951 there is **helped by hindsight**:
+nflverse usually rewrites a played game's listing to the real starter after the game, so the live listing (Seattle:
+Drew Lock, two weeks after Sam Darnold took over) is worse than its history says.
+
+**"Available"** = `availability_gate`'s question for the week: not Out / Doubtful on week W's report, not on a reserve
+list (week W's roster status outside ACT / INA / DEV); for the week under way also Sleeper's directory word when the
+gate would make him sit (its codes, dated after the previous week's last kickoff — the gate's stale rule). Questionable
+is available. History has only the report and the reserve lists (the directory keeps no dated copy).
+
+**Candidates** (defined here; L = the listing, D = the newest depth-chart snapshot before kickoff's first available
+quarterback, N = the available quarterback who led the team's dropbacks in its newest played game this season):
+* **S4** two sources agree (IQ-2's definition, reported again).
+* **S5 the snaps first**: N; if there is no such game or he is not available, D; without a depth chart, the listing.
+* **S6 two of three**: of L, D and N, the quarterback at least two name, if he is available; otherwise (no two agree,
+  or the one two name is out) D; without a depth chart, S5.
+* **Sleeper's directory** (`depth_chart_order`) is not a candidate: the copy holds one snapshot (5 October), no dated
+  history; it can be graded from now on (the record below), not on the past.
+
+**The rule that picks one**: among the candidates that fix **at least 80%** of the stale listings of the window, the
+highest accuracy on all its team-games; ties → the fewer newly broken. If none fixes 80%: the one that fixes the most
+(ties: accuracy). The pick ships as an unplayed game's `starting_qb_id`; nothing else (the board, a margin) can veto it.
+Reported for every candidate: accuracy, stale fixed, newly broken **by name**, and 2021 – 2024 for the candidates that
+need no depth chart (S5 without D falls to the listing there).
+
+**The result** (`iq2_starter_source.py study`, run at 15:37 ET after the rule above was committed `b6dc3c1`; played
+team-games of 2025 – 2026 week 4: 670, 12 stale listings, 21 in-game changes no rule can see):
+
+| Candidate | Accuracy (listing 0.951 →) | Stale fixed | Fixed | Newly broken | Still wrong | ≥ 80% stale? |
+|---|---|---|---|---|---|---|
+| S4 two sources agree | **0.957** | 10 of 12 (83%) | 10 | 6 | 23 | yes |
+| S5 the snaps first | 0.916 | 10 of 12 (83%) | 10 | 33 | 23 | yes |
+| S6 two of three | 0.954 | 10 of 12 (83%) | 10 | 8 | 23 | yes |
+| (S2 depth, first available, IQ-2) | 0.949 | 12 of 12 | 13 | 14 | 20 | yes |
+| (S3 listing unless ruled out, IQ-2) | 0.958 | 5 of 12 | 5 | 0 | 28 | no |
+
+2021 – 2024 (no depth chart): S5 = the newest game's leader, else the listing: 0.912 against the listing's 0.956 (29 of
+37 stale fixed, 133 newly broken) — the snaps alone are worse than the listing in every window.
+
+**The pick: S4** (the most accurate of the four that fix at least 80% of the stale listings). Its 6 newly broken games,
+by name (the pick, then who started): Arizona 2025 wk 6 Kyler Murray / Jacoby Brissett; Atlanta 2025 wk 8 Michael Penix
+Jr. / Kirk Cousins; Buffalo 2025 wk 18 Josh Allen / Mitchell Trubisky; the Chargers 2025 wk 18 Justin Herbert / Trey
+Lance; Philadelphia 2025 wk 18 Jalen Hurts / Tanner McKee; Pittsburgh 2025 wk 12 Aaron Rodgers / Mason Rudolph — four
+are a healthy starter rested or held out late (week 18), named by the chart and his last game; no data before kickoff
+says it. The case to look for, a starter back from injury, is what S5 breaks (Baltimore 2025 wk 9: Tyler Huntley for
+Lamar Jackson; Washington 2025 wk 5 and 9: Marcus Mariota for Jayden Daniels; San Francisco 2025 wk 4 and 11) and S4
+does not: the listing and the chart name the returning starter, so S4 keeps him.
+
+**Shipped** (`int_pn_team_game`, the IW-1 block): an unplayed game's `starting_qb_id` is S4's pick where the game has a
+listing (`starter_source` 'data' when it differs from the listing); a game more than about a week out keeps no starter,
+as before; played games keep the listing. The hand list (`starter_overrides.csv`) keeps its header only; its mechanism
+stays in the code, unused. Kill switch: `--vars '{starter_from_data: false}'`. (Round 3: S7 ships instead — sq1.1 below.)
+
+**Round 2 (16:50 ET, 2026-10-10): S7 and the PO's ship rule for it — written before any S7 number.**
+
+* **S7** = S4, and in addition: when neither the depth chart's first available quarterback nor the newest game's dropback
+  leader names the listed quarterback, the listing is dropped and the pick is the depth chart's first available (no
+  depth chart: the newest game's dropback leader if available; else the listing).
+* **The PO's ship rule — a product rule, and it says so**: the visible failure is a stale listing on a screen, so S7
+  replaces S4 if, on the same 670 team-games, it fixes **at least 11 of the 12** stale listings and its accuracy is **at
+  least S4's minus 0.003** (two team-games). If it meets that, S7 ships; if not, it does not, and the table and S7's
+  newly broken games go to the PO, who decides.
+* **History flatters the listing**: nflverse corrects a played game's listing after the game, so in history a stale
+  listing is rarer than live and a rule that distrusts an unsupported listing looks worse in history than it is live.
+* **A Questionable starter**: available (the gate says he does not sit), so he is the pick when the rule names him, and
+  his row carries its Questionable words as today; when he is ruled out, the next refresh moves the pick.
+
+**Round 2's result (`iq2_starter_source.py study`, 16:50 ET, after `09d75f6`)**: S7 on the same 670 team-games: 639
+right (0.9537) against S4's 641 (0.9567) — inside the 0.003 allowance by the width of a rounding — and **10 of 12** stale
+listings fixed, the same 10 as S4 (it still misses Seattle 2026 wk 3 and Chicago 2026 wk 4, where the listed quarterback
+had led the newest game: supported by one source, so kept). **S7 does not meet the ship rule (11 of 12); it is not
+shipped; the PO decides.** It differs from S4 in two games, both newly broken: Chicago 2026 wk 3 (Tyson Bagent picked;
+Case Keenum started) and Green Bay 2025 wk 18 (Jordan Love picked; Clayton Tune started). Its 8 newly broken: S4's 6
+(Arizona wk 6, Atlanta wk 8, Buffalo, the Chargers and Philadelphia wk 18, Pittsburgh wk 12) and those two. Live, for
+Chicago week 5 (listing Keenum, the chart Caleb Williams first, week 4's snaps Bagent), S7 would pick Williams.
+
+**The PO's decision (round 3, 16:53 ET, 2026-10-10) — sq1.1: S7 ships, S4 is recorded beside it.**
+
+S7 did not meet the PO's bar (10 of 12 stale listings fixed; the bar was 11) and met the accuracy bar by nothing (two
+team-games behind S4). The PO ships it anyway, and this is a product decision, not a finding. The clause S7 adds to S4 —
+drop a listing that neither the depth chart nor the newest game's snaps supports — changed two games of the 670, both
+wrong, on a base that has been corrected after the games: in history an unsupported listing is usually the answer
+written in afterwards; live it has been a stale name both times it has happened this season (Seattle before week 4,
+Chicago in week 5), and S4 would project Case Keenum as Chicago's starter this week. The past cannot test the clause, so
+the season will: S4's pick is recorded beside S7's at every kickoff and both are graded against who took the snaps. The
+PO reads the two records after four graded weeks and keeps the better.
+
+**Shipped (sq1.1, round 3).** `int_pn_team_game`'s `starting_qb_id` is S7's pick for every unplayed game with a listing;
+S4's and S7's picks are both kept (`s4_qb_id`, `s7_qb_id`) with the shipped rule's reason (`starter_reason`:
+`listing_out` — the listed quarterback is ruled out; `two_sources` — the depth chart and the newest game both name
+another; `unsupported` — S7's clause: neither names the listing) and the rule's name (`starter_rule`). The way back is
+the dbt var `starter_from_data`: `s7` (default, the PO's decision), `s4` (the rule the study picked), `false` / `off` /
+`listing` (the schedule's listing, as before IW-1); e.g. `--vars '{starter_from_data: s4}'`. The nearest week is the
+first week with a game not kicked off at the build's clock (var `starter_now`, default `now`; the unit test pins it).
+
+**The record (sq1.1, round 3; `ops.starter_record`, `league-lab starter-record`, `src/league_lab/starter_record.py`).**
+Per team-game from 2026 week 5: until kickoff, every run rewrites the listing, S4's pick, S7's pick, the projected
+quarterback and which rule shipped (`shipped`: `s7`, `s4`, `listing` or `override`); after kickoff the row is never
+rewritten (the last run before kickoff; the same freeze as `ops.lineup_record`). Once the game is in, the team's
+dropback leader (`truth_qb_id`, the leader `mart_starter_check` reads) and whether each pick was right
+(`listed_right`, `s4_right`, `s7_right`, `projected_right`). `mart_starter_check` carries the season's tallies per
+team (`record_games`, `record_projected_right`, `record_listed_right`, `record_s4_right`, `record_s7_right`); About
+says "Our projected starter was the game's quarterback in N of M games since week 5" and nothing while M is 0.
+
 ## Who cannot play (av1.0, IR-1, Wave I-R, 2026-10-08; `src/league_lab/availability_gate.py`, `api/league_lab_api/availability.py` § IR-1)
 
 Andrew, 2026-10-08: De'Von Achane (IR, torn ACL) was the 21st running back on Rankings at 10.93 while his card said

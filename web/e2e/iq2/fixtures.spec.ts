@@ -1,7 +1,11 @@
-// Wave I-Q (IQ-2): who starts, set by hand. Browsing (`ref:half`), week 5: the corrected quarterback's Rankings row
-// (Seattle → Sam Darnold, set by the override list) carries the chip "Starter corrected" and one sentence ("Seattle's
-// listing says Drew Lock; … Set by hand on 7 Oct."), keeps his tier and is never "Starter unclear"; Drew Lock's row says
-// the same; "Who should I start?" gives Darnold a call and his chance like anyone else. Phone at 375, desktop at 1300;
+// Wave I-Q (IQ-2), Wave I-W (IW-1): who starts, decided by the data (sq1.0; no hand list). Browsing (`ref:half`), week
+// 5: the quarterback the data rule starts against the listing (Seattle → Sam Darnold) carries the chip "Who starts" and
+// one sentence ("Seattle: we project Sam Darnold to start — …; the schedule lists Drew Lock."), keeps his tier and is
+// never "Starter unclear"; Drew Lock's row says the same; Chicago (round 3, S7: a listing neither the depth chart nor
+// the last game names is dropped) → Caleb Williams, the sentence on his row and on Case Keenum's ("the depth chart lists
+// him first; the schedule still lists Case Keenum; Tyson Bagent took the snaps in week 4"); "Who should I start?" gives
+// Darnold a call and his chance like anyone else.
+// Recorded again on IW-1's copy (league_lab_iq4, the data rule in force). Phone at 375, desktop at 1300;
 // screenshots (JPEG q70) into docs/handbacks/iq2/ (SHOTS_IQ2) or e2e/.out.
 //
 // Two modes, as e2e/ip2. Default: the rankings', the start answer's and Compare's answers come from
@@ -21,6 +25,7 @@ const SHOTS = process.env.SHOTS_IQ2 ?? join(import.meta.dirname, "..", ".out");
 type Recorded = Record<string, { status: number; body: unknown }>;
 type RankBody = { rows: Record<string, unknown>[] };
 const DARNOLD = "00-0034869";
+const WILLIAMS = "00-0039918", KEENUM = "00-0028986";   // ---- IW-1 round 3: Chicago
 const LOCK = "00-0035704";
 
 if (LIVE) test.use({ baseURL: LIVE });
@@ -97,19 +102,23 @@ test("a corrected starter: the chip, one sentence, his tier; Lock's row says the
   await expect(row).not.toHaveAttribute("data-unclear", "1");
   await expect(row).not.toHaveAttribute("data-tier", "");              // a tier like anyone else
   const phone = info.project.name.includes("phone");
-  await expect(row.getByTestId(phone ? "rankings-corrected-chip-phone" : "rankings-corrected-chip")).toHaveText("Starter corrected");
+  await expect(row.getByTestId(phone ? "rankings-corrected-chip-phone" : "rankings-corrected-chip")).toHaveText("Who starts");
   await expect(row.getByTestId(phone ? "rankings-corrected-chip" : "rankings-corrected-chip-phone")).toBeHidden();
   const words = row.getByTestId("rankings-corrected-words");
   await expect(words).toContainText(
-    "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold as the starter. Set by hand on 7 Oct.");
+    "Seattle: we project Sam Darnold to start — he led the team's dropbacks in week 4; the schedule lists Drew Lock.");
+  await expect(words).not.toContainText(/by hand|corrected/i);
   await expect(words).not.toContainText(/No tier|wrong|unclear/i);
   const lock = page.locator(`[data-testid=rankings-row][data-key="${LOCK}"]`);
   await expect(lock).toHaveAttribute("data-corrected", "1");
-  await expect(lock.getByTestId("rankings-corrected-words")).toContainText("Seattle's listing says Drew Lock;");
-  // Chicago too; and neither team's quarterbacks are "Starter unclear"
-  await expect(page.locator(`[data-testid=rankings-row][data-key="00-0038416"]`).getByTestId("rankings-corrected-words")).toContainText(
-    "Chicago's listing says Case Keenum; Tyson Bagent led the team's dropbacks in week 4, so we project Bagent as the starter. Set by hand on 7 Oct.");
-  for (const g of [DARNOLD, LOCK, "00-0038416", "00-0028986"]) {
+  await expect(lock.getByTestId("rankings-corrected-words")).toContainText("the schedule lists Drew Lock");
+  // Chicago (IW-1 round 3, S7): Caleb Williams, Questionable (available), first on the depth chart; the listing (Keenum)
+  // is named by neither the depth chart nor week 4's snaps (Bagent): the same sentence on Williams' row and Keenum's
+  const CHI_WORDS = "Chicago: we project Caleb Williams to start — the depth chart lists him first; the schedule still lists Case Keenum; Tyson Bagent took the snaps in week 4.";
+  for (const g of [WILLIAMS, KEENUM]) {
+    await expect(page.locator(`[data-testid=rankings-row][data-key="${g}"]`).getByTestId("rankings-corrected-words")).toContainText(CHI_WORDS);
+  }
+  for (const g of [DARNOLD, LOCK, WILLIAMS, KEENUM]) {
     await expect(page.locator(`[data-testid=rankings-row][data-key="${g}"][data-unclear]`)).toHaveCount(0);
   }
   // the projection reads the corrected starter: Darnold above Lock
@@ -138,7 +147,7 @@ test("Who should I start? with a corrected quarterback: a call and his chance, a
   await expect(page.getByTestId("compare-start-pct")).toHaveCount(2);
   await expect(page.getByTestId("compare-start-nocall")).toHaveCount(0);
   await expect(page.getByTestId("compare-start-corrected")).toHaveText(
-    "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold as the starter. Set by hand on 7 Oct.");
+    "Seattle: we project Sam Darnold to start — he led the team's dropbacks in week 4; the schedule lists Drew Lock.");
   await noSideways(page, "compare");
   await shot(page, `iq2-start-${info.project.name}`);
 });

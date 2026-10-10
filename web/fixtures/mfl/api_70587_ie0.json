@@ -1124,7 +1124,7 @@
    },
    "caveats": [],
    "caveat_effect": null,
-   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call."
   }
  },
  "/api/team?league=mfl%3A70587&team=8": {
@@ -4867,7 +4867,7 @@
    },
    "caveats": [],
    "caveat_effect": null,
-   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call."
   }
  },
  "/api/trades/lists?league=mfl%3A70587&team=8": {
@@ -17718,7 +17718,7 @@
    },
    "caveats": [],
    "caveat_effect": null,
-   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call."
   }
  },
  "POST /api/trades/evaluate {\"get\":[\"10229\"],\"give\":[\"mfl:0682\",\"mfl:9999\"],\"league\":\"mfl:70587\",\"partner\":12,\"team\":8}": {
@@ -19483,7 +19483,7 @@
    },
    "caveats": [],
    "caveat_effect": null,
-   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call."
   }
  },
  "POST /api/trades/evaluate {\"get\":[\"10229\"],\"give\":[\"12490\",\"mfl:0682\"],\"league\":\"mfl:70587\",\"partner\":12,\"team\":8}": {
@@ -21515,7 +21515,7 @@
    },
    "caveats": [],
    "caveat_effect": null,
-   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call."
   }
  },
  "POST /api/trades/evaluate {\"get\":[\"10229\"],\"give\":[\"mfl:0682\"],\"league\":\"mfl:70587\",\"partner\":12,\"team\":8}": {
@@ -23344,7 +23344,7 @@
    },
    "caveats": [],
    "caveat_effect": null,
-   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call."
   }
  },
  "POST /api/usage {\"league\":\"mfl:70587\",\"roster_id\":8,\"screen\":\"week\"}": {
@@ -26125,7 +26125,7 @@
    },
    "caveats": [],
    "caveat_effect": null,
-   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call."
   }
  },
  "POST /api/trades/evaluate {\"get\":[\"12518\"],\"give\":[\"mfl:0671\",\"12490\"],\"league\":\"mfl:70587\",\"partner\":7,\"team\":8}": {
@@ -28060,7 +28060,7 @@
    },
    "caveats": [],
    "caveat_effect": null,
-   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call."
   }
  },
  "/api/team?league=mfl%3A70587&team=6": {
@@ -31314,7 +31314,7 @@
    },
    "caveats": [],
    "caveat_effect": null,
-   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+   "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call."
   }
  }
 }

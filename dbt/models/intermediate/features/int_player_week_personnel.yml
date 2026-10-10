@@ -34,7 +34,7 @@ models:
         tests:
           - accepted_values:
               arguments:
-                values: [schedule, override]
+                values: [schedule, override, data]   # ---- IW-1: data = the rule (sq1.0) changed the listing
       # ---- end IQ-2
 
   - name: int_pn_player_game

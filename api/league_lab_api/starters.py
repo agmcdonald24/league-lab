@@ -155,8 +155,10 @@ def unclear(season: int, week: int) -> dict[str, dict]:
 CHECK = "mart_starter_check"
 CHECK_SQL = """select team, week, listed_qb_id, listed_name, depth_available_qb_id, depth_available_name, last_week,
                       override_qb_id, override_name, override_added_on, override_led_since_week, projected_qb_id,
-                      starter_source, listing_disputed
-               from analytics.mart_starter_check where season = %s and week = %s"""
+                      starter_source, listing_disputed,
+                      projected_name, last_qb_id, last_name,  -- ---- IW-1: the pick's sentence names its sources
+                      to_jsonb(m) ->> 'starter_reason' as starter_reason   -- round 3 (a mart built before it: NULL)
+               from analytics.mart_starter_check as m where season = %s and week = %s"""
 CHECK_COLS = ("team", "week", "listed_qb_id", "listed_name", "depth_available_qb_id", "depth_available_name", "last_week",
               "override_qb_id", "override_name", "override_added_on", "override_led_since_week", "projected_qb_id",
               "starter_source", "listing_disputed")
@@ -214,7 +216,7 @@ def disputed_from(chk: pd.DataFrame) -> dict[str, dict]:
     for r in chk.to_dict("records"):
         lid, did = _str(r.get("listed_qb_id")), _str(r.get("depth_available_qb_id"))
         flag = r.get("listing_disputed")
-        if flag is None or pd.isna(flag) or not bool(flag) or r.get("starter_source") == "override":
+        if flag is None or pd.isna(flag) or not bool(flag) or r.get("starter_source") in ("override", "data"):   # ---- IW-1
             continue
         if lid is None or did is None or lid == did:
             continue
@@ -235,36 +237,50 @@ def day_month(d) -> str | None:
     return None if pd.isna(t) else f"{t.day} {t.strftime('%b')}"
 
 
-def corrected_words(team: str, listed: str | None, qb: str, since: int | None, last_week: int | None, added_on) -> str:
-    """The corrected quarterback's sentence (docs/WORDS.md § "Starter set by hand")."""
+def projected_words(team: str, pick: str, listed: str | None, depth: str | None, last: str | None,
+                    last_week: int | None, reason: str | None = None) -> str:
+    """IW-1 (Wave I-W): who we project to start when the sources disagree, and why — one sentence in a manager's words
+    (docs/WORDS.md § "Who starts"). The pick is the data rule's (sq1.0: the listing unless he is ruled out — then the
+    depth chart's next available — or the chart and the newest game both name another); never a hand-set word."""
     lead = team_name(team)
-    own = lead + ("'" if lead.endswith("s") else "'s")
-    head = f"{own} listing says {listed}" if listed else f"{own} schedule names no starter yet"
-    if since is not None and last_week is not None and since < last_week:
-        why = f"{qb} has led the team's dropbacks since week {since}, so we project {last_name(qb)} as the starter"
-    elif since is not None:
-        why = f"{qb} led the team's dropbacks in week {since}, so we project {last_name(qb)} as the starter"
+    if reason == "unsupported" and listed and listed != pick:          # ---- round 3: S7's clause
+        snaps = f"; {last} took the snaps in week {last_week}" if last and last not in (pick, listed) and last_week else ""
+        return (f"{lead}: we project {pick} to start — the depth chart lists him first; the schedule still lists "
+                f"{listed}{snaps}.")
+    if last and last == pick and last_week is not None:
+        tail = [f"the schedule lists {listed}"] if listed and listed != pick else []
+        if depth and depth not in (pick, listed):
+            tail.append(f"the depth chart lists {depth} first")
+        why = f"he led the team's dropbacks in week {last_week}" + ("; " + " and ".join(tail) if tail else "")
+    elif listed and listed != pick:
+        why = f"{listed}, the listed starter, is ruled out and he is next on the depth chart"
     else:
-        why = f"we project {qb} as the starter"
-    when = day_month(added_on)
-    return f"{head}; {why}." + (f" Set by hand on {when}." if when else " Set by hand.")
+        why = "the depth chart lists him first"
+    return f"{lead}: we project {pick} to start — {why}."
 
 
 def corrected_from(chk: pd.DataFrame) -> dict[str, dict]:
-    """The pure part: gsis -> {"team", "listed", "set", "role": "set" | "listed", "words", "added_on", "since_week"} for
-    the quarterback a hand-kept row sets as the starter and the listed one, where the two differ."""
+    """The pure part (IW-1: the data rule's pick, sq1.0; IQ-2's hand list when a row is in force): gsis -> {"team",
+    "listed", "set", "role": "set" | "listed", "words", "since_week"} for the quarterback the projection starts and the
+    listed one, where the two differ (the sources disagree). Nothing when they agree."""
     out: dict[str, dict] = {}
     for r in chk.to_dict("records"):
-        oid, lid = _str(r.get("override_qb_id")), _str(r.get("listed_qb_id"))
-        if r.get("starter_source") != "override" or oid is None or oid == lid:
+        src = r.get("starter_source")
+        pid, lid = _str(r.get("projected_qb_id")), _str(r.get("listed_qb_id"))
+        if src not in ("override", "data") or pid is None or pid == lid:
             continue
-        qb, listed = _str(r.get("override_name")) or oid, (_str(r.get("listed_name")) or lid) if lid else None
-        since, last = _int(r.get("override_led_since_week")), _int(r.get("last_week"))
-        added = r.get("override_added_on")
-        base = {"team": r["team"], "listed": listed, "set": qb, "since_week": since,
-                "added_on": None if added is None or pd.isna(added) else str(pd.Timestamp(added).date()),
-                "words": corrected_words(str(r["team"]), listed, qb, since, last, added)}
-        out[oid] = {**base, "role": "set"}
+        qb = _str(r.get("projected_name")) or pid
+        listed = (_str(r.get("listed_name")) or lid) if lid else None
+        depth_id, last_id = _str(r.get("depth_available_qb_id")), _str(r.get("last_qb_id"))
+        depth = (_str(r.get("depth_available_name")) or depth_id) if depth_id else None
+        last = (_str(r.get("last_name")) or last_id) if last_id else None
+        lw = _int(r.get("last_week"))
+        reason = _str(r.get("starter_reason"))                            # ---- round 3
+        base = {"team": r["team"], "listed": listed, "set": qb, "since_week": lw if last_id == pid else None,
+                "added_on": None,
+                "words": projected_words(str(r["team"]), qb, listed, depth if depth_id != lid else listed,
+                                         last if (last_id == pid or reason == "unsupported") else None, lw, reason)}
+        out[pid] = {**base, "role": "set"}
         if lid:
             out[lid] = {**base, "role": "listed"}
     return out

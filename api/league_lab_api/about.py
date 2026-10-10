@@ -33,8 +33,9 @@ def sections(league_name: str) -> list[dict]:
          "text": "The regular-season games QBs, RBs, WRs and TEs played from 2016 to last season (over 50,000 of them), each with "
                  "only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, "
                  "carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against "
-                 "his position, the Vegas line, home or away, the injury report, who starts at quarterback and whether his "
-                 "team's top target is out."},
+                 "his position, the Vegas line, home or away, the injury report, who starts at quarterback (from the data "
+                 "alone: the schedule's listing, unless he is ruled out, the depth chart and the team's last game both "
+                 "name another, or neither of them names him) and whether his team's top target is out."},   # ---- IW-1: where the starter comes from
         {"key": "predicts", "title": "What it predicts",
          "text": "The stat line, not points. For each position there is one small model per stat: targets, catches, receiving "
                  "yards and touchdowns, carries, rushing yards and touchdowns, and for quarterbacks pass attempts, passing yards, "
@@ -259,8 +260,31 @@ def about(league_id: str, source: str | None = None) -> dict:
         _cache.put(key, out)
     from . import provenance  # ---- IR-4
     out.update(provenance.about_block())                                                           # ---- IR-4: versions, checks
+    out["starter_record"] = starter_record_line()                                                  # ---- IW-1 round 3
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
     return out
+
+
+# ---- IW-1 round 3: the site grades its own pick of who starts (ops.starter_record, league_lab.starter_record): one line,
+# nothing while no game since week 5 is graded, nothing before the table exists (the deploy lands before the refresh)
+STARTER_RECORD_SQL = """
+select count(*) filter (where r.projected_right) as n, count(*) as m
+from ops.starter_record as r
+where r.truth_qb_id is not null and r.week >= 5 and r.season = (select max(season) from ops.starter_record)
+"""
+
+
+def starter_record_line() -> str | None:
+    from league_lab.starter_record import sentence
+
+    try:
+        df = query(STARTER_RECORD_SQL)
+    except Exception:  # noqa: BLE001 — no table yet (or no database): no line
+        return None
+    if df.empty:
+        return None
+    return sentence(int(_num(df.iloc[0]["n"]) or 0), int(_num(df.iloc[0]["m"]) or 0))
+# ---- end IW-1
 
 
 def clear() -> None:

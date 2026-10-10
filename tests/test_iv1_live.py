@@ -135,3 +135,37 @@ def test_nfl_wide_live_rows_are_the_unplayed_games_of_the_week_gated():
     assert (rg.loc[rg["gsis_id"] == "huntley", "proj_points"] == 12.0).all()
     assert ln["frozen_source"].isna().all() and set(ln["game_kickoff"]) == {SUN}
     assert P.nfl_live_rows({"lines": lines}, 5, TEAMS.iloc[0:0], pt, kt, {}) == {}
+
+
+# ---- IW-1 round 3: project's waiver solve reads the live week (waivers.value_inputs: the market and the replacement)
+def test_the_waiver_solve_reads_the_market_and_the_replacement_through_the_live_week(monkeypatch):
+    from league_lab import trades as T
+    from league_lab import waivers as W
+
+    seen: list[str] = []
+
+    class Cur:
+        connection = object()
+
+        def execute(self, q, params=None):
+            self.q = q
+
+        def fetchone(self):
+            return (False,)                     # ops.player_scenarios: not there
+
+    def frame(cur, q, params):
+        seen.append(q)
+        return pd.DataFrame(columns=["player_key", "season_points", "position", "replacement"]).to_dict("records")
+
+    stored = sorted({t for t in LW.OVERLAYS if t in T.MARKET_SQL or t in T.REPLACEMENT_SQL})
+    assert stored, "MARKET_SQL / REPLACEMENT_SQL read no table that has a live overlay"
+    monkeypatch.setattr(W, "_frame", frame)
+    monkeypatch.setattr(LW, "active_on", lambda conn: frozenset(stored))
+    W.value_inputs(Cur(), "L", 2026, 5, 18)
+    assert seen[:2] == [LW.sql(T.MARKET_SQL, stored), LW.sql(T.REPLACEMENT_SQL, stored)]
+    assert seen[0] != T.MARKET_SQL and seen[1] != T.REPLACEMENT_SQL
+    monkeypatch.setattr(LW, "active_on", lambda conn: frozenset())
+    seen.clear()
+    W.value_inputs(Cur(), "L", 2026, 5, 18)
+    assert seen[:2] == [T.MARKET_SQL, T.REPLACEMENT_SQL]
+# ---- end IW-1

@@ -1,5 +1,5 @@
 // Wave I-R (IR-4): what is verified, with every analysis. Browsing (`ref:half`) in 2026 week 5: Rankings (this week and
-// rest of season), /ros, the free trade calculator (a quarterback whose starter was set by hand: the softened caveat),
+// rest of season), /ros, the free trade calculator (a quarterback whose sources disagree: the softened caveat),
 // the player card, About (what changed and when; what each number has been checked against) and the home ("Beta").
 // The answers of those routes are web/fixtures/ir4/api_ir4.json, recorded from the app on league_lab_im4 with the clock
 // pinned in week 5 (the real provenance lines and the real Seattle caveat); everything else from serveFixtures.
@@ -74,7 +74,7 @@ test("/ros: the line in the how-to-read box", async ({ context, page }, info) =>
   await shot(page, `ros-${info.project.name}`);
 });
 
-test("the free trade calculator: beta, the line, and the softened caveat of a starter set by hand", async ({ context, page }, info) => {
+test("the free trade calculator: beta, the line, and the softened caveat of a starter the sources disagree on", async ({ context, page }, info) => {
   await api(context);
   await page.goto(`/trade-calc?league=ref:half&give=${DARNOLD}&get=${HUBBARD}`);
   const line = page.getByTestId("ft-provenance-line");
@@ -84,7 +84,7 @@ test("the free trade calculator: beta, the line, and the softened caveat of a st
   const cav = page.getByTestId("ft-provenance-caveat");
   await expect(cav).toHaveCount(1);
   await expect(cav).toHaveAttribute("data-effect", "soften");
-  await expect(cav).toHaveText("Seattle's starter was set by hand (Sam Darnold, not the listed Drew Lock); this depends on Sam Darnold, so read the verdict as a lean that assumes Darnold starts.");
+  await expect(cav).toHaveText("We project Sam Darnold to start for Seattle, not the listed Drew Lock; this depends on Sam Darnold, so read the verdict as a lean that assumes Darnold starts.");
   await noSideScroll(page);
   await cav.scrollIntoViewIfNeeded();
   await shot(page, `free-trade-${info.project.name}`);

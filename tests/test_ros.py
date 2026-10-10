@@ -154,13 +154,15 @@ def test_mart_reproduces_from_the_board(conn):
 def test_mart_matches_the_trade_engines_sum_on_the_same_weeks(conn):
     """The trade engine's market (league_lab.trades.MARKET_SQL, ops.projections) over the same weeks adds up to the same
     totals: one projection everywhere."""
+    from league_lab import live_week as LW
     from league_lab import trades as T
 
+    active = LW.active_on(conn)   # ---- IW-1 round 3: the engines read the live week (db._run; project's waiver solve)
     mart = _frame(conn, "select league_id, season, from_week, last_week, player_key, ros_points from analytics.mart_player_ros_projection")
     if mart.empty:
         pytest.skip("no weeks left in the season")
     for (league_id, season, w0, w1), m in mart.groupby(["league_id", "season", "from_week", "last_week"]):
-        sql = T.MARKET_SQL.replace("week >= %s", "week between %s and %s")
+        sql = LW.sql(T.MARKET_SQL.replace("week >= %s", "week between %s and %s"), active)
         eng = _frame(conn, sql, (league_id, int(season), int(w0), int(w1))).set_index("player_key")
         got = m.set_index("player_key")["ros_points"].astype(float)
         assert (eng.reindex(got.index)["season_points"] - got).abs().max() < 0.005

@@ -56,7 +56,7 @@ def _named(rows) -> list[dict]:
 # verdict while …"); on My Week and Waivers there is no verdict to withhold, only a number that assumes who starts
 UNCLEAR_WORDS = ("{team}'s starter is unclear: {listed} is listed, the depth chart puts {other} first. {who}'s "
                  "projection assumes the listing — check who starts before kickoff.")
-SET_WORDS = "{team}'s starter was set by hand ({set}{listed}): {who}'s projection assumes {last} starts."
+SET_WORDS = "We project {set} to start for {team}{listed}: {who}'s projection assumes {last} starts."   # ---- IW-1
 
 
 def lineup_words(c: Mapping) -> str | None:
@@ -66,7 +66,7 @@ def lineup_words(c: Mapping) -> str | None:
     who = " and ".join(dict.fromkeys(str(x) for x in c.get("players") or [])) or "This"
     if c.get("kind") == "starter_unclear":
         return UNCLEAR_WORDS.format(team=team, listed=c.get("listed"), other=c.get("other"), who=who)
-    if c.get("kind") == "starter_set_by_hand":
+    if c.get("kind") == "starter_projected":                            # ---- IW-1
         listed = f", not the listed {c['listed']}" if c.get("listed") else ""
         return SET_WORDS.format(team=team, set=c.get("set"), listed=listed, who=who, last=provenance._last(str(c.get("set"))))
     return None

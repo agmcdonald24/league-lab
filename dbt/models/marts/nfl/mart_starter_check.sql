@@ -21,7 +21,8 @@ with season as (
 
 next_game as (
     select distinct on (t.team) t.season, t.week, t.game_id, t.team, t.opponent, t.kickoff_at, t.listed_qb_id,
-           t.starting_qb_id as projected_qb_id, t.starter_source
+           t.starting_qb_id as projected_qb_id, t.starter_source,
+           t.starter_reason, t.s4_qb_id, t.s7_qb_id                         -- ---- IW-1 round 3
     from {{ ref('int_pn_team_game') }} as t
     join season as s on s.season = t.season
     where not t.is_played
@@ -105,6 +106,20 @@ override as (
 
 names as (
     select gsis_id, player_name from {{ ref('dim_player') }}
+),
+
+-- ---- IW-1 round 3: the site grades its own pick (ops.starter_record, since week 5 of the season): per team, the games
+-- graded and how many each pick got right (the listing, S4, S7, the projected one)
+record as (
+    select r.team, count(*) as record_games,
+           count(*) filter (where r.projected_right) as record_projected_right,
+           count(*) filter (where r.listed_right)    as record_listed_right,
+           count(*) filter (where r.s4_right)        as record_s4_right,
+           count(*) filter (where r.s7_right)        as record_s7_right
+    from {{ source('ops', 'starter_record') }} as r
+    join season as s on s.season = r.season
+    where r.truth_qb_id is not null and r.week >= 5
+    group by r.team
 )
 
 select
@@ -120,6 +135,10 @@ select
     o.override_qb_id, nov.player_name as override_name, o.override_added_on, o.override_led_since_week,
     o.override_reason,
     n.projected_qb_id, npj.player_name as projected_name, n.starter_source,
+    n.starter_reason, n.s4_qb_id, n.s7_qb_id,                               -- ---- IW-1 round 3: why, and both rules
+    coalesce(rec.record_games, 0) as record_games, coalesce(rec.record_projected_right, 0) as record_projected_right,
+    coalesce(rec.record_listed_right, 0) as record_listed_right, coalesce(rec.record_s4_right, 0) as record_s4_right,
+    coalesce(rec.record_s7_right, 0) as record_s7_right,
     coalesce(n.listed_qb_id = d.depth_qb_id and d.depth_qb_id = ll.last_qb_id, false) as agree,
     -- U1, the "starter unclear" trigger kept by the rule (METRICS § "Who starts"): the listing is not the depth
     -- chart's first available quarterback (the screens drop a team the override list corrects)
@@ -142,4 +161,5 @@ left join names as nda on nda.gsis_id = coalesce(da.depth_available_qb_id, n.lis
 left join names as np on np.gsis_id = ll.last_qb_id
 left join names as nov on nov.gsis_id = o.override_qb_id
 left join names as npj on npj.gsis_id = n.projected_qb_id
+left join record as rec on rec.team = n.team
 -- ---- end IQ-2

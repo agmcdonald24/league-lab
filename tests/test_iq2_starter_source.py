@@ -102,3 +102,22 @@ def test_the_verdict_and_the_triggers():
     # Murray against the listed Brissett); SEA week 3 is stale and nothing before kickoff says so
     assert t.loc["U0", "flags"] == 2 and t.loc["U1", "flags"] == 4 and t.loc["U2", "flags"] == 4 and t.loc["U3", "flags"] == 2
     assert t.loc["U0", "stale_caught"] == 2 and t.loc["U1", "flags_not_stale"] == 2 and t.loc["U0", "stale"] == 3
+
+
+# ---- IW-1 (Wave I-W): S5 the snaps first, S6 two of three (docs/METRICS.md § "Who starts, decided by the data")
+def test_s5_and_s6_on_the_cases_that_matter():
+    m = Q
+
+    def none_out(q):
+        return False
+    # a starter back from injury: the listing and the chart name him, his backup led the last game
+    assert m.pick_s5_s6("lamar", ["lamar", "huntley"], "huntley", none_out) == ("huntley", "lamar")
+    # the listed starter ruled out: both take the available one the others name
+    assert m.pick_s5_s6("lamar", ["lamar", "huntley"], "lamar", lambda q: q == "lamar") == ("huntley", "huntley")
+    # Seattle's stale listing: the chart and the snaps name Darnold
+    assert m.pick_s5_s6("lock", ["darnold", "lock"], "darnold", none_out) == ("darnold", "darnold")
+    # three different names: S6 takes the chart's first available
+    assert m.pick_s5_s6("keenum", ["caleb", "bagent", "keenum"], "bagent", none_out) == ("bagent", "caleb")
+    # no chart (2021 - 2024): S6 is S5, which falls to the listing without a game
+    assert m.pick_s5_s6("a", None, None, none_out) == ("a", "a")
+    assert m.pick_s5_s6("a", None, "b", none_out) == ("b", "b")

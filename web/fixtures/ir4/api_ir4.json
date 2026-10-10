@@ -741,7 +741,7 @@
 "listed": "Drew Lock",
 "set": "Sam Darnold",
 "role": "set",
-"words": "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold as the starter. Set by hand on 7 Oct."
+"words": "Seattle: we project Sam Darnold to start — he led the team's dropbacks in week 4; the schedule lists Drew Lock."
 },
 "ros_games": 12,
 "ros_points_per_game": 14.86,
@@ -1687,13 +1687,7 @@
 "words": "Green Bay gives up the 12th-fewest points to quarterbacks."
 },
 "starter_unclear": null,
-"starter_corrected": {
-"team": "CHI",
-"listed": "Case Keenum",
-"set": "Tyson Bagent",
-"role": "set",
-"words": "Chicago's listing says Case Keenum; Tyson Bagent led the team's dropbacks in week 4, so we project Bagent as the starter. Set by hand on 7 Oct."
-}
+"starter_corrected": null
 },
 {
 "key": "00-0034869",
@@ -1726,7 +1720,7 @@
 "listed": "Drew Lock",
 "set": "Sam Darnold",
 "role": "set",
-"words": "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold as the starter. Set by hand on 7 Oct."
+"words": "Seattle: we project Sam Darnold to start — he led the team's dropbacks in week 4; the schedule lists Drew Lock."
 }
 },
 {
@@ -5264,7 +5258,7 @@
 },
 "caveats": [
 {
-"kind": "starter_set_by_hand",
+"kind": "starter_projected",
 "effect": "soften",
 "team": "SEA",
 "players": [
@@ -5272,11 +5266,11 @@
 ],
 "listed": "Drew Lock",
 "set": "Sam Darnold",
-"words": "Seattle's starter was set by hand (Sam Darnold, not the listed Drew Lock); this depends on Sam Darnold, so read the verdict as a lean that assumes Darnold starts."
+"words": "We project Sam Darnold to start for Seattle, not the listed Drew Lock; this depends on Sam Darnold, so read the verdict as a lean that assumes Darnold starts."
 }
 ],
 "caveat_effect": "soften",
-"caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call."
+"caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call."
 }
 },
 "/api/about?league=ref%3Ahalf": {
@@ -5291,7 +5285,7 @@
 {
 "key": "learned",
 "title": "What it learned from",
-"text": "The regular-season games QBs, RBs, WRs and TEs played from 2016 to last season (over 50,000 of them), each with only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against his position, the Vegas line, home or away, the injury report, who starts at quarterback and whether his team's top target is out."
+"text": "The regular-season games QBs, RBs, WRs and TEs played from 2016 to last season (over 50,000 of them), each with only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against his position, the Vegas line, home or away, the injury report, who starts at quarterback (from the data alone: the schedule's listing, unless he is ruled out or the depth chart and the team's last game both name another) and whether his team's top target is out."
 },
 {
 "key": "predicts",
@@ -5996,7 +5990,7 @@
 "kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their order is no better than chance)"
 ],
 "windows_words": "Next four weeks and rest of season: each week's projection in the window scored against that week (pooled over the window's weeks, not the window's total), against a simple baseline in brackets: his own points per game so far (for quarterbacks with his role, the opponent and the betting line).",
-"rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call.",
+"rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call.",
 "useful": {
 "words": "Is the trade calculator right? On a close one-for-one between two players of the same position, graded on 2021–2025, the side it favours scored more over the next four weeks 58 times in 100 at receiver, 57 at running back and 56 at tight end — more often than the side his own per-game record favours (54, 55 and 52). At quarterback 61 in 100 against 60 for his own record: the smallest margin of the four. 50 would be a coin flip.",
 "by_position": {
@@ -6048,7 +6042,7 @@
 {
 "key": "learned",
 "title": "What it learned from",
-"text": "The regular-season games QBs, RBs, WRs and TEs played from 2016 to last season (over 50,000 of them), each with only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against his position, the Vegas line, home or away, the injury report, who starts at quarterback and whether his team's top target is out."
+"text": "The regular-season games QBs, RBs, WRs and TEs played from 2016 to last season (over 50,000 of them), each with only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against his position, the Vegas line, home or away, the injury report, who starts at quarterback (from the data alone: the schedule's listing, unless he is ruled out or the depth chart and the team's last game both name another) and whether his team's top target is out."
 },
 {
 "key": "predicts",
@@ -6752,7 +6746,7 @@
 "kickers and defenses over the next four weeks or the rest of the season as a total (two to eight weeks ahead their order is no better than chance)"
 ],
 "windows_words": "Next four weeks and rest of season: each week's projection in the window scored against that week (pooled over the window's weeks, not the window's total), against a simple baseline in brackets: his own points per game so far (for quarterbacks with his role, the opponent and the betting line).",
-"rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter set by hand is a lean, never a firm call.",
+"rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call.",
 "useful": {
 "words": "Is the trade calculator right? On a close one-for-one between two players of the same position, graded on 2021–2025, the side it favours scored more over the next four weeks 58 times in 100 at receiver, 57 at running back and 56 at tight end — more often than the side his own per-game record favours (54, 55 and 52). At quarterback 61 in 100 against 60 for his own record: the smallest margin of the four. 50 would be a coin flip.",
 "by_position": {

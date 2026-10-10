@@ -20,6 +20,7 @@ from league_lab_api import starters as S
 from .conftest import needs_db
 
 SEA_LOCK, SEA_DARNOLD, CHI_KEENUM, CHI_BAGENT = "00-0035704", "00-0034869", "00-0028986", "00-0038416"
+CHI_WILLIAMS = "00-0039918"   # ---- IW-1 round 3
 ROUTE, START = "/api/rankings", "/api/rankings/start"
 
 
@@ -51,7 +52,7 @@ NYG = ("NYG", 5, "00-0031800", "Jameis Winston", "00-0031800", "Jameis Winston",
 
 
 def test_u1_flags_a_disputed_listing_never_a_corrected_team():
-    f = S.disputed_from(chk(SEA, CHI, TB, BUF))
+    f = S.disputed_from(chk(SEA, CHI, TB, BUF))   # (IQ-2's rows: SEA / CHI by the old override; IW-1 treats 'data' alike)
     assert set(f) == {"00-0041000", "00-0034855"}                      # Tampa Bay only: SEA and CHI are corrected
     assert f["00-0041000"]["role"] == "listed" and f["00-0034855"]["role"] == "depth"
     assert f["00-0041000"]["words"] == (
@@ -60,25 +61,33 @@ def test_u1_flags_a_disputed_listing_never_a_corrected_team():
     assert all("wrong" not in v["words"] for v in f.values())
 
 
-def test_the_corrected_sentence():
-    f = S.corrected_from(chk(SEA, CHI, TB, BUF, NYG))
-    assert set(f) == {SEA_DARNOLD, SEA_LOCK, CHI_BAGENT, CHI_KEENUM, "00-0040000", "00-0031800"}
+def test_the_pick_s_sentence_when_the_sources_disagree():
+    """IW-1 (Wave I-W): the data rule's pick (sq1.0, starter_source 'data') against the listing: one sentence in a
+    manager's words, never a hand-set word; nothing when the pick is the listing."""
+    rows = pd.DataFrame([
+        {"team": "SEA", "week": 5, "listed_qb_id": SEA_LOCK, "listed_name": "Drew Lock", "depth_available_qb_id": SEA_DARNOLD,
+         "depth_available_name": "Sam Darnold", "last_week": 4, "projected_qb_id": SEA_DARNOLD, "projected_name": "Sam Darnold",
+         "last_qb_id": SEA_DARNOLD, "last_name": "Sam Darnold", "starter_source": "data", "listing_disputed": True},
+        {"team": "BAL", "week": 5, "listed_qb_id": "00-0034796", "listed_name": "Lamar Jackson",
+         "depth_available_qb_id": "00-0035993", "depth_available_name": "Tyler Huntley", "last_week": 4,
+         "projected_qb_id": "00-0035993", "projected_name": "Tyler Huntley", "last_qb_id": "00-0034796",
+         "last_name": "Lamar Jackson", "starter_source": "data", "listing_disputed": True},
+        {"team": "BUF", "week": 5, "listed_qb_id": "00-0034857", "listed_name": "Josh Allen", "depth_available_qb_id": "00-0034857",
+         "depth_available_name": "Josh Allen", "last_week": 4, "projected_qb_id": "00-0034857", "projected_name": "Josh Allen",
+         "last_qb_id": "00-0034857", "last_name": "Josh Allen", "starter_source": "schedule", "listing_disputed": False}])
+    f = S.corrected_from(rows)
+    assert set(f) == {SEA_DARNOLD, SEA_LOCK, "00-0035993", "00-0034796"}
     assert f[SEA_DARNOLD]["role"] == "set" and f[SEA_LOCK]["role"] == "listed"
-    assert f[SEA_DARNOLD]["words"] == (
-        "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold "
-        "as the starter. Set by hand on 7 Oct.")
-    assert f[CHI_KEENUM]["words"] == f[CHI_BAGENT]["words"] == (
-        "Chicago's listing says Case Keenum; Tyson Bagent led the team's dropbacks in week 4, so we project Bagent as the "
-        "starter. Set by hand on 7 Oct.")
-    assert f["00-0040000"]["words"] == ("The Giants' listing says Jameis Winston; we project Jaxson Dart as the starter. "
-                                        "Set by hand on 1 Oct.")
-    assert f[SEA_DARNOLD]["added_on"] == "2026-10-07" and f[SEA_DARNOLD]["since_week"] == 3
-    # a row whose listing has caught up (the override names the listed QB) says nothing
-    same = ("SEA", 5, SEA_DARNOLD, "Sam Darnold", SEA_DARNOLD, "Sam Darnold", 4, SEA_DARNOLD, "Sam Darnold", "2026-10-07", 3,
-            SEA_DARNOLD, "override", False)
-    assert S.corrected_from(chk(same)) == {}
-    assert S.corrected_words("KC", None, "Patrick Mahomes", None, None, None) == (
-        "Kansas City's schedule names no starter yet; we project Patrick Mahomes as the starter. Set by hand.")
+    assert f[SEA_DARNOLD]["words"] == f[SEA_LOCK]["words"] == (
+        "Seattle: we project Sam Darnold to start — he led the team's dropbacks in week 4; the schedule lists Drew Lock.")
+    assert f["00-0035993"]["words"] == (
+        "Baltimore: we project Tyler Huntley to start — Lamar Jackson, the listed starter, is ruled out and he is next on "
+        "the depth chart.")
+    assert all("hand" not in v["words"] and "corrected" not in v["words"] for v in f.values())
+    # IQ-2's mechanism stays (unused: the seed keeps its header only); a listing the pick agrees with says nothing
+    assert S.corrected_from(rows.iloc[[2]]) == {}
+    # U1 never speaks for a team whose starter the rule set (one sentence per disagreement)
+    assert S.disputed_from(rows) == {}
 
 
 def test_with_the_mart_unclear_is_u1_and_corrected_reads_it(monkeypatch):
@@ -86,7 +95,7 @@ def test_with_the_mart_unclear_is_u1_and_corrected_reads_it(monkeypatch):
     u = S.unclear(2026, 5)
     assert {v["team"] for v in u.values()} == {"TB"}
     c = S.corrected(2026, 5)
-    assert {v["team"] for v in c.values()} == {"SEA", "CHI"} and c[SEA_DARNOLD]["set"] == "Sam Darnold"
+    assert {v["team"] for v in c.values()} == {"SEA", "CHI"} and c[SEA_DARNOLD]["role"] == "set"   # ---- IW-1: the pick's own row
 
 
 def test_without_the_mart_nothing_changes(monkeypatch):
@@ -127,20 +136,21 @@ def test_a_failed_read_is_never_an_error(monkeypatch):
 
 @needs_db
 def test_the_database_week_5():
-    """Where the mart is built (the nightly after this change): SEA and CHI corrected, neither unclear. Without it (a
-    database before the nightly): today's su1.0 flags and no sentence."""
+    """Where the mart is built: the data rule's pick (IW-1). Without it (a database before the nightly): today's su1.0
+    flags and no sentence."""
     if S.check(2026, 5) is None:
         assert S.corrected(2026, 5) == {}
         assert {"SEA", "CHI"} <= {v["team"] for v in S.unclear(2026, 5).values()}
         return
     c = S.corrected(2026, 5)
-    assert c[SEA_DARNOLD]["words"] == (
-        "Seattle's listing says Drew Lock; Sam Darnold has led the team's dropbacks since week 3, so we project Darnold "
-        "as the starter. Set by hand on 7 Oct.")
-    assert c[CHI_BAGENT]["role"] == "set" and c[CHI_KEENUM]["role"] == "listed"
-    assert "Tyson Bagent led the team's dropbacks in week 4" in c[CHI_BAGENT]["words"]
+    # IW-1: the data rule starts Darnold for Seattle; round 3 (S7, sq1.1): Chicago's listing (Keenum) is named by
+    # neither the depth chart (Caleb Williams first, Questionable: available) nor week 4's snaps (Bagent) -> Williams
+    assert c[SEA_DARNOLD]["words"].startswith("Seattle: we project Sam Darnold to start — he led the team's dropbacks")
+    assert c[CHI_WILLIAMS]["role"] == "set" and c[CHI_KEENUM]["role"] == "listed" and CHI_BAGENT not in c
+    assert c[CHI_WILLIAMS]["words"] == ("Chicago: we project Caleb Williams to start — the depth chart lists him first; "
+                                        "the schedule still lists Case Keenum; Tyson Bagent took the snaps in week 4.")
     u = S.unclear(2026, 5)
-    assert not ({"SEA", "CHI"} & {v["team"] for v in u.values()})
+    assert not {"SEA", "CHI"} & {v["team"] for v in u.values()}
     assert all(v["role"] in ("listed", "depth") for v in u.values())
 
 
@@ -164,10 +174,11 @@ def test_rankings_row_and_start_answer_for_a_corrected_quarterback(client, monke
         pytest.skip("the database is not at week 5 with mart_starter_check built")
     by = {x["gsis_id"]: x for x in body["rows"]}
     sea = by[SEA_DARNOLD]
-    assert sea["starter_corrected"]["role"] == "set" and sea["starter_corrected"]["words"].startswith("Seattle's listing says Drew Lock;")
+    assert sea["starter_corrected"]["role"] == "set" and sea["starter_corrected"]["words"].startswith("Seattle: we project Sam Darnold to start")   # ---- IW-1
     assert not sea.get("starter_unclear") and sea["tier"] is not None          # tiers like anyone else
     assert by[SEA_LOCK]["starter_corrected"]["role"] == "listed"
-    assert by[CHI_BAGENT]["starter_corrected"]["role"] == "set" and by[CHI_BAGENT]["tier"] is not None
+    assert not by[CHI_BAGENT].get("starter_corrected")          # ---- IW-1 round 3 (S7): Chicago starts Williams
+    assert by[CHI_WILLIAMS]["starter_corrected"]["role"] == "set" and by[CHI_KEENUM]["starter_corrected"]["role"] == "listed"
     assert by[SEA_DARNOLD]["proj_points"] > by[SEA_LOCK]["proj_points"]        # projected as the starter
     other = next(x["gsis_id"] for x in body["rows"] if not x.get("starter_unclear") and not x.get("starter_corrected"))
     a = client.get(START, params={"league": "ref:half", "ids": f"{SEA_DARNOLD},{other}"})
@@ -190,3 +201,13 @@ def test_rankings_without_the_mart_no_5xx_and_no_sentence(client, monkeypatch):
         assert not any(x.get("starter_corrected") for x in r.json()["rows"])
     r = client.get(START, params={"league": "ref:half", "ids": f"{SEA_DARNOLD},{SEA_LOCK}"})
     assert r.status_code == 200 and all(not p.get("starter_corrected") for p in r.json()["players"])
+
+
+def test_s7s_sentence_for_an_unsupported_listing():
+    """IW-1 round 3 (sq1.1): the listing neither the chart nor the newest game's snaps names is dropped."""
+    assert S.projected_words("CHI", "Caleb Williams", "Case Keenum", "Caleb Williams", "Tyson Bagent", 4, "unsupported") == (
+        "Chicago: we project Caleb Williams to start — the depth chart lists him first; the schedule still lists Case "
+        "Keenum; Tyson Bagent took the snaps in week 4.")
+    assert S.projected_words("CHI", "Tyson Bagent", "Case Keenum", "Caleb Williams", "Tyson Bagent", 4, "two_sources") == (
+        "Chicago: we project Tyson Bagent to start — he led the team's dropbacks in week 4; the schedule lists Case Keenum "
+        "and the depth chart lists Caleb Williams first.")
