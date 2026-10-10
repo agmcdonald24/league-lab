@@ -718,10 +718,16 @@ def value_inputs(cur: psycopg.Cursor, league_id: str, season: int, week: int, la
     """IF-1: a house league's drop-value inputs for ``sweep_roster`` — the market (rest-of-season points per player key),
     the replacement per position (``trades.MARKET_SQL`` / ``REPLACEMENT_SQL``, the Trade Finder's prices) and each
     role scenario's extra points over the horizon (``ops.player_scenarios``, when the table exists)."""
+    from . import live_week
     from .trades import MARKET_SQL, REPLACEMENT_SQL  # trades imports this module: imported here
-    market = {r["player_key"]: float(r["season_points"]) for r in _frame(cur, MARKET_SQL, (league_id, season, week))
+    # ---- IW-1 round 3: the live week (IV-1): the market and the replacement read the overlay of the started week's
+    # games that have not kicked off, as the API's Trade Finder does (db._run); no overlay rows: the statements as before
+    active = live_week.active_on(cur.connection)
+    market = {r["player_key"]: float(r["season_points"])
+              for r in _frame(cur, live_week.sql(MARKET_SQL, active), (league_id, season, week))
               if r["season_points"] is not None}
-    repl = {r["position"]: float(r["replacement"]) for r in _frame(cur, REPLACEMENT_SQL, (league_id, season, week, league_id))
+    repl = {r["position"]: float(r["replacement"])
+            for r in _frame(cur, live_week.sql(REPLACEMENT_SQL, active), (league_id, season, week, league_id))
             if r["replacement"] is not None}
     cur.execute("select to_regclass('ops.player_scenarios') is not null")
     up = ({r["gsis_id"]: float(r["upside"]) for r in _frame(cur, UPSIDE_POINTS_SQL, (league_id, season, week, last))}
