@@ -288,6 +288,11 @@ RECORD_TABLES="$RECORD_TABLES ops.context_record"
 STATE_TABLES="$STATE_TABLES ops.horizon_record"
 RECORD_TABLES="$RECORD_TABLES ops.horizon_record"
 # ---- end IU-5
+# ---- IW-1 (Wave I-W): the starter record (sq1.1): the listing, S4's and S7's picks kept until kickoff, graded after the
+# game; never rebuilt (a night lost loses that night's rewrite only), so record as well as state
+STATE_TABLES="$STATE_TABLES ops.starter_record"
+RECORD_TABLES="$RECORD_TABLES ops.starter_record"
+# ---- end IW-1
 # ---- IV-1 (Wave I-V): fr1.1, the live week's overlays (LEAGUE_LAB_FREEZE=game): a game that kicked off keeps the last
 # live number written before its kickoff until the week is over, so they are state (not record: no grade reads them).
 # `db migrate` creates them; a copy that does not have them yet is "not published there"; empty with the switch unset.
@@ -558,6 +563,12 @@ SOFT_WHY="the hosted copy has no grade tonight (odds_grades: null); the next nig
 # ops.context_record, graded after the games in ops.context_grade (docs/METRICS.md § "The context record").
 SOFT_WHY="the record's kept weeks are untouched; a week missed tonight is rebuilt from as-of inputs (labelled reconstructed)" soft context-record uv run league-lab context-record
 # ---- end IO-1
+# ---- IW-1 (Wave I-W): the starter record (league-lab starter-record; idempotent): every unplayed game's listing, S4's
+# and S7's picks rewritten until kickoff, the games that are in graded against the dropback leader (docs/METRICS.md
+# § "Who starts, decided by the data", sq1.1). About's line reads the table; mart_starter_check's tallies are the last
+# full build's (one night behind).
+SOFT_WHY="the record keeps last night's picks; tonight's kickoffs keep the pick from the last run before them" soft starter-record uv run league-lab starter-record
+# ---- end IW-1
 # plan E1: Sleeper's projections for the next week to kick off, one snapshot a night, so the record has the last one
 # saved before the first kickoff (the moment this board freezes). Soft: a failed pull loses one night's snapshot.
 if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then

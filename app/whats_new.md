@@ -3,6 +3,17 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 10 · the starting quarterback is worked out from the data
+
+- **No more hand-picked starters.** Each team's starting quarterback now comes from three sources checked against
+  each other: the schedule's listed starter, the team's depth chart, and who took the snaps in its last game. A
+  quarterback who is ruled out is skipped. When the sources disagree, his row says who we project and why
+  ("Chicago: we project Caleb Williams to start — the depth chart lists him first; the schedule still lists Case
+  Keenum; Tyson Bagent took the snaps in week 4.").
+- **We grade the pick every week.** Once games are in, About says how often our projected starter was the
+  quarterback who actually played.
+- **On a phone, the "Not playing" list on Rankings fits the screen.**
+
 ## Oct 9 (night) · this week's numbers keep up with the news until each game kicks off
 
 - **A week no longer stands still after Thursday night.** The numbers for a week used to be set at its first kickoff
@@ -24,8 +35,8 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
   another, and so missed some trades, two-for-ones among them. Each suggestion is still the calculator's own verdict.
 - **A waiver move named beside a trade now counts what you give up.** It names the player you would drop and takes
   his value off the gain.
-- **"Who should I start?" tells you when a call leans on a starter we set by hand.** If a team's starting
-  quarterback was corrected by hand, the answer says to read it as a lean.
+- **"Who should I start?" tells you when a call leans on a starter the sources disagree on.** If a team's starting
+  quarterback is not the one the schedule lists, the answer says to read it as a lean.
 - **A player's card says more when he is hurt.** Questionable shows how often such players play (about 2 in 3; closer
   to half for quarterbacks). A week he will miss reads "0, he sits" with the reason, not a bare 0.0.
 - **Trends no longer calls a player "due" in a week he will not play.** He is listed apart, with the reason.
