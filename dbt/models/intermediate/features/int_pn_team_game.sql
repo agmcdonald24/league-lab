@@ -309,7 +309,8 @@ select
                   is distinct from p.starting_qb_id then 'data'
          else 'schedule' end                                                 as starter_source,
     sq.s4_qb_id, sq.s7_qb_id,                                                -- ---- IW-1 round 3: both rules, recorded
-    {{ 'sq.s7_reason' if sq_rule == 's7' else ('sq.s4_reason' if sq_rule == 's4' else 'null') }} as starter_reason
+    {{ 'sq.s7_reason' if sq_rule == 's7' else ('sq.s4_reason' if sq_rule == 's4' else 'null') }} as starter_reason,
+    '{{ sq_rule if sq_rule in ('s7', 's4') else 'listing' }}'::text as starter_rule   -- which rule ships (ops.starter_record)
 from picked as p
 left join override_pick as op on op.game_id = p.game_id and op.team = p.team
 left join sq_pick as sq on sq.game_id = p.game_id and sq.team = p.team

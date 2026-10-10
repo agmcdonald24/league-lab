@@ -66,6 +66,11 @@
     {/each}
   </div>
 
+  <!-- ---- IW-1 (Wave I-W): the site grades its own pick of who starts (nothing while no game since week 5 is graded) -->
+  {#if ab.data?.starter_record}
+    <p class="text-sm leading-snug text-ink-3" data-testid="about-starter-record">{ab.data.starter_record}</p>
+  {/if}
+  <!-- ---- end IW-1 -->
   <!-- ---- N1 (Wave I-D): where the card's news line comes from (docs/ESPN_TERMS.md) -->
   <p class="text-sm leading-snug text-ink-3" data-testid="about-news-source">
     The news line on a player's card is the latest headline from ESPN's public player news (RotoWire's updates and ESPN's own stories), with its source and a link to ESPN; {APP_NAME} keeps only the headline, its date, the source and the link.<!-- IG-2: was "keeps none of it" -->

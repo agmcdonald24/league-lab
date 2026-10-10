@@ -791,6 +791,19 @@ def context_record_cmd(
 # ---- end IO-1
 
 
+# ---- IW-1 (Wave I-W): the starter record — the listing, S4's and S7's picks kept until kickoff, graded once the game is in
+@app.command("starter-record")
+def starter_record_cmd():
+    """Write ops.starter_record (every unplayed game's listing, S4's pick, S7's pick and the shipped one, rewritten
+    until kickoff) and grade the games that are in against the dropback leader. Idempotent: safe every night."""
+    from . import starter_record
+
+    with connect() as conn:
+        r = starter_record.run(conn)
+    console.print(f"starter record {r.season}: {r.written} written, {r.graded} graded, {r.rows} rows")
+# ---- end IW-1
+
+
 @app.command("version")
 def version_cmd():
     from .manifest import code_version

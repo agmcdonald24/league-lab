@@ -20,6 +20,7 @@ from league_lab_api import starters as S
 from .conftest import needs_db
 
 SEA_LOCK, SEA_DARNOLD, CHI_KEENUM, CHI_BAGENT = "00-0035704", "00-0034869", "00-0028986", "00-0038416"
+CHI_WILLIAMS = "00-0039918"   # ---- IW-1 round 3
 ROUTE, START = "/api/rankings", "/api/rankings/start"
 
 
@@ -142,12 +143,14 @@ def test_the_database_week_5():
         assert {"SEA", "CHI"} <= {v["team"] for v in S.unclear(2026, 5).values()}
         return
     c = S.corrected(2026, 5)
-    # IW-1: the data rule (sq1.0) starts Darnold for Seattle; Chicago keeps its listing (Keenum) while the depth chart
-    # names Caleb Williams first: "Starter unclear" (U1), no pick sentence
+    # IW-1: the data rule starts Darnold for Seattle; round 3 (S7, sq1.1): Chicago's listing (Keenum) is named by
+    # neither the depth chart (Caleb Williams first, Questionable: available) nor week 4's snaps (Bagent) -> Williams
     assert c[SEA_DARNOLD]["words"].startswith("Seattle: we project Sam Darnold to start — he led the team's dropbacks")
-    assert not ({CHI_BAGENT, CHI_KEENUM} & set(c))
+    assert c[CHI_WILLIAMS]["role"] == "set" and c[CHI_KEENUM]["role"] == "listed" and CHI_BAGENT not in c
+    assert c[CHI_WILLIAMS]["words"] == ("Chicago: we project Caleb Williams to start — the depth chart lists him first; "
+                                        "the schedule still lists Case Keenum; Tyson Bagent took the snaps in week 4.")
     u = S.unclear(2026, 5)
-    assert "SEA" not in {v["team"] for v in u.values()}
+    assert not {"SEA", "CHI"} & {v["team"] for v in u.values()}
     assert all(v["role"] in ("listed", "depth") for v in u.values())
 
 
@@ -174,7 +177,8 @@ def test_rankings_row_and_start_answer_for_a_corrected_quarterback(client, monke
     assert sea["starter_corrected"]["role"] == "set" and sea["starter_corrected"]["words"].startswith("Seattle: we project Sam Darnold to start")   # ---- IW-1
     assert not sea.get("starter_unclear") and sea["tier"] is not None          # tiers like anyone else
     assert by[SEA_LOCK]["starter_corrected"]["role"] == "listed"
-    assert not by[CHI_BAGENT].get("starter_corrected")          # ---- IW-1: Chicago keeps its listing (Keenum), no pick sentence
+    assert not by[CHI_BAGENT].get("starter_corrected")          # ---- IW-1 round 3 (S7): Chicago starts Williams
+    assert by[CHI_WILLIAMS]["starter_corrected"]["role"] == "set" and by[CHI_KEENUM]["starter_corrected"]["role"] == "listed"
     assert by[SEA_DARNOLD]["proj_points"] > by[SEA_LOCK]["proj_points"]        # projected as the starter
     other = next(x["gsis_id"] for x in body["rows"] if not x.get("starter_unclear") and not x.get("starter_corrected"))
     a = client.get(START, params={"league": "ref:half", "ids": f"{SEA_DARNOLD},{other}"})

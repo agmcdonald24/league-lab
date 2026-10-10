@@ -285,6 +285,10 @@ def migrate(conn: psycopg.Connection) -> None:
         cur.execute(context_record.DDL)
         cur.execute(context_record.GRADE_DDL)
         # ---- end IP-3
+        # ---- IW-1 (Wave I-W): the starter record exists on a fresh database (STATE_TABLES / RECORD_TABLES; dbt reads it)
+        from . import starter_record
+        cur.execute(starter_record.DDL)
+        # ---- end IW-1
     conn.commit()
     # plan D3: raw.nfl_weather + the stadium reference (dbt resolves venues before any weather is fetched)
     from .ingest import weather

@@ -1845,6 +1845,7 @@ export interface MyWeek {
 }
 export interface AboutAnswer {
   grade_note?: string | null; // the qualification shown right under the headline grade (a league we do not score)
+  starter_record?: string | null; // ---- IW-1: "Our projected starter was the game's quarterback in N of M games since week 5"
 }
 // ---- end IG-3
 
