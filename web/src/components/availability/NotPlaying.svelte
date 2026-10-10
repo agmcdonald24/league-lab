@@ -29,9 +29,9 @@
           {part.label} <span class="font-normal text-ink-3">· {part.rows.length}</span>
         </h3>
       {/if}
-      <ul class="mt-2 grid gap-x-6 gap-y-1 wide:grid-cols-2">
+      <ul class="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 wide:grid-cols-2"><!-- IW-1: grid-cols-1 = minmax(0, 1fr): a row never widens the page (375 px) -->
         {#each part.rows as x (x.key)}
-          <li data-testid={`${testid}-row`} data-key={x.key} data-code={x.code} data-group={x.group ?? "out"}>
+          <li class="min-w-0" data-testid={`${testid}-row`} data-key={x.key} data-code={x.code} data-group={x.group ?? "out"}>
             <button type="button" class="flex w-full min-w-0 items-center gap-2.5 rounded-md p-1.5 text-left hover:bg-raised" onclick={() => x.gsis_id && openPane(x.gsis_id, { from: "list", context: { name: x.player_name } })}>
               <Headshot url={x.headshot_url ?? null} name={x.player_name ?? undefined} team={x.team} size={32} />
               <span class="min-w-0 flex-1">
@@ -40,7 +40,7 @@
                   <span class="shrink-0 rounded-sm bg-raised px-1.5 py-0.5 text-[11px] font-bold tracking-wide whitespace-nowrap text-warn ring-1 ring-line-strong ring-inset" data-testid={`${testid}-status`}>{x.status ?? "No number yet"}</span>
                 </span>
                 <span class="block truncate text-xs text-ink-3">{x.position ?? ""} · {teamLabel(x.team) ?? "—"}{x.why ? ` · ${x.why}` : ""}</span>
-                <span class="block text-xs leading-snug text-ink-2" data-testid={`${testid}-words`}>{x.words}</span>
+                <span class="block text-xs leading-snug break-words text-ink-2" data-testid={`${testid}-words`}>{x.words}</span>
               </span>
               <span class="tabnum shrink-0 font-bold text-ink-3" title="No projection: he is not expected to play">—</span>
             </button>
