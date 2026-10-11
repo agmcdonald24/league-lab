@@ -112,7 +112,7 @@ and a filter for when a team trails, is within a score or leads."
 
 The CSV name with the situation; a "Filters" fold on the phone; IX-4.
 
-## Round 2 — a phone opens on the answer too (start 07:09, end 07:21 ET; branch `dev/IX7` from `main`)
+## Round 2 — a phone opens on the answer too (start 07:09, end 07:20 ET; branch `dev/IX7` from `main`)
 
 * **Done.** Under 900 px the Stats screen shows the title line (and its answer sentence), one **Filters** button, the
   position chips, the view tabs in **one row** (scrolling inside themselves, never the page), the count / CSV row, the
