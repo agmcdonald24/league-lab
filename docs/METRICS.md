@@ -6361,3 +6361,23 @@ games, so this favours Sleeper; the record above, from week 5 of 2026, compares 
 **What it is not**: not the record (never mixed with it); not proof of what Sleeper showed before kickoff; not every
 player Sleeper lists (players with both numbers who played); not a lineup decision in a real league (the start / sit
 pairs are NFL-wide at a position, not two players on one roster).
+
+### Borrowing Sleeper's number: what Andrew decides (bl1.0's paragraph; written 18:24 ET, after the rule's commit `c2b4b20` and before any number — it decides nothing)
+
+**What the nightly will show him**: per position, bl1.0's word ("gains" / "no gain") with w and, on 2024 and 2025,
+the error and order of ours alone, Sleeper's alone and the blend, and the share of startable pairs each orders right
+(the run's summary; `/api/record` `history.blend`). **The gain, if any, is an upper bound**: Sleeper's past lines were
+written after the games, so a blend fitted on them leans on Sleeper more than a blend fed the line Sleeper shows before
+kickoff would. The honest test of a blend is the clean record (from 2026 week 5, a few weeks a season at a time).
+
+**The terms question**: the line is RotoWire's (`company` "rotowire" on every object), served by Sleeper on an endpoint
+outside its documented API (`docs/SLEEPER_TERMS.md` § "Sleeper's projections"). Comparing against it is reading a
+number every Sleeper user sees for free; **putting it into ours** makes League Lab's projection partly a licensed third
+party's — a question for Sleeper (and RotoWire) before any paid tier, and arguably before the beta shows a blended number
+as "our projection". Nothing in this package changes a projection.
+
+**The way back, if he says yes**: one switch (off by default), one place in `project` (after the cold-start and
+new-team scales, before anything is priced: the line × (1 − w) + Sleeper's last pre-kickoff line × w, per position,
+w and its rule version stored with the board); a player Sleeper has no line for keeps ours; a night Sleeper does not
+answer is ours alone. Turning the switch off gives the model's own line the next night; the weeks already frozen keep
+what they published (B5). Not built.

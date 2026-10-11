@@ -159,9 +159,10 @@ def build_ours(conn: psycopg.Connection, seasons: Iterable[int] = HISTORY_SEASON
         rows["train_seasons"] = f"{first}-{s - 1}"
         out.append(rows)
         raw = pd.concat([raw, before[before["actual"].notna()]], ignore_index=True)
-        log.info("h2h ours: season %s: %s rows (%s moved by the steps) in %.0f s", s, len(rows),
-                 int((np.abs(rows["proj_points"].to_numpy() - before.loc[before["actual"].notna(), "proj_points"].to_numpy()) > 1e-9).sum())
-                 if len(rows) == int(before["actual"].notna().sum()) else "?", time.time() - ts)
+        keys = ["league_id", "gsis_id", "week"]
+        moved = rows[keys + ["proj_points"]].merge(before[keys + ["proj_points"]], on=keys, suffixes=("", "_raw"))
+        log.info("h2h ours: season %s: %s rows (%s player-week-scorings moved by the steps) in %.0f s", s, len(rows),
+                 int((np.abs(moved["proj_points"] - moved["proj_points_raw"]) > 1e-9).sum()), time.time() - ts)
     res = pd.concat(out, ignore_index=True)
     res["model_version"], res["built_at"] = P.MODEL_VERSION, datetime.now(UTC)
     log.info("h2h ours: %s rows in %.0f s", len(res), time.time() - t0)

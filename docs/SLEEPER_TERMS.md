@@ -58,3 +58,16 @@ what `TTL_S` sets today.
 
 **Never from tests or the sandbox**: tests read fixtures (`LEAGUE_LAB_SLEEPER_FIXTURES`, set for every API test by
 `api/tests/conftest.py`); the sandbox cannot reach Sleeper at all.
+
+## Sleeper's projections (plan E1, the record; IZ-1, the history)
+
+`api.sleeper.com/projections/nfl/<season>/<week>` is **not** part of Sleeper's documented v1 API (another host, no
+published terms of its own). Every object says whose line it is: `company` "rotowire" (2023 – 2026 as the PO read it on
+2026-10-11). What League Lab does with it:
+
+* **the record** (since 2026-10-02): one request a night for the next week to kick off, archived;
+* **the history** (IZ-1, 2026-10-11): one request per past week, at least a second apart, **once** (a week held is never
+  asked again): 2023 – 2025 weeks 1 – 18 and the current season's weeks with no snapshot saved before kickoff — about 58
+  requests on the first night, then none (a failed week is asked again the next night);
+* compared, never shown as our projection and never blended into it. Blending it in is Andrew's decision and a licence
+  question (RotoWire's number, through Sleeper): docs/METRICS.md § "Borrowing Sleeper's number".
