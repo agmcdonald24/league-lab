@@ -52,5 +52,10 @@ def test_lineup_rows_say_what_the_call_says(client, overlay):
 @needs_db
 def test_top_three_claims_are_ordered_by_this_weeks_gain(client, overlay):
     w = client.get(f"/api/waivers?league={KEY}&team=8").json()
-    tw = [c["this_week"] for c in w["top3"]]
+    # IX-5 (on purpose): a kicker or defense is judged on this week and listed after the graded positions, so the order
+    # by this week's gain holds among the graded claims, the guide cards last
+    graded = [c for c in w["top3"] if not c.get("guide")]
+    guide = [c for c in w["top3"] if c.get("guide")]
+    assert w["top3"] == graded + guide
+    tw = [c["this_week"] for c in graded]
     assert tw == sorted(tw, reverse=True) and w["top3"][0]["lead"].endswith("this week")
