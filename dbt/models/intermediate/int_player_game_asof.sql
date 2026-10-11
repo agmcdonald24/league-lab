@@ -3,6 +3,10 @@
 -- (season-to-date, last-3 and last-5 windows for points, expected points and usage). The
 -- feature-snapshot mart joins the latest row with week < target week, so a projection for
 -- week N never sees week N or later (T-11: no peeking).
+-- ---- IX-6, lf2.0: the study's candidates (var lf_candidate; unset: the SQL as before). P1: a marked game's per-game
+-- values leave the window's average; P3: they are scaled to a full game (lf_scale); P2: the game is not in rf at all.
+{%- set lf_cand = (var('lf_candidate', '') or '') | string | lower %}
+{%- set lf_mode = lf_cand[:2] if lf_cand in ['p1a', 'p1b', 'p2a', 'p2b', 'p3a', 'p3b'] else '' %}
 with rf as (
     select
         gsis_id, game_id, season, season_type, week, game_no, team, player_name, position,
@@ -12,6 +16,7 @@ with rf as (
         air_yards_share_l3, snap_pct_l3, snap_pct_l5,
         points_per_game_l3, points_per_game_l5, points_per_game_std,
         first_read_share_l3, first_read_share_std, route_participation_l3
+        {%- if lf_mode in ['p1', 'p3'] %}, lf_mark, lf_scale{% endif %}
     from {{ ref('mart_player_recent_form') }}
     where season_type = 'REG'
 ),
@@ -35,19 +40,19 @@ w as (
         rf.*,
         pg.attempts, pg.targets, pg.carries, pg.points_current_scoring,
         xp.points_expected,
-        count(xp.points_expected) over (partition by rf.gsis_id, rf.season order by rf.week) as games_with_xp_std,
-        avg(xp.points_expected)   over (partition by rf.gsis_id, rf.season order by rf.week) as xppg_std,
-        avg(xp.points_expected)   over (partition by rf.gsis_id, rf.season order by rf.week rows between 2 preceding and current row) as xppg_l3,
-        avg(xp.points_expected)   over (partition by rf.gsis_id, rf.season order by rf.week rows between 4 preceding and current row) as xppg_l5,
-        avg(pg.attempts)          over (partition by rf.gsis_id, rf.season order by rf.week rows between 2 preceding and current row) as attempts_l3,
-        avg(pg.attempts)          over (partition by rf.gsis_id, rf.season order by rf.week) as attempts_std,
-        stddev_samp(pg.points_current_scoring) over (partition by rf.gsis_id, rf.season order by rf.week) as points_sd_std,
+        count({{ lfv('xp.points_expected', lf_mode) }}) over (partition by rf.gsis_id, rf.season order by rf.week) as games_with_xp_std,
+        avg({{ lfv('xp.points_expected', lf_mode) }})   over (partition by rf.gsis_id, rf.season order by rf.week) as xppg_std,
+        avg({{ lfv('xp.points_expected', lf_mode) }})   over (partition by rf.gsis_id, rf.season order by rf.week rows between 2 preceding and current row) as xppg_l3,
+        avg({{ lfv('xp.points_expected', lf_mode) }})   over (partition by rf.gsis_id, rf.season order by rf.week rows between 4 preceding and current row) as xppg_l5,
+        avg({{ lfv('pg.attempts', lf_mode) }})          over (partition by rf.gsis_id, rf.season order by rf.week rows between 2 preceding and current row) as attempts_l3,
+        avg({{ lfv('pg.attempts', lf_mode) }})          over (partition by rf.gsis_id, rf.season order by rf.week) as attempts_std,
+        stddev_samp({{ lfv('pg.points_current_scoring', lf_mode) }}) over (partition by rf.gsis_id, rf.season order by rf.week) as points_sd_std,
         -- per-game component rates, season to date and last 3 (as-of: window ends at this game)
         {%- for c in component_stats() %}
-        avg(pg.{{ c }}) over (partition by rf.gsis_id, rf.season order by rf.week) as {{ c }}_pg_std,
-        avg(pg.{{ c }}) over (partition by rf.gsis_id, rf.season order by rf.week rows between 2 preceding and current row) as {{ c }}_pg_l3,
+        avg({{ lfv('pg.' ~ c, lf_mode) }}) over (partition by rf.gsis_id, rf.season order by rf.week) as {{ c }}_pg_std,
+        avg({{ lfv('pg.' ~ c, lf_mode) }}) over (partition by rf.gsis_id, rf.season order by rf.week rows between 2 preceding and current row) as {{ c }}_pg_l3,
         {%- endfor %}
-        avg(pg.offense_snap_pct) over (partition by rf.gsis_id, rf.season order by rf.week) as snap_pct_std
+        avg({{ lfv('pg.offense_snap_pct', lf_mode) if lf_mode != 'p3' else 'case when rf.lf_mark then rf.lf_scale * pg.offense_snap_pct else pg.offense_snap_pct end' }}) over (partition by rf.gsis_id, rf.season order by rf.week) as snap_pct_std
     from rf
     left join xp using (gsis_id, game_id)
     left join pg using (gsis_id, game_id)
