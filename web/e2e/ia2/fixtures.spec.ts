@@ -53,7 +53,7 @@ test("the trade calculator is its own link in the Decisions row", async ({ page,
   await expect(page).toHaveURL(new RegExp(`/trade-calc\\?league=${DYNASTY}&team=12`));
   await expect(page.getByTestId("trade-calc")).toBeVisible();
   await expect(page.getByTestId("tick-both")).toBeVisible();
-  await expect(page.getByTestId("window-caption")).toHaveText("The next four weeks: far enough to matter, near enough to trust.");
+  await expect(page.getByTestId("window-caption")).toHaveText("The next four weeks: running backs, receivers and tight ends graded; quarterbacks a lean, level with their own record; kickers and defenses a rough guide, no better than chance after next week.");
   // the Trades screen keeps the partners (and links here), not the pickers
   await page.goBack();
   await expect(page.getByTestId("finder")).toBeVisible();
@@ -110,7 +110,7 @@ test("the window control: the caption, the span and the numbers change (calculat
   const team = 3;
   await page.goto(calcUrl(TEST_LEAGUE, pk.partner, pk.from.give, pk.from.get));
   const next4 = fx(evalKey(TEST_LEAGUE, team, pk.partner, pk.from.give, pk.from.get));
-  await expect(page.getByTestId("window-caption")).toHaveText(`Weeks 4–7: the next four weeks: far enough to matter, near enough to trust.`);
+  await expect(page.getByTestId("window-caption")).toHaveText(`Weeks 4–7: the next four weeks: running backs, receivers and tight ends graded; quarterbacks a lean, level with their own record; kickers and defenses a rough guide, no better than chance after next week.`);
   for (const w of ["ros", "playoffs", "week"] as const) {
     const ev = fx(evalKey(TEST_LEAGUE, team, pk.partner, pk.from.give, pk.from.get, w));
     await page.getByTestId(`window-${w}`).click();

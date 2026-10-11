@@ -95,3 +95,20 @@ def test_statuses_match_the_metrics_table():
         assert P.CHECKS[key]["order"] == pytest.approx(order, abs=0.001) and P.CHECKS[key]["status"] == status, key
     for pos in ("RB", "WR", "TE"):
         assert P.CHECKS[("later", pos)]["status"] == "graded"
+
+
+# ------------------------------------------------------------------------------------------------ 2. the window's caption
+def test_window_caption_says_what_the_next_four_weeks_are_checked_to_be():
+    """METRICS § "The trade calculator's windows": next four weeks RB 0.660, WR 0.594, TE 0.564 (graded); QB 0.538
+    against his own record's 0.537 (level: a lean); K / DEF not pooled by window, 0.095 / 0.257 next week and no better
+    than chance after."""
+    from pathlib import Path
+
+    from league_lab_api import decisions as D
+    w = D.WINDOW_WHY["next4"]
+    assert "trust" not in w and "enough" not in w
+    assert w == ("the next four weeks: running backs, receivers and tight ends graded; quarterbacks a lean, level with "
+                 "their own record; kickers and defenses a rough guide, no better than chance after next week")
+    ts = (Path(__file__).resolve().parents[2] / "web" / "src" / "lib" / "decisions.ts").read_text()
+    assert f'next4: "{w}"' in ts                               # the page's copy is the API's
+    assert all(not c["status"] == "graded" for c in [P.CHECKS[("later", "K")], P.CHECKS[("later", "DEF")]])

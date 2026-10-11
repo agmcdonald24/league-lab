@@ -1124,7 +1124,7 @@ def trade_context(league_id: str, source: str | None = None, *, as_of: datetime 
 
 # ---- IA-2 (Wave I-A): the window, the interest dial, the sanity bound ---------------------------------------------
 # "Why weeks 4–7?" had no answer on the page. A trade is now priced over a window the user picks: this week, the next
-# four (the default: far enough to matter, near enough to trust), the rest of the season or the playoffs. The board
+# four (the default; IX-5: graded for RB / WR / TE over it, QB level with his own record, K / DEF a rough guide), the rest of the season or the playoffs. The board
 # holds the next four weeks (mart_league_roster_horizon / the on-demand solve); a longer window adds a row per player
 # and week past them from the rest-of-season board (mart_player_ros_projection.weeks_json for a house league,
 # `anyleague.ros_table` - load_window + skill_window, one round of queries - on demand): his projection that week in
@@ -1134,7 +1134,7 @@ def trade_context(league_id: str, source: str | None = None, *, as_of: datetime 
 WINDOWS = ("week", "next4", "ros", "playoffs")
 WINDOW_LABELS = {"week": "This week", "next4": "Next 4", "ros": "Rest of season", "playoffs": "Playoffs"}
 WINDOW_WHY = {"week": "this week only: the lineup you set for Sunday",
-              "next4": "the next four weeks: far enough to matter, near enough to trust",
+              "next4": "the next four weeks: running backs, receivers and tight ends graded; quarterbacks a lean, level with their own record; kickers and defenses a rough guide, no better than chance after next week",
               "ros": "every week left to this league's final, playoffs included: the longest view, the least sure",
               "playoffs": "the weeks of this league's playoffs: what the trade does when it counts most"}
 CARRY_REASONS = frozenset({"IR slot", "taxi squad", "NFL injured reserve", "no NFL team"})

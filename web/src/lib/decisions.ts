@@ -204,7 +204,7 @@ export const WINDOW_TABS: { key: TradeWindow; label: string }[] = [
 ];
 const WINDOW_WHY: Record<TradeWindow, string> = {
   week: "this week only: the lineup you set for Sunday",
-  next4: "the next four weeks: far enough to matter, near enough to trust",
+  next4: "the next four weeks: running backs, receivers and tight ends graded; quarterbacks a lean, level with their own record; kickers and defenses a rough guide, no better than chance after next week",
   ros: "every week left to this league's final, playoffs included: the longest view, the least sure",
   playoffs: "the weeks of this league's playoffs: what the trade does when it counts most",
 };
@@ -214,7 +214,7 @@ export function windowOf(v: string | null | undefined): TradeWindow {
   return v === "week" || v === "ros" || v === "playoffs" ? v : "next4";
 }
 
-/** The window control's one line: "Weeks 4–7: the next four weeks: far enough to matter, near enough to trust." */
+/** The window control's one line: "Weeks 4–7: the next four weeks: running backs, receivers and tight ends graded; quarterbacks a lean, level with their own record; kickers and defenses a rough guide, no better than chance after next week." */
 export function windowWhy(w: TradeWindow, span: string | null): string {
   const why = WINDOW_WHY[w];
   return span ? `${span[0].toUpperCase()}${span.slice(1)}: ${why}.` : `${why[0].toUpperCase()}${why.slice(1)}.`;
