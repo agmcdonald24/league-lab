@@ -1061,3 +1061,22 @@ beside it; nothing while the table has no rows.
 | the free calculator | **A trade's five questions, without a league**: 1–4 "A league would add …"; 5 "Nobody in this trade is out or without a projection." or the players out; "The values here are season value: points over the rest of the regular season, in Half PPR. Lineup points and whether an offer is plausible need the two rosters. Open your league" | "No league" |
 | the how-to | "**The answer, in five questions** …" and "**Three things, never mixed**: lineup points, market price, plausibility" | |
 
+
+## What he means for your roster, and why (IZ-3, Wave I-Z, 2026-10-11; `player.roster_line`, `player.reasons`; `PlayerPane.svelte`, `routes/Player.svelte`)
+
+The Overview reads: the forecast (the head and its one-line why) → the roster line → at most three reasons → his status (Availability, the news line) → the actions; the sections below stay. The full page: the head, then the roster line and the reasons. No league (a reference scoring): neither.
+
+| Case | The roster line (its numbers are My Week's "Recommended lineup") | Not |
+|---|---|---|
+| he starts for you | "Starts for you at RB1 this week, 3.4 points ahead of Di Dane." · with nobody behind him: "Starts for you at RB1 this week; nobody on your bench can take his place." | a margin over nobody |
+| your bench | "On your bench this week, behind Ann Able and Bo Bell." (your starters at his position, three at most) · "On your bench this week; his game has started." | |
+| he cannot play for you | "Can't play for you this week (bye)." (My Week's own reason) | |
+| a free agent who would start | "A free agent: he would start for you at FLEX1 over Cy Cole (+4.2 this week)." · "A free agent: he would start for you at QB, a spot nobody on your roster can fill this week (+20.2 this week)." | "must add" |
+| a free agent who would not | "A free agent who would not start for you this week: Parker Washington, your lowest starter where he could play, projects 11.7." | |
+| another team's | "On another team: Negrodamus (mjhend93)." (the name the Availability section shows) · "On another team in this league." | |
+
+| Reason (each one sentence, each says where to read more; one with nothing to say is left out) | The words | Not |
+|---|---|---|
+| role | the Role section's headline when it calls a change or a steady role ("Role: bigger role: …. More under Usage."); too early to call: "Role: 63% of the targets and carries of his team's RBs and 77% of their fantasy points (weeks 1–4, 4 games). More under Usage." | "Role: too early to say" |
+| matchup | "Matchup: week 5 vs BUF — BUF ranks #6 of 32 vs RB (1 = gives up the most). More in the schedule below." | a rank without its direction |
+| form | "Form: 19.8 points per game this season on work worth 16.1. More under Game log." (without the expected number on demand: "Form: 9.8 points per game this season. More under Game log.") | a 0 for an unknown |

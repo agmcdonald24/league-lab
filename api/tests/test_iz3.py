@@ -108,11 +108,11 @@ def _sections(role_blocks=(), nxt=None, ppg=None, exp=None):
 
 
 def test_at_most_three_reasons_each_one_sentence_naming_where_to_read_more():
-    card = _sections(["**Bigger role: 8.5 targets a game in his last 2, from 5.0.**"],
+    card = _sections(["**Bigger role: 8.5 targets per game in his last 2, from 5.0.**"],
                      "Next: week 5 vs **BUF** — BUF ranks #6 of 32 vs RB (1 = gives up the most).", "19.8", "16.1")
     r = P.reasons(card)
     assert [x["key"] for x in r] == ["role", "matchup", "form"]
-    assert r[0]["words"] == "Role: bigger role: 8.5 targets a game in his last 2, from 5.0. More under Usage."
+    assert r[0]["words"] == "Role: bigger role: 8.5 targets per game in his last 2, from 5.0. More under Usage."
     assert r[1]["words"] == "Matchup: week 5 vs BUF — BUF ranks #6 of 32 vs RB (1 = gives up the most). More in the schedule below."
     assert r[2]["words"] == "Form: 19.8 points per game this season on work worth 16.1. More under Game log."
     assert all(x["words"].count(". More ") == 1 for x in r) and len(r) <= 3
