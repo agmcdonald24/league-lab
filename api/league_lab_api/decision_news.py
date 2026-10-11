@@ -40,7 +40,8 @@ def _players(dec: dict, key_gsis: dict[str, str]) -> set[str]:
     """The gsis ids of a decision's players: an action's start / sit (roster keys → ids; the claim's drop too), a
     review line's two players."""
     gs: set[str] = set()
-    for p in (dec.get("start") or []) + (dec.get("sit") or []) + ([dec["drop"]] if isinstance(dec.get("drop"), dict) else []):
+    lists = [x for x in (dec.get("start"), dec.get("sit")) if isinstance(x, list)]
+    for p in [q for x in lists for q in x] + ([dec["drop"]] if isinstance(dec.get("drop"), dict) else []):
         if isinstance(p, dict):
             g = p.get("gsis_id") or key_gsis.get(str(p.get("key") or ""))
             if g:

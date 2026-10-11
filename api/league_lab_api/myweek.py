@@ -1872,7 +1872,7 @@ def finish(out: dict, rows: pd.DataFrame | None, current: dict[str, str] | None)
     """IX-4's fields on a My Week answer (both paths): `recommended`, `matchup`."""
     out["recommended"] = recommend(out, rows, current)
     out["matchup"] = matchup_summary(out)
-    from . import decision_news                    # ---- IZ-4: a news line sits on the decision it touches
+    from . import decision_news  # ---- IZ-4: a news line sits on the decision it touches
     return decision_news.attach(out, rows)
 
 
