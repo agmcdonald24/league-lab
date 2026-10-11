@@ -6231,3 +6231,15 @@ must exceed 3% **and** twice the baseline's run-to-run difference on the same ro
 
 **Cut order** (the clock): the candidates run in the order P2-A, P2-B, P1-A, P1-B, P3-A, P3-B; a candidate not run
 is reported as not run, and the rule picks among those run (never a weaker rule).
+
+**Item 0 — the projection says the same thing twice** (05:16 ET). Where the difference came from: the projection's
+fit and blends are deterministic at one state (the regressors carry `random_state=0`, the frame is read in a fixed
+order, the chain runs one thread); what moved was an **input**: `mart_player_season.avg_offense_snap_pct` was a float
+`avg` over an unordered group, so every build summed the same snap shares in another order and the feature
+`prev_snap_pct` changed in its last bit (≤ 4.4e-16) on about 30,000 rows; two values that were equal in one build were
+two distinct values in the next, the histogram binner of the gradient-boosted trees cut its bins elsewhere, and the
+fitted models — and every unfrozen week's projection — moved (up to 1.5 points). Fixed at the source: the average is
+summed in exact `numeric` arithmetic (order-free), then cast back. Shown: two rebuilds of the feature mart give one
+hash; two compute passes of `project` (the frame, the four positions' fits, the predictions, the pass-TD, horizon and
+market blends; `scripts/analysis/ix6_determinism.py`) at one state: **0 cells differ** (the frame's 109,409 rows, the
+lines' 50,985 rows). The study's noise clause therefore does not apply: the 3% is read as is.
