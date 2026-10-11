@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-11 — Wave I-Z
+
+- IZ-1: us against Sleeper's free projections on every past week Sleeper still serves (hh1.0, the rule committed
+  before any number): the nightly pulls each of 2023–2025's weeks and this season's weeks without a pre-kickoff
+  snapshot once (`league-lab ingest sleeper-history`; kept apart from the record, marked as served after the week),
+  re-runs the live model on 2023–2025 with only the seasons before each (`ops.h2h_ours`, once per model version), and
+  grades both by position (miss, order, top-N, with an interval from resampling weeks) and on the close start / sit
+  calls they disagree on, with the words ahead / level / behind (`league-lab h2h`, `ops.sleeper_h2h`); a blend with
+  Sleeper's number is measured (bl1.0) and never shipped. `/api/record` gains `history`; About's record says one
+  sentence built from it, with the caveat that Sleeper's past numbers were written after the games. The first numbers
+  are the nightly's.
+
 ## 2026-10-11 — Wave I-Y
 
 - IY-3: a published post never disappears because one read of the database failed: the list, a post and its pictures
