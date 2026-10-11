@@ -1,6 +1,6 @@
 # IZ-2 — a trade answers five questions in order (Wave I-Z)
 
-Start 18:52 ET, end 19:20 ET (2026-10-11). Branch `dev/IZ2` from `integ/IZ` (`2182488`), worktree `/home/claude/wt-iq4`,
+Start 18:52 ET, end 19:19 ET (2026-10-11). Branch `dev/IZ2` from `integ/IZ` (`2182488`), worktree `/home/claude/wt-iq4`,
 database `league_lab_iq4`. Ports 8921 (this branch's API at the PO's Saturday clock, 2026-10-10T16:00Z, to record),
 8927 (e2e).
 
