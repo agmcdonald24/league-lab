@@ -659,8 +659,9 @@ sees these; a visitor sees the blog as before.
 | the editor's address, not an editor | **Sign in to write** "Writing on the blog needs the editor's account. Sign in" · **This account does not write on the blog** "The blog has one editor for now. Read the blog" | — |
 | the Account screen | **Your account id** · the id · **Copy** → "Copied" · "Only needed to be made a writer on the blog. It is not a password." | "user id", "uuid" |
 | the cover (IU-6) | in **Picture**, under each picture: **Make it the cover** / "The cover" · under the body: "The cover: the post's banner, its picture in the list and on the home, and its link preview." **Remove** · refusal: "A cover is one of your own pictures: upload it under Picture first." | "thumbnail", "og:image", "hero" |
-| the help line (IU-6) | under the body: "A YouTube or X link alone on its line shows as a video (it plays after a tap) or a post card. The cover: **Picture**, then **Make it the cover**." (the second sentence only when the server keeps covers) | "embed", "iframe", "oEmbed" |
-| in a post, for readers (IU-6) | a video: **▶ Play the video** "From YouTube: it loads when you tap." · "Watch on YouTube" · a post on X: "A post on X" · "@handle" · "Open it on X ›" | "tweet", "embed", "Loading…" |
+| the help line (IU-6; IY-1) | under the body: "A post on X or a YouTube video: a link on its own line, or the embed code X or YouTube gives you. It shows as the reader will see it, and loads from X or YouTube only after a tap. The cover: **Picture**, then **Make it the cover**." (the second sentence only when the server keeps covers) | "embed", "iframe", "oEmbed" |
+| in a post, for readers (IU-6) | a video: **▶ Play the video** "From YouTube: it loads when you tap." · "Watch on YouTube" · a post on X: see the next row (IY-1) | "tweet", "embed", "Loading…" |
+| a post on X, for readers (IY-1) | the post's own words · "Ari Meirov (@MySportsUpdate) · June 9, 2023" (from pasted embed code; a bare link shows "A post on X" · "@handle") · **Show the post** (then X's own view of the post, in place) · "Open on X" | "tweet", "embed", "Loading…", "Click to load" |
 <!-- ---- end IO-3 -->
 <!-- ---- IP-5 (Wave I-P) -->
 ## Player pages that share, and "busy" for a refused read (Wave I-P, IP-5; SECURITY_PUBLIC § 15)

@@ -234,7 +234,7 @@ test.describe("the blog with a cover and embeds, on the real API", () => {
       .getByTestId("editor-body")
       .fill(["Read [the long version](https://example.org/read) first.", "", `https://www.youtube.com/watch?v=${YT}`, "", X_URL, "", "The chart:", "", ""].join("\n"));
     await expect(page).toHaveURL(/\/blog\/edit\//, { timeout: 20_000 });
-    await expect(page.getByTestId("editor-embeds")).toContainText("A YouTube or X link alone on its line");
+    await expect(page.getByTestId("editor-embeds")).toContainText("a link on its own line, or the embed code X or YouTube gives you");
     await page.getByTestId("tool-picture").click();
     const photo = bigPng(2400, 1600);
     await page.getByTestId("picture-file").setInputFiles({ name: "week-6-chart.png", mimeType: "image/png", buffer: photo });
