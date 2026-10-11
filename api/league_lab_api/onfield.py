@@ -143,3 +143,32 @@ def left_early_case(left_early: bool, reason: str | None) -> tuple[str | None, s
     missed = rest.split("; then missed ", 1)
     tail = f"; then missed {missed[1]}" if len(missed) == 2 else ""
     return "short", SHORT_WORDS.format(fact=fact + tail)
+
+
+# ---- IX-6 (Wave I-X): the signals section's words when his newest game was cut short by an injury (signals ra1.3 calls
+# no role change from such a game, so "his share is where it has been" would not be true either)
+LATEST_SQL = """
+select p.week, (to_jsonb(p) ->> 'left_early')::boolean as left_early, to_jsonb(p) ->> 'left_early_reason' as reason
+from analytics.fct_player_game as p
+where p.gsis_id = %s and p.season = %s and p.season_type = 'REG' and p.played
+order by p.week desc
+limit 1
+"""
+HURT_ROLE_WORDS = ("Role: **no role change called**: he left his last game (week {week}) hurt, and a game cut short by an "
+                   "injury is not read as a smaller role.  \nUpside: no additional modeled upside scenario available.")
+
+
+def latest_hurt_week(gsis: str, season: int | None) -> int | None:
+    """The week of his newest regular-season game when he left it hurt (the injury note named him), else None."""
+    if season is None:
+        return None
+    try:
+        df = query(LATEST_SQL, (gsis, int(season)))
+    except Exception:  # noqa: BLE001 — never a 500 for a card's sentence
+        return None
+    if df.empty:
+        return None
+    kind, _ = left_early_case(bool(df.iloc[0]["left_early"]) if df.iloc[0]["left_early"] is not None else False,
+                              df.iloc[0]["reason"] if isinstance(df.iloc[0]["reason"], str) else None)
+    return int(df.iloc[0]["week"]) if kind == "hurt" else None
+# ---- end IX-6

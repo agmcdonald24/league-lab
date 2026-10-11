@@ -514,7 +514,10 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         unav(sig_sec, "role alerts arrive with the nightly update; they are not on this copy yet.")
     else:
         sig = query(SIGNALS_SQL, (prof_league, prof_league, week if week is not None else 0, gsis, season))
-        if sig.empty:
+        hurt_week = onfield.latest_hurt_week(gsis, season) if sig.empty else None                      # ---- IX-6
+        if sig.empty and hurt_week is not None:
+            md(sig_sec, onfield.HURT_ROLE_WORDS.format(week=hurt_week))                                     # ---- IX-6
+        elif sig.empty:
             md(sig_sec, "Role: **no role change detected** in his last three games: his share of the snaps, targets and "
                                     "carries is where it has been.  \nUpside: no additional modeled upside scenario available.")  # ---- II-4
         else:
