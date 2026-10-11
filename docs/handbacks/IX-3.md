@@ -111,3 +111,23 @@ and a filter for when a team trails, is within a score or leads."
 ## 8. Next
 
 The CSV name with the situation; a "Filters" fold on the phone; IX-4.
+
+## Round 2 — a phone opens on the answer too (start 07:09, end 07:21 ET; branch `dev/IX7` from `main`)
+
+* **Done.** Under 900 px the Stats screen shows the title line (and its answer sentence), one **Filters** button, the
+  position chips, the view tabs in **one row** (scrolling inside themselves, never the page), the count / CSV row, the
+  view's question and the table. Behind the button (a real `<button>`, `aria-expanded`, `aria-controls`, Enter opens
+  it in place): the name filter, ownership, NFL team, window, per game / totals, both minimums, the situation chips and
+  their explanation, the window line, columns and saved views, the role-cards link. Closed, the button names every
+  filter in force ("Filters: When trailing · Free agents · Last 5 calendar weeks"), else "Filters". From 900 px nothing
+  changes (no button; every control where it was).
+* **At 375 × 812: 3 whole table rows** above the bottom menu (the 4th cut by it); before: 0 (the table started below
+  the fold). Screens: `ix3r2-closed-375.jpg`, `ix3r2-open-375.jpg`, `ix3r2-closed-filtered-375.jpg`.
+* **Not done**: the "8 columns · Download CSV" row stays on the phone's first screen (moving it would give a fourth
+  row; phone specs use `stats-csv`).
+* **Tests**: `e2e/ix3` 12 passed (a new test: folded, named when in force, one-row tabs, keyboard, ≥ 3 rows; 1300
+  unchanged); every spec that opens Stats, both projects — ix3, im2, ii3, il1, in2, ip3, io4, ib1: 82 passed; ip4, im3,
+  ii6, in1, ii2, `fixtures.spec.ts`: 103 passed, 7 skipped. Lint 0 / 0, build, copy standard clean; `scripts/gate.sh`
+  last: GATE PASSED.
+* **Specs touched** (an `openFilters(page)` helper, called before a folded control; a no-op on a desktop): `e2e/ix3`
+  (and the new test), `im2` (7 calls), `ii3` (7), `fixtures.spec.ts` (5), `ib1`, `ii2`, `ii6`, `il1` (1 each).

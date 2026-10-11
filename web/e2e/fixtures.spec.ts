@@ -7,6 +7,13 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DYNASTY, FIXTURE_PASSWORD, SCRUBS, serveFixtures, TEST_LEAGUE } from "./fixtures";
 
+// ---- IX-3 round 2 (Wave I-X): under 900 px the Stats filters fold behind one "Filters" button — a phone test opens it
+// before it uses a folded control (a no-op on a desktop, or when it is open)
+async function openFilters(page: import("@playwright/test").Page) {
+  const t = page.getByTestId("stats-filters-toggle");
+  if ((await t.count()) && (await t.isVisible()) && (await t.getAttribute("aria-expanded")) !== "true") await t.click();
+}
+
 const SHOTS = process.env.SHOTS_DIR ?? join(import.meta.dirname, ".out");
 mkdirSync(SHOTS, { recursive: true });
 
@@ -314,6 +321,7 @@ test("Trends: the answer first (below / above expectation), the gap bars, filter
   await tap(page, page.getByTestId("view-due"), isMobile);
   await expect(page).toHaveURL(/view=due/);
   await expect(rows.first()).toContainText("Jameis Winston");
+  await openFilters(page); // IX-3 round 2
   await tap(page, page.getByTestId("who-mine"), isMobile);
   await expect(page).toHaveURL(/who=mine/);
   const n = await rows.count();
@@ -369,11 +377,14 @@ test("Players · Stats: the sorted column's leader, search, position, sort, whos
   await page.getByTestId("sort-points").evaluate((n) => n.scrollIntoView({ block: "center" })); // clear of the phone's tab bar
   await tap(page, page.getByTestId("sort-points"), isMobile);
   await expect(page).toHaveURL(/sort=points&dir=desc/);
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("players-search").fill("st. brown");
   await expect(table.getByTestId("players-table-row")).toHaveCount(1);
   await expect(table.getByTestId("players-table-row")).toContainText("Amon-Ra St. Brown");
   await expect(table.getByTestId("players-table-row")).toHaveClass(/ll-mine/); // yours
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("players-search").fill("");
+  await openFilters(page); // IX-3 round 2
   await tap(page, page.getByTestId("who-mine"), isMobile);
   const mine = table.getByTestId("players-table-row");
   await expect(mine.first()).toBeVisible();
@@ -384,6 +395,7 @@ test("Receivers: /receivers lands on the Stats WR / TE preset; the role cards ke
   await page.goto(dyn("/receivers"));
   await expect(page).toHaveURL(/\/players\?.*position=WRTE/);
   await expect(page.getByTestId("players-table")).toBeVisible();
+  await openFilters(page); // IX-3 round 2
   await expect(page.getByTestId("role-cards")).toBeVisible();
   await page.goto(dyn("/receivers", "&view=cards"));
   await expect(page.getByTestId("receivers-answer")).toContainText("Biggest share of his team's targets: Jaxon Smith-Njigba (44%; the top-12 WRs average 29%).");

@@ -13,6 +13,13 @@ import { join } from "node:path";
 import { serveDecisions } from "../decisions-fixtures";
 import { SCRUBS, serveFixtures } from "../fixtures";
 
+// ---- IX-3 round 2 (Wave I-X): under 900 px the Stats filters fold behind one "Filters" button — a phone test opens it
+// before it uses a folded control (a no-op on a desktop, or when it is open)
+async function openFilters(page: import("@playwright/test").Page) {
+  const t = page.getByTestId("stats-filters-toggle");
+  if ((await t.count()) && (await t.isVisible()) && (await t.getAttribute("aria-expanded")) !== "true") await t.click();
+}
+
 const SHOTS = process.env.SHOTS_DIR ?? join(import.meta.dirname, "..", ".out");
 mkdirSync(SHOTS, { recursive: true });
 const II4 = join(import.meta.dirname, "..", "..", "fixtures", "ii4", "api_ii4.json");
@@ -179,6 +186,7 @@ test("the drawer (from 900 px): a filter changed beside the open drawer stays wh
   const table = page.getByTestId("players-table");
   await tap(page, table.getByRole("link", { name: PW.name, exact: true }), isMobile);
   await expect(pane(page)).toHaveAttribute("data-gsis", PW.gsis);
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("players-search").fill("wash");
   await expect(page).toHaveURL(/q=wash$/);
   await pane(page).getByTestId("pane-title").focus();

@@ -9,6 +9,13 @@ import { join } from "node:path";
 import { DYNASTY, serveFixtures, TEST_LEAGUE } from "../fixtures";
 import { serveDecisions } from "../decisions-fixtures";
 
+// ---- IX-3 round 2 (Wave I-X): under 900 px the Stats filters fold behind one "Filters" button — a phone test opens it
+// before it uses a folded control (a no-op on a desktop, or when it is open)
+async function openFilters(page: import("@playwright/test").Page) {
+  const t = page.getByTestId("stats-filters-toggle");
+  if ((await t.count()) && (await t.isVisible()) && (await t.getAttribute("aria-expanded")) !== "true") await t.click();
+}
+
 const SHOTS = process.env.SHOTS_DIR ?? join(import.meta.dirname, "..", ".out");
 mkdirSync(SHOTS, { recursive: true });
 const dyn = (path: string) => `${path}?league=${DYNASTY}&team=12`;
@@ -134,6 +141,7 @@ test("the player's page keeps the tab bar and the search field; Back goes where 
   await tap(page, page.getByTestId("tab-players"), isMobile);
   await tap(page, page.getByTestId("sub-players"), isMobile);
   await expect(page.getByTestId("players-table")).toBeVisible();
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("players-search").fill("st. brown");
   await expect(page.getByTestId("players-table").getByTestId("players-table-row")).toHaveCount(1);
   // Players' list: a name opens the pane; "Full page" his page, in the frame

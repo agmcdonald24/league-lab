@@ -51,6 +51,11 @@ async function noSidewaysScroll(page: Page) {
   expect(sw, "page wider than the screen").toBeLessThanOrEqual(iw);
 }
 const table = (page: Page) => page.getByTestId("players-table");
+/** IX-3 round 2: under 900 px the filters fold behind one button — open it before a folded control (no-op on a desktop). */
+async function openFilters(page: Page) {
+  const t = page.getByTestId("stats-filters-toggle");
+  if ((await t.isVisible()) && (await t.getAttribute("aria-expanded")) !== "true") await t.click();
+}
 const rows = (page: Page) => table(page).getByTestId("players-table-row");
 const colHeads = (page: Page) => table(page).locator('thead th[scope=col]:has([data-testid^="sort-"])');
 
@@ -123,6 +128,7 @@ test("When trailing: the split columns carry his plays' numbers; a column it can
   const api = await serve(context);
   await page.goto(url("&position=WRTE&sort=targets&dir=desc"));
   await expect(rows(page).first()).toBeVisible();
+  await openFilters(page);
   await tap(page, page.getByTestId("sit-trailing"), isMobile);
   await expect(page).toHaveURL(/[?&]sit=trailing/);
   await expect.poll(() => api.calls.some((c) => c.includes("situation=trailing"))).toBe(true);
@@ -140,6 +146,7 @@ test("When trailing: the split columns carry his plays' numbers; a column it can
   // a share on fewer than 20 of his team's plays: a dash, "Too few to read"
   const few = TRAIL.players.find((p) => typeof p.situation_plays === "number" && (p.situation_plays as number) > 0 && (p.situation_plays as number) < 20 && (p.targets as number) > 0);
   if (few) {
+    await openFilters(page);
     await page.getByTestId("players-search").fill(few.player_name.split(" ").slice(-1)[0].toLowerCase());
     const row = rows(page).filter({ hasText: few.player_name }).first();
     await expect(row.locator('[data-col="target_share"]')).toHaveText("—");
@@ -173,6 +180,7 @@ test("a card opened from the table and closed keeps the position, view, filter, 
   for (const k of ["position", "view", "sit", "sort", "dir"]) expect(after.searchParams.get(k), k).toBe(addr.searchParams.get(k));
   await expect(page.getByTestId("stats-table-view-opportunity")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("sit-trailing")).toHaveAttribute("aria-pressed", "true");
+  if (isMobile) await expect(page.getByTestId("stats-filters-label")).toHaveText("Filters: When trailing");
   expect(Math.abs((await page.evaluate(() => window.scrollY)) - before)).toBeLessThanOrEqual(2);
   expect(Math.abs((await box.evaluate((el) => el.scrollTop)) - boxBefore)).toBeLessThanOrEqual(2);
   await expect(link).toBeInViewport();
@@ -188,4 +196,53 @@ test("screens: 375 and 1300, the first view", async ({ page, context }, info) =>
   await page.goto(url("&position=WRTE&view=full"));
   await expect(rows(page).first()).toBeVisible();
   await page.screenshot({ path: join(SHOTS, `ix3-full-${info.project.name === "phone" ? 375 : 1300}.jpg`), quality: 70, fullPage: false });
+});
+
+// ---- IX-3 round 2: on a phone the first screen is the answer — the title line, the positions, the view tabs (one row)
+// and the table's first rows; every other control behind one Filters button that names what is in force
+test("a phone opens on the answer: Filters folded (named when in force), the view tabs one row, the table's first rows on the first screen", async ({ page, context, isMobile }, info) => {
+  await serve(context);
+  await page.goto(url("&position=WRTE"));
+  await expect(rows(page).first()).toBeVisible();
+  const toggle = page.getByTestId("stats-filters-toggle");
+  if (!isMobile) {
+    // 1300: nothing changes — no Filters button, every control in place
+    await expect(toggle).toBeHidden();
+    await expect(page.getByTestId("players-search")).toBeVisible();
+    await expect(page.getByTestId("sit-all")).toBeVisible();
+    return;
+  }
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByTestId("stats-filters-label")).toHaveText("Filters");
+  for (const id of ["players-search", "who-all", "players-team", "stats-window-pick", "mode-game", "stats-min", "stats-minopp", "sit-all", "stats-columns", "role-cards"]) await expect(page.getByTestId(id), id).toBeHidden();
+  await expect(page.getByTestId("pos-WRTE")).toBeInViewport();
+  // the view tabs in one row: every tab on the same line, the page never wider than the screen
+  const tops = await page.getByTestId("stats-table-view").locator("button").evaluateAll((bs) => bs.map((b) => Math.round(b.getBoundingClientRect().top)));
+  expect(new Set(tops).size).toBe(1);
+  await noSidewaysScroll(page);
+  // whole rows above the fold: the screen's bottom or, on a phone, the top of the fixed bottom menu
+  const seen = await rows(page).evaluateAll((rs) => {
+    const bar = [...document.querySelectorAll<HTMLElement>("body *")].find((e) => getComputedStyle(e).position === "fixed" && e.getBoundingClientRect().bottom >= window.innerHeight - 1 && e.getBoundingClientRect().top > window.innerHeight / 2);
+    const limit = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+    return rs.filter((r) => r.getBoundingClientRect().bottom <= limit).length;
+  });
+  expect(seen, "table rows on the first screen").toBeGreaterThanOrEqual(3);
+  console.log(`IX3R2 rows on the first screen at ${page.viewportSize()?.width}x${page.viewportSize()?.height}: ${seen}`);
+  mkdirSync(SHOTS, { recursive: true });
+  await page.screenshot({ path: join(SHOTS, "ix3r2-closed-375.jpg"), quality: 70, fullPage: false });
+  // a real button, keyboard reachable: Enter opens it in place
+  await toggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByTestId("players-search")).toBeVisible();
+  await expect(page.getByTestId("sit-all")).toBeVisible();
+  await page.screenshot({ path: join(SHOTS, "ix3r2-open-375.jpg"), quality: 70, fullPage: false });
+  // a filter in force is named on the closed button
+  await page.goto(url("&position=WRTE&sit=trailing&who=fa&window=last5w"));
+  await expect(rows(page).first()).toBeVisible().catch(() => undefined);
+  await expect(page.getByTestId("stats-filters-label")).toHaveText("Filters: When trailing · Free agents · Last 5 calendar weeks");
+  await expect(page.getByTestId("stats-filters-toggle")).toHaveAttribute("aria-expanded", "false");
+  await page.screenshot({ path: join(SHOTS, "ix3r2-closed-filtered-375.jpg"), quality: 70, fullPage: false });
+  void info;
 });

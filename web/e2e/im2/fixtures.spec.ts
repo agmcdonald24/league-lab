@@ -14,6 +14,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { serveFixtures, SCRUBS } from "../fixtures";
 
+// ---- IX-3 round 2 (Wave I-X): under 900 px the Stats filters fold behind one "Filters" button — a phone test opens it
+// before it uses a folded control (a no-op on a desktop, or when it is open)
+async function openFilters(page: import("@playwright/test").Page) {
+  const t = page.getByTestId("stats-filters-toggle");
+  if ((await t.count()) && (await t.isVisible()) && (await t.getAttribute("aria-expanded")) !== "true") await t.click();
+}
+
 const DIR = join(import.meta.dirname, "..", "..", "fixtures", "im2");
 type Col = { id: string; label: string; short: string; available: boolean; positions: string[]; group?: string; per_game: boolean; format: string; reason: string | null };
 type Row = Record<string, unknown> & { gsis_id: string; player_name: string; position: string; games: number };
@@ -142,6 +149,7 @@ test("sort any column (the sorted column marked, aria-sort), then the group togg
   await tap(page, chip, isMobile);
   await expect(page.getByTestId("sort-first_read_target_share")).toHaveCount(1);
   // the column picker on top: untick one column of the Full table
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("stats-columns").locator("summary").click();
   await page.getByTestId("col-catchable_rate").uncheck();
   await expect(page).toHaveURL(/off=catchable_rate/);
@@ -179,11 +187,13 @@ test("all the players: Showing 50 of 291 — Show all; per game and totals switc
   await expect(rows(page).first()).toHaveAttribute("aria-rowindex", "3");
   // per game ↔ totals over the whole table
   await expect(page.getByTestId("sort-receptions")).toHaveText(/REC\/G/i);
+  await openFilters(page); // IX-3 round 2
   await tap(page, page.getByTestId("mode-total"), isMobile);
   await expect(page.getByTestId("sort-receptions")).toHaveText(/^Rec(?!\/G)/i);
   await expect(page.getByTestId("sort-red_zone_targets")).not.toHaveText(/\/G/);
   await expect(page.getByTestId("sort-target_share")).toHaveText(/Tgt %/i); // a share keeps its own denominator
   // a filter starts again at the first 50
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("players-search").fill("wa");
   await expect(page.getByTestId("stats-showing")).toContainText(/^Showing \d+ of \d+$/);
 });
@@ -261,6 +271,7 @@ test("375 / 1300: the sticky name column (≤ 120 px on a phone) and header rows
   await noSidewaysScroll(page);
   // a name opens the drawer (lib/player-drawer.svelte.ts), the table stays
   await box.evaluate((el) => el.scrollTo({ top: 0, left: 0 }));
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("players-search").fill("parker wash");
   await expect(rows(page)).toHaveCount(1);
   await tap(page, table(page).getByRole("link", { name: PW.name, exact: true }), isMobile);
@@ -275,6 +286,7 @@ test("a dash keeps its reason on a tap; a small sample is greyed with its size; 
   await expect(rows(page).first()).toBeVisible();
   // sorted ascending, the unknowns come last: find one by search
   const u = WRTE.players.find((p) => p.position === "WR" && p.separation === null && (p.games ?? 0) > 0)!;
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("players-search").fill(u.player_name);
   const cell = rows(page).filter({ hasText: u.player_name }).first().locator('td[data-col="separation"]');
   await expect(cell).toHaveText("—");
@@ -286,12 +298,14 @@ test("a dash keeps its reason on a tap; a small sample is greyed with its size; 
   await expect(page.getByTestId("stats-tip")).toHaveCount(0);
   // a small sample: a rate on under 10 targets reads greyed, the sample in its title
   const s = WRTE.players.find((p) => p.position === "WR" && typeof p.catch_rate === "number" && (p.targets as number) < 10 && (p.targets as number) > 0)!;
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("players-search").fill(s.player_name);
   const sc = rows(page).filter({ hasText: s.player_name }).first().locator('td[data-col="catch_rate"]');
   await expect(sc).toHaveText(pctText(s.catch_rate));
   await expect(sc).toHaveClass(/text-ink-3/);
   await expect(sc).toHaveAttribute("title", new RegExp(`Small sample: ${s.targets} targets`));
   // keyboard: a header button scrolled under the sticky column comes back into view beside it
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("players-search").fill("");
   const box = page.getByTestId("stats-scroll");
   await box.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));

@@ -13,6 +13,13 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { serveFixtures, SCRUBS } from "../fixtures";
 
+// ---- IX-3 round 2 (Wave I-X): under 900 px the Stats filters fold behind one "Filters" button — a phone test opens it
+// before it uses a folded control (a no-op on a desktop, or when it is open)
+async function openFilters(page: import("@playwright/test").Page) {
+  const t = page.getByTestId("stats-filters-toggle");
+  if ((await t.count()) && (await t.isVisible()) && (await t.getAttribute("aria-expanded")) !== "true") await t.click();
+}
+
 const FILE = join(import.meta.dirname, "..", "..", "fixtures", "ii3", "api_ii3.json");
 type Row = Record<string, unknown> & { gsis_id: string; player_name: string; position: string; games: number; rostered_by_roster_id: number | null };
 type Frame = { players: Row[]; window: { label: string } };
@@ -82,10 +89,12 @@ test("Kyren Williams: the table's carry share is the card's", async ({ page }) =
 test("windows: last 3 games played vs last 3 calendar weeks vs a week range; totals or per game", async ({ page, isMobile }) => {
   await page.goto(scrubs("&position=WRTE"));
   await expect(page.getByTestId("stats-window-label")).toContainText("Season (weeks 1–3)");
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("stats-window-pick").selectOption("last3");
   await expect(page).toHaveURL(/window=last3/);
   await expect(page.getByTestId("stats-window-label")).toContainText("Last 3 games played");
   await expect(page.getByTestId("stats-window-label")).toContainText("the G column says how many");
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("stats-window-pick").selectOption("last3w");
   await expect(page.getByTestId("stats-window-label")).toContainText(/Last 3 calendar weeks \(weeks 1–3\)/);
   await page.goto(scrubs("&position=RB&window=weeks&weeks=1-2"));
@@ -96,11 +105,13 @@ test("windows: last 3 games played vs last 3 calendar weeks vs a week range; tot
   // minimum opportunities (targets + carries in the window): fewer rows, every one over the bar
   const rb = frame({ position: "RB", window: "weeks", weeks: "1-2" }).players;
   const over = rb.filter((p) => ((p.targets as number) ?? 0) + ((p.carries as number) ?? 0) >= 20).length;
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("stats-minopp").selectOption("20");
   await expect(page).toHaveURL(/minopp=20/);
   await expect(page.getByTestId("players-answer")).toContainText(`· ${over} players ·`);
   // totals ↔ per game: counts switch, shares keep their own denominators
   await expect(page.getByTestId("sort-carries")).toHaveText(/CAR\/G/i);
+  await openFilters(page); // IX-3 round 2
   await tap(page, page.getByTestId("mode-total"), isMobile);
   await expect(page).toHaveURL(/mode=total/);
   await expect(page.getByTestId("sort-carries")).toHaveText(/^CAR\s*/i);
@@ -109,6 +120,7 @@ test("windows: last 3 games played vs last 3 calendar weeks vs a week range; tot
 
 test("the column picker: definitions, verified extras, routes unavailable in-season with the reason; — never 0", async ({ page }, info) => {
   await page.goto(scrubs("&position=WRTE&view=key")); // IM-2: the picker adds to Key stats (the Full table has them all)
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("stats-columns").locator("summary").click();
   await expect(page.getByTestId("col-routes")).toBeDisabled();
   await expect(page.getByTestId("col-why-routes")).toContainText("Not available");
@@ -144,10 +156,12 @@ test("sticky player column and header on a phone; 2–4 side by side; saved view
   await expect(page.getByTestId("stats-open-compare")).toHaveAttribute("href", /\/compare\?a=.+&b=.+/);
   await shot(page, "side-by-side", info.project.name);
   // a saved view comes back after a reload (this browser only)
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("stats-columns").locator("summary").click();
   await page.getByTestId("stats-view-name").fill("My WR check");
   await page.getByTestId("stats-view-save").click();
   await page.reload();
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("stats-columns").locator("summary").click();
   await expect(page.getByTestId("stats-view")).toHaveText(["My WR check"]);
 });

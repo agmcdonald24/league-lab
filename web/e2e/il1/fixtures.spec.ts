@@ -10,6 +10,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { FIXTURES, SCRUBS, serveFixtures } from "../fixtures";
 
+// ---- IX-3 round 2 (Wave I-X): under 900 px the Stats filters fold behind one "Filters" button — a phone test opens it
+// before it uses a folded control (a no-op on a desktop, or when it is open)
+async function openFilters(page: import("@playwright/test").Page) {
+  const t = page.getByTestId("stats-filters-toggle");
+  if ((await t.count()) && (await t.isVisible()) && (await t.getAttribute("aria-expanded")) !== "true") await t.click();
+}
+
 const WAN = { gsis: "00-0038117", name: "Wan'Dale Robinson" };
 const CARD = readFileSync(join(FIXTURES, "il1", `player_${SCRUBS}_${WAN.gsis}.json`), "utf8");
 const QB = readFileSync(join(FIXTURES, "il1", "players_qb_season.json"), "utf8");
@@ -76,6 +83,7 @@ test("Players · Stats, QB preset: Time to throw from Next Gen Stats, — for a 
   await expect(cell).toHaveAttribute("title", /NGS published \d of his \d games? \(15\+ pass attempts\)/);
   const u = qbRows.find((r) => r.time_to_throw === null && (r.games ?? 0) > 0);
   if (u) {
+    await openFilters(page); // IX-3 round 2
     await page.getByTestId("players-search").fill(u.player_name);
     const ucell = rows.filter({ hasText: u.player_name }).first().locator('td[data-col="time_to_throw"]');
     await expect(ucell).toHaveText("—");

@@ -14,6 +14,13 @@ import { join } from "node:path";
 import { FIXTURES, SCRUBS, serveFixtures, type FixtureApi } from "../fixtures";
 import { serveDecisions } from "../decisions-fixtures";
 
+// ---- IX-3 round 2 (Wave I-X): under 900 px the Stats filters fold behind one "Filters" button — a phone test opens it
+// before it uses a folded control (a no-op on a desktop, or when it is open)
+async function openFilters(page: import("@playwright/test").Page) {
+  const t = page.getByTestId("stats-filters-toggle");
+  if ((await t.count()) && (await t.isVisible()) && (await t.getAttribute("aria-expanded")) !== "true") await t.click();
+}
+
 const SHOTS = process.env.SHOTS_DIR ?? join(import.meta.dirname, "..", ".out");
 mkdirSync(SHOTS, { recursive: true });
 const scrubs = (path: string, extra = "") => `${path}?league=${SCRUBS}&team=2${extra}`;
@@ -85,6 +92,7 @@ async function openNext(page: Page, link: Locator, isMobile: boolean) {
 test("Players: several players in a row without leaving the table; the search, filter and sort stay; Escape closes, focus returns", async ({ page, isMobile }, info) => {
   await page.goto(scrubs("/players", "&position=WR&sort=target_share&dir=desc"));
   await expect(page.getByTestId("players-table")).toBeVisible();
+  await openFilters(page); // IX-3 round 2
   await page.getByTestId("players-search").fill("n");
   await expect(page).toHaveURL(/[?&]q=n(&|$)/); // integ: the search's 250 ms debounce lands before the first open (a Back close restores the entry before it)
   const table = page.getByTestId("players-table");

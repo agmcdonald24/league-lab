@@ -340,6 +340,23 @@
     setParams({ sel: next.length ? next.join(",") : null });
   }
   const selected = $derived(sel.map((id) => r.data?.players.find((p) => p.gsis_id === id)).filter((p): p is StatsRow => !!p));
+  // ---- IX-3 round 2 (Wave I-X): on a phone (under 900 px) the filters fold behind one "Filters" button that names
+  // every filter in force while it is closed ("Filters: When trailing · Free agents"); from 900 px nothing changes
+  let filtersOpen = $state(false);
+  const inForce = $derived(
+    [
+      sitKey !== "all" ? sitLabel : "",
+      who === "mine" ? "Yours" : who === "fa" ? "Free agents" : who === "others" ? "Other teams" : "",
+      nfl ? nfl : "",
+      win === "weeks" ? (range[0] === range[1] ? `Week ${range[0]}` : `Weeks ${range[0]}–${range[1]}`) : win !== "season" ? (WINDOWS.find((w) => w.key === win)?.label ?? "") : "",
+      mode === "total" ? "Totals" : "",
+      minGames > 1 ? `At least ${minGames} games` : "",
+      minOpp > 0 ? `At least ${minOpp} opportunities` : "",
+      (params.get("q") ?? q).trim() ? `Name: ${(params.get("q") ?? q).trim()}` : "",
+    ].filter(Boolean),
+  );
+  const filtersLabel = $derived(inForce.length ? `Filters: ${inForce.join(" · ")}` : "Filters");
+  // ---- end IX-3 round 2
   const leader = $derived(filtered[0] ?? null);
   const weeksMax = $derived(Math.max(r.data?.window.through_week ?? 18, 1));
 </script>
@@ -361,9 +378,21 @@
   </ScreenHead>
 
   <div class="space-y-2.5">
+    <!-- ---- IX-3 round 2: the phone's one Filters button (aria-expanded), naming what is in force while closed -->
+    <button
+      type="button"
+      class="ll-filters-toggle flex min-h-10 w-full items-center gap-2 rounded-md border border-line bg-surface px-3 text-left text-sm font-semibold {inForce.length ? 'text-ink' : 'text-accent'}"
+      aria-expanded={filtersOpen}
+      aria-controls="ll-stats-filters-a ll-stats-filters-b"
+      onclick={() => (filtersOpen = !filtersOpen)}
+      data-testid="stats-filters-toggle"
+      ><span class="min-w-0 flex-1 truncate" data-testid="stats-filters-label">{filtersLabel}</span><span aria-hidden="true" class="text-ink-2">{filtersOpen ? "▴" : "▾"}</span></button
+    >
     <!-- ---- IX-3: the table's own box says what it does (the app's search, in the top bar, is unchanged) -->
-    <label class="sr-only" for="ll-players-q">Filter this table by player name</label>
-    <input id="ll-players-q" class="ll-input w-full" type="search" placeholder="Filter this table by name" autocomplete="off" bind:value={q} oninput={onq} data-testid="players-search" />
+    <div id="ll-stats-filters-a" class="ll-fold {filtersOpen ? 'll-open' : ''}">
+      <label class="sr-only" for="ll-players-q">Filter this table by player name</label>
+      <input id="ll-players-q" class="ll-input w-full" type="search" placeholder="Filter this table by name" autocomplete="off" bind:value={q} oninput={onq} data-testid="players-search" />
+    </div>
     <!-- on a phone each chip row scrolls sideways inside itself (the page never does); from 640 px they wrap -->
     <div class="ll-chiprow">
       <Chips
@@ -374,6 +403,7 @@
         items={POS}
       />
     </div>
+    <div id="ll-stats-filters-b" class="ll-fold space-y-2.5 {filtersOpen ? 'll-open' : ''}"><!-- ---- IX-3 round 2: folded on a phone -->
     {#if owned}<!-- ---- IM-2: no ownership in the answer (a reference league): no "whose" chips -->
       <div class="ll-chiprow">
         <Chips
@@ -480,6 +510,7 @@
     {#if group === "wrte"}
       <p class="text-sm"><a class="text-accent underline" href={withContext("/receivers?view=cards", ctx)} data-testid="role-cards">Receivers' role cards</a> <span class="text-ink-2">— usage by half, score, down, field zone and quarterback</span></p>
     {/if}
+    </div><!-- ---- end IX-3 round 2: the folded block -->
   </div>
 
   {#if selected.length}
@@ -517,14 +548,16 @@
   {:else}
     <!-- ---- IM-2: the view (Key stats · Full table), the CSV, the group toggles, the table, every player -->
     <div class="flex flex-wrap items-center gap-x-3 gap-y-2" data-testid="stats-toolbar">
-      <Tabs
-        items={[...viewDefs.map((d) => ({ key: d.key, label: d.label })), { key: "full", label: "Full table" }]}
-        current={view}
-        onpick={setView}
-        size="sm"
-        label="Table view"
-        testid="stats-table-view"
-      />
+      <div class="ll-viewtabs min-w-0 max-w-full"><!-- ---- IX-3 round 2: one row on a phone, scrolling inside itself -->
+        <Tabs
+          items={[...viewDefs.map((d) => ({ key: d.key, label: d.label })), { key: "full", label: "Full table" }]}
+          current={view}
+          onpick={setView}
+          size="sm"
+          label="Table view"
+          testid="stats-table-view"
+        />
+      </div>
       <span class="text-sm text-ink-2" data-testid="stats-col-count">{cols.length} column{cols.length === 1 ? "" : "s"}</span>
       <a
         class="ml-auto inline-flex min-h-9 items-center gap-1 rounded-md border border-line px-2.5 text-sm font-semibold text-accent {csvBusy ? 'opacity-60' : ''}"
@@ -624,4 +657,23 @@
     }
   }
   /* ---- IM-2: the table's own styles live in components/stats/StatsTable.svelte */
+  /* ---- IX-3 round 2: under 900 px the filters fold behind the Filters button and the view tabs keep one row */
+  @media (max-width: 899px) {
+    .ll-fold:not(.ll-open) {
+      display: none;
+    }
+    .ll-viewtabs :global(nav) {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .ll-viewtabs :global(nav > *) {
+      flex-shrink: 0;
+    }
+  }
+  @media (min-width: 900px) {
+    .ll-filters-toggle {
+      display: none;
+    }
+  }
 </style>
