@@ -1033,3 +1033,16 @@ are, the table is the recommendation and says so, and an unclear starter sits on
 | the tabs without a league | **Home** · **Rankings** · **Research** · **Trades** | DFS as a tab |
 | eyebrows; the player page's back link while browsing; Home's tools | **Research · Stats**, **Research · Rankings**; ‹ Research; Research "Every player's stats, trends and this week's projection." | Players · …; ‹ Players |
 
+
+## Us against Sleeper on past weeks (IZ-1, Wave I-Z, 2026-10-11; `api/league_lab_api/h2h_api.py`, `routes/About.svelte`; docs/METRICS.md § hh1.0)
+
+About's record section, under the record (GET /api/record `history`), one sentence built from the table and the caveat
+beside it; nothing while the table has no rows.
+
+| Where | Words |
+|---|---|
+| The sentence (built from the rows; the positions grouped by their word, in the order ahead, level, behind) | "Against Sleeper's free projections on {weeks} past weeks ({seasons}), on the weekly miss and the order of players: ahead at {positions}; level at {positions}; behind at {positions}." + "On the close start / sit calls the two disagreed on, ours was right {share}% of {n} times." (only when there are such calls) |
+| The caveat, our side | "Ours: our model as it runs today, re-run on each past season with only the seasons before it" (the live model's rows) · "Ours: our model re-run on each past season, without the live board's latest adjustments" (the stored rows) · + "({current season}: our projections as published before kickoff)" when a current-season week is in |
+| The caveat, Sleeper's side | "Sleeper's numbers for past weeks are the ones its site serves now, written after the games, so this favours Sleeper; the record above, from week 5 of 2026, compares numbers saved before kickoff." |
+| The table cannot be read | "The comparison with Sleeper on past weeks is not available right now." |
+| The words of a position (the summary, the API) | ahead · level · behind (the interval of ours − Sleeper on one side of zero or not; METRICS § hh1.0) · the blend: gains · no gain |

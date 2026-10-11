@@ -6362,7 +6362,7 @@ games, so this favours Sleeper; the record above, from week 5 of 2026, compares 
 player Sleeper lists (players with both numbers who played); not a lineup decision in a real league (the start / sit
 pairs are NFL-wide at a position, not two players on one roster).
 
-### Borrowing Sleeper's number: what Andrew decides (bl1.0's paragraph; written 18:24 ET, after the rule's commit `c2b4b20` and before any number — it decides nothing)
+### Borrowing Sleeper's number: what Andrew decides (bl1.0's paragraph; written 18:23 ET, after the rule's commit `c2b4b20` and before any number — it decides nothing)
 
 **What the nightly will show him**: per position, bl1.0's word ("gains" / "no gain") with w and, on 2024 and 2025,
 the error and order of ours alone, Sleeper's alone and the blend, and the share of startable pairs each orders right

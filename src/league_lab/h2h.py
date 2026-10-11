@@ -194,16 +194,19 @@ def ours_current(conn: psycopg.Connection) -> bool:
 def ensure_ours(conn: psycopg.Connection) -> str:
     """Build ``ops.h2h_ours`` when it does not hold 2023-2025 of the live model version (once per version). A failure
     is logged and the grade falls back to the stored rows (labelled)."""
+    from . import projections as P
+
     ensure_tables(conn)
     if ours_current(conn):
-        return "current"
+        return f"the live model ({P.MODEL_VERSION}) re-run on each season: kept from an earlier night"
+    t0 = time.time()
     try:
         n = write_ours(conn, build_ours(conn))
     except Exception as exc:  # noqa: BLE001 - the grade falls back to ops.calibration_oof, labelled
         conn.rollback()
         log.exception("h2h ours: the live model's rows could not be built: %s", exc)
-        return f"failed ({type(exc).__name__}): the grade reads the stored rows"
-    return f"built {n} rows"
+        return f"the live model's rows could NOT be built ({type(exc).__name__}): graded on the stored rows, labelled"
+    return f"the live model ({P.MODEL_VERSION}) re-run on each season: built tonight ({n:,} rows in {time.time() - t0:.0f} s)"
 
 
 # ------------------------------------------------------------------------------ the inputs
@@ -680,4 +683,4 @@ def run(make_ours: bool = True) -> str:
             if len(src) and src.iloc[0] == "stored_walk_forward":
                 note = (note + "; " if note else "") + "the live model's rows are missing: graded on the stored rows, labelled"
         log.info("%s: %s rows written (%s player-weeks graded)", GRADE_TABLE, n, len(inp.pop))
-        return summary_text(read_weeks(conn), df, inp, f"the live model's rows {note}" if note else "")
+        return summary_text(read_weeks(conn), df, inp, note)

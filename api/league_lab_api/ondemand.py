@@ -1011,6 +1011,10 @@ def record(league_id: str) -> dict:
            "notice": None if not rec.empty else ("No week on the record yet: the record starts the first week Sleeper's "
                                                 "projections are archived before kickoff.")}
     out.update(record_pricing(league_id, season, out["weeks"]))       # ---- M4 (Wave I-G)
+    # ---- IZ-1 (Wave I-Z): us against Sleeper on the weeks Sleeper still serves (never mixed with the record above)
+    from .h2h_api import history as _iz1_history
+    out["history"] = _iz1_history(league_id)
+    # ---- end IZ-1
     return out
 
 

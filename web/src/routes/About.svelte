@@ -209,6 +209,13 @@
       </div>
       <!-- ---- M4 (Wave I-G): how the weeks were priced, one sentence (GET /api/record `pricing.sentence`) -->
       {#if r.data?.pricing?.sentence}<p class="text-sm leading-snug text-ink-3" data-testid="record-pricing">{r.data.pricing.sentence}</p>{/if}
+      <!-- ---- IZ-1 (Wave I-Z): us against Sleeper on the weeks Sleeper still serves — one sentence built from the table
+           (GET /api/record `history`; nothing until it has rows; "not available right now" when it cannot be read) -->
+      {#if r.data?.history?.sentence}
+        <p class="text-sm leading-snug" data-testid="record-history">{r.data.history.sentence}</p>
+        {#if r.data.history.caveat}<p class="text-sm leading-snug text-ink-3" data-testid="record-history-caveat">{r.data.history.caveat}</p>{/if}
+      {/if}
+      <!-- ---- end IZ-1 -->
 
       {#if view.calls.length}
         <div class="space-y-2">

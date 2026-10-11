@@ -3164,3 +3164,39 @@ export interface MyWeek {
   more_actions?: WeekAction[];
 }
 // ---- end IX-4
+
+// ---- IZ-1 (Wave I-Z): GET /api/record `history` — us against Sleeper on the weeks Sleeper still serves (hh1.0)
+export interface RecordHistoryMeasure {
+  ours: number | null;
+  sleeper: number | null;
+  diff: number | null;
+  diff_lo: number | null;
+  diff_hi: number | null;
+  word: string | null;
+  weeks: number | null;
+  n: number | null;
+  share?: number | null;
+}
+export interface RecordHistory {
+  available: boolean;
+  status: "unavailable" | "none" | "graded";
+  sentence: string | null; // built from the table; "… not available right now." when it cannot be read
+  caveat: string | null;
+  rule?: string | null;
+  scored_in?: string | null;
+  ours?: string | null;
+  weeks?: number | null;
+  seasons?: string | null;
+  by_position?: {
+    position: string;
+    word: string | null;
+    error: RecordHistoryMeasure | null;
+    order: RecordHistoryMeasure | null;
+    close_calls: RecordHistoryMeasure | null;
+    blend: string | null;
+  }[];
+}
+export interface RecordAnswer {
+  history?: RecordHistory | null;
+}
+// ---- end IZ-1
