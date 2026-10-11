@@ -345,7 +345,7 @@
 </script>
 
 <main class="space-y-4" data-testid="players">
-  <ScreenHead eyebrow="Players · Stats" title={r.data ? `Stats, ${r.data.season}` : "Stats"}>
+  <ScreenHead eyebrow="Research · Stats" title={r.data ? `Stats, ${r.data.season}` : "Stats"}>
     {#snippet answer()}
       {#if leader && sortCol}
         <span data-testid="players-answer"

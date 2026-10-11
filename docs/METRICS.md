@@ -6135,3 +6135,36 @@ tab answers it for one player (IX-2); the Stats table answers it for every playe
   target / carry share on the field (snaps are per game), air yards share, red-zone, efficiency, Next Gen Stats, Pro
   Football Reference, charting and the role changes (each from whole-game or weekly files), and the value column.
   Games stays: it is the window's sample.
+
+## What we claim, said once (IX-5, Wave I-X, 2026-10-11) — the rules that word the evidence above
+
+No new number. Each rule below words § "What each number has been checked against (IR-4)" and nothing else.
+
+* **The trust line** (`provenance._checked_words`): per span (next week; two to eight weeks ahead), one status for
+  every position in play → the span and that status; some position graded → "graded" and the positions that are not,
+  each with its own status; **none graded and the statuses differ → every position named with its own status** (was:
+  the worst status for the whole span, so a quarterback with a kicker read "no better than chance, quarterbacks weak").
+  Tested over all 63 position sets × three spans (`api/tests/test_ix5.py`: the sentence is read back and compared with
+  `CHECKS`).
+* **The trade window's caption, Next 4** (`decisions.WINDOW_WHY`, `lib/decisions.ts`): from § "The trade calculator's
+  windows" — RB 0.660, WR 0.594, TE 0.564 over horizons 1–4 (graded); QB 0.538 against his own record's 0.537 (level:
+  "a lean, level with their own record"); K / DEF not pooled by window, 0.095 / 0.257 next week (weak) and 0.028 /
+  0.040 two to eight weeks ahead (no better than chance): "a rough guide, no better than chance after next week".
+  "Near enough to trust" is gone: nothing measured supports it for QB, K or DEF.
+* **Waivers' strongest three** (`decisions.ix5_kd_last`, `ix5_guide_card`): the graded positions (QB, RB, WR, TE;
+  one claim per position) are chosen on the window's lineup gain as before; **a kicker or a defense (K, DEF, MFL
+  team K / DEF) is never chosen on the window's gain**: it is chosen only on this week's lineup gain (≥ 0.05), only
+  when the graded positions leave room in the three, listed after them, its card's number is this week's gain (no
+  window total), and it says it is a rough guide. Why: K / DEF order is 0.095 / 0.257 next week and no better than
+  chance after. League of Scrubs team 2 (this database, week 5): before, the Patriots defense +13.65 over weeks 5–8
+  (+4.28 this week) was the third strongest; after, Brian Robinson (RB, +3.84 over weeks 5–8) is, and the Patriots
+  stay in Help now on this week's gain. Help now and My Week's claim were already this week's gain; a kicker's or
+  defense's window total is no longer printed there either.
+* **Net lineup points** (was "Fit", `roster_value.trade_candidates` `fit_week` / `fit_horizon`): his new team's
+  best-lineup gain minus his old team's best-lineup loss, over the lists' weeks (the next four). One meaning on the
+  screens; each team's own gain is "Improvement to your starting lineup" (`trades.fit_line`, the API's words since IT-1).
+* **A defense's rank** (`research.gives_up_words`, `cards.rank_words`, `cards.reason_pieces`, `lib/research.ts`,
+  `lib/words.ts`): one direction everywhere, 1 = gives up the most points to the position; "the most" / "the fewest"
+  at the ends, "the Nth-most" between (was the nearer end's "Nth-fewest" and the Matchups screen's "#N toughest"). The
+  API keeps `tough_rank` for old readers; no screen prints it. A corner's rank (#1 = the hardest to throw on) is his
+  own list and says so.

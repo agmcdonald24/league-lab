@@ -97,7 +97,7 @@
 </script>
 
 <main class="space-y-4" data-testid="rankings">
-  <ScreenHead eyebrow={browsing ? `Rankings · ${scoringName}` : "Players · Rankings"} title={view === "week" ? "Who to start this week" : "Rest-of-season rankings"} testid="rankings-head">
+  <ScreenHead eyebrow={browsing ? `Rankings · ${scoringName}` : "Research · Rankings"} title={view === "week" ? "Who to start this week" : "Rest-of-season rankings"} testid="rankings-head">
     {#snippet answer()}
       {#if d && !d.notice}
         <span data-testid="rankings-answer"
