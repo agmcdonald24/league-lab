@@ -15,7 +15,7 @@
     // ---- end IP-2
     {
       key: "myteam",
-      label: "My Team",
+      label: "My Week", // ---- IX-5 (the review's "Proposed simpler structure"): was My Team; the key and test ids stay
       screens: [
         { name: "week", label: "This week", path: "/" },
         { name: "ros", label: "Season", path: "/ros" },
@@ -34,7 +34,7 @@
     },
     {
       key: "players",
-      label: "Players",
+      label: "Research", // ---- IX-5: was Players (Stats · Rankings · Trends · Matchups · Compare); the key and test ids stay
       // ---- II-3 (the fifth review § 4): the research tabs are Stats · Trends · Matchups · Compare; Receivers is the
       // Stats WR / TE preset (/receivers redirects there; its role cards stay at /receivers?view=cards, lit as Stats)
       screens: [
@@ -51,8 +51,8 @@
   ];
   // ---- IN-2 (Wave I-N): the tabs while browsing without a league, in this order (a tab another package adds — Home —
   // keeps its place in the list; one this list does not name goes last); a screen that needs a team is left out
-  const REF_ORDER = ["home", "rankings", "players", "trades", "dfs"]; // ---- IP-2: + rankings
-  const REF_HIDDEN = new Set<string>(["myteam", "waivers"]);
+  const REF_ORDER = ["home", "rankings", "players", "trades"]; // ---- IP-2: + rankings; IX-5: DFS moved to the ⋯ menu
+  const REF_HIDDEN = new Set<string>(["myteam", "waivers", "dfs"]);
   const REF_SCREENS_HIDDEN = new Set<string>(["trades", "week", "team", "league", "waivers", "watchlist"]);
   export function refSections<T extends { key: string; screens: { name: RouteName }[] }>(all: T[]): T[] {
     const rank = (k: string) => (REF_ORDER.indexOf(k) < 0 ? REF_ORDER.length : REF_ORDER.indexOf(k));
@@ -134,7 +134,7 @@
   const href = (path: string) => withContext(path, ctx);
   // ---- IN-2 (Wave I-N): browsing without a league the tab bar reads Home · Players · Trades · DFS — My Team and
   // Waivers are behind "Open your league" — and Trades is the calculator alone (never the invitation card)
-  const sections = $derived(isRef(league) ? refSections(SECTIONS) : SECTIONS.filter((s) => s.key !== "home" && s.key !== "rankings")); // IP-2: rankings
+  const sections = $derived(isRef(league) ? refSections(SECTIONS) : SECTIONS.filter((s) => s.key !== "home" && s.key !== "rankings" && s.key !== "dfs")); // IP-2: rankings; IX-5: DFS in the ⋯ menu
   // ---- end IN-2
   // a tab opens its first screen
   const tabs = $derived(sections.map((s) => ({ key: s.key, label: s.label, href: href(s.screens[0].path) })));
@@ -369,6 +369,8 @@
         <!-- ---- IN-1 (Wave I-N): the home page and the blog (IN-2 lays out the tabs; these two live in the menu) -->
         <a href={href("/home")} role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised {here === 'home' ? 'font-semibold text-accent' : ''}" data-testid="menu-home">Home</a>
         <a href="/blog" role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised {here === 'blog' || here === 'post' ? 'font-semibold text-accent' : ''}" data-testid="menu-blog">Blog</a>
+        <!-- ---- IX-5: DFS left the tabs (four destinations); its route is unchanged -->
+        <a href={href("/dfs")} role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised {here === 'dfs' ? 'font-semibold text-accent' : ''}" aria-current={here === "dfs" ? "page" : undefined} data-testid="menu-dfs">DFS</a>
         <!-- ---- end IN-1 -->
         <!-- ---- IO-3: the blog's editor — only for an account the server lists as an editor -->
         {#if editor.on}<a href="/blog/new" role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised {here === 'write' ? 'font-semibold text-accent' : ''}" data-testid="menu-write">Write</a>{/if}

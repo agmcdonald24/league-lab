@@ -98,10 +98,11 @@ test("the picker: scoring, options and size in the URL and remembered; the tabs 
   await expect(page.getByTestId("ref-picker")).toBeVisible();
   await expect(page.getByTestId(wide ? "ref-label" : "ref-short")).toHaveText("Half PPR");
   await expect(page.getByTestId("ref-open")).toHaveText("Open your league");
-  // the tabs: Players · Trades · DFS — My Team and Waivers are behind "Open your league"
+  // the tabs: Research · Trades (IX-5: DFS in the ⋯ menu) — My Week and Waivers are behind "Open your league"
   await expect(page.getByTestId("tab-players")).toBeVisible();
   await expect(page.getByTestId("tab-trades")).toBeVisible();
-  await expect(page.getByTestId("tab-dfs")).toBeVisible();
+  await expect(page.getByTestId("tab-dfs")).toHaveCount(0);
+  await expect(page.getByTestId("menu-dfs")).toHaveCount(1);
   await expect(page.getByTestId("tab-myteam")).toHaveCount(0);
   await expect(page.getByTestId("tab-waivers")).toHaveCount(0);
   await expect(page.locator("body")).not.toContainText("No league");
@@ -162,7 +163,7 @@ test("a player's pane while browsing: the scoring in the head, his value, no own
   await expect(page.getByTestId("player-foot")).toContainText("Priced in PPR · superflex · 10 teams.");
   await expect(page.getByTestId("section-value")).toContainText("in a 10-team PPR league, two quarterbacks (superflex)");
   await expect(page.getByTestId("player")).not.toContainText(/free agent|No league/i);
-  await expect(page.getByTestId("back")).toContainText("Players");
+  await expect(page.getByTestId("back")).toContainText("Research"); // IX-5: was Players
   await noSidewaysScroll(page);
   await shot(page, `in2-player-${info.project.name}`, true);
 });

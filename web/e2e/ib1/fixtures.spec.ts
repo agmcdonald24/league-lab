@@ -38,7 +38,7 @@ async function shot(page: Page, name: string, info: TestInfo, full = false) {
 const TABS: { tab: string; label: string; first: string; subs: [string, string, string][] }[] = [
   {
     tab: "myteam",
-    label: "My Team",
+    label: "My Week", // ---- IX-5: was My Team
     first: "my-week",
     subs: [
       ["week", "This week", "my-week"],
@@ -59,7 +59,7 @@ const TABS: { tab: string; label: string; first: string; subs: [string, string, 
   },
   {
     tab: "players",
-    label: "Players",
+    label: "Research", // ---- IX-5: was Players
     first: "players", // ---- II-3: Stats · Trends · Matchups · Compare (Receivers is the Stats WR / TE preset)
     subs: [
       ["players", "Stats", "players"],
@@ -69,14 +69,14 @@ const TABS: { tab: string; label: string; first: string; subs: [string, string, 
       ["compare", "Compare", "compare"],
     ],
   },
-  { tab: "dfs", label: "DFS", first: "dfs", subs: [] }, // ---- IM-5 (Wave I-M): the DFS tab
+  // ---- IX-5: DFS left the tabs for the ⋯ menu (four destinations; its route unchanged) — was IM-5's fifth tab
 ];
 
 test("four tabs and their sub-tabs reach every screen (one tap each, same tab, the paths kept)", async ({ page, context, isMobile }, info) => {
   await page.goto(dyn("/"));
   await expect(page.getByTestId("my-week")).toBeVisible();
   const tabs = page.getByTestId("tabs").locator("a");
-  await expect(tabs).toHaveCount(TABS.length); // ---- IM-5: was 4 (DFS is the fifth)
+  await expect(tabs).toHaveCount(TABS.length); // ---- IX-5: four again (DFS is in the ⋯ menu)
   await expect(tabs).toHaveText(TABS.map((t) => t.label));
   const bar = (await page.getByTestId("tabs").boundingBox())!;
   if (isMobile) expect(bar.y + bar.height).toBeGreaterThan(page.viewportSize()!.height - 2); // the bottom bar

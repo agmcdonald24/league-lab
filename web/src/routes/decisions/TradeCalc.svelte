@@ -390,7 +390,7 @@
             </div>
             {#if d.unfilled.mine.before && d.unfilled.mine.after && (Math.abs(d.mine.before.this_week - d.unfilled.mine.before.this_week) >= 0.005 || Math.abs(d.mine.after.this_week - d.unfilled.mine.after.this_week) >= 0.005)}
               <!-- IT-1: which total the tiles are (with the assumed pickups), the roster-only total other screens show beside it -->
-              <p class="mt-1 text-sm text-ink-2" data-testid="tile-totals">Totals with the assumed pickups for empty slots; your roster alone, as My Team shows it: {f2(d.unfilled.mine.before.this_week)} → {f2(d.unfilled.mine.after.this_week)} this week.</p>
+              <p class="mt-1 text-sm text-ink-2" data-testid="tile-totals">Totals with the assumed pickups for empty slots; your roster alone, as My Week's Team screen shows it: {f2(d.unfilled.mine.before.this_week)} → {f2(d.unfilled.mine.after.this_week)} this week.</p>
             {/if}
             <p class="mt-2 text-sm text-ink-2" data-testid="basis"><span class="font-semibold text-ink">{d.basis_label}.</span> {d.basis_words}</p>
             <p class="mt-3 text-lg leading-snug font-semibold text-ink" data-testid="verdict">{d.verdict}</p>

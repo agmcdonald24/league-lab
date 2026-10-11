@@ -149,7 +149,7 @@ test("DFS with a league in the URL: the tab, the frame, links keep the league", 
   if (narrow(info.project.name)) await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(`/dfs?league=${SCRUBS}&team=2`);
   await expect(page.getByTestId("dfs")).toBeVisible();
-  await expect(page.getByTestId("tab-dfs")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("menu-dfs")).toHaveAttribute("aria-current", "page"); // IX-5: DFS is in the ⋯ menu (was a tab)
   await expect(page.getByTestId("dfs-honest").locator("a")).toHaveAttribute("href", new RegExp(`/about\\?league=${SCRUBS}&team=2`));
   await page.getByTestId("dfs-file").setInputFiles(SALARIES);
   await expect(page.getByTestId("dfs-undervalued").getByTestId("dfs-value-row").first()).toBeVisible();

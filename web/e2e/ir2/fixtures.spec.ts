@@ -108,7 +108,7 @@ test("Folk for Stafford + Reichard: one basis, the slots paired, one depth sente
   for (const t of [yourEffect, theirEffect, await page.getByTestId("verdict").innerText(), await page.getByTestId("recommendation").innerText()])
     expect(t, "a hyphen as a minus sign").not.toMatch(/(^|[\s(])-\d/);
   // IT-1: the tiles say which total they are, the roster-only total other screens show named beside them
-  await expect(page.getByTestId("tile-totals")).toContainText("as My Team shows it");
+  await expect(page.getByTestId("tile-totals")).toContainText("as My Week's Team screen shows it");
   // the dial's label agrees with their tile (the review's "Improves it" beside a card that says they lose)
   const label = await page.getByTestId("dial-row").innerText();
   if (themWin < -0.05) expect(label).toContain("Makes their lineup weaker");

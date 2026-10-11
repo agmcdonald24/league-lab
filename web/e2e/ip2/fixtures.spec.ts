@@ -110,10 +110,10 @@ test.afterAll(() => {
 test("browsing: the Rankings tab, tiers as lines, the range bar, the defense's chip, a search", async ({ context, page }, info) => {
   const calls = await api(context);
   await page.goto("/rankings?league=ref:half");
-  // the tab while browsing: Home · Rankings · Players · Trades · DFS, Rankings lit
+  // the tab while browsing: Home · Rankings · Research · Trades, Rankings lit (IX-5: DFS in the ⋯ menu)
   await expect(page.getByTestId("tab-rankings")).toBeVisible();
   await expect(page.getByTestId("tab-rankings")).toHaveAttribute("aria-current", "page");
-  await expect(page.getByTestId("tabs").locator("a")).toHaveText(["Home", "Rankings", "Players", "Trades", "DFS"]);
+  await expect(page.getByTestId("tabs").locator("a")).toHaveText(["Home", "Rankings", "Research", "Trades"]);
   const list = page.getByTestId("rankings");
   await expect(page.getByTestId("rankings-row").first()).toBeVisible({ timeout: 30_000 });
   expect(await page.getByTestId("rankings-row").count()).toBe(50);
