@@ -11,7 +11,8 @@ export const X_SANDBOX = "allow-scripts allow-same-origin allow-popups allow-pop
 // and measures — a frame with visibility: hidden or no height is throttled and X never sends its size), and swapped in
 // on its first resize message. No resize within X_GIVE_UP_MS: the frame is removed and the card stays.
 export const X_NEAR = "600px 0px";
-export const X_GIVE_UP_MS = 10_000;
+export const X_GIVE_UP_MS = 10_000; // IY-3: counted only while the document is visible
+export const X_ATTEMPTS = 2; // IY-3: after a give-up, once more when the block is next on screen; then the card stays
 const X_ID = /^\d{1,25}$/;
 
 export function isXId(id: string | null | undefined): id is string {

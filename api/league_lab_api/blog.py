@@ -57,6 +57,8 @@ WORDS_PER_MINUTE = 220
 IMG_CACHE = "public, max-age=2592000"       # 30 days: a changed picture gets a new name (docs/BLOG.md)
 FEED_CACHE = "public, max-age=600"
 NOT_FOUND = "No post at that address."
+UNREAD = "This post did not load. Try again in a few seconds."   # IY-3: the store could not be read (503, never 404)
+UNREAD_CACHE = "public, max-age=5"                              # IY-3: what the files alone answer while it cannot
 ET = ZoneInfo("America/New_York")
 
 _region = memo.region("blog", ttl=3600.0, max_entries=4)
@@ -243,7 +245,9 @@ def blog_list(limit: int = LIST_DEFAULT) -> JSONResponse:
         raise HTTPException(status_code=400, detail=f"limit is 1 to {LIST_MAX}")
     listed = [meta(p) for p in posts()[:limit]]
     # ---- IO-3: with the editor's table the list may change any minute (a post just published): revalidate each load
-    cache = "public, max-age=0, must-revalidate" if blog_store.live() else "public, max-age=300"
+    # ---- IY-3: the store there but never read well by this process: the files' posts, kept 5 seconds
+    cache = UNREAD_CACHE if blog_store.unread() else "public, max-age=0, must-revalidate" if blog_store.live() else \
+        "public, max-age=300"
     return JSONResponse({"posts": listed}, headers={"Cache-Control": cache})
 
 
@@ -277,13 +281,30 @@ def blog_db_image(image_id: str, request: Request) -> Response:
 @router.get("/api/blog/{slug}")
 def blog_post(slug: str) -> JSONResponse:
     post = find(slug)
-    body = None if post is None else post["markdown"] if post.get("source") != "db" else blog_store.published_body(slug)
+    try:
+        body = None if post is None else post["markdown"] if post.get("source") != "db" else blog_store.published_body(slug)
+    except blog_store.Unread:
+        return _unread()
+    if post is None and blog_store.unread():
+        return _unread()                    # ---- IY-3: unknown is not "no post" (the files do not hold it; the store unread)
     if post is None or body is None:
         return JSONResponse({"error": NOT_FOUND, "detail": NOT_FOUND, "code": "no_post"}, status_code=404,
                             headers={"Cache-Control": "no-store"})
     # ---- IO-3: a database post may change when its editor saves: revalidated on each load, like the list
     cache = "public, max-age=0, must-revalidate" if blog_store.live() else "public, max-age=300"
     return JSONResponse({**meta(post), "markdown": body}, headers={"Cache-Control": cache})
+
+
+def _unread() -> JSONResponse:
+    """---- IY-3: the store could not be read and nothing is kept for this address: 503 in words, retried in 5 s, never
+    stored by a browser, a crawler or a CDN."""
+    return JSONResponse({"error": UNREAD, "detail": UNREAD, "code": "not_read"}, status_code=503,
+                        headers={"Cache-Control": "no-store", "Retry-After": "5"})
+
+
+def feed_cache() -> str:
+    """RSS and the sitemap: ten minutes, or 5 seconds while the store is there but was never read well (IY-3)."""
+    return UNREAD_CACHE if blog_store.unread() else FEED_CACHE
 
 
 def _rfc822(d: str) -> str:
@@ -306,7 +327,8 @@ def rss() -> str:
 
 @pages.get("/blog/rss.xml", include_in_schema=False)
 def blog_rss() -> Response:
-    return Response(rss(), media_type="application/rss+xml; charset=utf-8", headers={"Cache-Control": FEED_CACHE})
+    body = rss()
+    return Response(body, media_type="application/rss+xml; charset=utf-8", headers={"Cache-Control": feed_cache()})
 
 
 def _looks_like(kind: str, head: bytes) -> bool:
@@ -380,8 +402,9 @@ def preview(path: str) -> dict[str, Any] | None:
         post = find(m.group(1))
         if post is None:
             title, desc = PAGES["/blog"]
+            # ---- IY-3: the store could not be read: 503 (main.py adds Retry-After and no-store), never 404
             return {"title": title, "description": desc, "url": f"{ORIGIN}/blog", "image": DEFAULT_IMAGE, "type": "website",
-                    "status": 404}
+                    "status": 503 if blog_store.unread() else 404}
         return {"title": f"{post['title']} · {APP_NAME}", "description": post["summary"] or BLOG_DESCRIPTION,
                 "url": f"{ORIGIN}/blog/{post['slug']}", "image": ORIGIN + post["image"] if post["image"] else DEFAULT_IMAGE,
                 "type": "article", "published": post["date"], "author": post["author"], "status": 200}
@@ -454,4 +477,5 @@ def sitemap() -> str:
 
 @pages.get("/sitemap.xml", include_in_schema=False)
 def sitemap_xml() -> Response:
-    return Response(sitemap(), media_type="application/xml; charset=utf-8", headers={"Cache-Control": FEED_CACHE})
+    body = sitemap()
+    return Response(body, media_type="application/xml; charset=utf-8", headers={"Cache-Control": feed_cache()})

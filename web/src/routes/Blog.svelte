@@ -3,7 +3,7 @@
   // repository (blog/*.md; docs/BLOG.md) served by GET /api/blog and /api/blog/{slug}; a post is rendered by
   // lib/md.ts `mdDoc` (escaped first: no raw HTML). A player link in a post opens his card in the drawer like everywhere.
   import { APP_NAME } from "../lib/brand";
-  import { ApiError, blogPaths, get, type BlogMeta, type BlogPost } from "../lib/api";
+  import { ApiError, blogPaths, forget, get, type BlogMeta, type BlogPost } from "../lib/api";
   import { longDate } from "../components/home/home";
   import PostBody from "../components/blog/PostBody.svelte";
   import { coverSrc } from "../components/blog/cover";
@@ -33,9 +33,11 @@
 
   let copied = $state<"idle" | "copied" | "manual">("idle");
   let post = $state<BlogPost | null>(null);
-  let postState = $state<"loading" | "ok" | "missing" | "failed">("loading");
+  let postState = $state<"loading" | "ok" | "missing" | "unread" | "failed">("loading");
+  let attempt = $state(0); // ---- IY-3: Try again (a 503: the post could not be read just now)
   $effect(() => {
     const s = slug;
+    void attempt;
     if (!s) return;
     post = null;
     postState = "loading";
@@ -47,7 +49,7 @@
         postState = "ok";
       })
       .catch((e) => {
-        if (slug === s) postState = e instanceof ApiError && e.status === 404 ? "missing" : "failed";
+        if (slug === s) postState = e instanceof ApiError && e.status === 404 ? "missing" : e instanceof ApiError && e.status === 503 ? "unread" : "failed";
       });
   });
 
@@ -176,6 +178,19 @@
           <section class="mt-3 space-y-2 rounded-lg border border-line bg-surface p-5" data-testid="post-missing">
             <h1 class="text-xl font-bold">No post at that address.</h1>
             <p class="text-ink-2">It may have been renamed. <a class="ll-link" href="/blog">See every post</a>.</p>
+          </section>
+        {:else if postState === "unread"}<!-- ---- IY-3: the store could not be read: not "no post" -->
+          <section class="mt-3 flex flex-wrap items-center gap-3 rounded-lg bg-raised p-4 text-base" data-testid="post-unread">
+            <p>This post did not load. Try again in a few seconds.</p>
+            <button
+              type="button"
+              class="inline-flex min-h-11 items-center rounded-md border border-line-strong px-4 font-semibold"
+              onclick={() => {
+                if (slug) forget(blogPaths.post(slug));
+                attempt++;
+              }}
+              data-testid="post-retry">Try again</button
+            >
           </section>
         {:else if postState === "failed" || !post}
           <p class="mt-3 rounded-lg bg-raised p-4 text-base" data-testid="post-failed">The post did not load. Try again in a minute.</p>

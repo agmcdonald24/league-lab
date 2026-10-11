@@ -1036,8 +1036,9 @@ def web(path: str, request: Request):  # ---- IO-2: the request (a League link's
     # shell's head — a shared post or tool unfurls in iMessage / X / Reddit / Discord; an unknown post answers 404
     shaped = blog_mod.shell(index, path)
     if shaped is not None:
+        unread = {"Cache-Control": "no-store", "Retry-After": "5"} if shaped[1] == 503 else {}   # ---- IY-3
         return HTMLResponse(player_share.noindex(shaped[0]) if league_q else shaped[0], status_code=shaped[1],
-                            headers={"Cache-Control": SHELL_CACHE, **robots})          # ---- IP-5: robots
+                            headers={"Cache-Control": SHELL_CACHE, **robots, **unread})  # ---- IP-5: robots
     # ---- end IN-1
     if league_q:                                                                       # ---- IP-5
         return HTMLResponse(player_share.noindex(player_share._index_text(index)), headers={"Cache-Control": SHELL_CACHE, **robots})

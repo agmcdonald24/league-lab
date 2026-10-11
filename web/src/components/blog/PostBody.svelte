@@ -4,7 +4,7 @@
   // phone (the page never scrolls sideways). Player links carry the frame's league, so a tap opens the drawer.
   import { isYoutubeId, mdDoc } from "../../lib/md";
   import PlayersBlock from "./PlayersBlock.svelte";
-  import { onXMessage, X_GIVE_UP_MS, X_NEAR, X_SANDBOX, xFrameSrc } from "./xframe";
+  import { onXMessage, X_ATTEMPTS, X_GIVE_UP_MS, X_NEAR, X_SANDBOX, xFrameSrc } from "./xframe";
 
   let { markdown, league }: { markdown: string; league: string } = $props();
   // the first ```players block becomes the live table; the text before and after it is markdown (escaped first)
@@ -54,34 +54,95 @@
   // block by itself. `color-scheme: light` on the frame: X's document is light-scheme, and a frame whose scheme differs
   // from the page's gets an opaque backdrop (white on our dark page).
   const dark = () => typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches;
+  // ---- IY-3: X sends its size only after it has painted, and a document that is not being painted (a background tab)
+  // never paints it: the 10 seconds count only while the document is visible. After a give-up the block tries once
+  // more the next time it is on screen in a visible document — two attempts in all, then the card stays.
+  const attempts = new WeakMap<Element, number>();
+  const stops = new WeakMap<HTMLIFrameElement, () => void>(); // a waiting frame's give-up watch, stopped when it shows
+  const cleanups: (() => void)[] = [];
+  const visible = () => typeof document === "undefined" || document.visibilityState === "visible";
   function loadX(fig: HTMLElement) {
+    const n = attempts.get(fig) ?? 0;
     const src = xFrameSrc(fig.dataset.xPost ?? "", dark());
-    if (!src || fig.querySelector("iframe[data-x-frame]")) return;
+    if (n >= X_ATTEMPTS || !src || fig.querySelector("iframe[data-x-frame]")) return;
+    attempts.set(fig, n + 1);
     const frame = document.createElement("iframe");
     frame.src = src;
     frame.title = "Post on X";
     frame.setAttribute("sandbox", X_SANDBOX);
     frame.setAttribute("referrerpolicy", "no-referrer");
+    frame.setAttribute("scrolling", "no"); // IY-3: as X's own script sets it — no scrollbar, X's card the frame's full width
+    frame.allowFullscreen = true; // IY-3: the post's video may go full screen
     frame.setAttribute("aria-hidden", "true");
     frame.tabIndex = -1;
     frame.className = "ll-embed-xframe ll-embed-xframe-waiting";
     frame.dataset.testid = "x-frame";
     frame.dataset.xFrame = "waiting";
     fig.insertBefore(frame, fig.firstChild);
-    const giveUp = setTimeout(() => {
-      if (frame.dataset.xFrame === "waiting") frame.remove(); // X never answered: the card is the block
-    }, X_GIVE_UP_MS);
-    timers.push(giveUp);
+    watchGiveUp(frame, fig);
+  }
+  function watchGiveUp(frame: HTMLIFrameElement, fig: HTMLElement) {
+    let left = X_GIVE_UP_MS;
+    let since = 0;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const pause = () => {
+      if (t === undefined) return;
+      clearTimeout(t);
+      t = undefined;
+      left -= Date.now() - since;
+    };
+    const run = () => {
+      if (t !== undefined || !visible()) return;
+      since = Date.now();
+      t = setTimeout(giveUp, Math.max(0, left));
+    };
+    const onVisibility = () => (visible() ? run() : pause());
+    const stop = () => {
+      pause();
+      document.removeEventListener("visibilitychange", onVisibility);
+      stops.delete(frame);
+    };
+    const giveUp = () => {
+      t = undefined;
+      stop();
+      if (frame.dataset.xFrame !== "waiting") return;
+      frame.remove(); // X never answered: the card is the block
+      tryAgainOnScreen(fig);
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    stops.set(frame, stop);
+    cleanups.push(stop);
+    run();
+  }
+  function tryAgainOnScreen(fig: HTMLElement) {
+    if ((attempts.get(fig) ?? 0) >= X_ATTEMPTS || typeof IntersectionObserver !== "function") return;
+    let onScreen = false;
+    const go = () => {
+      if (!onScreen || !visible()) return;
+      io.disconnect();
+      document.removeEventListener("visibilitychange", go);
+      loadX(fig);
+    };
+    const io = new IntersectionObserver((entries) => {
+      onScreen = entries.some((e) => e.isIntersecting);
+      go();
+    });
+    document.addEventListener("visibilitychange", go);
+    io.observe(fig);
+    cleanups.push(() => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", go);
+    });
   }
   function showFrame(frame: HTMLIFrameElement) {
     if (frame.dataset.xFrame !== "waiting") return;
+    stops.get(frame)?.();
     frame.dataset.xFrame = "shown";
     frame.classList.remove("ll-embed-xframe-waiting");
     frame.removeAttribute("aria-hidden");
     frame.removeAttribute("tabindex");
     frame.closest("figure")?.querySelector("[data-x-body]")?.remove();
   }
-  const timers: ReturnType<typeof setTimeout>[] = [];
   $effect(() => {
     const el = root;
     void parts; // the post's HTML is new (the editor's preview): look at its blocks again
@@ -105,7 +166,7 @@
     figs.forEach((f) => io.observe(f));
     return () => {
       io.disconnect();
-      timers.splice(0).forEach(clearTimeout);
+      cleanups.splice(0).forEach((f) => f());
     };
   });
   $effect(() => {

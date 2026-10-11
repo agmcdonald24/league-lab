@@ -258,6 +258,8 @@ test.describe("the post page: X's frame swaps in by itself", () => {
     await expect(frame).toHaveAttribute("src", new RegExp(`^https://platform\\.twitter\\.com/embed/Tweet\\.html\\?id=${ID}&dnt=true&theme=(light|dark)$`));
     await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox");
     await expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
+    await expect(frame).toHaveAttribute("scrolling", "no"); // IY-3: no scrollbar in X's document (no white bar)
+    await expect(frame).toHaveAttribute("allowfullscreen", ""); // IY-3: the post's video may go full screen
     await expect(frame).toHaveAttribute("aria-hidden", "true");
     const look = () =>
       frame.evaluate((el) => {
@@ -331,9 +333,15 @@ test.describe("the post page: X's frame swaps in by itself", () => {
     expect(await page.evaluate(() => (window as unknown as { __iy1?: number }).__iy1)).toBeUndefined();
   });
 
-  test("X never says its size: after 10 seconds the hidden frame goes and the card stays", async ({ context, page }) => {
-    test.setTimeout(90_000);
-    await setUp(context);
+  test("IY-3: X never says its size — the 10 s count only while the document is visible; one more try on screen, not three", async ({ context, page }) => {
+    test.setTimeout(120_000);
+    const outside = await setUp(context);
+    const tries = () => outside.filter((u) => u.startsWith(`https://platform.twitter.com/embed/Tweet.html?id=${ID}&`)).length;
+    const setVisible = (v: boolean) =>
+      page.evaluate((vis) => {
+        Object.defineProperty(document, "visibilityState", { configurable: true, get: () => (vis ? "visible" : "hidden") });
+        document.dispatchEvent(new Event("visibilitychange"));
+      }, v);
     await page.clock.install();
     await page.goto(`/blog/${SLUG}`);
     await expect(page.getByTestId("post-title")).toHaveText(POST.title, { timeout: 30_000 });
@@ -341,12 +349,48 @@ test.describe("the post page: X's frame swaps in by itself", () => {
     await fig.scrollIntoViewIfNeeded();
     const frame = fig.locator("iframe[data-x-frame]");
     await expect(frame).toHaveAttribute("data-x-frame", "waiting");
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __xm: string[] }).__xm.join(",")), { timeout: 15_000 }).toContain("twttr.private.results");
+    await expect.poll(tries).toBe(1);
+    // a hidden document (a background tab): the clock does not run down
+    await setVisible(false);
+    await page.clock.fastForward(30_000);
+    await expect(frame).toHaveCount(1);
+    await expect(frame).toHaveAttribute("data-x-frame", "waiting");
+    // visible again: the 10 s count from there
+    await setVisible(true);
     await page.clock.fastForward(9_000);
     await expect(frame).toHaveCount(1);
+    expect(tries()).toBe(1);
     await page.clock.fastForward(1_500);
+    // given up — and, the block being on screen in a visible document, tried once more: a second frame
+    await expect.poll(tries, { timeout: 15_000 }).toBe(2);
+    await expect(frame).toHaveAttribute("data-x-frame", "waiting");
+    await page.clock.fastForward(10_500);
     await expect(frame).toHaveCount(0);
+    // no third: the card stays, complete
+    await page.clock.fastForward(30_000);
+    await page.waitForTimeout(1_000);
+    await expect(frame).toHaveCount(0);
+    expect(tries()).toBe(2);
     await expect(fig.locator("[data-x-body] .ll-embed-words")).toHaveText(WORDS);
     await expect(fig.getByRole("link", { name: "Open on X" })).toBeVisible();
+  });
+
+  test("IY-3: a post the server could not read (503) says so with Try again, never 'No post at that address'", async ({ context, page }) => {
+    test.setTimeout(60_000);
+    await setUp(context);
+    let down = true;
+    await context.route(`**/api/blog/${SLUG}`, (route: Route) =>
+      down
+        ? route.fulfill({ status: 503, contentType: "application/json", headers: { "Retry-After": "5", "Cache-Control": "no-store" }, body: JSON.stringify({ error: "This post did not load. Try again in a few seconds.", detail: "This post did not load. Try again in a few seconds.", code: "not_read" }) })
+        : route.fallback(),
+    );
+    await page.goto(`/blog/${SLUG}`);
+    const unread = page.getByTestId("post-unread");
+    await expect(unread).toContainText("This post did not load. Try again in a few seconds.", { timeout: 30_000 });
+    await expect(page.getByTestId("post-missing")).toHaveCount(0);
+    await expect(page.getByText("No post at that address.")).toHaveCount(0);
+    down = false;
+    await page.getByTestId("post-retry").click();
+    await expect(page.getByTestId("post-title")).toHaveText(POST.title, { timeout: 30_000 });
   });
 });

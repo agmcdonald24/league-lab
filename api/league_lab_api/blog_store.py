@@ -44,6 +44,7 @@ import time
 import unicodedata
 import uuid
 import zipfile
+from collections import OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Any
@@ -153,6 +154,10 @@ def reset() -> None:
     _ready.update(ok=False, next=0.0)
     _cover.update(on=False, next=0.0)
     _pub.clear()
+    _good["list"] = None                                             # IY-3: the last good answers too
+    _good_bodies.clear()
+    _good_images.clear()
+    _failing.clear()
 
 
 def _err(status: int, code: str, words: str) -> accounts.AccountError:
@@ -607,6 +612,8 @@ def _status(uid: str, post_id: str, action: str, revision: int | None = None) ->
         return _get(c, post_id, uid, body=False)
     out = db.run_rw(tx, purpose=PURPOSE)
     _published_changed()
+    if action in ("unpublish", "delete") and out:
+        _forget_good(out["slug"])                                    # IY-3: not served from the last good answers
     return out
 
 
@@ -649,35 +656,96 @@ def to_markdown(p: dict[str, Any]) -> str:
 
 # ---------------------------------------------------------------- the public side (blog.py reads these)
 def published_meta() -> list[dict[str, Any]]:
-    """The published database posts' meta (no bodies), newest first; [] without the schema. One query a minute."""
+    """The published database posts' meta (no bodies), newest first; [] without the schema. One query a minute.
+    IY-3: a read that fails serves the last good list (see `_published`)."""
     return _published()[1]
 
 
 def live() -> bool:
     """The `blog` table is there to read: the public answers then say `no-cache` (a post published a moment ago shows
-    on the next load: max-age=0, must-revalidate); without it they keep the files' five minutes."""
+    on the next load: max-age=0, must-revalidate); without it they keep the files' five minutes. IY-3: true while the
+    last good list is served through a failed read."""
     return _published()[0]
 
 
-def _published() -> tuple[bool, list[dict[str, Any]]]:
+def unread() -> bool:
+    """---- IY-3: the store is there but could not be read, and this process never read it well: the public answers are
+    the files' alone, briefly cached, and a database post's address is 503, never 404 ("no post" is only for a read
+    that succeeded and found none)."""
+    return _published()[2]
+
+
+# ---- IY-3 (Wave I-Y): a published post never disappears because one read failed. Live, 2026-10-11 16:33 ET: one read
+# that raised (a pooled connection not handed out in 5 s, a dropped connection, a statement timeout) used to be cached
+# for a minute as "no database posts", hiding every post and 404-ing its address. Now three outcomes are kept apart:
+#   * read well → the answer, kept a minute (PUBLIC_TTL_S), and remembered as the LAST GOOD answer;
+#   * read well, and the schema / the right is not there → a real state, kept a minute, as before;
+#   * the read raised → the last good answer if this process ever had one (a list, a post's body, a picture), else
+#     "unread"; either way the next read is tried within RETRY_S. Logged once per failure at warning, by class only.
+# The last good answers live outside the memory budget's region (which may evict them) and are bounded: one list
+# (≤ 500 posts' meta), the bodies of at most BODY_ENTRIES posts (40 × ≤ 200 KB ≈ 8 MB at the very worst), at most
+# GOOD_IMAGES pictures (20 × ≤ 300 KB ≈ 6 MB at the very worst); a real blog is a few KB. An unpublish or a delete made
+# by this process forgets that post's last good answers at once.
+RETRY_S = 5.0
+GOOD_IMAGES = 20
+_good: dict[str, Any] = {"list": None}
+_good_bodies: OrderedDict[str, str] = OrderedDict()
+_good_images: OrderedDict[str, tuple[str, bytes]] = OrderedDict()
+_failing: set[str] = set()
+
+
+class Unread(Exception):
+    """---- IY-3: a published post's body could not be read and this process has none kept: answer 503, never 404."""
+
+
+def _failed(what: str, exc: BaseException) -> None:
+    if what not in _failing:                    # once per failure (a streak of failed reads), by the class alone
+        _failing.add(what)
+        log.warning("blog: %s not read (%s); serving the last good answer if there is one", what, exc.__class__.__name__)
+
+
+def _keep(store: OrderedDict, key: str, value: Any, bound: int) -> None:
+    store[key] = value
+    store.move_to_end(key)
+    while len(store) > bound:
+        store.popitem(last=False)
+
+
+def _forget_good(slug: str) -> None:
+    """An unpublish or a delete made here: that post is not served from the last good answers any more."""
+    _good_bodies.pop(slug, None)
+    g = _good["list"]
+    if g is not None:
+        _good["list"] = (g[0], [p for p in g[1] if p["slug"] != slug], False)
+
+
+def _published() -> tuple[bool, list[dict[str, Any]], bool]:
+    """(live, the published posts' meta, unread)."""
     hit = _pub.get("list")
     if hit is None:
-        hit = _pub.put("list", _read_published())
+        try:
+            got = _read_published()
+        except Exception as exc:                                     # noqa: BLE001 - the files' blog stays up
+            _failed("the published list", exc)
+            last = _good["list"]
+            hit = _pub.put("list", last if last is not None else (False, [], True), ttl=RETRY_S, nbytes=256)
+        else:
+            _failing.discard("the published list")
+            if got[0]:
+                _good["list"] = got
+            hit = _pub.put("list", got)
     return hit
 
 
-def _read_published() -> tuple[bool, list[dict[str, Any]]]:
-    try:
-        with db.pool().connection(timeout=5) as c:
-            if c.execute("select has_table_privilege(to_regclass(%s), 'select')", TABLES[:1]).fetchone()[0] is not True:
-                return False, []
-            has_cover = cover_on(c)                                  # IU-6: the cover is the post's `image`
-            rows = c.execute("select slug, title, summary, tags, author, minutes, published_at, "
-                             + (COVER_COL if has_cover else "null::uuid") + " from blog.posts "
-                             "where status = 'published' order by published_at desc limit %s", (MAX_POSTS,)).fetchall()
-    except Exception as exc:                                         # noqa: BLE001 - the files' blog stays up
-        log.info("blog: database posts not read (%s)", exc.__class__.__name__)
-        return False, []
+def _read_published() -> tuple[bool, list[dict[str, Any]], bool]:
+    """Raises when the read fails; (False, [], False) when it succeeds and the table or the right is not there."""
+    with db.pool().connection(timeout=5) as c:
+        if c.execute("select has_table_privilege(to_regclass(%s), 'select')", TABLES[:1]).fetchone()[0] is not True:
+            return False, [], False
+        has_cover = cover_on(c)                                      # IU-6: the cover is the post's `image`
+        rows = c.execute("select slug, title, summary, tags, author, minutes, published_at, "
+                         + (COVER_COL if has_cover else "null::uuid") + " from blog.posts "
+                         "where status = 'published' order by published_at desc limit %s", (MAX_POSTS,)).fetchall()
     out = []
     for slug, title, summary, tags, author, minutes, published, cover in rows:
         if not blog.SLUG.fullmatch(slug or "") or not title:
@@ -685,12 +753,13 @@ def _read_published() -> tuple[bool, list[dict[str, Any]]]:
         out.append({"slug": slug, "title": title, "date": _date(published), "summary": summary or "",
                     "author": author or blog.SITE_AUTHOR, "tags": list(tags or []), "minutes": minutes or 1,
                     "image": f"/blog/img/db/{cover}" if cover is not None else None, "draft": False, "source": "db"})
-    return True, out
+    return True, out, False
 
 
 def published_body(slug: str) -> str | None:
     """A published database post's body — call only with a slug from ``published_meta()`` (the cache's keys are that
-    closed set). None when it is gone or cannot be read."""
+    closed set). None when the read succeeded and found no such published post. IY-3: a read that fails serves the
+    body last read well; with none kept it raises ``Unread`` (503, never 404)."""
     key = ("body", slug)
     hit = _pub.get(key)
     if hit is None:
@@ -698,8 +767,15 @@ def published_body(slug: str) -> str | None:
             with db.pool().connection(timeout=5) as c:
                 r = c.execute("select body from blog.posts where slug = %s and status = 'published'", (slug,)).fetchone()
         except Exception as exc:                                     # noqa: BLE001
-            log.info("blog: a database post not read (%s)", exc.__class__.__name__)
-            return None
+            _failed("a post's body", exc)
+            if slug in _good_bodies:
+                return _pub.put(key, (_good_bodies[slug],), ttl=RETRY_S, nbytes=64)[0]
+            raise Unread(slug) from exc
+        _failing.discard("a post's body")
+        if r is not None:
+            _keep(_good_bodies, slug, r[0], BODY_ENTRIES)
+        else:
+            _good_bodies.pop(slug, None)
         hit = _pub.put(key, (r[0],) if r else (None,), nbytes=len(r[0].encode()) if r else 64)
     return hit[0]
 
@@ -822,6 +898,7 @@ def remove_image(uid: str, image_id: str) -> None:
     if not n:
         raise _err(404, "no_image", "No picture at that address.")
     _pub.pop(("img", image_id))
+    _good_images.pop(image_id, None)                                 # IY-3: never served again from the last good
     _published_changed()                                             # IU-6: a cover goes with its picture (set null)
 
 
@@ -839,12 +916,17 @@ def image(image_id: str) -> tuple[str, bytes] | None:
                 return None
             r = c.execute("select kind, bytes from blog.images where id = %s", (image_id,)).fetchone()
     except Exception as exc:                                         # noqa: BLE001
-        log.info("blog: a picture not read (%s)", exc.__class__.__name__)
-        return None
+        _failed("a picture", exc)
+        if image_id in _good_images:
+            return _good_images[image_id]                           # IY-3: the picture last read well
+        raise Unread(image_id) from exc                             # IY-3: unknown is not "no picture": 503
+    _failing.discard("a picture")
     if r is None or r[0] not in IMAGE_TYPES or image_kind(bytes(r[1])) != r[0]:
+        _good_images.pop(image_id, None)
         return None
     out = (r[0], bytes(r[1]))
     _pub.put(("img", image_id), out, nbytes=len(out[1]))
+    _keep(_good_images, image_id, out, GOOD_IMAGES)
     return out
 
 
@@ -868,7 +950,10 @@ def image_delete_route(image_id: str, request: Request) -> JSONResponse:
 
 
 def image_response(image_id: str, if_none_match: str | None = None) -> Response:
-    got = image(image_id)
+    try:
+        got = image(image_id)
+    except Unread:                                                   # ---- IY-3: not read, none kept: 503, retried
+        return Response(status_code=503, headers={"Cache-Control": "no-store", "Retry-After": "5"})
     if got is None:
         return Response(status_code=404, headers={"Cache-Control": "no-store"})
     etag = '"' + hashlib.sha256(got[1]).hexdigest()[:32] + '"'
