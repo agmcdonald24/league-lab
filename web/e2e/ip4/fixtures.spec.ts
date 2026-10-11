@@ -317,3 +317,33 @@ test("the role chart carries the record's sentence when it is graded (IP-3's sum
   await expect(page.getByTestId("card-role-record")).toHaveText(words, { timeout: 30_000 });
 });
 
+
+// ---- IX-6 (Wave I-X): the projected target share on Usage, one line of context (lf1.1: his projected targets over his
+// quarterback's projected passes); the recorded card answer with the field added (the recording predates it)
+test("Usage: the projected target share is one line of context (IX-6)", async ({ context, page, isMobile }) => {
+  test.skip(!!LIVE, "the recorded card answer with the field added");
+  await api(context);
+  const words =
+    "7.9 of the 33.8 passes we project Joe Burrow to throw in week 5 (23%): the model's own forecast of his share of the team's targets this week.";
+  const key = Object.keys(recorded).find((k) => k.startsWith(`/api/player/${P.wr.id}?`));
+  expect(key).toBeTruthy();
+  await context.route(new RegExp(`/api/player/${P.wr.id}(\\?|$)`), (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...(recorded[key!].body as object),
+        projected_target_share: { share: 0.2337, targets: 7.9, team_attempts: 33.8, week: 5, quarterback: "Joe Burrow", words },
+      }),
+    }),
+  );
+  await page.goto(`/players?league=${REF}&pane=${P.wr.id}&from=search`);
+  const pane = page.getByTestId("pane");
+  await expect(pane.getByTestId("pane-card")).toBeVisible({ timeout: 30_000 });
+  await (isMobile ? pane.getByTestId("drawer-tab-usage").tap() : pane.getByTestId("drawer-tab-usage").click());
+  await expect(pane.getByTestId("pane-projected-target-share")).toHaveText(words, { timeout: 30_000 });
+  await noSideways(page);
+  mkdirSync(SHOTS, { recursive: true });
+  await pane.screenshot({ path: join(SHOTS, `ix6-usage-${isMobile ? "375" : "1300"}.jpg`), type: "jpeg", quality: 70 });
+});
+// ---- end IX-6
