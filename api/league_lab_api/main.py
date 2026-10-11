@@ -468,6 +468,15 @@ def player_card(gsis: str, league: str, response: Response, team: int | None = N
     # ---- end IX-2
     if refleague.is_reference(league):                         # ---- IN-2: the scoring in the head, the value, no owner
         out = refleague.card(out, league)                      # ---- end IN-2
+    # ---- IZ-3: what he means for this roster (no league: nothing) and at most three reasons
+    try:
+        out["roster_line"] = (None if refleague.is_reference(league) else
+                              player.roster_line(league, gsis, team, out,
+                                                 house=not (source == "sleeper" or not myweek.known_league(league))))
+    except Exception:  # noqa: BLE001 - a line never costs the card
+        out["roster_line"] = None
+    out["reasons"] = player.reasons(out)
+    # ---- end IZ-3
     out = provenance.with_card(out)                                                               # ---- IR-4
     return _research(out, league, response)                                                       # ---- IM-3
 

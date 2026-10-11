@@ -10,6 +10,8 @@ Streamlit's AppTest and compares every metric and sentence, so a change to the p
 
 from __future__ import annotations
 
+import re  # ---- IZ-3
+
 import pandas as pd
 from league_lab import availability_gate as AGATE  # ---- PO (Wave I-S): the week's own report through the gate
 from league_lab import clock
@@ -883,3 +885,130 @@ def situations(gsis: str, season) -> dict | None:
                    "included), leading by 9 or more. Shares are his targets ÷ his team's targets (and carries ÷ carries) "
                    "in those plays, this regular season."}
 # ---- end IX-2
+
+
+# ---- IZ-3 (Wave I-Z): what he means for this roster, and at most three reasons — from what the card already holds.
+# The roster line's numbers are My Week's "Recommended lineup" numbers (the same rows: `myweek.lineup` over
+# `availability.roster_context` of the viewer's team) and the head's projection; nothing new is computed.
+def _short(name) -> str:
+    return str(name or "").strip()
+
+
+def roster_line(league_id: str, gsis: str, team: int | None, card: dict, *, house: bool) -> dict | None:
+    """{kind, words, slot?, margin?, vs?, over?, gain?} or None (no league, after the season, nothing to say).
+
+    kind: ``starter`` | ``bench`` | ``out`` | ``free_agent_starts`` | ``free_agent_sits`` | ``other_team`` |
+    ``free_agent``."""
+    from . import availability as AVL
+    from . import myweek as MW
+    owner = card.get("rostered_by_roster_id")
+    other = card.get("rostered_by_team")
+    if owner is not None and (team is None or int(owner) != int(team)):
+        mgr = None
+        if not other and house:           # the house card names him in its Availability text only: the same member row
+            try:
+                m = query("select team_name, manager_name from analytics.dim_league_member where league_id = %s and roster_id = %s",
+                          (str(league_id), int(owner)))
+                if not m.empty:
+                    other, mgr = m.iloc[0]["team_name"], m.iloc[0]["manager_name"]
+            except Exception:  # noqa: BLE001
+                other = None
+        who = f"{other} ({mgr})" if other and isinstance(mgr, str) and mgr else other
+        return {"kind": "other_team", "team": other, "words": f"On {who}'s roster." if who else "On another team's roster."}
+    if team is None or card.get("week") is None:
+        return {"kind": "free_agent", "words": "A free agent in this league."} if card.get("is_free_agent") else None
+    try:
+        ctx = AVL.roster_context(league_id, int(team), int(card["week"]), house=house)
+        if ctx is None:
+            return None
+        _short_rows, full = MW.lineup(ctx.rows)
+    except Exception:  # noqa: BLE001 - no lineup this week: no line (the card stands)
+        return None
+    mine = next((r for r in full if r.get("gsis_id") == gsis), None)
+    starters = [r for r in full if r.get("role") == "starter" and r.get("gsis_id")]
+    pos = card.get("position")
+    if mine is not None:
+        if mine.get("role") == "starter":
+            m, vs = mine.get("margin"), mine.get("margin_vs")
+            if m is not None and vs:
+                return {"kind": "starter", "slot": mine.get("slot"), "margin": round(float(m), 1), "vs": vs,
+                        "words": f"Starts for you at {mine.get('slot')} this week, {float(m):.1f} points ahead of {vs}."}
+            return {"kind": "starter", "slot": mine.get("slot"),
+                    "words": f"Starts for you at {mine.get('slot')} this week; nobody on your bench can take his place."}
+        if mine.get("role") == "bench":
+            ahead = [_short(r.get("player_name")) for r in starters if r.get("position") == pos]
+            who = " and ".join(ahead[:3]) if ahead else "your starters"
+            return {"kind": "bench", "behind": ahead, "words": f"On your bench this week, behind {who}."}
+        why = str(mine.get("flag") or mine.get("reason") or "").strip()
+        if why.startswith("game started"):
+            return {"kind": "bench", "words": "On your bench this week; his game has started."}
+        return {"kind": "out", "words": f"Can't play for you this week ({why or 'he cannot play'})."}
+    # a free agent: would he start for you, over whom, by how much this week (his projection against the starter's —
+    # the head's number and My Week's table's number); an empty starting spot that admits him: he would fill it
+    if not card.get("is_free_agent"):
+        return None
+    p = card.get("proj_points")
+    rows = ctx.rows
+    if p is None or rows is None or rows.empty or not pos or "slot_type" not in rows:
+        return {"kind": "free_agent", "words": "A free agent in this league."}
+    st = rows[rows["role"].isin(["starter", "empty"])]
+    label = {str(r.get("key")): r.get("slot") for r in full if r.get("key")}
+
+    def admits(code) -> bool:
+        el = MW._slot_elig(str(code)) if isinstance(code, str) and code else None
+        return bool(el) and pos in el
+    elig = st[[admits(c) for c in st["slot_type"]]]
+    if elig.empty:
+        return {"kind": "free_agent", "words": "A free agent in this league."}
+    is_empty = elig["gsis_id"].isna() if "gsis_id" in elig else pd.Series(False, index=elig.index)
+    if "is_empty_slot" in elig:
+        is_empty = is_empty | elig["is_empty_slot"].fillna(False).astype(bool)
+    if is_empty.any():
+        code = str(elig[is_empty].iloc[0]["slot_type"])
+        return {"kind": "free_agent_starts", "slot": code, "over": None, "gain": round(float(p), 1),
+                "words": f"A free agent: he would start for you at {code}, a spot nobody on your roster can fill this week "
+                         f"(+{float(p):.1f} this week)."}
+    filled = elig.assign(_v=pd.to_numeric(elig["value"], errors="coerce")).sort_values("_v", na_position="first")
+    low = filled.iloc[0]
+    v = low["_v"]
+    who = _short(low.get("player_name"))
+    slot = label.get(str(low.get("sleeper_player_id"))) or str(low.get("slot_type"))
+    if pd.isna(v):
+        return {"kind": "free_agent", "words": "A free agent in this league."}
+    if float(p) > float(v) + 0.05:
+        g = float(p) - float(v)
+        return {"kind": "free_agent_starts", "slot": slot, "over": who, "gain": round(g, 1),
+                "words": f"A free agent: he would start for you at {slot} over {who} (+{g:.1f} this week)."}
+    return {"kind": "free_agent_sits", "over": who,
+            "words": f"A free agent who would not start for you this week: {who}, your lowest starter where he could "
+                     f"play, projects {float(v):.1f}."}
+
+
+REASON_MORE = {"role": "More under Usage.", "matchup": "More in the schedule below.", "form": "More under Game log."}
+
+
+def _plain(md: str) -> str:
+    return re.sub(r"\*\*|\[|\]\([^)]*\)", "", md or "").strip()
+
+
+def reasons(card: dict) -> list[dict]:
+    """At most three: role (the Role section's own words), matchup (the projection's "Next:" line: 1 = gives up the
+    most), form (points per game against what his work was worth, the Value section's numbers). One left out when it
+    has nothing to say."""
+    out = []
+    secs = card.get("sections") or {}
+    role = next((b.get("text") for b in (secs.get("role") or {}).get("blocks") or [] if b.get("kind") == "markdown" and b.get("text")), None)
+    if role:
+        s = _plain(role).rstrip(".")
+        out.append({"key": "role", "words": f"Role: {s[0].lower() + s[1:] if s else s}. {REASON_MORE['role']}"})
+    nxt = next((b.get("text") for b in (secs.get("projection") or {}).get("blocks") or [] if (b.get("text") or "").startswith("Next:")), None)
+    if nxt:
+        s = _plain(nxt)[len("Next:"):].strip().rstrip(".")
+        out.append({"key": "matchup", "words": f"Matchup: {s}. {REASON_MORE['matchup']}"})
+    vals = {m.get("label"): m.get("value") for b in (secs.get("value") or {}).get("blocks") or [] for m in b.get("metrics") or []}
+    ppg, exp = vals.get("Points / game"), vals.get("Expected")
+    if ppg not in (None, "", "—"):
+        tail = f" on work worth {exp}" if exp not in (None, "", "—") else ""
+        out.append({"key": "form", "words": f"Form: {ppg} points per game this season{tail}. {REASON_MORE['form']}"})
+    return out[:3]
+# ---- end IZ-3
