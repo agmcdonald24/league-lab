@@ -1,6 +1,6 @@
 # IX-5 — what we claim, said once and truly; a simpler menu (Wave I-X)
 
-Start 03:54 ET, end __END__ ET (2026-10-11). Branch `dev/IX5` from `integ/IX` (`d131d37`, IX-1 to IX-4), worktree
+Start 03:54 ET, end 05:04 ET (2026-10-11). Branch `dev/IX5` from `integ/IX` (`d131d37`, IX-1 to IX-4), worktree
 `/home/claude/wt-iq4`, database `league_lab_iq4`. Ports 8921 (this branch's API at the PO's Saturday clock, to record),
 8927 (e2e).
 
@@ -41,7 +41,8 @@ Start 03:54 ET, end __END__ ET (2026-10-11). Branch `dev/IX5` from `integ/IX` (`
 ## 2. Commits
 
 `ac2d731` 1 · `581262e` 2 · `8d30dbf` 3 + 5 · `ba4ccff` 4 · `dde4145` 6 · `6589717` 7 · `82daf0f` 8 · `995d48e` docs ·
-`a0b8ab0` test_ie_po · `dc82c9d` e2e, recordings, screens · the hand-back.
+`a0b8ab0` test_ie_po · `dc82c9d` e2e, recordings, screens · `f892b81` the back link, Home's tool · the
+hand-back.
 
 ## 3. Evidence
 
@@ -99,10 +100,13 @@ the MFL guide card, the calculator's trust line, Matchups. No sideways scroll at
   points), test_ie_po; root test_trades, test_trade_finder_page (fit_line), test_matchups (one direction).
 * Root suite (`check_root.sh`): 4 failed (all known), 1,750 passed — **no new failures**.
 * ruff clean; copy standard clean; `npm run lint` and `npm run build` clean.
-* e2e: `e2e/ix5` 12 passed (phone + desktop). All fixture specs (the tabs are on every screen): __E2E__.
+* e2e: `e2e/ix5` 12 passed (phone + desktop). All fixture specs, both projects (the tabs are on every screen): 635
+  passed, 21 skipped, 2 failed (in2: the player page's back link still said "Players" while browsing, phone and
+  desktop) → fixed (`Player.svelte`: "Research") → in1, in2, im3, ib1, ix5: 56 passed, 6 skipped.
 * Saved answers updated on purpose (only the changed words): 41 (`window_why`), 8 (Fit sentences), 47 (Nth-fewest →
   Nth-most, n = 32; the card help and the rank note); new `web/fixtures/ix5/api_ix5.json` (recorded).
-* `scripts/gate.sh`: __GATE__.
+* `scripts/gate.sh` (05:01 ET, after the last code commit): decision suite src ok (783 ran, 45 s), api ok (40 ran), ruff
+  ok, web lint + type check ok, web build ok — 81 s, exit 0.
 
 ## 5. Edits outside my files
 
@@ -110,7 +114,8 @@ the MFL guide card, the calculator's trust line, Matchups. No sideways scroll at
 Start/Sit cards print "the Nth-most"; parity tests pass), `src/league_lab/trades.py` (`fit_line`),
 `api/league_lab_api/context_record.py` (one sentence), `web/src/routes/Players.svelte` and `Rankings.svelte` (the
 eyebrow only), `web/src/lib/feed.ts` (`topIntro`), `TopBar.svelte`, `TradeCalc.svelte` (one sentence), `ClaimCard.svelte`
-(the guide line), the e2e specs listed in § 4, WORDS, METRICS, CHANGELOG.
+(the guide line), `Player.svelte` (the back link's word), `Home.svelte` (one tool's title), the e2e specs listed in
+§ 4, WORDS, METRICS, CHANGELOG. Scratch: my run logs went to the shared scratchpad's top level (not `ix5/`); deleted.
 
 ## 6. PO lines
 
