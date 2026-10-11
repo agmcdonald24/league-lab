@@ -947,3 +947,19 @@ sentence of its own, only where they appear.
 | Game log row, a game left early | "15 snaps (20% of the team's; usually 94%); hurt on a play in the 2nd quarter" / "…; no target or carry after half-time"; once his team's next game is in and he did not play it: "…; then missed week 5" | "injured" when no injury note named him; "benched" |
 | Card (RB / WR / TE), the projected target share | "8.0 of his team's 46.3 projected targets in week 5 (17%): the model's own forecast of his share of the team's targets this week." Nothing for a quarterback, a player who sits, or a player with no projection. | "expected share", a share for a player who sits |
 <!-- ---- end IX-1 -->
+<!-- ---- IX-2 -->
+## The player card: who he is, a shorter Overview, his splits (IX-2, Wave I-X, 2026-10-11)
+
+| Where | Words |
+|---|---|
+| Under the name (drawer and full page; no line for a team defense; a fact we do not have is left out) | 6'0" · 205 lb · 26 years old · 6th season · LSU · 2021 · round 1, pick 5 ("Rookie" in his first season; two colleges "BYU / Washington"; no draft part when the data has none — never "Undrafted" guessed) |
+| Usage tab, the table's title | By game situation · 2026 |
+| Its rows (IX-3's Stats filter uses the same three words) | **When trailing** (his team behind by 9 or more) · **Within a score** (8 points or fewer either way, tied included) · **When leading** (his team ahead by 9 or more) |
+| Under each row | 179 plays of his team's / 14 plays of his team's: too few to read (shares shown as "—") |
+| Under the table | His team's score when the play began: trailing by 9 or more, within 8 points either way (tied included), leading by 9 or more. Shares are his targets ÷ his team's targets (and carries ÷ carries) in those plays, this regular season. |
+| Game log, a game the play-by-play names him hurt | Week 4: Left early: 15 snaps (20% of the team's; usually 94%); hurt on a play in the 2nd quarter. Target share on the field: 28% (whole game 6%; 15 snaps). |
+| Game log, a marked game without the injury note (never "left early", never "hurt") | Week 3: Played far less than usual: 12 snaps (18% of the team's; usually 80%). |
+| The same, under 10 offensive snaps | Target share on the field: — too few snaps (6). |
+| Under the marks | Target share on the field: his targets ÷ his team's targets on the plays he was on the field — here an estimate from his share of the team's snaps (who was on the field on each play is published after the season). |
+| Removed from the card | the ratings' "average of N" box; the projection section's four tiles (the head has the projection and its range); "Role: **not enough games to say** …" / "Role: **role steady over N games** …" (the Role section's words are the card's one role vocabulary) |
+<!-- ---- end IX-2 -->

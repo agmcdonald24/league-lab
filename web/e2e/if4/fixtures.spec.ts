@@ -113,9 +113,11 @@ test("the drawer is focused on the decision: role words, the ledger and the sche
   // the week-by-week paragraph and the next four are not in the open section any more
   await expect(pane.getByTestId("pane-section-projection")).not.toContainText("Week by week");
   await expect(pane.getByTestId("pane-section-projection")).not.toContainText("Next 4:");
-  // the role line says which comparison is valid (2 games: not enough to say) — never "no role change detected"
-  await expect(pane.getByTestId("pane-section-signals")).toContainText("not enough games to say");
+  // IX-2 (one role vocabulary): the Role section's words only — the signals section neither says "no role change
+  // detected" nor rewrites it into "not enough games to say" / "role steady" (a second detector's words)
   await expect(pane.getByTestId("pane-section-signals")).not.toContainText("no role change detected");
+  await expect(pane.getByTestId("pane-section-signals")).not.toContainText("not enough games to say");
+  await expect(pane.getByTestId("pane-section-signals")).not.toContainText("role steady");
   for (const id of ["pane-more", "pane-schedule"]) await expect(pane.getByTestId(id)).not.toHaveAttribute("open", /.*/); // II-2: the game log is a section of its own
   await tap(page, pane.getByTestId("pane-more").locator("summary"), isMobile);
   await expect(pane.getByTestId("pane-more-body")).toContainText("Week by week");

@@ -319,8 +319,11 @@
 {#snippet gamelogPanel(d: PlayerCard)}
   <div data-testid="drawer-gamelog">
     {#if d.position === "DEF"}
-      <!-- ---- IP-4 fix round: a team defense has no player game log; its points by week are the Overview's chart -->
-      <p class="ll-empty" data-testid="drawer-gamelog-unit">A team defense's points by week are in the Overview's chart.</p>
+      <!-- ---- IP-4 fix round: a team defense has no player game log; IX-2: its points by week (the chart) are here -->
+      {#await panels() then P}
+        <P.PointsChart gsis={d.gsis_id} {league} season={d.season} scoring={isRef(league) ? refScoringLabel(league) : d.league_name} schedule={d.schedule ?? []} position={d.position} testid="pane-points" />
+      {/await}
+      <p class="ll-empty" data-testid="drawer-gamelog-unit">A team defense has no game log of its own: its points by week are the chart above.</p>
     {:else}
     <!-- ---- IX-2: the points against the projection live with the game log (they were the Overview's) -->
     {#await panels() then P}

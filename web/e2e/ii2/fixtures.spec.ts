@@ -182,7 +182,9 @@ test("the sections: Overview · Usage · Game log · News (tabs, arrow keys); Ex
   const d = pane(page);
   // Overview: the projection and its range, where he stands, the one-line reason, the actions
   await expect(d.getByTestId("drawer-tab-overview")).toHaveAttribute("aria-selected", "true");
-  await expect(d.getByTestId("pane-section-projection")).toContainText("Typical range");
+  // IX-2 (one forecast): the head carries the projection and its range; the section's four tiles left the Overview
+  await expect(d.getByTestId("pane-card").getByTestId("card-number")).toHaveText(/^\d+\.\d$|^—$/);
+  await expect(d.getByTestId("pane-section-projection")).not.toContainText("Typical range");
   await expect(d.getByTestId("pane-section-availability")).toBeVisible();
   await expect(d.getByTestId("pane-why")).toContainText("points this week");
   await expect(d.getByTestId("drawer-compare")).toHaveText("Add to compare");

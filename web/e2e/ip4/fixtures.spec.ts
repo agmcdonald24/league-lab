@@ -123,7 +123,8 @@ for (const [kind, p] of Object.entries(P).filter(([k]) => k !== "k")) {
     await expect(head).toContainText("Half PPR points");
     await expect(head.getByTestId("headshot")).toBeVisible(); // the silhouette here: no outside host in a test
 
-    // the ratings: 6–8 rows; a number 0–99 or a dash with the reason; the overall is the mean of the ones shown
+    // the ratings: 6–8 rows; a number 0–99 or a dash with the reason. IX-2 (the review's § 3): their plain average is not
+    // shown (it is not a graded player score)
     const card = page.getByTestId("card-ratings");
     await expect(card).toBeVisible();
     await expect(card.getByTestId("rating").first()).toBeVisible({ timeout: 30_000 });
@@ -134,9 +135,7 @@ for (const [kind, p] of Object.entries(P).filter(([k]) => k !== "k")) {
     const values = await card.getByTestId("rating-value").allTextContents();
     const shown = values.filter((v) => /^\d+$/.test(v.trim())).map(Number);
     for (const v of shown) expect(v).toBeLessThanOrEqual(99);
-    const overall = (await card.getByTestId("ratings-overall").textContent()) ?? "";
-    if (shown.length >= 3) expect(Number(overall.match(/\d+/)![0])).toBe(Math.round(shown.reduce((a, b) => a + b, 0) / shown.length));
-    else expect(overall).toContain("—");
+    await expect(card.getByTestId("ratings-overall")).toHaveCount(0); // IX-2: no average on the card
     if (values.some((v) => v.trim() === "—")) await expect(card.getByTestId("rating-reason").or(card.getByTestId("ratings-words")).first()).toBeVisible();
     // the screenshot before anything is opened (what a visitor sees first)
     await expect(page.getByTestId("card-points-chart")).toBeVisible({ timeout: 30_000 });
@@ -186,9 +185,8 @@ for (const [kind, p] of Object.entries(P).filter(([k]) => k !== "k")) {
     await log.getByRole("slider").focus();
     await page.keyboard.press("End");
     await expect(log.getByTestId("chart-readout")).toContainText("Week");
-    // the head's number is the Projection tile's own (one rounding on the card)
-    const num = ((await head.getByTestId("card-number").textContent()) ?? "").trim();
-    if (num !== "—") await expect(page.getByTestId("section-projection").getByTestId("metrics").locator("button").first()).toContainText(num);
+    // IX-2 (one forecast): the head's number is the card's only projection — the Projection section has no tiles
+    await expect(page.getByTestId("section-projection").getByTestId("metrics")).toHaveCount(0);
 
     // fix round: the first chart sits directly under the ratings, above the sections (a phone and the page alike)
     const order = await page.locator("[data-testid=card-ratings], [data-testid=card-points], [data-testid=section-projection]").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
@@ -226,7 +224,7 @@ test("the rookie with two games: dashes with the reason, never a low number", as
   expect(dashes).toBeGreaterThan(0);
   // not in the ranked group at all (2 targets): one line says why, for every row
   await expect(card.getByTestId("ratings-words")).toContainText(/so far; ratings start at 15\+ targets/);
-  await expect(card.getByTestId("ratings-overall")).toContainText("no average yet");
+  await expect(card.getByTestId("ratings-overall")).toHaveCount(0); // IX-2: no average on the card
 });
 
 test("a kicker: no ratings, the card still stands", async ({ context, page, isMobile }) => {
@@ -258,8 +256,11 @@ test("a defense: search Denver, pick it, its card (not an error)", async ({ cont
   await expect(pane.getByTestId("pane-card")).toContainText("Broncos", { ignoreCase: true, timeout: 30_000 });
   await expect(pane.getByTestId("card-unit-mark")).toHaveText("DEN");
   await expect(pane.getByTestId("pane-ratings")).toHaveCount(0);
+  // IX-2: the points chart lives on the Game log tab (a unit's: the chart alone)
+  await pane.getByTestId("drawer-tab-gamelog").click();
   await expect(pane.getByTestId("pane-points").getByTestId("card-points-chart")).toBeVisible({ timeout: 30_000 });
   await expect(pane.locator(".ll-error")).toHaveCount(0);
+  await pane.getByTestId("drawer-tab-overview").click(); // IX-2: the actions are the Overview's
   await pane.getByTestId("pane-full").click();
   await expect(page).toHaveURL(/\/player\/DEN\?/);
   await expect(page.getByTestId("player-header")).toContainText("Broncos", { ignoreCase: true, timeout: 30_000 });
@@ -275,19 +276,23 @@ test("a defense: search Denver, pick it, its card (not an error)", async ({ cont
   }
 });
 
-test("the pane: the head, the ratings and the first chart, then the sections", async ({ context, page, isMobile }, info) => {
+test("the pane: the head, the reason and the sections first; the ratings on Usage, the chart on the game log (IX-2)", async ({ context, page, isMobile }, info) => {
   const calls = await api(context);
   await page.goto(`/players?league=${REF}&pane=${P.wr.id}&from=search`);
   const pane = page.getByTestId("pane");
   await expect(pane.getByTestId("pane-card")).toBeVisible({ timeout: 30_000 });
   await expect(pane.getByTestId("pane-card")).toContainText("NACUA", { ignoreCase: true });
-  await expect(pane.getByTestId("pane-ratings").getByTestId("rating").first()).toBeVisible({ timeout: 30_000 });
-  await expect(pane.getByTestId("pane-points").getByTestId("card-points-chart")).toBeVisible({ timeout: 30_000 });
   await expect(pane.getByTestId("pane-section-projection")).toBeVisible();
   await expect(pane.getByTestId("pane-actions")).toBeVisible();
-  // fix round: in the drawer too, the first chart sits directly under the ratings, above the sections
-  const order = await pane.locator("[data-testid=pane-ratings], [data-testid=pane-points], [data-testid=pane-section-projection]").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
-  expect(order).toEqual(["pane-ratings", "pane-points", "pane-section-projection"]);
+  // IX-2 (the review's § 3): the Overview has no ratings and no chart
+  await expect(pane.getByTestId("pane-ratings")).toHaveCount(0);
+  await expect(pane.getByTestId("pane-points")).toHaveCount(0);
+  const tab = async (k: string) => (isMobile ? pane.getByTestId(`drawer-tab-${k}`).tap() : pane.getByTestId(`drawer-tab-${k}`).click());
+  await tab("usage");
+  await expect(pane.getByTestId("pane-ratings").getByTestId("rating").first()).toBeVisible({ timeout: 30_000 });
+  await expect(pane.getByTestId("pane-ratings").getByTestId("ratings-overall")).toHaveCount(0); // no plain average
+  await tab("gamelog");
+  await expect(pane.getByTestId("pane-points").getByTestId("card-points-chart")).toBeVisible({ timeout: 30_000 });
   // the ratings are asked without a league (the limiter never marks it seen: L2)
   expect(calls.some((c) => /\/ratings\?league=/.test(c))).toBe(false);
   await noSideways(page);

@@ -4,6 +4,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-11 — Wave I-X
 
+- **IX-2 — the player card: who he is, a shorter Overview, his splits.** A bio line under the name (height, weight,
+  age, season, college, draft) on every card; the Overview keeps one forecast (the head), loses the ratings' plain
+  average and the repeated projection tiles, and speaks one role vocabulary (the Role section's); the ratings and
+  "By game situation" (when trailing · within a score · when leading, with the plays behind each) are on Usage; the
+  points chart and the games he played far less than usual ("Left early" only with the play-by-play's injury note;
+  `left_early_kind` hurt | short) are on the game log, with his target share on the field and its sample.
+
 - **IX-1 — a game a player left early (lf1.0).** Per game, beside the whole-game shares: the **target / carry share on
   the field** (2016 – 2025 counted play by play from participation; 2026 estimated as his targets ÷ (team targets × his
   snap share), capped at 1) with its basis, and **left early** (knowable when the game ends: snaps at most half his
