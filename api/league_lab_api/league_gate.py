@@ -98,5 +98,6 @@ def with_waivers(ans):
 
 
 def with_lineup(ans):
-    return with_players(ans, "lineup_full")
+    from .myweek import rule_calls  # ---- IX-4: the starter rule on the calls it affects (My Week, both paths)
+    return rule_calls(with_players(ans, "lineup_full"))
 # ---- end IS-2

@@ -1085,17 +1085,19 @@ def lineup_table(rows: pd.DataFrame, full: bool = False) -> None:
 
 
 def league_line(league_id: str, roster_id: int, week: int, rows: pd.DataFrame) -> str:
-    """One line on the whole-league picture: the lineup value and, when B2's
-    `analytics.mart_league_roster_rankings` is on this database, its league rank (horizon named)."""
+    """One line on the whole-league picture: the best lineup's league rank, when B2's
+    `analytics.mart_league_roster_rankings` is on this database (horizon named); '' otherwise.
+    IX-4 (Wave I-X): the rank only — the total is the matchup summary's ("you project 125"), never printed twice
+    (was "Your best lineup projects **125.07** in week 5, 3rd of 12 in the league.")."""
     total = rows.loc[rows["role"] == "starter", "lineup_value"].dropna()
-    if total.empty:
+    if total.empty or missing_relations(("mart_league_roster_rankings",)):
         return ""
-    line = f"Your best lineup projects **{float(total.iloc[0]):.2f}** in week {week}"
-    if not missing_relations(("mart_league_roster_rankings",)):
-        rk = query("select * from analytics.mart_league_roster_rankings where league_id = %s and roster_id = %s",
-                   (league_id, int(roster_id)))
-        line += rank_phrase(rk, week)
-    return line + "."
+    rk = query("select * from analytics.mart_league_roster_rankings where league_id = %s and roster_id = %s",
+               (league_id, int(roster_id)))
+    rank = rank_phrase(rk, week)
+    if not rank:
+        return ""
+    return f"Your best lineup ranks {rank.removeprefix(', ')} in week {week}."
 
 
 def rank_phrase(rk: pd.DataFrame, week: int | None = None) -> str:

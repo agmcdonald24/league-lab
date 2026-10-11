@@ -239,7 +239,7 @@ def my_week(league_id: str, roster_id: int) -> dict:
     out["changed"] = what_changed(ctx.meta, rows, cur)                                                     # ---- IF-4
     out["clocks"] = clocks(ctx.meta, out["changed"])                                                      # ---- II-4
     out["lineup"], out["lineup_full"] = lineup(rows)
-    annotate_swaps(out["lineup"], out["lineup_full"], out.get("swaps") or [])                              # ---- PO I-E
+    # ---- IX-4: the swaps go into the recommended lineup (`finish`), no "the call above keeps …" flag on the rows
     out["howto"] = howto()
     # ---- copied from app/Home.py (Movers on your roster)
     mv = query(
@@ -253,7 +253,7 @@ def my_week(league_id: str, roster_id: int) -> dict:
     out["movers"] = [{"gsis_id": _str(r.gsis_id), "player_name": r.player_name, "position": r.position,
                       "tags": _str(r.tags), "momentum": _num(r.momentum)} for r in mv.itertuples()]
     out["win"] = win(league_id, int(roster_id), season, week, rows, out["opponent"], house=True)          # ---- IH-3
-    return out
+    return finish(out, rows, cur)                                                                          # ---- IX-4
 
 
 LINEUP_TOTAL_SQL = """select lineup_value from ops.lineup_totals
@@ -890,11 +890,14 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
                              and isinstance(info[k].get("slot"), str)}, key=str)
         a["slot_label"] = " · ".join(cards.slot_label(s) for s in a["slots"])
         a["cards"] = g_cards
-        a["_order"] = (a["urgency"], first if first is not None else pd.Timestamp.max.tz_localize("UTC"), -(gain or 0.0))
+        # ---- IX-4: a starter who cannot play first, then a change for points, then a call to re-check before a kickoff
+        a["_order"] = (a["urgency"] if cant or kind != "change" else 1.5,
+                       first if first is not None else pd.Timestamp.max.tz_localize("UTC"), -(gain or 0.0))
         acts.append(a)
     acts.sort(key=lambda a: _order_key(a.pop("_order")))           # ---- IN-5: one time type (an open spot's deadline)
     more = acts[MAX_ACTIONS:]
     acts = acts[:MAX_ACTIONS]
+    res["more_actions"] = more                                     # ---- IX-4: behind "More" on the screen
     for n, a in enumerate(acts):
         for i in a["cards"]:
             cards_out[i]["action"] = n
@@ -913,7 +916,7 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
     if locks:
         k, a = min(locks, key=lambda x: x[0])
         res["next_lock"] = {"kickoff": k, "words": a["lock"]["words"], "players": a.pop("_lock_players", [])}
-    for a in acts:
+    for a in acts + more:                                          # ---- IX-4: + more
         a.pop("_lock_players", None)
     return res
 
@@ -1491,8 +1494,22 @@ def win_starters(rows: pd.DataFrame | None) -> list[dict]:
         key = _str(r.get("gsis_id")) or _str(r.get("sleeper_player_id")) or _str(r.get("player_name"))
         out.append({"key": key, "sleeper_player_id": _str(r.get("sleeper_player_id")), "position": _str(r.get("position")),
                     "team": _str(r.get("team")), "opponent": _str(r.get("opponent")), "value": _num(r.get("value")),
-                    **{q: _num(r.get(q)) for q in ("p10", "p25", "p50", "p75", "p90")}, "actual": None})
+                    **{q: _num(r.get(q)) for q in ("p10", "p25", "p50", "p75", "p90")}, "actual": None,
+                    "started": kicked_off(r)})                                              # ---- IX-4
     return out
+
+
+def kicked_off(r) -> bool:
+    """IX-4: his game has kicked off at the request's clock (`league_lab.clock.now()`; the stored `locked_now` when the
+    row has no kickoff time)."""
+    k = r.get("kickoff_at")
+    if k is None or (not isinstance(k, str) and pd.isna(k)):
+        return bool(r.get("locked_now")) if "locked_now" in r else False
+    from league_lab import clock
+    t, now = pd.Timestamp(k), pd.Timestamp(clock.now())
+    t = t.tz_localize("UTC") if t.tzinfo is None else t
+    now = now.tz_localize("UTC") if now.tzinfo is None else now
+    return bool(t <= now)
 
 
 def scored_teams(season: int, week: int) -> set[str]:
@@ -1604,9 +1621,10 @@ def win(league_id: str, roster_id: int, season: int, week: int, rows: pd.DataFra
         ok = live_ok and with_actuals(theirs, scored, points)
         if not ok:
             answers.append({"opponent_roster_id": int(o["roster_id"]), "p": None, "line": None, "note": WIN_NO_LIVE,
-                            "early": WIN_EARLY})
+                            "early": WIN_EARLY, **started_counts(mine, theirs)})               # ---- IX-4: the counts
             continue
         answers.append(win_answer(mine, theirs, int(o["roster_id"])))
+        answers[-1].update(started_counts(mine, theirs))                                   # ---- IX-4
     head = answers[0]
     if len(answers) > 1:
         head["also"] = answers[1:]
@@ -1713,3 +1731,241 @@ def live_scored(league_id: str, week: int, scored: set[str], house: bool) -> set
 
     return set(scored) | {t for t in (_team_code(x) for x in mfl_teams_done(None, league_id, week)) if t}
 # ---- end IL-2
+
+
+# ---- IX-4 (Wave I-X; the review of 10 October § 1, § 4's Big Mac Attack paragraph, § 5's news sentence): My Week says
+# ONE matchup number with what it is, the lineup table is the recommendation (with how it differs from the provider's
+# lineup where that is known), and an unclear starter sits on the call it affects. Both paths call `finish` (the house
+# path `my_week`, the on-demand path `ondemand.my_week`); `rule_calls` runs where the caveats are put on the answer
+# (`league_gate.with_lineup`). No number moves: every figure below is one the answer already carried.
+def started_counts(mine: list[dict], theirs: list[dict]) -> dict:
+    """Starters whose game has kicked off (or is in), each side: the matchup summary's switch to the live line."""
+    def n(side):
+        return sum(1 for s in side or [] if s.get("started") or s.get("actual") is not None)
+    return {"n_started": n(mine), "opp_n_started": n(theirs),
+            "n_starters": len(mine or []), "opp_n_starters": len(theirs or [])}
+
+
+MATCHUP_BEFORE_BASIS = "Each side's best lineup by our projections."
+MATCHUP_LIVE_BASIS = "Points scored so far plus projections for players still to play"
+MATCHUP_NO_POINTS = "a game has kicked off; no points are in yet"
+MATCHUP_NO_LIVE = "Each side's best lineup by our projections; this league's live scores are not read yet."
+MATCHUP_FINAL_BASIS = "Points scored: every starter on both sides has played."
+
+
+def _pts(a: float, b: float) -> tuple[str, str]:
+    """Whole points; one decimal when whole points would hide a real difference (110.69 vs 111.15)."""
+    fine = round(a) == round(b) and abs(a - b) >= 0.05
+    return (f"{a:.1f}", f"{b:.1f}") if fine else (f"{a:.0f}", f"{b:.0f}")
+
+
+def chance_words(w: dict | None) -> str | None:
+    """'You're a clear underdog this week: 31%.' — the win chance without the totals (the summary says them)."""
+    if not w or w.get("p") is None or w.get("percent") is None or not w.get("words"):
+        return None
+    if w["words"] == "a coin flip":
+        return f"This week is a coin flip: {w['percent']}%."
+    return f"You're {w['words']} this week: {w['percent']}%."
+
+
+def _one_game(week: int, team: str, mine: float | None, theirs: float | None, w: dict | None) -> dict:
+    """One opponent's summary {state, line, basis, chance, mine, theirs}."""
+    w = w or {}
+    head = f"Week {week} vs **{team}**"
+    started = (w.get("n_started") or 0) + (w.get("opp_n_started") or 0) > 0 or bool(w.get("n_played") or w.get("opp_n_played"))
+    if started and w.get("mine") is not None and w.get("theirs") is not None:
+        a, b = _pts(float(w["mine"]), float(w["theirs"]))
+        if w.get("n_starters") and w.get("n_played") == w.get("n_starters") and w.get("opp_n_played") == w.get("opp_n_starters"):
+            return {"state": "final", "line": f"{head}: {a} to {b}.", "basis": MATCHUP_FINAL_BASIS, "chance": None,
+                    "mine": w["mine"], "theirs": w["theirs"]}
+        played = played_words(w) or MATCHUP_NO_POINTS
+        return {"state": "live", "line": f"{head}: {a} to {b} expected.", "basis": f"{MATCHUP_LIVE_BASIS} ({played}).",
+                "chance": chance_words(w), "mine": w["mine"], "theirs": w["theirs"]}
+    if mine is None or theirs is None:
+        return {"state": "before", "line": f"{head}.", "basis": None, "chance": None, "mine": mine, "theirs": theirs}
+    a, b = _pts(float(mine), float(theirs))
+    return {"state": "live" if started else "before", "line": f"{head}: you project {a}, they project {b}.",
+            "basis": MATCHUP_NO_LIVE if started else MATCHUP_BEFORE_BASIS,
+            "chance": None if started else chance_words(w), "mine": mine, "theirs": theirs}
+
+
+def matchup_summary(out: dict) -> dict | None:
+    """The one matchup summary (WORDS.md § IX-4). Before either side's first kickoff: each side's best lineup by our
+    projections (`lineup_value`, `opponent.lineup_value`) and the win chance without a second total; once a game of
+    either side has kicked off: the live line (`win.mine` / `win.theirs`: points in plus projections still to play,
+    how many have played) with the chance; when every starter has played: the score. A double header: one per game
+    (``also``). None without an opponent (a bye week, no matchup)."""
+    o = out.get("opponent") if isinstance(out.get("opponent"), dict) else None
+    if not o or not o.get("team_name") or out.get("week") is None:
+        return None
+    w = out.get("win") if isinstance(out.get("win"), dict) else None
+    games = [(o, w)] + [(x, next((y for y in ((w or {}).get("also") or []) if y.get("opponent_roster_id") == x.get("roster_id")), None))
+                        for x in (o.get("also") or []) if x and x.get("team_name")]
+    res = [_one_game(int(out["week"]), g["team_name"], _num(out.get("lineup_value")), _num(g.get("lineup_value")), gw)
+           for g, gw in games]
+    head = dict(res[0])
+    if len(res) > 1:
+        head["also"] = res[1:]
+    head["assumptions"] = (w or {}).get("assumptions")
+    return head
+
+
+def recommend(out: dict, rows: pd.DataFrame | None, current: dict[str, str] | None) -> dict | None:
+    """The lineup table as the recommendation: the best lineup with the calls above applied (a close call whose injury
+    tiebreak keeps the bench player puts him in the slot), its own total, and — where the provider's submitted lineup is
+    known (``current``) — each row that differs marked with who is in that slot there now, plus one line ("Matches
+    your Sleeper lineup" / "2 changes from your Sleeper lineup"). None without a lineup."""
+    if rows is None or rows.empty or not out.get("lineup"):
+        return None
+    pname = out.get("platform_name") or "Sleeper"
+    starters = [dict(r) for r in out["lineup"]]
+    bench = [dict(r) for r in out.get("lineup_full") or [] if r.get("role") != "starter"]
+    for sw in out.get("swaps") or []:
+        i = next((n for n, r in enumerate(starters) if r.get("key") == sw.get("out")), None)
+        j = next((n for n, r in enumerate(bench) if r.get("key") == sw.get("in") and r.get("role") == "bench"), None)
+        if i is None or j is None:
+            continue
+        a, b = starters[i], bench[j]
+        starters[i] = {**b, "role": "starter", "slot": a["slot"], "margin": None, "margin_vs": None, "margin_words": "",
+                       "by_call": True}
+        bench[j] = {**a, "role": "bench", "slot": b["slot"], "margin": None, "margin_vs": None, "margin_words": ""}
+    vals = [r.get("value") for r in starters if r.get("player_name") and r.get("value") is not None]
+    total = round(sum(vals), 2) if vals else None
+    rec = {"rows": starters, "bench": bench, "total": total, "best_total": _num(out.get("lineup_value")),
+           "known": current is not None, "changes": None, "words": None, "platform_name": pname}
+    if current is None:
+        return rec
+    info = {_str(r.get("sleeper_player_id")): r for r in rows.to_dict("records") if _str(r.get("sleeper_player_id"))}
+    keys = [r.get("key") for r in starters if r.get("key") and r.get("player_name")]
+    sub = set(current)
+
+    def locked(k) -> bool:
+        return bool((info.get(k) or {}).get("locked_now"))
+
+    def pos(k) -> str | None:
+        return _str((info.get(k) or {}).get("position"))
+    roster = [n for n in rows["player_name"] if isinstance(n, str)] if "player_name" in rows else []
+
+    def nm(k) -> str:
+        r = info.get(k)
+        return GONE_NAME if r is None else short_name(_str(r.get("player_name")) or "a player", r.get("position"), roster)
+    ins = sorted((k for k in keys if k not in sub and not locked(k)), key=lambda k: (-(_num((info.get(k) or {}).get("value")) or 0.0), k))
+    outs = sorted((k for k in sub if k not in keys and not locked(k)), key=lambda k: (k in info, k))
+    # the actions' pairing (build_actions): the roster's outs first, then a player who left the roster takes an incoming
+    # player left without a spot whom his slot admits (gone_actions' rule)
+    pairs = pair_moves(ins, [o for o in outs if o in info], current, pos) if ins or outs else []
+    for o in (o for o in outs if o not in info):
+        ok = _slot_elig(current.get(o))
+        fill = next((p for p in pairs if p[1] is None and p[0] is not None and (ok is None or pos(p[0]) in ok)), None)
+        if fill is not None:
+            pairs.remove(fill)
+        pairs.append((fill[0] if fill else None, o))
+    lu = cards.lineup_frame(rows)
+    codes = {id(r): str(rows.loc[i, "slot"]) for r, i in zip(starters, lu.index, strict=False)}
+    changes = len(pairs)                          # a submitted player with no row to mark still differs (the actions say who)
+    for i, o in pairs:
+        row = next((r for r in starters if i and r.get("key") == i), None)
+        if row is None and o:                     # nobody of ours comes in: the slot is empty in the recommendation
+            ok = [r for r in starters if not r.get("player_name") and not r.get("now_in")
+                  and (_slot_elig(codes.get(id(r))) is None or pos(o) in (_slot_elig(codes.get(id(r))) or ()))]
+            row = ok[0] if ok else None
+        if row is None:
+            continue
+        row["now_in"] = {"name": nm(o) if o else None, "key": o}
+        row["now_words"] = f"In {pname} now: {nm(o)}" if o else f"Open in {pname} now"
+    rec["changes"] = changes
+    rec["words"] = (f"Matches your {pname} lineup." if changes == 0 else
+                    f"{changes} change{'s' if changes != 1 else ''} from your {pname} lineup.")
+    return rec
+
+
+def finish(out: dict, rows: pd.DataFrame | None, current: dict[str, str] | None) -> dict:
+    """IX-4's fields on a My Week answer (both paths): `recommended`, `matchup`."""
+    out["recommended"] = recommend(out, rows, current)
+    out["matchup"] = matchup_summary(out)
+    return out
+
+
+CHECK_FIRST = "check who starts first"
+BACKUP_GAP = 10.0          # docs/METRICS.md § "Starter uncertainty in a decision": a starter's week against his backup's
+
+
+def _caveat_of(keys, by_key: dict, cvs: list[dict]) -> dict | None:
+    """The strongest caveat a call depends on: one of its players is a quarterback or a team-QB unit of a flagged team."""
+    from .provenance import WITHHOLD, _team
+    hit = []
+    for k in keys:
+        r = by_key.get(k) or {}
+        if str(r.get("position") or "").upper() not in ("QB", "TMQB"):
+            continue
+        hit += [c for c in cvs if _team(c.get("team")) == _team(r.get("team"))]
+    if not hit:
+        return None
+    return next((c for c in hit if c.get("effect") == WITHHOLD), hit[0])
+
+
+def rule_calls(ans: dict) -> dict:
+    """The starter rule (docs/METRICS.md § "Starter uncertainty in a decision"; `provenance.effect`, as start/sit uses
+    it) on My Week's calls: a call that depends on a quarterback or a team-QB slot whose starter is unclear is withheld —
+    "check who starts first", both players named, no "Start"; one whose starter the sources disagree on is a lean that
+    says whom it assumes, and a close one (not a clear call: under 3 points, or under 70%) is worded "check who starts
+    first" too. The caveat's sentence goes into the call itself. Never raises."""
+    try:
+        from .provenance import SOFTEN, WITHHOLD
+        cvs = [c for c in ans.get("caveats") or [] if c.get("effect") in (WITHHOLD, SOFTEN)]
+        if not cvs:
+            return ans
+        by_key = {r.get("key"): r for r in ans.get("lineup_full") or [] if r.get("key")}
+        cards_ = ans.get("cards") or []
+        for c in cards_:
+            cv = _caveat_of([c.get("key"), c.get("alt_key")], by_key, cvs)
+            if cv:
+                close = cv["effect"] == WITHHOLD or c.get("strength") != "clear"
+                c["caveat"] = {"effect": cv["effect"], "words": cv.get("words"), "check_first": close}
+        pname = ans.get("platform_name") or "Sleeper"
+        for a in (ans.get("actions") or []) + (ans.get("more_actions") or []):
+            keys = [p.get("key") for p in (a.get("start") or []) + (a.get("sit") or [])]
+            cv = _caveat_of(keys, by_key, cvs)
+            if not cv:
+                continue
+            mine = [cards_[i] for i in a.get("cards") or [] if i < len(cards_) and cards_[i].get("caveat")]
+            clear = all(x.get("strength") == "clear" for x in mine) if mine else (a.get("gain") or 0.0) >= cards.LEAN
+            a["caveat"] = {"effect": cv["effect"], "words": cv.get("words"),
+                           "check_first": cv["effect"] == WITHHOLD or not clear}
+            a["action_unqualified"], a["reason_unqualified"] = a.get("action"), a.get("reason")
+            if a["caveat"]["check_first"]:
+                ins = [p.get("link") or p.get("name") for p in a.get("start") or []]
+                outs = [p.get("link") or p.get("name") for p in a.get("sit") or []]
+                both = _or(ins + outs) if len(ins + outs) > 1 else (ins + outs)[0] if ins + outs else "Your quarterback"
+                where = f" at {a['slot_label']}" if a.get("slot_label") else ""
+                a["action"] = f"{both}{where}: {CHECK_FIRST}."
+                gap = a.get("gain")
+                ahead = (f" By our projections {_and(ins)} {'is' if len(ins) == 1 else 'are'} about {gap:.1f} points "
+                         f"ahead: less than a starter's week against his backup's (about 10 points)."
+                         if gap is not None and gap < BACKUP_GAP and ins and outs else "")
+                a["reason"] = f"{cv.get('words') or ''}{ahead}".strip()
+                a["kind"], a["urgency"] = "close", 2
+                if a.get("submitted") is False:
+                    a["submitted_words"] = f"Your {pname} lineup has {_and(outs) or 'another player'} there now."
+            else:
+                a["reason"] = f"{a.get('reason') or ''} Read it as a lean. {cv.get('words') or ''}".strip()
+        for r in ans.get("review") or []:
+            cv = _caveat_of([(r.get("start") or {}).get("key"), (r.get("other") or {}).get("key")], by_key, cvs)
+            if cv:
+                r["caveat"] = {"effect": cv["effect"], "words": cv.get("words"), "check_first": True}
+                r["words"] = f"{r['words']} {cv.get('words') or ''} So {CHECK_FIRST}.".strip()
+        for r in ((ans.get("recommended") or {}).get("rows") or []):
+            cv = _caveat_of([r.get("key")], by_key, cvs)
+            if cv:
+                r["check_first"] = True
+                r["check_words"] = f"Check who starts for {_team_words(cv)} before kickoff"
+    except Exception:  # noqa: BLE001 - a caveat must never cost the screen
+        import logging
+        logging.getLogger(__name__).warning("myweek.rule_calls failed", exc_info=True)
+    return ans
+
+
+def _team_words(cv: dict) -> str:
+    from . import starters
+    return starters.team_name(str(cv.get("team")))
+# ---- end IX-4

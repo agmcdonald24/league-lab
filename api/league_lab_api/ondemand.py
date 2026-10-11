@@ -34,17 +34,17 @@ from league_lab.lineup import UNVALUED, Player  # ---- IB-3
 from . import availability, db, why
 from .applib import cards, ui
 from .db import query
-from .myweek import (  # IE-1 (+ annotate_swaps, PO I-E)
+from .myweek import (  # IE-1 (IX-4: annotate_swaps → finish)
     NOTHING_SUBMITTED,
     NotFound,
     _num,
     _str,
-    annotate_swaps,
     build_actions,
     cards_from_rows,
     clocks,  # ---- II-4
     current_starters,
     edit_link,
+    finish,  # ---- IX-4
     howto,
     lineup,
     what_changed,
@@ -150,7 +150,7 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     out["clocks"] = clocks(avail, out["changed"])                                    # ---- II-4: the home's three stamps
     t2 = time.perf_counter()
     out["lineup"], out["lineup_full"] = lineup(rows)
-    annotate_swaps(out["lineup"], out["lineup_full"], out.get("swaps") or [])                              # ---- PO I-E
+    # ---- IX-4: the swaps go into the recommended lineup (myweek.finish), no "the call above keeps …" flag on the rows
     out["howto"] = howto()
     gs = sorted({g for g in rows["gsis_id"].dropna()}) if not rows.empty else []
     mv = query(MOVERS_SQL, (season, gs)) if gs else pd.DataFrame()
@@ -158,6 +158,7 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
                       "tags": _str(r.tags), "momentum": _num(r.momentum)} for r in mv.itertuples()]
     out["win"] = win_on_demand(client, league_id, int(roster_id), season, week, rows, opp, as_of=as_of,      # ---- IH-3
                                exclude_reference=exclude_reference)
+    finish(out, rows, cur)                                                                                 # ---- IX-4
     t3 = time.perf_counter()
     timings = dict(od.timings_ms)
     timings.update({"opponent": t_opp, "cards": round((t2 - t1) * 1000, 1), "rest": round((t3 - t2) * 1000, 1),
