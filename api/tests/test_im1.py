@@ -52,7 +52,7 @@ def test_every_column_has_a_group_and_the_catalogue_runs_group_by_group():
     assert all(g in ST.GROUPS for g in seen)
     runs = [g for i, g in enumerate(seen) if i == 0 or seen[i - 1] != g]
     assert runs == ST.GROUPS                                    # one run per group, in GROUPS order
-    assert len({c["id"] for c in ST.CATALOGUE}) == len(ST.CATALOGUE) == 104       # IO-4: + the 3 role-change columns
+    assert len({c["id"] for c in ST.CATALOGUE}) == len(ST.CATALOGUE) == 106       # IO-4: + the 3 role-change columns; IX-1: + the 2 on-field shares
 
 
 def test_every_new_column_says_how_it_adds_up_and_why_it_can_be_null():

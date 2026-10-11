@@ -836,8 +836,8 @@ def season_rows(season: int, season_type: str) -> pd.DataFrame:
         i5 = df.groupby(["team", "game_id"])["inside_5_carries"].sum(min_count=1).rename("team_inside_5_carries")
         df = df.merge(rb.reset_index(), on=["team", "game_id"], how="left").merge(i5.reset_index(), on=["team", "game_id"],
                                                                                      how="left")
+        df = with_on_field(df, int(season), season_type)               # ---- IX-1 (before: the merges below set attrs)
         df = with_advanced(df, int(season), season_type)               # ---- IM-1
-        df = with_on_field(df, int(season), season_type)               # ---- IX-1
         df = with_ngs(df, int(season), season_type)                    # ---- IL-1
     return _frames.put(key, df, ttl=TTL_S)
 
@@ -905,7 +905,9 @@ def with_on_field(df: pd.DataFrame, season: int, season_type: str) -> pd.DataFra
         return df
     for c in ON_FIELD_COLS[1:5]:
         of[c] = pd.to_numeric(of[c], errors="coerce")
-    return df.merge(of, on=["gsis_id", "game_id"], how="left")
+    out = df.merge(of, on=["gsis_id", "game_id"], how="left")
+    out.attrs = dict(df.attrs)                                     # a merge drops attrs (the IM-1 / IL-1 notes ride there)
+    return out
 # ---- end IX-1
 
 
