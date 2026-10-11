@@ -4,6 +4,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-11 — Wave I-Z
 
+- **IZ-2 — a trade answers five questions in order.** The calculator's answer reads top to bottom: what changes in your starters (a lineup panel — each slot that changes, before → after, the displaced player named, the weeks under it), what they get and why they might say no (words, never a chance), what it costs beyond the players named (cut, depth, bye cover, roster spots), keep / claim / trade side by side on one basis (three totals, the claim named and its assumption), and what could change the answer (the notes on every player in the trade, the checks for their positions, what is missing; a marked place for IZ-4's news line). Lineup points, market price (its source and date) and plausibility are said apart, by name. The free calculator says what applies and what a league would add. Nothing is re-priced: the known Folk trade gives the same numbers before and after.
 - IZ-1: us against Sleeper's free projections on every past week Sleeper still serves (hh1.0, the rule committed
   before any number): the nightly pulls each of 2023–2025's weeks and this season's weeks without a pre-kickoff
   snapshot once (`league-lab ingest sleeper-history`; kept apart from the record, marked as served after the week),
