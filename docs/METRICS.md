@@ -6266,3 +6266,98 @@ are a player who left hurt coming back limited, and a "no touch after half-time"
 on-field share and left-early mark stay display (context), and the card says nothing it cannot back: no screen claims
 the projection discounts a shortened game. The candidates stay in the code behind `var('lf_candidate')` (unset), for a
 later study.
+
+## Us against Sleeper on the weeks Sleeper still serves (hh1.0, IZ-1, Wave I-Z, 2026-10-11) — the rule, written before any number
+
+Written at 18:10 ET on 2026-10-11, before any number of this section exists: the sandbox cannot reach Sleeper, so the
+first numbers are the nightly's. Andrew's roadmap item 2: "a head-to-head against Sleeper's free projections, by
+position and on start / sit calls, and fix or borrow where we lose". The clean record (§ "Projection record", pr1.0:
+our kickoff board against Sleeper's last snapshot fetched before the first kickoff, from 2026 week 5) is unchanged;
+**this is a second, separate grade and the two are never added into one number.**
+
+**What Sleeper serves for a past week.** The endpoint the record already reads still answers for past weeks (the PO,
+2026-10-11: 2023 week 5, 2024 week 5, 2025 weeks 1 / 9 / 18, 2026 weeks 2 / 4; about 3,300 objects a week, 350–450
+of them with a projected line; `company` "rotowire"). Every object of a week carries one `updated_at` /
+`last_modified`, minutes after the week's last game (2023: none): a batch written after the week. **So no history row
+can be shown to be the number a Sleeper user saw before kickoff.** If anything that favours Sleeper (a line rewritten
+after the week can only have learned). Every surface that shows this grade says so in plain words.
+
+**The pull** (`league-lab ingest sleeper-history`; `ops.sleeper_history`, `ops.sleeper_history_weeks`): seasons 2023,
+2024, 2025 weeks 1–18, and each week of the current season whose last game is over and that has no snapshot in
+`raw.sleeper_projections` fetched before its first kickoff (2026: weeks 1–4). One request a week, at least a second
+apart, through the ingest's client; the answer is archived whole (`data/raw/sleeper/projections_history/`, never the
+snapshot folder the record replays) and its rows with a projected line are kept in `ops.sleeper_history`, marked
+`served = 'after_week'` with the payload's `updated_at`. A week held (`status = 'ok'`) is never asked again; a failed,
+empty or malformed answer is a `failed` row and the next night asks again. **The record's pre-kickoff rule never
+reads a history row**: they are in another table, never in `raw.sleeper_projections` (a dbt test keeps it so).
+
+**Ours.**
+
+* **2023–2025: the live model run on seasons it never saw** (`ops.h2h_ours`, built by `league-lab h2h` once per
+  `MODEL_VERSION`): for each season S, the production component models fitted on 2016 … S−1, every step the live
+  board applies to next week's line (the QB passing-TD regression pt1.0; the cold-start and WR new-team scales on the
+  line, fitted on the model's own out-of-sample rows of the three seasons before S; the horizon steps do not touch next
+  week), the line priced in each house league's scoring. Labelled with its version (`ours_version`).
+* **What `ops.calibration_oof` is** (found 2026-10-11): the out-of-sample *component* projection of the three newest
+  completed seasons (fitted on the seasons before each, priced in the house scorings) — the rows the cold-start and
+  new-team scales are fitted on, so **before** those steps and before the passing-TD regression. `ensure_oof` rebuilds
+  it when its `model_version` differs from `MODEL_VERSION`; on this copy it says v3.0 because it was built at 08:21 ET
+  on 2026-10-05, when the constant still said v3.0 (v3.1 and v3.2 never bumped it; v3.3 came at 12:37 ET that day), and
+  this copy has not run the nightly's step since. On the nightly it is rebuilt to the live version, still without the
+  three steps. **Fallback**: when `ops.h2h_ours` holds no rows of the live `MODEL_VERSION`, the grade reads
+  `ops.calibration_oof` and every surface says "our model re-run on past seasons, before the live board's adjustments
+  (version X)" (`ours_source = 'stored_walk_forward'`).
+* **The current season**: the board frozen at the week's first kickoff (`ops.projections`, `frozen_source =
+  'kickoff'`; refit weeks — 2026 weeks 1–3 — are left out and counted; a week whose board was priced `ev` is left out,
+  so both sides are priced one way). `ours_source = 'kickoff_board'`.
+
+**Sleeper's side**: the history line priced in each house league's current scoring with `price_line` (=
+`scoring.compute_points`, the record's flat pricing: the macro `league_points`), the same scoring our side is priced
+in. Sleeper's id → gsis id through `analytics.player_id_map` (never by name); an id that does not map is **unmatched**
+and counted. A DEF is not priced (no K / DEF on our out-of-sample side either: **QB, RB, WR, TE only**).
+
+**The population** (per house league × season × week × position): players with both numbers who played, with the
+actual points in that league's scoring (the walk-forward rows' priced actual; the current season's
+`mart_player_week_projections.points_actual`, played and rankable).
+
+**By position** — per week, the record's three measures: **error** = mean |projection − actual|; **order** = Spearman
+(average ranks; none under 8 players); **top-N hit rate** (N = 12 QB, 24 RB, 36 WR, 12 TE). **Pooled** = the mean over
+weeks of the weekly value; the difference ours − Sleeper per week, its mean, and a **95% interval by resampling weeks**
+(2,000 percentile-bootstrap draws of the weeks with replacement, seed 20261011). Pooled over all weeks and by season;
+per house scoring.
+
+**Start / sit** (a call a manager faces, fixed now). Per house league × week × position, among the population:
+**startable** = in the top 24 QB / 48 RB / 60 WR / 24 TE by our projection **or** by Sleeper's (ranked within the
+population). **A close call they disagree on** = two startable players of one position, within 3 points of each other
+by our projection or by Sleeper's, ranked the other way round by the two (a tie in either is not a disagreement), and
+the actual points differ (a tie in actual is a push: counted, left out). Measure: the share of those calls our side
+got right (the player we ranked higher scored more); pooled = pair-weighted; interval by resampling weeks as above; 50%
+is level. **All startable pairs** (agreements too, no 3-point limit): the share each side orders right (a tie in a
+side's projection counts half for that side; pushes left out) and the difference ours − Sleeper with its interval.
+
+**The verdict words** (per position and house scoring, pooled; and by season). For each measure: **ahead** when the
+interval of ours − Sleeper lies entirely on our side of zero (error below, order / hit rate / share above; the close
+calls: the share's interval entirely above 50%), **behind** when entirely on Sleeper's side, **level** otherwise. The
+position's one word reads **error and order**: ahead when one is ahead and neither behind; behind when one is behind
+and neither ahead; level otherwise (both level, or one each way — the table shows both). Start / sit has its own word
+(the close calls). The headline is League of Scrubs' scoring (Half PPR, the scoring the site opens on); the dynasty's
+words are shown beside it.
+
+**The blend, measured, never shipped (bl1.0).** Per house scoring and position: ours × (1 − w) + Sleeper × w, w from
+{0, 0.05, …, 1} minimising the error on the earlier seasons only (2023 → tested on 2024; 2023–2024 → tested on 2025),
+against ours alone and Sleeper's alone on the test season: error, order, the all-startable-pairs share. **The blend
+"gains" at a position** when, in League of Scrubs' scoring, on **both** test seasons its error is at least **1% below
+ours alone** and its order is **no more than 0.002 below** ours alone; otherwise "no gain". Nothing changes in the
+projection either way: putting a third party's number into ours is Andrew's decision and a terms question
+(`docs/SLEEPER_TERMS.md`).
+
+**Where it shows**: `ops.sleeper_h2h` (the grade, rebuilt each night from the tables above), the nightly's summary (one
+table: the pull's counts, the match counts, player-weeks graded by position and season, and per position error /
+order / close calls with ours, Sleeper's, the difference, its interval and the word), `/api/record` `history`, and
+About's one sentence built from the table (nothing while it has no rows; "not available right now" when it cannot be
+read), with the caveat beside it: "Sleeper's numbers for past weeks are the ones its site serves now, written after the
+games, so this favours Sleeper; the record above, from week 5 of 2026, compares numbers saved before kickoff."
+
+**What it is not**: not the record (never mixed with it); not proof of what Sleeper showed before kickoff; not every
+player Sleeper lists (players with both numbers who played); not a lineup decision in a real league (the start / sit
+pairs are NFL-wide at a position, not two players on one roster).
