@@ -18,7 +18,7 @@ const FILE = join(import.meta.dirname, "..", "..", "fixtures", "ih3", "api_ih3.j
 type Saved = { status: number; body: unknown };
 const saved: Record<string, Saved> = existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
 
-type Win = { line: string; opponent_roster_id: number; also?: Win[] };
+type Win = { line: string; opponent_roster_id: number; percent: number; also?: Win[] }; // IX-4: + percent
 type Side = { roster_id: number; team_name: string; percent?: number; expected?: number };
 type Game = { matchup_id: number; a: Side; b: Side; p: number | null };
 const body = <T,>(k: string) => saved[k]?.body as T;
@@ -56,29 +56,38 @@ async function noSidewaysScroll(page: Page) {
 const shot = (page: Page, name: string, project: string) =>
   page.screenshot({ path: join(process.env.SHOTS_DIR ?? "e2e/.out", `ih3-${name}-${project}.png`), fullPage: false });
 
-const LINE = /^(This week is a coin flip|You're a (slight|clear) (favorite|underdog) this week): \d{1,2}%, \d+ to \d+ expected\.( \d+ of your \d+ have played, \d+ of theirs\.)?$/;
 
-test("League of Scrubs roster 6: one line under the opponent line, the percentage and both expected totals", async ({ page }, info) => {
+// IX-4 (Wave I-X, on purpose): the win chance is part of the ONE matchup summary — the line with the totals, what they are,
+// and the chance without a second total (was IH-3's win line "…: 53%, 120 to 117 expected." under the opponent line)
+const CHANCE = /^(This week is a coin flip|You're a (slight|clear) (favorite|underdog) this week): \d{1,2}%\.$/;
+const SUMMARY = /^Week \d+ vs .+: (you project [\d.]+, they project [\d.]+|[\d.]+ to [\d.]+ expected|[\d.]+ to [\d.]+)\.$/;
+
+test("League of Scrubs roster 6: one matchup summary, the chance under it with no second total", async ({ page }, info) => {
   await page.goto(`/?league=${SCRUBS}&team=6`);
   await expect(page.getByTestId("my-week")).toBeVisible();
-  const line = page.getByTestId("win-line");
-  await expect(line).toHaveCount(1);
-  await expect(line).toHaveText(LINE);
-  await expect(line).toHaveText(myWeekScrubs6().win.line);         // the recording's own line (53%, 120 to 117 at 12:58 ET)
-  await expect(line).toHaveAttribute("title", "assuming the players' weeks are independent except teammates and opponents");
-  // right under the opponent line, above the league line
-  const opp = await page.getByTestId("opponent-line").boundingBox();
-  const box = await line.boundingBox();
+  const d = myWeekScrubs6();
+  await expect(page.getByTestId("matchup")).toHaveCount(1);
+  await expect(page.getByTestId("matchup-line")).toHaveText(SUMMARY);
+  const chance = page.getByTestId("matchup-chance");
+  await expect(chance).toHaveText(CHANCE);
+  await expect(chance).toContainText(`${d.win.percent}%`);         // the recording's own chance (53% at 12:58 ET)
+  await expect(chance).toHaveAttribute("title", "assuming the players' weeks are independent except teammates and opponents");
+  await expect(page.getByTestId("win-line")).toHaveCount(0);
+  await expect(page.getByTestId("opponent-line")).toHaveCount(0);
+  // the totals once on the screen's head: the league line keeps the rank only
+  await expect(page.getByTestId("league-line")).not.toContainText("projects");
+  const box = await chance.boundingBox();
   const lg = await page.getByTestId("league-line").boundingBox();
-  expect(opp && box && box.y > opp.y).toBeTruthy();
+  const sm = await page.getByTestId("matchup-line").boundingBox();
+  expect(sm && box && box.y > sm.y).toBeTruthy();
   if (lg) expect(box && box.y < lg.y).toBeTruthy();
   // information, never an instruction
-  expect((await line.textContent())?.toLowerCase()).not.toMatch(/\b(start|sit|bench|ceiling|chase)\b/);
+  expect((await chance.textContent())?.toLowerCase()).not.toMatch(/\b(start|sit|bench|ceiling|chase)\b/);
   await noSidewaysScroll(page);
   await shot(page, "myweek-scrubs6", info.project.name);
 });
 
-test("dad's league, a double header: two lines, each naming its opponent", async ({ page }, info) => {
+test("dad's league, a double header: one summary per game, each naming its opponent", async ({ page }, info) => {
   await page.goto("/leagues"); // IN-1: "/" without a league is the home page now; the setup screen is /leagues
   await expect(page.getByTestId("leagues")).toBeVisible();
   await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
@@ -86,24 +95,25 @@ test("dad's league, a double header: two lines, each naming its opponent", async
   await page.getByTestId("mfl-go").click();
   await page.getByTestId("mfl-team").filter({ hasText: "Knight Train" }).click();
   await expect(page.getByTestId("my-week")).toBeVisible();
-  const lines = page.getByTestId("win-line");
-  await expect(lines).toHaveCount(2);
+  const games = page.getByTestId("matchup");
+  await expect(games).toHaveCount(2);
   const d = myWeekKnight();
   const name = (rid: number) => [d.opponent, ...d.opponent.also].find((o) => o.roster_id === rid)?.team_name;
   expect(name(d.win.opponent_roster_id)).toBe("Big Mac Attack");
-  await expect(lines.nth(0)).toHaveText(`Big Mac Attack: ${d.win.line}`);
-  await expect(lines.nth(1)).toHaveText(`Klaby Crew: ${d.win.also![0].line}`);
-  for (const t of await lines.allTextContents()) expect(t.replace(/^[^:]+: /, "")).toMatch(LINE);
-  await expect(lines.nth(0)).toHaveAttribute("data-side", "underdog");
+  await expect(games.nth(0).getByTestId("matchup-line")).toContainText("vs Big Mac Attack");
+  await expect(games.nth(1).getByTestId("matchup-line")).toContainText("vs Klaby Crew");
+  for (const t of await page.getByTestId("matchup-line").allTextContents()) expect(t).toMatch(SUMMARY);
+  await expect(games.nth(0).getByTestId("matchup-chance")).toContainText(`${d.win.percent}%`);
+  await expect(games.nth(1).getByTestId("matchup-chance")).toContainText(`${d.win.also![0].percent}%`);
   await noSidewaysScroll(page);
   await shot(page, "myweek-double-header", info.project.name);
 });
 
-test("an answer without `win` shows no line", async ({ page }) => {
+test("an answer without `win` shows the summary and no chance", async ({ page }) => {
   await page.goto(`/?league=${SCRUBS}&team=2`);          // the base fixture (recorded before Wave I-H)
   await expect(page.getByTestId("my-week")).toBeVisible();
-  await expect(page.getByTestId("opponent-line")).toBeVisible();
-  await expect(page.getByTestId("win-line")).toHaveCount(0);
+  await expect(page.getByTestId("matchup-line")).toBeVisible();
+  await expect(page.getByTestId("matchup-chance")).toHaveCount(0);
 });
 
 test("League screen, a house league: this week's games with both teams' chance, asked after the screen shows", async ({ page }, info) => {

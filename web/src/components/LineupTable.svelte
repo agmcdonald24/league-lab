@@ -111,7 +111,7 @@
   {#if total !== null && total !== undefined}<!-- ---- IX-4: the table's own total -->
     <tfoot>
       <tr class="border-t border-line-strong">
-        <td class="py-1.5 pr-1 text-sm font-semibold text-ink-3" colspan="2" data-testid="lineup-total-label">Total</td>
+        <td class="py-1.5 pr-1 text-sm font-semibold text-ink-3" colspan="2" data-testid="lineup-total-label">Projected total</td>
         <td class="tabnum py-1.5 text-right font-bold" data-testid="lineup-total">{total.toFixed(1)}</td>
         {#if showMargin}<td class="hidden sm:table-cell"></td>{/if}
       </tr>

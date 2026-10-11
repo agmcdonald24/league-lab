@@ -20,7 +20,7 @@ const KEY = "mfl%3A70587";
 
 type Tx = { transaction_id: string; transaction_type: string; team_name: string; player_name: string; action: string; week: number };
 type Side = { roster_id: number; team_name: string; live?: number | null };
-type Win = { line: string; n_played: number; also?: Win[] };
+type Win = { line: string; n_played: number; mine: number; theirs: number; also?: Win[] }; // IX-4: + the expected totals
 const body = <T,>(k: string) => saved[k]?.body as T;
 const league = () => body<{ transactions: Tx[]; matchups: { played: boolean; week: number; games: { a: Side; b: Side }[] }[] }>(`/api/league?league=${KEY}&team=1`);
 const myWeek = () => body<{ win: Win }>(`/api/my-week?league=${KEY}&team=1`);
@@ -96,12 +96,14 @@ test("this week's matchups carry MFL's live score beside the odds; My Week count
 
   await page.goto(`/?league=${KEY}&team=1`);
   await expect(page.getByTestId("my-week")).toBeVisible();
-  const lines = page.getByTestId("win-line");
+  // IX-4 (on purpose): a game in → the live line is the one summary (was IH-3's win line under the opponent line)
+  const lines = page.getByTestId("matchup");
   await expect(lines).toHaveCount(2);
   const w = myWeek().win;
   expect(w.n_played).toBe(1);
-  await expect(lines.nth(0)).toContainText(w.line);
-  await expect(lines.nth(0)).toContainText("1 of your");
+  await expect(lines.nth(0)).toHaveAttribute("data-state", "live");
+  await expect(lines.nth(0).getByTestId("matchup-line")).toContainText(`${Math.round(w.mine)} to ${Math.round(w.theirs)} expected`);
+  await expect(lines.nth(0).getByTestId("matchup-basis")).toContainText("Points scored so far plus projections for players still to play (1 of your");
   await noSidewaysScroll(page);
   await shot(page, "myweek-live", info.project.name);
 });

@@ -83,7 +83,9 @@ test("a stranger: password → username → picker → My Week → player → Ba
   await expect(page).toHaveURL(new RegExp(`/\\?league=${TEST_LEAGUE}&team=3$`));
   await expect(page.getByTestId("team-name")).toHaveText("Fixture Falcons");
   await expect(page.getByTestId("record-line")).toHaveText("2-1, #3 in the league");
-  await expect(page.getByTestId("opponent-line")).toHaveText("Week 4 vs Hail Marys, projects 108 — you project 134");
+  // IX-4 (on purpose): one matchup summary, labelled (was "Week 4 vs Hail Marys, projects 108 — you project 134")
+  await expect(page.getByTestId("matchup-line")).toHaveText("Week 4 vs Hail Marys: you project 134, they project 108.");
+  await expect(page.getByTestId("matchup-basis")).toHaveText("Each side's best lineup by our projections.");
   await expect(page.getByTestId("decision-card")).toHaveCount(3);
   const first = page.getByTestId("decision-card").first();
   const box = (await first.boundingBox())!;
@@ -177,7 +179,7 @@ test("a house league through the picker: opponent, a card's name, all five secti
   await tap(page, page.locator(`[data-testid="league-row"][data-league="${DYNASTY}"]`), isMobile);
   await expect(page.getByTestId("team-name")).toHaveText("Shake & Bake");
   await expect(page.getByTestId("record-line")).toHaveText("0-2, #10 in the league");
-  await expect(page.getByTestId("opponent-line")).toHaveText("Week 4 vs 2 da Moon wit Love, projects 110.7 — you project 111.2");
+  await expect(page.getByTestId("matchup-line")).toHaveText("Week 4 vs 2 da Moon wit Love: you project 111.2, they project 110.7."); // IX-4
   await shot(page, "week_dyn12", project, false);
   const name = page.getByTestId("decision-card").first().locator("a").first();
   const who = (await name.textContent())!.trim();
@@ -210,7 +212,7 @@ test("a shared link wins (no username needed); Scrubs: K and DEF in rest of seas
   const project = info.project.name;
   await page.goto(`/?league=${SCRUBS}&team=2`);
   await expect(page.getByTestId("team-name")).toHaveText("MacZaddy");
-  await expect(page.getByTestId("opponent-line")).toHaveText("Week 4 vs Daejon Loves PR team, projects 115 — you project 117");
+  await expect(page.getByTestId("matchup-line")).toHaveText("Week 4 vs Daejon Loves PR team: you project 117, they project 115."); // IX-4
   await tap(page, page.getByTestId("sub-ros"), isMobile); // IB-1: My Team · Season
   await tap(page, page.getByTestId("ros-view-projections"), isMobile); // II-4: the projections view (My roster outlook leads)
   await expect(page.getByTestId("ros-pos-K")).toBeVisible();

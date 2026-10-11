@@ -62,7 +62,9 @@ test("the review's close call stays in view: No clear upgrade, Compare, the set 
   await expect(page.getByTestId("set-line")).toContainText("No clear upgrade elsewhere.");
   await expect(page.getByTestId("week-answer")).toHaveCount(0); // not the blanket "Your lineup is set — nothing to change."
   await expect(acts).not.toContainText("nothing to change");
-  await expect(page.getByTestId("what-changed").getByTestId("changed-empty")).toHaveText("Nothing has changed since the morning build.");
+  // IX-4 (on purpose; the review § 5 "keep empty news quiet"): no news, no card (was "Nothing has changed since the morning build.")
+  await expect(page.getByTestId("what-changed")).toHaveCount(0);
+  await expect(page.getByText("Nothing has changed since the morning build.")).toHaveCount(0);
   // the lineup: each margin names its comparator; a slot nobody can fill says so (not the whole projection as a gap)
   const lineup = page.getByTestId("lineup");
   if (isMobile) {

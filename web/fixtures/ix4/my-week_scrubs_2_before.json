@@ -1,0 +1,1398 @@
+{
+ "actions": [
+  {
+   "action": "Your quarterback spot is open: [Mahomes](/player/00-0033873) and [Young](/player/00-0039150) are on a bye. Add a quarterback before Sun 1:00 PM ET.",
+   "cards": [],
+   "gain": null,
+   "href": "/waivers?position=QB",
+   "href_label": "Find a quarterback on Waivers",
+   "kind": "change",
+   "lock": {
+    "kickoff": "2026-10-11T17:00:00+00:00",
+    "words": "before Sun 1:00 PM ET"
+   },
+   "open_slot": {
+    "named": [
+     "4046",
+     "9228"
+    ],
+    "players": [
+     "4046"
+    ],
+    "position": "QB",
+    "slot_type": "QB",
+    "slots": [
+     "QB"
+    ],
+    "words": "quarterback"
+   },
+   "reason": "Nobody else on your roster can play quarterback this week. Mahomes is still in your Sleeper lineup: start the player you add in his place.",
+   "sit": [
+    {
+     "key": "4046",
+     "link": "[Mahomes](/player/00-0033873)",
+     "name": "Mahomes"
+    }
+   ],
+   "slot_label": "QB",
+   "slots": [
+    "QB"
+   ],
+   "start": [],
+   "submitted": false,
+   "submitted_words": "Nothing is claimed from here: add a quarterback in Sleeper.",
+   "urgency": 1
+  },
+  {
+   "action": "Your tight end spot is open: [Kelce](/player/00-0030506) is on a bye. Add a tight end before Sun 1:00 PM ET.",
+   "cards": [],
+   "gain": null,
+   "href": "/waivers?position=TE",
+   "href_label": "Find a tight end on Waivers",
+   "kind": "change",
+   "lock": {
+    "kickoff": "2026-10-11T17:00:00+00:00",
+    "words": "before Sun 1:00 PM ET"
+   },
+   "open_slot": {
+    "named": [
+     "1466"
+    ],
+    "players": [
+     "1466"
+    ],
+    "position": "TE",
+    "slot_type": "TE",
+    "slots": [
+     "TE"
+    ],
+    "words": "tight end"
+   },
+   "reason": "Nobody else on your roster can play tight end this week. Kelce is still in your Sleeper lineup: start the player you add in his place.",
+   "sit": [
+    {
+     "key": "1466",
+     "link": "[Kelce](/player/00-0030506)",
+     "name": "Kelce"
+    }
+   ],
+   "slot_label": "TE",
+   "slots": [
+    "TE"
+   ],
+   "start": [],
+   "submitted": false,
+   "submitted_words": "Nothing is claimed from here: add a tight end in Sleeper.",
+   "urgency": 1
+  },
+  {
+   "action": "A player in your Sleeper lineup is no longer on your roster \u2014 set that spot again.",
+   "cards": [],
+   "gain": null,
+   "gone": true,
+   "href": null,
+   "kind": "change",
+   "lock": {
+    "kickoff": "2026-10-11T20:25:00+00:00",
+    "words": "before Sun 4:25 PM ET"
+   },
+   "reason": "Our lineup starts [Wilson](/player/00-0038559) there (your FLEX spot).",
+   "sit": [],
+   "slot_label": "FLEX",
+   "slots": [
+    "FLEX"
+   ],
+   "start": [
+    {
+     "key": "10232",
+     "link": "[Wilson](/player/00-0038559)",
+     "name": "Wilson"
+    }
+   ],
+   "submitted": false,
+   "submitted_words": "Not in your Sleeper lineup yet: set that spot in Sleeper.",
+   "urgency": 1
+  }
+ ],
+ "availability": null,
+ "cards": [
+  {
+   "action": null,
+   "alt_gsis_id": "00-0036322",
+   "alt_key": "6794",
+   "alt_name": "Justin Jefferson",
+   "alt_value": 9.86,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**FLEX2: [Denzel Boston](/player/00-0041037) or [Justin Jefferson](/player/00-0036322) \u2014 a coin flip**"
+    },
+    {
+     "kind": "markdown",
+     "text": "Too close to call: the projection has them level, the ranges say either. Go with Boston on the role: Jefferson's share of the targets has dropped three games running (39% \u2192 8%)."
+    },
+    {
+     "kind": "caption",
+     "text": "Denzel Boston projects 0.01 more on average; Justin Jefferson outscores him 51% of the time \u2014 a coin flip. 9.87 vs 9.86 projected: 0.01 apart.  \nTypical range (the middle 50%): Denzel Boston 5\u201314, Justin Jefferson 6\u201315.  \nA bad week to a good week: Denzel Boston 2\u201319, Justin Jefferson 2\u201320.  \nDenzel Boston vs NYJ (9th-fewest WR points allowed) \u00b7 Justin Jefferson vs NO (12th-fewest WR points allowed)"
+    }
+   ],
+   "gsis_id": "00-0041037",
+   "how": "best bench player who can play FLEX2",
+   "in_sleeper_lineup": {
+    "alt": true,
+    "player": false
+   },
+   "key": "13346",
+   "margin": 0.01,
+   "matchup_uncertain": false,
+   "p_win": 0.485275,
+   "player_name": "Denzel Boston",
+   "slot": "FLEX2",
+   "slot_label": "FLEX2",
+   "status": "close",
+   "strength": "coin flip",
+   "tiebreak": {
+    "kind": "role",
+    "pick": "Boston",
+    "side": "me"
+   },
+   "value": 9.87,
+   "verdict": "a coin flip",
+   "why": "Too close to call: the projection has them level, the ranges say either. Go with Boston on the role: Jefferson's share of the targets has dropped three games running (39% \u2192 8%)."
+  },
+  {
+   "action": null,
+   "alt_gsis_id": "00-0036322",
+   "alt_key": "6794",
+   "alt_name": "Justin Jefferson",
+   "alt_value": 9.86,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**FLEX1: start [Parker Washington](/player/00-0038606) over [Justin Jefferson](/player/00-0036322)**"
+    },
+    {
+     "kind": "markdown",
+     "text": "Parker Washington gets 26% of his team's targets; Jefferson's share of the targets has dropped three games running (39% \u2192 8%)."
+    },
+    {
+     "kind": "caption",
+     "text": "Parker Washington outscores Justin Jefferson 57% of the time \u2014 a lean. 11.54 vs 9.86 projected: 1.68 apart.  \nTypical range (the middle 50%): Parker Washington 6\u201316, Justin Jefferson 6\u201315.  \nA bad week to a good week: Parker Washington 3\u201322, Justin Jefferson 2\u201320.  \nParker Washington vs PHI (9th-most WR points allowed) \u00b7 Justin Jefferson vs NO (12th-fewest WR points allowed)"
+    }
+   ],
+   "gsis_id": "00-0038606",
+   "how": "best bench player who can play FLEX1",
+   "in_sleeper_lineup": {
+    "alt": true,
+    "player": true
+   },
+   "key": "9487",
+   "margin": 1.68,
+   "matchup_uncertain": false,
+   "p_win": 0.56655,
+   "player_name": "Parker Washington",
+   "slot": "FLEX1",
+   "slot_label": "FLEX1",
+   "status": "change",
+   "strength": "lean",
+   "tiebreak": null,
+   "value": 11.54,
+   "verdict": "a lean",
+   "why": "Parker Washington gets 26% of his team's targets; Jefferson's share of the targets has dropped three games running (39% \u2192 8%)."
+  },
+  {
+   "action": null,
+   "alt_gsis_id": "00-0040242",
+   "alt_key": "12533",
+   "alt_name": "Jacory Croskey-Merritt",
+   "alt_value": 8.98,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**RB2: start [Omarion Hampton](/player/00-0040666) over [Jacory Croskey-Merritt](/player/00-0040242)**"
+    },
+    {
+     "kind": "markdown",
+     "text": "Hampton is at home against the Broncos, who give up the 7th-most points to running backs, and the projection has him 2.9 points ahead."
+    },
+    {
+     "kind": "caption",
+     "text": "Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time \u2014 a lean. 11.92 vs 8.98 projected: 2.94 apart.  \nTypical range (the middle 50%): Omarion Hampton 6\u201316, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Omarion Hampton 3\u201322, Jacory Croskey-Merritt 2\u201318.  \nOmarion Hampton vs DEN (7th-most RB points allowed) \u00b7 Jacory Croskey-Merritt vs NYG (15th-most RB points allowed)"
+    }
+   ],
+   "gsis_id": "00-0040666",
+   "how": "best bench player who can play RB2",
+   "in_sleeper_lineup": {
+    "alt": false,
+    "player": true
+   },
+   "key": "12507",
+   "margin": 2.94,
+   "matchup_uncertain": false,
+   "p_win": 0.62485,
+   "player_name": "Omarion Hampton",
+   "slot": "RB2",
+   "slot_label": "RB2",
+   "status": "set",
+   "strength": "lean",
+   "tiebreak": null,
+   "value": 11.92,
+   "verdict": "a lean",
+   "why": "Hampton is at home against the Broncos, who give up the 7th-most points to running backs, and the projection has him 2.9 points ahead."
+  }
+ ],
+ "caveat_effect": null,
+ "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call.",
+ "caveats": [],
+ "changed": {
+  "empty": "Nothing has changed since the morning build.",
+  "lines": []
+ },
+ "clocks": {
+  "data_built": "2026-10-08T01:35:07.105357+00:00",
+  "injuries_checked": null,
+  "news": null
+ },
+ "edit_link": {
+  "label": "Open Sleeper to edit your lineup",
+  "platform": "Sleeper",
+  "url": "https://sleeper.com/leagues/1389709692405551104"
+ },
+ "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls: who to start, then **why** in one sentence (the matchup, his share of his team's carries or targets, an injury, the betting line). On a coin flip the card says so and names the tiebreaker.\n- The small print starts with **how often your starter outscores the other player** this week, from both players' ranges: 50\u201355% is a coin flip (go with the latest news), 55\u201365% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **5th-fewest WR points allowed** is the opponent's rank against that position this season, said one way everywhere: the most points allowed is the matchup you want, the fewest the toughest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
+ "league_id": "1389709692405551104",
+ "league_line": "Your best lineup ranks 10th of 10 in the league in week 5.",
+ "league_name": "League of Scrubs",
+ "lineup": [
+  {
+   "flag": "EMPTY: nobody can play",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": null,
+   "margin": null,
+   "margin_vs": null,
+   "margin_words": "",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": null,
+   "position": null,
+   "role": "starter",
+   "sits": false,
+   "slot": "QB",
+   "team": null,
+   "value": null
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0037840",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+   "key": "8150",
+   "margin": 10.31,
+   "margin_vs": "Croskey-Merritt",
+   "margin_words": "over Croskey-Merritt",
+   "market_points": 14.92,
+   "no_projection": false,
+   "player_name": "Kyren Williams",
+   "position": "RB",
+   "role": "starter",
+   "sits": false,
+   "slot": "RB1",
+   "team": "LA",
+   "value": 19.29
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0040666",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+   "key": "12507",
+   "margin": 2.94,
+   "margin_vs": "Croskey-Merritt",
+   "margin_words": "over Croskey-Merritt",
+   "market_points": 11.25,
+   "no_projection": false,
+   "player_name": "Omarion Hampton",
+   "position": "RB",
+   "role": "starter",
+   "sits": false,
+   "slot": "RB2",
+   "team": "LAC",
+   "value": 11.92
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0039075",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ipy6qw7hdygdfc8k86ba",
+   "key": "9493",
+   "margin": 8.83,
+   "margin_vs": "Jefferson",
+   "margin_words": "over Jefferson",
+   "market_points": 16.7,
+   "no_projection": false,
+   "player_name": "Puka Nacua",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "WR1",
+   "team": "LA",
+   "value": 18.69
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0038559",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+   "key": "10232",
+   "margin": 4.03,
+   "margin_vs": "Jefferson",
+   "margin_words": "over Jefferson",
+   "market_points": 12.96,
+   "no_projection": false,
+   "player_name": "Michael Wilson",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "WR2",
+   "team": "ARI",
+   "value": 13.89
+  },
+  {
+   "flag": "EMPTY: nobody can play",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": null,
+   "margin": null,
+   "margin_vs": null,
+   "margin_words": "",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": null,
+   "position": null,
+   "role": "starter",
+   "sits": false,
+   "slot": "TE",
+   "team": null,
+   "value": null
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0038606",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+   "key": "9487",
+   "margin": 1.68,
+   "margin_vs": "Jefferson",
+   "margin_words": "over Jefferson",
+   "market_points": 12.68,
+   "no_projection": false,
+   "player_name": "Parker Washington",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "FLEX1",
+   "team": "JAX",
+   "value": 11.54
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0041037",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+   "key": "13346",
+   "margin": 0.01,
+   "margin_vs": "Jefferson",
+   "margin_words": "over Jefferson",
+   "market_points": 8.91,
+   "no_projection": false,
+   "player_name": "Denzel Boston",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "FLEX2",
+   "team": "CLE",
+   "value": 9.87
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0025565",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+   "key": "650",
+   "margin": 8.51,
+   "margin_vs": null,
+   "margin_words": "no eligible reserve: the slot would be empty",
+   "market_points": 7.65,
+   "no_projection": false,
+   "player_name": "Nick Folk",
+   "position": "K",
+   "role": "starter",
+   "sits": false,
+   "slot": "K",
+   "team": "ATL",
+   "value": 8.51
+  },
+  {
+   "flag": "",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": "BUF",
+   "margin": 4.48,
+   "margin_vs": null,
+   "margin_words": "no eligible reserve: the slot would be empty",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Buffalo Bills",
+   "position": "DEF",
+   "role": "starter",
+   "sits": false,
+   "slot": "DEF",
+   "team": "BUF",
+   "value": 4.48
+  }
+ ],
+ "lineup_full": [
+  {
+   "flag": "EMPTY: nobody can play",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": null,
+   "margin": null,
+   "margin_vs": null,
+   "margin_words": "",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": null,
+   "position": null,
+   "role": "starter",
+   "sits": false,
+   "slot": "QB",
+   "team": null,
+   "value": null
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0037840",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+   "key": "8150",
+   "margin": 10.31,
+   "margin_vs": "Croskey-Merritt",
+   "margin_words": "over Croskey-Merritt",
+   "market_points": 14.92,
+   "no_projection": false,
+   "player_name": "Kyren Williams",
+   "position": "RB",
+   "role": "starter",
+   "sits": false,
+   "slot": "RB1",
+   "team": "LA",
+   "value": 19.29
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0040666",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+   "key": "12507",
+   "margin": 2.94,
+   "margin_vs": "Croskey-Merritt",
+   "margin_words": "over Croskey-Merritt",
+   "market_points": 11.25,
+   "no_projection": false,
+   "player_name": "Omarion Hampton",
+   "position": "RB",
+   "role": "starter",
+   "sits": false,
+   "slot": "RB2",
+   "team": "LAC",
+   "value": 11.92
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0039075",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ipy6qw7hdygdfc8k86ba",
+   "key": "9493",
+   "margin": 8.83,
+   "margin_vs": "Jefferson",
+   "margin_words": "over Jefferson",
+   "market_points": 16.7,
+   "no_projection": false,
+   "player_name": "Puka Nacua",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "WR1",
+   "team": "LA",
+   "value": 18.69
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0038559",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+   "key": "10232",
+   "margin": 4.03,
+   "margin_vs": "Jefferson",
+   "margin_words": "over Jefferson",
+   "market_points": 12.96,
+   "no_projection": false,
+   "player_name": "Michael Wilson",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "WR2",
+   "team": "ARI",
+   "value": 13.89
+  },
+  {
+   "flag": "EMPTY: nobody can play",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": null,
+   "margin": null,
+   "margin_vs": null,
+   "margin_words": "",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": null,
+   "position": null,
+   "role": "starter",
+   "sits": false,
+   "slot": "TE",
+   "team": null,
+   "value": null
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0038606",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+   "key": "9487",
+   "margin": 1.68,
+   "margin_vs": "Jefferson",
+   "margin_words": "over Jefferson",
+   "market_points": 12.68,
+   "no_projection": false,
+   "player_name": "Parker Washington",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "FLEX1",
+   "team": "JAX",
+   "value": 11.54
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0041037",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+   "key": "13346",
+   "margin": 0.01,
+   "margin_vs": "Jefferson",
+   "margin_words": "over Jefferson",
+   "market_points": 8.91,
+   "no_projection": false,
+   "player_name": "Denzel Boston",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "FLEX2",
+   "team": "CLE",
+   "value": 9.87
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0025565",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+   "key": "650",
+   "margin": 8.51,
+   "margin_vs": null,
+   "margin_words": "no eligible reserve: the slot would be empty",
+   "market_points": 7.65,
+   "no_projection": false,
+   "player_name": "Nick Folk",
+   "position": "K",
+   "role": "starter",
+   "sits": false,
+   "slot": "K",
+   "team": "ATL",
+   "value": 8.51
+  },
+  {
+   "flag": "",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": "BUF",
+   "margin": 4.48,
+   "margin_vs": null,
+   "margin_words": "no eligible reserve: the slot would be empty",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Buffalo Bills",
+   "position": "DEF",
+   "role": "starter",
+   "sits": false,
+   "slot": "DEF",
+   "team": "BUF",
+   "value": 4.48
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0036322",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+   "key": "6794",
+   "margin": null,
+   "market_points": 13.82,
+   "no_projection": false,
+   "player_name": "Justin Jefferson",
+   "position": "WR",
+   "role": "bench",
+   "sits": false,
+   "slot": "Bench 1",
+   "team": "MIN",
+   "value": 9.86
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0039880",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dmaiwnmaal9nrwfskl28",
+   "key": "11610",
+   "margin": null,
+   "market_points": 8.98,
+   "no_projection": false,
+   "player_name": "Malik Washington",
+   "position": "WR",
+   "role": "bench",
+   "sits": false,
+   "slot": "Bench 2",
+   "team": "MIA",
+   "value": 9.22
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0040242",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+   "key": "12533",
+   "margin": null,
+   "market_points": 11.64,
+   "no_projection": false,
+   "player_name": "Jacory Croskey-Merritt",
+   "position": "RB",
+   "role": "bench",
+   "sits": false,
+   "slot": "Bench 3",
+   "team": "WAS",
+   "value": 8.98
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0039874",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+   "key": "11643",
+   "margin": null,
+   "market_points": 7.51,
+   "no_projection": false,
+   "player_name": "Jaylen Wright",
+   "position": "RB",
+   "role": "bench",
+   "sits": false,
+   "slot": "Bench 4",
+   "team": "MIA",
+   "value": 3.47
+  },
+  {
+   "flag": "IR slot",
+   "gsis_id": "00-0039165",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cuuyog0lpxfaj0y0huvp",
+   "key": "9753",
+   "margin": null,
+   "market_points": 1.77,
+   "no_projection": false,
+   "player_name": "Zach Charbonnet",
+   "position": "RB",
+   "reason": "PUP (knee - acl) \u00b7 Sleeper, Oct 2",
+   "role": "unplayable",
+   "sits": true,
+   "slot": "Can't play",
+   "team": "SEA",
+   "value": 0.0
+  },
+  {
+   "flag": "IR slot",
+   "gsis_id": "00-0041496",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qbauucaxakkhtxihuvmr",
+   "key": "13345",
+   "margin": null,
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Jonah Coleman",
+   "position": "RB",
+   "reason": "IR (ankle) \u00b7 Sleeper, Sep 26",
+   "role": "unplayable",
+   "sits": true,
+   "slot": "Can't play",
+   "team": "DEN",
+   "value": 0.0
+  },
+  {
+   "flag": "bye",
+   "gsis_id": "00-0030506",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+   "key": "1466",
+   "margin": null,
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Travis Kelce",
+   "position": "TE",
+   "role": "unplayable",
+   "sits": false,
+   "slot": "Can't play",
+   "team": "KC",
+   "value": null
+  },
+  {
+   "flag": "bye",
+   "gsis_id": "00-0039150",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+   "key": "9228",
+   "margin": null,
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Bryce Young",
+   "position": "QB",
+   "role": "unplayable",
+   "sits": false,
+   "slot": "Can't play",
+   "team": "CAR",
+   "value": null
+  },
+  {
+   "flag": "bye",
+   "gsis_id": "00-0033873",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+   "key": "4046",
+   "margin": null,
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Patrick Mahomes",
+   "position": "QB",
+   "role": "unplayable",
+   "sits": false,
+   "slot": "Can't play",
+   "team": "KC",
+   "value": null
+  }
+ ],
+ "lineup_value": 98.19,
+ "manager_name": "amcdonald24",
+ "matchup": {
+  "assumptions": "assuming the players' weeks are independent except teammates and opponents",
+  "basis": "Each side's best lineup by our projections.",
+  "chance": "You're a clear underdog this week: 31%.",
+  "line": "Week 5 vs **GoodGameBuddy**: you project 98, they project 122.",
+  "mine": 98.19,
+  "state": "before",
+  "theirs": 121.68
+ },
+ "more_actions": [
+  {
+   "action": "A player in your Sleeper lineup is no longer on your roster \u2014 set that spot again.",
+   "cards": [],
+   "gain": null,
+   "gone": true,
+   "href": null,
+   "kind": "change",
+   "lock": {
+    "kickoff": "2026-10-12T00:20:00+00:00",
+    "words": "before Sun 8:20 PM ET"
+   },
+   "reason": "Our lineup starts [Folk](/player/00-0025565) there (your K spot).",
+   "sit": [],
+   "slot_label": "K",
+   "slots": [
+    "K"
+   ],
+   "start": [
+    {
+     "key": "650",
+     "link": "[Folk](/player/00-0025565)",
+     "name": "Folk"
+    }
+   ],
+   "submitted": false,
+   "submitted_words": "Not in your Sleeper lineup yet: set that spot in Sleeper.",
+   "urgency": 1
+  },
+  {
+   "action": "A player in your Sleeper lineup is no longer on your roster \u2014 set that spot again.",
+   "cards": [],
+   "gain": null,
+   "gone": true,
+   "href": null,
+   "kind": "change",
+   "lock": {
+    "kickoff": "2026-10-13T00:15:00+00:00",
+    "words": "before Mon 8:15 PM ET"
+   },
+   "reason": "Our lineup starts Buffalo Bills there (your DEF spot).",
+   "sit": [],
+   "slot_label": "DEF",
+   "slots": [
+    "DEF"
+   ],
+   "start": [
+    {
+     "key": "BUF",
+     "link": "Buffalo Bills",
+     "name": "Buffalo Bills"
+    }
+   ],
+   "submitted": false,
+   "submitted_words": "Not in your Sleeper lineup yet: set that spot in Sleeper.",
+   "urgency": 1
+  },
+  {
+   "action": "A player in your Sleeper lineup is no longer on your roster \u2014 set that spot again.",
+   "cards": [],
+   "gain": null,
+   "gone": true,
+   "href": null,
+   "kind": "change",
+   "lock": null,
+   "reason": "Start someone from your bench there (your RB spot), or add a player.",
+   "sit": [],
+   "slot_label": "RB",
+   "slots": [
+    "RB"
+   ],
+   "start": [],
+   "submitted": false,
+   "submitted_words": "Not in your Sleeper lineup yet: set that spot in Sleeper.",
+   "urgency": 1
+  },
+  {
+   "action": "Make 2 changes: [Nacua](/player/00-0039075) at WR in place of [Jefferson](/player/00-0036322); [Boston](/player/00-0041037) at FLEX (an open spot in your Sleeper lineup).",
+   "cards": [
+    0,
+    1
+   ],
+   "gain": 18.7,
+   "href": null,
+   "kind": "change",
+   "lock": {
+    "kickoff": "2026-10-11T17:00:00+00:00",
+    "words": "before Sun 1:00 PM ET"
+   },
+   "reason": "The change is worth about 19 more projected points this week.",
+   "sit": [
+    {
+     "key": "6794",
+     "link": "[Jefferson](/player/00-0036322)",
+     "name": "Jefferson"
+    }
+   ],
+   "slot_label": "FLEX2 \u00b7 WR1",
+   "slots": [
+    "FLEX2",
+    "WR1"
+   ],
+   "start": [
+    {
+     "key": "9493",
+     "link": "[Nacua](/player/00-0039075)",
+     "name": "Nacua"
+    },
+    {
+     "key": "9487",
+     "link": "[P. Washington](/player/00-0038606)",
+     "name": "P. Washington"
+    },
+    {
+     "key": "13346",
+     "link": "[Boston](/player/00-0041037)",
+     "name": "Boston"
+    }
+   ],
+   "submitted": false,
+   "submitted_words": "Not in your Sleeper lineup yet: make the change in Sleeper.",
+   "urgency": 1
+  }
+ ],
+ "movers": [
+  {
+   "gsis_id": "00-0038559",
+   "momentum": 1.27,
+   "player_name": "Michael Wilson",
+   "position": "WR",
+   "tags": "\u2191 snaps, \u2191 air-yard share, \u2191 target share, \u2193 aDOT, \u2191 first-read share"
+  }
+ ],
+ "n_unvalued": 0,
+ "next_lock": {
+  "kickoff": "2026-10-11T17:00:00+00:00",
+  "players": [],
+  "words": "before Sun 1:00 PM ET"
+ },
+ "nothing_submitted": "isuckatfantasy never changes your lineup or claims; it tells you what to do in your league's app.",
+ "notice": null,
+ "opponent": {
+  "changes": [],
+  "lineup_value": 121.68,
+  "manager": "Chazk92",
+  "matchup_id": 4,
+  "roster_id": 6,
+  "team_name": "GoodGameBuddy"
+ },
+ "platform_name": "Sleeper",
+ "provenance": {
+  "beta": false,
+  "checks": [
+   {
+    "mae": 4.52,
+    "order": 0.686,
+    "position": "RB",
+    "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+    "span": "next",
+    "status": "graded",
+    "words": "Running backs next week: graded (order 0.69)"
+   },
+   {
+    "mae": 4.44,
+    "order": 0.618,
+    "position": "WR",
+    "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+    "span": "next",
+    "status": "graded",
+    "words": "Receivers next week: graded (order 0.62)"
+   },
+   {
+    "mae": 3.77,
+    "order": 0.095,
+    "position": "K",
+    "ref": "docs/METRICS.md \u00a7 Kickers and defenses beyond next week (IQ-4)",
+    "span": "next",
+    "status": "graded_weak",
+    "words": "Kickers next week: graded, weak (order 0.10)"
+   },
+   {
+    "mae": 4.32,
+    "order": 0.257,
+    "position": "DEF",
+    "ref": "docs/METRICS.md \u00a7 Kickers and defenses beyond next week (IQ-4)",
+    "span": "next",
+    "status": "graded_weak",
+    "words": "Defenses next week: graded, weak (order 0.26)"
+   },
+   {
+    "mae": 3.25,
+    "order": 0.599,
+    "position": "TE",
+    "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+    "span": "next",
+    "status": "graded",
+    "words": "Tight ends next week: graded (order 0.60)"
+   },
+   {
+    "mae": 6.44,
+    "order": 0.587,
+    "position": "QB",
+    "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+    "span": "next",
+    "status": "graded",
+    "words": "Quarterbacks next week: graded (order 0.59)"
+   }
+  ],
+  "horizon": {
+   "first": 5,
+   "last": 5,
+   "market_week": 5,
+   "words": "week 5"
+  },
+  "kd_model_version": "kd1.0",
+  "model_version": "v3.6",
+  "published_at": "2026-10-11T05:10:27.259203+00:00",
+  "status": "graded_weak",
+  "words": "Model v3.6 (kickers and defenses kd1.0), data published 11 Oct, 1:10 am ET \u00b7 week 5 \u00b7 checked on 2021\u20132025: next week graded, kickers and defenses weak."
+ },
+ "recommended": {
+  "bench": [
+   {
+    "flag": "",
+    "gsis_id": "00-0036322",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+    "key": "6794",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Justin Jefferson",
+    "position": "WR",
+    "role": "bench",
+    "sits": false,
+    "slot": "Bench 1",
+    "team": "MIN",
+    "value": 9.86
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0039880",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dmaiwnmaal9nrwfskl28",
+    "key": "11610",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Malik Washington",
+    "position": "WR",
+    "role": "bench",
+    "sits": false,
+    "slot": "Bench 2",
+    "team": "MIA",
+    "value": 9.22
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0040242",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+    "key": "12533",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Jacory Croskey-Merritt",
+    "position": "RB",
+    "role": "bench",
+    "sits": false,
+    "slot": "Bench 3",
+    "team": "WAS",
+    "value": 8.98
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0039874",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+    "key": "11643",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Jaylen Wright",
+    "position": "RB",
+    "role": "bench",
+    "sits": false,
+    "slot": "Bench 4",
+    "team": "MIA",
+    "value": 3.47
+   },
+   {
+    "flag": "IR slot",
+    "gsis_id": "00-0039165",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cuuyog0lpxfaj0y0huvp",
+    "key": "9753",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Zach Charbonnet",
+    "position": "RB",
+    "reason": "PUP (knee - acl) \u00b7 Sleeper, Oct 2",
+    "role": "unplayable",
+    "sits": true,
+    "slot": "Can't play",
+    "team": "SEA",
+    "value": 0.0
+   },
+   {
+    "flag": "IR slot",
+    "gsis_id": "00-0041496",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qbauucaxakkhtxihuvmr",
+    "key": "13345",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Jonah Coleman",
+    "position": "RB",
+    "reason": "IR (ankle) \u00b7 Sleeper, Sep 26",
+    "role": "unplayable",
+    "sits": true,
+    "slot": "Can't play",
+    "team": "DEN",
+    "value": 0.0
+   },
+   {
+    "flag": "bye",
+    "gsis_id": "00-0030506",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+    "key": "1466",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Travis Kelce",
+    "position": "TE",
+    "role": "unplayable",
+    "sits": false,
+    "slot": "Can't play",
+    "team": "KC",
+    "value": null
+   },
+   {
+    "flag": "bye",
+    "gsis_id": "00-0039150",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+    "key": "9228",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Bryce Young",
+    "position": "QB",
+    "role": "unplayable",
+    "sits": false,
+    "slot": "Can't play",
+    "team": "CAR",
+    "value": null
+   },
+   {
+    "flag": "bye",
+    "gsis_id": "00-0033873",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+    "key": "4046",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Patrick Mahomes",
+    "position": "QB",
+    "role": "unplayable",
+    "sits": false,
+    "slot": "Can't play",
+    "team": "KC",
+    "value": null
+   }
+  ],
+  "best_total": 98.19,
+  "changes": 8,
+  "known": true,
+  "platform_name": "Sleeper",
+  "rows": [
+   {
+    "flag": "EMPTY: nobody can play",
+    "gsis_id": null,
+    "headshot_url": null,
+    "key": null,
+    "margin": null,
+    "margin_vs": null,
+    "margin_words": "",
+    "no_projection": false,
+    "now_in": {
+     "key": "4046",
+     "name": "Mahomes"
+    },
+    "now_words": "In Sleeper now: Mahomes",
+    "player_name": null,
+    "position": null,
+    "role": "starter",
+    "sits": false,
+    "slot": "QB",
+    "team": null,
+    "value": null
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0037840",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+    "key": "8150",
+    "margin": 10.31,
+    "margin_vs": "Croskey-Merritt",
+    "margin_words": "over Croskey-Merritt",
+    "no_projection": false,
+    "player_name": "Kyren Williams",
+    "position": "RB",
+    "role": "starter",
+    "sits": false,
+    "slot": "RB1",
+    "team": "LA",
+    "value": 19.29
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0040666",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+    "key": "12507",
+    "margin": 2.94,
+    "margin_vs": "Croskey-Merritt",
+    "margin_words": "over Croskey-Merritt",
+    "no_projection": false,
+    "player_name": "Omarion Hampton",
+    "position": "RB",
+    "role": "starter",
+    "sits": false,
+    "slot": "RB2",
+    "team": "LAC",
+    "value": 11.92
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0039075",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ipy6qw7hdygdfc8k86ba",
+    "key": "9493",
+    "margin": 8.83,
+    "margin_vs": "Jefferson",
+    "margin_words": "over Jefferson",
+    "no_projection": false,
+    "now_in": {
+     "key": "6794",
+     "name": "Jefferson"
+    },
+    "now_words": "In Sleeper now: Jefferson",
+    "player_name": "Puka Nacua",
+    "position": "WR",
+    "role": "starter",
+    "sits": false,
+    "slot": "WR1",
+    "team": "LA",
+    "value": 18.69
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0038559",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+    "key": "10232",
+    "margin": 4.03,
+    "margin_vs": "Jefferson",
+    "margin_words": "over Jefferson",
+    "no_projection": false,
+    "now_in": {
+     "key": "12526",
+     "name": "a player no longer on your roster"
+    },
+    "now_words": "In Sleeper now: a player no longer on your roster",
+    "player_name": "Michael Wilson",
+    "position": "WR",
+    "role": "starter",
+    "sits": false,
+    "slot": "WR2",
+    "team": "ARI",
+    "value": 13.89
+   },
+   {
+    "flag": "EMPTY: nobody can play",
+    "gsis_id": null,
+    "headshot_url": null,
+    "key": null,
+    "margin": null,
+    "margin_vs": null,
+    "margin_words": "",
+    "no_projection": false,
+    "now_in": {
+     "key": "1466",
+     "name": "Kelce"
+    },
+    "now_words": "In Sleeper now: Kelce",
+    "player_name": null,
+    "position": null,
+    "role": "starter",
+    "sits": false,
+    "slot": "TE",
+    "team": null,
+    "value": null
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0038606",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+    "key": "9487",
+    "margin": 1.68,
+    "margin_vs": "Jefferson",
+    "margin_words": "over Jefferson",
+    "no_projection": false,
+    "player_name": "Parker Washington",
+    "position": "WR",
+    "role": "starter",
+    "sits": false,
+    "slot": "FLEX1",
+    "team": "JAX",
+    "value": 11.54
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0041037",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+    "key": "13346",
+    "margin": 0.01,
+    "margin_vs": "Jefferson",
+    "margin_words": "over Jefferson",
+    "no_projection": false,
+    "now_in": {
+     "key": null,
+     "name": null
+    },
+    "now_words": "Open in Sleeper now",
+    "player_name": "Denzel Boston",
+    "position": "WR",
+    "role": "starter",
+    "sits": false,
+    "slot": "FLEX2",
+    "team": "CLE",
+    "value": 9.87
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0025565",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+    "key": "650",
+    "margin": 8.51,
+    "margin_vs": null,
+    "margin_words": "no eligible reserve: the slot would be empty",
+    "no_projection": false,
+    "now_in": {
+     "key": "6650",
+     "name": "a player no longer on your roster"
+    },
+    "now_words": "In Sleeper now: a player no longer on your roster",
+    "player_name": "Nick Folk",
+    "position": "K",
+    "role": "starter",
+    "sits": false,
+    "slot": "K",
+    "team": "ATL",
+    "value": 8.51
+   },
+   {
+    "flag": "",
+    "gsis_id": null,
+    "headshot_url": null,
+    "key": "BUF",
+    "margin": 4.48,
+    "margin_vs": null,
+    "margin_words": "no eligible reserve: the slot would be empty",
+    "no_projection": false,
+    "now_in": {
+     "key": "KC",
+     "name": "a player no longer on your roster"
+    },
+    "now_words": "In Sleeper now: a player no longer on your roster",
+    "player_name": "Buffalo Bills",
+    "position": "DEF",
+    "role": "starter",
+    "sits": false,
+    "slot": "DEF",
+    "team": "BUF",
+    "value": 4.48
+   }
+  ],
+  "total": 98.19,
+  "words": "8 changes from your Sleeper lineup."
+ },
+ "record": {
+  "losses": 2,
+  "standing": 8,
+  "wins": 1
+ },
+ "review": [],
+ "roster_id": 2,
+ "scoring_label": "10-team redraft \u00b7 half PPR \u00b7 4\u2011pt pass TD",
+ "season": 2026,
+ "set_line": "4 more roster alerts: the lineup below shows every slot.",
+ "source": "database",
+ "summary": "**MacZaddy** \u00b7 1-2, #8 in the league",
+ "swaps": [],
+ "team_name": "MacZaddy",
+ "unvalued_words": null,
+ "week": 5,
+ "win": {
+  "assumptions": "assuming the players' weeks are independent except teammates and opponents",
+  "early": false,
+  "line": "You're a clear underdog this week: 31%, 98 to 122 expected.",
+  "mine": 98.19,
+  "n_no_range": 1,
+  "n_played": 0,
+  "n_started": 0,
+  "n_starters": 8,
+  "note": null,
+  "opp_n_no_range": 1,
+  "opp_n_played": 0,
+  "opp_n_started": 0,
+  "opp_n_starters": 10,
+  "opponent_roster_id": 6,
+  "p": 0.3075,
+  "percent": 31,
+  "played_words": null,
+  "side": "underdog",
+  "theirs": 121.68,
+  "words": "a clear underdog"
+ }
+}

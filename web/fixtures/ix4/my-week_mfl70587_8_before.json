@@ -1,0 +1,972 @@
+{
+ "actions": [
+  {
+   "action": "Chicago Bears QB or Houston Texans QB at team QB: check who starts first.",
+   "action_unqualified": "Start Chicago Bears QB at team QB in place of Houston Texans QB.",
+   "cards": [
+    1
+   ],
+   "caveat": {
+    "check_first": true,
+    "effect": "soften",
+    "words": "We project Caleb Williams to start for Chicago, not the listed Case Keenum: Chicago Bears QB's projection assumes Williams starts."
+   },
+   "gain": 1.91,
+   "href": null,
+   "kind": "close",
+   "lock": {
+    "kickoff": "2026-10-11T17:00:00+00:00",
+    "words": "before Sun 1:00 PM ET"
+   },
+   "reason": "We project Caleb Williams to start for Chicago, not the listed Case Keenum: Chicago Bears QB's projection assumes Williams starts. By our projections Chicago Bears QB is about 1.9 points ahead: less than a starter's week against his backup's (about 10 points).",
+   "reason_unqualified": "The change is worth about 2 more projected points this week.",
+   "sit": [
+    {
+     "key": "mfl:0682",
+     "link": "Houston Texans QB",
+     "name": "Houston Texans QB"
+    }
+   ],
+   "slot_label": "team QB",
+   "slots": [
+    "TMQB"
+   ],
+   "start": [
+    {
+     "key": "mfl:0671",
+     "link": "Chicago Bears QB",
+     "name": "Chicago Bears QB"
+    }
+   ],
+   "submitted": false,
+   "submitted_words": "Your MFL lineup has Houston Texans QB there now.",
+   "urgency": 2
+  }
+ ],
+ "availability": null,
+ "cards": [
+  {
+   "action": null,
+   "alt_gsis_id": "00-0039915",
+   "alt_key": "11635",
+   "alt_name": "Ladd McConkey",
+   "alt_value": 6.3,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**WR/TE 3: start [Malik Nabers](/player/00-0039337) over [Ladd McConkey](/player/00-0039915)**"
+    },
+    {
+     "kind": "markdown",
+     "text": "Nabers's share of the targets rose from 12% to 24% last game, and the projection has him 1.7 points ahead."
+    },
+    {
+     "kind": "caption",
+     "text": "Malik Nabers outscores Ladd McConkey 56% of the time \u2014 a lean. 8.02 vs 6.30 projected: 1.72 apart.  \nTypical range (the middle 50%): Malik Nabers 2\u201312, Ladd McConkey 2\u20139.  \nA bad week to a good week: Malik Nabers 1\u201316, Ladd McConkey 1\u201313.  \nMalik Nabers vs WAS (5th-most WR points allowed) \u00b7 Ladd McConkey vs DEN (11th-fewest WR points allowed)"
+    }
+   ],
+   "gsis_id": "00-0039337",
+   "how": "best bench player who can play WR/TE 3",
+   "in_sleeper_lineup": {
+    "alt": false,
+    "player": true
+   },
+   "key": "11632",
+   "margin": 1.72,
+   "matchup_uncertain": true,
+   "p_win": 0.556725,
+   "player_name": "Malik Nabers",
+   "slot": "WR+TE3",
+   "slot_label": "WR/TE 3",
+   "status": "set",
+   "strength": "lean",
+   "tiebreak": null,
+   "value": 8.02,
+   "verdict": "a lean",
+   "why": "Nabers's share of the targets rose from 12% to 24% last game, and the projection has him 1.7 points ahead."
+  },
+  {
+   "action": 0,
+   "alt_gsis_id": null,
+   "alt_key": "mfl:0682",
+   "alt_name": "Houston Texans QB",
+   "alt_value": 25.82,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**team QB: start Chicago Bears QB over Houston Texans QB**"
+    },
+    {
+     "kind": "markdown",
+     "text": "Nothing in the matchups or the roles splits them: the projection has Bears QB 1.9 points ahead."
+    },
+    {
+     "kind": "caption",
+     "text": "27.73 vs 25.82 projected \u2014 **1.91 apart, a lean**.  \nChicago Bears QB vs GB \u00b7 Houston Texans QB vs TEN"
+    }
+   ],
+   "caveat": {
+    "check_first": true,
+    "effect": "soften",
+    "words": "We project Caleb Williams to start for Chicago, not the listed Case Keenum: Chicago Bears QB's projection assumes Williams starts."
+   },
+   "gsis_id": null,
+   "how": "best bench player who can play team QB",
+   "in_sleeper_lineup": {
+    "alt": true,
+    "player": false
+   },
+   "key": "mfl:0671",
+   "margin": 1.91,
+   "matchup_uncertain": false,
+   "p_win": null,
+   "player_name": "Chicago Bears QB",
+   "slot": "TMQB",
+   "slot_label": "team QB",
+   "status": "change",
+   "strength": "lean",
+   "tiebreak": null,
+   "value": 27.73,
+   "verdict": "a lean",
+   "why": "Nothing in the matchups or the roles splits them: the projection has Bears QB 1.9 points ahead."
+  },
+  {
+   "action": null,
+   "alt_gsis_id": "00-0039915",
+   "alt_key": "11635",
+   "alt_name": "Ladd McConkey",
+   "alt_value": 6.3,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**WR/TE 2: start [Jordan Addison](/player/00-0038994) over [Ladd McConkey](/player/00-0039915)**"
+    },
+    {
+     "kind": "markdown",
+     "text": "Nothing in the matchups or the roles splits them: the projection has Addison 2.5 points ahead."
+    },
+    {
+     "kind": "caption",
+     "text": "Jordan Addison outscores Ladd McConkey 63% of the time \u2014 a lean. 8.79 vs 6.30 projected: 2.49 apart.  \nTypical range (the middle 50%): Jordan Addison 4\u201314, Ladd McConkey 2\u20139.  \nA bad week to a good week: Jordan Addison 1\u201318, Ladd McConkey 1\u201313.  \nJordan Addison vs NO (12th-fewest WR points allowed) \u00b7 Ladd McConkey vs DEN (11th-fewest WR points allowed)"
+    }
+   ],
+   "gsis_id": "00-0038994",
+   "how": "best bench player who can play WR/TE 2",
+   "in_sleeper_lineup": {
+    "alt": false,
+    "player": true
+   },
+   "key": "9756",
+   "margin": 2.49,
+   "matchup_uncertain": false,
+   "p_win": 0.6254500000000001,
+   "player_name": "Jordan Addison",
+   "slot": "WR+TE2",
+   "slot_label": "WR/TE 2",
+   "status": "set",
+   "strength": "lean",
+   "tiebreak": null,
+   "value": 8.79,
+   "verdict": "a lean",
+   "why": "Nothing in the matchups or the roles splits them: the projection has Addison 2.5 points ahead."
+  }
+ ],
+ "caveat_effect": "soften",
+ "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call.",
+ "caveats": [
+  {
+   "effect": "soften",
+   "kind": "starter_projected",
+   "listed": "Case Keenum",
+   "players": [
+    "Chicago Bears QB"
+   ],
+   "set": "Caleb Williams",
+   "team": "CHI",
+   "verdict_words": "We project Caleb Williams to start for Chicago, not the listed Case Keenum; this depends on Chicago Bears QB, so read the verdict as a lean that assumes Williams starts.",
+   "words": "We project Caleb Williams to start for Chicago, not the listed Case Keenum: Chicago Bears QB's projection assumes Williams starts."
+  }
+ ],
+ "changed": {
+  "empty": "Nothing has changed since the morning build.",
+  "lines": []
+ },
+ "clocks": {
+  "data_built": "2026-10-08T01:35:07.105357+00:00",
+  "injuries_checked": null,
+  "news": null
+ },
+ "edit_link": {
+  "label": "Open MFL to edit your lineup",
+  "platform": "MFL",
+  "url": "https://www44.myfantasyleague.com/2026/options?L=70587&O=02"
+ },
+ "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls: who to start, then **why** in one sentence (the matchup, his share of his team's carries or targets, an injury, the betting line). On a coin flip the card says so and names the tiebreaker.\n- The small print starts with **how often your starter outscores the other player** this week, from both players' ranges: 50\u201355% is a coin flip (go with the latest news), 55\u201365% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **5th-fewest WR points allowed** is the opponent's rank against that position this season, said one way everywhere: the most points allowed is the matchup you want, the fewest the toughest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
+ "league_id": "mfl:70587",
+ "league_line": "",
+ "league_name": "Make Football Great Again",
+ "lineup": [
+  {
+   "flag": "",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": "mfl:0671",
+   "margin": 1.91,
+   "margin_vs": "Texans QB",
+   "margin_words": "over Texans QB",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Chicago Bears QB",
+   "position": "TMQB",
+   "role": "starter",
+   "sits": false,
+   "slot": "team QB",
+   "team": "CHI",
+   "value": 27.73
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0036223",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yw46ky6akdm7h7siofu8",
+   "key": "6813",
+   "margin": 8.28,
+   "margin_vs": "Tuten",
+   "margin_words": "over Tuten",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Jonathan Taylor",
+   "position": "RB",
+   "role": "starter",
+   "sits": false,
+   "slot": "RB1",
+   "team": "IND",
+   "value": 19.22
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0033280",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+   "key": "4034",
+   "margin": 3.41,
+   "margin_vs": "Tuten",
+   "margin_words": "over Tuten",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Christian McCaffrey",
+   "position": "RB",
+   "role": "starter",
+   "sits": false,
+   "slot": "RB2",
+   "team": "SF",
+   "value": 14.35
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0038124",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tumeg4d32sirkab2xzu5",
+   "key": "8167",
+   "margin": 4.94,
+   "margin_vs": "McConkey",
+   "margin_words": "over McConkey",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Christian Watson",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "WR/TE 1",
+   "team": "GB",
+   "value": 11.24
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0038994",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mi4lzk9gvjrvo6rwdf1e",
+   "key": "9756",
+   "margin": 2.49,
+   "margin_vs": "McConkey",
+   "margin_words": "over McConkey",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Jordan Addison",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "WR/TE 2",
+   "team": "MIN",
+   "value": 8.79
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0039337",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w3edoyyuomqlovvp9ixc",
+   "key": "11632",
+   "margin": 1.72,
+   "margin_vs": "McConkey",
+   "margin_words": "over McConkey",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Malik Nabers",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "WR/TE 3",
+   "team": "NYG",
+   "value": 8.02
+  },
+  {
+   "flag": "",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": "mfl:0732",
+   "margin": 12.68,
+   "margin_vs": null,
+   "margin_words": "no eligible reserve: the slot would be empty",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Houston Texans K",
+   "position": "TMPK",
+   "role": "starter",
+   "sits": false,
+   "slot": "team K",
+   "team": "HOU",
+   "value": 12.68
+  },
+  {
+   "flag": "",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": "JAX",
+   "margin": 12.35,
+   "margin_vs": null,
+   "margin_words": "no eligible reserve: the slot would be empty",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Jacksonville Jaguars",
+   "position": "DEF",
+   "role": "starter",
+   "sits": false,
+   "slot": "DEF",
+   "team": "JAX",
+   "value": 12.35
+  }
+ ],
+ "lineup_full": [
+  {
+   "flag": "",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": "mfl:0671",
+   "margin": 1.91,
+   "margin_vs": "Texans QB",
+   "margin_words": "over Texans QB",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Chicago Bears QB",
+   "position": "TMQB",
+   "role": "starter",
+   "sits": false,
+   "slot": "team QB",
+   "team": "CHI",
+   "value": 27.73
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0036223",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yw46ky6akdm7h7siofu8",
+   "key": "6813",
+   "margin": 8.28,
+   "margin_vs": "Tuten",
+   "margin_words": "over Tuten",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Jonathan Taylor",
+   "position": "RB",
+   "role": "starter",
+   "sits": false,
+   "slot": "RB1",
+   "team": "IND",
+   "value": 19.22
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0033280",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+   "key": "4034",
+   "margin": 3.41,
+   "margin_vs": "Tuten",
+   "margin_words": "over Tuten",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Christian McCaffrey",
+   "position": "RB",
+   "role": "starter",
+   "sits": false,
+   "slot": "RB2",
+   "team": "SF",
+   "value": 14.35
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0038124",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tumeg4d32sirkab2xzu5",
+   "key": "8167",
+   "margin": 4.94,
+   "margin_vs": "McConkey",
+   "margin_words": "over McConkey",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Christian Watson",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "WR/TE 1",
+   "team": "GB",
+   "value": 11.24
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0038994",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mi4lzk9gvjrvo6rwdf1e",
+   "key": "9756",
+   "margin": 2.49,
+   "margin_vs": "McConkey",
+   "margin_words": "over McConkey",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Jordan Addison",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "WR/TE 2",
+   "team": "MIN",
+   "value": 8.79
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0039337",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w3edoyyuomqlovvp9ixc",
+   "key": "11632",
+   "margin": 1.72,
+   "margin_vs": "McConkey",
+   "margin_words": "over McConkey",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Malik Nabers",
+   "position": "WR",
+   "role": "starter",
+   "sits": false,
+   "slot": "WR/TE 3",
+   "team": "NYG",
+   "value": 8.02
+  },
+  {
+   "flag": "",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": "mfl:0732",
+   "margin": 12.68,
+   "margin_vs": null,
+   "margin_words": "no eligible reserve: the slot would be empty",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Houston Texans K",
+   "position": "TMPK",
+   "role": "starter",
+   "sits": false,
+   "slot": "team K",
+   "team": "HOU",
+   "value": 12.68
+  },
+  {
+   "flag": "",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": "JAX",
+   "margin": 12.35,
+   "margin_vs": null,
+   "margin_words": "no eligible reserve: the slot would be empty",
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Jacksonville Jaguars",
+   "position": "DEF",
+   "role": "starter",
+   "sits": false,
+   "slot": "DEF",
+   "team": "JAX",
+   "value": 12.35
+  },
+  {
+   "flag": "",
+   "gsis_id": null,
+   "headshot_url": null,
+   "key": "mfl:0682",
+   "margin": null,
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Houston Texans QB",
+   "position": "TMQB",
+   "role": "bench",
+   "sits": false,
+   "slot": "Bench 1",
+   "team": "HOU",
+   "value": 25.82
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0040719",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+   "key": "12490",
+   "margin": null,
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Bhayshul Tuten",
+   "position": "RB",
+   "role": "bench",
+   "sits": false,
+   "slot": "Bench 2",
+   "team": "JAX",
+   "value": 10.94
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0039738",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/axzqbqjkrbwfzodwwakq",
+   "key": "11586",
+   "margin": null,
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Blake Corum",
+   "position": "RB",
+   "role": "bench",
+   "sits": false,
+   "slot": "Bench 3",
+   "team": "LA",
+   "value": 7.84
+  },
+  {
+   "flag": "",
+   "gsis_id": "00-0039915",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/q2sk7yforrkiusvruo1o",
+   "key": "11635",
+   "margin": null,
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "Ladd McConkey",
+   "position": "WR",
+   "role": "bench",
+   "sits": false,
+   "slot": "Bench 4",
+   "team": "LAC",
+   "value": 6.3
+  },
+  {
+   "flag": "NFL injured reserve",
+   "gsis_id": "00-0035676",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qfhvjyssf0lwsh0kienp",
+   "key": "5859",
+   "margin": null,
+   "market_points": null,
+   "no_projection": false,
+   "player_name": "A.J. Brown",
+   "position": "WR",
+   "reason": "IR (ankle) \u00b7 Sleeper, Oct 4",
+   "role": "unplayable",
+   "sits": true,
+   "slot": "Can't play",
+   "team": "NE",
+   "value": 0.0
+  }
+ ],
+ "lineup_value": 114.38,
+ "manager_name": null,
+ "matchup": {
+  "assumptions": "assuming the players' weeks are independent except teammates and opponents",
+  "basis": "Each side's best lineup by our projections.",
+  "chance": "You're a slight favorite this week: 60%.",
+  "line": "Week 5 vs **Uh, Winning!**: you project 114, they project 101.",
+  "mine": 114.38,
+  "state": "before",
+  "theirs": 101.04
+ },
+ "more_actions": [],
+ "movers": [
+  {
+   "gsis_id": "00-0038994",
+   "momentum": 1.29,
+   "player_name": "Jordan Addison",
+   "position": "WR",
+   "tags": "\u2191 targets, \u2191 snaps, \u2191 target share, \u2191 expected points, \u2191 first-read share, \u2191 air-yard share, \u2191 points"
+  },
+  {
+   "gsis_id": "00-0039915",
+   "momentum": -1.03,
+   "player_name": "Ladd McConkey",
+   "position": "WR",
+   "tags": "\u2193 expected points, \u2193 target share, \u2193 points, \u2193 targets, \u2193 air-yard share"
+  }
+ ],
+ "n_unvalued": 0,
+ "next_lock": {
+  "kickoff": "2026-10-11T17:00:00+00:00",
+  "players": [
+   "Chicago Bears QB",
+   "Houston Texans QB"
+  ],
+  "words": "before Sun 1:00 PM ET"
+ },
+ "nothing_submitted": "isuckatfantasy never changes your lineup or claims; it tells you what to do in your league's app.",
+ "notice": null,
+ "on_demand": {
+  "board_source": "nfl_wide",
+  "kd_value_source": {
+   "DEF": "lines",
+   "K": "lines"
+  },
+  "mfl_mapped_by": {
+   "defense": 12,
+   "table": 121,
+   "unit": 34
+  },
+  "mfl_scoring_note": "Lineup read as team QB, 2 RB, 3 WR/TE, team K, DEF. Points allowed on a projection: the league's bands (0, 1\u20133) are spread over the defense projection's (0, 1\u20136, 7\u201313 \u2026) by the average over each. Kicks of 50+ yards on a projection: priced at the 50\u201359 band (10); the projection does not split off 60+. Return touchdowns are not projected (they count on actual lines). 2-point conversions are not projected.",
+  "mfl_unmapped": [],
+  "not_projected_keys": [
+   "fumble_recovery_tds",
+   "passing_2pt_conversions",
+   "receiving_2pt_conversions",
+   "return_tds",
+   "rushing_2pt_conversions"
+  ],
+  "opponent_note": null,
+  "range_method": "ratio",
+  "range_reference_league": "standard",
+  "sleeper_calls": 5,
+  "stat_line_mismatches": 0,
+  "unmapped_players": [],
+  "unmapped_scoring_keys": []
+ },
+ "opponent": {
+  "changes": [],
+  "lineup_value": 101.04,
+  "manager": null,
+  "matchup_id": 2,
+  "roster_id": 3,
+  "team_name": "Uh, Winning!"
+ },
+ "platform": "mfl",
+ "platform_name": "MFL",
+ "provenance": {
+  "beta": false,
+  "checks": [
+   {
+    "mae": 4.52,
+    "order": 0.686,
+    "position": "RB",
+    "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+    "span": "next",
+    "status": "graded",
+    "words": "Running backs next week: graded (order 0.69)"
+   },
+   {
+    "mae": 4.44,
+    "order": 0.618,
+    "position": "WR",
+    "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+    "span": "next",
+    "status": "graded",
+    "words": "Receivers next week: graded (order 0.62)"
+   },
+   {
+    "mae": 4.32,
+    "order": 0.257,
+    "position": "DEF",
+    "ref": "docs/METRICS.md \u00a7 Kickers and defenses beyond next week (IQ-4)",
+    "span": "next",
+    "status": "graded_weak",
+    "words": "Defenses next week: graded, weak (order 0.26)"
+   }
+  ],
+  "horizon": {
+   "first": 5,
+   "last": 5,
+   "market_week": 5,
+   "words": "week 5"
+  },
+  "kd_model_version": "kd1.0",
+  "model_version": "v3.6",
+  "published_at": "2026-10-11T05:10:27.259203+00:00",
+  "status": "graded_weak",
+  "words": "Model v3.6 (kickers and defenses kd1.0), data published 11 Oct, 1:10 am ET \u00b7 week 5 \u00b7 checked on 2021\u20132025: next week graded, defenses weak."
+ },
+ "recommended": {
+  "bench": [
+   {
+    "flag": "",
+    "gsis_id": null,
+    "headshot_url": null,
+    "key": "mfl:0682",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Houston Texans QB",
+    "position": "TMQB",
+    "role": "bench",
+    "sits": false,
+    "slot": "Bench 1",
+    "team": "HOU",
+    "value": 25.82
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0040719",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+    "key": "12490",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Bhayshul Tuten",
+    "position": "RB",
+    "role": "bench",
+    "sits": false,
+    "slot": "Bench 2",
+    "team": "JAX",
+    "value": 10.94
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0039738",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/axzqbqjkrbwfzodwwakq",
+    "key": "11586",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Blake Corum",
+    "position": "RB",
+    "role": "bench",
+    "sits": false,
+    "slot": "Bench 3",
+    "team": "LA",
+    "value": 7.84
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0039915",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/q2sk7yforrkiusvruo1o",
+    "key": "11635",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "Ladd McConkey",
+    "position": "WR",
+    "role": "bench",
+    "sits": false,
+    "slot": "Bench 4",
+    "team": "LAC",
+    "value": 6.3
+   },
+   {
+    "flag": "NFL injured reserve",
+    "gsis_id": "00-0035676",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qfhvjyssf0lwsh0kienp",
+    "key": "5859",
+    "margin": null,
+    "no_projection": false,
+    "player_name": "A.J. Brown",
+    "position": "WR",
+    "reason": "IR (ankle) \u00b7 Sleeper, Oct 4",
+    "role": "unplayable",
+    "sits": true,
+    "slot": "Can't play",
+    "team": "NE",
+    "value": 0.0
+   }
+  ],
+  "best_total": 114.38,
+  "changes": 1,
+  "known": true,
+  "platform_name": "MFL",
+  "rows": [
+   {
+    "check_first": true,
+    "check_words": "Check who starts for Chicago before kickoff",
+    "flag": "",
+    "gsis_id": null,
+    "headshot_url": null,
+    "key": "mfl:0671",
+    "margin": 1.91,
+    "margin_vs": "Texans QB",
+    "margin_words": "over Texans QB",
+    "no_projection": false,
+    "now_in": {
+     "key": "mfl:0682",
+     "name": "Houston Texans QB"
+    },
+    "now_words": "In MFL now: Houston Texans QB",
+    "player_name": "Chicago Bears QB",
+    "position": "TMQB",
+    "role": "starter",
+    "sits": false,
+    "slot": "team QB",
+    "team": "CHI",
+    "value": 27.73
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0036223",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yw46ky6akdm7h7siofu8",
+    "key": "6813",
+    "margin": 8.28,
+    "margin_vs": "Tuten",
+    "margin_words": "over Tuten",
+    "no_projection": false,
+    "player_name": "Jonathan Taylor",
+    "position": "RB",
+    "role": "starter",
+    "sits": false,
+    "slot": "RB1",
+    "team": "IND",
+    "value": 19.22
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0033280",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+    "key": "4034",
+    "margin": 3.41,
+    "margin_vs": "Tuten",
+    "margin_words": "over Tuten",
+    "no_projection": false,
+    "player_name": "Christian McCaffrey",
+    "position": "RB",
+    "role": "starter",
+    "sits": false,
+    "slot": "RB2",
+    "team": "SF",
+    "value": 14.35
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0038124",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tumeg4d32sirkab2xzu5",
+    "key": "8167",
+    "margin": 4.94,
+    "margin_vs": "McConkey",
+    "margin_words": "over McConkey",
+    "no_projection": false,
+    "player_name": "Christian Watson",
+    "position": "WR",
+    "role": "starter",
+    "sits": false,
+    "slot": "WR/TE 1",
+    "team": "GB",
+    "value": 11.24
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0038994",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mi4lzk9gvjrvo6rwdf1e",
+    "key": "9756",
+    "margin": 2.49,
+    "margin_vs": "McConkey",
+    "margin_words": "over McConkey",
+    "no_projection": false,
+    "player_name": "Jordan Addison",
+    "position": "WR",
+    "role": "starter",
+    "sits": false,
+    "slot": "WR/TE 2",
+    "team": "MIN",
+    "value": 8.79
+   },
+   {
+    "flag": "",
+    "gsis_id": "00-0039337",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w3edoyyuomqlovvp9ixc",
+    "key": "11632",
+    "margin": 1.72,
+    "margin_vs": "McConkey",
+    "margin_words": "over McConkey",
+    "no_projection": false,
+    "player_name": "Malik Nabers",
+    "position": "WR",
+    "role": "starter",
+    "sits": false,
+    "slot": "WR/TE 3",
+    "team": "NYG",
+    "value": 8.02
+   },
+   {
+    "flag": "",
+    "gsis_id": null,
+    "headshot_url": null,
+    "key": "mfl:0732",
+    "margin": 12.68,
+    "margin_vs": null,
+    "margin_words": "no eligible reserve: the slot would be empty",
+    "no_projection": false,
+    "player_name": "Houston Texans K",
+    "position": "TMPK",
+    "role": "starter",
+    "sits": false,
+    "slot": "team K",
+    "team": "HOU",
+    "value": 12.68
+   },
+   {
+    "flag": "",
+    "gsis_id": null,
+    "headshot_url": null,
+    "key": "JAX",
+    "margin": 12.35,
+    "margin_vs": null,
+    "margin_words": "no eligible reserve: the slot would be empty",
+    "no_projection": false,
+    "player_name": "Jacksonville Jaguars",
+    "position": "DEF",
+    "role": "starter",
+    "sits": false,
+    "slot": "DEF",
+    "team": "JAX",
+    "value": 12.35
+   }
+  ],
+  "total": 114.38,
+  "words": "1 change from your MFL lineup."
+ },
+ "record": {
+  "losses": 2,
+  "standing": 8,
+  "wins": 2
+ },
+ "review": [],
+ "roster_id": 8,
+ "roster_source": "MFL",
+ "roster_updated_at": "2026-10-11T07:30:57+00:00",
+ "scoring_label": "12-team redraft \u00b7 standard \u00b7 6\u2011pt pass TD",
+ "season": 2026,
+ "set_line": "The rest of your lineup is set.",
+ "source": "sleeper",
+ "summary": "**Big Mac Attack** \u00b7 2-2, #8 in the league \u00b7 week 5 vs **Uh, Winning!**",
+ "swaps": [],
+ "team_name": "Big Mac Attack",
+ "unvalued_words": null,
+ "week": 5,
+ "win": {
+  "assumptions": "assuming the players' weeks are independent except teammates and opponents",
+  "early": false,
+  "line": "You're a slight favorite this week: 60%, 114 to 101 expected.",
+  "mine": 114.38,
+  "n_no_range": 1,
+  "n_played": 0,
+  "n_started": 0,
+  "n_starters": 8,
+  "note": null,
+  "opp_n_no_range": 1,
+  "opp_n_played": 0,
+  "opp_n_started": 0,
+  "opp_n_starters": 8,
+  "opponent_roster_id": 3,
+  "p": 0.5986,
+  "percent": 60,
+  "played_words": null,
+  "side": "favorite",
+  "theirs": 101.04,
+  "words": "a slight favorite"
+ }
+}

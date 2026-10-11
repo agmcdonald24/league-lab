@@ -28,9 +28,9 @@ test("My Week: short names and a headshot on every lineup row, the plain header,
   await page.goto(dyn("/"));
   await expect(page.getByTestId("team-name")).toHaveText(d.team_name);
 
-  // the header: "Your lineup" and one line under it
-  await expect(page.getByTestId("lineup-head")).toHaveText("Your lineup");
-  await expect(page.getByTestId("lineup-caption")).toHaveText("Starters, the bench, who can't play — tap a name for his card.");
+  // the header: IX-4 (on purpose) "Recommended lineup" (was "Your lineup": the table is the recommendation) and one line under it
+  await expect(page.getByTestId("lineup-head")).toHaveText("Recommended lineup");
+  await expect(page.getByTestId("lineup-caption")).toHaveText("Who we would start, by our projections and the calls above — tap a name for his card.");
   await expect(page.getByTestId("lineup-full").locator("summary")).toHaveText(/The bench and who can't play/);
   await expect(page.getByText(/Your full lineup: every slot/)).toHaveCount(0);
 

@@ -86,7 +86,10 @@ test("My Week, two open spots: each is its own roster alert with Waivers at the 
   const open = cards.nth(0).getByTestId("action-open");
   await expect(open).toHaveText("Find a quarterback on Waivers ›");
   await expect(open).toHaveAttribute("href", `/waivers?position=QB&${Q}`);
-  await expect(page.getByTestId("news-feed-title")).toHaveText("News feed");
+  // IX-4 (on purpose; the review § 5): this answer has no news, so no News feed card and no empty line (the heading's
+  // word "News feed" stays where there is news: e2e/ig2, ih2, ii4)
+  await expect(page.getByTestId("what-changed")).toHaveCount(0);
+  await expect(page.getByText("Nothing has changed since the morning build.")).toHaveCount(0);
   await expect(page.getByText("Change needed")).toHaveCount(0);
   await expect(page.getByText("What changed", { exact: true })).toHaveCount(0);
   // the lineup shows the two open slots as open, nothing else
