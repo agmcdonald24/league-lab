@@ -16,6 +16,7 @@ from league_lab import clock
 
 from . import availability as AV
 from . import league_gate as LG  # ---- IS-2
+from . import onfield  # ---- IX-1
 from .applib import cards, links, signals, ui
 from .applib import ros as ROS
 from .db import missing_relations, query
@@ -563,6 +564,8 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "schedule": schedule_rows(sched, ros_weeks, week),
         "games_played": int(p["games_played"]) if is_num(p["games_played"]) else None,
         # ---- end IF-4
+        # ---- IX-1: the model's own forecast of his share of the team's targets this week (live week; RB / WR / TE)
+        "projected_target_share": onfield.projected_target_share(gsis, pos, season, week, sits=bool(sits_now)),
     }
 
 

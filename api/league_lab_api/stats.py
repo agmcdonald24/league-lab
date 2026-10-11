@@ -268,6 +268,21 @@ CATALOGUE: list[dict] = [
        "kneel-downs (nflverse carries); two-point tries are excluded. The card's Carry share is this number.",
        "carries", "team carries in the games he played", SHARE_AGG, source=NFLV + " (team totals: fct_team_game)",
        status="derived", reason="no team carries in his games"),
+    # ---- IX-1 (Wave I-X), lf1.0: on the field (docs/METRICS.md § "A game left early")
+    _c("on_field_target_share", "Target share on the field", "Tgt % on", "share", "pct",
+       "His targets / his team's targets on the plays he was on the field, so a game he left early does not drag it "
+       "down. 2016-2025: counted play by play; 2026: estimated as his targets / (his team's targets x his share of the "
+       "snaps), because who was on the field each play is published after the season.",
+       "targets (on the plays he was on the field)", "team targets on the plays he was on the field (2026: team targets x "
+       "his snap share)", SHARE_AGG, source="nflverse play-by-play and participation (2016-2025); nflverse snap counts "
+       "(2026)", status="derived", reason="no snap count for his games", positions=RECV),
+    _c("on_field_carry_share", "Carry share on the field", "Car % on", "share", "pct",
+       "His carries / his team's carries on the plays he was on the field. 2016-2025: counted play by play; 2026: "
+       "estimated as his carries / (his team's carries x his share of the snaps).",
+       "carries (on the plays he was on the field)", "team carries on the plays he was on the field (2026: team carries "
+       "x his snap share)", SHARE_AGG, source="nflverse play-by-play and participation (2016-2025); nflverse snap counts "
+       "(2026)", status="derived", reason="no snap count for his games", positions=("RB",)),
+    # ---- end IX-1
     _c("rb_carry_share", "Backfield carry share (RBs only)", "RB Car %", "share", "pct",
        "His carries / the carries of his team's running backs and fullbacks in the games he played — quarterback runs "
        "and kneel-downs and receivers' carries left out. Kept apart from Carry share.",
@@ -619,9 +634,9 @@ GROUPS = ["Games and points", "Receiving", "Rushing", "Passing", "Air yards", "R
           "Next Gen Stats", "Charting", "Snaps and routes", "Role change", "Advanced (PFR)"]    # IO-4: Role change
 GROUP_ORDER: dict[str, list[str]] = {
     "Games and points": ["games", "points"],
-    "Receiving": ["targets", "receptions", "receiving_yards", "receiving_tds", "target_share", "catch_rate",
+    "Receiving": ["targets", "receptions", "receiving_yards", "receiving_tds", "target_share", "on_field_target_share", "catch_rate",
                   "yards_per_target", "yards_per_reception", "yac_per_reception", "receiving_first_downs"],
-    "Rushing": ["carries", "rushing_yards", "rushing_tds", "carry_share", "rb_carry_share", "yards_per_carry",
+    "Rushing": ["carries", "rushing_yards", "rushing_tds", "carry_share", "on_field_carry_share", "rb_carry_share", "yards_per_carry",
                 "rushing_first_downs", "yards_per_touch"],
     "Passing": ["attempts", "completions", "completion_rate", "passing_yards", "yards_per_attempt",
                 "adjusted_yards_per_attempt", "passing_tds", "td_rate", "passing_interceptions", "int_rate",
@@ -822,6 +837,7 @@ def season_rows(season: int, season_type: str) -> pd.DataFrame:
         df = df.merge(rb.reset_index(), on=["team", "game_id"], how="left").merge(i5.reset_index(), on=["team", "game_id"],
                                                                                      how="left")
         df = with_advanced(df, int(season), season_type)               # ---- IM-1
+        df = with_on_field(df, int(season), season_type)               # ---- IX-1
         df = with_ngs(df, int(season), season_type)                    # ---- IL-1
     return _frames.put(key, df, ttl=TTL_S)
 
@@ -871,6 +887,26 @@ def relation_columns(rel: str) -> set[str]:
                (rel,))
     return set(df["column_name"]) if not df.empty else set()
 # ---- end IL-1
+
+
+# ---- IX-1 (Wave I-X), lf1.0: the on-field shares' summable parts and the left-early mark onto his game row
+# (docs/METRICS.md § "A game left early"). Read only when the copy has the columns (the deploy lands before the refresh).
+ON_FIELD_COLS = ["on_field_basis", "on_field_targets", "on_field_team_targets", "on_field_carries", "on_field_team_carries",
+                 "left_early"]
+ON_FIELD_SQL = f"""select gsis_id, game_id, {", ".join(ON_FIELD_COLS)} from analytics.fct_player_game
+                    where season = %s and season_type = %s"""
+
+
+def with_on_field(df: pd.DataFrame, season: int, season_type: str) -> pd.DataFrame:
+    if not set(ON_FIELD_COLS) <= relation_columns("fct_player_game"):
+        return df
+    of = query(ON_FIELD_SQL, (season, season_type))
+    if of.empty:
+        return df
+    for c in ON_FIELD_COLS[1:5]:
+        of[c] = pd.to_numeric(of[c], errors="coerce")
+    return df.merge(of, on=["gsis_id", "game_id"], how="left")
+# ---- end IX-1
 
 
 # ---- IM-1 (Wave I-M): the advanced mart's row onto his game row (gsis_id + game_id; one row per player-game)
@@ -1000,6 +1036,15 @@ def aggregate(g: pd.DataFrame) -> pd.DataFrame:
         if c not in g:
             g[c] = np.nan
     # ---- end IM-1
+    # ---- IX-1: the on-field parts of the games he played (a frame without them: unknown); basis per game, counted
+    for c in ON_FIELD_COLS[1:5]:
+        g[c] = (pd.to_numeric(g[c], errors="coerce") if c in g else pd.Series(np.nan, index=g.index)).where(g["played"])
+    basis = g["on_field_basis"] if "on_field_basis" in g else pd.Series(None, index=g.index, dtype=object)
+    g["_of_part"] = g["played"] & (basis == "participation")
+    g["_of_snaps"] = g["played"] & (basis == "snaps")
+    g["_left_early"] = g["played"] & (g["left_early"].astype("boolean").fillna(False).astype(bool) if "left_early" in g
+                                      else False)
+    # ---- end IX-1
     by = g.groupby("gsis_id", sort=False)
     # position = mode() within group (order by position): the most frequent, ties to the first alphabetically
     cnt = g.dropna(subset=["position"]).groupby(["gsis_id", "position"]).size().reset_index(name="n")
@@ -1021,6 +1066,10 @@ def aggregate(g: pd.DataFrame) -> pd.DataFrame:
         "_cpoe_n": by["_cpoe_n"].sum(min_count=1),
         **{c: (by[c].sum().astype(int) if c.endswith("_week") else by[c].sum(min_count=1)) for c in ngs_cols},  # IL-1
         "pfr_rec_games": by["pfr_rec_games"].sum().astype(int), "pfr_pass_games": by["pfr_pass_games"].sum().astype(int),
+        **{c: by[c].sum(min_count=1) for c in ON_FIELD_COLS[1:5]},                                     # ---- IX-1
+        "on_field_participation_games": by["_of_part"].sum().astype(int),                                 # ---- IX-1
+        "on_field_snap_games": by["_of_snaps"].sum().astype(int),                                         # ---- IX-1
+        "left_early_games": by["_left_early"].sum().astype(int),                                          # ---- IX-1
     })
     out = out.join(pos.set_index("gsis_id")["position"])
     out["red_zone_opportunities"] = out["red_zone_carries"].add(out["red_zone_targets"], fill_value=0).where(
@@ -1028,6 +1077,13 @@ def aggregate(g: pd.DataFrame) -> pd.DataFrame:
     # shares: summed numerator / summed denominator (4 places, the mart's rounding)
     out["target_share"] = ratio(out["targets"], out["team_targets"])
     out["carry_share"] = ratio(out["carries"], out["team_carries"])
+    # ---- IX-1: on the field — summed on-field numerators / summed on-field denominators; the basis of the window
+    out["on_field_target_share"] = ratio(out["on_field_targets"], out["on_field_team_targets"]).clip(upper=1)
+    out["on_field_carry_share"] = ratio(out["on_field_carries"], out["on_field_team_carries"]).clip(upper=1)
+    out["on_field_basis"] = np.where(out["on_field_snap_games"] > 0,
+                                     np.where(out["on_field_participation_games"] > 0, "mixed", "snaps"),
+                                     np.where(out["on_field_participation_games"] > 0, "participation", None))
+    # ---- end IX-1
     out["rb_carry_share"] = ratio(out["carries"], out["team_rb_carries"])
     out["air_yards_share"] = ratio(out["receiving_air_yards"], out["team_air_yards"])
     out["red_zone_target_share"] = ratio(out["red_zone_targets"], out["team_red_zone_targets"])

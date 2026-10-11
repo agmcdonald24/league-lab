@@ -1375,7 +1375,9 @@ def player_games(league_id: str, gsis: str, *, season: int | None = None, season
                   order by p.season_type desc, p.week""", (gsis, season, st, st))
     lp = league_games(ctx, season, [gsis])[["game_id", "points", "points_expected"]].rename(
         columns={"points_expected": "expected_points"})
-    g = g.merge(lp, on="game_id", how="left").drop(columns=["gsis_id"])
+    g = g.merge(lp, on="game_id", how="left")
+    from . import onfield  # ---- IX-1: left early (+ its reason) and the on-field shares
+    g = onfield.game_log_marks(g, gsis, season).drop(columns=["gsis_id"])
     return {**ctx.meta(), **{"player": head}, "season": season, "season_type": st, "games": _records(g),
             "scoring_note": REF_NOTE.format(ref=reference_name())}
 
