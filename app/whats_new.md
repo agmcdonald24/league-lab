@@ -3,6 +3,30 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 11 · a clearer week, a shorter player card, and stats by game situation
+
+- **My Week shows one matchup number and says what it is.** Before kickoff it is each side's best lineup by our
+  projections. Once games start it is points scored so far plus projections for players still to play.
+- **The lineup table is our recommended lineup, and it shows where yours differs.** Each slot that is different in
+  your league app is marked, with a count at the top.
+- **A close call at quarterback says "check who starts first"** when a team's starter is in doubt.
+- **The player card is shorter and tells you who he is.** Height, weight, age, seasons played, college and draft sit
+  under his name. The first tab keeps to the forecast and the reasons; ratings moved to Usage and the points chart to
+  Game log.
+- **Stats by game situation.** On a player's Usage tab and on the Stats table you can see his targets and carries
+  when his team is trailing, within a score, or leading.
+- **A game a player left hurt is marked.** His game log says he left early and shows his target share for the time he
+  was on the field. His card no longer calls that game a smaller role.
+- **A projected target share.** Usage shows how many of his quarterback's projected passes we expect to go his way.
+- **Stats opens on eight columns.** Pick Production, Opportunity, Role changes, Efficiency or Advanced for a
+  different question; the full table is one tap away, and your choice is remembered for each position.
+- **Kickers and defenses are judged on this week only.** We cannot rank them further ahead, so they no longer lead
+  the waiver list on a four-week gain.
+- **A defense's rank reads one way everywhere:** 1 gives up the most points to the position.
+- **The menu is simpler:** My Week, Waivers, Trades and Research. DFS is under the ⋯ menu.
+- **Projections no longer shift between updates for no reason.** A rounding fault made some numbers move a little
+  from one nightly update to the next with no new information. That is fixed.
+
 ## Oct 10 · the starting quarterback is worked out from the data
 
 - **No more hand-picked starters.** Each team's starting quarterback now comes from three sources checked against

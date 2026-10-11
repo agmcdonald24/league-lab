@@ -598,6 +598,21 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 34 — Wave I-X, the review's Pass 1 and the stat asks (2026-10-11, Sunday 00:31 – morning ET)
+
+Andrew asked for stats by game situation, for a game a player left early not to read as a lost role, for a projected
+target share, for bio facts on the card, and for an outside review to be incorporated. Six packages, one after
+another: **IX-1** the on-field shares (exact from participation, estimated from snaps for the season under way) and
+the left-early mark; **IX-2** the card — a bio line, an Overview with one forecast and no average of ratings, usage by
+game situation, the mark on the game log; **IX-3** Stats opens on eight columns, named views, the view remembered per
+position, a situation filter; **IX-4** My Week — one labelled matchup number, "Recommended lineup" with the provider's
+differences marked, an unclear starter on the call, three decisions first; **IX-5** the trust line by position, no
+"near enough to trust", kickers and defenses on this week only, "net lineup points" for Fit, one direction for a
+defense's rank, the menu My Week · Waivers · Trades · Research; **IX-6** `project` made reproducible, the projected
+target share over the starter's projected attempts, role alerts that do not read an injury exit as a smaller role, and
+the study — handling a shortened game in the projection is worse in every season, so nothing ships. Acceptance and
+evidence: `docs/STATUS.md` § "Wave I-X". **Next**: the review's Pass 2; the Sleeper head-to-head when week 5 is in.
+
 ### Iteration 33 — Wave I-W, starters from the data; the roadmap reset (2026-10-10, Saturday 15:00 – evening ET)
 
 Andrew rejected the PO's roadmap as "non needle moving" and named what was wrong on the screen: a starter set by

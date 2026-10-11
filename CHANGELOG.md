@@ -4,6 +4,9 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-11 — Wave I-X
 
+- **PO — the merge.** `sync_to_hosted.sh` publishes `mart_player_game_situation` as a window of seasons; the console's
+  Home says its total once and names its table; the console's Trade Finder says net lineup points; the review is kept
+  at `docs/reviews/2026-10-10-competitive-review-and-design-plan.md`. docs/STATUS.md § "Wave I-X".
 - **IX-6 — does handling a shortened game make the projection better? No (lf2.0).** Six candidates (the left-early
   game skipped, its shares taken on the field, its numbers scaled to a full game; each with the precise mark LE-A and
   the shipped LE-B), walk-forward 2021 – 2025: every one is worse on the games after a shortened game, in every season

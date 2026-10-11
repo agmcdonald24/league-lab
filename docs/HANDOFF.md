@@ -386,6 +386,27 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-X (2026-10-11, Sunday overnight; STATUS § "Wave I-X (Iteration 34)")**: **Andrew opened the next push
+  himself** — his stat asks (splits by game situation, a game left early, bio on the card, a projected target share)
+  and an outside review (`docs/reviews/2026-10-10-competitive-review-and-design-plan.md`) "to incorporate for our next
+  big push". The three-item roadmap of Wave I-W still governs model work; **the review's two passes are the screens'
+  roadmap: Pass 1 is this wave, Pass 2 (keep / claim / trade side by side, the lineup-diff panel, the comparison tray)
+  is next, after he has used Pass 1.** What a successor must know: (1) **a game left early** is marked per game
+  (`fct_player_game.left_early`, lf1.0) and the screens say "Left early" **only with the injury note**
+  (`left_early_kind` = hurt); the on-field share for the season under way is an **estimate from snaps** (participation
+  comes after the postseason) and is never shown under 10 snaps. (2) **The projection does not use it, on evidence**:
+  six candidates, five seasons, every one worse on the games after a shortened game (lf2.0) — do not "fix" this again
+  without a new idea; the candidates sit behind the dbt var `lf_candidate`, unset. (3) **`project` is reproducible
+  now** (the season snap share is summed exactly; two runs, 0 rows differ): a run-to-run difference is a defect again,
+  not noise — `/home/claude/waveIX/verify.sh` hashes the projection tables across two runs. (4) **My Week's table is
+  "Recommended lineup"** (the calls applied, a total, every slot that differs from the provider's lineup marked); the
+  summary is one number with its label; an unclear starter sits on the call. (5) **Trust words**: each position's
+  verdict by name (`provenance._checked_words`, a test over every position set); a kicker or defense is judged on
+  this week only and never leads Waivers; a defense's rank is "Nth-most", 1 = gives up the most, everywhere.
+  (6) The menu is My Week · Waivers · Trades · Research; DFS is under ⋯. **How the wave ran is the pattern to keep**:
+  packages one after another in one worktree on one database, each from the last one's branch — six packages, no
+  merge conflict, five hours. A developer's full e2e run rewrites other packages' screenshots under
+  `docs/handbacks`: `git checkout -- docs/handbacks` after it.
 * **Wave I-W (2026-10-10, Saturday; STATUS § "Wave I-W (Iteration 33)") — READ THIS ONE FIRST: the owner reset the
   roadmap.** Andrew: "you really need to get this an effective and useful product. I don't care about a lot of these
   non needle moving shit." and "Having to hand set (and tell people it was set by hand) is not acceptable." The

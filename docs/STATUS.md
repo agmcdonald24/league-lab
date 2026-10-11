@@ -20188,3 +20188,1028 @@ the record keeps grading both picks either way. No workflow or render line.
   sign-in limits, the host's logs, the NFL image requests, the stored visitor-league snapshots and every retention
   period go unsaid; and any league is readable by anyone who has its id. Offered: a Privacy page linked in the footer
   and his decision on Google Analytics (keep, ask first, or drop). Not built until he says.
+
+## Wave I-X (Iteration 34) — the review's Pass 1 and Andrew's stat asks: a game left early, the card, Stats, My Week, what we claim
+
+### PO merge — Wave I-X, 2026-10-11 (Sunday 00:31 – 08:15 ET)
+
+* **Why**: Andrew, Sunday 00:31: "Can we see stats based on certain conditions? Like in the lead or trailing? adjust
+  things like if a player gets hurt early their target share doesn't suffer … Ja'Marr Chase goes out with a concussion
+  early in the 2nd quarter so his target share seems artificially low. I wonder if there is like a projected target
+  share maybe? Could we also add more stats esp when opening a player card such as height, weight, age, yrs pro etc?
+  There is also a review markdown I want you to incorporate for our next big push as well." The review (an outside
+  reviewer on the live site, 10 October, against five other products) is kept at
+  `docs/reviews/competitive-review-2026-10-10.md`. **This is the owner opening the next push himself**: the three-item
+  roadmap of 10 October still governs model work; the review's two passes are the screens' roadmap.
+* **What the PO checked first**: two read-only surveys of the code against the review's eleven reproducible findings.
+  **All eleven are real**, and three are worse than the review says: the table headed "Your lineup" was our best
+  lineup, not the manager's, with nothing saying so; My Week never softened a call for an unclear starter although
+  METRICS says it is withheld; the trust line could label a whole span "no better than chance" from a kicker alone and
+  name the quarterback as the exception. On Andrew's own asks: per-player splits by score existed but only on an old
+  screen; **a game left early counted as a full game everywhere** (METRICS line 12 listed a "partial-game exclusion"
+  no code implemented); the card selected no bio column although `dim_player` holds them.
+* **How it ran**: six packages **one after another, each from the last one's finished branch, in one worktree on one
+  database** (`wt-iq4`, `league_lab_iq4`) — so no merge conflict and each developer could rely on the one before. The
+  brief is `/home/claude/waveIX/BRIEF.md`. IX-1 00:51–01:43, IX-2 01:43–02:40, IX-3 02:39–03:13, IX-4 03:13–03:52,
+  IX-5 03:54–05:04, IX-6 05:03–06:12. Three developers resumed (IX-1 / IX-6: IW-1's; IX-2: IU-3's), three new. An
+  agent the user had stopped was not resumed (IX-5 went to a new one).
+* **What was built** (the hand-backs below; the tables are in docs/METRICS.md):
+  * **IX-1 — a game left early (lf1.0).** Per game: **target and carry share on the field** — exact from
+    participation for 2016–2025, **estimated from his snap share for 2026** (participation is published after the
+    season); and a **left-early mark** knowable when the game ends. The estimate against the exact share: off by 0.035
+    on all player-games, 0.060 on the left-early ones (the whole-game share is off by 0.200 there). The mark against a
+    truth built from participation: with an injury note naming him, right 19 times in 20 but finds one in seven; the
+    shipped rule (the note **or** a touch before half-time and none after) is right less than half the time. Ja'Marr
+    Chase, 2026 week 4: 3 of 53 targets on 15 snaps — whole game 5.7%, on the field 28%.
+  * **IX-2 — the card.** A bio line (height, weight, age, season, college, draft; a missing fact left out). The
+    Overview: one forecast; the ratings moved to Usage and **their plain average removed everywhere**; the points chart
+    on Game log; one role vocabulary (the web no longer turns "no alert" into "role steady over N games"). Usage: **by
+    game situation** — When trailing (behind by 9+), Within a score (8 or fewer either way), When leading (ahead by 9+)
+    — with the plays behind each and "too few to read" under 20. Game log: the mark and the on-field share.
+  * **IX-3 — Stats.** Every width opens on **Key stats, eight columns**; named views (Production, Opportunity, Role
+    changes, Efficiency, Advanced), each with its question; the Full table one tap away; the view remembered per
+    position; **a situation filter** on a new per-game model (`mart_player_game_situation`); no table name on screen.
+  * **IX-4 — My Week.** One matchup summary, labelled for what it is (before kickoff: each side's best lineup by our
+    projections; once a game has started: points scored plus projections for players still to play); the table is
+    **"Recommended lineup"**, holds the lineup the calls produce, has a total, and marks every slot that differs from
+    the provider's submitted lineup; **an unclear starter sits on the call it affects** ("check who starts first");
+    at most three decisions first; no card for no news. Both paths (house leagues and on demand).
+  * **IX-5 — what we claim.** The trust line names each position's verdict (a test over all 63 position sets × 3
+    spans); "near enough to trust" is gone; **a kicker or defense is judged on this week, as a rough guide, after the
+    graded positions**; "Fit" is "net lineup points" with its weeks; a defense's rank runs one way (1 = gives up the
+    most); Waivers names the provider, not a table; the menu is My Week · Waivers · Trades · Research, DFS under ⋯;
+    the known Folk trade has a regression test.
+  * **IX-6 — the study, and three faults IX-1 turned up.** (0) **`project` says the same thing twice**: the season
+    snap share was a float average over an unordered group, so every build moved `prev_snap_pct`'s last bit on about
+    30,000 rows, the trees binned differently and every unfrozen week moved (up to 1.5 points); summed exactly now —
+    two runs, 0 rows differ in 13 tables. This was the "hb1.0 run-to-run difference" carried since Wave I-U. (1) **The
+    projected target share** is his projected targets ÷ his projected starting quarterback's projected attempts (the
+    first version summed every listed player's "if he plays" line: 40–47 a team); on weeks 1–4 it is 0.056 from the
+    real share; shown on Usage as context. (2) **Role alerts (ra1.3)**: a game he left hurt is handled like a game
+    missed injured — Chase's "Smaller role … Why: Mitchell Tinsley back" is gone. (3) **The study (lf2.0): nothing
+    ships.** Six candidates (skip the game, take its shares on the field, scale it to a full game; each with the
+    precise and the shipped mark), walk-forward 2021–2025: **every one is worse on the games after a shortened game,
+    in all five seasons (+4.9% to +9.1% error)**. The dragged-down inputs carry real information — a player who left
+    hurt does less in his next games — so the projection keeps them. The display is right to show the on-field share;
+    the forecast is right not to use it.
+* **The PO's glue** (commit `db984e2` and the docs commit): `sync_to_hosted.sh` publishes
+  `mart_player_game_situation` as a window of seasons (19 → about 4 MB); the console's Home says its total once and
+  names its table; the console's Trade Finder says net lineup points.
+* **The PO's decisions**:
+  * **"Left early" needs the injury note.** A marked game without the note reads "Played far less than usual: N snaps
+    (x% of the team's; usually y%)" and nothing more (`left_early_kind`: hurt | short).
+  * **An on-field share is never shown from a sliver** (under 10 snaps: a dash, "too few snaps"), and 2026's is
+    labelled an estimate.
+  * **One direction for a defense's rank means "31st-most"**, not "2nd-fewest": awkward on a tough matchup, but the
+    reviewer's complaint was having to reverse the scale, and every screen now reads the same way.
+  * **The study's answer is told to Andrew as it is**: his eye was right about the stat and the role alert; the
+    backtest says the projection should not be "corrected" for it.
+* **Round 2 (07:09–07:20, IX-3's developer)**: on a phone Stats still opened on a screen of controls (its own
+  "found"). Below 900 px the filters now sit behind one Filters button that names everything in force ("Filters: When
+  trailing · Free agents · Last 5 calendar weeks"); three table rows show on the first screen at 375 × 812; nothing
+  changes at 900 px and wider.
+* **Verified**: on the merged tree, by the PO (`/home/claude/waveIX/verify.sh`, then `verify2.sh` after round 2):
+  `fresh_db_check` — every state table exists after `db migrate` (27); the copy standard clean; `scripts/gate.sh`
+  GATE PASSED (twice); the nightly's middle with the live week on (`LEAGUE_LAB_FREEZE=game chain.sh`, on
+  `league_lab_iq4`): dbt PASS=754 ERROR=0, `project`, the projection marts PASS=145 ERROR=0, both availability guards as
+  errors PASS=2, the audit's first line 0; **`project` run a second time at the same state: seven projection tables
+  (stored and live) hash identically**; `context-record` and `starter-record` rc 0; the root suite 4 failed / 1,753
+  passed, 0 new; the API suite 102 failed / 1,606 passed — **16 names not in the known list: 14 fail the same on the
+  pre-wave code (`38c0339`) against this database** (the copy stands in week 5; the list was made on a week-4 copy:
+  `test_decisions` ×2, `test_f3` ×2, `test_ib0`, `test_ib2`, `test_im5` ×2, `test_in3`, `test_in4` ×2, `test_inf1`,
+  `test_iu1`, `test_m6`), **2 were the PO's own glue** (`test_parity::test_my_week_is_the_home_page` ×2: the console's
+  Home skipped an empty league line) — fixed, `test_parity` 12 passed; the wave's own API tests with parity 246 passed;
+  the full e2e, both projects: 639 passed / 21 skipped / 0 failed, and after round 2 641 / 21 / 0; the pooler check
+  passed in both modes. The PO opened the phone Stats screen against the real API with a situation, an ownership and a
+  window filter in force (50 rows, no error; the developer's screenshot of that state showed its fixture server's
+  missing recording and was replaced). **Not checked**: no publish to a hosted database was drilled (no publish SQL
+  changed; one table joined the windowed list); the screens were read from screenshots at 375 and 1300, not on a real
+  phone; nobody but the PO and the developers has used them.
+* **Not done / next** (in the order the PO would take them):
+  1. **The review's Pass 2**: keep / claim / trade on one basis side by side, a two-team lineup-diff panel, the
+     comparison tray, sourced news beside the decision it affects — after Andrew has used Pass 1.
+  2. IX-2's cut: the Overview's one line of what he means for this roster and three evidence bullets as their own
+     blocks (today's sections stay under the head).
+  3. The Sleeper head-to-head (roadmap item 2): week 5's result on Tuesday via `/api/record`; nothing is built before
+     that and Andrew's word.
+  4. The privacy page and the Google Analytics decision: waiting on Andrew.
+  5. Small: the Stats CSV's file name does not say the situation; the older root `waivers_*.json` saved answers hold a
+     defense in the three; `provenance.CHECKS` prints 0.636 / 0.569 / 0.545 where METRICS prints 0.633 / 0.568 / 0.540;
+     the plausibility label "A roster-fit idea" still says "fit"; the fixture API recipe has no editor account (the
+     blog editor's specs fail in a developer's run and pass in the PO's).
+  6. The review's own caution stands: a redesign can improve comprehension; it does not establish accuracy. Five to
+     ten managers on three real tasks is Andrew's to arrange.
+
+### IX-1 — a game a player left early: the stat, the mark, the projected share (Wave I-X)
+
+**Start 00:51 ET, Sunday 2026-10-11 (read from `date`); end 01:43.** Branch `dev/IX1` (from `integ/IX` = `main`
+`38c0339`), `/home/claude/wt-iq4`, database `league_lab_iq4`. The rule: docs/METRICS.md § "A game left early" (lf1.0),
+committed first (`01a4f3a`, 00:54), before any number was read.
+
+#### 1. Done / not done / cut
+
+* **Definitions and the grade's rule, first** (`01a4f3a`): the on-field share exact (participation) and estimated
+  (snaps; capped at 1, NULL without snaps), left early (snap drop + injury note identified by the play's own ids, or +
+  no touch after half-time), candidates LE-A / LE-B / LE-0 (reference), the participation truth, precision / recall /
+  F1, and the pick (higher F1; a tie ships LE-A).
+* **Built** (`2d89ac7`): `int_player_game_on_field` (new) → `fct_player_game` gets `on_field_basis`,
+  `on_field_targets`, `on_field_team_targets`, `on_field_target_share`, `on_field_carries`, `on_field_team_carries`,
+  `on_field_carry_share`, `left_early`, `left_early_reason`; 12 new dbt tests. **LE-B ships, by the rule** (F1 0.422
+  against LE-A's 0.253) — with a plain warning on its precision (§ 3).
+* **Projected target share** on the card (`/api/player/{gsis}`, the live week): built; its accuracy is context (§ 3).
+* **API fields for IX-2 / IX-3** (`e5f8b8a`, `18e445a`, `dff1314`): Stats' two catalogue columns with sums, basis and
+  samples (on the window path, `window=…`, which the Stats screen uses; the plain season path reads
+  `mart_player_season`, which does not carry them);
+  the game log's `left_early` + reason (+ the display-only "then missed week N") and on-field shares; types in
+  `web/src/lib/api.ts`; the Stats mirror (`columns.ts`: group and sample line).
+* **Evidence**: Ja'Marr Chase's game is on the copy (2026 week 4, CIN at JAX) — § 3. The chain: ERROR 0 everywhere.
+  **The projection's inputs: 0 cells differ** with the code toggled at one state (main's `fct_player_game.sql` and
+  IX-1's, each followed by a rebuild of every model between it and the feature mart): `fct_player_game`'s 148 columns
+  of `main` identical on all 186,415 rows; `mart_player_recent_form` identical; `mart_player_week_features` identical
+  but for `prev_snap_pct`'s last floating-point bit (≤ 4.4e-16), which differs just as much between two rebuilds of the
+  same code (29,869 rows). The projection's outputs against the pre-chain copy are **not** 0: weeks 6 – 18 and the live
+  week differ (weeks 1 – 5 kept identical; max 1.48 points, 182 rows ≥ 0.5) — the refit's run-to-run variation and the
+  copy's earlier state, not this change (§ 7).
+* **Not done / cut**: no screen work (IX-2 / IX-3 own the card and the table), so no screenshots; the Stats screen's
+  Full table gains the two columns through the catalogue (no saved answer carries them).
+
+#### 2. Commits
+
+* `01a4f3a` the definitions and the grade's rule, before any number
+* `2d89ac7` `int_player_game_on_field`, the columns on `fct_player_game`, tests; the grade script
+* `e5f8b8a` the API fields (Stats catalogue, game log, the card's projected target share)
+* `9992829` the result in METRICS, WORDS, CHANGELOG, the API tests, the types and the Stats mirror
+* `c4e199d` METRICS wording (LE-A's recall, verified: 386 of 1,465)
+* `18e445a` Stats rows carry the on-field samples
+* `df64f89` lf1.0 in the metric registry
+* `dff1314` the merge keeps the frame's notes; the pinned catalogue count; DATA_INVENTORY
+* this file
+
+#### 3. Evidence
+
+**Ja'Marr Chase, 2026 week 4** (Cincinnati at Jacksonville; "CIN-1-J.Chase was injured during the play", 2nd quarter
+12:11, on a play whose receiver id is his):
+
+| | Week 1 | Week 2 | Week 3 | **Week 4** |
+|---|---:|---:|---:|---:|
+| Targets / team targets | 4 / 34 | 9 / 31 | 12 / 37 | **3 / 53** |
+| Snap share | 94% | 88% | 100% | **20%** (15 snaps) |
+| Whole-game target share | 11.8% | 29.0% | 32.4% | **5.7%** |
+| On-field target share (estimate; 2026 has no participation) | 12.5% | 33.0% | 32.4% | **28.3%** |
+| Left early | — | — | — | **yes**: "15 snaps (20% of the team's; usually 94%); hurt on a play in the 2nd quarter" |
+
+The card's projected target share for week 5: "8.0 of his team's 46.3 projected targets in week 5 (17%): the model's own
+forecast of his share of the team's targets this week."
+
+**The fields, exactly** (IX-2, IX-3):
+
+* `GET /api/players?…&window=season` (Stats), per row: `on_field_target_share`, `on_field_carry_share` (0 – 1, null =
+  unknown), `on_field_targets`, `on_field_team_targets`, `on_field_carries`, `on_field_team_carries` (the summed parts),
+  `on_field_basis` (`participation` | `snaps` | `mixed` | null), `left_early_games`. Catalogue ids
+  `on_field_target_share` ("Target share on the field", "Tgt % on", RB / WR / TE, group Receiving) and
+  `on_field_carry_share` ("Carry share on the field", "Car % on", RB, group Rushing). Chase, 2026, `window=season`:
+  `{"games": 4, "targets": 28, "team_targets": 155, "target_share": 0.1806, "on_field_target_share": 0.2621,
+  "on_field_targets": 28, "on_field_team_targets": 106.84, "on_field_basis": "snaps", "left_early_games": 1}`.
+* `GET /api/player/{gsis}/games`, per game: `left_early` (bool), `left_early_reason` (string | null),
+  `on_field_target_share`, `on_field_carry_share`, `on_field_basis`. Chase, week 4: `{"week": 4, "targets": 3,
+  "target_share": 0.0566, "on_field_target_share": 0.283, "on_field_carry_share": 0.0, "on_field_basis": "snaps",
+  "left_early": true, "left_early_reason": "15 snaps (20% of the team's; usually 94%); hurt on a play in the 2nd
+  quarter"}` ("; then missed week 5" is added once week 5's box score is in and he did not play).
+* `GET /api/player/{gsis}`: `projected_target_share` = `{"share": 0.1724, "targets": 8.0, "team_targets": 46.3,
+  "week": 5, "players": 13, "words": "8.0 of his team's 46.3 projected targets in week 5 (17%): the model's own
+  forecast of his share of the team's targets this week."}` or null (a QB, no line, he sits, a team total of 0).
+
+**The grade** (`scripts/analysis/ix1_left_early.py`, after the rule's commit): (a) the estimate against the exact share
+on 2016 – 2025 — target share mean absolute difference 0.035 on all 52,131 player-games, **0.060 on the 1,732 truly
+left-early ones** (the whole-game share is off by 0.200 there); carry share 0.038 / 0.047 (whole game 0.247). Coarse in
+the tail: one left-early game in ten is off by 0.18 or more. (b) the rule against the truth (42,803 player-games, 1,465
+true):
+
+| Candidate | Flagged | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|
+| LE-A snap drop + injury note | 224 | 0.955 | 0.146 | 0.253 |
+| **LE-B snap drop + (note or no touch after half-time)** — ships | 1,367 | 0.437 | 0.408 | **0.422** |
+| LE-0 snap drop alone (reference) | 3,719 | 0.219 | 0.557 | 0.315 |
+
+Plainly: **LE-B's mark is right less than half the time**; the reason says which signal fired, so "hurt" is said only
+when the play-by-play named him. LE-A is right 19 times in 20 (0.86 – 1.00 by season) and finds one in seven.
+
+**The ten largest on-field − whole-game differences of 2026** (RB / WR / TE): all one-target games of a player with 1 –
+4% of the snaps (Colbie Young CIN wk 3, J. Michael Sturdivant GB wk 4 (left early), Jayden Reed GB wk 2, Braxton Berrios
+NYG wk 4 (left early), Tank Bigsby PHI wk 3 (left early), Cyrus Allen KC wk 1, Arian Smith NYJ wk 1, Demond Claiborne
+MIN wk 2, Lan Larison NE wk 1, Jalen McMillan TB wk 3): the estimate caps at 100% and is noise on a handful of snaps — a
+screen should show the sample beside it (the Stats row carries the parts: "1 of 1.0 team targets on the plays he was on
+the field").
+
+**The projected target share against weeks 1 – 4 of 2026** (frozen lines): the teams' summed projected targets average
+32.8 against 31.2 real; the projected share is 0.051 from the real whole-game share on average (1,281 RB / WR / TE
+player-weeks). Not graded against a baseline: context.
+
+**The chain** (`LEAGUE_LAB_FREEZE=game /home/claude/waveIT/chain.sh /home/claude/wt-iq4 league_lab_iq4`, 801 s):
+
+```
+== 01:03:23 db migrate
+== 01:03:25 dbt build (full)
+05:10:14  Done. PASS=746 WARN=5 ERROR=0 SKIP=0 NO-OP=0 TOTAL=751
+== 01:10:14 project
+== 01:16:15 projection marts
+05:16:29  Done. PASS=145 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=145
+== 01:16:30 availability guards (as errors)
+05:16:38  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=2
+== 01:16:39 audit
+## Players who cannot play or are unlikely to play and are ranked or valued on the screens: 0
+```
+
+**The projection's inputs** (how I checked; `scratchpad/ix1/toggle.sh`, `toggle2.sh`, `colcmp.py`):
+
+1. `main`'s `fct_player_game.sql` built beside IX-1's as a scratch table (`ix1tmp_fct_player_game_main`, dropped):
+   `except all` both ways on main's 148 columns → 0 and 0 rows (186,415 each).
+2. Nothing in `dbt/models` or `src/league_lab` reads the new columns (grep: only `int_player_game_on_field.sql` and
+   `fct_player_game.sql`).
+3. The toggle (same data, same clock): main's file → `dbt run --select "fct_player_game+,+mart_player_week_features"`
+   (16 models) → dump the feature mart (F0); IX-1's file → the same (F2); and IX-1's before it (F1). Per column:
+   F0 vs F1 29,271 cells, F0 vs F2 30,128, **F1 vs F2 (the same code) 29,869** — every one in `prev_snap_pct`, all
+   ≤ 4.4e-16 (an `avg` summed in a different order). No other column of the 127 differs.
+4. The chain's projection against the pre-chain copy (`ops.*` snapshots before `project` ran): K / DEF identical
+   (`kd_lines`, `kd_ranges` and their live rows); QB / RB / WR / TE weeks 1 – 5 identical, weeks 6 – 18 differ (12,406
+   rows of `ops.projections`, `proj_points` up to 1.48) and the live week (898 rows). The copy's earlier feature mart had
+   another hash (it was built at another time); with inputs equal to the last bit, this is the refit's variation, which
+   IW-1 already saw between two chains of the same code. A second `project` at the same state (6 minutes) did not fit
+   the clock.
+
+#### 4. Tests
+
+* New: `api/tests/test_ix1.py` 5 passed (the catalogue's two columns, a window's on-field sums and basis, unknown
+  never 0, the projected target share's words and its None cases, the game log's mark and "then missed week N");
+  12 dbt tests (`int_player_game_on_field`: unique key, estimates ≤ 1, his on-field targets ≤ the team's, the mark's
+  inputs, the shipped rule = LE-B, the basis; `fct_player_game`: shares in [0, 1], the basis, a mark has a reason,
+  2026 is the estimate) — the chain's dbt build PASS 746, ERROR 0.
+* API test files of the edited modules and changed routes (37 files: `stats` / `/api/players`, `player` /
+  `/api/player/{gsis}`, `research` / the game log; `check_api.sh`): 555 passed, 37 failed, 9 skipped; **new against the
+  known list: 8**, of which **5 were mine and are fixed** (`test_im1` ×3 — the merge dropped the frame's notes, and the
+  catalogue's pinned count 104 → 106 on purpose; `test_ii3` — `docs/DATA_INVENTORY.md` rows added); re-run
+  `test_im1` + `test_ii3` + `test_ix1`: 41 passed, 1 skipped. **3 are this copy's state, not mine**:
+  `test_f3::test_player_card_ros_is_the_marts` ×2 (fails the same with `main`'s `player.py`),
+  `test_ib0::test_waivers_never_calls_an_overlay_starter_would_not_start`,
+  `test_inf1::test_waivers_deadline_answers_the_pinned_moment` (the waiver routes: no file of mine; the chain re-ran
+  `project`).
+* `check_root.sh`: 1,749 passed, 5 failed; new: `test_metric_registry` (lf1.0's row, fixed: 3 passed).
+* `scripts/gate.sh python`: **GATE PASSED**. ruff `src app tests api scripts`: clean. Copy standard `--check`: clean.
+  `web`: lint 0 errors / 0 warnings, build OK. e2e `im2` (Stats; both projects): 18 passed.
+
+#### 5. Edits outside my files
+
+`dbt/models/marts/nfl/fct_player_game.sql` (the join and nine columns, in an IX-1 block), `dbt/models/marts/schema.yml`
+and `dbt/models/intermediate/schema.yml` (tests); `api/league_lab_api/stats.py` (two catalogue entries, the merge, the
+sums, the samples), `research.py` (the game log calls `onfield.game_log_marks`), `player.py` (one field);
+`web/src/lib/api.ts` (types at the end), `web/src/components/stats/columns.ts` (group + sample line); docs METRICS,
+WORDS, CHANGELOG. New: `int_player_game_on_field.sql`, `api/league_lab_api/onfield.py`, `api/tests/test_ix1.py`,
+`scripts/analysis/ix1_left_early.py`.
+
+#### 6. PO lines
+
+None needed: no new table to keep (every column is rebuilt by dbt from inputs the nightly already has), no workflow or
+render line. Hosted size: `fct_player_game` (published slim, `SLIM_TABLES`) gains nine columns — 2.6 MB over all
+seasons here, a fraction of that for the hosted seasons' window. `app/whats_new.md` waits for IX-2 / IX-3 (nothing on a screen reads these yet).
+
+#### 7. Found, not mine
+
+* **The projection is not reproducible run to run** (weeks 6 – 18 and the live week, up to 1.5 points), and
+  `mart_player_week_features.prev_snap_pct` changes in its last bit on every rebuild. IX-6's backtest should fix both
+  (round `prev_snap_pct`; seed / order the refit) before it reads a 3% improvement.
+* docs/METRICS.md line 12 lists a "partial-game exclusion" that no code implements: still true (IX-6's question).
+* `fct_player_game.target_share` counts nflverse's team targets; the exact on-field share counts play-by-play targets
+  (both numerator and denominator), so the two differ by a target or so on some games.
+
+#### 8. Next
+
+1. IX-2 / IX-3: the fields in § 1 (exact names in the final message).
+2. IX-6: LE-B is what ships for display; for the projection, LE-A's precision (0.955) may matter more than F1 — IX-6's
+   rule decides. A feature-mart before / after must be compared column by column at one state (§ 3, § 7).
+
+### IX-2 — the player card: who he is, a shorter Overview, his splits (Wave I-X, 2026-10-11)
+
+Start 01:43 ET, end 02:40 ET. Branch `dev/IX2` from `integ/IX` (IX-1 at `07d73b0`), worktree
+`/home/claude/wt-iq4`, database `league_lab_iq4`.
+
+#### 1. Done / not done / cut
+
+* **Done — who he is**: `bio` on the card's answer for every league kind and no league (the route adds it after the
+  house or on-demand card): "6'0" · 205 lb · 26 years old · 6th season · LSU · 2021 · round 1, pick 5", under the
+  name in the head (drawer and full page; none for a team defense). A missing fact is left out; a missing draft row is
+  never printed "Undrafted" (the data cannot tell undrafted from unknown: Austin Ekeler has no draft row).
+* **Done — the Overview** (drawer): the head (one forecast, with the bio), the reason, the actions, the sections. Out
+  of the first view: the ratings (to Usage, **without their plain average** — removed from the full page too), the
+  points chart (to Game log), the projection section's four tiles (the head carries the projection and its range;
+  the full page keeps that one set). **Cut**: the "one line of what it means for this roster" and the "three evidence
+  bullets" as new blocks — the Overview keeps today's sections (projection, role, availability with the news line,
+  value, signals) below the head; not restructured into bullets for the clock.
+* **Done — one role vocabulary**: the web no longer rewrites "no alert" into "role steady over N games" / "not enough
+  games to say"; the signals section's no-alert sentence leaves; the Role section's words (roles.role_change: "Too early
+  to say …", rising / falling / steady with the games) are the card's only role words; a fired alert still shows.
+* **Done — Usage**: "By game situation" (targets, share, carries, share, with his team's plays behind each group; under
+  20 plays: "too few to read" and no share; empty columns hidden: no carries column of zeros for a receiver) and the
+  ratings. **The left-early mark** and **target share on the field** with its sample are on the Game log (each marked
+  game, the closed kind, under 10 offensive snaps a dash and "too few snaps", the key saying 2026 is an estimate).
+  **Not shown: the projected target share** — see § 7.
+* **Done — the phone**: the card is a full-height sheet (375 × 900 at 0, 0) with its close button; closing returns the
+  Players list to where it was (query, sort and scroll: 692 px before and after). Nothing to fix.
+* **Cut**: a season "Target share on the field" value on Usage (the card's answer has no window value; IX-3's Stats
+  row carries it).
+
+**The situation groups (IX-3, use the same words)** — from `mart_player_context`'s five score-state buckets:
+**When trailing** = his team behind by 9 or more (`trailing_9plus`) · **Within a score** = 8 points or fewer either
+way, tied included (`trailing_1_8`, `tied`, `leading_1_8`) · **When leading** = his team ahead by 9 or more
+(`leading_9plus`). Plays behind a group = his team's dropbacks + carries in it; under 20, "too few to read".
+
+**The field for IX-3**: `/api/player/{gsis}/games`, per game, beside IX-1's `left_early` / `left_early_reason`:
+**`left_early_kind`** (`"hurt"` | `"short"` | null) and **`left_early_words`** ("Left early: 15 snaps (20% of the
+team's; usually 94%); hurt on a play in the 2nd quarter" / "Played far less than usual: 12 snaps (18% of the team's;
+usually 80%)"), written in `onfield.left_early_case`. "hurt" only when the reason carries the play-by-play's injury
+note (the one closed form `int_player_game_on_field` writes: "; hurt on a play in the …").
+
+#### 2. Commits
+
+`11e2516` (the answer: `bio`, `situations`, `left_early_kind` / `left_early_words`), `850d8c1` (the card: bio line, the
+Overview, Usage, Game log), `5c559b8` (the specs updated on purpose, a defense's chart, WORDS, CHANGELOG), and the last
+commit (the situations table's empty columns, screenshots, this hand-back).
+
+#### 3. Evidence (League of Scrubs, `league_lab_iq4`, a Saturday clock)
+
+* **Ja'Marr Chase's card** — bio: "6'0" · 205 lb · 26 years old · 6th season · LSU · 2021 · round 1, pick 5".
+  By game situation, 2026: When trailing 0 targets (28 plays of his team's) · Within a score 25 targets, 24% (170
+  plays) · When leading 3, 11% (56 plays). Game log: "Week 4: Left early: 15 snaps (20% of the team's; usually 94%);
+  hurt on a play in the 2nd quarter. Target share on the field: 28% (whole game 6%; 15 snaps)."
+* Michael Wilson: "6'2" · 213 lb · 26 years old · 4th season · Stanford · 2023 · round 3, pick 94"; When leading:
+  "14 plays of his team's: too few to read" (no share shown). Joe Burrow: "… LSU / Ohio State · 2020 · round 1, pick 1".
+* **Before → after, the drawer's first view**: head · reason · actions · **ratings with "average of 8"** · **points
+  chart** · projection (**four tiles** + lines) · role ("Too early to say …") · availability · value · signals
+  (**"Role: not enough games to say …"** / **"role steady over N games"** rewritten from "no role change detected") →
+  head **with the bio line** · reason · actions · projection (lines only) · role · availability · value · signals (a
+  fired alert only). Usage: ratings (no average) · By game situation · Usage. Game log: the points chart · the points
+  by week · the marked games.
+* **The projected target share is not on the card (PO decision 3)**: the teams' summed projected targets for the live
+  week (week 5 on this copy, `ops.projection_lines`, by `dim_player.latest_team`): median **40.1**, max **50.3**, **15 of
+  30 teams above 40** — against 29.4 / 30.2 / 32.8 / 32.6 real targets per team in weeks 1–4. Michael Wilson's own:
+  "8.6 of his team's 45.8 projected targets". Left for IX-1's developer (§ 7).
+* The phone: the card at 375 is a full-height sheet (0, 0, 375 × 900) with its close; closing it from the Players list
+  (WR, sorted by target share, scrolled to the 26th row) leaves the query, sort and scroll as they were (692 → 692 at
+  375; 592 → 592 at 1300).
+* Screenshots (`docs/handbacks/ix2/`, JPEG q70, 375 and 1300): `overview_*`, `usage_*`, `gamelog_*` (Chase). No
+  sideways scroll (scrollWidth 375 / 1300), no page errors.
+
+#### 4. Tests
+
+* New: `api/tests/test_ix2.py` 3 passed (the bio line and what it leaves out; the situations' three groups and the
+  small-sample words; "Left early" only with the injury note, the plain fact otherwise).
+* API files of the routes whose answer changed (`test_ix2`, `test_ix1`, `test_player`, **`test_parity`**, `test_ip4`,
+  `test_research`, `test_ia3`, `test_if4`, `test_ie0`, `test_in2`, `test_ir4`, `test_il5`, `test_ig1`): 10 failed /
+  197 passed / 1 skipped — **all 10 in the known list**, 0 new. `test_parity` passes (no console diff needed).
+* `scripts/gate.sh python`: GATE PASSED (root 783, api 40, ruff). Ruff and the copy standard clean; `npm run lint` 0
+  errors (210 files); the build. No `src/` or `dbt/` edit (no `check_root.sh`, no chain: nothing the nightly reads).
+* **e2e** (the card opens from most screens): the whole fixtures suite on phone and desktop through `io3`, then the
+  desktop folders after it (`io4` … `v2`): **585 passed, 9 failed, 21 skipped**. The 9 failures are the blog editor's
+  (`io3` 175, 263, 278, 316, 392, 450, 555; `iu6` 213), all on "This account does not write on the blog": the fixture
+  API here has no editor account; they open no card. Not run: `io3` 370+ and `iu6` on desktop (the same editor
+  tests; the run was stopped while they timed out). **Specs updated on purpose**: `ip4` (no ratings average; the head
+  is the only projection — no tiles in the Projection section; the drawer test now finds the ratings on Usage and the
+  chart on Game log; a defense's chart on its Game log tab), `if4` (the signals section says neither "no role change
+  detected" nor "not enough games to say" / "role steady"), `ii2` (the head's number instead of the projection
+  section's "Typical range"). `il1` passed unchanged.
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/main.py` (the card route: two lines in an `# ---- IX-2` block adding `bio` and `situations`);
+`api/league_lab_api/onfield.py` (the closed kind, as the PO asked); `web/src/lib/api.ts` (three types and two optional
+fields on `PlayerCard`, marked); `web/e2e/ip4`, `if4`, `ii2` (below); `CHANGELOG.md`, `docs/WORDS.md`.
+
+#### 6. The PO's lines
+
+None.
+
+#### 7. Found, not mine
+
+* **The projected target share's team total is far from a real game** (above): 15 of 30 teams project more than 40
+  targets in week 5 against about 31 real; the denominator likely counts every projected player listed on a team
+  (`dim_player.latest_team`), backups and the inactive included. Not shown on the card until IX-1's developer looks.
+* **Chase's role alert reads his injury exit as a smaller role**: "Smaller role: Ja'Marr Chase — snap share 94% → 20%,
+  target share 29% → 6% since week 4 (one game so far). Why: Mitchell Tinsley back." The alert detector does not read
+  IX-1's left-early mark (IX-6's subject: the inputs).
+* The e2e `io3` / `iu6` blog-editor tests fail on this worktree's fixture API ("This account does not write on the
+  blog": no editor account in the recipe); they open no card. I did not run them on the base branch to compare.
+
+#### 8. Next
+
+The Overview's roster line and three evidence bullets as blocks of their own (cut here); a season "Target share on the
+field" on Usage from IX-3's window fields; the alert detector reading the left-early mark.
+
+### IX-3 — Stats: a table that opens on an answer (Wave I-X)
+
+**Start 02:39 ET, Sunday 2026-10-11 (read from `date`); end 03:13.** Branch `dev/IX3` (from `integ/IX` = IX-1 + IX-2,
+`d67be9c`), `/home/claude/wt-iq4`, database `league_lab_iq4`.
+
+#### 1. Done / not done / cut
+
+* **Done — 1. Key stats first on every width** (at most eight columns, games included; was 14, and Full table from
+  900 px). Named views **Production · Opportunity · Role changes · Efficiency · Advanced**, each ≤ 8 columns per
+  position with its question in a line under the switch; IX-1's two on-field shares are in Opportunity; Full table one
+  tap away; saved views keep working (`view=` stays in their address; a named view clears a custom `cols=`). The views
+  live in `stats.VIEWS` (the answer's `views`, and `presets[].views`); `columns.ts` mirrors them for an older answer. A
+  view the season leaves with games alone is not offered (a quarterback has no Role changes view).
+* **Done — 2. Remembered per position** (`ll.stats.tables` = {"wrte": …, "rb": …, "qb": …, "all": …}); IM-2's one
+  `ll.stats.table` value is carried over once to every position and removed. Changing position drops `view=` from the
+  address so the new position opens on its own choice.
+* **Done — 3. The situation filter**: All plays · When trailing · Within a score · When leading (IX-2's words, groups
+  and 20-play floor). New `analytics.mart_player_game_situation` (player × game × situation; 4 dbt tests) so any
+  window splits. **Split**: targets, target share, receptions, receiving yards, carries, carry share, rushing yards
+  (+ their per-game twins). **Not split** — a dash and "Not split by game situation: …" — everything else (points, snap
+  share, the on-field shares, air yards, red zone, efficiency, NGS, PFR, charting, role changes, the value column).
+  A share on fewer than 20 of his team's plays: a dash and "Too few to read: N plays of his team's when trailing."
+* **Done — 4. No internal names**: every catalogue source in plain words; "Out of:" replaces "Denominator:"; the group
+  is **Snaps** in a season with no route column (2026), "Snaps and routes" when one is there.
+* **Done — 5.** The table's box: "Filter this table by name" (the top bar's "Search players" unchanged).
+* **Done — 6. Checked, nothing to fix**: a card opened from the table and closed keeps position, view, situation,
+  sort, the page scroll and the table's own scroll (both widths, `e2e/ix3`).
+* **Done — 7.** Tests, WORDS, CHANGELOG, METRICS § "Stats by game situation".
+* **Not done**: the CSV file name does not say the situation (its rows do: unsplit cells are empty). The `data-view`
+  attribute of the table still reads "key" for every named view (IM-2's component; specs read the tab's
+  `aria-pressed`).
+
+#### 2. Commits
+
+`76d42a9` (1) · `d3c16d2` (2) · `d047180` (3, the mart and METRICS) · `9adf216` (4) · `9d95a93` (5) · `be17cc6` (6,
+`e2e/ix3`, recordings, screens) · `3dbb7a5` (7, specs updated on purpose, WORDS, CHANGELOG) · this file.
+
+#### 3. Evidence (League of Scrubs, `league_lab_iq4`, the fixture API, 2026 weeks 1–4)
+
+* **What a first-time visitor sees, before → after**: phone — Key stats, **14** WR / TE columns; desktop (≥ 900 px) —
+  the **Full table, 63** WR / TE columns (68 RB, 52 QB) under 13 group chips → **Key stats, 8 columns on every width**
+  (G · Pts/G · Tgt/G · Tgt % · Rec/G · Rec yds/G · Rec TD/G · Snap %), the line "Key stats: The numbers to read first:
+  what he scores and how much of the offence is his.", then the switch Key stats · Production · Opportunity · Role
+  changes · Efficiency · Advanced · Full table.
+* View sizes (WR / TE · RB · QB): Key 8 · 8 · 8; Production 8 · 8 · 8; Opportunity 8 · 8 · 7; Role changes 6 · 8 · —;
+  Efficiency 8 · 8 · 8; Advanced 7 · 8 · 8 (2026 drops the route columns).
+* **Ja'Marr Chase by situation** (Stats, season): When trailing 0 of 21 team targets (28 plays: 0.0%) · Within a score
+  25 of 106 (170 plays: 23.6%) · When leading 3 of 28 (56 plays: 10.7%); all plays 28 of 155 (18.1%) — 0 + 25 + 3 = 28.
+  The same as the card's Usage tab (IX-2).
+* Leaders, target share when trailing (≥ 5 targets): Tetairoa McMillan 8 / 17 (47%, 33 plays), Isaiah Likely 10 / 23,
+  DeVonta Smith 6 / 14. WR / TE when trailing: 45 players "too few to read", 68 whose team never trailed by 9+ in their
+  games (unknown, not 0).
+* **The mart reconciles**: summed by player, season and group, `mart_player_game_situation` equals
+  `mart_player_context`'s five buckets on all 20,306 player-season-situation rows, 2016–2026 (0 differ). 106,700 rows,
+  19 MB locally; the hosted window (3 seasons) is 23,874 rows (~4.3 MB).
+* Sentences before → after: "Find a player" (the table's box) → "Filter this table by name"; "Denominator: …" → "Out
+  of: …"; sources "nflverse play-by-play (fct_play)" → "nflverse play-by-play", "… (mart_player_ngs_week)" → "NFL Next Gen
+  Stats via nflverse", "(team totals: fct_team_game); league_lab.role_trend" → "(team totals: his team's game totals); the
+  measure DFS's role trend reads", "licensed routes feed (routes_feed)" → "a licensed routes feed"; group "Snaps and
+  routes" → "Snaps" (2026); the How-to line adds the named views.
+* Screens (`docs/handbacks/ix3/`, JPEG q70): `ix3-key-*`, `ix3-opportunity-*`, `ix3-trailing-*`, `ix3-full-*` at 375
+  and 1300. No sideways scroll at 375.
+
+#### 4. Tests
+
+* New: `api/tests/test_ix3.py` **5 passed** (views ≤ 8 with a question; IX-2's groups and floor; the window sum, the
+  floor, unknown not 0, unsplit columns null; the route against SQL on this copy and the three groups adding up; no
+  internal name in the catalogue, "Snaps" in 2026). dbt: `mart_player_game_situation` PASS 8 (model + 7 tests).
+  `web/e2e/ix3` **10 passed** (5 × phone, desktop).
+* API files of the edited modules and changed routes (`check_api.sh`: i0b, ii3, il1, il4, im1, im3, in2, io4, ip3,
+  ip4, ix1, ix2, ix3, research, parity): **296 passed, 2 failed, 2 skipped; 0 new** (the 2: `test_research::
+  test_trends_route` ×2, in the known list). **Updated on purpose**: `test_im1` (Key stats 6–8 columns, was 10–14; the
+  five deeper receiver columns are in the named views), `test_il1` (the NGS columns in the named views).
+* `check_root.sh`: 1,750 passed, 4 failed, **0 new**. Ruff `src app tests api scripts`: clean. Copy standard: clean.
+  `npm run lint`: 0 errors / 0 warnings (210 files); build OK.
+* e2e that open Stats, both projects: im2, ii3, il1, in2, ip3, io4 → 58 passed + `il1` QB test updated on purpose and
+  re-run (2 passed); ip4, im3, ii6, in1, ii2, `fixtures.spec.ts` → 101 passed, 7 skipped. **Updated on purpose**:
+  `im2` (every width opens on Key stats; Key stats ≤ 8; the group "Snaps"), `il1` (the QB test opens `view=full`).
+* `scripts/gate.sh` (python + web), run last: **GATE PASSED** (79 s).
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/stats.py` (PRESETS' Key stats, VIEWS, sources, the "Snaps" group, the situation functions),
+`research.py` (`stats_frame`: `situation`, `views`, `groups_for`), `main.py` (the two Stats routes take `situation`;
+`_situation_only`, IX-3 block), `web/src/lib/api.ts` (types, end), `web/src/lib/prefs.ts` (IX-3 block),
+`web/src/components/stats/columns.ts`, `StatsTable.svelte` ("Out of:"), `web/e2e/im2`, `web/e2e/il1`,
+`api/tests/test_im1.py`, `test_il1.py`, CHANGELOG, WORDS, METRICS. New: `dbt/models/marts/nfl/
+mart_player_game_situation.sql`, `situation.yml`, `api/tests/test_ix3.py`, `web/e2e/ix3/`, `web/fixtures/ix3/`,
+`web/fixtures/save_ix3_fixtures.py`.
+
+#### 6. PO lines
+
+```diff
+--- scripts/sync_to_hosted.sh
+-SLIM_TABLES="fct_player_game … mart_player_game_advanced"  # …
++SLIM_TABLES="fct_player_game … mart_player_game_advanced mart_player_game_situation"  # … IX-3: the Stats situation filter, windowed (19 → ~4.3 MB)
+```
+(The sync finds the relation by itself — the API names `analytics.mart_player_game_situation`; without the line it
+goes whole, 19 MB.) The nightly's `dbt build` builds it with no edit. `app/whats_new.md` (PO): "Stats opens on eight
+columns that answer a question, with views for production, opportunity, role changes, efficiency and advanced numbers,
+and a filter for when a team trails, is within a score or leads."
+
+#### 7. Found, not mine
+
+* The phone's first screen is still mostly controls (search, four chip rows, three selects) before the table: the
+  table starts below 375 × 812's fold. A collapsed "Filters" row would put the answer first.
+* `StatsTable`'s `data-view` attribute is binary (key / full).
+* WORDS rule 4 lists "denominator" as never on a page; the catalogue's `aggregation` text says "summed numerator /
+  summed denominator" (not shown on the Stats screen today; the CSV does not carry it).
+
+#### 8. Next
+
+The CSV name with the situation; a "Filters" fold on the phone; IX-4.
+
+#### Round 2 — a phone opens on the answer too (start 07:09, end 07:20 ET; branch `dev/IX7` from `main`)
+
+* **Done.** Under 900 px the Stats screen shows the title line (and its answer sentence), one **Filters** button, the
+  position chips, the view tabs in **one row** (scrolling inside themselves, never the page), the count / CSV row, the
+  view's question and the table. Behind the button (a real `<button>`, `aria-expanded`, `aria-controls`, Enter opens
+  it in place): the name filter, ownership, NFL team, window, per game / totals, both minimums, the situation chips and
+  their explanation, the window line, columns and saved views, the role-cards link. Closed, the button names every
+  filter in force ("Filters: When trailing · Free agents · Last 5 calendar weeks"), else "Filters". From 900 px nothing
+  changes (no button; every control where it was).
+* **At 375 × 812: 3 whole table rows** above the bottom menu (the 4th cut by it); before: 0 (the table started below
+  the fold). Screens: `ix3r2-closed-375.jpg`, `ix3r2-open-375.jpg`, `ix3r2-closed-filtered-375.png` (the PO's capture against the real API: the developer's fixture server had no recording for that combination and showed an error).
+* **Not done**: the "8 columns · Download CSV" row stays on the phone's first screen (moving it would give a fourth
+  row; phone specs use `stats-csv`).
+* **Tests**: `e2e/ix3` 12 passed (a new test: folded, named when in force, one-row tabs, keyboard, ≥ 3 rows; 1300
+  unchanged); every spec that opens Stats, both projects — ix3, im2, ii3, il1, in2, ip3, io4, ib1: 82 passed; ip4, im3,
+  ii6, in1, ii2, `fixtures.spec.ts`: 103 passed, 7 skipped. Lint 0 / 0, build, copy standard clean; `scripts/gate.sh`
+  last: GATE PASSED.
+* **Specs touched** (an `openFilters(page)` helper, called before a folded control; a no-op on a desktop): `e2e/ix3`
+  (and the new test), `im2` (7 calls), `ii3` (7), `fixtures.spec.ts` (5), `ib1`, `ii2`, `ii6`, `il1` (1 each).
+
+### IX-4 — My Week: one matchup number, the lineup it is, three decisions (Wave I-X)
+
+**Start 03:13 ET, Sunday 2026-10-11 (read from `date`); end 03:52.** Branch `dev/IX4` (from `integ/IX` = IX-1 … IX-3,
+`bb03c90`), `/home/claude/wt-iq4`, database `league_lab_iq4`. Ports 8921–8923 (the API at three clocks), 8927 (e2e).
+
+#### 1. Done / not done / cut
+
+* **Done — 1. One matchup summary** (`myweek.matchup_summary`, both paths; the web's `matchupOf` builds the same words
+  for an answer saved before it). Before either side's first kickoff: "Week 5 vs **X**: you project 98, they project
+  122." + "Each side's best lineup by our projections." + the chance without totals ("You're a clear underdog this
+  week: 31%."). Once a starter of either side has kicked off (`kickoff_at` ≤ the request's clock: `win.n_started` /
+  `opp_n_started`, new): "… 122 to 183 expected." + "Points scored so far plus projections for players still to play
+  (9 of your 10 have played, 8 of theirs)." — "(a game has kicked off; no points are in yet)" before the first points;
+  every starter played: the score, no chance. IH-3's opponent line and win line are gone; the league line keeps the
+  rank only ("Your best lineup ranks 10th of 10 in the league in week 5.", `cards.league_line`: the console's Home too).
+* **Done — 2. Recommended lineup** (`myweek.recommend` → `recommended`): the best lineup with the calls applied (an
+  injury tiebreak puts the bench player IN the slot, the other on the bench; `annotate_swaps` and its "the call above
+  keeps …" flags deleted), its own **Projected total**, and where the provider's lineup is known "✓ Matches your Sleeper
+  lineup." / "≠ 8 changes from your Sleeper lineup." with "≠ In Sleeper now: Jefferson" / "Open in Sleeper now" on each
+  differing row (the actions' own pairing, `pair_moves` + IO-4's rule for a player who left the roster). Unknown: nothing.
+  `lineup` (the best lineup on paper) is unchanged in the answer: test_myweek / test_parity compare it with the mart and
+  the console.
+* **Done — 3. The unclear starter on the call** (`myweek.rule_calls`, run in `league_gate.with_lineup` after the caveats,
+  both paths): a call whose players include a QB or a team-QB unit of a flagged team — withheld (unclear) or a lean that
+  is not clear (sources disagree, under 3 points / 70%) — reads "X or Y at team QB: check who starts first.", chip Close
+  call, the caveat's sentence and the gap as its reason, "Your MFL lineup has Houston Texans QB there now."; a clear lean
+  keeps its call with "Read it as a lean. …"; the row says "? Check who starts for Chicago before kickoff". METRICS §
+  "Starter uncertainty in a decision" carries the rule. The review's case (Chicago team QB over Houston by 1.9) is
+  `test_ix4` (unit + the MFL answer on the database) and `e2e/ix4`.
+* **Done — 4. Three decisions first** (`decisionsOf`): actions + the ones past three (`more_actions`, new) + Waivers'
+  claim + the "no clear upgrade" lines, by urgency (a starter who cannot play, then a change for points, then a call to
+  re-check, then a claim); the rest behind **More: N other calls**. **No news card without news** (no line either).
+* **Done — 5.** Every piece above runs on both paths (`finish` in `myweek.my_week` and `ondemand.my_week`).
+* **Done — 6.** test_ix4 (16), specs and saved answers, WORDS § IX-4, METRICS (two notes), CHANGELOG.
+* **Not done / cut**: no saved answer was re-recorded: the web derives the summary for an answer saved before IX-4
+  (`matchupOf`, `rankLine`), so the old recordings show the new screen; the new recordings are `web/fixtures/ix4/`. The
+  console's own Home keeps "Your lineup" over the best lineup (PO-owned; § 6). The swap → recommended path is tested by
+  unit test only (no injury tiebreak on this copy's fixtures: test_ie_po's case skips).
+
+#### 2. Commits
+
+`1f61d3e` the answer (items 1–3, 5) · `9432b12` the screen (1, 2, 4) · `abca470` tests · `dc57cf6` WORDS, METRICS,
+CHANGELOG · `8f97a21` e2e, recordings, screens · `3cbcb8e` annotate_swaps deleted · the hand-back. (Items 1–5 landed in
+two commits, the answer and the screen, not one per item: the pieces share one function per path.)
+
+#### 3. Evidence (Saturday clock 2026-10-10T16:00Z unless said; the review's numbers were the live site's, this copy's
+Sleeper fixtures differ)
+
+Every figure left on the screen, and which number it is:
+
+| Figure | Number |
+|---|---|
+| summary, before | `lineup_value` (my best lineup's starters' projections, the overlay's re-solve) · `opponent.lineup_value` (his, the same way) |
+| summary, live | `win.mine` / `win.theirs`: the best lineups' starters, points (Sleeper's / MFL's) where the game is in, projection otherwise |
+| chance | `win.percent` (calibrated, unchanged) — no total beside it |
+| league line | the rank of `lineup_value` in `mart_league_roster_rankings` (house leagues; none on demand) — no total |
+| table rows · Margin | each starter's projection in the league's scoring · what the lineup loses without him (unchanged) |
+| Projected total | `recommended.total` = the recommended starters' projections = `lineup_value` unless a call swapped a player |
+| an action's points | `gain` (the change's projected points) · a close call's margin (the cards') |
+
+League of Scrubs team 2 (MacZaddy), before → after:
+* "Week 5 vs **GoodGameBuddy**, projects 122 — you project 98" + "You're a clear underdog this week: 31%, 98 to 122
+  expected." + "Your best lineup projects **98.19** in week 5, 10th of 10 in the league." →
+  "Week 5 vs **GoodGameBuddy**: 98 to 122 expected." / "Points scored so far plus projections for players still to play
+  (a game has kicked off; no points are in yet)." / "You're a clear underdog this week: 31%." / "Your best lineup ranks
+  10th of 10 in the league in week 5."
+* Thursday clock: "Week 5 vs **GoodGameBuddy**: you project 98, they project 122." / "Each side's best lineup by our
+  projections."; week-4 Monday clock: "Week 4 vs **GoodGameBuddy**: 122 to 183 expected." / "… (9 of your 10 have
+  played, 8 of theirs)." / "You're a clear underdog this week: 1%." (projected total 115.8: projections only).
+* "Your lineup" → "Recommended lineup" / "≠ 8 changes from your Sleeper lineup." / WR1 Nacua "≠ In Sleeper now:
+  Jefferson", QB (empty) "≠ In Sleeper now: Mahomes", FLEX2 Boston "≠ Open in Sleeper now" / Projected total 98.2.
+* 3 action cards + "More: 4 other calls" (was 3 cards + "4 more roster alerts: the lineup below shows every slot.");
+  the News feed card with "Nothing has changed since the morning build." → nothing.
+
+MFL `mfl:70587` team 8 (Big Mac Attack), before → after:
+* "Week 5 vs **Uh, Winning!**, projects 100 — you project 114" + "You're a slight favorite this week: 61%, 114 to 100
+  expected." + "Your best lineup projects **114.38** in week 5." → "Week 5 vs **Uh, Winning!**: 114 to 100 expected." /
+  the basis / "You're a slight favorite this week: 61%." (no league line: no rank on demand).
+* Roster alert "Start Chicago Bears QB at team QB in place of Houston Texans QB." / "The change is worth about 2 more
+  projected points this week." (the caveat only under the table) → Close call "Chicago Bears QB or Houston Texans QB at
+  team QB: check who starts first." / "We project Caleb Williams to start for Chicago, not the listed Case Keenum:
+  Chicago Bears QB's projection assumes Williams starts. By our projections Chicago Bears QB is about 1.9 points ahead:
+  less than a starter's week against his backup's (about 10 points)." / "→ Your MFL lineup has Houston Texans QB there
+  now."; its row "≠ In MFL now: Houston Texans QB" and "? Check who starts for Chicago before kickoff"; "≠ 1 change
+  from your MFL lineup."
+
+Screens (375 and 1300, full page): `docs/handbacks/ix4/ix4-{scrubs2-before,scrubs2-live,scrubs2-played,mfl8-live}-{375,1300}.png`;
+no sideways scroll at 375 (asserted); at 1300 the two columns use the width.
+
+#### 4. Tests
+
+* New: `api/tests/test_ix4.py` 16 passed (+ test_ie_po: 1 passed, 1 skipped — no injury tiebreak on the fixture week).
+* The test files of every module and route changed (`myweek`, `ondemand`, `league_gate`, `cards`, `/api/my-week`: 42
+  files): 531 passed, 68 failed, 15 skipped. The same 68 re-run with integ/IX's four source files and two test files
+  (`bb03c90`): 68 failed. **New failures: 0.** (They read week 4's state at the pinned clock on a copy that holds week 5.)
+* Updated on purpose: test_myweek (2 asserts: the league line without the total), test_ie_po (the swap is in the
+  recommended lineup, no flag); e2e fixtures.spec (3 lines: the summary's words), ia1 (the heading and caption), if4
+  and in5 (no News feed card without news), ih3 (the chance in the summary; 3 tests rewritten), il2 (the live line).
+* ruff clean; copy standard clean; `npm run lint` and `npm run build` clean.
+* e2e on fixtures, both projects, the 27 spec files that open My Week (fixtures.spec, decisions, i0a, ia1, ib1, ib3,
+  ic3, ic4, ie0, ie1, if4, ig1, ig2, ig3, ih1, ih2, ih3, ii2, ii4, ii6, ik4, il2, in5, ix4, n1, n2, v2): 256 passed, 2
+  failed (in5's empty-feed title, phone and desktop) → updated on purpose → in5 10 passed. ix4: 8 passed.
+* `scripts/gate.sh`: see the end of this file.
+
+#### 5. Edits outside my files
+
+`app/lib/cards.py` (`league_line`: the rank only — the console's Home renders it); `api/league_lab_api/league_gate.py`
+(`with_lineup` → `rule_calls`, two lines); `api/league_lab_api/ondemand.py` (`finish`, the import); `web/src/lib/api.ts`
+(the `// ---- IX-4` block at the end); `web/src/components/LineupTable.svelte` (`total`, the two row marks); the e2e
+specs in § 4; `docs/WORDS.md`, `docs/METRICS.md`, `CHANGELOG.md`.
+
+#### 6. PO lines
+
+The console's Home loses the total with `cards.league_line` (now the rank only); to say it once, labelled, and name the
+table for what it is:
+```diff
+--- app/Home.py
+         if not rows.empty:
+-            st.markdown(league_line(league_id, roster_id, week, rows))
++            lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna()
++            if not lv.empty:
++                st.markdown(f"Week {week}: your best lineup projects **{float(lv.iloc[0]):.0f}** (by our projections).")
++            if (ll := league_line(league_id, roster_id, week, rows)):
++                st.markdown(ll)
+         st.markdown("**The calls that matter**")
+         decision_cards(league_id, roster_id, week, season, rows=rows)
+-        st.markdown("**Your lineup**")
++        st.markdown("**Best lineup by our projections**")
+```
+(test_parity still holds: `api["league_line"]` is in the page.) `app/whats_new.md`: "My Week says one matchup number and
+what it is, names the table Recommended lineup and shows how it differs from your Sleeper lineup, and says check who
+starts first on a close call at a quarterback whose starter is in doubt."
+
+#### 7. Found, not mine
+
+* The Sleeper fixture lineup of League of Scrubs team 2 holds four players no longer on the roster (four "A player in
+  your Sleeper lineup is no longer on your roster" alerts; "8 changes", one of them with no row to mark): the fixtures'
+  date, not the code. On the live site the review saw Boston/Jefferson instead.
+* The stored rows' `locked_now` is the build's (`kicked_off` from the nightly) and does not follow `LEAGUE_LAB_NOW`: a
+  Thursday clock still marks Thursday's players locked (GoodGameBuddy's two); the summary reads `kickoff_at` against
+  the clock instead.
+* An MFL opponent's total moves between kickoff states (101.0 before Thursday's kickoff, 100.0 after) — his lineup is
+  re-solved with the lock; the summary says the number of the moment.
+* 68 tests in the My Week files fail on integ/IX already (week-4 expectations on a week-5 copy).
+
+#### 8. Next
+
+The console's Home lines (§ 6); a saved answer with an injury tiebreak so the swap is pinned end to end; IX-5.
+
+#### The gate
+
+`scripts/gate.sh` on `dev/IX4` (03:51 ET, after the last code commit): decision suite src ok (44 s), api ok (2 s), ruff
+ok, web lint + type check ok (28 s), web build ok (4 s) — 78 s, exit 0.
+
+### IX-5 — what we claim, said once and truly; a simpler menu (Wave I-X)
+
+Start 03:54 ET, end 05:04 ET (2026-10-11). Branch `dev/IX5` from `integ/IX` (`d131d37`, IX-1 to IX-4), worktree
+`/home/claude/wt-iq4`, database `league_lab_iq4`. Ports 8921 (this branch's API at the PO's Saturday clock, to record),
+8927 (e2e).
+
+#### 1. Done / not done / cut
+
+* **Done — 1. The trust line says each position's verdict** (`provenance._checked_words`): a span where no position is
+  graded and the statuses differ now names every position with its own verdict ("two to eight weeks ahead: quarterbacks
+  weak, kickers no better than chance"); was the worst status for the whole span. Table-driven test over all 63
+  position sets × three spans, the sentence read back and compared with `CHECKS` (189 cases). The audit is in § 3.
+* **Done — 2. "Near enough to trust" goes**: Next 4's caption (API `WINDOW_WHY`, web `decisions.ts`, Trades' how-to)
+  says what METRICS says.
+* **Done — 3. A kicker or defense is never the strongest move on a four-week gain** (`decisions.ix5_kd_last`,
+  `ix5_guide_card`): chosen only on this week's gain, only when the graded positions leave room, listed last, its number
+  this week's, a guide sentence on the card, no window total (also in Help now and My Week's claim); the heading and the
+  intro count the graded claims only. The rule is in METRICS § "What we claim, said once (IX-5)".
+* **Done — 4. "Fit" said as what it is**: "net lineup points" (his new team's gain minus his old team's loss, the weeks
+  said) on Trades' lists, their card sentences and how-to; the console's `trades.fit_line` now prints the API's
+  "Improvement to your starting lineup" (the API's words since IT-1: no saved answer changes).
+* **Done — 5. No internal names**: Waivers' recent adds say "Sleeper transactions" (the provider's name), not
+  `analytics.mart_league_transactions`. Saved answers scanned for printed table names: none other is printed (the
+  `source`/`points_source` fields that hold one are not shown).
+* **Done — 6. One direction for a defense's rank**: "gives up the Nth-most" (1 = the most; "the most" / "the fewest" at
+  the ends) in `research.gives_up_words`, `lib/research.ts`, `cards.rank_words` / `reason_pieces` (shared with the
+  console), `lib/words.ts`; Matchups' chips and cell titles "#N of 32 vs POS"; the how-to and `RANK_NOTE`; the card help.
+  Verified and left: `CardHead`/`player.py` ("#N of 32 vs POS (1 = gives up the most)"), Compare's caption and note
+  (already 1 = the most), `matchup_board.TONE_WORDS` (no number), `outlook.ts` "Nth-hardest" (a fantasy team's schedule
+  of fantasy opponents, not a defense's rank; one direction already).
+* **Done — 7. The menu**: with a league My Week · Waivers · Trades · Research (Stats, Rankings, Trends, Matchups,
+  Compare); without one Home · Rankings · Research · Trades; DFS in the ⋯ menu (`menu-dfs`), its route unchanged; tab
+  keys and test ids kept; eyebrows "Research · Stats" / "Research · Rankings".
+* **Done — 8. The known trade**: `test_the_known_trade_stays_fixed` (Scrubs, team 2 gives Folk for Stafford + Reichard):
+  reconciliation of headline, summary tiles and weekly table, no cross-position explanation, implausible, the trust
+  line's QB / K words.
+* **Done — 9.** Tests, saved answers, WORDS, METRICS, CHANGELOG.
+* **Not done / cut**: the plausibility label "A roster-fit idea" keeps "fit" (a label, not the number; 59 saved answers
+  pin it) — see § 8.
+
+#### 2. Commits
+
+`ac2d731` 1 · `581262e` 2 · `8d30dbf` 3 + 5 · `ba4ccff` 4 · `dde4145` 6 · `6589717` 7 · `82daf0f` 8 · `995d48e` docs ·
+`a0b8ab0` test_ie_po · `dc82c9d` e2e, recordings, screens · `f892b81` the back link, Home's tool · the
+hand-back.
+
+#### 3. Evidence
+
+**The audit (item 1): each sentence about what has been checked, its number (METRICS § IR-4), what changed.**
+
+| Sentence (where) | Number behind it | Change |
+|---|---|---|
+| trust line, per span and position (`provenance.block`, every analysis) | next week QB .587 RB .686 WR .618 TE .599 graded; K .095 DEF .257 weak; 2–8 weeks QB .495 weak, RB/WR/TE graded, K .028 DEF .040 chance | the mixed, none-graded case names each position (was the worst for all) |
+| Next 4's caption (calculator, Partners, Trades' how-to) | next four weeks RB .660 WR .594 TE .564; QB .538 vs his record's .537; K/DEF not pooled (.095/.257 then chance) | "far enough to matter, near enough to trust" → "RB, WR, TE graded; QB a lean, level with their own record; K and DEF a rough guide, no better than chance after next week" |
+| `ros_grade.WORDS` (QB misses about 7.4 two to eight weeks ahead, 6.4 next week; RB/WR/TE about 0.2 more) | 7.41 / 6.44; +0.18 / +0.15 / +0.16 | none (true) |
+| `KD_WORDS`, `KD_CALC_WORDS` (K/DEF order 2–8 weeks no better than chance) | .028 / .040 | none (true) |
+| About's per-position rows (`STATUS_WORDS`) | the same table | none |
+| `USEFUL_WORDS` (WR / RB / TE / QB .584 / .575 / .555 / .613 against his record's .539 / .552 / .524 / .595) | METRICS § useful decision + PO's IT-5 QB re-grade | none (true) |
+| Waivers' guide sentence (new) | K .095 / DEF .257 next week; .028 / .040 after | new |
+| (noted, not changed) the per-check words' order for RB/WR/TE 2–8 weeks reads `CHECKS` .636/.569/.545 (IR-4's run on the rows with a record) against the table's .633/.568/.540 (IQ-1's cells) | same status | § 7 |
+
+**Before → after (the ten that matter most):**
+1. Calculator, Folk trade: "two to eight weeks ahead no better than chance, quarterbacks weak" → "next week graded,
+   kickers weak; two to eight weeks ahead: quarterbacks weak, kickers no better than chance".
+2. Next 4: "the next four weeks: far enough to matter, near enough to trust" → "the next four weeks: running backs,
+   receivers and tight ends graded; quarterbacks a lean, level with their own record; kickers and defenses a rough
+   guide, no better than chance after next week".
+3. Waivers, Scrubs team 2 (this database, week 5): the three were Brissett, Hockenson, **Patriots DEF +13.65 over weeks
+   5–8**; now Brissett, Hockenson, Robinson/Dowdle (RB; the defense stays in Help now on this week's +4.28).
+4. Waivers, MFL 70587 team 8: "The three strongest claims below …" → heading "The two strongest moves", intro "… After
+   them, a kicker or defense for this week only: a rough guide."; the Saints DEF card "+0.1 this week" with "Kickers and
+   defenses are judged on this week only: their projections are a rough guide (weakly graded for next week, no better
+   than chance after)."
+5. Trades' lists: value "Fit" / "Fit weeks 4–7" → "Net lineup points"; "(fit **+9.9** over weeks 4–7): the fit, from the
+   projections, is the reason …" → "(net **+9.9** lineup points over weeks 4–7: your gain minus their loss): that, from
+   the projections, is the reason …"; "best fit X" → "worth most to X".
+6. Matchups chip: "#31 toughest vs RB" → "#2 of 32 vs RB"; answer "gives up the 2nd-fewest to WRs" → "gives up the
+   31st-most to WRs"; how-to "#1 is the toughest for the offense" → "#1 gives up the most points to the position".
+7. Cards (console and web): "who give up the 7th-fewest points to running backs" → "the 26th-most"; "2nd-fewest WR
+   points allowed" → "31st-most WR points allowed".
+8. Waivers' recent adds: "· analytics.mart_league_transactions" → "· Sleeper transactions".
+9. Tabs with a league: "My Team · Waivers · Trades · Players · DFS" → "My Week · Waivers · Trades · Research"; without:
+   "Home · Rankings · Players · Trades · DFS" → "Home · Rankings · Research · Trades"; DFS in ⋯.
+10. Console simulator: "**Fit** (what the best lineups gain): you …" → "**Improvement to your starting lineup** (best
+    lineup each week): you …".
+
+Screens (375 and 1300, JPEG): `docs/handbacks/ix5/` — the menu with a league and browsing (⋯ open), Waivers (Scrubs),
+the MFL guide card, the calculator's trust line, Matchups. No sideways scroll at 375 (asserted).
+
+#### 4. Tests
+
+* New `api/tests/test_ix5.py`: 199 passed (189 trust-line cases, caption, K/DEF rule and intro, Fit, the two house
+  leagues' Waivers on the database, the known trade).
+* The test files of every module and route changed (`provenance`, `decisions`, `research`, `context_record`, `cards`,
+  `/api/waivers`, `/api/trades/*`, `/api/matchups/*`, `/api/compare`: 74 files): 1,237 passed, 103 failed, 25 skipped.
+  The 103 re-run on `d131d37`'s code and tests (exported): 102 fail there too (week-4 state at the pinned clock on a
+  copy holding week 5; corner regulars). **New: 1** — `test_ie_po::test_top_three_claims_are_ordered_by_this_weeks_gain`
+  (MFL team 8's Saints guide card now last by design) → updated on purpose, passes.
+* Updated on purpose: test_ir4 (none needed), test_ib3, test_ia1, test_if3 (one direction), test_ip3 (net lineup
+  points), test_ie_po; root test_trades, test_trade_finder_page (fit_line), test_matchups (one direction).
+* Root suite (`check_root.sh`): 4 failed (all known), 1,750 passed — **no new failures**.
+* ruff clean; copy standard clean; `npm run lint` and `npm run build` clean.
+* e2e: `e2e/ix5` 12 passed (phone + desktop). All fixture specs, both projects (the tabs are on every screen): 635
+  passed, 21 skipped, 2 failed (in2: the player page's back link still said "Players" while browsing, phone and
+  desktop) → fixed (`Player.svelte`: "Research") → in1, in2, im3, ib1, ix5: 56 passed, 6 skipped.
+* Saved answers updated on purpose (only the changed words): 41 (`window_why`), 8 (Fit sentences), 47 (Nth-fewest →
+  Nth-most, n = 32; the card help and the rank note); new `web/fixtures/ix5/api_ix5.json` (recorded).
+* `scripts/gate.sh` (05:01 ET, after the last code commit): decision suite src ok (783 ran, 45 s), api ok (40 ran), ruff
+  ok, web lint + type check ok, web build ok — 81 s, exit 0.
+
+#### 5. Edits outside my files
+
+`app/lib/cards.py` (`reason_pieces`, `rank_words`, the card help: the console's mirror changes with it — its Home and
+Start/Sit cards print "the Nth-most"; parity tests pass), `src/league_lab/trades.py` (`fit_line`),
+`api/league_lab_api/context_record.py` (one sentence), `web/src/routes/Players.svelte` and `Rankings.svelte` (the
+eyebrow only), `web/src/lib/feed.ts` (`topIntro`), `TopBar.svelte`, `TradeCalc.svelte` (one sentence), `ClaimCard.svelte`
+(the guide line), `Player.svelte` (the back link's word), `Home.svelte` (one tool's title), the e2e specs listed in
+§ 4, WORDS, METRICS, CHANGELOG. Scratch: my run logs went to the shared scratchpad's top level (not `ix5/`); deleted.
+
+#### 6. PO lines
+
+`app/pages/6_Trade_Finder.py` (console, PO-owned) still says "Fit":
+
+```diff
+-    "**Fit** is what the starting lineups gain. **Market** is what the players are worth on the market: their projected points "
++    "**Improvement to your starting lineup** is what the best lineups gain over the weeks. **Market** is what the players are worth on the market: their projected points "
+-           "the gap was no reason to trade on its own. Both lists are ordered by lineup fit, from the projections.")
++           "the gap was no reason to trade on its own. Both lists are ordered by net lineup points, from the projections.")
+-      "fit_week": Col(f"Fit · {wk}", "signed1", "You gain minus they lose, this week"),
+-      "fit_horizon": Col(f"Fit · {span}", "signed1", f"You gain minus they lose over {span_words}: the lineup points the trade creates")}
++      "fit_week": Col(f"Net lineup points · {wk}", "signed1", "You gain minus they lose, this week"),
++      "fit_horizon": Col(f"Net lineup points · {span}", "signed1", f"You gain minus they lose over {span_words}: the lineup points the trade creates")}
+-        "fit_week": Col(f"Fit · {wk}", "signed1", "They gain minus you lose, this week"),
+-        "fit_horizon": Col(f"Fit · {span}", "signed1", f"They gain minus you lose over {span_words}")}
++        "fit_week": Col(f"Net lineup points · {wk}", "signed1", "They gain minus you lose, this week"),
++        "fit_horizon": Col(f"Net lineup points · {span}", "signed1", f"They gain minus you lose over {span_words}")}
+-    "it, so it is no reason to trade on its own. Both lists are ordered by **Fit**, from the projections. Filter by "
++    "it, so it is no reason to trade on its own. Both lists are ordered by **net lineup points**, from the projections. Filter by "
+-    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other "
+-    "team than to his own: an easier ask when you buy, a better sale when you sell.",
++    "**Net lineup points** is what his new team's best lineup gains minus what his old team's loses, over the next four "
++    "weeks. A big positive number means he matters more to the other team than to his own: an easier ask when you buy, a "
++    "better sale when you sell.",
+```
+
+`app/whats_new.md` (one line, if wanted): "What we claim is said once: each position's check by name, no 'near enough to
+trust', kickers and defenses judged on this week on Waivers, 'net lineup points' for Fit, a defense's rank one way
+(1 = gives up the most). The menu is My Week · Waivers · Trades · Research; DFS is in the ⋯ menu."
+
+#### 7. Found, not mine
+
+* `provenance.CHECKS` RB / WR / TE two to eight weeks ahead carry IR-4's run on the rows with a record (.636 / .569 /
+  .545, misses 4.73 / 4.62 / 3.42) while METRICS' table prints IQ-1's cells (.633 / .568 / .540, 4.70 / 4.59 / 3.41); the
+  per-check words show "(order 0.64)". Same status; one source would be cleaner.
+* `test_if3` (3) and `test_ig2` (2) fail on the base too: the database's Carolina corners now list Will Lee III as a
+  regular (data, not words).
+* The old saved answers (`waivers_*.json` at the fixtures' root) were recorded with a defense among the three; the
+  screens that read them show it without the guide (no API re-run behind them). Re-record when the fixture weeks move.
+
+#### 8. Next
+
+* "A roster-fit idea" (plausibility label) → "A lineup idea (no market price)" with its 59 saved answers.
+* The console page lines in § 6.
+
+### IX-6 — does handling a shortened game make the projection better? (Wave I-X)
+
+**Start 05:03:51 ET, Sunday 2026-10-11 (read from `date`); end 06:12.** Branch `dev/IX6` (from `integ/IX`, IX-1 to
+IX-5), `/home/claude/wt-iq4`, database `league_lab_iq4`. The study's rule: docs/METRICS.md § "Does handling a
+shortened game make the projection better?" (lf2.0), committed `1e098e0` at 05:11, before any number of it was read.
+
+#### 1. Done / not done / cut
+
+* **0. `project` says the same thing twice** (`0d2c4df`, METRICS `998e4ca`): the run-to-run difference was an
+  **input**, not the fit — `mart_player_season.avg_offense_snap_pct` was a float `avg` over an unordered group, so each
+  build summed the same snap shares in another order and `prev_snap_pct` changed its last bit on ~30,000 rows; values
+  that were equal became distinct, the trees' histogram binner cut its bins elsewhere, and every unfrozen week moved.
+  Fixed at the source (an exact `numeric` sum). The fit itself carries `random_state=0`, reads its frame in a fixed
+  order and runs one thread. Shown: two compute passes of `project` at one state (`ix6_determinism.py`): 0 cells differ (the frame's
+  109,409 rows, the lines' 50,985). **Two `project` runs at one state** (the chain's, then `league-lab project` again,
+  live week on): **0 rows differ in all 13 tables** (§ 3).
+* **2. The role alert** (`9e57b7d`, signals **ra1.3**): a game he left hurt (lf1.0's LE-A: the snap drop and the
+  injury note naming him) is treated like a game missed injured — no alert from it, no "before" game for a later one,
+  the next game is a return. Chase's "Smaller role … Why: Mitchell Tinsley back" is gone; so is Konata Mumpfield's
+  (week 4, "snap share 69% → 27%, Puka Nacua back") — the only two of 2026's 65 alerts that change; none is added.
+* **1. The projected target share** (`424af6f`, `703ef10`): lf1.0's team total counted every listed player (about 18.6
+  a team, each with an "if he plays" line) — 40 – 47 targets against 29 – 33 real. lf1.1 = his projected targets ÷ the
+  projected starter's projected pass attempts; on 2026 weeks 1 – 4 the denominators average 30.4 against 31.2 real team
+  targets and the share is 0.056 from his real target share (bias +0.009). Shown on the card's Usage tab as one line.
+  **The projection does not hand out too many targets** (§ 7).
+* **3. The study** (rule `1e098e0` first; the candidates `e39d693`, `65329b4`; the result `050e9d2`): **nothing ships.**
+  All six candidates ran (P1, P2, P3 × marks A and B). Every one is worse on its own affected rows in all five seasons
+  (+4.9% to +9.1% error). The rule's pick, P1-B, fails clause (a). The projection keeps its inputs, and IX-1's columns
+  stay display only.
+* **Cut**: nothing from items 0–3. Not done: a refit-per-season backtest of the full model. The study fitted only the
+  component models, which give exactly the backtest's projected points; the range models do not change the point.
+
+#### 2. Commits
+
+`9e57b7d` (2. ra1.3), `424af6f` (1. lf1.1 + Usage line), `1e098e0` (3. the rule, before any number), `0d2c4df` (0. the
+exact average + the determinism harness), `e39d693` (3. the candidates as dbt vars + the study script), `998e4ca` (0.
+METRICS), `efa8eb5` (the study's scoring), `703ef10` (1. e2e + screenshots), `65329b4` (P1 / P3 numeric casts), `050e9d2`
+(3. the result, registry rows), `2848c48` (CHANGELOG), and this file.
+
+#### 3. Evidence
+
+**0. Two `project` runs at one state** (`LEAGUE_LAB_FREEZE=game`; the chain's `project` at 05:50, then `league-lab
+project` again at 05:57; each table dumped sorted, run stamps left out; `scratchpad/ix6/snap_ops.sh`, `cmp_ops.sh`):
+
+```
+same  ops.projections (19,364 rows)        same  ops.projection_live (1,104)       same  ops.kd_lines (1,088)
+same  ops.projection_lines (9,234)         same  ops.projection_lines_live (524)   same  ops.kd_lines_live (56)
+same  ops.projection_ranges (46,170)       same  ops.projection_ranges_live (2,620) same ops.kd_ranges (5,440)
+same  ops.kd_ranges_live (280)             same  ops.lineups (9,522)               same  ops.waiver_moves (7,509)
+same  ops.player_role_alerts (7,151)
+```
+
+The feature mart's hash is the same after every rebuild: `b3fc4ac5…` before the study, and again after the study's
+seven rebuilds of `mart_player_recent_form+,+mart_player_week_features` (the last one with no candidate). Before the
+fix, two rebuilds of the same code and data gave `ff79…` and `3689…` (IX-1).
+
+**2. Chase's card, Signals** (League of Scrubs, week 5):
+
+* before (ra1.2): "Role: **Smaller role: Ja'Marr Chase — snap share 94% → 20%, target share 29% → 6% since week 4 (one
+  game so far)**. Why: Mitchell Tinsley back. Check again after week 7 … Upside: none: his role shrank, and the
+  projection above already leans on his last three games."
+* after (ra1.3, written by the chain's `project`): "Role: **no role change called**: he left his last game (week 4)
+  hurt, and a game cut short by an injury is not read as a smaller role. Upside: no additional modeled upside scenario
+  available." (The default "his share … is where it has been" would not be true after such a game, so it is not said.)
+* 2026's alerts: 65 → 63. Removed: Ja'Marr Chase week 4 and Konata Mumpfield week 4 ("snap share 69% → 27%", Puka
+  Nacua back). None added.
+
+**1. The projected target share's team total** (lf1.0's denominator, by week of 2026; the real game's figures where
+played):
+
+| Week | Teams | Median summed projected targets (max) | Players listed per team | Real team targets | Real attempts |
+|---|---:|---:|---:|---:|---:|
+| 1 | 32 | 47.1 (62.5) | 18.7 | 29.4 | 31.1 |
+| 2 | 32 | 44.3 (57.2) | 18.5 | 30.2 | 31.8 |
+| 3 | 32 | 44.0 (54.8) | 18.9 | 32.8 | 34.5 |
+| 4 | 32 | 43.6 (54.4) | 18.6 | 32.6 | 34.3 |
+| 5 | 30 | 40.1 (50.3) | 18.6 | — | — |
+
+For the players who played, the summed projected targets average 31.7 a team against 31.2 real: the model is not
+handing out too many targets. lf1.1 (over the projected starter's projected attempts), checked on weeks 1–4 across
+1,195 player-weeks:
+
+* the denominators average 30.4, against 31.2 real targets;
+* the mean absolute difference from his real target share is 0.056, bias +0.009;
+* for comparison, an oracle denominator (only the players who played, unknowable beforehand) gives 0.051.
+
+Chase, week 5: "8.0 of the 33.8 passes we project Joe Burrow to throw in week 5 (24%): the model's own forecast of his
+share of the team's targets this week." (lf1.0 said "8.0 of his team's 46.3 projected targets … (17%)".) Screenshots:
+`docs/handbacks/ix6/ix6-usage-375.jpg`, `ix6-usage-1300.jpg`.
+
+**3. The study** (Half PPR, walk-forward 2021–2025, component models, 28,808 played player-weeks). Today's error and
+order on all rows: QB 5.412 / 0.588, RB 4.244 / 0.669, WR 4.076 / 0.614, TE 3.012 / 0.557.
+
+| Candidate | Affected rows (by season) | Its error | Today's | Change | Seasons better | All rows: max error worse / order lower |
+|---|---|---:|---:|---:|---:|---|
+| P2-A skip | 180 (30, 28, 27, 48, 47) | 5.021 | 4.721 | +6.4% worse | 0 | 0.004 / 0.004 |
+| P2-B skip | 1,347 (256, 360, 253, 246, 232) | 3.724 | 3.519 | +5.8% worse | 0 | 0.006 / 0.002 |
+| P1-A on the field | 180 | 4.974 | 4.721 | +5.4% worse | 0 | 0.005 / 0.002 |
+| **P1-B on the field** (the rule's pick) | 1,347 | **3.690** | 3.519 | +4.9% worse | 0 | 0.030 / 0.006 |
+| P3-A scaled | 180 | 5.148 | 4.721 | +9.1% worse | 0 | 0.014 / 0.004 |
+| P3-B scaled | 1,347 | 3.777 | 3.519 | +7.3% worse | 0 | 0.022 / 0.003 |
+
+**Nothing ships.** No candidate meets (a), and most also fail (b). No week-under-way rows move, because no input
+changed.
+
+**The chain** (`LEAGUE_LAB_FREEZE=game /home/claude/waveIT/chain.sh /home/claude/wt-iq4 league_lab_iq4`, 832 s): dbt
+754 passed / ERROR 0; project as before (frozen weeks 1–5 kept); projection marts 145 / ERROR 0; both availability
+guards passed as errors; the audit's first line was 0.
+
+#### 4. Tests
+
+* New tests:
+  * `tests/test_ix6_signals.py`: 3 passed. Chase's case: the control without the mark fires ra1.2's alert; with the
+    mark, no alert at week 4 and no "bigger role" at week 5; the rule version.
+  * `api/tests/test_ix6.py`: 2 passed (the Signals words after a game left hurt; a short game without the note is not
+    hurt).
+  * `api/tests/test_ix1.py`: 5 passed. Its projected-share test now pins lf1.1's words; changed on purpose.
+  * e2e `ip4`: 20 passed on both projects, including the new Usage-line test. One rookie test failed once under load
+    and passed on re-run. `il1` + `if4`: 14 passed.
+* `tests/test_signals.py`: 27 passed. `test_metric_registry`: 3 passed (lf1.1, lf2.0 rows).
+* `check_root.sh`: 1,753 passed, 4 failed, **no new failures**.
+* API test files of the routes and modules I touched (`check_api.sh`; the card, the game log, research, `onfield`; 36
+  files + `test_ix6`): 516 passed, 33 failed, 9 skipped. New against the known list: 4, the same four IX-1 reported as
+  this copy's state: `test_f3::test_player_card_ros_is_the_marts` ×2 (fails the same with `main`'s `player.py`),
+  `test_ib0::…overlay_starter…` and `test_inf1::…pinned_moment` (waiver routes, no file of mine).
+* `scripts/gate.sh python`: **GATE PASSED** (root 783, api 40, ruff). ruff `src app tests api scripts`: clean. Copy
+  standard `--check`: clean. `web`: lint 0 errors / 0 warnings, build OK.
+
+#### 5. Edits outside my files
+
+`dbt/models/marts/nfl/mart_player_season.sql` (the exact average), `mart_player_recent_form.sql` and
+`dbt/models/intermediate/int_player_game_asof.sql` (the candidates behind `var('lf_candidate')`; unset = the SQL as
+before), new `dbt/macros/lf_candidate.sql`; `src/league_lab/signals.py` (ra1.3); `api/league_lab_api/onfield.py`
+(lf1.1), `web/src/components/PlayerPane.svelte` (one line on Usage), `web/src/lib/api.ts` (the type);
+`web/e2e/ip4/fixtures.spec.ts` (one test), `api/tests/test_ix1.py` (the projected share's test, words changed on
+purpose); new `tests/test_ix6_signals.py`, `scripts/analysis/ix6_determinism.py`, `scripts/analysis/ix6_study.py`;
+docs METRICS, WORDS, CHANGELOG, metric registry.
+
+#### 6. PO lines
+
+None. No new table and no new step. Signals ra1.3 rewrites `ops.player_role_alerts` on the next `project`, because
+the rule version changed. The dbt var `lf_candidate` stays unset. `app/whats_new.md` (optional): "A player's card no
+longer calls a game he left hurt a smaller role."
+
+#### 7. Found, not mine
+
+* **The projection does not hand out too many targets.** For the players who played, weeks 1–4 projected targets
+  sum to 31.7 a team against 31.2 real. lf1.0's 40–47 a team came from counting every listed player's "if he plays"
+  line: about 18.6 players a team, three of them quarterbacks. That was a display fault, not a model fault.
+* lf1.1 reads a little high (+0.009 on average): a pass attempt is not always a target.
+* The game log shows LE-B marks without an injury note as "Played far less than usual" (LE-B precision
+  0.437). Neither mark helps the projection (§ 3).
+
+#### 8. Next
+
+1. Nothing for the projection from shortened games. If it comes back, try a different signal, such as the next
+   week's practice report, rather than a rewrite of the windows; the windows are closer to the truth as they stand.
+2. Grade lf1.1 against a baseline (his season target share) over a few weeks before the card says more than context.
