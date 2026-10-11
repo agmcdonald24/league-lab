@@ -3,6 +3,12 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 11 (afternoon) · posts from X show up in the blog
+
+- **Paste the embed code and it works.** A blog post now understands the embed code X and YouTube give you, as well as
+  a plain link on its own line. A post from X shows its words and author straight away; tap "Show the post" to load
+  the post itself, video included.
+
 ## Oct 11 · a clearer week, a shorter player card, and stats by game situation
 
 - **My Week shows one matchup number and says what it is.** Before kickoff it is each side's best lineup by our

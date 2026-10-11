@@ -4,6 +4,8 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-11 — Wave I-Y
 
+- **PO — the merge.** The X block's words drop the media pointer X leaves at their end (a trailing `https://t.co/…`).
+  docs/STATUS.md § "Wave I-Y".
 - IY-1: embed code pasted into a blog post works. X's "Embed post" code (with or without its script, one line or
   several) is read, not passed through: the post shows the words, "Name (@handle) · date", **Show the post** (X's own
   view of the post in a sandboxed frame, only after the tap, sized by X's message) and **Open on X**; YouTube's iframe

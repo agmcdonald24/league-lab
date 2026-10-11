@@ -386,6 +386,13 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-Y (2026-10-11, Sunday midday; STATUS § "Wave I-Y (Iteration 35)")**: a blog post understands **the embed
+  code X and YouTube hand a writer**, not only a bare link (Andrew pasted X's blockquote + script into a published post
+  and it printed as text). `md.ts` reads the code by strict patterns and never passes pasted HTML through; an X post
+  is our own block (its words, author, date) with **Show the post**, which loads
+  `https://platform.twitter.com/embed/Tweet.html?id=…` in a sandboxed frame after the tap — the only new origin the
+  CSP's `frame-src` allows; no script of X's ever runs on our page. **Open**: whether X's frame resizes itself on the
+  live page was not seen (the PO's browser pane was hidden); until it does the frame is 560 px and scrolls inside.
 * **Wave I-X (2026-10-11, Sunday overnight; STATUS § "Wave I-X (Iteration 34)")**: **Andrew opened the next push
   himself** — his stat asks (splits by game situation, a game left early, bio on the card, a projected target share)
   and an outside review (`docs/reviews/2026-10-10-competitive-review-and-design-plan.md`) "to incorporate for our next

@@ -598,6 +598,12 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 35 — Wave I-Y, pasted embed code in a blog post (2026-10-11, Sunday 12:36 – 13:40 ET)
+
+Andrew's published post printed X's embed code as text. One package, **IY-1**: X's and YouTube's pasted embed code is
+read into the same blocks as the bare links (nothing pasted reaches the page); an X post shows its words at once and
+loads X's own frame after a tap; the CSP allows that one frame origin. Evidence: `docs/STATUS.md` § "Wave I-Y".
+
 ### Iteration 34 — Wave I-X, the review's Pass 1 and the stat asks (2026-10-11, Sunday 00:31 – morning ET)
 
 Andrew asked for stats by game situation, for a game a player left early not to read as a lost role, for a projected
