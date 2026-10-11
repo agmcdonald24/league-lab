@@ -3202,3 +3202,17 @@ export interface RecordAnswer {
   history?: RecordHistory | null;
 }
 // ---- end IZ-1
+
+// ---- IZ-4 (Wave I-Z): a news line on the decision it affects (the feed's line, moved), and section 5's per player
+export interface WeekAction {
+  news?: ChangedLine[]; // at most two, the newest first
+  news_more?: ChangedLine[]; // the rest, under "Why"
+}
+export interface ReviewLine {
+  news?: ChangedLine[];
+  news_more?: ChangedLine[];
+}
+export interface TradeEval {
+  news?: Record<string, ChangedLine[]>; // sleeper id → the feed's newest item about him
+}
+// ---- end IZ-4

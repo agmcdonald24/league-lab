@@ -729,6 +729,10 @@ def trades_evaluate(body: TradeBody, response: Response, source: str | None = No
                              source=source, window=body.window)
     out = provenance.with_trade(out)                          # ---- IR-4: provenance + the starter caveats (data)
     out = provenance.rule_trade(out)                          # ---- PO (Wave I-R): the caveat rule applied to the one decision
+    # ---- IZ-4: section 5's news line per player (the feed's newest item about him; nothing reads it)
+    from . import decision_news
+    out = decision_news.with_trade(out)
+    # ---- end IZ-4
     response.headers["Cache-Control"] = "no-store"
     return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
 

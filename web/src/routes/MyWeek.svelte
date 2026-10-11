@@ -18,6 +18,7 @@
   import Expander from "../components/Expander.svelte";
   import LineupTable from "../components/LineupTable.svelte";
   import ProvenanceLine from "../components/provenance/ProvenanceLine.svelte"; // ---- IT-3
+  import DecisionNews from "../components/news/DecisionNews.svelte"; // ---- IZ-4
   import Md from "../components/Md.svelte";
   // ---- IH-1: the error card (the API down, a 500, still waiting) and the stale banner (/api/status `nightly`)
   import ErrorCard from "../components/ErrorCard.svelte";
@@ -287,6 +288,8 @@
                       </details>
                     {/if}
                   {/if}
+                  <!-- ---- IZ-4: the news about this decision's players (at most two, the newest first; the rest under Why) -->
+                  {#if a.news?.length}<DecisionNews lines={a.news} />{/if}
                   {#if a.submitted_words}
                     <p class="text-sm leading-snug font-semibold {a.submitted ? 'text-good' : 'text-warn'}" data-testid="action-submitted">
                       {a.submitted ? "✓ " : "→ "}{a.submitted_words}
@@ -296,12 +299,13 @@
                     <a class="inline-flex min-h-9 items-center rounded-sm border border-line-strong px-3 text-sm font-semibold hover:bg-raised"
                       href={withContext(a.href, ctx)} data-testid="action-open">{a.href_label ?? "See it on Waivers"} ›</a><!-- IN-5: "Find a quarterback on Waivers" -->
                   {/if}
-                  {#if why.length}
+                  {#if why.length || a.news_more?.length}
                     <details class="group" data-testid="action-why">
                       <summary class="inline-flex min-h-9 cursor-pointer items-center gap-1 text-sm font-semibold text-accent">
                         <span class="chev" aria-hidden="true">›</span>Why? The numbers behind it
                       </summary>
                       <div class="mt-1 space-y-3">
+                        {#if a.news_more?.length}<DecisionNews lines={a.news_more} testid="decision-news-more" />{/if}<!-- IZ-4 -->
                         {#each why as c, ix (`${c.slot}#${ix}`)}
                           {@const cmp = compareHref(c)}
                           <div class="space-y-1 border-t border-line pt-2" data-testid="action-call">
@@ -328,6 +332,13 @@
                     {#if r.slot_label}<span class="ll-label text-ink-2">{r.slot_label}</span>{/if}
                   </div>
                   <p class="text-base leading-snug" data-testid="review-words"><Md text={r.words} {ctx} /></p>
+                  {#if r.news?.length}<DecisionNews lines={r.news} />{/if}<!-- ---- IZ-4 -->
+                  {#if r.news_more?.length}
+                    <details class="text-sm" data-testid="review-news-more">
+                      <summary class="inline-flex min-h-8 cursor-pointer items-center gap-1 font-semibold text-accent"><span class="chev" aria-hidden="true">›</span>More news</summary>
+                      <div class="mt-1"><DecisionNews lines={r.news_more} testid="decision-news-more" /></div>
+                    </details>
+                  {/if}
                   {#if cmp}
                     <a class="inline-flex min-h-9 items-center text-sm font-semibold text-accent" href={withContext(cmp, ctx)} data-testid="review-compare">Compare ›</a>
                   {/if}

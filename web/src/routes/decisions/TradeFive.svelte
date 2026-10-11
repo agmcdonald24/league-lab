@@ -7,7 +7,8 @@
   // get there another way — keep / claim / trade on one basis, one row; (5) what could change the answer — the caveats
   // on the players involved, the trust line's verdicts for their positions, what is missing. Nothing is re-priced:
   // every number is the answer's (lib/tradefive.ts says which).
-  import type { TeamRosterRow, TradeEval } from "../../lib/api";
+  import type { ChangedLine, TeamRosterRow, TradeEval } from "../../lib/api";
+  import DecisionNews from "../../components/news/DecisionNews.svelte"; // ---- IZ-4
   import { f1, s1, slotLabel } from "../../lib/decisions";
   import { involved, panelRows, threeWays, weekly, type PanelRow } from "../../lib/tradefive";
   import Expander from "../../components/Expander.svelte";
@@ -47,8 +48,13 @@
         ? `${flagged[0].name}: ${flagged[0].words}.`
         : "Nothing is flagged on the players in this trade: the projections' checks for their positions are below.",
   );
-  // ---- IZ-2 → IZ-4: a news line per player in section 5 goes here (`newsFor`: null until IZ-4 fills it)
-  const newsFor = (_key: string): { words: string; source: string; when: string } | null => (void _key, null);
+  // ---- IZ-2 → IZ-4: a news line per player in section 5 — the feed's newest item about him (the answer's `news`, by
+  // Sleeper id; the same line as on My Week's decisions: the words, the source, how long ago, what the projection does
+  // with it). Nothing is read from it.
+  const newsFor = (key: string): ChangedLine[] | null => {
+    const l = r.news?.[key];
+    return l && l.length ? l : null;
+  };
 </script>
 
 {#snippet panel(rows: PanelRow[], who: string, testid: string, total: { before: number; after: number; change: number } | null)}
@@ -177,7 +183,7 @@
         <li data-testid="five-player" data-key={p.key}>
           <span class="font-semibold">{p.name}</span> <span class="text-sm text-ink-3">({p.side === "give" ? "you give" : p.side === "get" ? "you get" : "cut"})</span>: {p.words ?? "nothing flagged on his report"}.
           <!-- ---- IZ-2 → IZ-4: the news line for this player (source, how long ago, "context only: not in the projection") -->
-          {#if newsFor(p.key)}<span class="block text-sm text-ink-2" data-testid="trade-news">{newsFor(p.key)!.words}</span>{/if}
+          {#if newsFor(p.key)}<div class="mt-1" data-testid="trade-news"><DecisionNews lines={newsFor(p.key)!} names={false} testid="trade-news-lines" /></div>{/if}
         </li>
       {/each}
       {#each r.caveats ?? [] as c, i (i)}<li class="text-warn" data-testid="five-caveat">{c.words}</li>{/each}
