@@ -197,22 +197,31 @@ def worst(cs: list[dict]) -> str:
     return max((c["status"] for c in cs), key=STATUS_ORDER.index)
 
 
+def _and(words: list[str]) -> str:
+    """["a", "b", "c"] -> "a, b and c"."""
+    return words[0] if len(words) == 1 else f"{', '.join(words[:-1])} and {words[-1]}"
+
+
 def _checked_words(cs: list[dict]) -> str:
     """"next week graded; two to eight weeks ahead graded, quarterbacks weak, kickers and defenses no better than
-    chance; the season total's range not graded" — the positions named only where the status differs from the span's
-    majority."""
+    chance; the season total's range not graded". Per span: one status for every position in play -> the span and the
+    status; some graded -> "graded" and the positions that are not, by status; none graded and the statuses differ
+    (IX-5: a quarterback with a kicker) -> every position named with its own status ("two to eight weeks ahead:
+    quarterbacks weak, kickers no better than chance"), never the worst status for the whole span."""
     parts = []
     for sp in ("next", "later"):
         here = [c for c in cs if c["span"] == sp]
         if not here:
             continue
-        base = "graded" if any(c["status"] == "graded" for c in here) else worst(here)
-        odd: dict[str, list[str]] = {}
-        for c in here:
-            if c["status"] != base:
-                odd.setdefault(c["status"], []).append(POS_WORDS[c["position"]])
-        tail = "".join(f", {' and '.join(v)} {'weak' if s == 'graded_weak' else STATUS_WORDS[s]}" for s, v in odd.items())
-        parts.append(f"{SPAN_WORDS[sp]} {STATUS_WORDS[base]}{tail}")
+        statuses = {c["status"] for c in here}
+        if len(statuses) == 1:
+            parts.append(f"{SPAN_WORDS[sp]} {STATUS_WORDS[here[0]['status']]}")
+            continue
+        base = "graded" if "graded" in statuses else None
+        groups = [(s, [POS_WORDS[c["position"]] for c in sorted(here, key=lambda c: POSITIONS.index(c["position"]))
+                       if c["status"] == s]) for s in STATUS_ORDER if s in statuses and s != base]
+        tail = ", ".join(f"{_and(v)} {'weak' if s == 'graded_weak' else STATUS_WORDS[s]}" for s, v in groups)
+        parts.append(f"{SPAN_WORDS[sp]} graded, {tail}" if base else f"{SPAN_WORDS[sp]}: {tail}")
     for c in cs:
         if c["span"] in ("season_range", "trade_gap"):
             parts.append(f"{SPAN_WORDS[c['span']]} not graded")
