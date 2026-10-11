@@ -1,6 +1,6 @@
 # IZ-3 — the card says what he means for your roster (Wave I-Z)
 
-Start 19:19 ET, end 19:43 ET (2026-10-11). Branch `dev/IZ3` from `integ/IZ`, worktree `/home/claude/wt-iq4`, database
+Start 19:19 ET, end 19:42 ET (2026-10-11). Branch `dev/IZ3` from `integ/IZ`, worktree `/home/claude/wt-iq4`, database
 `league_lab_iq4`. Ports 8922 (this branch's API on the database at Thursday 8 October 16:00 UTC, week 5, providers on
 the local fixtures, outside calls refused by a dead proxy; for the screens), 8927 (e2e).
 
