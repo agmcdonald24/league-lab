@@ -64,8 +64,7 @@ if roster_id is not None:
             lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna()
             if not lv.empty:
                 st.markdown(f"Week {week}: your best lineup projects **{float(lv.iloc[0]):.0f}** (by our projections).")
-            if (ll := league_line(league_id, roster_id, week, rows)):
-                st.markdown(ll)
+            st.markdown(league_line(league_id, roster_id, week, rows))
         st.markdown("**The calls that matter**")
         decision_cards(league_id, roster_id, week, season, rows=rows)
         st.markdown("**Best lineup by our projections**")
