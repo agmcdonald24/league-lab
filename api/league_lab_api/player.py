@@ -914,7 +914,7 @@ def roster_line(league_id: str, gsis: str, team: int | None, card: dict, *, hous
             except Exception:  # noqa: BLE001
                 other = None
         who = f"{other} ({mgr})" if other and isinstance(mgr, str) and mgr else other
-        return {"kind": "other_team", "team": other, "words": f"On {who}'s roster." if who else "On another team's roster."}
+        return {"kind": "other_team", "team": other, "words": f"On another team: {who}." if who else "On another team in this league."}
     if team is None or card.get("week") is None:
         return {"kind": "free_agent", "words": "A free agent in this league."} if card.get("is_free_agent") else None
     try:
@@ -997,10 +997,17 @@ def reasons(card: dict) -> list[dict]:
     has nothing to say."""
     out = []
     secs = card.get("sections") or {}
-    role = next((b.get("text") for b in (secs.get("role") or {}).get("blocks") or [] if b.get("kind") == "markdown" and b.get("text")), None)
-    if role:
-        s = _plain(role).rstrip(".")
-        out.append({"key": "role", "words": f"Role: {s[0].lower() + s[1:] if s else s}. {REASON_MORE['role']}"})
+    blocks = [_plain(b.get("text")) for b in (secs.get("role") or {}).get("blocks") or [] if b.get("kind") == "markdown" and b.get("text")]
+    role = blocks[0].rstrip(".") if blocks else ""
+    if role and not role.startswith("Too early"):   # a change called, or his role steady: the Role section's headline
+        out.append({"key": "role", "words": f"Role: {role[0].lower() + role[1:]}. {REASON_MORE['role']}"})
+    else:   # too early to call a change: his share of his group's work and points, when the Role section has it
+        opp = next((re.match(r"Opportunity vs production: [^—]+— (\S+%) of the (.+?), (\S+%) of their fantasy points in .+? "
+                             r"scoring \((.+?)\)", b) for b in blocks if b.startswith("Opportunity vs production:")), None)
+        if opp:
+            a, what, p, wk = opp.groups()
+            out.append({"key": "role", "words": f"Role: {a} of the {what} and {p} of their fantasy points ({wk}). "
+                                                f"{REASON_MORE['role']}"})
     nxt = next((b.get("text") for b in (secs.get("projection") or {}).get("blocks") or [] if (b.get("text") or "").startswith("Next:")), None)
     if nxt:
         s = _plain(nxt)[len("Next:"):].strip().rstrip(".")
