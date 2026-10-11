@@ -330,6 +330,28 @@ models:
   - name: fct_player_game
     description: Player x game facts with team denominators, snaps and shares.
     tests:
+      # ---- IX-1 (Wave I-X), lf1.0: the on-field shares and the left-early mark (docs/METRICS.md § "A game left early")
+      - expression_is_true:
+          arguments:
+            expression: "on_field_target_share between 0 and 1"
+            condition: "on_field_target_share is not null"
+      - expression_is_true:
+          arguments:
+            expression: "on_field_carry_share between 0 and 1"
+            condition: "on_field_carry_share is not null"
+      - expression_is_true:
+          arguments:
+            expression: "on_field_basis in ('participation', 'snaps')"
+            condition: "on_field_basis is not null"
+      - expression_is_true:
+          arguments:
+            expression: "played and left_early_reason is not null"
+            condition: "left_early"
+      - expression_is_true:
+          arguments:
+            expression: "season < 2026 or on_field_basis = 'snaps'"
+            condition: "on_field_basis is not null and season >= 2026"
+      # ---- end IX-1
       - unique_combination_of_columns:
           arguments:
             combination_of_columns: [gsis_id, game_id]

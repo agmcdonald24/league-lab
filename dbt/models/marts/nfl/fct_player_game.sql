@@ -162,7 +162,17 @@ select
     case when cs.scoring_settings is null then null
          else {{ league_points('cs.scoring_settings', 's') }} end as points_current_scoring,
     cs.current_league_id                                     as points_current_scoring_league_id,
-    cs.current_league_season                                 as points_current_scoring_season
+    cs.current_league_season                                 as points_current_scoring_season,
+    -- ---- IX-1 (Wave I-X), lf1.0: a game left early (int_player_game_on_field; docs/METRICS.md § "A game left early").
+    -- The on-field shares (exact where participation covers the game, else estimated from his snap share; the basis
+    -- says which) and their summable parts; left early (knowable when the game ends) and its reason. Not a projection
+    -- input (IX-6 decides).
+    lf.on_field_basis,
+    lf.on_field_targets, lf.on_field_team_targets, lf.on_field_target_share,
+    lf.on_field_carries, lf.on_field_team_carries, lf.on_field_carry_share,
+    coalesce(lf.left_early, false)                           as left_early,
+    lf.left_early_reason
+    -- ---- end IX-1
 from stats as s
 left join {{ ref('dim_game') }} as g using (game_id)
 left join team as t on t.team = s.team and t.game_id = s.game_id
@@ -172,3 +182,4 @@ left join pbp as pb on pb.gsis_id = s.gsis_id and pb.game_id = s.game_id
 left join team_pbp as tp on tp.team = s.team and tp.game_id = s.game_id
 left join feed as fd on fd.gsis_id = s.gsis_id and fd.season = s.season and fd.week = s.week and fd.rn = 1
 left join current_scoring as cs on true
+left join {{ ref('int_player_game_on_field') }} as lf on lf.gsis_id = s.gsis_id and lf.game_id = s.game_id   -- ---- IX-1

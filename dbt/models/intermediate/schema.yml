@@ -98,3 +98,33 @@ models:
           - accepted_values:
               arguments:
                 values: ["QB", "RB", "WR", "TE"]
+
+  # ---- IX-1 (Wave I-X), lf1.0: a game left early (docs/METRICS.md § "A game left early")
+  - name: int_player_game_on_field
+    description: "Per player x game he played (QB / RB / WR / TE / FB): the on-field target and carry shares, exact (participation, 2016-2025) and estimated (snaps, every season), the shipped share and its basis, the left-early rule's inputs, both candidates and the shipped mark with its reason, and the participation truth's parts for the grade. Knowable when the game ends; not a projection input."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+      - expression_is_true:
+          arguments:
+            expression: "on_field_target_share_est <= 1 and on_field_carry_share_est <= 1"
+            condition: "on_field_target_share_est is not null and on_field_carry_share_est is not null"
+      - expression_is_true:
+          arguments:
+            expression: "targets_on_field <= team_targets_on_field and carries_on_field <= team_carries_on_field"
+            condition: "plays_on_field is not null"
+      - expression_is_true:
+          arguments:
+            expression: "snap_drop and prev_games >= 2 and offense_snap_pct <= 0.5 * usual_snap_pct"
+            condition: "left_early"
+      - expression_is_true:
+          arguments:
+            expression: "left_early = left_early_b"
+            condition: "left_early is not null"
+    columns:
+      - name: on_field_basis
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["participation", "snaps"]
