@@ -1080,3 +1080,17 @@ The Overview reads: the forecast (the head and its one-line why) → the roster 
 | role | the Role section's headline when it calls a change or a steady role ("Role: bigger role: …. More under Usage."); too early to call: "Role: 63% of the targets and carries of his team's RBs and 77% of their fantasy points (weeks 1–4, 4 games). More under Usage." | "Role: too early to say" |
 | matchup | "Matchup: week 5 vs BUF — BUF ranks #6 of 32 vs RB (1 = gives up the most). More in the schedule below." | a rank without its direction |
 | form | "Form: 19.8 points per game this season on work worth 16.1. More under Game log." (without the expected number on demand: "Form: 9.8 points per game this season. More under Game log.") | a 0 for an unknown |
+<!-- ---- IZ-4 -->
+## News on the decision it affects (IZ-4, Wave I-Z, 2026-10-11; `decision_news.attach` / `for_trade`; `components/news/DecisionNews.svelte`)
+
+The review's Pass 2: "surface sourced injury / personnel changes beside the affected decision". The words are the
+News feed's own (`myweek.decision_feed`, II-4); IZ-4 moves them, it writes no sentence of the news itself.
+
+| Where | Words | Never |
+|---|---|---|
+| a My Week decision (a roster alert, a close call, a "no clear upgrade" line) whose player has a news item | under the call: "News **Justin Jefferson:** Jefferson (ankle) ruled out for Sunday · RotoWire via ESPN ↗ · 2 h ago" and, under it, what the projection does with it — "Context only: not in the projection" / "Included in the current projection" / "Update pending: the next injury check may move his projection"; at most two, the newest first | a number, a verdict or an order changed by a headline |
+| more than two items on one decision | the rest under the call's "Why? The numbers behind it" (a "no clear upgrade" line: **More news**) | — |
+| the News feed | only the items that touch no decision; not drawn when none is left (IX-4's rule) | the same item twice on the screen |
+| the trade calculator's section 5, a player with an item | the same line under his row (his name is the row's) | "Your lineup this week" on a player you would receive |
+| Waivers' top claims | nothing (cut: the Waivers answer has no news read; adding one costs up to three uncached ESPN reads, about a second, on every Waivers visit) | — |
+<!-- ---- end IZ-4 -->
