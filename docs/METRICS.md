@@ -6002,3 +6002,59 @@ chart) is not measured here. The hand-back recommends `game` after one weekend o
   (`covered_move`'s number) and his drop netted. The netting rides on the move (`drop_cost`) and in its sentence.
 * Not graded: a drop's starts after the window and its upside (the waiver sweep's other two pieces).
 <!-- ---- end IU-1 -->
+
+## A game left early (lf1.0, IX-1, Wave I-X, 2026-10-11) — the definitions and the grade's rule, written before any number
+
+Andrew, 2026-10-11 00:31: a receiver who leaves early in the second quarter (Ja'Marr Chase, a concussion) shows an
+artificially low target share for that game. Written at 00:55 ET, before any number of this section was read.
+`fct_player_game.target_share` stays what it is (his targets ÷ his team's targets for the whole game); the columns
+below are added beside it (`int_player_game_on_field`, joined onto `fct_player_game`). **The projection's inputs do not
+change in this package** (IX-6 decides whether they should, by its own rule).
+
+**On-field target share, exact** (`on_field_basis = 'participation'`; 2016 – 2025, the seasons nflverse's
+participation file covers): his targets ÷ the team's targets on the plays he was on the field (`bridge_play_participation`
+× play-by-play). A target = a play-by-play pass attempt with a receiver (no two-point tries); a carry = a rush attempt with
+a rusher (no two-point tries). Numerator and denominator both from play-by-play. The same for carries.
+
+**On-field target share, estimated** (`on_field_basis = 'snaps'`; every season with snap counts, the only one for 2026
+— the participation file arrives after the postseason): his targets ÷ (the team's targets × his share of the team's
+offensive snaps, `offense_snap_pct`); NULL when his snaps are unknown or zero; never above 1 (capped). The same for
+carries. The shipped columns (`on_field_target_share`, `on_field_carry_share`) use the exact share where it exists and
+the estimate otherwise, and say which (`on_field_basis`). Windows: summed on-field numerators ÷ summed on-field
+denominators (rule 1), over the games where the denominator is known.
+
+**Left early** (`left_early`, `left_early_reason`; knowable when the game ends — nothing from a later week; every
+season with snap counts, 2026 included; no hand list). For a player-game he played:
+
+* **the snap drop**: his `offense_snap_pct` is at most half the median of his previous games of the same season (regular
+  season, played, snaps known), with at least two such games;
+* **the injury signal**: a play-by-play note "<TEAM>-<jersey>-<name> was injured during the play" in this game that
+  names him. He is identified by the play's ids first: the note's name equals the play's passer, receiver or rusher
+  name and the note's team is the offence → that player's id. A note naming anyone else is **unmatched** (counted, never
+  guessed; no name match beyond the play's own ids).
+
+Candidates (defined now, before running):
+
+* **LE-A** = the snap drop **and** the injury signal.
+* **LE-B** = the snap drop **and** (the injury signal **or** he touched the ball — a target or a carry — in the first
+  half and never after it).
+* LE-0 = the snap drop alone (a reference row; it also catches benchings, so it cannot ship).
+
+**The truth** (2016 – 2025, from participation): he **left early** when his last offensive play on the field came
+before the fourth quarter (quarter 1 – 3) while his team ran at least 15 more offensive plays after it (plays in the
+participation file), **and he was hurt**: an injury note identified for him in that game (as above), or a game status
+(Out, Doubtful, Questionable) on his team's injury report for the following week, or he did not play his team's next
+regular-season game of the season. (The truth may read the next week; the rule may not.)
+
+**The grade, and the rule that picks**: on 2016 – 2025, regular season, RB / WR / TE / QB player-games he played:
+
+* (a) the estimate against the exact share: the mean absolute difference of the target share (players with a target
+  on the field or a known estimate) and of the carry share, on all player-games and on the truly-left-early ones;
+  reported as is — if the estimate is poor on left-early games, this section says so in one sentence and the screen's
+  key says it is an estimate;
+* (b) each candidate against the truth: precision and recall (and F1) on all player-games where the snap drop can be
+  evaluated (two previous games). **The shipped rule is the candidate with the higher F1; a tie ships LE-A** (the
+  narrower one). It ships for display in any case (it changes no projection); IX-6 reads it.
+
+**Display-only extension** (never an input): the game log's reason adds "then missed week N+1" when he did not play
+his team's next game — a later week's fact, on the screen only.
