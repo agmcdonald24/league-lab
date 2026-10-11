@@ -60,7 +60,8 @@ test("the full player page shows the Role block too", async ({ page }) => {
 });
 
 test("Players · Stats, QB preset: Time to throw from Next Gen Stats, — for a passer NGS did not qualify", async ({ page }) => {
-  await page.goto(`/players?league=${SCRUBS}&team=2&position=QB`);
+  // IX-3 (Wave I-X), on purpose: Key stats is eight columns now; time to throw and CPOE are one tap away (the Full table)
+  await page.goto(`/players?league=${SCRUBS}&team=2&position=QB&view=full`);
   const table = page.getByTestId("players-table");
   await expect(table.getByTestId("players-table-row").first()).toBeVisible();
   await expect(page.getByTestId("sort-time_to_throw")).toHaveText(/TTT/i);

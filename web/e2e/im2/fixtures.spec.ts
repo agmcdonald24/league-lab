@@ -74,15 +74,12 @@ test("Full table: every WR / TE column we have (> 25) under group headers; Key s
   await serve(context);
   await page.goto(url("&position=WRTE"));
   await expect(rows(page).first()).toBeVisible();
-  // the phone opens on Key stats, the desktop on the Full table (the PO's call)
-  const opening = isMobile ? "key" : "full";
-  await expect(page.getByTestId(`stats-table-view-${opening}`)).toHaveAttribute("aria-pressed", "true");
-  await expect(table(page)).toHaveAttribute("data-view", opening);
-  if (isMobile) {
-    await expect(page.getByTestId("stats-group-row")).toHaveCount(0);
-    await tap(page, page.getByTestId("stats-table-view-full"), isMobile);
-    await expect(page).toHaveURL(/[?&]view=full/);
-  }
+  // IX-3 (Wave I-X), on purpose: every width opens on Key stats (was: the desktop on the Full table — the review's § 2)
+  await expect(page.getByTestId("stats-table-view-key")).toHaveAttribute("aria-pressed", "true");
+  await expect(table(page)).toHaveAttribute("data-view", "key");
+  await expect(page.getByTestId("stats-group-row")).toHaveCount(0);
+  await tap(page, page.getByTestId("stats-table-view-full"), isMobile);
+  await expect(page).toHaveURL(/[?&]view=full/);
   await expect(table(page)).toHaveAttribute("data-view", "full");
   // every available column for WR / TE (today's API: no `full` list, derived here), in groups
   await expect(colHeads(page)).toHaveCount(wrteAvailable.length);
@@ -91,7 +88,9 @@ test("Full table: every WR / TE column we have (> 25) under group headers; Key s
   await expect(groups.first()).toHaveAttribute("data-group", "Games and points");
   await expect(groups.first()).toContainText("Games and points"); // a narrow group's short name on screen, the whole one for a screen reader
   const names = await groups.evaluateAll((ths) => ths.map((th) => th.getAttribute("data-group")!));
-  for (const g of ["Receiving", "Air yards", "Red zone", "Next Gen Stats", "Charting", "Snaps and routes", "Rushing"]) expect(names).toContain(g);
+  // IX-3, on purpose: 2026 has no route column, so the group is "Snaps" (was "Snaps and routes")
+  for (const g of ["Receiving", "Air yards", "Red zone", "Next Gen Stats", "Charting", "Snaps", "Rushing"]) expect(names).toContain(g);
+  expect(names).not.toContain("Snaps and routes");
   expect(names.indexOf("Receiving")).toBeLessThan(names.indexOf("Rushing")); // a receiver's own stats first
   // a group header spans its columns (scope=colgroup + colspan), one <colgroup> per group
   const spans = await groups.evaluateAll((ths) => ths.map((th) => Number(th.getAttribute("colspan"))));
@@ -101,18 +100,15 @@ test("Full table: every WR / TE column we have (> 25) under group headers; Key s
   // a column the app does not have is not in the Full table (routes: after the season); it stays in the picker
   await expect(page.getByTestId("sort-route_participation")).toHaveCount(0);
   await expect(page.getByTestId("sort-adot")).toBeVisible();
-  // remembered on this device: a fresh visit without view= opens on the view picked last
-  if (isMobile) {
-    await page.goto(url("&position=WRTE"));
-    await expect(table(page)).toHaveAttribute("data-view", "full");
-  } else {
-    await tap(page, page.getByTestId("stats-table-view-key"), isMobile);
-    await expect(page).toHaveURL(/[?&]view=key/);
-    await expect(table(page)).toHaveAttribute("data-view", "key");
-    await expect(colHeads(page)).toHaveCount(WRTE.presets.find((p) => p.key === "wrte")!.columns.length);
-    await page.goto(url("&position=WRTE"));
-    await expect(table(page)).toHaveAttribute("data-view", "key");
-  }
+  // remembered on this device (per position since IX-3): a fresh visit without view= opens on the view picked last
+  await page.goto(url("&position=WRTE"));
+  await expect(table(page)).toHaveAttribute("data-view", "full");
+  await tap(page, page.getByTestId("stats-table-view-key"), isMobile);
+  await expect(page).toHaveURL(/[?&]view=key/);
+  await expect(table(page)).toHaveAttribute("data-view", "key");
+  expect(await colHeads(page).count()).toBeLessThanOrEqual(8); // IX-3, on purpose: Key stats is at most eight columns (was 14)
+  await page.goto(url("&position=WRTE"));
+  await expect(table(page)).toHaveAttribute("data-view", "key");
   await noSidewaysScroll(page);
   void info;
 });
@@ -325,10 +321,10 @@ test("IM-1's answer shape: the API's groups and full list win; a new column the 
   const drops = rows(page).first().locator('td[data-col="pfr_drops"]');
   await expect(drops).toHaveText("—");
   await expect(drops).toHaveAttribute("title", /PFR has not charted his games yet/);
-  // Key stats: the preset's own (richer) default columns
+  // Key stats: IX-3 (on purpose) — at most eight columns, whatever the preset's list (adot is in the Advanced view)
   await tap(page, page.getByTestId("stats-table-view-key"), isMobile);
-  await expect(colHeads(page)).toHaveCount(SHAPE.columns.wrte.length);
-  await expect(page.getByTestId("sort-adot")).toBeVisible();
+  expect(await colHeads(page).count()).toBeLessThanOrEqual(8);
+  await expect(page.getByTestId("sort-target_share")).toBeVisible();
   await noSidewaysScroll(page);
 });
 

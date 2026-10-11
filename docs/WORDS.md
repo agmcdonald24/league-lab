@@ -963,3 +963,24 @@ sentence of its own, only where they appear.
 | Under the marks | Target share on the field: his targets ÷ his team's targets on the plays he was on the field — here an estimate from his share of the team's snaps (who was on the field on each play is published after the season). |
 | Removed from the card | the ratings' "average of N" box; the projection section's four tiles (the head has the projection and its range); "Role: **not enough games to say** …" / "Role: **role steady over N games** …" (the Role section's words are the card's one role vocabulary) |
 <!-- ---- end IX-2 -->
+<!-- ---- IX-3 -->
+## Stats: a table that opens on an answer (IX-3, Wave I-X, 2026-10-11; `routes/Players.svelte`, `components/stats/columns.ts`, `api/league_lab_api/stats.py`)
+
+| Where | Words | Never |
+|---|---|---|
+| the view switch (every width opens on the first) | **Key stats** · **Production** · **Opportunity** · **Role changes** · **Efficiency** · **Advanced** · **Full table** (a quarterback has no Role changes view: no role-change column) | "Basic / Advanced", "Pro view" |
+| the line under the switch (the question each view answers) | **Key stats:** The numbers to read first: what he scores and how much of the offence is his. · **Production:** What has he produced? · **Opportunity:** How much of his team's offence comes his way? · **Role changes:** Is his role growing or shrinking? · **Efficiency:** What does he do with each chance? · **Advanced:** What do tracking and charting add? · **Full table:** every column we have for the position, grouped. Tap a group to hide or show it. | — |
+| How to read this (the IM-2 line, changed) | "**Key stats** are the numbers to read first. **Production**, **Opportunity**, **Role changes**, **Efficiency** and **Advanced** each answer one question, said under the switch. **Full table** shows every column …" | — |
+| the situation chips (IX-2's words) | **All plays** · **When trailing** · **Within a score** · **When leading** | "garbage time", "blowout", "neutral script" |
+| under them, a situation picked | "**When trailing**: his team behind by 9 or more. Split by it: targets, target share, receptions, receiving yards, carries, carry share and rushing yards, in those plays. A share needs 20 of his team's plays (fewer: too few to read). Every other column shows — here: it comes from whole-game stats." | the all-plays number in a column the filter cannot split |
+| a dash in a column not split by situation (hover / tap) | "Not split by game situation: this number comes from whole-game stats, so it is left out here. Pick All plays to see it." | 0 |
+| a share on fewer than 20 of his team's plays | "Too few to read: 14 plays of his team's when trailing." | a share from a sliver |
+| his team never in the situation in his games | "His team was not in this situation (when trailing) in his games in this window." | 0 targets |
+| a split number's sample | "5 of 40 team targets when trailing (60 plays of his team's, his 4 games)" · "Targets per game when trailing: 60 plays of his team's in his 4 games" | — |
+| the answer line | "Highest targets per game when trailing: Puka Nacua, 5.5 (…)" | — |
+| before the nightly builds the situation table | "Game situations arrive with the nightly update; they are not on this copy yet." | "stale" |
+| the table's own search box | placeholder **Filter this table by name**; its label "Filter this table by player name" (the app's search in the top bar is unchanged: "Search players") | "Find a player" twice on one screen |
+| the column group of snap share in a season with no route column | **Snaps** (2026: participation arrives after the season) — **Snaps and routes** only when a route column is there | "routes" over snap counts |
+| a column's source (definitions under How to read this) | nflverse play-by-play · nflverse play-by-play, summed per game · nflverse participation: who was on the field each play · NFL Next Gen Stats via nflverse · Pro Football Reference advanced stats, weekly, via nflverse · our expected-points model over nflverse play-by-play · this league's scoring and our expected-points model · nflverse weekly player stats (team totals: his team's game totals); the measure DFS's role trend reads · a licensed routes feed: not connected | a table, model or module name (`fct_play`, `mart_…`, `bridge_…`, `league_lab.role_trend`, `routes_feed`) |
+| the share's other part in a definition | "Out of: team targets in the games he played." | "Denominator:" |
+<!-- ---- end IX-3 -->

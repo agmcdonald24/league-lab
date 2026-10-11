@@ -4,6 +4,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-11 — Wave I-X
 
+- **IX-3 — Stats: a table that opens on an answer.** Every width opens on **Key stats** (eight columns, was 14; the
+  desktop opened on the 97-column Full table); named views **Production · Opportunity · Role changes · Efficiency ·
+  Advanced** each answer one question (the line under the switch) in at most eight columns, IX-1's on-field shares in
+  Opportunity; the Full table one tap away; the view remembered per position (`ll.stats.tables`; IM-2's one key carried
+  over once). A **game situation** filter (All plays · When trailing · Within a score · When leading — IX-2's groups
+  and 20-play floor) from the new `mart_player_game_situation` (player × game × situation, tested, equal to
+  `mart_player_context` on every player-season): targets, target share, receptions, receiving yards, carries, carry
+  share and rushing yards are split; every other column is a dash with the reason. No table name in any source line;
+  "Snaps" (not "Snaps and routes") in a season with no route column; the table's box says "Filter this table by name".
 - **IX-2 — the player card: who he is, a shorter Overview, his splits.** A bio line under the name (height, weight,
   age, season, college, draft) on every card; the Overview keeps one forecast (the head), loses the ratings' plain
   average and the repeated projection tiles, and speaks one role vocabulary (the Role section's); the ratings and
