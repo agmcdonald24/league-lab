@@ -859,7 +859,7 @@ def h2h_cmd(
     nightly's summary shows. Exit 0 unless it crashes (no history yet = an empty grade, said so)."""
     from .h2h import run
 
-    text = run(build_ours=ours)
+    text = run(make_ours=ours)
     if md is not None:
         md.parent.mkdir(parents=True, exist_ok=True)
         md.write_text(text)

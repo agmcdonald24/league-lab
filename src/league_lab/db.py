@@ -300,9 +300,11 @@ def migrate(conn: psycopg.Connection) -> None:
     sleeper_projections.ensure_tables(conn)
     # ---- IZ-1 (Wave I-Z): Sleeper's past weeks (ops.sleeper_history, _weeks) and the head-to-head's tables exist on a fresh
     # database, so the nightly's restore-state (STATE_TABLES) can fill them
+    from . import h2h
     from .ingest import sleeper_history
 
     sleeper_history.ensure_tables(conn)
+    h2h.ensure_tables(conn)
     # ---- end IZ-1
 
 
