@@ -88,6 +88,9 @@ def test_another_teams_player_names_the_team_and_no_lineup_costs_no_card(monkeyp
     line = P.roster_line("mfl:1", "g9", 1, _card(rostered_by_roster_id=7, rostered_by_team="Team Seven"), house=False)
     assert line == {"kind": "other_team", "team": "Team Seven", "words": "On another team: Team Seven."}
     assert P.roster_line("mfl:1", "g9", 1, _card(rostered_by_roster_id=7), house=False)["words"] == "On another team in this league."
+    avail = {"sections": {"availability": {"blocks": [{"kind": "markdown", "text": "Rostered by **Klaby Crew**, starting in his MFL lineup."}]}}}
+    line = P.roster_line("mfl:1", "g9", 1, _card(rostered_by_roster_id=7, **avail), house=False)
+    assert line["words"] == "On another team: Klaby Crew."                 # the name the Availability section shows
 
     def boom(*a, **k):
         raise RuntimeError("provider down")

@@ -913,6 +913,10 @@ def roster_line(league_id: str, gsis: str, team: int | None, card: dict, *, hous
                     other, mgr = m.iloc[0]["team_name"], m.iloc[0]["manager_name"]
             except Exception:  # noqa: BLE001
                 other = None
+        if not other:                     # on demand: the name the Availability section shows ("Rostered by **X**")
+            txt = " ".join(b.get("text") or "" for b in ((card.get("sections") or {}).get("availability") or {}).get("blocks") or [])
+            m2 = re.search(r"Rostered by \*\*(.+?)\*\*", txt)
+            other = m2.group(1).strip() if m2 else None
         who = f"{other} ({mgr})" if other and isinstance(mgr, str) and mgr else other
         return {"kind": "other_team", "team": other, "words": f"On another team: {who}." if who else "On another team in this league."}
     if team is None or card.get("week") is None:
