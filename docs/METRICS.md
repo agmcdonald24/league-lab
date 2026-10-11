@@ -6243,3 +6243,26 @@ summed in exact `numeric` arithmetic (order-free), then cast back. Shown: two re
 hash; two compute passes of `project` (the frame, the four positions' fits, the predictions, the pass-TD, horizon and
 market blends; `scripts/analysis/ix6_determinism.py`) at one state: **0 cells differ** (the frame's 109,409 rows, the
 lines' 50,985 rows). The study's noise clause therefore does not apply: the 3% is read as is.
+
+**The result (05:43 ET): nothing ships.** Walk-forward 2021 – 2025, component models, Half PPR (`scripts/analysis/
+ix6_study.py`; 28,808 played player-weeks). Today's error on all rows: QB 5.412, RB 4.244, WR 4.076, TE 3.012 points;
+order (mean weekly Spearman) QB 0.588, RB 0.669, WR 0.614, TE 0.557. On each candidate's own affected rows (mark A:
+180 rows — 30, 28, 27, 48, 47 by season; mark B: 1,347 — 256, 360, 253, 246, 232):
+
+| Candidate | Affected rows | Its error | Today's error | Change | Seasons better | All rows: max error worse | max order lower |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| P2-A skip | 180 | 5.021 | 4.721 | **+6.4% worse** | 0 of 5 | 0.004 | 0.004 |
+| P2-B skip | 1,347 | 3.724 | 3.519 | +5.8% worse | 0 of 5 | 0.006 | 0.002 |
+| P1-A on the field | 180 | 4.974 | 4.721 | +5.4% worse | 0 of 5 | 0.005 | 0.002 |
+| P1-B on the field | 1,347 | 3.690 | 3.519 | +4.9% worse | 0 of 5 | 0.030 | 0.006 |
+| P3-A scaled | 180 | 5.148 | 4.721 | +9.1% worse | 0 of 5 | 0.014 | 0.004 |
+| P3-B scaled | 1,347 | 3.777 | 3.519 | +7.3% worse | 0 of 5 | 0.022 | 0.003 |
+
+The rule picks P1-B (the lowest error on its affected rows) and it fails (a): it is 4.9% **worse** than today's, not 3%
+better, in every season. Every candidate is worse on the games after a shortened game, in every season, with either
+mark: the game he left early carries information the next weeks bear out, and today's windows, dragged down, are
+closer to what happens next than windows that treat the game as whole. (Why is not measured here; the likely reasons
+are a player who left hurt coming back limited, and a "no touch after half-time" game being a lost role.) The projection keeps its inputs; IX-1's
+on-field share and left-early mark stay display (context), and the card says nothing it cannot back: no screen claims
+the projection discounts a shortened game. The candidates stay in the code behind `var('lf_candidate')` (unset), for a
+later study.
