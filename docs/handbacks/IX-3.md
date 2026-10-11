@@ -1,6 +1,6 @@
 # IX-3 — Stats: a table that opens on an answer (Wave I-X)
 
-**Start 02:39 ET, Sunday 2026-10-11 (read from `date`); end 03:14.** Branch `dev/IX3` (from `integ/IX` = IX-1 + IX-2,
+**Start 02:39 ET, Sunday 2026-10-11 (read from `date`); end 03:13.** Branch `dev/IX3` (from `integ/IX` = IX-1 + IX-2,
 `d67be9c`), `/home/claude/wt-iq4`, database `league_lab_iq4`.
 
 ## 1. Done / not done / cut
@@ -76,7 +76,7 @@
 * e2e that open Stats, both projects: im2, ii3, il1, in2, ip3, io4 → 58 passed + `il1` QB test updated on purpose and
   re-run (2 passed); ip4, im3, ii6, in1, ii2, `fixtures.spec.ts` → 101 passed, 7 skipped. **Updated on purpose**:
   `im2` (every width opens on Key stats; Key stats ≤ 8; the group "Snaps"), `il1` (the QB test opens `view=full`).
-* `scripts/gate.sh`: see the final message.
+* `scripts/gate.sh` (python + web), run last: **GATE PASSED** (79 s).
 
 ## 5. Edits outside my files
 
