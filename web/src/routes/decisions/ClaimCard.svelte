@@ -73,6 +73,7 @@
     {#if c.total_words && thisWeekFirst}<p class="mt-0.5 text-sm leading-snug text-ink-2" data-testid="claim-total">{c.total_words}.</p>{/if}
   {/if}
   <p class="mt-2 text-base leading-snug text-ink" data-testid="claim-reason">{c.reason}</p>
+  {#if c.guide}<p class="mt-1 text-sm leading-snug text-ink-2" data-testid="claim-guide">{c.guide}</p>{/if}<!-- IX-5 -->
   <p class="mt-1 text-sm leading-snug text-ink-3" data-testid="claim-cost">
     {c.cost}{#if !c.lead && c.this_week != null && c.this_week >= 0.05 && Math.abs(c.this_week - (big ?? 0)) >= 0.05}<span class="ml-1">{`· this week ${s1(c.this_week)}`}</span>{/if}
   </p>

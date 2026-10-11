@@ -94,7 +94,9 @@ export function topIntro(cards: WaiverCard[], week: number, last: number): strin
   if (later.length) parts.push(`${later.length} help${later.length === 1 ? "s" : ""} later in the window`);
   if (stash) parts.push(`${stash} ${stash === 1 ? "is an upside stash" : "are upside stashes"}`);
   const span = last > week ? `weeks ${week}–${last}` : `week ${week}`;
-  return `${head} below: ${parts.join(", ")}. Each card's total is its gain over ${span}.`;
+  const kd = cards.filter((c) => !!c.guide).length; // ---- IX-5: a kicker or defense is judged on this week only
+  const tail = !kd ? "" : kd === 1 ? " The kicker or defense counts this week only: a rough guide." : " The kickers and defenses count this week only: a rough guide.";
+  return `${head} below: ${parts.join(", ")}. Each card's total is its gain over ${span}.${tail}`;
 }
 
 /** Claims that compete for the same roster spot (the same drop, or the API's `alternative_to`): one line each. */

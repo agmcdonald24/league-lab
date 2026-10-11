@@ -78,6 +78,7 @@
 
   // ---- IB-2: the three strongest moves, the views
   const top3 = $derived(data?.top3 ?? []);
+  const gradedN = $derived(top3.filter((c) => !c.guide).length); // ---- IX-5: kickers and defenses are not counted among the strongest
   const views = $derived(data?.views ?? null);
   const view = $derived(viewOf(route.current.params.get("view"), data?.default_view ?? "help"));
   // ---- IE-1: the answer is not the first card's move again (the API's `answer`: "The three strongest claims are below …")
@@ -215,13 +216,14 @@
 
     {#if top3.length}
       <section class="space-y-2" data-testid="top3">
-        <h2 class="text-xl font-bold">{top3.length === 1 ? "The strongest move" : `The ${top3.length === 2 ? "two" : "three"} strongest moves`}</h2>
+        <!-- ---- IX-5: a kicker or defense is never counted among the strongest (judged on this week, a rough guide, last) -->
+        <h2 class="text-xl font-bold">{gradedN === 0 ? "This week's kicker and defense claims" : gradedN === 1 ? "The strongest move" : `The ${gradedN === 2 ? "two" : "three"} strongest moves`}</h2>
         <div class="grid grid-cols-1 gap-3 wide:grid-cols-3">
           {#each top3 as c, i (`${one(c)}#${i}`)}
             <!-- ---- II-4: the horizon on each claim (helps this week / covers a bye / helps later / upside stash) -->
             {@const h = horizonOf(c, data.week ?? 0)}
             <div class="space-y-1" data-testid="top-move-wrap">
-              <span class="inline-block rounded-sm px-2 py-0.5 text-xs font-bold {h.key === 'now' ? 'bg-accent-soft text-accent' : 'bg-raised text-ink-2'}" data-testid="top-move-horizon" data-horizon={h.key}>{h.label}</span>
+              <span class="inline-block rounded-sm px-2 py-0.5 text-xs font-bold {h.key === 'now' && !c.guide ? 'bg-accent-soft text-accent' : 'bg-raised text-ink-2'}" data-testid="top-move-horizon" data-horizon={h.key}>{c.guide ? `${h.label}: a rough guide` : h.label}</span>
               <ClaimCard card={c} {ctx} rank={i + 1} testid="top-move" />
             </div>
           {/each}

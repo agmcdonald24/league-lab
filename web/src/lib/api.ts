@@ -1586,6 +1586,7 @@ export interface WaiverCard {
   lead?: string; // "Bears defense instead of Jaguars: about 2 more starter points this week"
   total_words?: string | null; // "+12.4 over weeks 4–7 in total"
   alternative_to?: string | null; // an earlier card that takes the same spot this week
+  guide?: string | null; // IX-5: a kicker or defense, judged on this week only ("Kickers and defenses are judged on …")
 }
 export interface Waivers {
   answer?: string | null;

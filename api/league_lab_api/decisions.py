@@ -4563,6 +4563,40 @@ VIEWS = ("help", "bye", "stash", "all")
 VIEW_LABELS = {"help": "Help now", "bye": "Bye coverage", "stash": "Stashes", "all": "All available"}
 VIEW_CAP = 8                                      # moves a view lists (the rest are in All available's free agents)
 GAIN_EPS = 0.05                                   # a gain under this is "+0.0": no gain (decisions.ts s1)
+# ---- IX-5 (Wave I-X): a kicker or a defense is never the strongest move on the window's gain. Their order is graded
+# weak next week (K 0.095, DEF 0.257) and no better than chance two to eight weeks ahead (K 0.028, DEF 0.040: METRICS
+# § "What each number has been checked against (IR-4)"), so their claim is judged on this week's lineup gain, said to be
+# a rough guide, and listed after the graded positions (only when the graded positions leave room in the three).
+KD_GUIDE_POSITIONS = ("K", "DEF", "TMPK", "TMDEF")
+KD_GUIDE_WORDS = ("Kickers and defenses are judged on this week only: their projections are a rough guide (weakly "
+                  "graded for next week, no better than chance after).")
+
+
+def ix5_kd_last(best: pd.DataFrame, seen: set, room: int, move_of) -> list[dict]:
+    """The kickers' and defenses' claims for the strongest three: this week's gain, most first, one per position."""
+    if room <= 0 or best is None or best.empty or "add_position" not in best:
+        return []
+    kd = best[best["add_position"].isin(KD_GUIDE_POSITIONS)]
+    if kd.empty:
+        return []
+    kd = kd.assign(_wk=pd.to_numeric(kd["weekly_gain"], errors="coerce").fillna(0.0)).sort_values(
+        ["_wk", "add_rank"], ascending=[False, True])
+    out = []
+    for _, r in kd.iterrows():
+        if r["_wk"] < GAIN_EPS or r.get("add_position") in seen:
+            continue
+        out.append(move_of(r))
+        seen.add(r.get("add_position"))
+        if len(out) >= room:
+            break
+    return out
+
+
+def ix5_guide_card(c: dict, week: int) -> dict:
+    """A kicker's or defense's card: its number is this week's gain, its label the week, and it says it is a guide."""
+    if ((c.get("move") or {}).get("add") or {}).get("position") not in KD_GUIDE_POSITIONS:
+        return c
+    return {**c, "gain": c.get("this_week"), "gain_label": f"week {week}", "guide": KD_GUIDE_WORDS}
 
 
 NICKNAMES = frozenset("Cardinals Falcons Ravens Bills Panthers Bears Bengals Browns Cowboys Broncos Lions Packers Texans Colts "
@@ -4869,12 +4903,15 @@ def waiver_views(league_id: str, team: int | None, season: int, week: int, mv: p
     ranked = best.sort_values(["horizon_gain", "add_rank"], ascending=[False, True])
     top, seen = [], set()
     for _, r in ranked.iterrows():
+        if r.get("add_position") in KD_GUIDE_POSITIONS:          # ---- IX-5: never chosen on the window's gain
+            continue
         if (_num(r.get("horizon_gain")) or 0) < GAIN_EPS or r.get("add_position") in seen:
             continue
         top.append(move_of(r))
         seen.add(r.get("add_position"))
         if len(top) >= 3:
             break
+    top.extend(ix5_kd_last(best, seen, 3 - len(top), move_of))   # ---- IX-5: kickers and defenses on this week, after
     top = qb_once(top)
     # ---- IC-4 (Wave I-D): an empty starting slot first — the claim that fills it this week leads the three and Help now
     # (70587, overlay on: Hall and Price Out leave RB2 empty; "Fills your empty RB2 this week" comes before a kicker's +4)
@@ -4891,7 +4928,7 @@ def waiver_views(league_id: str, team: int | None, season: int, week: int, mv: p
         return {"move": m, "reason": reason or _reason(m, int(week), byes, empty, stash),
                 "cost": _cost(m, int(week), last, m.get("drop_starts")), "gain": m.get("horizon_gain"), "gain_label": span,
                 "this_week": m.get("weekly_gain"), **extra}
-    res["top3"] = [card(m) for m in top]
+    res["top3"] = [ix5_guide_card(card(m), int(week)) for m in top]
     # Help now: this week's lineup gain, most first
     now_rows = best[pd.to_numeric(best["weekly_gain"], errors="coerce") >= GAIN_EPS]
     now_rows = now_rows.assign(_fill=now_rows["fills_empty_slot"].fillna(False).astype(bool)          # ---- IC-4
@@ -5019,12 +5056,17 @@ def top_intro(cards: list[dict], week: int, last: int) -> str:
     if stash:
         parts.append(f"{stash} {'is an upside stash' if stash == 1 else 'are upside stashes'}")
     span = f"weeks {week}–{last}" if last > week else f"week {week}"
-    return f"{head} below: {', '.join(parts)}. Each card's total is its gain over {span}."
+    kd = sum(1 for c in cards if c.get("guide"))                       # ---- IX-5
+    tail = "" if not kd else (" The kicker or defense counts this week only: a rough guide." if kd == 1
+                              else " The kickers and defenses count this week only: a rough guide.")
+    return f"{head} below: {', '.join(parts)}. Each card's total is its gain over {span}.{tail}"
 
 
 def _ie1_present(res: dict, league_id: str, week: int, last: int, span: str) -> None:
     def total(c: dict) -> str | None:
         g = _num(c.get("gain"))
+        if c.get("guide") or ((c.get("move") or {}).get("add") or {}).get("position") in KD_GUIDE_POSITIONS:
+            return None                                       # ---- IX-5: a kicker's or defense's window total is not said
         return None if g is None or last <= week else f"{g:+.1f} over {span} in total"
 
     def dress(cs: list[dict]) -> None:
@@ -5063,7 +5105,8 @@ def _ie1_present(res: dict, league_id: str, week: int, last: int, span: str) -> 
             "lock": None, "cards": [], "gain": _num(first.get("this_week")), "href": "/waivers"}
     # PO (I-E): the three strongest claims lead with this week's gain, so they are ordered by it (the window total
     # second) — the review's "the current-week view should emphasize the current-week improvement"
-    res["top3"] = sorted(res["top3"], key=lambda c: (-(_num(c.get("this_week")) or 0.0), -(_num(c.get("gain")) or 0.0)))
+    res["top3"] = sorted(res["top3"], key=lambda c: (bool(c.get("guide")), -(_num(c.get("this_week")) or 0.0),
+                                                     -(_num(c.get("gain")) or 0.0)))   # ---- IX-5: K / DEF after
     dress(res["top3"])
     dress(help_all)
     shown = {one(c) for c in res["top3"]}
@@ -5618,7 +5661,7 @@ def recent_adds(league_id: str, team: int | None, week: int, is_house: bool) -> 
     try:
         if is_house:
             tx = query(TX_SQL, (league_id,))
-            out["source"] = "analytics.mart_league_transactions"
+            out["source"] = f"{A.platforms.LONG[A.platforms.provider_of(league_id)]} transactions"   # ---- IX-5: was the table's name
         else:
             lg, rosters, users = _sleeper_league(league_id)
             sl = A.sleeper()

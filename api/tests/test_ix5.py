@@ -16,6 +16,8 @@ import pytest
 
 from league_lab_api import provenance as P
 
+from .conftest import needs_db
+
 BOARD = {"model_version": "v3.6", "kd_model_version": "kd1.0", "published_at": None, "versions": [], "source": "code"}
 WORD_POS = {w: p for p, w in P.POS_WORDS.items()}
 NAMES = "|".join(sorted(WORD_POS, key=len, reverse=True))
@@ -112,3 +114,56 @@ def test_window_caption_says_what_the_next_four_weeks_are_checked_to_be():
     ts = (Path(__file__).resolve().parents[2] / "web" / "src" / "lib" / "decisions.ts").read_text()
     assert f'next4: "{w}"' in ts                               # the page's copy is the API's
     assert all(not c["status"] == "graded" for c in [P.CHECKS[("later", "K")], P.CHECKS[("later", "DEF")]])
+
+
+# ------------------------------------------------------------------------------------------------ 3. kickers and defenses
+def _row(pos, horizon, weekly, rank, name):
+    return {"add_position": pos, "horizon_gain": horizon, "weekly_gain": weekly, "add_rank": rank, "add_name": name}
+
+
+def test_a_defense_is_never_the_strongest_on_the_window_gain():
+    """The review's case: a defense +4.7 over four weeks. It is chosen only on this week's gain, after the graded
+    positions, and its card's number is this week's."""
+    import pandas as pd
+
+    from league_lab_api import decisions as D
+    best = pd.DataFrame([_row("DEF", 4.7, 0.8, 1, "Buccaneers"), _row("RB", 2.0, 1.0, 2, "Back"),
+                         _row("K", 3.0, 0.0, 3, "Kicker"), _row("WR", 1.0, 0.0, 4, "Receiver")])
+    seen = {"RB", "WR"}
+    picked = D.ix5_kd_last(best, seen, 1, lambda r: {"add": {"position": r["add_position"], "player_name": r["add_name"]},
+                                                     "weekly_gain": r["weekly_gain"], "horizon_gain": r["horizon_gain"]})
+    assert [m["add"]["position"] for m in picked] == ["DEF"]          # the kicker gains nothing this week: not listed
+    assert D.ix5_kd_last(best, {"RB", "WR"}, 0, lambda r: r) == []    # no room after the graded positions: none
+    c = D.ix5_guide_card({"move": picked[0], "gain": 4.7, "gain_label": "weeks 5–8", "this_week": 0.8}, 5)
+    assert c["gain"] == 0.8 and c["gain_label"] == "week 5" and c["guide"] == D.KD_GUIDE_WORDS
+    rb = {"move": {"add": {"position": "RB"}}, "gain": 2.0, "gain_label": "weeks 5–8", "this_week": 1.0}
+    assert D.ix5_guide_card(rb, 5) is rb
+    assert "rough guide" in D.KD_GUIDE_WORDS and "no better than chance" in D.KD_GUIDE_WORDS
+
+
+def test_the_intro_says_the_guide():
+    from league_lab_api import decisions as D
+    rb = {"move": {"weekly_gain": 1.0}, "this_week": 1.0}
+    df = {"move": {"weekly_gain": 0.8}, "this_week": 0.8, "guide": D.KD_GUIDE_WORDS}
+    assert D.top_intro([rb, df], 5, 8) == ("The two strongest claims below: each helps this week. Each card's total is "
+                                           "its gain over weeks 5–8. The kicker or defense counts this week only: a rough guide.")
+    assert D.top_intro([rb], 5, 8).endswith("weeks 5–8.")
+
+
+@needs_db
+@pytest.mark.parametrize("league,team", [("1389709692405551104", "2"), ("1321941740235550720", "12")])
+def test_waivers_three_put_kickers_and_defenses_last_on_this_week(client, league, team):
+    from league_lab_api import decisions as D
+    r = client.get("/api/waivers", params={"league": league, "team": team})
+    assert r.status_code == 200, r.text[:300]
+    top = r.json().get("top3") or []
+    kd = [((c.get("move") or {}).get("add") or {}).get("position") in D.KD_GUIDE_POSITIONS for c in top]
+    assert kd == sorted(kd), "a kicker or defense listed before a graded position"
+    for c, is_kd in zip(top, kd):
+        if is_kd:
+            assert c.get("guide") and c["gain"] == c["this_week"] and not c.get("total_words")
+            assert (c["this_week"] or 0) >= D.GAIN_EPS
+        else:
+            assert not c.get("guide")
+    src = (r.json().get("recent_adds") or {}).get("source")              # 5. no internal names on Waivers
+    assert src is None or ("mart_" not in src and "analytics." not in src and src.endswith(" transactions")), src
