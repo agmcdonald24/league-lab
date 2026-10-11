@@ -80,8 +80,8 @@ forged blockquote.
   - `iy1` alone: 7 passed, 5 skipped.
 - **API** (`league_lab_iq4`): `test_iu6.py`, `test_im3.py`, `test_in1.py` gave **103 passed**. The CSP test is now
   `test_the_csp_frames_only_youtube_nocookie_and_x`.
-- **Checks:** `npm run lint` 0 errors, 0 warnings. `npm run build` green. Copy standard exit 0. `scripts/gate.sh`: see
-  the final message.
+- **Checks:** `npm run lint` 0 errors, 0 warnings. `npm run build` green. Copy standard exit 0. `scripts/gate.sh` (all):
+  **GATE PASSED** (root 783, api 40, ruff, web lint, build).
 - **Unit tests.** `web/src` has no unit-test runner, and adding vitest would be a new dependency. The parser and
   frame-handler unit tests are pure-function tests in `web/e2e/iy1`, as `in1` and `iu6` do.
 
