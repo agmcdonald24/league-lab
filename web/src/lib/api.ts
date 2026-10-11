@@ -3033,3 +3033,26 @@ export interface PlayAvailability {
   short?: string | null;
 }
 // ---- end IT-2
+
+// ---- IX-1 (Wave I-X), lf1.0: a game left early (docs/METRICS.md § "A game left early"; IX-2 and IX-3 read these)
+/** The model's own forecast of his share of the team's targets this week: his projected targets / the projected targets
+ * of his team's players the model projects that week (the live week's rows before each kickoff). RB / WR / TE. */
+export interface ProjectedTargetShare {
+  share: number; // 0-1
+  targets: number; // his projected targets, one decimal
+  team_targets: number; // his team's projected targets (the players the model projects), one decimal
+  week: number;
+  players: number; // his team's players with projected targets
+  words: string; // "8.0 of his team's 46.3 projected targets in week 5 (17%): the model's own forecast …"
+}
+export interface PlayerCard {
+  projected_target_share?: ProjectedTargetShare | null; // null: no line, a QB, he sits, or a team total of 0
+}
+export interface GameRow {
+  left_early?: boolean; // knowable when the game ended: his snaps fell to half his usual and he was hurt or had no touch after half-time
+  left_early_reason?: string | null; // "15 snaps (20% of the team's; usually 94%); hurt on a play in the 2nd quarter[; then missed week 5]"
+  on_field_target_share?: number | null; // his targets / the team's targets on the plays he was on the field
+  on_field_carry_share?: number | null;
+  on_field_basis?: "participation" | "snaps" | null; // participation: counted play by play (2016-2025); snaps: estimated (2026)
+}
+// ---- end IX-1

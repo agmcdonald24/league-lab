@@ -35,6 +35,7 @@ export const GROUPS: Record<string, string> = {
   expected_points_per_game: "Expected points",
   targets: "Receiving",
   target_share: "Receiving",
+  on_field_target_share: "Receiving", // ---- IX-1
   receptions: "Receiving",
   receiving_yards: "Receiving",
   receiving_tds: "Receiving",
@@ -65,6 +66,7 @@ export const GROUPS: Record<string, string> = {
   ngs_cpoe: "Next Gen Stats",
   carries: "Rushing",
   carry_share: "Rushing",
+  on_field_carry_share: "Rushing", // ---- IX-1
   rb_carry_share: "Rushing",
   rushing_yards: "Rushing",
   rushing_tds: "Rushing",
@@ -217,6 +219,11 @@ export function why(c: StatsColumn, p: StatsRow, mode: Mode): string {
       return `${n("targets")} of ${n("team_targets")} team targets in his ${g}`;
     case "carry_share":
       return `${n("carries")} of ${n("team_carries")} team carries in his ${g}`;
+    // ---- IX-1: on the field (2016-2025 counted play by play; 2026 estimated from his snap share)
+    case "on_field_target_share":
+      return `${n("on_field_targets")} of ${fmt.pts(n("on_field_team_targets"), 1)} team targets on the plays he was on the field in his ${g}${p.on_field_basis === "participation" ? "" : " (estimated from his snap share)"}`;
+    case "on_field_carry_share":
+      return `${n("on_field_carries")} of ${fmt.pts(n("on_field_team_carries"), 1)} team carries on the plays he was on the field in his ${g}${p.on_field_basis === "participation" ? "" : " (estimated from his snap share)"}`;
     case "rb_carry_share":
       return `${n("carries")} of ${n("team_rb_carries")} running-back carries in his ${g}`;
     case "first_read_target_share":

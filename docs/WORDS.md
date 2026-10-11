@@ -934,3 +934,16 @@ sentence of its own, only where they appear.
 | The calculator's alternative line | add Cameron Dicker, drop Rhamondre Stevenson (netted: his season value above replacement, 20.0): +0.0 over weeks 5–8 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you |
 | A Finder row's reason, a player who cannot play this week | Ja'Marr Chase cannot play this week (Out · Sleeper, Oct 3): the gain comes after it. — the note in brackets is the league screens' one note (`league_gate.note`), no longer the old `cannot_play` field. |
 <!-- ---- end IU-1 -->
+
+<!-- ---- IX-1 (Wave I-X) -->
+## A game left early (IX-1, Wave I-X, 2026-10-11; `api/league_lab_api/onfield.py`, `stats.py`; docs/METRICS.md § "A game left early")
+
+| Where | The words | Never |
+|---|---|---|
+| Stats column (RB / WR / TE) | **Target share on the field** (short "Tgt % on"): "His targets / his team's targets on the plays he was on the field, so a game he left early does not drag it down. 2016-2025: counted play by play; 2026: estimated as his targets / (his team's targets x his share of the snaps), because who was on the field each play is published after the season." | "true share", "adjusted share", a share above 100% |
+| Stats column (RB) | **Carry share on the field** ("Car % on"): "His carries / his team's carries on the plays he was on the field. 2016-2025: counted play by play; 2026: estimated as his carries / (his team's carries x his share of the snaps)." | |
+| Stats cell's sample (the web's `why`) | "3 of 10.6 team targets on the plays he was on the field in his 1 game (estimated from his snap share)" | |
+| A cell with no snap count | — "no snap count for his games" | 0 |
+| Game log row, a game left early | "15 snaps (20% of the team's; usually 94%); hurt on a play in the 2nd quarter" / "…; no target or carry after half-time"; once his team's next game is in and he did not play it: "…; then missed week 5" | "injured" when no injury note named him; "benched" |
+| Card (RB / WR / TE), the projected target share | "8.0 of his team's 46.3 projected targets in week 5 (17%): the model's own forecast of his share of the team's targets this week." Nothing for a quarterback, a player who sits, or a player with no projection. | "expected share", a share for a player who sits |
+<!-- ---- end IX-1 -->

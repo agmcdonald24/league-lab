@@ -6058,3 +6058,37 @@ regular-season game of the season. (The truth may read the next week; the rule m
 
 **Display-only extension** (never an input): the game log's reason adds "then missed week N+1" when he did not play
 his team's next game — a later week's fact, on the screen only.
+
+**The result** (`scripts/analysis/ix1_left_early.py`, 01:00 ET, after the rule's commit `01a4f3a`). 2016 – 2025, regular
+season, QB / RB / WR / TE player-games he played: 54,551; with participation 53,652; truly left early 1,926.
+
+| (a) estimate against exact | Player-games | Mean abs. difference | Median | 90th pct | The whole-game share's difference |
+|---|---:|---:|---:|---:|---:|
+| target share, all | 52,131 | 0.035 | 0.013 | 0.086 | 0.087 |
+| target share, left early | 1,732 | 0.060 | 0.017 | 0.178 | 0.200 |
+| carry share, all | 52,314 | 0.038 | 0.000 | 0.136 | 0.118 |
+| carry share, left early | 1,743 | 0.047 | 0.000 | 0.180 | 0.247 |
+
+The estimate is a third of the whole-game share's error on the games that matter (left early: 0.060 against 0.200 for
+targets), but it is **coarse in the tail**: one left-early game in ten is off by 18 share points or more (snap share
+treats every snap alike; a receiver hurt on a pass-heavy drive is on the field for more of the targets than of the
+snaps). The screen says 2026's is an estimate.
+
+| (b) against the truth (42,803 player-games with two previous games; 1,465 true) | Flagged | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|
+| LE-A snap drop + injury note | 224 | 0.955 | 0.146 | 0.253 |
+| **LE-B snap drop + (note or no touch after half-time)** | 1,367 | 0.437 | 0.408 | **0.422** |
+| LE-0 snap drop alone (reference) | 3,719 | 0.219 | 0.557 | 0.315 |
+
+**By the rule, LE-B ships** (the higher F1). Plainly: LE-B's mark is right less than half the time (the "no touch after
+half-time" arm also catches a player pulled from a lost role or a blowout), while LE-A is right 19 times in 20 but finds
+one left-early game in seven (the play-by-play names an injured player on fewer than one play in five of these games).
+The reason says which signal fired ("hurt on a play in the 2nd quarter" / "no target or carry after half-time"), so the
+screen never says "hurt" without the note. LE-A's precision per season: 0.86 – 1.00 (2016 – 2025). IX-6 may prefer
+LE-A's precision for the projection; that is its rule to write.
+
+**The projected target share** (`onfield.projected_target_share`): his projected targets ÷ the projected targets of
+his team's players the model projects that week (QB / RB / WR / TE lines; a player who sits counts 0; a player without a
+line is not in it). On 2026 weeks 1 – 4 the team's summed projected targets average 32.8 against 31.2 real targets, and
+the projected share is 0.051 from the real whole-game share on average (1,281 RB / WR / TE player-weeks) — context, not a
+graded forecast against a baseline.

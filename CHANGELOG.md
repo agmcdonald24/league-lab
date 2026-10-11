@@ -2,6 +2,16 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-11 — Wave I-X
+
+- **IX-1 — a game a player left early (lf1.0).** Per game, beside the whole-game shares: the **target / carry share on
+  the field** (2016 – 2025 counted play by play from participation; 2026 estimated as his targets ÷ (team targets × his
+  snap share), capped at 1) with its basis, and **left early** (knowable when the game ends: snaps at most half his
+  usual median and an injury note naming him or no touch after half-time — LE-B, picked by the rule committed first;
+  precision 0.44, recall 0.41 against the participation truth) with its reason. Stats' "Target share on the field" /
+  "Carry share on the field", the game log's mark, the card's projected target share (the live week). The projection's
+  inputs are unchanged (IX-6 decides).
+
 ## 2026-10-10 — Wave I-W
 
 - **PO — after the first live run (the trade check's 500).** The publish runs `ANALYZE` on every table it restores,
