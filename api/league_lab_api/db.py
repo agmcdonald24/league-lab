@@ -32,7 +32,7 @@ import psycopg
 from league_lab import live_week as LW  # ---- IV-1
 from league_lab import memo
 from psycopg.types.numeric import FloatLoader
-from psycopg_pool import ConnectionPool
+from psycopg_pool import ConnectionPool, PoolTimeout
 
 from .settings import app_dsn
 
@@ -49,6 +49,17 @@ class DataNotReady(RuntimeError):
     """A mart the endpoint needs is not on this database right now."""
 
 
+# ---- PO (Wave I-W, 2026-10-10): a request never hangs half a minute for a pooled connection. On 2026-10-10 the first
+# trade evaluation after a publication waited the pool's 30 s and came back a 500 (psycopg_pool.PoolTimeout: every
+# connection busy that long). The wait is now POOL_WAIT_S, and running out of it is said in words: 503 "busy", with
+# the pool's own counts in the log.
+POOL_WAIT_S = 12.0
+
+
+class Busy(DataNotReady):
+    """Every pooled connection stayed busy for POOL_WAIT_S."""
+
+
 _pool: ConnectionPool | None = None
 _pool_lock = threading.Lock()
 _cache = memo.region("sql", ttl=CACHE_TTL_SECONDS, published=True)  # IS-4: dropped at a new publication       # INF-2: (sql, params) -> DataFrame, in the shared budget
@@ -58,7 +69,7 @@ def pool() -> ConnectionPool:
     global _pool
     with _pool_lock:
         if _pool is None:
-            _pool = ConnectionPool(app_dsn(), min_size=1, max_size=4, open=True, timeout=30,
+            _pool = ConnectionPool(app_dsn(), min_size=1, max_size=4, open=True, timeout=POOL_WAIT_S,   # PO (Wave I-W)
                                    kwargs={"autocommit": True, "prepare_threshold": None},   # IT-4: no server-side prepared statements
                                    check=ConnectionPool.check_connection,
                                    max_idle=240, name="league-lab-api", configure=_numeric_as_float)
@@ -144,6 +155,19 @@ def _live_sql(cur, sql: str) -> str:
 
 
 def _run(sql: str, params: tuple) -> pd.DataFrame:
+    # ---- PO (Wave I-W): no connection within POOL_WAIT_S is "busy" in words, never a 500 after half a minute
+    try:
+        return _run_pooled(sql, params)
+    except PoolTimeout as exc:
+        try:
+            stats = {k: v for k, v in pool().get_stats().items() if k.startswith(("pool_", "requests_"))}
+        except Exception:  # noqa: BLE001
+            stats = {}
+        log.warning("no pooled connection within %s s (%s); the statement began: %s", POOL_WAIT_S, stats, " ".join(sql.split())[:120])
+        raise Busy("busy") from exc
+
+
+def _run_pooled(sql: str, params: tuple) -> pd.DataFrame:
     with pool().connection() as conn, conn.cursor() as cur:
         try:
             cur.execute(_live_sql(cur, sql), params)            # ---- IV-1: _live_sql

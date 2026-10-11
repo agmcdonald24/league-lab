@@ -62,7 +62,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import auth, availability, db, myweek, news, ondemand, player, research  # availability: I0-A; news: N1
 from .applib import cards, ui
-from .db import DataNotReady, query
+from .db import Busy, DataNotReady, query
 from .myweek import NotFound
 from .settings import APP_NAME, web_dist
 
@@ -126,6 +126,15 @@ async def _sleeper_busy(_req: Request, exc: A.SleeperBusy):
                         headers={"Cache-Control": "no-store", "Retry-After": "60"})
 
 
+# ---- PO (Wave I-W): every pooled connection busy for db.POOL_WAIT_S -> 503 in words (the web's retry card), not a 500
+@app.exception_handler(Busy)
+async def _busy(_req: Request, exc: Busy):
+    words = "The site is busy right now. Try again in a few seconds."
+    return JSONResponse({"error": "busy right now", "detail": words, "code": "busy"}, status_code=503,
+                        headers={"Cache-Control": "no-store", "Retry-After": "5"})
+# ---- end PO
+
+
 @app.exception_handler(DataNotReady)
 async def _not_ready(_req: Request, exc: DataNotReady):
     return JSONResponse({"error": "the numbers are not ready yet",
@@ -145,8 +154,10 @@ async def _http(_req: Request, exc: StarletteHTTPException):
 @app.exception_handler(Exception)
 async def _server_error(_req: Request, exc: Exception):
     words = "Something broke on our side. /api/status says whether the data is up and when it was last updated."
-    return JSONResponse({"error": words, "detail": words, "status": "/api/status"}, status_code=500,
-                        headers={"Cache-Control": "no-store"})
+    # PO (Wave I-W): `kind` is the exception's class name and nothing else (never its text), so a check that meets a
+    # 500 can say what kind it was without anyone opening the server's log
+    return JSONResponse({"error": words, "detail": words, "status": "/api/status", "kind": type(exc).__name__[:60]},
+                        status_code=500, headers={"Cache-Control": "no-store"})
 # ---- end IH-1
 
 

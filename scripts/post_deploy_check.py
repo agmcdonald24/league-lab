@@ -113,6 +113,14 @@ def _signed(x: float) -> str:
     return f"{x:+.1f}"
 
 
+def _why(b) -> str:
+    """A failed answer's words, with the kind of error (a 500's exception class) or the code (503 "busy") it carries."""
+    if not isinstance(b, dict):
+        return str(b)
+    tag = b.get("kind") or b.get("code")
+    return (f"[{tag}] " if tag else "") + str(b.get("error") or b.get("detail") or "")
+
+
 def check_trade(b: object) -> tuple[bool, str, dict | None]:
     if not isinstance(b, dict):
         return False, "not a JSON answer", None
@@ -219,12 +227,12 @@ def main(argv: list[str] | None = None) -> int:
     j.line(ok, "web app", code, secs, "the page is served" if ok else "not the web app's page")
 
     code, secs, b = j.call("GET", "/api/rankings?league=ref:half&position=RB&limit=30")
-    ok, text = check_rankings(b) if code == 200 else (False, (b.get("error") if isinstance(b, dict) else str(b))[:160])
+    ok, text = check_rankings(b) if code == 200 else (False, _why(b)[:160])
     j.line(ok, "rankings", code, secs, text)
 
     body = {"league": league, "team": team_i, "partner": partner_i, "give": give_l, "get": get_l}
     code, secs, b = j.call("POST", "/api/trades/evaluate", body)
-    ok, text, fwd = check_trade(b) if code == 200 else (False, (b.get("error") if isinstance(b, dict) else str(b))[:200], None)
+    ok, text, fwd = check_trade(b) if code == 200 else (False, _why(b)[:200], None)
     j.line(ok, "trade", code, secs, text)
 
     if fwd is not None:

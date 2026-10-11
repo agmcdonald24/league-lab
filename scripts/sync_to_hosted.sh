@@ -410,6 +410,15 @@ do $$ begin
     grant select on all tables in schema ops to league_lab_app;
   end if;
 end $$;
+-- PO (Wave I-W, 2026-10-10): the planner's statistics for the tables just restored, in the same transaction. A restored
+-- table has none until autovacuum reaches it, so the first requests after the switch were planned blind (the night the
+-- post-publish check's trade request waited 30 s for a pooled connection and got a 500).
+do $an$ declare r record; begin
+  for r in select n.nspname, c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname in ('analytics', 'analytics_seeds', 'ops') and c.relkind in ('r', 'm') loop
+    execute format('analyze %I.%I', r.nspname, r.relname);
+  end loop;
+end $an$;
 SQL
   revoke_prev_sql
   # the publication's id, in the same transaction as its tables (/api/ready reads it)
@@ -498,6 +507,15 @@ grant usage on schema analytics, analytics_seeds, ops to league_lab_app;
 grant select on all tables in schema analytics to league_lab_app;
 grant select on all tables in schema analytics_seeds to league_lab_app;
 grant select on all tables in schema ops to league_lab_app;
+-- PO (Wave I-W, 2026-10-10): the planner's statistics for the tables just restored, in the same transaction. A restored
+-- table has none until autovacuum reaches it, so the first requests after the switch were planned blind (the night the
+-- post-publish check's trade request waited 30 s for a pooled connection and got a 500).
+do $an$ declare r record; begin
+  for r in select n.nspname, c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+           where n.nspname in ('analytics', 'analytics_seeds', 'ops') and c.relkind in ('r', 'm') loop
+    execute format('analyze %I.%I', r.nspname, r.relname);
+  end loop;
+end $an$;
 SQL
 }
 restore_retrying drop_stream
