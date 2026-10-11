@@ -4,6 +4,7 @@
   // phone (the page never scrolls sideways). Player links carry the frame's league, so a tap opens the drawer.
   import { isYoutubeId, mdDoc } from "../../lib/md";
   import PlayersBlock from "./PlayersBlock.svelte";
+  import { onXMessage, X_SANDBOX, X_START_HEIGHT, xFrameSrc } from "./xframe";
 
   let { markdown, league }: { markdown: string; league: string } = $props();
   // the first ```players block becomes the live table; the text before and after it is markdown (escaped first)
@@ -19,6 +20,7 @@
   // YouTube or X is asked for before that tap, and no script from either is ever loaded.
   let root = $state<HTMLDivElement | null>(null);
   function play(e: MouseEvent) {
+    showX(e);
     const btn = (e.target as Element | null)?.closest?.("button[data-yt-play]") as HTMLButtonElement | null;
     if (!btn || !root?.contains(btn)) return;
     const id = btn.dataset.ytPlay;
@@ -40,6 +42,37 @@
     if (!el) return;
     el.addEventListener("click", play);
     return () => el.removeEventListener("click", play);
+  });
+
+  // ---- IY-1 (Wave I-Y): a post on X is our own block (md.ts `xBlock`) until the reader taps **Show the post**; then X's
+  // frame takes the block's place — platform.twitter.com/embed/Tweet.html from the id checked again here, sandboxed,
+  // lazy, no referrer, a title — 560 px tall (it scrolls inside itself) until X's frame says its height (xframe.ts).
+  function showX(e: MouseEvent) {
+    const btn = (e.target as Element | null)?.closest?.("button[data-x-show]") as HTMLButtonElement | null;
+    if (!btn || !root?.contains(btn)) return;
+    const fig = btn.closest("figure.ll-embed-x");
+    const dark = typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches;
+    const src = xFrameSrc(btn.dataset.xShow ?? "", dark);
+    if (!fig || !src) return;
+    const frame = document.createElement("iframe");
+    frame.src = src;
+    frame.title = "Post on X";
+    frame.setAttribute("sandbox", X_SANDBOX);
+    frame.setAttribute("loading", "lazy");
+    frame.setAttribute("referrerpolicy", "no-referrer");
+    frame.className = "ll-embed-xframe";
+    frame.style.height = `${X_START_HEIGHT}px`;
+    frame.dataset.testid = "x-frame";
+    frame.dataset.xFrame = "";
+    (fig.querySelector("[data-x-body]") ?? btn).replaceWith(frame);
+    btn.remove();
+  }
+  $effect(() => {
+    const el = root;
+    if (!el) return;
+    const onMessage = (e: MessageEvent) => onXMessage(e, el.querySelectorAll<HTMLIFrameElement>("iframe[data-x-frame]"));
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
   });
 </script>
 
@@ -220,6 +253,51 @@
   }
   .ll-prose :global(.ll-embed-card:hover) {
     border-color: var(--ll-line-strong);
+  }
+  /* ---- IY-1: a post on X — its words in our markup, then X's frame after the tap */
+  .ll-prose :global(.ll-embed-quote) {
+    margin: 0;
+    padding: 0.75em 1em;
+    border: 1px solid var(--ll-line);
+    border-left: 4px solid var(--ll-line-strong);
+    border-radius: 10px;
+    background: var(--ll-raised);
+    font-style: normal;
+  }
+  .ll-prose :global(.ll-embed-words) {
+    margin: 0 0 0.5em;
+    overflow-wrap: anywhere;
+  }
+  .ll-prose :global(.ll-embed-by) {
+    font-size: 0.875rem;
+    color: var(--ll-ink-2);
+    overflow-wrap: anywhere;
+  }
+  .ll-prose :global(.ll-embed-actions) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5em 1em;
+    margin-top: 0.5em;
+    font-size: 0.9375rem;
+  }
+  .ll-prose :global(.ll-embed-show) {
+    min-height: 2.5rem;
+    padding: 0 0.9em;
+    border: 1px solid var(--ll-line-strong);
+    border-radius: 8px;
+    font-weight: 600;
+    color: var(--ll-ink);
+  }
+  .ll-prose :global(.ll-embed-show:focus-visible) {
+    outline: 2px solid var(--ll-accent);
+  }
+  .ll-prose :global(.ll-embed-xframe) {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-radius: 10px;
+    overflow: auto;
   }
   .ll-prose :global(.ll-embed-h) {
     font-weight: 700;

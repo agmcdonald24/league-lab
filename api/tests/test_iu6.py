@@ -182,14 +182,17 @@ def test_without_the_cover_column_every_read_and_save_works_as_before(dist, edit
         blog_store.reset()
 
 
-def test_the_csp_frames_only_youtube_nocookie(api):  # noqa: F811
+def test_the_csp_frames_only_youtube_nocookie_and_x(api):  # noqa: F811
+    """IU-6 + IY-1: the two frames a post can hold after a tap, and nothing else; scripts unchanged."""
     csp = api.get("/blog").headers["content-security-policy"]
     frames = [d for d in csp.split("; ") if d.startswith("frame-src")]
-    assert frames == ["frame-src https://www.youtube-nocookie.com"]
+    assert frames == ["frame-src https://www.youtube-nocookie.com https://platform.twitter.com"]
     assert "frame-ancestors 'none'" in csp and "default-src 'self'" in csp
-    assert "youtube" not in csp.replace("frame-src https://www.youtube-nocookie.com", "")
-    assert "twitter" not in csp and "x.com" not in csp
-    assert security.csp().count("youtube") == 1
+    rest = csp.replace(frames[0], "")
+    assert "youtube" not in rest and "twitter" not in rest and "x.com" not in rest
+    script = [d for d in csp.split("; ") if d.startswith("script-src")]
+    assert len(script) == 1 and "twitter" not in script[0] and "x.com" not in script[0]
+    assert security.csp().count("platform.twitter.com") == 1
 
 
 @pytest.mark.parametrize("name, image", [

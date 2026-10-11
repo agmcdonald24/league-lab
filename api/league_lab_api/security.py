@@ -92,7 +92,8 @@ def csp() -> str:
         "base-uri 'self'",
         "form-action 'self'",
         "frame-ancestors 'none'",
-        "frame-src https://www.youtube-nocookie.com",   # IU-6: a post's YouTube video, after the reader's click
+        # IU-6: a post's YouTube video; IY-1: a post on X (X's own page, no script on ours) — each after the reader's tap
+        "frame-src https://www.youtube-nocookie.com https://platform.twitter.com",
     ])
 
 

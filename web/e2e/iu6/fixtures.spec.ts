@@ -91,7 +91,7 @@ test.describe("md.ts: embeds and links", () => {
     const html = embed(X_URL)!;
     expect(html).toContain(`href="https://x.com/NFL/status/1843000000000000001" rel="noopener noreferrer nofollow ugc" target="_blank"`);
     expect(html).toContain("@NFL");
-    expect(html).not.toMatch(/<script|platform\.twitter|widgets\.js|<iframe|<img/);
+    expect(html).not.toMatch(/<script|platform\.twitter|widgets\.js|<iframe|<img/); // IY-1: the frame only after the tap
     expect(mdDoc(`https://twitter.com/NFL/status/7`)).toContain('href="https://x.com/NFL/status/7"');
   });
 
@@ -269,10 +269,13 @@ test.describe("the blog with a cover and embeds, on the real API", () => {
     const play = body.locator(`button[data-yt-play="${YT}"]`);
     await expect(play).toBeVisible();
     await expect(body.locator("iframe")).toHaveCount(0);
-    const card = body.locator("a.ll-embed-card");
+    // IY-1: the card is our block; the link out is "Open on X" beside "Show the post"
+    const xFig = body.locator("figure.ll-embed-x");
+    await expect(xFig.locator(".ll-embed-card")).toContainText("@NFL");
+    const card = xFig.getByRole("link", { name: "Open on X" });
     await expect(card).toHaveAttribute("href", X_URL);
     await expect(card).toHaveAttribute("rel", "noopener noreferrer nofollow ugc");
-    await expect(card).toContainText("@NFL");
+    await expect(xFig.getByRole("button", { name: "Show the post" })).toBeVisible();
     await expect(body.getByRole("link", { name: "the long version" })).toHaveAttribute("rel", "noopener noreferrer nofollow ugc");
     expect(await page.locator('script[src]:not([src^="/"])').count(), "no script from another origin").toBe(0);
     await page.waitForTimeout(1500);
@@ -323,7 +326,7 @@ test.describe("the blog with a cover and embeds, on the real API", () => {
     expect(meta("og:description")).toBe("A post with a cover, a video and a post on X.");
     // the CSP frames exactly one host
     const csp = (await fetch(`${API}/blog/${slug}`)).headers.get("content-security-policy") ?? "";
-    expect(csp.split("; ").filter((d) => d.startsWith("frame-src"))).toEqual(["frame-src https://www.youtube-nocookie.com"]);
+    expect(csp.split("; ").filter((d) => d.startsWith("frame-src"))).toEqual(["frame-src https://www.youtube-nocookie.com https://platform.twitter.com"]);
   });
 
   test("a file over 300 KB that is not a picture (HTML named .png) is refused in the browser and never sent", async ({ page, isMobile }) => {

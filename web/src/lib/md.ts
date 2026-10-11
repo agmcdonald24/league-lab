@@ -108,7 +108,7 @@ function inlineDoc(text: string, ctx: LinkContext): string {
   // code spans and pictures are held aside (their own escaped HTML) while `inline` escapes and marks up the rest
   const held: string[] = [];
   const hold = (html: string) => `\uE000${held.push(html) - 1}\uE000`;
-  let rest = text.replace(/`([^`\n]+)`/g, (_m, c: string) => hold(`<code>${escapeHtml(c)}</code>`));
+  let rest = text.replace(/\uE002\d*\uE002?/g, "").replace(/`([^`\n]+)`/g, (_m, c: string) => hold(`<code>${escapeHtml(c)}</code>`));
   // pictures: ![alt](/blog/img/name.png) — our own folder only, else the words
   rest = rest.replace(/!\[([^\]]*)\]\(([^)\s]*)\)/g, (_m, alt: string, src: string) =>
     hold(BLOG_IMG.test(src) ? `<img src="${src}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" class="ll-md-img">` : escapeHtml(alt)),
@@ -147,27 +147,117 @@ export function xPost(line: string): { handle: string; id: string } | null {
 export function isYoutubeId(id: string | null | undefined): id is string {
   return typeof id === "string" && YT_ID.test(id);
 }
+/** The YouTube block from a checked id: a Play button (nothing asked of YouTube before the tap) and the video's link. */
+function youtubeBlock(yt: string): string {
+  const id = escapeHtml(yt);
+  return (
+    `<figure class="ll-embed ll-embed-yt" data-yt="${id}">` +
+    `<button type="button" class="ll-embed-play" data-yt-play="${id}" aria-label="Play the YouTube video"><span class="ll-embed-k">▶ Play the video</span><span class="ll-embed-s">From YouTube: it loads when you tap.</span></button>` +
+    `<figcaption><a href="https://www.youtube.com/watch?v=${id}" rel="${POST_LINK_REL}" target="_blank" class="ll-link">Watch on YouTube</a></figcaption></figure>`
+  );
+}
+
+/** ---- IY-1 (Wave I-Y): the X block — our own markup only: the post's words and "Name (@handle) · date" when a pasted
+ * embed code had them (plain text, escaped here), else the card; then **Show the post** (PostBody makes X's frame on the
+ * tap: nothing from X before it) and **Open on X**. The handle and the id come from strict patterns. */
+function xBlock(handle: string, id: string, said?: { words: string; name: string; date: string }): string {
+  const h = escapeHtml(handle);
+  const n = escapeHtml(id);
+  const by = said ? [said.name ? `${escapeHtml(said.name)} (@${h})` : `@${h}`, said.date ? escapeHtml(said.date) : ""].filter(Boolean).join(" · ") : "";
+  const body = said
+    ? `<blockquote class="ll-embed-quote" data-x-body>${said.words ? `<p class="ll-embed-words">${escapeHtml(said.words).replace(/\n/g, "<br>")}</p>` : ""}<footer class="ll-embed-by">${by}</footer></blockquote>`
+    : `<div class="ll-embed-card" data-x-body><span class="ll-embed-k">A post on X</span><span class="ll-embed-h">@${h}</span></div>`;
+  return (
+    `<figure class="ll-embed ll-embed-x" data-x-post="${n}">${body}` +
+    `<div class="ll-embed-actions"><button type="button" class="ll-embed-show" data-x-show="${n}">Show the post</button>` +
+    `<a href="https://x.com/${h}/status/${n}" rel="${POST_LINK_REL}" target="_blank" class="ll-link">Open on X</a></div></figure>`
+  );
+}
+
 /** The embed's HTML for a line that is one link alone, else null (the line stays a paragraph). */
 export function embed(line: string): string | null {
   const yt = youtubeId(line);
-  if (yt) {
-    const id = escapeHtml(yt);
-    return (
-      `<figure class="ll-embed ll-embed-yt" data-yt="${id}">` +
-      `<button type="button" class="ll-embed-play" data-yt-play="${id}" aria-label="Play the YouTube video"><span class="ll-embed-k">▶ Play the video</span><span class="ll-embed-s">From YouTube: it loads when you tap.</span></button>` +
-      `<figcaption><a href="https://www.youtube.com/watch?v=${id}" rel="${POST_LINK_REL}" target="_blank" class="ll-link">Watch on YouTube</a></figcaption></figure>`
-    );
-  }
+  if (yt) return youtubeBlock(yt);
   const x = xPost(line);
-  if (x) {
-    const h = escapeHtml(x.handle);
-    const n = escapeHtml(x.id);
-    return (
-      `<figure class="ll-embed ll-embed-x"><a href="https://x.com/${h}/status/${n}" rel="${POST_LINK_REL}" target="_blank" class="ll-embed-card" data-x-post="${n}">` +
-      `<span class="ll-embed-k">A post on X</span><span class="ll-embed-h">@${h}</span><span class="ll-embed-s">Open it on X ›</span></a></figure>`
-    );
+  if (x) return xBlock(x.handle, x.id);
+  return null;
+}
+
+// ---- IY-1 (Wave I-Y): the embed code X and YouTube hand a writer, pasted into a post, is READ — never passed through.
+// X: <blockquote class="twitter-tweet">…</blockquote>, with or without X's <script …widgets.js></script> after it, on
+// one line or several. From it, by strict patterns only: the handle and the post's number from its status link (the
+// last link inside; x.com or twitter.com); as plain text (tags dropped, entities decoded — escaped again on output):
+// the post's words (the first <p>), the author's name (before "(@handle)") and the date (the status link's words).
+// YouTube: <iframe … src="https://www.youtube.com/embed/<id>…"></iframe> (or youtube-nocookie.com) → the YouTube block
+// from the id; nothing else is read from it. A blockquote whose status link does not match, any other HTML, a second
+// script, an attribute: the text it was, escaped like any text.
+const X_PASTE = /<blockquote\b[^>]{0,400}\bclass\s*=\s*["']twitter-tweet\b[^"']{0,200}["'][^>]{0,400}>([\s\S]{0,20000}?)<\/blockquote\s*>(?:\s*<script\b[^>]{0,200}\bsrc\s*=\s*["']https:\/\/platform\.(?:twitter|x)\.com\/widgets\.js["'][^>]{0,200}>\s*<\/script\s*>)?/gi;
+const YT_PASTE = /<iframe\b[^>]{0,800}?\bsrc\s*=\s*["']https:\/\/www\.youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{11})(?:\?[^"'<>\s]{0,400})?["'][^>]{0,800}>\s*<\/iframe\s*>/gi;
+const X_STATUS = /^https:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})\/status\/(\d{5,25})(?:[?#][^"'<>\s]*)?$/;
+const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", mdash: "—", ndash: "–", hellip: "…", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“" };
+
+/** HTML → plain text: line breaks kept, every tag dropped, entities decoded (escapeHtml runs again on output). */
+export function plainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/[<>]/g, "")
+    .replace(/&(#x[0-9a-f]{1,6}|#\d{1,7}|[a-z]{2,8});/gi, (m, e: string) => {
+      if (e[0] === "#") {
+        const cp = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+        return cp > 31 && cp <= 0x10ffff && !(cp >= 0xd800 && cp <= 0xdfff) && cp !== 127 ? String.fromCodePoint(cp) : "";
+      }
+      return ENTITIES[e.toLowerCase()] ?? m;
+    })
+    // eslint-disable-next-line no-control-regex -- the control characters (all but the line break) are the point
+    .replace(/[\u0000-\u0009\u000b-\u001f\u007f\uE000-\uF8FF]/g, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .trim();
+}
+
+/** A pasted X blockquote's inner HTML → the post it names, or null (no status link of the strict shape: it stays text). */
+export function xPaste(inner: string): { handle: string; id: string; words: string; name: string; date: string } | null {
+  const links = [...inner.matchAll(/<a\b[^>]*?\bhref\s*=\s*["']([^"'<>]{0,500})["'][^>]*>([\s\S]{0,500}?)<\/a\s*>/gi)];
+  for (let k = links.length - 1; k >= 0; k--) {
+    const m = X_STATUS.exec(links[k][1].replace(/&amp;/gi, "&"));
+    if (!m) continue;
+    const words = plainText(/<p\b[^>]*>([\s\S]*?)<\/p\s*>/i.exec(inner)?.[1] ?? "").slice(0, 1000);
+    const after = inner.slice(inner.search(/<\/p\s*>/i) >= 0 ? inner.search(/<\/p\s*>/i) : 0, links[k].index);
+    const who = plainText(after).replace(/^[\s—–-]+/, "");
+    const named = /^(.{1,80}?)\s*\(@[A-Za-z0-9_]{1,15}\)$/.exec(who);
+    return { handle: m[1], id: m[2], words, name: named ? named[1].trim().slice(0, 60) : "", date: plainText(links[k][2]).slice(0, 40) };
   }
   return null;
+}
+
+/** The pasted embed codes in a document (outside code fences) lifted out: each becomes a line of its own holding
+ * \uE002<n>\uE002, and `blocks[n]` its HTML. A blockquote that is not a post on X stays exactly as written. */
+function liftPastes(text: string, blocks: string[]): string {
+  const lift = (seg: string) =>
+    seg
+      .replace(X_PASTE, (all: string, inner: string) => {
+        const x = xPaste(inner);
+        if (!x) return all;
+        return `\n\n\uE002${blocks.push(xBlock(x.handle, x.id, x)) - 1}\uE002\n\n`;
+      })
+      .replace(YT_PASTE, (all: string, id: string) => (isYoutubeId(id) ? `\n\n\uE002${blocks.push(youtubeBlock(id)) - 1}\uE002\n\n` : all));
+  const out: string[] = [];
+  let seg: string[] = [];
+  let fenced = false;
+  for (const l of text.split("\n")) {
+    if (isFence(l)) {
+      if (!fenced) {
+        out.push(lift(seg.join("\n")));
+        seg = [];
+      }
+      out.push(l);
+      fenced = !fenced;
+    } else if (fenced) out.push(l);
+    else seg.push(l);
+  }
+  out.push(lift(seg.join("\n")));
+  return out.join("\n");
 }
 
 const isRule = (l: string) => /^ {0,3}([-*_])( *\1){2,} *$/.test(l);
@@ -186,14 +276,19 @@ const cells = (l: string) =>
     .map((c) => c.trim().replace(/\\\|/g, "|"));
 
 /** A whole markdown document → HTML (safe for {@html}: escaped first). The blog's renderer. */
-export function mdDoc(text: string | null | undefined, ctx: LinkContext = {}): string {
+export function mdDoc(text: string | null | undefined, ctx: LinkContext = {}, lifted?: string[]): string {
   if (!text) return "";
-  const lines = text.replace(/\uE000/g, "").replace(/\r\n?/g, "\n").split("\n"); // U+E000: the placeholders' mark (a private-use character)
+  // U+E000: the placeholders' mark (a private-use character); IY-1: U+E002 marks a lifted embed code (top level only)
+  const blocks = lifted ?? [];
+  let src = text.replace(/\r\n?/g, "\n");
+  if (!lifted) src = liftPastes(src.replace(/[\uE000\uE002]/g, ""), blocks);
+  const lines = src.replace(/\uE000/g, "").split("\n");
   const out: string[] = [];
   let i = 0;
   const para: string[] = [];
   const flush = () => {
-    const alone = para.length === 1 ? embed(para[0].trim()) : null; // IU-6: a YouTube / X link alone on its line
+    const held = para.length === 1 ? /^\uE002(\d+)\uE002$/.exec(para[0].trim()) : null; // IY-1: a pasted embed code
+    const alone = held ? (blocks[Number(held[1])] ?? "") : para.length === 1 ? embed(para[0].trim()) : null; // IU-6: a YouTube / X link alone on its line
     if (alone) out.push(alone);
     else if (para.length) out.push(`<p>${inlineDoc(para.join("\n"), ctx).replace(/\n/g, " ")}</p>`);
     para.length = 0;
@@ -224,7 +319,7 @@ export function mdDoc(text: string | null | undefined, ctx: LinkContext = {}): s
       flush();
       const body: string[] = [];
       while (i < lines.length && isQuote(lines[i])) body.push(lines[i++].replace(/^ {0,3}> ?/, ""));
-      out.push(`<blockquote>${mdDoc(body.join("\n"), ctx)}</blockquote>`);
+      out.push(`<blockquote>${mdDoc(body.join("\n"), ctx, blocks)}</blockquote>`);
     } else if (isTableRow(l) && i + 1 < lines.length && isTableSep(lines[i + 1])) {
       flush();
       const head = cells(l);
