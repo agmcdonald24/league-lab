@@ -8,6 +8,8 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 - **Paste the embed code and it works.** A blog post now understands the embed code X and YouTube give you, as well as
   a plain link on its own line. A post from X appears in the page by itself as you scroll to it, video included; a
   YouTube video shows its picture and plays when you tap it.
+- **A published post stays put.** A brief hiccup reading the blog could make a post disappear for a minute. It now
+  keeps showing.
 
 ## Oct 11 · a clearer week, a shorter player card, and stats by game situation
 

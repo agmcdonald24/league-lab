@@ -397,7 +397,14 @@ number is worse, say so and show it.
   its own still.** A frame that must be measured is hidden with opacity, never `visibility: hidden` or height 0 (a
   browser stops rendering those and X never reports a size); `color-scheme: light` on the frame stops the white
   backdrop on a dark page; X sends no size to a hidden tab, so a check in a hidden browser pane proves nothing —
-  a screenshot forces the paint.
+  a screenshot forces the paint. **Round 3, the same afternoon: his published post answered "No post at that address" for
+  two minutes and the PO told him he had unpublished it — he had not.** One failed read of the blog's tables (no pooled
+  connection in 5 s) was cached as "no posts" for a minute. Now a failed read serves the last good answer and a post
+  that cannot be read answers 503 "try again", never 404. **Two rules from it: (1) never explain a fault you have not
+  diagnosed with something the user did — say what you see and that you do not know why yet; (2) a catch-all that
+  turns "could not read" into "there is nothing" is a defect wherever it is: unknown is not zero applies to rows as
+  much as to numbers.** Also: the Actions page lists `image` runs (a push building the site) beside `nightly` runs (the
+  data), and a scheduled nightly of a few seconds is a skip — when he says "it ran", read which.
 * **Wave I-X (2026-10-11, Sunday overnight; STATUS § "Wave I-X (Iteration 34)")**: **Andrew opened the next push
   himself** — his stat asks (splits by game situation, a game left early, bio on the card, a projected target share)
   and an outside review (`docs/reviews/2026-10-10-competitive-review-and-design-plan.md`) "to incorporate for our next

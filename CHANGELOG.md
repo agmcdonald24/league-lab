@@ -13,6 +13,9 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   first paint; X's frame is made out of sight as the block nears the screen and takes the card's place at X's own size
   once X has laid the post out (no empty box, no jump), at most 550 px wide with no white backdrop on a dark page. If
   X never answers, the card stays. A YouTube block shows the video's still under its Play button.
+- **PO — round 3.** A published post answered "No post at that address" for two minutes (one failed read cached as
+  "no posts"); IY-3 below serves the last good answer and answers 503, not 404, for what could not be read; X's frame
+  loses its scrollbar and tries again after a give-up. docs/STATUS.md § "Wave I-Y", the second addendum.
 - **PO — round 2.** Andrew: "you have to click to show it and it loads a bit weird." IY-2 below; the PO checked the
   hidden-frame swap against real X on the live page before delivering. docs/STATUS.md § "Wave I-Y", the addendum.
 - **PO — the merge.** The X block's words drop the media pointer X leaves at their end (a trailing `https://t.co/…`).
