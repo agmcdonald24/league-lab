@@ -20,8 +20,8 @@
   import { windowOf, windowWhy } from "../../lib/decisions";
   import { openPlayer } from "../../lib/decisions";
   import { effectTone } from "../../lib/decisions"; // ---- IE-1
-  import WeekStrip from "./WeekStrip.svelte"; // ---- IF-2: the week strip, both sides
-  import TradeCard from "./TradeCard.svelte"; // ---- II-1: the trade card (plausibility, both sides, the reasons each way)
+  import { publishedWords } from "../../lib/tradefive"; // ---- IZ-2
+  import TradeFive from "./TradeFive.svelte"; // ---- IZ-2: the five questions (II-1's trade card is the Trade Finder's; the calculator says it in the sections)
   import { restoreScroll, route, setParams } from "../../lib/router.svelte";
   import { fmt } from "../../lib/theme";
   import Bar from "../../components/Bar.svelte";
@@ -378,6 +378,8 @@
     {:else}
       {@const r = shown}
       {@const d = shown.decision}
+      {@const pub = publishedWords(r.provenance?.words)}
+      {@const plaus = r.card?.plausibility ?? null}
       <Card tone="accent" testid="trade-result">
         <div class="grid items-center gap-4 wide:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]" data-testid="dial-row" aria-busy={evaluating} {@attach watchDial}>
           <Dial score={d.dial.score} label={d.dial.label} caption={d.dial.caption} need={d.dial.need ?? null} you={d.dial.you} youLabel={`You · ${d.span}`} busy={evaluating} /><!-- IR-2: the decision's dial -->
@@ -394,6 +396,13 @@
             {/if}
             <p class="mt-2 text-sm text-ink-2" data-testid="basis"><span class="font-semibold text-ink">{d.basis_label}.</span> {d.basis_words}</p>
             <p class="mt-3 text-lg leading-snug font-semibold text-ink" data-testid="verdict">{d.verdict}</p>
+            <!-- ---- IZ-2: three things kept apart, by name, each with its unit (lineup points · market price with its source
+                 and date · plausibility); a low lineup value is a number of points, never "free" -->
+            <dl class="mt-2 space-y-1 text-sm leading-snug" data-testid="three-apart">
+              <div data-testid="apart-lineup"><dt class="inline font-semibold text-ink">Lineup points</dt> <dd class="inline text-ink-2">(your best lineup each week): you {s1(d.mine.gain_window)}{d.window === "week" ? ` in ${d.span}` : ` over ${d.span} (${s1(d.mine.gain_week)} this week)`}; {r.partner_team} {s1(d.theirs.gain_window)}{d.window === "week" ? "" : ` (${s1(d.theirs.gain_week)} this week)`}.</dd></div>
+              <div data-testid="apart-market"><dt class="inline font-semibold text-ink">Market price</dt> <dd class="inline text-ink-2">(season value above replacement, in season points): you give {r.market.give ?? "—"}, you get {r.market.get ?? "—"}. From League Lab's rest-of-season projections{pub ? `, data published ${pub}` : ""}.</dd></div>
+              {#if plaus}<div data-testid="apart-plausibility"><dt class="inline font-semibold text-ink">Plausibility</dt> <dd class="inline text-ink-2"><span data-testid="five-plausibility">{plaus.label}</span>{plaus.reasons.length ? `: ${plaus.reasons[0]}` : ""}.</dd></div>{/if}
+            </dl>
             <p class="mt-2 text-base leading-snug {d.recommendation.credible ? 'text-good' : 'text-ink'}" data-testid="recommendation"><span class="font-semibold">{d.recommendation.label}:</span> {d.recommendation.words.replace(`${d.recommendation.label}: `, "")}</p>
             <div class="mt-2"><ProvenanceLine p={r.provenance} caveats={r.caveats} testid="trade-provenance" /></div><!-- ---- IR-4: beta, what is verified, the starter caveats -->
             {#if r.sanity}
@@ -401,56 +410,15 @@
             {/if}
           </div>
         </div>
-        <!-- ---- IE-2 / IR-2 result: what the trade does, slot by slot, on the decision's basis -->
-        <div class="mt-4 space-y-3 border-t border-line pt-3" data-testid="trade-story">
+        <!-- ---- IZ-2 (Wave I-Z): the result as five questions in the review's order (TradeFive); the package first -->
+        <div class="mt-4 space-y-4 border-t border-line pt-3" data-testid="trade-story">
           <dl class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-2 gap-y-1 text-base" data-testid="trade-assets">
             <dt class="font-semibold text-ink-2">You give</dt>
             <dd class="min-w-0">{#each r.give as p, i (p.sleeper_id)}{i ? ", " : ""}<strong>{p.player_name}</strong> <span class="text-sm text-ink-2">({posOf(p)})</span>{/each}</dd>
             <dt class="font-semibold text-ink-2">You get</dt>
             <dd class="min-w-0">{#each r.get as p, i (p.sleeper_id)}{i ? ", " : ""}<strong>{p.player_name}</strong> <span class="text-sm text-ink-2">({posOf(p)})</span>{/each}</dd>
-            {#each r.cut ?? [] as c (c.player.sleeper_id)}
-              <dt class="font-semibold text-bad">Cut</dt>
-              <dd class="min-w-0" data-testid="trade-cut">{c.words}</dd>
-            {/each}
           </dl>
-          <p class="text-lg leading-snug font-semibold text-ink" data-testid="trade-effect">{d.effect_words}</p>
-          <p class="text-base leading-snug {d.alternative.beats ? 'text-ink' : 'text-warn'}" data-testid="trade-alternative"><span class="font-semibold">Against your best waiver move:</span> {d.alternative.words}</p>
-          {#if d.strip.weeks.length > 1}
-            <div data-testid="trade-strip-block">
-              <h3 class="ll-label mb-1">Starter points, week by week</h3>
-              <WeekStrip strip={d.strip} them={r.partner_team} testid="trade-strip" />
-            </div>
-          {/if}
-          {#if r.card}
-            <div class="rounded-md border border-line p-3" data-testid="calc-card">
-              <h3 class="ll-label mb-1">Worth proposing? {d.recommendation.label}</h3>
-              <TradeCard card={r.card} testid="calc-trade-card" />
-            </div>
-          {/if}
-          <div data-testid="trade-starters">
-            <h3 class="ll-label mb-1">Your starters this week, slot by slot</h3>
-            <ul class="space-y-1 text-base">
-              {#each d.changes.mine as x, i (`${x.slot}-${i}`)}
-                <li data-testid="starter-change">{x.words}.</li>
-              {/each}
-              {#if !d.changes.mine.length}
-                <li class="text-ink-2">The same players start this week.</li>
-              {/if}
-            </ul>
-            <p class="mt-1 text-sm text-ink-2" data-testid="trade-total">Starting lineup this week: {f1(d.mine.before.this_week)} → <strong class="text-ink">{f1(d.mine.after.this_week)}</strong> ({s1(d.mine.gain_week)} projected points)</p>
-          </div>
-          {#if d.depth.mine.words}<p class="text-base text-ink" data-testid="trade-backup">Backup coverage: {d.depth.mine.words}.</p>{/if}
-          <div class="text-base text-ink" data-testid="trade-their-side">
-            <p>{d.their_effect_words}</p>
-            {#if d.changes.theirs.length}<ul class="mt-1 space-y-1 text-ink-2">{#each d.changes.theirs as x, i (`t-${x.slot}-${i}`)}<li data-testid="their-change">{x.words}.</li>{/each}</ul>{/if}
-            {#if d.depth.theirs.words}<p class="mt-1 text-ink-2" data-testid="their-backup">Backup coverage: {d.depth.theirs.words}.</p>{/if}
-          </div>
-          {#if d.fills.mine.words || d.fills.theirs.words}
-            <div class="text-sm text-ink-2" data-testid="trade-fills">
-              {#if d.fills.mine.words}<p>{d.fills.mine.words}</p>{/if}
-              {#if d.fills.theirs.words}<p class="mt-1">{d.fills.theirs.words}</p>{/if}
-            </div>
-          {/if}
+          <TradeFive {r} {ctx} mineRows={mine?.roster ?? []} theirRows={theirs?.roster ?? []} />
           <Expander title={d.unfilled.label} testid="unfilled">
             <p class="text-base leading-snug" data-testid="unfilled-words">{d.unfilled.words}</p>
           </Expander>
