@@ -4,6 +4,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-11 — Wave I-X
 
+- **IX-6 — does handling a shortened game make the projection better? No (lf2.0).** Six candidates (the left-early
+  game skipped, its shares taken on the field, its numbers scaled to a full game; each with the precise mark LE-A and
+  the shipped LE-B), walk-forward 2021 – 2025: every one is worse on the games after a shortened game, in every season
+  (+4.9% to +9.1% error); nothing ships, the projection keeps its inputs. **`project` now says the same thing twice**:
+  the season snap share was a float average over an unordered group, so each build moved `prev_snap_pct`'s last bit and
+  the trees' bins with it (up to 1.5 points on unfrozen weeks); it is summed exactly now. **Role alerts (ra1.3)**: a game
+  he left hurt is not a smaller role (Ja'Marr Chase's and Konata Mumpfield's week-4 alerts are gone). **The projected
+  target share (lf1.1)** is over his quarterback's projected passes (lf1.0's denominator counted every listed player:
+  40 – 47 targets a team), one line on the card's Usage tab.
 - **IX-5 — what we claim, said once and truly; a simpler menu.** The trust line names each position's verdict (a quarterback with a kicker no longer reads "no better than chance" for both; tested over all 63 position sets). "Near enough to trust" is gone: Next 4 says RB / WR / TE graded, QB a lean, K / DEF a rough guide. A kicker or defense is never Waivers' strongest move on a four-week gain (this week's gain, a rough guide, after the graded positions). "Fit" is net lineup points over the weeks. A defense's rank runs one way everywhere ("gives up the Nth-most", 1 = the most; no "toughest" numbering). Waivers names the provider, not a table. The menu: My Week · Waivers · Trades · Research (Home · Rankings · Research · Trades without a league); DFS in the ⋯ menu. The known Folk trade has a regression test.
 - **IX-4 — My Week: one matchup number, the lineup it is, three decisions.** One summary in place of three figures:
   before the first kickoff "Week 5 vs X: you project 98, they project 122" labelled "Each side's best lineup by our
