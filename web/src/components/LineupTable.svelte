@@ -16,7 +16,13 @@
     testid,
     pane,
     margins = false,
-  }: { rows: LineupRow[]; full?: boolean; ctx: LinkContext; testid: string; pane?: (r: LineupRow) => PaneOptions; margins?: boolean } = $props();
+    total = null,
+  }: { rows: LineupRow[]; full?: boolean; ctx: LinkContext; testid: string; pane?: (r: LineupRow) => PaneOptions; margins?: boolean; total?: number | null } = $props();
+  // ---- IX-4: the recommended lineup's marks — who is in this slot in the provider now, and a starter to check first
+  type Marked = LineupRow & { now_words?: string | null; check_words?: string | null };
+  const nowWords = (r: LineupRow) => (r as Marked).now_words ?? "";
+  const checkWords = (r: LineupRow) => (r as Marked).check_words ?? "";
+  // ---- end IX-4
   // ---- IF-4 (the decision-quality review's table): the margin column only where a row has one, and each margin names
   // its comparator ("4.63 over Lloyd"; "no eligible reserve" when the slot would be empty — the margin is then his whole
   // projection, not a gap to a player); `margins` shows it on the starters' table
@@ -83,6 +89,9 @@
               {#if showMargin && r.margin !== null}<div class="tabnum text-xs text-ink-3 sm:hidden" data-testid="margin-line"
                   >{#if vsWords(r).startsWith("no eligible")}no eligible reserve{:else}margin {r.margin.toFixed(1)}{vsWords(r) ? ` ${vsWords(r)}` : ""}{/if}</div
                 >{/if}
+              <!-- ---- IX-4: the row differs from the provider's lineup (words, not colour alone); a starter to check first -->
+              {#if nowWords(r)}<div class="text-xs leading-snug font-semibold text-warn" data-testid="lineup-now">≠ {nowWords(r)}</div>{/if}
+              {#if checkWords(r)}<div class="text-xs leading-snug font-semibold text-ink-2" data-testid="lineup-check">? {checkWords(r)}</div>{/if}
               <!-- IS-2: a player who sits this week shows why beside his 0 in every table, not only the full list -->
               {#if (full || sitsNow(r)) && reason(r)}<div class="text-xs leading-snug text-ink-3" data-testid="avail-reason">{reason(r)}</div>{/if}
             </div>
@@ -99,4 +108,13 @@
       </tr>
     {/each}
   </tbody>
+  {#if total !== null && total !== undefined}<!-- ---- IX-4: the table's own total -->
+    <tfoot>
+      <tr class="border-t border-line-strong">
+        <td class="py-1.5 pr-1 text-sm font-semibold text-ink-3" colspan="2" data-testid="lineup-total-label">Total</td>
+        <td class="tabnum py-1.5 text-right font-bold" data-testid="lineup-total">{total.toFixed(1)}</td>
+        {#if showMargin}<td class="hidden sm:table-cell"></td>{/if}
+      </tr>
+    </tfoot>
+  {/if}
 </table>

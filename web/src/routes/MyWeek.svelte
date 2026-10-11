@@ -2,11 +2,13 @@
   import { APP_NAME } from "../lib/brand"; // ---- IG-3
   import { ApiError, get, paths, peek, Unauthorized, type MyWeek, type Status, type UserLeagues } from "../lib/api";
   import { decisionPaths, type Waivers } from "../lib/api"; // ---- IE-1
-  import { ACTION_WORD, homeActions } from "../lib/week"; // ---- IE-1
+  import { ACTION_WORD } from "../lib/week"; // ---- IE-1 (IX-4: decisionsOf in place of homeActions)
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
   import { learnLeagueName } from "../lib/names.svelte";
-  import { checkedLine, opponentLine, recordLine } from "../lib/week";
+  import { checkedLine, recordLine } from "../lib/week";
+  import { decisionsOf, matchupOf, rankLine } from "../lib/week"; // ---- IX-4
+  import type { WeekAction, ReviewLine, RecommendedRow } from "../lib/api"; // ---- IX-4
   // ---- IB-3: the card's default content (status, the call, strength, one reason, Compare; the rest behind Why?)
   import { cardCall, cardStatus, cardStrength, compareHref, STATUS_WORD, STRENGTH_WORD, whyBlocks } from "../lib/week";
   import type { Availability, AvailabilityStatus } from "../lib/shapes";
@@ -72,21 +74,14 @@
   // Home's line "**Team** · 0-2, #10 in the league · week 4 vs **X**" without the team (shown as the heading); the
   // opponent gets its own line when the API sends the contract's object
   const record = $derived(data ? recordLine(data) : "");
-  const versus = $derived(data ? opponentLine(data) : "");
-  // ---- IH-3: one line per game (a double header names each opponent); the assumption on hover / long-press
-  const winLines = $derived.by(() => {
-    const w = data?.win;
-    const o = data?.opponent && typeof data.opponent === "object" ? data.opponent : null;
-    if (!w || !o || data?.week === null) return [];
-    const games = [w, ...(w.also ?? [])];
-    const teams = [o, ...(o.also ?? [])];
-    const two = games.length > 1;
-    return games
-      .map((g, i) => ({ key: `${g.opponent_roster_id ?? i}-${i}`, line: g.line, side: g.side ?? "", title: g.assumptions ?? "",
-        team: two ? (teams.find((t) => t.roster_id === g.opponent_roster_id)?.team_name ?? teams[i]?.team_name ?? null) : null }))
-      .filter((g): g is typeof g & { line: string } => !!g.line);
-  });
-  // ---- end IH-3
+  // ---- IX-4 (the review of 10 October § 1): ONE matchup summary — before the first kickoff each side's best lineup by
+  // our projections with the win chance; once a game of either side has kicked off the live line (points in plus
+  // projections still to play) with the chance — in place of IH-3's opponent line, win line and the league line's total.
+  // A double header: one per game. The league rank stays as detail, with no total.
+  const mu = $derived(data ? matchupOf(data) : null);
+  const muGames = $derived(mu ? [mu, ...(mu.also ?? [])] : []);
+  const rank = $derived(data ? rankLine(data) : "");
+  // ---- end IX-4
   // I0-A: the availability overlay — when injuries were last checked, and who moved since the nightly build
   const avail = $derived((data as (MyWeek & { availability?: Availability | null }) | null)?.availability ?? null);
   const checked = $derived(
@@ -111,11 +106,18 @@
       .then((w) => league === l && team === t && (waivers = w))
       .catch(() => {});
   });
-  const actions = $derived(data && data.actions !== undefined ? homeActions(data, waivers) : null);
   // ---- IF-4: the close calls the lineup already follows ("No clear upgrade") and what changed since the morning build
   const review = $derived(data?.review ?? []);
-  const changed = $derived(data?.changed ?? null);
-  const allSet = $derived(!!actions && actions.length === 0 && review.length === 0);
+  // ---- IX-4: at most three decisions first (the most urgent first), the rest behind "More"; the news feed only when it has news
+  const decisions = $derived(data && data.actions !== undefined ? decisionsOf<ReviewLine>(data, waivers, review) : null);
+  const actions = $derived(decisions ? decisions.first : null);
+  const isReview = (x: WeekAction | ReviewLine): x is ReviewLine => x.kind === "no_clear_upgrade";
+  const changed = $derived(data?.changed && data.changed.lines.length ? data.changed : null);
+  const rec = $derived(data?.recommended ?? null);
+  const recRows = $derived<RecommendedRow[]>(rec?.rows ?? data?.lineup ?? []);
+  const benchRows = $derived(rec?.bench ?? data?.lineup_full.filter((r) => r.role !== "starter") ?? []);
+  // ---- end IX-4
+  const allSet = $derived(!!actions && actions.length === 0);
   function reviewHref(r: { compare: { a: string; b: string } | null }): string | null {
     return r.compare ? `/compare?a=${encodeURIComponent(r.compare.a)}&b=${encodeURIComponent(r.compare.b)}` : null;
   }
@@ -222,16 +224,16 @@
       </p>
       <h1 class="text-2xl leading-tight font-extrabold tracking-tight wide:text-3xl" data-testid="team-name">{data.team_name}</h1>
       {#if record}<p class="text-sm text-ink-2" data-testid="record-line"><Md text={record} {ctx} /></p>{/if}
-      {#if versus}<p class="text-base leading-snug" data-testid="opponent-line"><Md text={versus} {ctx} /></p>{/if}
-      <!-- ---- IH-3: the week's win probability under the opponent line (information: the cards decide the lineup); one
-           line per game of a double header, nothing when the league has no ranges yet -->
-      {#each winLines as w (w.key)}
-        <p class="text-sm leading-snug text-ink-2" data-testid="win-line" data-side={w.side} title={w.title}>
-          {#if w.team}<span class="font-semibold text-ink">{w.team}:</span> {w.line}{:else}{w.line}{/if}
-        </p>
+      <!-- ---- IX-4: the one matchup summary (what the numbers are under it; the chance after it); a double header: one per game -->
+      {#each muGames as g, i (i)}
+        <div class="space-y-0.5" data-testid="matchup" data-state={g.state}>
+          <p class="text-base leading-snug font-semibold" data-testid="matchup-line"><Md text={g.line} {ctx} /></p>
+          {#if g.basis}<p class="text-sm leading-snug text-ink-3" data-testid="matchup-basis">{g.basis}</p>{/if}
+          {#if g.chance}<p class="text-sm leading-snug text-ink-2" data-testid="matchup-chance" title={mu?.assumptions ?? ""}>{g.chance}</p>{/if}
+        </div>
       {/each}
-      <!-- ---- end IH-3 -->
-      {#if data.league_line}<p class="text-sm text-ink-2" data-testid="league-line"><Md text={data.league_line} {ctx} /></p>{/if}
+      {#if rank}<p class="text-sm text-ink-3" data-testid="league-line"><Md text={rank} {ctx} /></p>{/if}
+      <!-- ---- end IX-4 -->
       {#if checked}<p class="text-sm text-ink-3" data-testid="injuries-checked">{checked}</p>{/if}
       {#if status?.warning && SHOW_STALE}<!-- ---- II-4: PO 2026-10-04 — never tell users the data is stale -->
         <details class="text-sm text-warn" data-testid="stale-warning">
@@ -263,7 +265,7 @@
                   {#if data.cards.length === 0 && data.notice}<Md text={data.notice} {ctx} />{/if}
                 </p>
               {/if}
-              {#each actions as a, i (`${a.kind}-${i}`)}
+              {#snippet actionCard(a: WeekAction)}
                 {@const why = a.cards.map((k) => data!.cards[k]).filter(Boolean)}
                 <article class="relative space-y-2 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)"
                   data-testid="action-card" data-kind={a.kind} data-submitted={a.submitted === null ? "unknown" : String(a.submitted)}>
@@ -314,10 +316,10 @@
                   {/if}
                   <span class="absolute inset-y-0 left-0 w-1 {a.kind === 'change' ? 'bg-warn' : 'bg-accent'}" aria-hidden="true"></span>
                 </article>
-              {/each}
+              {/snippet}
               <!-- ---- IF-4: Decisions worth reviewing — a close call the lineup already follows stays in view ("No clear
                    upgrade", not "nothing to change"): the two names, the gap, who the lineup has, Compare -->
-              {#each review as r, i (`review-${i}`)}
+              {#snippet reviewCard(r: ReviewLine)}
                 {@const cmp = reviewHref(r)}
                 <article class="relative space-y-1.5 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)"
                   data-testid="review-line" data-uncertain={String(r.matchup_uncertain)}>
@@ -331,8 +333,21 @@
                   {/if}
                   <span class="absolute inset-y-0 left-0 w-1 bg-line-strong" aria-hidden="true"></span>
                 </article>
-              {/each}
+              {/snippet}
               <!-- ---- end IF-4 -->
+              <!-- ---- IX-4: at most three decisions first, the most urgent first; the rest behind More -->
+              {#each actions ?? [] as x, i (i)}{#if isReview(x)}{@render reviewCard(x)}{:else}{@render actionCard(x)}{/if}{/each}
+              {#if decisions && decisions.more.length}
+                <details class="group" data-testid="decisions-more">
+                  <summary class="inline-flex min-h-10 cursor-pointer items-center gap-1 px-1 text-base font-semibold text-accent"
+                    ><span class="chev" aria-hidden="true">›</span>More: {decisions.more.length} other {decisions.more.length === 1 ? "call" : "calls"}</summary
+                  >
+                  <div class="mt-2 space-y-2.5">
+                    {#each decisions.more as x, i (i)}{#if isReview(x)}{@render reviewCard(x)}{:else}{@render actionCard(x)}{/if}{/each}
+                  </div>
+                </details>
+              {/if}
+              <!-- ---- end IX-4 -->
               {#if changed}
                 <!-- ---- IF-4: What changed — the overlay's moves since the morning build and the week's news from the last
                      24 hours (at most five lines, the source and the time on each).
@@ -393,7 +408,7 @@
                   {/if}
                 </section>
               {/if}
-              {#if !allSet && data.set_line}
+              {#if !allSet && data.set_line && !decisions?.more.length}<!-- IX-4: More lists the rest -->
                 <p class="px-1 text-base leading-snug text-ink-2" data-testid="set-line"><span class="text-good" aria-hidden="true">✓ </span>{data.set_line}</p>
               {/if}
               <div class="space-y-1 px-1" data-testid="where-to-change">
@@ -457,18 +472,24 @@
 
         <div class="space-y-3">
           <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)">
-            <!-- IA-1: one plain header (Andrew did not understand "Your full lineup: every slot, how close each call is …") -->
+            <!-- IA-1: one plain header (Andrew did not understand "Your full lineup: every slot, how close each call is …")
+                 ---- IX-4 (the review § 1): the table is the recommendation and says so — the lineup the calls above add up
+                 to (a close call that keeps a player puts him in the slot), its own total, and how it differs from the
+                 lineup set in the provider where that is known (one line above; each row that differs says who is there now) -->
             <div>
-              <h2 class="text-lg leading-tight font-bold" data-testid="lineup-head">Your lineup</h2>
-              <p class="text-sm leading-snug text-ink-3" data-testid="lineup-caption">Starters, the bench, who can't play — tap a name for his card.</p>
+              <h2 class="text-lg leading-tight font-bold" data-testid="lineup-head">Recommended lineup</h2>
+              <p class="text-sm leading-snug text-ink-3" data-testid="lineup-caption">Who we would start, by our projections and the calls above — tap a name for his card.</p>
+              {#if rec?.words}<p class="mt-1 text-sm leading-snug font-semibold {rec.changes ? 'text-warn' : 'text-good'}" data-testid="lineup-vs-provider"
+                  >{rec.changes ? "≠ " : "✓ "}{rec.words}</p
+                >{/if}
             </div>
             {#if avail?.changes?.length && !changed}<!-- IF-4: What changed carries them (an answer from before keeps them here) -->
               <ul class="space-y-1 text-sm leading-snug text-warn" data-testid="availability-changes">
                 {#each avail.changes as c, i (i)}<li>{c}</li>{/each}
               </ul>
             {/if}
-            {#if data.lineup.length}
-              <LineupTable rows={data.lineup} {ctx} testid="lineup" margins pane={(row) => lineupPane(row, data!.lineup_full)} /><!-- IF-4: margins -->
+            {#if recRows.length}
+              <LineupTable rows={recRows} {ctx} testid="lineup" margins total={rec?.total ?? null} pane={(row) => lineupPane(row, data!.lineup_full)} /><!-- IF-4: margins; IX-4: the recommendation, its total -->
               <!-- ---- IG-1: the total counts a starter with no projection as 0: say how many -->
               {#if data.unvalued_words}<p class="text-sm leading-snug text-ink-3" data-testid="unvalued-words">{data.unvalued_words}</p>{/if}
               <!-- ---- IT-3: what the numbers are and what has been checked; a quarterback whose starter is unclear or disputed says so in a lineup's words -->
@@ -480,7 +501,7 @@
 
           <!-- ---- IF-4 (the review's table: the bench section repeated every starter first): the bench and who can't play only -->
           <Expander title="The bench and who can't play" testid="lineup-full">
-            <LineupTable rows={data.lineup_full.filter((r) => r.role !== "starter")} full {ctx} testid="lineup-full-table" pane={(row) => lineupPane(row, data!.lineup_full)} />
+            <LineupTable rows={benchRows} full {ctx} testid="lineup-full-table" pane={(row) => lineupPane(row, data!.lineup_full)} /><!-- IX-4: the recommendation's bench -->
           </Expander>
           {#if data.howto}
             <Expander title="How to read this" testid="howto"><Md text={data.howto} {ctx} block class="text-base leading-snug" /></Expander>

@@ -3114,3 +3114,52 @@ export interface StatsColumn {
   situation?: string; // the screen's mark under a situation: split, read "when trailing"
 }
 // ---- end IX-3
+
+// ---- IX-4 (Wave I-X): My Week — one matchup summary, the recommended lineup (and how it differs from the provider's),
+// the starter rule on the calls it affects, the actions beyond the first three. Additive: declaration merging.
+export interface MatchupGame {
+  state: "before" | "live" | "final";
+  line: string; // markdown: "Week 5 vs **X**: you project 125, they project 105." / "…: 118 to 117 expected."
+  basis: string | null; // what the numbers are: "Each side's best lineup by our projections."
+  chance: string | null; // "You're a slight favorite this week: 58%." (no second total)
+  mine: number | null;
+  theirs: number | null;
+}
+export interface Matchup extends MatchupGame {
+  also?: MatchupGame[]; // a double header's other game(s)
+  assumptions?: string | null;
+}
+export interface RecommendedRow extends LineupRow {
+  key?: string | null;
+  now_words?: string | null; // "In Sleeper now: Jefferson" — this row differs from the provider's lineup
+  check_words?: string | null; // "Check who starts for Chicago before kickoff"
+  by_call?: boolean; // a close call above put him in this slot
+}
+export interface Recommended {
+  rows: RecommendedRow[];
+  bench: LineupRow[];
+  total: number | null; // the recommended starters' projections, summed
+  best_total: number | null; // the best lineup on paper (lineup_value)
+  known: boolean; // the provider's submitted lineup is known
+  changes: number | null;
+  words: string | null; // "Matches your Sleeper lineup." / "2 changes from your Sleeper lineup."
+  platform_name: string;
+}
+export interface CallCaveat {
+  effect: "withhold" | "soften";
+  words: string | null;
+  check_first: boolean;
+}
+export interface WeekAction {
+  caveat?: CallCaveat | null;
+}
+export interface WinProbability {
+  n_started?: number; // starters whose game has kicked off (or is in)
+  opp_n_started?: number;
+}
+export interface MyWeek {
+  matchup?: Matchup | null;
+  recommended?: Recommended | null;
+  more_actions?: WeekAction[];
+}
+// ---- end IX-4

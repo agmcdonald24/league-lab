@@ -133,3 +133,81 @@ export function waiversFor(slotType: string | null | undefined): string {
   return WAIVER_POSITIONS.has(t) ? `/waivers?position=${t}` : "/waivers";
 }
 // ---- end IN-5
+
+// ---- IX-4 (Wave I-X; the review of 10 October § 1): ONE matchup summary. The API sends `matchup`
+// (`myweek.matchup_summary`); an answer saved before it carries the same numbers in `lineup_value`, `opponent` and
+// `win`, so the same words are built from them here (the API's sentence wins when it is there).
+import type { Matchup, MatchupGame, WinProbability } from "./api";
+
+export const MATCHUP_BEFORE_BASIS = "Each side's best lineup by our projections.";
+export const MATCHUP_LIVE_BASIS = "Points scored so far plus projections for players still to play";
+export const MATCHUP_NO_POINTS = "a game has kicked off; no points are in yet";
+export const MATCHUP_NO_LIVE = "Each side's best lineup by our projections; this league's live scores are not read yet.";
+export const MATCHUP_FINAL_BASIS = "Points scored: every starter on both sides has played.";
+
+function pts(a: number, b: number): [string, string] {
+  const fine = Math.round(a) === Math.round(b) && Math.abs(a - b) >= 0.05;
+  return fine ? [a.toFixed(1), b.toFixed(1)] : [String(Math.round(a)), String(Math.round(b))];
+}
+
+/** "You're a clear underdog this week: 31%." — the chance without the totals (myweek.chance_words). */
+export function chanceWords(w: WinProbability | null | undefined): string | null {
+  if (!w || w.p === null || w.p === undefined || w.percent === null || !w.words) return null;
+  return w.words === "a coin flip" ? `This week is a coin flip: ${w.percent}%.` : `You're ${w.words} this week: ${w.percent}%.`;
+}
+
+function oneGame(week: number, team: string, mine: number | null, theirs: number | null, w: WinProbability | null | undefined): MatchupGame {
+  const head = `Week ${week} vs **${team}**`;
+  const started = (w?.n_started ?? 0) + (w?.opp_n_started ?? 0) > 0 || !!(w?.n_played || w?.opp_n_played);
+  if (started && w && w.mine !== null && w.mine !== undefined && w.theirs !== null && w.theirs !== undefined) {
+    const [a, b] = pts(w.mine, w.theirs);
+    if (w.n_starters && w.n_played === w.n_starters && w.opp_n_played === w.opp_n_starters)
+      return { state: "final", line: `${head}: ${a} to ${b}.`, basis: MATCHUP_FINAL_BASIS, chance: null, mine: w.mine, theirs: w.theirs };
+    const played = w.played_words || MATCHUP_NO_POINTS;
+    return { state: "live", line: `${head}: ${a} to ${b} expected.`, basis: `${MATCHUP_LIVE_BASIS} (${played}).`, chance: chanceWords(w), mine: w.mine, theirs: w.theirs };
+  }
+  if (mine === null || theirs === null) return { state: "before", line: `${head}.`, basis: null, chance: null, mine, theirs };
+  const [a, b] = pts(mine, theirs);
+  return { state: started ? "live" : "before", line: `${head}: you project ${a}, they project ${b}.`,
+    basis: started ? MATCHUP_NO_LIVE : MATCHUP_BEFORE_BASIS, chance: started ? null : chanceWords(w), mine, theirs };
+}
+
+/** The one matchup summary: the API's, else built from the answer's own numbers; null without a matchup. */
+export function matchupOf(d: MyWeek): Matchup | null {
+  if (d.matchup !== undefined) return d.matchup;
+  const o = opponentObject(d);
+  if (!o || !o.team_name || d.week === null) return null;
+  const w = d.win ?? null;
+  const more = (o.also ?? []).filter((x) => x && x.team_name);
+  const games = [oneGame(d.week, o.team_name, d.lineup_value ?? null, o.lineup_value ?? null, w),
+    ...more.map((x) => oneGame(d.week as number, x.team_name as string, d.lineup_value ?? null, x.lineup_value ?? null,
+      (w?.also ?? []).find((y) => y.opponent_roster_id === x.roster_id) ?? null))];
+  return { ...games[0], ...(games.length > 1 ? { also: games.slice(1) } : {}), assumptions: w?.assumptions ?? null };
+}
+
+/** The league-rank sentence as detail, never a second total: an answer saved before IX-4 said "Your best lineup projects
+ * **125.07** in week 5, 3rd of 12 in the league." — the rank is kept, the total dropped ("" without a rank). */
+export function rankLine(d: MyWeek): string {
+  const l = d.league_line ?? "";
+  const old = /^Your best lineup projects \*\*[\d.]+\*\* in week (\d+)(?:, (.+?))?\.$/.exec(l);
+  if (!old) return l;
+  return old[2] ? `Your best lineup ranks ${old[2]} in week ${old[1]}.` : "";
+}
+
+/** At most three decisions first (the most urgent: a starter who cannot play, a call to re-check before a kickoff, a
+ * claim before waivers run), the rest behind "More": the API's first three and its `more_actions`, the claim from
+ * Waivers, then the close calls the lineup already follows. */
+export function decisionsOf<R>(d: MyWeek, w: Waivers | null | undefined, review: R[]): { first: (WeekAction | R)[]; more: (WeekAction | R)[] } {
+  const acts = [...(d.actions ?? []), ...(d.more_actions ?? [])];
+  const move = w?.home_action;
+  if (move) {
+    // not about a player an action already names: neither the one it adds nor the one it drops (homeActions' rule)
+    const named = new Set(acts.flatMap((a) => [...a.start, ...a.sit].map((p) => p.key)));
+    const drop = move.drop?.key;
+    if (!move.start.some((p) => p.key && named.has(p.key)) && !(drop && named.has(drop))) acts.push(move);
+  }
+  acts.sort((a, b) => a.urgency - b.urgency);
+  const all: (WeekAction | R)[] = [...acts, ...review];
+  return { first: all.slice(0, MAX_ACTIONS), more: all.slice(MAX_ACTIONS) };
+}
+// ---- end IX-4
