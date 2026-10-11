@@ -106,7 +106,8 @@
   // last picked on this device.
   // ---- IX-3 (Wave I-X): Key stats first on every width (no more Full table from 900 px); the named views
   const VIEW_NAMES = ["key", "production", "opportunity", "role", "efficiency", "advanced", "full"];
-  const remembered = accountPrefs.statsTable();
+  // ---- IX-3: remembered per position group (lib/prefs.ts `ll.stats.tables`; IM-2's one key carried over once)
+  const remembered = $derived(accountPrefs.statsTableFor(group));
   const askedView = $derived.by<string>(() => {
     const v = params.get("view") ?? "";
     return VIEW_NAMES.includes(v) ? v : (remembered ?? "key");
@@ -116,7 +117,7 @@
   function setView(v: string) {
     const next = VIEW_NAMES.includes(v) ? v : "key";
     setParams({ view: next, cols: null });
-    accountPrefs.setStatsTable(next === "full" ? "full" : "key");
+    accountPrefs.setStatsTableFor(group, next);
   }
   // ---- end IX-3
   // the Full table: the answer's `full` list (IM-1) or every available column for the position, grouped; minus the
@@ -346,7 +347,7 @@
         label="Position"
         testid="pos"
         current={position}
-        onpick={(p) => setParams({ position: p === "ALL" ? null : p, cols: null, sort: null, dir: null })}
+        onpick={(p) => setParams({ position: p === "ALL" ? null : p, cols: null, sort: null, dir: null, view: null, off: null, hide: null })}
         items={POS}
       />
     </div>

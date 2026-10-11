@@ -116,6 +116,9 @@ export const prefs = {
 // The saved Stats views (II-3's `ll.stats.views`) are read and written here now, so they can follow the account.
 const KEY_STATS_VIEWS = "ll.stats.views";
 const KEY_STATS_TABLE = "ll.stats.table"; // ---- IM-2
+const KEY_STATS_TABLES = "ll.stats.tables"; // ---- IX-3: per position group
+const STATS_POS_GROUPS = ["wrte", "rb", "qb", "all"];
+const STATS_VIEW_NAMES = ["key", "production", "opportunity", "role", "efficiency", "advanced", "full"];
 
 /** A league as the account saves it (PUT /api/account/leagues). */
 export interface SavedLeagueIn {
@@ -176,6 +179,38 @@ export const accountPrefs = {
   },
   setStatsTable: (v: "key" | "full") => write(KEY_STATS_TABLE, v),
   // ---- end IM-2
+  // ---- IX-3 (Wave I-X): the view is remembered per position group (`ll.stats.tables`: {"wrte": "full", "qb": "key"}),
+  // so a full QB table does not force a full WR table. IM-2's single `ll.stats.table` value is carried over once —
+  // to every position group, the one choice it was — and then removed.
+  statsTableFor: (pos: string): string | null => {
+    let map: Record<string, string> = {};
+    try {
+      const v = JSON.parse(read(KEY_STATS_TABLES) ?? "{}") as unknown;
+      if (v && typeof v === "object" && !Array.isArray(v)) map = v as Record<string, string>;
+    } catch {
+      map = {};
+    }
+    const old = read(KEY_STATS_TABLE);
+    if (old === "key" || old === "full") {
+      for (const g of STATS_POS_GROUPS) if (!(g in map)) map[g] = old;
+      write(KEY_STATS_TABLES, JSON.stringify(map));
+      write(KEY_STATS_TABLE, null);
+    }
+    const got = map[pos];
+    return typeof got === "string" && STATS_VIEW_NAMES.includes(got) ? got : null;
+  },
+  setStatsTableFor: (pos: string, v: string) => {
+    if (!STATS_POS_GROUPS.includes(pos) || !STATS_VIEW_NAMES.includes(v)) return;
+    let map: Record<string, string> = {};
+    try {
+      const got = JSON.parse(read(KEY_STATS_TABLES) ?? "{}") as unknown;
+      if (got && typeof got === "object" && !Array.isArray(got)) map = got as Record<string, string>;
+    } catch {
+      map = {};
+    }
+    write(KEY_STATS_TABLES, JSON.stringify({ ...map, [pos]: v }));
+  },
+  // ---- end IX-3
   /** Every league this browser knows with the team picked in it (the account's "save these leagues"). */
   localLeagues: (): SavedLeagueIn[] => {
     const out: SavedLeagueIn[] = [];
