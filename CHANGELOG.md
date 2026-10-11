@@ -4,6 +4,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-11 — Wave I-Y
 
+- IY-2: the post from X shows by itself. No button: our card (the words, the author, the date, "Open on X") from the
+  first paint; X's frame is made out of sight as the block nears the screen and takes the card's place at X's own size
+  once X has laid the post out (no empty box, no jump), at most 550 px wide with no white backdrop on a dark page. If
+  X never answers, the card stays. A YouTube block shows the video's still under its Play button.
 - **PO — the merge.** The X block's words drop the media pointer X leaves at their end (a trailing `https://t.co/…`).
   docs/STATUS.md § "Wave I-Y".
 - IY-1: embed code pasted into a blog post works. X's "Embed post" code (with or without its script, one line or
