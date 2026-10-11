@@ -6,8 +6,8 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 ## Oct 11 (afternoon) · posts from X show up in the blog
 
 - **Paste the embed code and it works.** A blog post now understands the embed code X and YouTube give you, as well as
-  a plain link on its own line. A post from X shows its words and author straight away; tap "Show the post" to load
-  the post itself, video included.
+  a plain link on its own line. A post from X appears in the page by itself as you scroll to it, video included; a
+  YouTube video shows its picture and plays when you tap it.
 
 ## Oct 11 · a clearer week, a shorter player card, and stats by game situation
 

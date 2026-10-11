@@ -389,10 +389,15 @@ number is worse, say so and show it.
 * **Wave I-Y (2026-10-11, Sunday midday; STATUS § "Wave I-Y (Iteration 35)")**: a blog post understands **the embed
   code X and YouTube hand a writer**, not only a bare link (Andrew pasted X's blockquote + script into a published post
   and it printed as text). `md.ts` reads the code by strict patterns and never passes pasted HTML through; an X post
-  is our own block (its words, author, date) with **Show the post**, which loads
-  `https://platform.twitter.com/embed/Tweet.html?id=…` in a sandboxed frame after the tap — the only new origin the
-  CSP's `frame-src` allows; no script of X's ever runs on our page. **Open**: whether X's frame resizes itself on the
-  live page was not seen (the PO's browser pane was hidden); until it does the frame is 560 px and scrolls inside.
+  is our own block (its words, author, date) from the first paint; as it nears the screen X's own frame
+  (`https://platform.twitter.com/embed/Tweet.html?id=…`, sandboxed — the only new origin in the CSP's `frame-src`; no
+  script of X's ever runs on our page) is made over the card with opacity 0 and **takes the card's place when X
+  reports its size**; no answer in 10 s and the card stays. **There is no tap: Andrew rejected one within the hour
+  ("you have to click to show it and it loads a bit weird") — an embed shows itself; a video still waits for Play, over
+  its own still.** A frame that must be measured is hidden with opacity, never `visibility: hidden` or height 0 (a
+  browser stops rendering those and X never reports a size); `color-scheme: light` on the frame stops the white
+  backdrop on a dark page; X sends no size to a hidden tab, so a check in a hidden browser pane proves nothing —
+  a screenshot forces the paint.
 * **Wave I-X (2026-10-11, Sunday overnight; STATUS § "Wave I-X (Iteration 34)")**: **Andrew opened the next push
   himself** — his stat asks (splits by game situation, a game left early, bio on the card, a projected target share)
   and an outside review (`docs/reviews/2026-10-10-competitive-review-and-design-plan.md`) "to incorporate for our next
