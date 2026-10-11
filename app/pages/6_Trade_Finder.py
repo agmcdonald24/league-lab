@@ -618,7 +618,7 @@ howto(
     "**Try a trade**: pick the team, tick players both ways. You see both best lineups this week before and after (every slot "
     "re-picked, FLEX and superflex included), who starts and who sits, the four-week totals, the depth, and where both teams "
     "would rank in the league.",
-    "**Fit** is what the starting lineups gain. **Market** is what the players are worth on the market: their projected points "
+    "**Improvement to your starting lineup** is what the best lineups gain over the weeks. **Market** is what the players are worth on the market: their projected points "
     "for the rest of the season above the best free agent at their position (a kicker anyone can pick up is worth about 0). "
     "They are not the same thing and are never added together: a player can be worth a lot and still sit on your bench. The "
     "verdict reads both. It is a rough guide: it knows nothing of draft picks, next season or what the other manager believes.",
@@ -634,7 +634,7 @@ howto(
 # ------------------------------------------------------------- scoring below / above his work (B2), whole league, by position and owner
 st.subheader("Scoring below or above his work")
 st.caption("What happened, not a forecast: his projection already counts his work and his points. Graded on past weeks, "
-           "the gap was no reason to trade on its own. Both lists are ordered by lineup fit, from the projections.")
+           "the gap was no reason to trade on its own. Both lists are ordered by net lineup points, from the projections.")
 f1, f2 = st.columns([3, 2])
 with f1:
     pos_f = st.segmented_control("Position", ["All", *POSITIONS], default="All", key="tf_position") or "All"
@@ -663,8 +663,8 @@ ov = {"player": Col("Player"), "manager": Col("Owner"),
       "gain_horizon": Col(f"You gain · {span}", "signed1", f"The same over {span_words}"),
       "loss_week": Col(f"They lose · {wk}", "num1", f"What his roster's best week-{this_week} lineup loses without him (0 on their bench)"),
       "loss_horizon": Col(f"They lose · {span}", "num1", f"The same over {span_words}"),
-      "fit_week": Col(f"Fit · {wk}", "signed1", "You gain minus they lose, this week"),
-      "fit_horizon": Col(f"Fit · {span}", "signed1", f"You gain minus they lose over {span_words}: the lineup points the trade creates")}
+      "fit_week": Col(f"Net lineup points · {wk}", "signed1", "You gain minus they lose, this week"),
+      "fit_horizon": Col(f"Net lineup points · {span}", "signed1", f"You gain minus they lose over {span_words}: the lineup points the trade creates")}
 with st.expander(f"Scoring below his work · {len(buy_f)} players{where}", expanded=False):
     if not buy_f.empty:
         b = buy_f.copy()
@@ -683,8 +683,8 @@ ov_s = {**ov, "manager": Col("Best fit", help=f"The roster whose lineup gains th
         "gain_horizon": Col(f"They gain · {span}", "signed1", f"The same over {span_words}"),
         "loss_week": Col(f"You lose · {wk}", "num1", f"What your best week-{this_week} lineup loses without him (0 if he is on your bench)"),
         "loss_horizon": Col(f"You lose · {span}", "num1", f"The same over {span_words}"),
-        "fit_week": Col(f"Fit · {wk}", "signed1", "They gain minus you lose, this week"),
-        "fit_horizon": Col(f"Fit · {span}", "signed1", f"They gain minus you lose over {span_words}")}
+        "fit_week": Col(f"Net lineup points · {wk}", "signed1", "They gain minus you lose, this week"),
+        "fit_horizon": Col(f"Net lineup points · {span}", "signed1", f"They gain minus you lose over {span_words}")}
 with st.expander(f"Scoring above his work · {len(sell_f)} of your players{where}", expanded=False):
     if not sell_f.empty:
         s = sell_f.copy()
@@ -703,13 +703,14 @@ howto(
     "**Scoring below his work**: players on other teams scoring *less* than their work is usually worth (**PPG − xPPG**, "
     "points minus expected points per game, below zero). **Scoring above his work**: your players scoring *more*. That is "
     "what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect "
-    "it, so it is no reason to trade on its own. Both lists are ordered by **Fit**, from the projections. Filter by "
+    "it, so it is no reason to trade on its own. Both lists are ordered by **net lineup points**, from the projections. Filter by "
     "position and by owner to see the whole league.",
     f"**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). "
     f"**They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week ({wk}) and "
     f"the next four ({span}), in your league's scoring.",
-    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other "
-    "team than to his own: an easier ask when you buy, a better sale when you sell.",
+    "**Net lineup points** is what his new team's best lineup gains minus what his old team's loses, over the next four "
+    "weeks. A big positive number means he matters more to the other team than to his own: an easier ask when you buy, a "
+    "better sale when you sell.",
     "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use \"Try a trade\" above.",
     title="How to read the two lists",
 )

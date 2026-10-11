@@ -61,10 +61,14 @@ if roster_id is not None:
             bits.append(f"week {week} vs **{opp.iloc[0]['opponent']}**")
         st.markdown(" · ".join(bits))
         if not rows.empty:
-            st.markdown(league_line(league_id, roster_id, week, rows))
+            lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna()
+            if not lv.empty:
+                st.markdown(f"Week {week}: your best lineup projects **{float(lv.iloc[0]):.0f}** (by our projections).")
+            if (ll := league_line(league_id, roster_id, week, rows)):
+                st.markdown(ll)
         st.markdown("**The calls that matter**")
         decision_cards(league_id, roster_id, week, season, rows=rows)
-        st.markdown("**Your lineup**")
+        st.markdown("**Best lineup by our projections**")
         lineup_table(rows)
         with st.expander("Your full lineup: every slot, how close each call is, the bench, and who can't play"):
             lineup_table(rows, full=True)
