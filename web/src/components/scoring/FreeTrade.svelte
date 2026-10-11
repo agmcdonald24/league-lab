@@ -104,6 +104,15 @@
   const tone = $derived(answer?.verdict.even ? "even" : answer?.verdict.lean === "get" ? "good" : answer?.verdict.lean === "give" ? "bad" : "none");
   const maxV = $derived(Math.max(1, answer?.give.value ?? 0, answer?.get.value ?? 0));
   const shown = $derived(answer);
+  // ---- IZ-2 (Wave I-Z): the five questions without a league — what applies here (who cannot play, no projection, how
+  // sure the numbers are), and what a league would add (both lineups, the cut, the claim beside the trade)
+  const flags = $derived(
+    shown
+      ? [...shown.give.players, ...shown.get.players].flatMap((p) =>
+          p.no_projection ? [`${p.player_name}: no projection${p.why ? ` (${p.why})` : ""}`] : p.outlook?.out ? [`${p.player_name}: ${p.outlook.out}${p.outlook.why ? ` (${p.outlook.why})` : ""}`] : [],
+        )
+      : [],
+  );
 </script>
 
 {#snippet player(side: "give" | "get", id: string, p: FreeTradePlayer | null)}
@@ -235,6 +244,21 @@
     <!-- ---- end IQ-4 -->
     <div class="mt-2"><ProvenanceLine p={shown?.provenance} caveats={shown?.caveats} testid="ft-provenance" /></div><!-- ---- IR-4 -->
   </Card>
+
+  {#if shown}
+    <!-- ---- IZ-2: the five questions of a trade, in the league calculator's order: what applies without a league -->
+    <Card testid="ft-five">
+      <h2 class="ll-label mb-2">A trade's five questions, without a league</h2>
+      <ol class="space-y-2 text-base leading-snug">
+        <li data-testid="ft-five-1"><span class="font-semibold">1 · What changes in your starters.</span> <span class="text-ink-2">A league would add whose starting slot each player takes, whom he moves out, and the points it changes week by week.</span></li>
+        <li data-testid="ft-five-2"><span class="font-semibold">2 · What the other team gets.</span> <span class="text-ink-2">A league would add the same for their lineup, and the reasons they might say no.</span></li>
+        <li data-testid="ft-five-3"><span class="font-semibold">3 · What it costs beyond the players named.</span> <span class="text-ink-2">A league would add who you would have to cut, and the bench depth and bye cover you lose.</span></li>
+        <li data-testid="ft-five-4"><span class="font-semibold">4 · Could you get there another way.</span> <span class="text-ink-2">A league would add the best waiver claim, side by side with keeping your roster and with this trade, on one basis.</span></li>
+        <li data-testid="ft-five-5"><span class="font-semibold">5 · What could change the answer.</span> <span class="text-ink-2">{flags.length ? `${flags.join("; ")}.` : "Nobody in this trade is out or without a projection."} How sure each position's numbers are is the line under the verdict.</span></li>
+      </ol>
+      <p class="mt-2 text-sm text-ink-3">The values here are season value: points over the rest of the regular season, in {refLabel(league)}. Lineup points and whether an offer is plausible need the two rosters. <a class="ll-link" href="/leagues" data-testid="ft-five-open">Open your league</a></p>
+    </Card>
+  {/if}
 
   <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
     {@render sideCard("give", give, "You give")}
