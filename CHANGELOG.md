@@ -4,6 +4,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-10 — Wave I-W
 
+- **PO — after the first live run (the trade check's 500).** The publish runs `ANALYZE` on every table it restores,
+  inside the transaction, in both paths (a restored table had no planner statistics until autovacuum reached it). A
+  pooled connection is waited for 12 s (`db.POOL_WAIT_S`; it was 30), then the request is `db.Busy`: 503 "busy" in
+  words with `Retry-After: 5`, the pool's counts in the log. A 500 carries `kind` (the exception's class, never its
+  text) and `scripts/post_deploy_check.py` prints it. `api/tests/test_iw0.py`, in the release gate. docs/STATUS.md
+  § "Wave I-W" (the addendum).
 - **PO — the merge, and game-day refreshes.** `ops.starter_record` in `nightly.sh`'s `STATE_TABLES` and
   `RECORD_TABLES` and the soft `starter-record` step after `context-record`. The Cloudflare Worker
   (`ops/nightly-trigger`) dispatches the nightly again at `GAME_SLOTS_ET` (default Sun 11:52, Sun 15:37, Sun 18:52,

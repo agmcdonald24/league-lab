@@ -20144,3 +20144,47 @@ the record keeps grading both picks either way. No workflow or render line.
 2. A Sunday refresh after the inactives would move the record's freeze next to kickoff and settle Chicago-like cases.
 3. Chicago's "ruled out" words: let `mart_starter_check`'s `depth_available` read Sleeper's directory the way the rule
    does.
+
+### PO addendum — Wave I-W live, and the 500 after the publication (Saturday 20:44 – 21:40 ET)
+
+* **Live**: Andrew pushed at about 20:40 (`4a20b94`); nightly #36 green in 19m 25s (dbt-build 9m 19s on a slow
+  runner): `starter-record` ok, "fr1.0 live week: … 52 house-league rows moved … (written)", swap in 15 s (249 MB +
+  ~294 MB = 543 MB; the previous copy kept, 477 MB in all), the audit's first line 0, `ops.starter_record` "never
+  published … starts tonight" (expected once). **On the public Rankings**: no "set by hand" and no "Starter
+  corrected" in the page or the answer; Seattle — Sam Darnold 15.0 with "Seattle: we project Sam Darnold to start —
+  he led the team's dropbacks in week 4; the schedule lists Drew Lock."; Baltimore — Tyler Huntley QB7 at 18.1, Lamar
+  Jackson out; **Chicago is not the sandbox's case**: the live schedule feed now lists Tyson Bagent, week 4's snaps
+  agree, the depth chart has Caleb Williams (Questionable) first — the rule keeps Bagent (15.9) and both rows say
+  "Starter unclear"; Case Keenum 5.7. Tampa Bay keeps Jalon Daniels (Mayfield out).
+* **The post-publish check failed two lines**: "FAIL trade 500 30.15s Something broke on our side" (and "reversed:
+  not run"). The PO retested at once: the same trade 200 in 0.2 s, the dynasty Finder cold 4.3 s, a first evaluation
+  for another pair 0.2 s, My Week 0.9 s, Waivers 0.4 s, `/api/ready` 0.1 s — the site was healthy minutes later.
+  **What is known**: the only 30-second wait in the API is the connection pool's (`ConnectionPool(…, max_size=4,
+  timeout=30)`), so the request most likely waited that long for a pooled connection and raised
+  `PoolTimeout`; the rankings line one second earlier took a pooled connection in 0.58 s. **What is not known**: what
+  held four connections for half a minute at that moment (the server's log would say; the PO cannot open Render's).
+  A restored table has no planner statistics until autovacuum reaches it, and the publish never ran `ANALYZE`: the
+  first statements after a switch were planned blind — a likely cause of slow statements right then, not a proven
+  one. Earlier swaps passed the same check in 0.9–4.4 s.
+* **Hardening, delivered as `wave-iw-2`** (PO; `9bd3849` and the docs commit): the publish runs `ANALYZE` on every
+  table it restores, inside the transaction, in both paths; a pooled connection is waited for 12 s
+  (`db.POOL_WAIT_S`), then the request is refused in words — 503 "busy", `Retry-After: 5` — with the pool's counts in
+  the log; a 500 carries `kind` (the exception's class, never its text) and `post_deploy_check.py` prints it, so the
+  next failure names itself in the run's summary; `api/tests/test_iw0.py` in the release gate. Verified: the new test file 4 passed; `scripts/gate.sh` GATE PASSED; the root
+  suite 4 failed / 1,750 passed, 0 new; the API suite 89 failed / 1,392 passed, 0 new by name; `pooler_check.sh` passed in
+  both modes; **the publish itself drilled on a scratch database, both paths** (the pooler check does not restore):
+  the drop path "restored in 11 s" and the swap "switched in 12 s", and after each, 82 of the 85 tables carry
+  statistics and no table with data is without them (the other three are empty). **Not verified**: that the missing
+  statistics were the cause — only the next publications on the hosted database can say.
+* **Decision**: Andrew was asked **not** to deploy the Worker's game-day slots until the cause is known or two
+  publications in a row pass the check with the hardening in — five more publications a week at the hours lineups
+  are set must not carry a hang nobody can explain.
+* Andrew also asked two things this evening, answered from the code and the live site (no change made): whether the
+  Worker costs anything (no: Cloudflare free plan, 48 of 100,000 daily requests, 2 of 5 cron triggers; about 325 more
+  Actions minutes a month of the 2,000 free), and what the site collects from visitors and whether the policy is
+  explicit — **it is not explicit enough**: Google Analytics loads for every visitor on the first page and sets its
+  cookies with no prompt (the code's comment "only after sign-in" dates from the gated beta); the only notice is two
+  paragraphs at the bottom of About; there is no privacy page; our own one-day cookie, the hashed IPs kept for
+  sign-in limits, the host's logs, the NFL image requests, the stored visitor-league snapshots and every retention
+  period go unsaid; and any league is readable by anyone who has its id. Offered: a Privacy page linked in the footer
+  and his decision on Google Analytics (keep, ask first, or drop). Not built until he says.

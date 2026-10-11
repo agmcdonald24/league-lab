@@ -403,6 +403,16 @@ number is worse, say so and show it.
   crons :37 and :52), never from GitHub's schedule (hours late); only Andrew deploys the Worker (`npx wrangler
   deploy` in `ops/nightly-trigger`). **An agent the user stopped is not resumed**, and a spawn he rejects is a
   message: stop and read what he says next before starting anything else.
+* **After Wave I-W's first live run (2026-10-10 evening; STATUS § "Wave I-W", the addendum)**: the post-publish
+  check's trade line was a 500 after 30.15 s, once, and the site was healthy minutes later. The only 30 s wait in the
+  API was the connection pool's; the cause of four busy connections is **not known** (the server's log is Render's;
+  ask Andrew for the lines, do not guess in his hearing). Now: the publish runs `ANALYZE` in its transaction, the
+  pool waits 12 s and then answers 503 "busy", a 500 carries its `kind`, and the check prints it — **read the
+  post-publish block of every run: a `[kind]` there is the diagnosis.** The Worker's game-day slots stay undeployed
+  until two publications in a row pass with this in. `pooler_check.sh` does not restore: a change to the publish's
+  SQL is drilled on a scratch database (`LEAGUE_LAB_HOSTED_ALLOW_LOCAL=1 LEAGUE_LAB_HOSTED_SKIP_ROLE=1`, both
+  `LEAGUE_LAB_HOSTED_PUBLISH=drop` and `auto`). Privacy: the notice is two paragraphs on About, Google Analytics sets
+  cookies for every visitor with no prompt, and several things go unsaid — offered to Andrew, not built.
 * **Wave I-V (2026-10-09, Friday evening; STATUS § "Wave I-V (Iteration 32)")**: **the live week is on**
   (`LEAGUE_LAB_FREEZE: game` in `nightly.yml`; fr1.1). A week's first kickoff still freezes **the record** — the
   kickoff board, which every grade reads and nothing rewrites — but the screens read tonight's number for every game
