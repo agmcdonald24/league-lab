@@ -6181,3 +6181,53 @@ No new number. Each rule below words § "What each number has been checked again
   at the ends, "the Nth-most" between (was the nearer end's "Nth-fewest" and the Matchups screen's "#N toughest"). The
   API keeps `tough_rank` for old readers; no screen prints it. A corner's rank (#1 = the hardest to throw on) is his
   own list and says so.
+
+## Does handling a shortened game make the projection better? (lf2.0, IX-6, Wave I-X, 2026-10-11) — the rule, written before any number
+
+Written at 05:15 ET, before any number of this study was read. The question: the week after a player left early, is
+his projection more accurate if the left-early game stops dragging his windows down? Everything a candidate reads is
+computable for 2026 and knowable when each game ends (lf1.0's columns: snap share, the play-by-play's injury note, the
+touches by half; no participation, nothing from a later week).
+
+**The marks** (both from `int_player_game_on_field`, lf1.0): **A** = LE-A (the snap drop and an injury note naming him by
+the play's ids; precision 0.955, recall 0.146) and **B** = LE-B (what IX-1 shipped for display: the snap drop and the
+note or no touch after half-time; precision 0.437, recall 0.408).
+
+**The candidates** (each defined twice, with mark A and with mark B; implemented as dbt vars in
+`mart_player_recent_form` / `int_player_game_asof`, the only place the windows are built):
+
+* **P1-A / P1-B — shares on the field**: every game's team targets and team carries in the share windows (last 3, last
+  5, season to date) are weighted by his snap share (lf1.0's estimate: team targets × `offense_snap_pct` when his snaps
+  are known and above 0, else the team's total); and in the per-game windows (points per game, snap share, the
+  per-game stat rates, attempts, expected points) **a marked game's value is left out of the window's average** (the
+  window still spans the same games; a window with only marked games is unknown).
+* **P2-A / P2-B — skip**: a marked game is left out of every window (it is not a game of his windows at all; the next
+  game's windows are built from the games before it).
+* **P3-A / P3-B — scaled**: P1's shares, and a marked game's per-game numbers scaled to a full game by his usual snap
+  share (× usual ÷ his snap share in that game, `usual_snap_pct` of lf1.0) instead of left out.
+
+**The backtest** (the lightest valid way, said before running): the walk-forward of `projections.walk_forward` —
+for each test season N in **2021 – 2025**, the position's component models fitted on 2016 … N−1 (the production
+features of each position, v3.6's `FEATURES_BY_POSITION`, the production regressor settings) and the season N
+predicted. **Only the component models are fitted**: the projected points are the priced component predictions, which
+is exactly the backtest's `proj_points` (the quantile and conformal models shape the range only, not the point). Not
+included: the project-only steps applied after the fit (the cold-start prior, the QB pass-TD regression, the horizon
+and market blends) — the same for every candidate and the baseline. Scored in **Half PPR** (the reference scoring the
+site opens on) against the played games' priced actuals (`out_*`).
+
+**The affected rows** (per candidate, by its own mark): a player's next three games played after a marked game, in the
+same season (the rows whose features the candidate can change through the mark). Counted per season and said.
+
+**The ship rule** (the brief's, unchanged): the candidate with the lowest mean absolute error on its affected rows
+ships if **(a)** that error is at least **3% lower** than today's (the baseline's error on the same rows) and lower in
+at least **four of the five** seasons, and **(b)** on all rows, by position (QB, RB, WR, TE), the mean absolute error is
+no more than **0.005 points worse** and the order (the mean over weeks of the weekly Spearman correlation, weeks with 8
+players or more, as the backtest's `spearman`) no more than **0.002 lower**. Otherwise nothing ships and this section
+says so in one paragraph.
+
+**Run-to-run noise** (item 0): two fits at one state must give the same numbers. If they do (shown in § "Item 0"
+below), the 3% is read as is. If they do not, the baseline is fitted twice and a candidate's gain on the affected rows
+must exceed 3% **and** twice the baseline's run-to-run difference on the same rows.
+
+**Cut order** (the clock): the candidates run in the order P2-A, P2-B, P1-A, P1-B, P3-A, P3-B; a candidate not run
+is reported as not run, and the rule picks among those run (never a weaker rule).
