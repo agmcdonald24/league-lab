@@ -14,8 +14,8 @@ with pg as (
         f.attempts, f.passing_yards,
         {%- if lf_mode in ['p1', 'p3'] %}
         -- P1 / P3: the share windows' team totals weighted by his snap share (lf1.0's estimate)
-        f.team_targets * case when f.snaps_known and f.offense_snap_pct > 0 then f.offense_snap_pct else 1 end as team_targets,
-        f.team_carries * case when f.snaps_known and f.offense_snap_pct > 0 then f.offense_snap_pct else 1 end as team_carries,
+        (f.team_targets * case when f.snaps_known and f.offense_snap_pct > 0 then f.offense_snap_pct else 1 end)::numeric as team_targets,
+        (f.team_carries * case when f.snaps_known and f.offense_snap_pct > 0 then f.offense_snap_pct else 1 end)::numeric as team_carries,
         {%- else %}
         f.team_targets, f.team_carries,
         {%- endif %}
@@ -28,8 +28,8 @@ with pg as (
         {%- elif lf_mode == 'p3' %}
         case when {{ lf_mark }} then lf.usual_snap_pct else f.offense_snap_pct end as offense_snap_pct,
         f.snaps_known,
-        f.points_current_scoring * case when {{ lf_mark }} and f.offense_snap_pct > 0 and lf.usual_snap_pct > 0
-                                        then lf.usual_snap_pct / f.offense_snap_pct else 1 end as points_current_scoring,
+        (f.points_current_scoring * case when {{ lf_mark }} and f.offense_snap_pct > 0 and lf.usual_snap_pct > 0
+                                         then lf.usual_snap_pct / f.offense_snap_pct else 1 end)::numeric as points_current_scoring,
         {%- else %}
         f.offense_snap_pct, f.snaps_known, f.points_current_scoring,
         {%- endif %}
