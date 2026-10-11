@@ -1244,7 +1244,10 @@ def parse_weeks(weeks: str | None) -> tuple[int, int] | None:
 IDENTITY = ["gsis_id", "player_name", "position", "team", "headshot_url", "rostered_by_roster_id", "rostered_by_team", "games",
             "first_week", "last_week", "points", "points_per_game"]
 # the sample behind a column (shown on hover: "12 of 57 team carries")
-SAMPLE = {"target_share": ["team_targets"], "carry_share": ["team_carries"], "rb_carry_share": ["team_rb_carries"],
+SAMPLE = {"target_share": ["team_targets"], **{                                            # ---- IX-1: on the field
+          "on_field_target_share": ["on_field_targets", "on_field_team_targets", "on_field_basis", "left_early_games"],
+          "on_field_carry_share": ["on_field_carries", "on_field_team_carries", "on_field_basis", "left_early_games"]},
+          "carry_share": ["team_carries"], "rb_carry_share": ["team_rb_carries"],
           "air_yards_share": ["receiving_air_yards", "team_air_yards"], "adot": ["receiving_air_yards"],
           "red_zone_target_share": ["team_red_zone_targets"], "red_zone_carry_share": ["team_red_zone_carries"],
           "inside_5_carry_share": ["team_inside_5_carries"],
