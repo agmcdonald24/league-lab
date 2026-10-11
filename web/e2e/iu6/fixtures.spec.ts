@@ -269,17 +269,20 @@ test.describe("the blog with a cover and embeds, on the real API", () => {
     const play = body.locator(`button[data-yt-play="${YT}"]`);
     await expect(play).toBeVisible();
     await expect(body.locator("iframe")).toHaveCount(0);
-    // IY-1: the card is our block; the link out is "Open on X" beside "Show the post"
+    // IY-1 / IY-2: the card is our block, with "Open on X"; no button (X's frame swaps in by itself when X answers)
     const xFig = body.locator("figure.ll-embed-x");
     await expect(xFig.locator(".ll-embed-card")).toContainText("@NFL");
     const card = xFig.getByRole("link", { name: "Open on X" });
     await expect(card).toHaveAttribute("href", X_URL);
     await expect(card).toHaveAttribute("rel", "noopener noreferrer nofollow ugc");
-    await expect(xFig.getByRole("button", { name: "Show the post" })).toBeVisible();
+    await expect(xFig.getByRole("button")).toHaveCount(0);
     await expect(body.getByRole("link", { name: "the long version" })).toHaveAttribute("rel", "noopener noreferrer nofollow ugc");
     expect(await page.locator('script[src]:not([src^="/"])').count(), "no script from another origin").toBe(0);
     await page.waitForTimeout(1500);
-    expect(outside, "nothing left for YouTube or X before the tap").toEqual([]);
+    // IY-2: before any tap the only outside requests are the video's still and X's frame (made near the screen, out of
+    // sight; refused here, so the card stays) — never YouTube's player, x.com or a script
+    const preload = (u: string) => u === `https://i.ytimg.com/vi/${YT}/hqdefault.jpg` || u.startsWith("https://platform.twitter.com/embed/Tweet.html?id=1843000000000000001&dnt=true&theme=");
+    expect(outside.filter((u) => !preload(u)), "nothing else left for YouTube or X before the tap").toEqual([]);
     const { sw, iw } = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
     expect(sw, "no sideways scroll").toBeLessThanOrEqual(iw);
     await page.screenshot({ path: join(SHOTS, `iu6-post-${w}.jpg`), type: "jpeg", quality: 70, fullPage: true });
@@ -292,8 +295,8 @@ test.describe("the blog with a cover and embeds, on the real API", () => {
     await expect(frame).toHaveAttribute("loading", "lazy");
     await expect(frame).toHaveAttribute("referrerpolicy", "strict-origin-when-cross-origin");
     await expect(frame).toHaveAttribute("title", "YouTube video");
-    await expect.poll(() => outside.length, { timeout: 15_000 }).toBeGreaterThan(0);
-    expect(outside.every((u) => u.startsWith(`https://www.youtube-nocookie.com/embed/${YT}`)), outside.join(" ")).toBe(true);
+    await expect.poll(() => outside.filter((u) => !preload(u)).length, { timeout: 15_000 }).toBeGreaterThan(0);
+    expect(outside.filter((u) => !preload(u)).every((u) => u.startsWith(`https://www.youtube-nocookie.com/embed/${YT}`)), outside.join(" ")).toBe(true);
     await expect(page.frameLocator('iframe[title="YouTube video"]').getByText("The video would play here.")).toBeVisible();
     await frame.scrollIntoViewIfNeeded();
     await page.screenshot({ path: join(SHOTS, `iu6-post-played-${w}.jpg`), type: "jpeg", quality: 70, fullPage: true });

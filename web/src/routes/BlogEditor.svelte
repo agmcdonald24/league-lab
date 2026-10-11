@@ -748,7 +748,7 @@
           </div>
         {/if}
         <p class="mt-1 text-sm text-ink-3" data-testid="editor-embeds">
-          A post on X or a YouTube video: a link on its own line, or the embed code X or YouTube gives you. It shows as the reader will see it, and loads from X or YouTube only after a tap. {#if coverOn}The cover: <strong>Picture</strong>, then <strong>Make it the cover</strong>.{/if}
+          A post on X or a YouTube video: a link on its own line, or the embed code X or YouTube gives you. It shows as the reader will see it: the post from X by itself, the video when tapped. {#if coverOn}The cover: <strong>Picture</strong>, then <strong>Make it the cover</strong>.{/if}
         </p>
         <p class="mt-1 text-sm text-ink-3" data-testid="editor-pictures">
           Pictures: <strong>Picture</strong> above uploads one (PNG, JPEG or WebP, 300 KB at most: a bigger one, like a phone photo, is made smaller in your browser first). A file in <code>blog/img/</code> in the repository works too:

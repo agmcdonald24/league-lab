@@ -1,12 +1,17 @@
-// ---- IY-1 (Wave I-Y): a post on X, shown in X's own frame after the reader taps **Show the post** (md.ts `xBlock`).
+// ---- IY-1 / IY-2 (Wave I-Y): a post on X, shown in X's own frame once X has laid it out (md.ts `xBlock`, PostBody).
 // The frame is https://platform.twitter.com/embed/Tweet.html — a page of X's that renders the post with no script on
 // ours. It tells its parent its height with a message from https://platform.twitter.com:
 //   {"twttr.embed": {"method": "twttr.private.resize", "params": [{"height": <n>, …}]}}   (an object or a JSON string)
-// Only that origin, only from one of our X frames, only a number, clamped to 200–2000 px. Until a message comes the
-// frame is 560 px tall and scrolls inside itself, so the post is usable if none ever arrives.
+// Only that origin, only from one of our X frames, only a number, clamped to 200–2000 px. Until the first one comes the
+// frame is out of sight and the card is the block; if none comes, the card stays (IY-2).
 export const X_ORIGIN = "https://platform.twitter.com";
 export const X_SANDBOX = "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox";
-export const X_START_HEIGHT = 560;
+// ---- IY-2: no tap. The frame is made when the block comes within X_NEAR of the screen, kept out of sight (opacity 0,
+// absolutely placed over the card's own box: it takes no room, and Chrome still counts it as on screen, so X renders
+// and measures — a frame with visibility: hidden or no height is throttled and X never sends its size), and swapped in
+// on its first resize message. No resize within X_GIVE_UP_MS: the frame is removed and the card stays.
+export const X_NEAR = "600px 0px";
+export const X_GIVE_UP_MS = 10_000;
 const X_ID = /^\d{1,25}$/;
 
 export function isXId(id: string | null | undefined): id is string {

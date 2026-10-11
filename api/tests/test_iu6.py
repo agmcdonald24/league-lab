@@ -183,7 +183,7 @@ def test_without_the_cover_column_every_read_and_save_works_as_before(dist, edit
 
 
 def test_the_csp_frames_only_youtube_nocookie_and_x(api):  # noqa: F811
-    """IU-6 + IY-1: the two frames a post can hold after a tap, and nothing else; scripts unchanged."""
+    """IU-6 + IY-1: the two frames a post can hold (YouTube after a tap, X by itself), and nothing else; scripts unchanged."""
     csp = api.get("/blog").headers["content-security-policy"]
     frames = [d for d in csp.split("; ") if d.startswith("frame-src")]
     assert frames == ["frame-src https://www.youtube-nocookie.com https://platform.twitter.com"]

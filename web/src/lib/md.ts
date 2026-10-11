@@ -152,14 +152,18 @@ function youtubeBlock(yt: string): string {
   const id = escapeHtml(yt);
   return (
     `<figure class="ll-embed ll-embed-yt" data-yt="${id}">` +
-    `<button type="button" class="ll-embed-play" data-yt-play="${id}" aria-label="Play the YouTube video"><span class="ll-embed-k">▶ Play the video</span><span class="ll-embed-s">From YouTube: it loads when you tap.</span></button>` +
+    // IY-2: the video's own still under the Play button (i.ytimg.com, the id checked; no referrer; lazy); the player
+    // itself still loads only on the tap. A still that fails to load is removed (PostBody): the grey block stays
+    `<button type="button" class="ll-embed-play" data-yt-play="${id}" aria-label="Play the YouTube video">` +
+    `<img class="ll-embed-still" src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` +
+    `<span class="ll-embed-k">▶ Play the video</span></button>` +
     `<figcaption><a href="https://www.youtube.com/watch?v=${id}" rel="${POST_LINK_REL}" target="_blank" class="ll-link">Watch on YouTube</a></figcaption></figure>`
   );
 }
 
 /** ---- IY-1 (Wave I-Y): the X block — our own markup only: the post's words and "Name (@handle) · date" when a pasted
- * embed code had them (plain text, escaped here), else the card; then **Show the post** (PostBody makes X's frame on the
- * tap: nothing from X before it) and **Open on X**. The handle and the id come from strict patterns. */
+ * embed code had them (plain text, escaped here), else the card; then **Open on X**. The handle and the id come from
+ * strict patterns. IY-2: X's own frame replaces the card once X has laid the post out (PostBody, xframe.ts). */
 function xBlock(handle: string, id: string, said?: { words: string; name: string; date: string }): string {
   const h = escapeHtml(handle);
   const n = escapeHtml(id);
@@ -167,10 +171,11 @@ function xBlock(handle: string, id: string, said?: { words: string; name: string
   const body = said
     ? `<blockquote class="ll-embed-quote" data-x-body>${said.words ? `<p class="ll-embed-words">${escapeHtml(said.words).replace(/\n/g, "<br>")}</p>` : ""}<footer class="ll-embed-by">${by}</footer></blockquote>`
     : `<div class="ll-embed-card" data-x-body><span class="ll-embed-k">A post on X</span><span class="ll-embed-h">@${h}</span></div>`;
+  // IY-2: no button — PostBody loads X's frame out of sight as the block nears the screen and swaps it in when X says
+  // the post is laid out; until then (and for good, if X never answers) this card is the block
   return (
     `<figure class="ll-embed ll-embed-x" data-x-post="${n}">${body}` +
-    `<div class="ll-embed-actions"><button type="button" class="ll-embed-show" data-x-show="${n}">Show the post</button>` +
-    `<a href="https://x.com/${h}/status/${n}" rel="${POST_LINK_REL}" target="_blank" class="ll-link">Open on X</a></div></figure>`
+    `<div class="ll-embed-actions"><a href="https://x.com/${h}/status/${n}" rel="${POST_LINK_REL}" target="_blank" class="ll-link">Open on X</a></div></figure>`
   );
 }
 

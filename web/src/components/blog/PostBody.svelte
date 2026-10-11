@@ -4,7 +4,7 @@
   // phone (the page never scrolls sideways). Player links carry the frame's league, so a tap opens the drawer.
   import { isYoutubeId, mdDoc } from "../../lib/md";
   import PlayersBlock from "./PlayersBlock.svelte";
-  import { onXMessage, X_SANDBOX, X_START_HEIGHT, xFrameSrc } from "./xframe";
+  import { onXMessage, X_GIVE_UP_MS, X_NEAR, X_SANDBOX, xFrameSrc } from "./xframe";
 
   let { markdown, league }: { markdown: string; league: string } = $props();
   // the first ```players block becomes the live table; the text before and after it is markdown (escaped first)
@@ -20,7 +20,6 @@
   // YouTube or X is asked for before that tap, and no script from either is ever loaded.
   let root = $state<HTMLDivElement | null>(null);
   function play(e: MouseEvent) {
-    showX(e);
     const btn = (e.target as Element | null)?.closest?.("button[data-yt-play]") as HTMLButtonElement | null;
     if (!btn || !root?.contains(btn)) return;
     const id = btn.dataset.ytPlay;
@@ -44,35 +43,89 @@
     return () => el.removeEventListener("click", play);
   });
 
-  // ---- IY-1 (Wave I-Y): a post on X is our own block (md.ts `xBlock`) until the reader taps **Show the post**; then X's
-  // frame takes the block's place — platform.twitter.com/embed/Tweet.html from the id checked again here, sandboxed,
-  // lazy, no referrer, a title — 560 px tall (it scrolls inside itself) until X's frame says its height (xframe.ts).
-  function showX(e: MouseEvent) {
-    const btn = (e.target as Element | null)?.closest?.("button[data-x-show]") as HTMLButtonElement | null;
-    if (!btn || !root?.contains(btn)) return;
-    const fig = btn.closest("figure.ll-embed-x");
-    const dark = typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches;
-    const src = xFrameSrc(btn.dataset.xShow ?? "", dark);
-    if (!fig || !src) return;
+  // ---- IY-1 / IY-2 (Wave I-Y): a post on X is our own card (md.ts `xBlock`) from the first paint. When the block comes
+  // within 600 px of the screen (once per block), X's frame — platform.twitter.com/embed/Tweet.html from the id checked
+  // again here, sandboxed, no referrer, a title — is made in the block OUT OF SIGHT: absolutely placed over the card's
+  // own box (it takes no room), at its real width (min(550px, 100%)), opacity 0, not clickable, not focusable. Opacity
+  // rather than visibility: hidden or a zero height, because Chrome throttles a cross-origin frame it counts as not
+  // visible (hidden, no area, off screen) and X only measures and sends its size once it has painted. On X's first
+  // resize message (xframe.ts: that origin, that frame) the frame takes the card's place at that height and the card
+  // goes; later messages keep the height. No message in 10 s: the frame is removed and the card stays — it is a complete
+  // block by itself. `color-scheme: light` on the frame: X's document is light-scheme, and a frame whose scheme differs
+  // from the page's gets an opaque backdrop (white on our dark page).
+  const dark = () => typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches;
+  function loadX(fig: HTMLElement) {
+    const src = xFrameSrc(fig.dataset.xPost ?? "", dark());
+    if (!src || fig.querySelector("iframe[data-x-frame]")) return;
     const frame = document.createElement("iframe");
     frame.src = src;
     frame.title = "Post on X";
     frame.setAttribute("sandbox", X_SANDBOX);
-    frame.setAttribute("loading", "lazy");
     frame.setAttribute("referrerpolicy", "no-referrer");
-    frame.className = "ll-embed-xframe";
-    frame.style.height = `${X_START_HEIGHT}px`;
+    frame.setAttribute("aria-hidden", "true");
+    frame.tabIndex = -1;
+    frame.className = "ll-embed-xframe ll-embed-xframe-waiting";
     frame.dataset.testid = "x-frame";
-    frame.dataset.xFrame = "";
-    (fig.querySelector("[data-x-body]") ?? btn).replaceWith(frame);
-    btn.remove();
+    frame.dataset.xFrame = "waiting";
+    fig.insertBefore(frame, fig.firstChild);
+    const giveUp = setTimeout(() => {
+      if (frame.dataset.xFrame === "waiting") frame.remove(); // X never answered: the card is the block
+    }, X_GIVE_UP_MS);
+    timers.push(giveUp);
   }
+  function showFrame(frame: HTMLIFrameElement) {
+    if (frame.dataset.xFrame !== "waiting") return;
+    frame.dataset.xFrame = "shown";
+    frame.classList.remove("ll-embed-xframe-waiting");
+    frame.removeAttribute("aria-hidden");
+    frame.removeAttribute("tabindex");
+    frame.closest("figure")?.querySelector("[data-x-body]")?.remove();
+  }
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  $effect(() => {
+    const el = root;
+    void parts; // the post's HTML is new (the editor's preview): look at its blocks again
+    if (!el) return;
+    const figs = Array.from(el.querySelectorAll<HTMLElement>("figure.ll-embed-x[data-x-post]"));
+    if (!figs.length) return;
+    if (typeof IntersectionObserver !== "function") {
+      figs.forEach(loadX);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries)
+          if (e.isIntersecting) {
+            io.unobserve(e.target);
+            loadX(e.target as HTMLElement);
+          }
+      },
+      { rootMargin: X_NEAR },
+    );
+    figs.forEach((f) => io.observe(f));
+    return () => {
+      io.disconnect();
+      timers.splice(0).forEach(clearTimeout);
+    };
+  });
   $effect(() => {
     const el = root;
     if (!el) return;
-    const onMessage = (e: MessageEvent) => onXMessage(e, el.querySelectorAll<HTMLIFrameElement>("iframe[data-x-frame]"));
+    const onMessage = (e: MessageEvent) => {
+      const f = onXMessage(e, el.querySelectorAll<HTMLIFrameElement>("iframe[data-x-frame]"));
+      if (f) showFrame(f as HTMLIFrameElement);
+    };
+    // IY-2: a YouTube still that fails to load goes (error does not bubble: caught on the way down); the grey block stays
+    const onError = (e: Event) => {
+      const t = e.target as Element | null;
+      if (t instanceof HTMLImageElement && t.classList.contains("ll-embed-still")) t.remove();
+    };
     window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
+    el.addEventListener("error", onError, true);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      el.removeEventListener("error", onError, true);
+    };
   });
 </script>
 
@@ -281,23 +334,46 @@
     margin-top: 0.5em;
     font-size: 0.9375rem;
   }
-  .ll-prose :global(.ll-embed-show) {
-    min-height: 2.5rem;
-    padding: 0 0.9em;
-    border: 1px solid var(--ll-line-strong);
-    border-radius: 8px;
-    font-weight: 600;
-    color: var(--ll-ink);
-  }
-  .ll-prose :global(.ll-embed-show:focus-visible) {
-    outline: 2px solid var(--ll-accent);
+  /* IY-2: X's frame — at most X's card width (550 px), on the column's left edge; a light scheme like X's document, so
+     no opaque backdrop is painted behind X's dark card on our dark page; out of sight until X has laid the post out */
+  .ll-prose :global(.ll-embed-x) {
+    position: relative;
   }
   .ll-prose :global(.ll-embed-xframe) {
     display: block;
-    width: 100%;
+    width: min(550px, 100%);
+    max-width: 100%;
+    margin: 0;
     border: 0;
-    border-radius: 10px;
-    overflow: auto;
+    border-radius: 12px;
+    color-scheme: light;
+  }
+  .ll-prose :global(.ll-embed-xframe-waiting) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* IY-2: the YouTube still fills the 16:9 box under the Play label; without it, the grey block as before */
+  .ll-prose :global(.ll-embed-play) {
+    position: relative;
+    overflow: hidden;
+  }
+  .ll-prose :global(.ll-embed-still) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .ll-prose :global(.ll-embed-play .ll-embed-k) {
+    position: relative;
+    padding: 0.45em 0.9em;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 0.72);
+    color: #fff;
   }
   .ll-prose :global(.ll-embed-h) {
     font-weight: 700;

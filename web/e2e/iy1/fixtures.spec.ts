@@ -14,7 +14,7 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { serveFixtures } from "../fixtures";
 
-const SHOTS = join(import.meta.dirname, "..", "..", "..", "docs", "handbacks", "iy1");
+const SHOTS = join(import.meta.dirname, "..", "..", "..", "docs", "handbacks", "iy2"); // IY-2's screens
 // Andrew's paste, exactly as X gave it and as the post stores it (one line)
 const PASTE =
   '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">This is awesome: Here\'s the call #Cardinals GM Monti Ossenfort had with the #Texans when he traded out of No. 3 on draft night. Access to the blockbuster trade while they were on the clock. This content is INCREDIBLE. (via Cardinals Flight Plan on YT) https://t.co/taUindXEfy</p>&mdash; Ari Meirov (@MySportsUpdate) <a href="https://x.com/MySportsUpdate/status/1666992852084092930?ref_src=twsrc%5Etfw">June 9, 2023</a></blockquote> <script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>';
@@ -34,7 +34,7 @@ function onlyOurs(html: string) {
 test.describe("md.ts reads pasted embed code", () => {
   test.beforeEach(({ isMobile }) => test.skip(isMobile, "pure functions: once"));
 
-  test("Andrew's paste as stored (one line) becomes our X block: words, name (@handle) · date, Show the post, Open on X", async () => {
+  test("Andrew's paste as stored (one line) becomes our X block: words, name (@handle) · date, Open on X", async () => {
     const { mdDoc, xPaste } = await import("../../src/lib/md");
     const inner = /<blockquote[^>]*>([\s\S]*)<\/blockquote>/.exec(PASTE)![1];
     expect(xPaste(inner)).toEqual({ handle: "MySportsUpdate", id: ID, words: WORDS, name: "Ari Meirov", date: "June 9, 2023" });
@@ -43,7 +43,7 @@ test.describe("md.ts reads pasted embed code", () => {
     expect(html).toContain(`<figure class="ll-embed ll-embed-x" data-x-post="${ID}">`);
     expect(html).toContain(`<p class="ll-embed-words">This is awesome: Here&#39;s the call #Cardinals GM Monti Ossenfort`);
     expect(html).toContain('<footer class="ll-embed-by">Ari Meirov (@MySportsUpdate) · June 9, 2023</footer>');
-    expect(html).toContain(`<button type="button" class="ll-embed-show" data-x-show="${ID}">Show the post</button>`);
+    expect(html).not.toContain("<button"); // IY-2: no tap — X's frame swaps in by itself
     expect(html).toContain(`<a href="https://x.com/MySportsUpdate/status/${ID}" rel="noopener noreferrer nofollow ugc" target="_blank" class="ll-link">Open on X</a>`);
     expect(html).toContain("<p>Intro words.</p>");
     expect(html).toContain("<p>After words.</p>");
@@ -52,7 +52,7 @@ test.describe("md.ts reads pasted embed code", () => {
     const mid = mdDoc(`Look: ${PASTE} wow`);
     expect(mid).toMatch(/<p>Look: ?<\/p>/);
     expect(mid).toMatch(/<p> ?wow<\/p>/);
-    expect(mid).toContain('data-x-show="1666992852084092930"');
+    expect(mid).toContain('data-x-post="1666992852084092930"');
   });
 
   test("the same paste broken over lines, without the script, with twitter.com, with Windows line ends", async () => {
@@ -63,7 +63,7 @@ test.describe("md.ts reads pasted embed code", () => {
     for (const [what, text] of [["broken", broken], ["no script", noScript], ["twitter.com", twitter], ["crlf", broken.replace(/\n/g, "\r\n")]] as const) {
       const html = mdDoc(text);
       onlyOurs(html);
-      expect(html, what).toContain(`data-x-show="${ID}"`);
+      expect(html, what).toContain(`data-x-post="${ID}"`);
       expect(html, what).toContain("Ari Meirov (@MySportsUpdate) · June 9, 2023");
       expect(html, what).toContain("This is awesome: Here&#39;s the call");
       expect(html.match(/ll-embed-x/g)?.length, what).toBe(1);
@@ -77,6 +77,8 @@ test.describe("md.ts reads pasted embed code", () => {
       const html = mdDoc(`Watch:\n\n${code}`);
       onlyOurs(html);
       expect(html).toContain(`data-yt-play="${YT}"`);
+      // IY-2: the video's still, from the checked id only
+      expect(html).toContain(`<img class="ll-embed-still" src="https://i.ytimg.com/vi/${YT}/hqdefault.jpg" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`);
       expect(html).not.toMatch(/title="YouTube video player"|allowfullscreen|accelerometer/);
     }
     for (const bad of [
@@ -116,7 +118,7 @@ test.describe("md.ts reads pasted embed code", () => {
     const hostile =
       '<blockquote class="twitter-tweet" onmouseover="window.__iy1=3"><p lang="en"><a href="javascript:alert(1)" onclick="window.__iy1=4">click</a> <img src=x onerror="window.__iy1=5"><b>bold</b> &lt;script&gt;alert(6)&lt;/script&gt; &#106;avascript &#0; &#xD800;</p>&mdash; Eve <i>"Evil"</i> (@NFL) <a href="https://x.com/NFL/status/123456789" onclick="window.__iy1=7">May 1, 2024</a></blockquote><script src="https://evil.example/x.js"></script><script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>';
     const html = mdDoc(hostile);
-    expect(html).toContain('data-x-show="123456789"');
+    expect(html).toContain('data-x-post="123456789"');
     expect(html).toContain('<p class="ll-embed-words">click bold &lt;script&gt;alert(6)&lt;/script&gt; javascript</p>');
     expect(html).toContain('<footer class="ll-embed-by">Eve &quot;Evil&quot; (@NFL) · May 1, 2024</footer>');
     // the second script (another host) is not X's: it stays text, after the block
@@ -129,9 +131,9 @@ test.describe("md.ts reads pasted embed code", () => {
     const fenced = mdDoc("```\n" + PASTE + "\n```");
     expect(fenced).toContain("<pre");
     expect(fenced).not.toContain("ll-embed-x");
-    // the bare link still works (IU-6), now with Show the post
+    // the bare link still works (IU-6): the card, then X's frame by itself (IY-2)
     const bare = mdDoc(`https://x.com/MySportsUpdate/status/${ID}`);
-    expect(bare).toContain(`data-x-show="${ID}"`);
+    expect(bare).toContain(`data-x-post="${ID}"`);
     expect(bare).toContain('<span class="ll-embed-h">@MySportsUpdate</span>');
     // the lifted block's mark typed by a writer is dropped, never a block
     expect(mdDoc("0")).not.toContain("ll-embed");
@@ -164,8 +166,11 @@ test.describe("md.ts reads pasted embed code", () => {
   });
 });
 
-// ============================================================================ part 2: the post page
+// ============================================================================ part 2: the post page (IY-2)
 const SLUG = "what-s-monti-ossenfort-up-to-now";
+const ID2 = "1843000000000000001";
+const YT_BAD = "aaaaaaaaaaa"; // a video whose still does not load
+const FILLER = Array.from({ length: 30 }, (_, k) => `Paragraph ${k + 1}: the numbers before the post, so the post on X starts well below the screen.`);
 const POST = {
   slug: SLUG,
   title: "What's Monti Ossenfort up to now?",
@@ -175,78 +180,173 @@ const POST = {
   tags: [],
   minutes: 2,
   image: null,
-  markdown: ["The call is worth a look.", "", PASTE, "", "And the video:", "", YT_PASTE, "", "A forged one stays text:", "", FORGED, ""].join("\n"),
+  markdown: [...FILLER.flatMap((p) => [p, ""]), "The call is worth a look.", "", PASTE, "", "Another one:", "", `https://x.com/NFL/status/${ID2}`, "", "And the video:", "", YT_PASTE, "", YT_PASTE.replace(YT, YT_BAD), "", "A forged one stays text:", "", FORGED, ""].join("\n"),
 };
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+// X's frame, as this test's stub: it says "initialized" and "results" like X's, never its size by itself
+const STUB = `<!doctype html><title>stub</title><body style="margin:0;background:#15202b;color:#fff;font:16px sans-serif"><p style="margin:0;padding:16px">X's post would show here.</p><script>
+for (const m of ["twttr.private.initialized", "twttr.private.results"]) parent.postMessage({ "twttr.embed": { method: m, params: [{}] } }, "*");
+</script></body>`;
 
-test.describe("the post page", () => {
+async function setUp(context: import("@playwright/test").BrowserContext) {
+  await serveFixtures(context);
+  const outside: string[] = [];
+  // after serveFixtures (the last route registered answers first): the outside world is this test's
+  await context.route(/^https?:\/\/(?!localhost[:/]|127\.0\.0\.1[:/])/, (route: Route) => {
+    const url = route.request().url();
+    outside.push(url);
+    if (url.startsWith("https://platform.twitter.com/embed/Tweet.html?")) return route.fulfill({ status: 200, contentType: "text/html", body: STUB });
+    if (url === `https://i.ytimg.com/vi/${YT}/hqdefault.jpg`) return route.fulfill({ status: 200, contentType: "image/png", body: PNG });
+    return route.abort();
+  });
+  await context.route(/\/api\/blog(\?|\/)/, (route: Route) => {
+    const u = new URL(route.request().url());
+    if (u.pathname === `/api/blog/${SLUG}`) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(POST) });
+    if (u.pathname === "/api/blog") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ posts: [{ ...POST, markdown: undefined }] }) });
+    return route.fallback();
+  });
+  await context.addInitScript(() => {
+    const w = window as unknown as { __xm: string[] };
+    w.__xm = [];
+    addEventListener("message", (e) => {
+      const m = (e.data as { "twttr.embed"?: { method?: string } } | null)?.["twttr.embed"]?.method;
+      if (e.origin === "https://platform.twitter.com" && m) w.__xm.push(m);
+    });
+  });
+  return outside;
+}
+const resize = (h: number) => ({ "twttr.embed": { method: "twttr.private.resize", params: [{ width: 550, height: h, data: { tweet_id: "x" } }] } });
+async function scrollNear(page: import("@playwright/test").Page, sel: string, below: number) {
+  // the block's top `below` px under the screen's bottom edge (within the 600 px margin, not on screen)
+  await page.evaluate(([s, b]) => {
+    const el = document.querySelector(s as string)!;
+    window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - window.innerHeight - (b as number));
+  }, [sel, below] as const);
+}
+
+test.describe("the post page: X's frame swaps in by itself", () => {
   test.beforeEach(async ({ page, isMobile }) => {
     if (isMobile) await page.setViewportSize({ width: 375, height: 812 });
+    mkdirSync(SHOTS, { recursive: true });
   });
 
-  test("the X block before the tap (nothing from X), X's frame after it, YouTube's paste behind Play, a forged one as text", async ({ context, page, isMobile }) => {
+  test("the card first; X's frame made near the screen, out of sight; shown at X's size on its first resize", async ({ context, page, isMobile }) => {
     test.setTimeout(90_000);
-    mkdirSync(SHOTS, { recursive: true });
     const w = isMobile ? 375 : 1300;
-    await serveFixtures(context);
-    const outside: string[] = [];
-    // after serveFixtures (the last route registered answers first): the outside world is this test's
-    await context.route(/^https?:\/\/(?!localhost[:/]|127\.0\.0\.1[:/])/, (route: Route) => {
-      const url = route.request().url();
-      outside.push(url);
-      if (url.startsWith("https://platform.twitter.com/embed/Tweet.html?"))
-        return route.fulfill({
-          status: 200,
-          contentType: "text/html",
-          body: `<!doctype html><title>stub</title><p>X's post would show here.</p><script>parent.postMessage(${JSON.stringify(JSON.stringify({ "twttr.embed": { method: "twttr.private.resize", params: [{ height: 812, width: 550 }] } }))}, "*")</script>`,
-        });
-      return route.abort();
-    });
-    await context.route(/\/api\/blog(\?|\/)/, (route: Route) => {
-      const u = new URL(route.request().url());
-      if (u.pathname === `/api/blog/${SLUG}`) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(POST) });
-      if (u.pathname === "/api/blog") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ posts: [{ ...POST, markdown: undefined }] }) });
-      return route.fallback();
-    });
+    const outside = await setUp(context);
     await page.goto(`/blog/${SLUG}`);
     await expect(page.getByTestId("post-title")).toHaveText(POST.title, { timeout: 30_000 });
     const body = page.getByTestId("post-body");
-    const fig = body.locator("figure.ll-embed-x");
-    await expect(fig).toHaveCount(1);
-    await expect(fig.locator(".ll-embed-words")).toHaveText(WORDS);
-    await expect(fig.locator(".ll-embed-by")).toHaveText("Ari Meirov (@MySportsUpdate) · June 9, 2023");
+    const fig = body.locator(`figure.ll-embed-x[data-x-post="${ID}"]`);
+    const card = fig.locator("[data-x-body]");
+    await expect(card.locator(".ll-embed-words")).toHaveText(WORDS);
+    await expect(card.locator(".ll-embed-by")).toHaveText("Ari Meirov (@MySportsUpdate) · June 9, 2023");
     await expect(fig.getByRole("link", { name: "Open on X" })).toHaveAttribute("href", `https://x.com/MySportsUpdate/status/${ID}`);
-    const show = fig.getByRole("button", { name: "Show the post" });
-    await expect(show).toBeVisible();
-    await expect(body.locator(`button[data-yt-play="${YT}"]`)).toBeVisible();
-    await expect(body.locator("iframe")).toHaveCount(0);
-    await expect(page.locator("script[src*='widgets.js'], blockquote.twitter-tweet, iframe")).toHaveCount(0);
-    await expect(body).toContainText('<blockquote class="twitter-tweet"><p>Forged</p>'); // as text
-    await page.waitForTimeout(1000);
+    await expect(fig.getByRole("button")).toHaveCount(0); // no tap
+    // far from the screen: no frame, nothing asked of X
+    await page.waitForTimeout(800);
+    await expect(page.locator("iframe")).toHaveCount(0);
+    expect(outside.filter((u) => /twitter|x\.com|twimg/.test(u)), "nothing asked of X yet").toEqual([]);
     expect(await page.evaluate(() => (window as unknown as { __iy1?: number }).__iy1)).toBeUndefined();
-    expect(outside, "nothing asked of X or YouTube before a tap").toEqual([]);
-    const sw = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(sw, "no sideways scroll").toBeLessThanOrEqual(0);
-    await fig.scrollIntoViewIfNeeded();
-    await page.screenshot({ path: join(SHOTS, `iy1-post-${w}.jpg`), type: "jpeg", quality: 70, fullPage: true });
 
-    // the tap: X's frame in the block's place, exactly this address and sandbox; the stub's height message is obeyed
-    await show.click();
-    const frame = fig.locator("iframe");
+    // near (300 px under the screen): the frame exists, takes no room, is not seen; the card is as it was
+    const before = await fig.evaluate((el) => el.getBoundingClientRect().height);
+    await scrollNear(page, `figure.ll-embed-x[data-x-post="${ID}"]`, 300);
+    const frame = fig.locator("iframe[data-x-frame]");
     await expect(frame).toHaveCount(1);
+    await expect(frame).toHaveAttribute("data-x-frame", "waiting");
     await expect(frame).toHaveAttribute("src", new RegExp(`^https://platform\\.twitter\\.com/embed/Tweet\\.html\\?id=${ID}&dnt=true&theme=(light|dark)$`));
     await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox");
-    await expect(frame).toHaveAttribute("loading", "lazy");
     await expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
-    await expect(frame).toHaveAttribute("title", "Post on X");
-    await expect(fig.locator(".ll-embed-words")).toHaveCount(0);
-    await expect(fig.getByRole("button", { name: "Show the post" })).toHaveCount(0);
-    await expect(page.frameLocator('iframe[title="Post on X"]').getByText("X's post would show here.")).toBeVisible();
-    await expect.poll(() => frame.evaluate((el) => (el as HTMLIFrameElement).style.height), { timeout: 10_000 }).toBe("812px");
-    const box = await frame.boundingBox();
-    const col = await body.boundingBox();
-    expect(Math.abs((box?.width ?? 0) - (col?.width ?? 0)), "as wide as the column").toBeLessThanOrEqual(2);
-    expect(outside.every((u) => u.startsWith(`https://platform.twitter.com/embed/Tweet.html?id=${ID}&dnt=true&theme=`)), outside.join(" ")).toBe(true);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
-    await page.screenshot({ path: join(SHOTS, `iy1-post-shown-${w}.jpg`), type: "jpeg", quality: 70, fullPage: true });
+    await expect(frame).toHaveAttribute("aria-hidden", "true");
+    const look = () =>
+      frame.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { opacity: cs.opacity, position: cs.position, scheme: cs.colorScheme, events: cs.pointerEvents, width: el.getBoundingClientRect().width, height: el.style.height };
+      });
+    expect(await look()).toMatchObject({ opacity: "0", position: "absolute", scheme: "light", events: "none" });
+    expect(Math.abs((await fig.evaluate((el) => el.getBoundingClientRect().height)) - before), "the frame takes no room").toBeLessThanOrEqual(1);
+    await expect(card).toBeVisible();
+    // X's first two messages: still the card
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __xm: string[] }).__xm.join(",")), { timeout: 15_000 }).toContain("twttr.private.results");
+    await expect(frame).toHaveAttribute("data-x-frame", "waiting");
+    await expect(card).toBeVisible();
+    // the card on screen, waiting
+    await fig.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: join(SHOTS, `iy2-card-${w}.jpg`), type: "jpeg", quality: 70 });
+
+    // a resize from another origin (this page) or from another frame (the second post's) does nothing to this one
+    await page.evaluate((m) => window.postMessage(m, "*"), resize(300));
+    await page.waitForTimeout(300);
+    await expect(frame).toHaveAttribute("data-x-frame", "waiting");
+    const fig2 = body.locator(`figure.ll-embed-x[data-x-post="${ID2}"]`);
+    await fig2.scrollIntoViewIfNeeded();
+    await expect(fig2.locator("iframe[data-x-frame]")).toHaveCount(1);
+    const xFrame = (id: string) => page.frames().find((f) => f.url().includes(`id=${id}&`));
+    await expect.poll(() => !!xFrame(ID2), { timeout: 15_000 }).toBe(true);
+    await xFrame(ID2)!.evaluate((m) => parent.postMessage(m, "*"), resize(333));
+    await expect(fig2.locator("iframe[data-x-frame]")).toHaveAttribute("data-x-frame", "shown");
+    await expect(frame).toHaveAttribute("data-x-frame", "waiting");
+    await expect(card).toBeVisible();
+
+    // X says its size: the frame takes the card's place at that height, at most 550 px wide; "Open on X" stays
+    await fig.scrollIntoViewIfNeeded();
+    await expect.poll(() => !!xFrame(ID), { timeout: 15_000 }).toBe(true);
+    await xFrame(ID)!.evaluate((m) => parent.postMessage(m, "*"), resize(746));
+    await expect(frame).toHaveAttribute("data-x-frame", "shown");
+    await expect(card).toHaveCount(0);
+    await expect(frame).not.toHaveAttribute("aria-hidden", "true");
+    const shown = await look();
+    expect(shown).toMatchObject({ opacity: "1", position: "static", scheme: "light", height: "746px" });
+    const col = (await body.boundingBox())!.width;
+    expect(shown.width).toBeLessThanOrEqual(Math.min(550, col) + 0.5);
+    expect(shown.width).toBeGreaterThanOrEqual(Math.min(550, col) - 0.5);
+    expect(Math.abs((await frame.boundingBox())!.x - (await body.boundingBox())!.x), "on the column's left edge").toBeLessThanOrEqual(1);
+    await expect(fig.getByRole("link", { name: "Open on X" })).toBeVisible();
+    // a later resize keeps adjusting
+    await xFrame(ID)!.evaluate((m) => parent.postMessage(m, "*"), resize(812));
+    await expect.poll(() => frame.evaluate((el) => el.style.height)).toBe("812px");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), "no sideways scroll").toBeLessThanOrEqual(0);
+    await fig.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: join(SHOTS, `iy2-shown-${w}.jpg`), type: "jpeg", quality: 70 });
+
+    // YouTube: its still under the Play button, no player before the tap; a still that fails leaves the grey block
+    const yt = body.locator(`figure.ll-embed-yt[data-yt="${YT}"]`);
+    await yt.scrollIntoViewIfNeeded();
+    const still = yt.locator("img.ll-embed-still");
+    await expect(still).toHaveAttribute("src", `https://i.ytimg.com/vi/${YT}/hqdefault.jpg`);
+    await expect(still).toHaveAttribute("referrerpolicy", "no-referrer");
+    await expect.poll(() => still.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    await expect(yt.locator("iframe")).toHaveCount(0);
+    const ratio = await yt.locator("button[data-yt-play]").evaluate((el) => el.getBoundingClientRect().width / el.getBoundingClientRect().height);
+    expect(Math.abs(ratio - 16 / 9)).toBeLessThan(0.05);
+    const bad = body.locator(`figure.ll-embed-yt[data-yt="${YT_BAD}"]`);
+    await bad.scrollIntoViewIfNeeded();
+    await expect(bad.locator("img")).toHaveCount(0, { timeout: 15_000 });
+    await expect(bad.locator("button[data-yt-play]")).toBeVisible();
+    expect(outside.some((u) => u.includes("youtube-nocookie") || u.includes("youtube.com/"))).toBe(false);
+    await yt.locator("button[data-yt-play]").click();
+    await expect(yt.locator("iframe")).toHaveAttribute("src", `https://www.youtube-nocookie.com/embed/${YT}?autoplay=1`);
+    expect(outside.filter((u) => !/^https:\/\/(platform\.twitter\.com\/embed\/Tweet\.html\?|i\.ytimg\.com\/vi\/|www\.youtube-nocookie\.com\/embed\/)/.test(u)), "nothing else left").toEqual([]);
+    expect(await page.evaluate(() => (window as unknown as { __iy1?: number }).__iy1)).toBeUndefined();
+  });
+
+  test("X never says its size: after 10 seconds the hidden frame goes and the card stays", async ({ context, page }) => {
+    test.setTimeout(90_000);
+    await setUp(context);
+    await page.clock.install();
+    await page.goto(`/blog/${SLUG}`);
+    await expect(page.getByTestId("post-title")).toHaveText(POST.title, { timeout: 30_000 });
+    const fig = page.locator(`figure.ll-embed-x[data-x-post="${ID}"]`);
+    await fig.scrollIntoViewIfNeeded();
+    const frame = fig.locator("iframe[data-x-frame]");
+    await expect(frame).toHaveAttribute("data-x-frame", "waiting");
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __xm: string[] }).__xm.join(",")), { timeout: 15_000 }).toContain("twttr.private.results");
+    await page.clock.fastForward(9_000);
+    await expect(frame).toHaveCount(1);
+    await page.clock.fastForward(1_500);
+    await expect(frame).toHaveCount(0);
+    await expect(fig.locator("[data-x-body] .ll-embed-words")).toHaveText(WORDS);
+    await expect(fig.getByRole("link", { name: "Open on X" })).toBeVisible();
   });
 });
