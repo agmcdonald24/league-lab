@@ -43,7 +43,9 @@ agg as (
         sum(pat_made) as pat_made, sum(pat_att) as pat_att,
         -- snaps (only over games where known)
         sum(offense_snaps) as offense_snaps,
-        avg(offense_snap_pct) filter (where snaps_known) as avg_offense_snap_pct,
+        -- IX-6: summed in exact numeric arithmetic (a float avg over an unordered group changed its last bit on every
+        -- build, and the feature mart's prev_snap_pct with it: two builds of one state fed the fit different inputs)
+        (avg(offense_snap_pct::numeric) filter (where snaps_known))::float8 as avg_offense_snap_pct,
         -- team denominators over the player's appearance games only (plan §5/§6): a stat row
         -- without an appearance (special-teams-only game) must not widen the denominator
         sum(team_targets) filter (where played) as team_targets, sum(team_carries) filter (where played) as team_carries,
