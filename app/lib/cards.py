@@ -545,9 +545,8 @@ def reason_pieces(d: dict, side: str, f: dict, nicks: dict) -> list[tuple[float,
         if r <= 10:
             most = "the most" if r == 1 else f"the {_ordinal(r)}-most"
             out.append(((16.5 - r) / 15.5, "matchup", f"{name} is {where} {_nick(opp, nicks)}, who give up {most} points to {plural}"))
-        elif r >= 23:
-            k = 33 - r
-            fewest = "the fewest" if k == 1 else f"the {_ordinal(k)}-fewest"
+        elif r >= 23:                                                   # ---- IX-5: one direction, 1 = the most
+            fewest = "the fewest" if r == 32 else f"the {_ordinal(r)}-most"
             out.append(((16.5 - r) / 15.5, "matchup", f"{name} is {where} {_nick(opp, nicks)}, who give up {fewest} points to {plural}"))
     # ---- IF-3: the defense's regular corners changed: the rank stays a fact on the card but is never a reason (score 0,
     # its own kind: `_tiebreak` never picks it, `reason_line` never leads with it)
@@ -901,10 +900,9 @@ def rank_words(rank, position, n: int = 32) -> str:
         return ""
     k, n = int(rank), int(n or 32)
     pos = str(position or "").upper() or "his position's"
-    if k <= (n + 1) // 2:
-        return f"the most {pos} points allowed" if k == 1 else f"{_ordinal(k)}-most {pos} points allowed"
-    f = n + 1 - k
-    return f"the fewest {pos} points allowed" if f == 1 else f"{_ordinal(f)}-fewest {pos} points allowed"
+    if k == 1:                                     # ---- IX-5: one direction, 1 = the most (was the nearer end's "Nth-fewest")
+        return f"the most {pos} points allowed"
+    return f"the fewest {pos} points allowed" if k >= n else f"{_ordinal(k)}-most {pos} points allowed"
 # ---- end IF-4
 
 
@@ -1136,8 +1134,8 @@ def howto_cards() -> None:
             f"falls back on the points: under {COIN_FLIP:.0f} point apart is a coin flip, under {LEAN:.0f} a lean.\n"
             "- The named player is the one who would really come in: your best bench player for that spot, or, when "
             "moving a teammate over works better, the card says who moves.\n"
-            "- **5th-fewest WR points allowed** is the opponent's rank against that position this season, said one way "
-            "everywhere: the most points allowed is the matchup you want, the fewest the toughest.\n"
+            "- **5th-most WR points allowed** is the opponent's rank against that position this season, said one way "
+            "everywhere: 1 = the most points allowed, the matchup you want; the higher the number, the tougher.\n"
             "- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can "
             "replace, like your only kicker."
         )

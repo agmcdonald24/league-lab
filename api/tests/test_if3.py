@@ -89,7 +89,7 @@ def test_coin_flip_before_the_rank_breaks_the_tie():
     d, facts = _coin(None)
     tb = cards.tiebreak(d, facts, {"CAR": "Panthers", "CIN": "Bengals"})
     assert tb is not None and tb["kind"] == "matchup" and tb["pick"] == "Tuten" and not tb["matchup_uncertain"]
-    assert "give up the 2nd-fewest points to receivers" in cards.reason_line(d, facts, {"CAR": "Panthers"})
+    assert "give up the 31st-most points to receivers" in cards.reason_line(d, facts, {"CAR": "Panthers"})
 
 
 def test_coin_flip_with_the_corners_changed_is_not_settled_by_the_rank():
@@ -109,7 +109,7 @@ def test_the_matchup_piece_stays_a_fact_but_never_a_reason():
     d, facts = _coin("Carolina's starting corners changed (Horn is out)")
     pieces = cards.reason_pieces(d, "alt_", facts[WILLIAMS], {"CAR": "Panthers"})
     m = [p for p in pieces if p[1].startswith("matchup")]
-    assert m == [(0.0, "matchup_caveat", "Williams is on the road against the Panthers, who give up the 2nd-fewest "
+    assert m == [(0.0, "matchup_caveat", "Williams is on the road against the Panthers, who give up the 31st-most "
                                          "points to receivers, but Carolina's starting corners changed (Horn is out)")]
 
 

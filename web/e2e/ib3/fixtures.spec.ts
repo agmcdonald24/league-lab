@@ -33,13 +33,13 @@ test("Matchups: the tone is the signal, the rank small and one way, a corner cal
   const def = read(`matchups_defense_${DYNASTY}_12.json`);
   await page.goto(`/matchups?league=${DYNASTY}&team=12`);
   await expect(page.getByTestId("matchups-answer")).toContainText(/who gives up the .*: favorable\. Toughest: .* who gives up the .*: difficult\./s);
-  // every starter row: a tone chip (a word, not a color alone), the rank under it ("#N toughest vs POS")
+  // every starter row: a tone chip (a word, not a color alone), the rank under it ("#N of 32 vs POS"; IX-5: 1 = gives up the most)
   const chips = page.getByTestId("starters").getByTestId("tone-chip");
   await expect(chips).toHaveCount(8);
   for (const t of await chips.all()) {
     await expect(t).toHaveAttribute("data-tone", /favorable|neutral|difficult/);
     await expect(t).toContainText(/Favorable|Neutral|Difficult/);
-    await expect(t.getByTestId("rank-small")).toHaveText(/^#\d+ toughest vs (QB|RB|WR|TE)$/);
+    await expect(t.getByTestId("rank-small")).toHaveText(/^#\d+ of \d+ vs (QB|RB|WR|TE)$/);
   }
   // the heatmap's cells carry the API's tone; the legend names the three tones
   const ind = def.teams.find((t: { defense: string; position: string }) => t.defense === "IND" && t.position === "RB");

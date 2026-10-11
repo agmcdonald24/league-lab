@@ -787,8 +787,8 @@ COVER_SPLIT_NOTE = ("Shutdown here = the corner's rank over the season to date, 
 TONES = ("favorable", "neutral", "difficult")
 TONE_EDGE = 10 / 32          # the card's reason line (cards.reason_pieces): rank <= 10 "the Nth-most", >= 23 "the Nth-fewest"
 CERTAINTY = {"clear": "likely", "even": "unclear"}
-RANK_NOTE = ("#1 = the toughest for the offense: the defense that gives up the fewest points to the position, the "
-             "corner hardest to throw on.")
+RANK_NOTE = ("#1 = the defense that gives up the most points to the position: the matchup you want. A corner's rank "
+             "is his own: #1 = the corner hardest to throw on.")   # ---- IX-5: one direction for a defense (was "toughest")
 LABEL_TONE = {"shutdown": "difficult", "solid": "neutral", "target": "favorable"}
 
 
@@ -821,14 +821,14 @@ def tough_rank(rank_most, n) -> int | None:
 
 
 def gives_up_words(rank_most, n) -> str | None:
-    """'gives up the 2nd-most' / 'gives up the 7th-fewest' (the nearer end; the card's words)."""
+    """'gives up the 2nd-most' / 'gives up the 26th-most' (IX-5: one direction, 1 = the most; was the nearer end's
+    'Nth-fewest'); the ends 'the most' and 'the fewest'."""
     r = _rank(rank_most)
     if r is None or not n:
         return None
-    if r <= (int(n) + 1) / 2:
-        return "gives up the most" if r == 1 else f"gives up the {_ordinal(r)}-most"
-    k = int(n) + 1 - r
-    return "gives up the fewest" if k == 1 else f"gives up the {_ordinal(k)}-fewest"
+    if r == 1:
+        return "gives up the most"
+    return "gives up the fewest" if r >= int(n) else f"gives up the {_ordinal(r)}-most"
 
 
 def defense_meaning(rows: pd.DataFrame) -> pd.DataFrame:

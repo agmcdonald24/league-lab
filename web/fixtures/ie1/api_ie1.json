@@ -214,7 +214,7 @@
      "verdict": "clear",
      "how": "best bench player who can play RB2",
      "p_win": 0.70725,
-     "why": "McCaffrey is at home against the Broncos, who give up the 5th-most points to running backs; Tuten is on the road against the Bengals, who give up the 9th-fewest points to running backs.",
+     "why": "McCaffrey is at home against the Broncos, who give up the 5th-most points to running backs; Tuten is on the road against the Bengals, who give up the 24th-most points to running backs.",
      "status": "set",
      "strength": "clear",
      "in_sleeper_lineup": {
@@ -228,7 +228,7 @@
       },
       {
        "kind": "markdown",
-       "text": "McCaffrey is at home against the Broncos, who give up the 5th-most points to running backs; Tuten is on the road against the Bengals, who give up the 9th-fewest points to running backs."
+       "text": "McCaffrey is at home against the Broncos, who give up the 5th-most points to running backs; Tuten is on the road against the Bengals, who give up the 24th-most points to running backs."
       },
       {
        "kind": "caption",

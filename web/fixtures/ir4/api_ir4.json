@@ -1040,7 +1040,7 @@
 "game_state": null,
 "matchup": {
 "tone": "neutral",
-"words": "Los Angeles gives up the 13th-fewest points to quarterbacks."
+"words": "Los Angeles gives up the 20th-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1068,7 +1068,7 @@
 "game_state": null,
 "matchup": {
 "tone": "difficult",
-"words": "Tampa Bay gives up the 9th-fewest points to quarterbacks."
+"words": "Tampa Bay gives up the 24th-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1208,7 +1208,7 @@
 "game_state": null,
 "matchup": {
 "tone": "neutral",
-"words": "New York gives up the 15th-fewest points to quarterbacks."
+"words": "New York gives up the 18th-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1348,7 +1348,7 @@
 "game_state": null,
 "matchup": {
 "tone": "neutral",
-"words": "Jacksonville gives up the 11th-fewest points to quarterbacks."
+"words": "Jacksonville gives up the 22nd-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1376,7 +1376,7 @@
 "game_state": null,
 "matchup": {
 "tone": "difficult",
-"words": "Seattle gives up the 2nd-fewest points to quarterbacks."
+"words": "Seattle gives up the 31st-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1404,7 +1404,7 @@
 "game_state": null,
 "matchup": {
 "tone": "difficult",
-"words": "New York gives up the 5th-fewest points to quarterbacks."
+"words": "New York gives up the 28th-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1432,7 +1432,7 @@
 "game_state": null,
 "matchup": {
 "tone": "difficult",
-"words": "Tennessee gives up the 6th-fewest points to quarterbacks."
+"words": "Tennessee gives up the 27th-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1488,7 +1488,7 @@
 "game_state": null,
 "matchup": {
 "tone": "neutral",
-"words": "Cincinnati gives up the 14th-fewest points to quarterbacks."
+"words": "Cincinnati gives up the 19th-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1600,7 +1600,7 @@
 "game_state": null,
 "matchup": {
 "tone": "difficult",
-"words": "Chicago gives up the 10th-fewest points to quarterbacks."
+"words": "Chicago gives up the 23rd-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1628,7 +1628,7 @@
 "game_state": null,
 "matchup": {
 "tone": "difficult",
-"words": "New England gives up the 8th-fewest points to quarterbacks."
+"words": "New England gives up the 25th-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1656,7 +1656,7 @@
 "game_state": null,
 "matchup": {
 "tone": "difficult",
-"words": "Pittsburgh gives up the 3rd-fewest points to quarterbacks."
+"words": "Pittsburgh gives up the 30th-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1684,7 +1684,7 @@
 "game_state": null,
 "matchup": {
 "tone": "neutral",
-"words": "Green Bay gives up the 12th-fewest points to quarterbacks."
+"words": "Green Bay gives up the 21st-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -1712,7 +1712,7 @@
 "game_state": null,
 "matchup": {
 "tone": "difficult",
-"words": "San Francisco gives up the 7th-fewest points to quarterbacks."
+"words": "San Francisco gives up the 26th-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": {
@@ -1746,7 +1746,7 @@
 "game_state": null,
 "matchup": {
 "tone": "neutral",
-"words": "Baltimore gives up the 16th-fewest points to quarterbacks."
+"words": "Baltimore gives up the 17th-most points to quarterbacks."
 },
 "starter_unclear": null,
 "starter_corrected": null
@@ -7122,7 +7122,7 @@
 "rank_most": 26,
 "tough_rank": 7,
 "n": 32,
-"words": "gives up the 7th-fewest points to quarterbacks",
+"words": "gives up the 26th-most points to quarterbacks",
 "games": 4,
 "through_week": 4,
 "period": "2026, weeks 1–4",
@@ -7133,7 +7133,7 @@
 "adjusted_rank": {
 "rank_most": 23,
 "n": 32,
-"words": "gives up the 10th-fewest",
+"words": "gives up the 23rd-most",
 "scoring": "Half PPR scoring"
 }
 },
@@ -7169,7 +7169,7 @@
 "matchup_uncertain": false,
 "caveat": null,
 "sentences": [
-"San Francisco gives up the 7th-fewest points to quarterbacks (weeks 1–4, 4 games, Half PPR scoring, not adjusted for the offenses it faced).",
+"San Francisco gives up the 26th-most points to quarterbacks (weeks 1–4, 4 games, Half PPR scoring, not adjusted for the offenses it faced).",
 "Who plays for San Francisco's defense is checked for receivers (the corners) only; the projection counts the points it has allowed."
 ]
 },

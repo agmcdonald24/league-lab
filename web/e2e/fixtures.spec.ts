@@ -339,8 +339,8 @@ test("Trends: the answer first (below / above expectation), the gap bars, filter
 test("Matchups: your starters' best and toughest, the heatmap with your cells ringed, the cornerbacks your receivers face", async ({ page, isMobile }) => {
   await page.goto(dyn("/matchups"));
   await expect(page.getByTestId("matchups-answer")).toContainText(
-    // IB-3: the tone first, the rank in words (1 = toughest for the offense everywhere)
-    "Best matchup in your lineup: Jacory Croskey-Merritt (RB) vs IND, who gives up the 2nd-most to RBs: favorable. Toughest: Denzel Boston (WR) vs PIT, who gives up the 2nd-fewest to WRs: difficult.",
+    // IB-3: the tone first, the rank in words (IX-5: one direction everywhere, 1 = gives up the most)
+    "Best matchup in your lineup: Jacory Croskey-Merritt (RB) vs IND, who gives up the 2nd-most to RBs: favorable. Toughest: Denzel Boston (WR) vs PIT, who gives up the 31st-most to WRs: difficult.",
   );
   await expect(page.getByTestId("starters").getByTestId("player-row")).toHaveCount(8);
   await expect(page.getByTestId("heatmap").getByTestId("heat-row")).toHaveCount(32);

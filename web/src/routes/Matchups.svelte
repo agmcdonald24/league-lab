@@ -7,7 +7,7 @@
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
   // ---- IB-3: the tone first, one rank direction (1 = the toughest for the offense), the rank in words
-  import { certaintyOf, defenseTone, givesUpShort, TONE_COLOR, TONE_GLYPH, TONE_WORD, toneWash, toughRank, type Tone } from "../lib/research";
+  import { certaintyOf, defenseTone, givesUpShort, rankShort, TONE_COLOR, TONE_GLYPH, TONE_WORD, toneWash, type Tone } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
   import { toCb, toDefense } from "../lib/shapes";
   import { fmt, SERIES, teamLabel } from "../lib/theme";
@@ -49,10 +49,12 @@
   // ---- IB-3: per cell the tone and the rank the screen's way (the API's; mirrored for an answer saved before them)
   const nAt = (pos: string) => cell.size ? [...cell.values()].filter((t) => t.position === pos && t.rank != null).length || nDef : nDef;
   const toneOf = (t: DefenseCell | null | undefined): Tone | null => (t ? (t.tone ?? defenseTone(t.rank, t.n_ranked ?? nAt(t.position))) : null);
-  const toughOf = (t: DefenseCell | null | undefined) => (t ? (t.tough_rank ?? toughRank(t.rank, t.n_ranked ?? nAt(t.position))) : null);
+  // ---- IX-5: one direction for a defense's rank, 1 = gives up the most (was the "toughest" numbering, 1 = the fewest)
+  const mostOf = (t: DefenseCell | null | undefined) => (t?.rank ?? null);
+  const nOf = (t: DefenseCell) => t.n_ranked ?? nAt(t.position);
   const wordsOf = (t: DefenseCell | null | undefined) => (t ? givesUpShort(t.rank, t.n_ranked ?? nAt(t.position), t.position) : "");
-  // the best matchup = the defense that gives up the most (the highest "toughest" rank); the toughest = rank 1's end
-  const ranked = $derived(starters.filter((s) => toughOf(s.m) != null).sort((a, b) => toughOf(b.m)! - toughOf(a.m)!));
+  // the best matchup = the defense that gives up the most (rank 1); the toughest = the other end
+  const ranked = $derived(starters.filter((s) => mostOf(s.m) != null).sort((a, b) => mostOf(a.m)! - mostOf(b.m)!));
   const best = $derived(ranked[0] ?? null);
   const worst = $derived(ranked.length > 1 ? ranked[ranked.length - 1] : null);
   // ---- end IB-3
@@ -77,12 +79,11 @@
     const t = cell.get(`${row}|${col}`);
     const tone = toneOf(t);
     const pts = t?.points_allowed_pg == null ? "—" : t.points_allowed_pg.toFixed(1);
-    const k = toughOf(t);
     return {
       v: t?.points_allowed_pg ?? null,
       tone,
       display: tone && TONE_GLYPH[tone] ? `${TONE_GLYPH[tone]} ${pts}` : pts,
-      title: tone ? `${TONE_WORD[tone]} · ${wordsOf(t)} · #${k} toughest vs ${col}` : undefined,
+      title: tone && t ? `${TONE_WORD[tone]} · ${wordsOf(t)} · ${rankShort(t.rank, nOf(t), col)}` : undefined,
     };
   };
   // ---- end IB-3
@@ -248,7 +249,7 @@
                     href={withContext(`/player/${s.gsis_id}`, ctx)}
                     context={`${s.slot ?? s.position} · ${s.is_home ? "vs" : "at"} ${teamLabel(s.opponent)} · ${wordsOf(s.m)}`}
                   >
-                    {#snippet trailing()}{@render toneChip(toneOf(s.m), toughOf(s.m) == null ? "" : `#${toughOf(s.m)} toughest vs ${s.position}`)}{/snippet}
+                    {#snippet trailing()}{@render toneChip(toneOf(s.m), s.m ? rankShort(s.m.rank, nOf(s.m), s.position) : "")}{/snippet}
                   </PlayerRow>
                 </li>
               {/each}
@@ -292,7 +293,7 @@
         <Md
           block
           text={"- **Favorable** means the defense gives up a lot to his position (one of the 10 that give up the most): a matchup you want. **Difficult** is one of the 10 that give up the fewest. The rest are neutral.\n" +
-            "- **Ranks run one way on this screen: #1 is the toughest for the offense** — the defense that gives up the fewest points to the position, the corner hardest to throw on.\n" +
+            "- **A defense's rank runs one way, everywhere: #1 gives up the most points to the position** (the matchup you want); the higher the number, the tougher. A corner's rank is his own: #1 is the corner hardest to throw on.\n" +
             "- **The cornerback is context, not a reason to start or sit someone**: graded against past games, a likely shutdown or easy corner made no measurable difference to a receiver's points against his projection, so it moves no matchup here. A call marked **unclear** could be either corner.\n" +
             "- The side bar shows where his targets have gone since the start of last season (the offense's left, middle, right); the highlighted side is the one the named corner covers.\n" +
             `- A few weeks is a small sample: a defense's rank moves a lot early. Points here are in ${leagueName} scoring.`}

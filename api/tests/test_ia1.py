@@ -78,7 +78,7 @@ def test_reason_home_and_away():
     facts = {"A": {"is_home": True}, "B": {"is_home": False}}
     assert cards.reason_line(d, facts, NICKS) == (
         "Croskey-Merritt is at home against the Colts, who give up the 2nd-most points to running backs; "
-        "Hampton is on the road against the Seahawks, who give up the 7th-fewest points to running backs.")
+        "Hampton is on the road against the Seahawks, who give up the 26th-most points to running backs.")   # IX-5: one direction
 
 
 def test_reason_role_drop():
@@ -116,7 +116,7 @@ def test_reason_without_the_extra_read():
     and nothing at all still says the gap — never an empty line."""
     d = card(player_name="Bhayshul Tuten", alt_name="Kenny Gainwell", opponent="CIN", opp_rank=24, alt_opponent="GB",
              alt_opp_rank=15, margin=1.2, p_win=0.6)
-    assert cards.reason_line(d) == ("Tuten is against CIN, who give up the 9th-fewest points to running backs, but the "
+    assert cards.reason_line(d) == ("Tuten is against CIN, who give up the 24th-most points to running backs, but the "
                                     "projection still has him 1.2 points ahead.")
     assert cards.reason_line(card(player_name="A One", alt_name="B Two", margin=1.2, p_win=0.6)) == (
         "Nothing in the matchups or the roles splits them: the projection has One 1.2 points ahead.")

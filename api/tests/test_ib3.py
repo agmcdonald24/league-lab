@@ -48,10 +48,10 @@ def test_defense_tone_scales_with_the_defenses_ranked():
     assert research.defense_tone(20, 28) == "difficult"
 
 
-def test_rank_words_take_the_nearer_end():
+def test_rank_words_run_one_way():          # IX-5: one direction, 1 = the most (was the nearer end's "3rd-fewest")
     assert research.gives_up_words(1, 32) == "gives up the most"
     assert research.gives_up_words(2, 32) == "gives up the 2nd-most"
-    assert research.gives_up_words(30, 32) == "gives up the 3rd-fewest"
+    assert research.gives_up_words(30, 32) == "gives up the 30th-most"
     assert research.gives_up_words(32, 32) == "gives up the fewest"
     assert research.corner_words(17, 74) == "the 17th-hardest of 74 starting corners to throw on"
     assert research.corner_words(66, 74) == "the 9th-easiest of 74 starting corners to throw on"
@@ -91,7 +91,7 @@ def test_cornerback_tone_and_certainty_never_say_more_than_the_call():
 @pytest.mark.parametrize("league", [SCRUBS, DYNASTY])
 def test_defense_route_tone_and_one_direction(client, league):
     d = client.get(f"/api/matchups/defense?league={league}&team={ANDREW[league]}").json()
-    assert "#1 = the toughest for the offense" in d["rank_note"]
+    assert "#1 = the defense that gives up the most points" in d["rank_note"]   # IX-5: one direction
     df = pd.DataFrame(d["teams"])
     for pos, g in df[df["rank_std"].notna()].groupby("position"):
         n = len(g)
@@ -103,7 +103,7 @@ def test_defense_route_tone_and_one_direction(client, league):
         assert (g.loc[g["tough_rank"] <= e, "tone"] == "difficult").all()
         assert (g.loc[g["tough_rank"] > n - e, "tone"] == "favorable").all()
         assert set(g["tone"]) <= set(research.TONES)
-        assert g["rank_words"].str.match(r"^gives up the (most|fewest|\d+(st|nd|rd|th)-(most|fewest)) points to ").all()
+        assert g["rank_words"].str.match(r"^gives up the (most|fewest|\d+(st|nd|rd|th)-most) points to ").all()
 
 
 @needs_db

@@ -126,7 +126,7 @@ test("the drawer is focused on the decision: role words, the ledger and the sche
   await tap(page, pane.getByTestId("pane-schedule").locator("summary"), isMobile);
   const sched = pane.getByTestId("pane-schedule-table");
   await expect(sched.getByTestId("schedule-row").first()).toContainText("at CAR");
-  await expect(sched.getByTestId("schedule-row").first()).toContainText("12th-fewest WR points allowed"); // rank 21 of 32
+  await expect(sched.getByTestId("schedule-row").first()).toContainText("21st-most WR points allowed"); // rank 21 of 32 (IX-5: one direction, 1 = the most)
   await expect(sched.getByTestId("schedule-row").first()).toContainText("10.0");
   await expect(sched.getByTestId("schedule-row").filter({ hasText: "Bye" })).toHaveCount(1);
   await noSidewaysScroll(page);

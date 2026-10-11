@@ -6,13 +6,12 @@ function ordinal(k: number): string {
   return `${k}${s}`;
 }
 
-/** 31 of 32 vs WR → "2nd-fewest WR points allowed"; 5 → "5th-most WR points allowed"; "" when unknown. */
+/** 5 of 32 vs WR → "5th-most WR points allowed"; 31 → "31st-most" (IX-5: one direction, 1 = the most); 32 → "the fewest"; "" when unknown. */
 export function rankWords(rank: number | null | undefined, position: string | null | undefined, n = 32): string {
   if (rank == null || !Number.isFinite(rank)) return "";
   const pos = (position ?? "").toUpperCase() || "his position's";
   const k = Math.round(rank);
-  if (k <= Math.floor((n + 1) / 2)) return k === 1 ? `the most ${pos} points allowed` : `${ordinal(k)}-most ${pos} points allowed`;
-  const f = n + 1 - k;
-  return f === 1 ? `the fewest ${pos} points allowed` : `${ordinal(f)}-fewest ${pos} points allowed`;
+  if (k === 1) return `the most ${pos} points allowed`;
+  return k >= n ? `the fewest ${pos} points allowed` : `${ordinal(k)}-most ${pos} points allowed`;
 }
 // ---- end IF-4

@@ -66,8 +66,8 @@ export function l3Season(l3: number | null | undefined, season: number | null | 
 }
 // ---- end IA-1
 
-// ---- IB-3 (Wave I-B): matchup meaning first. Favorable / Neutral / Difficult is the signal; the rank runs one way on
-// the whole screen (1 = the toughest for the offense: the defense that gives up the fewest, the corner hardest to
+// ---- IB-3 (Wave I-B): matchup meaning first. Favorable / Neutral / Difficult is the signal; a defense's rank runs one
+// way everywhere (IX-5: 1 = gives up the most; the "toughest" numbering is gone; a corner's own rank: 1 = the hardest to
 // throw on) and is said in words where that reads better. The API sends `tone`, `tough_rank`, `rank_words` (defense)
 // and `tone`, `certainty`, `named_corners` (cornerbacks); these mirror research.py for an answer saved before them.
 export type Tone = "favorable" | "neutral" | "difficult";
@@ -88,22 +88,22 @@ export function defenseTone(rankMost: number | null | undefined, n: number): Ton
   return rankMost <= e ? "favorable" : rankMost >= n + 1 - e ? "difficult" : "neutral";
 }
 
-/** The screen's rank: 1 = gives up the fewest (the toughest for the offense). */
-export const toughRank = (rankMost: number | null | undefined, n: number) =>
-  rankMost === null || rankMost === undefined || !n ? null : n + 1 - rankMost;
 
 export function ordinal(k: number): string {
   const s = k % 100 >= 10 && k % 100 <= 20 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[k % 10] ?? "th";
   return `${k}${s}`;
 }
 
-/** "gives up the 2nd-most" / "gives up the 7th-fewest" (the nearer end). */
+/** "gives up the 2nd-most" / "gives up the 26th-most" (IX-5: one direction, 1 = the most); the ends "the most", "the fewest". */
 export function givesUpWords(rankMost: number | null | undefined, n: number): string | null {
   if (rankMost === null || rankMost === undefined || !n) return null;
-  if (rankMost <= (n + 1) / 2) return rankMost === 1 ? "gives up the most" : `gives up the ${ordinal(rankMost)}-most`;
-  const k = n + 1 - rankMost;
-  return k === 1 ? "gives up the fewest" : `gives up the ${ordinal(k)}-fewest`;
+  if (rankMost === 1) return "gives up the most";
+  return rankMost >= n ? "gives up the fewest" : `gives up the ${ordinal(rankMost)}-most`;
 }
+
+/** The rank under a tone chip, one direction (IX-5; was "#N toughest vs POS"): "#2 of 32 vs RB" (1 = gives up the most). */
+export const rankShort = (rankMost: number | null | undefined, n: number, pos: string) =>
+  rankMost === null || rankMost === undefined || !n ? "" : `#${rankMost} of ${n} vs ${pos}`;
 
 const PLURAL: Record<string, string> = { QB: "QBs", RB: "RBs", WR: "WRs", TE: "TEs", K: "kickers" };
 /** The short form for a row: "gives up the 2nd-most to RBs". */

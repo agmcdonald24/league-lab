@@ -154,7 +154,7 @@
       "rank_most": 21,
       "tough_rank": 12,
       "n": 32,
-      "words": "gives up the 12th-fewest points to receivers",
+      "words": "gives up the 21st-most points to receivers",
       "games": 2,
       "through_week": 2,
       "period": "2026, weeks 1–2",
@@ -165,7 +165,7 @@
       "adjusted_rank": {
        "rank_most": 17,
        "n": 32,
-       "words": "gives up the 16th-fewest",
+       "words": "gives up the 17th-most",
        "scoring": "League of Scrubs scoring"
       }
      },
@@ -288,7 +288,7 @@
      "matchup_uncertain": true,
      "caveat": "Carolina's starting corners changed (Jackson and Horn are on injured reserve)",
      "sentences": [
-      "Carolina gives up the 12th-fewest points to receivers (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced), but with different corners: Jackson and Horn are on injured reserve (ESPN, Sep 30); Evans, Lee and Smith-Wade are expected to start (Evans and Lee unranked: insufficient snaps; Smith-Wade the 30th-easiest of 74 starting corners to throw on).",
+      "Carolina gives up the 21st-most points to receivers (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced), but with different corners: Jackson and Horn are on injured reserve (ESPN, Sep 30); Evans, Lee and Smith-Wade are expected to start (Evans and Lee unranked: insufficient snaps; Smith-Wade the 30th-easiest of 74 starting corners to throw on).",
       "The historical rank is less representative this week (both starting corners changed), so treat it cautiously: it does not settle a close call. Who plays corner is contextual only; not in the forecast."
      ]
     }
@@ -438,7 +438,7 @@
       "rank_most": 24,
       "tough_rank": 9,
       "n": 32,
-      "words": "gives up the 9th-fewest points to running backs",
+      "words": "gives up the 24th-most points to running backs",
       "games": 2,
       "through_week": 2,
       "period": "2026, weeks 1–2",
@@ -449,7 +449,7 @@
       "adjusted_rank": {
        "rank_most": 24,
        "n": 32,
-       "words": "gives up the 9th-fewest",
+       "words": "gives up the 24th-most",
        "scoring": "League of Scrubs scoring"
       }
      },
@@ -484,7 +484,7 @@
      "matchup_uncertain": false,
      "caveat": null,
      "sentences": [
-      "Cincinnati gives up the 9th-fewest points to running backs (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced).",
+      "Cincinnati gives up the 24th-most points to running backs (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced).",
       "Who plays for Cincinnati's defense is checked for receivers (the corners) only; the projection counts the points it has allowed."
      ]
     }
@@ -836,7 +836,7 @@
      "rank_most": 21,
      "tough_rank": 12,
      "n": 32,
-     "words": "gives up the 12th-fewest points to receivers",
+     "words": "gives up the 21st-most points to receivers",
      "games": 2,
      "through_week": 2,
      "period": "2026, weeks 1–2",
@@ -847,7 +847,7 @@
      "adjusted_rank": {
       "rank_most": 17,
       "n": 32,
-      "words": "gives up the 16th-fewest",
+      "words": "gives up the 17th-most",
       "scoring": "League of Scrubs scoring"
      }
     },
@@ -970,7 +970,7 @@
     "matchup_uncertain": true,
     "caveat": "Carolina's starting corners changed (Jackson and Horn are on injured reserve)",
     "sentences": [
-     "Carolina gives up the 12th-fewest points to receivers (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced), but with different corners: Jackson and Horn are on injured reserve (ESPN, Sep 30); Evans, Lee and Smith-Wade are expected to start (Evans and Lee unranked: insufficient snaps; Smith-Wade the 30th-easiest of 74 starting corners to throw on).",
+     "Carolina gives up the 21st-most points to receivers (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced), but with different corners: Jackson and Horn are on injured reserve (ESPN, Sep 30); Evans, Lee and Smith-Wade are expected to start (Evans and Lee unranked: insufficient snaps; Smith-Wade the 30th-easiest of 74 starting corners to throw on).",
      "The historical rank is less representative this week (both starting corners changed), so treat it cautiously: it does not settle a close call. Who plays corner is contextual only; not in the forecast."
     ]
    },

@@ -102,7 +102,7 @@
       },
       {
        "kind": "caption",
-       "text": "Bhayshul Tuten outscores Jacory Croskey-Merritt 56% of the time \u2014 a lean. 9.72 vs 9.19 projected: 0.53 apart.  \nTypical range (the middle 50%): Bhayshul Tuten 5\u201315, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Bhayshul Tuten 2\u201322, Jacory Croskey-Merritt 1\u201319.  \nBhayshul Tuten vs CIN (9th-fewest RB points allowed) \u00b7 Jacory Croskey-Merritt vs IND (2nd-most RB points allowed)"
+       "text": "Bhayshul Tuten outscores Jacory Croskey-Merritt 56% of the time \u2014 a lean. 9.72 vs 9.19 projected: 0.53 apart.  \nTypical range (the middle 50%): Bhayshul Tuten 5\u201315, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Bhayshul Tuten 2\u201322, Jacory Croskey-Merritt 1\u201319.  \nBhayshul Tuten vs CIN (24th-most RB points allowed) \u00b7 Jacory Croskey-Merritt vs IND (2nd-most RB points allowed)"
       }
      ],
      "key": "12490",
@@ -142,7 +142,7 @@
       },
       {
        "kind": "caption",
-       "text": "Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time \u2014 a lean. 11.28 vs 9.19 projected: 2.09 apart.  \nTypical range (the middle 50%): Omarion Hampton 6\u201315, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Omarion Hampton 3\u201323, Jacory Croskey-Merritt 1\u201319.  \nOmarion Hampton vs SEA (7th-fewest RB points allowed) \u00b7 Jacory Croskey-Merritt vs IND (2nd-most RB points allowed)"
+       "text": "Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time \u2014 a lean. 11.28 vs 9.19 projected: 2.09 apart.  \nTypical range (the middle 50%): Omarion Hampton 6\u201315, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Omarion Hampton 3\u201323, Jacory Croskey-Merritt 1\u201319.  \nOmarion Hampton vs SEA (26th-most RB points allowed) \u00b7 Jacory Croskey-Merritt vs IND (2nd-most RB points allowed)"
       }
      ],
      "key": "12507",
@@ -579,7 +579,7 @@
      "market_points": null
     }
    ],
-   "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls: who to start, then **why** in one sentence (the matchup, his share of his team's carries or targets, an injury, the betting line). On a coin flip the card says so and names the tiebreaker.\n- The small print starts with **how often your starter outscores the other player** this week, from both players' ranges: 50\u201355% is a coin flip (go with the latest news), 55\u201365% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **5th-fewest WR points allowed** is the opponent's rank against that position this season, said one way everywhere: the most points allowed is the matchup you want, the fewest the toughest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
+   "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls: who to start, then **why** in one sentence (the matchup, his share of his team's carries or targets, an injury, the betting line). On a coin flip the card says so and names the tiebreaker.\n- The small print starts with **how often your starter outscores the other player** this week, from both players' ranges: 50\u201355% is a coin flip (go with the latest news), 55\u201365% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **5th-most WR points allowed** is the opponent's rank against that position this season, said one way everywhere: 1 = the most points allowed, the matchup you want; the higher the number, the tougher.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
    "movers": [],
    "availability": {
     "checked_at": "2026-10-03T23:18:38.694396Z",
@@ -846,7 +846,7 @@
       },
       {
        "kind": "caption",
-       "text": "Jameson Williams projects 0.26 more on average; Bhayshul Tuten outscores him 52% of the time \u2014 a coin flip. 9.98 vs 9.72 projected: 0.26 apart.  \nTypical range (the middle 50%): Jameson Williams 5\u201315, Bhayshul Tuten 5\u201315.  \nA bad week to a good week: Jameson Williams 2\u201319, Bhayshul Tuten 2\u201322.  \nJameson Williams vs CAR (12th-fewest WR points allowed) \u00b7 Bhayshul Tuten vs CIN (9th-fewest RB points allowed)"
+       "text": "Jameson Williams projects 0.26 more on average; Bhayshul Tuten outscores him 52% of the time \u2014 a coin flip. 9.98 vs 9.72 projected: 0.26 apart.  \nTypical range (the middle 50%): Jameson Williams 5\u201315, Bhayshul Tuten 5\u201315.  \nA bad week to a good week: Jameson Williams 2\u201319, Bhayshul Tuten 2\u201322.  \nJameson Williams vs CAR (21st-most WR points allowed) \u00b7 Bhayshul Tuten vs CIN (24th-most RB points allowed)"
       }
      ],
      "key": "8148",
@@ -890,7 +890,7 @@
       },
       {
        "kind": "caption",
-       "text": "Javonte Williams outscores MarShawn Lloyd 71% of the time \u2014 clear. 12.65 vs 8.02 projected: 4.63 apart.  \nTypical range (the middle 50%): Javonte Williams 8\u201317, MarShawn Lloyd 3\u201311.  \nA bad week to a good week: Javonte Williams 4\u201324, MarShawn Lloyd 1\u201318.  \nJavonte Williams vs HOU (4th-fewest RB points allowed) \u00b7 MarShawn Lloyd vs TB (15th-fewest RB points allowed)"
+       "text": "Javonte Williams outscores MarShawn Lloyd 71% of the time \u2014 clear. 12.65 vs 8.02 projected: 4.63 apart.  \nTypical range (the middle 50%): Javonte Williams 8\u201317, MarShawn Lloyd 3\u201311.  \nA bad week to a good week: Javonte Williams 4\u201324, MarShawn Lloyd 1\u201318.  \nJavonte Williams vs HOU (29th-most RB points allowed) \u00b7 MarShawn Lloyd vs TB (18th-most RB points allowed)"
       }
      ],
      "key": "7588",
@@ -912,7 +912,7 @@
      "verdict": "clear",
      "how": "best bench player for the slot (the lineup would shuffle more than one player)",
      "p_win": 0.670175,
-     "why": "Olave gets 27% of his team's targets; Tuten is on the road against the Bengals, who give up the 9th-fewest points to running backs.",
+     "why": "Olave gets 27% of his team's targets; Tuten is on the road against the Bengals, who give up the 24th-most points to running backs.",
      "status": "set",
      "strength": "clear",
      "in_sleeper_lineup": {
@@ -926,11 +926,11 @@
       },
       {
        "kind": "markdown",
-       "text": "Olave gets 27% of his team's targets; Tuten is on the road against the Bengals, who give up the 9th-fewest points to running backs."
+       "text": "Olave gets 27% of his team's targets; Tuten is on the road against the Bengals, who give up the 24th-most points to running backs."
       },
       {
        "kind": "caption",
-       "text": "Chris Olave outscores Bhayshul Tuten 67% of the time \u2014 clear. 15.16 vs 9.72 projected: 5.18 apart.  \nTypical range (the middle 50%): Chris Olave 9\u201320, Bhayshul Tuten 5\u201315.  \nA bad week to a good week: Chris Olave 6\u201324, Bhayshul Tuten 2\u201322.  \nChris Olave vs ATL (12th-most WR points allowed) \u00b7 Bhayshul Tuten vs CIN (9th-fewest RB points allowed)"
+       "text": "Chris Olave outscores Bhayshul Tuten 67% of the time \u2014 clear. 15.16 vs 9.72 projected: 5.18 apart.  \nTypical range (the middle 50%): Chris Olave 9\u201320, Bhayshul Tuten 5\u201315.  \nA bad week to a good week: Chris Olave 6\u201324, Bhayshul Tuten 2\u201322.  \nChris Olave vs ATL (12th-most WR points allowed) \u00b7 Bhayshul Tuten vs CIN (24th-most RB points allowed)"
       }
      ],
      "key": "8144",
@@ -1349,7 +1349,7 @@
      "market_points": null
     }
    ],
-   "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls: who to start, then **why** in one sentence (the matchup, his share of his team's carries or targets, an injury, the betting line). On a coin flip the card says so and names the tiebreaker.\n- The small print starts with **how often your starter outscores the other player** this week, from both players' ranges: 50\u201355% is a coin flip (go with the latest news), 55\u201365% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **5th-fewest WR points allowed** is the opponent's rank against that position this season, said one way everywhere: the most points allowed is the matchup you want, the fewest the toughest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
+   "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls: who to start, then **why** in one sentence (the matchup, his share of his team's carries or targets, an injury, the betting line). On a coin flip the card says so and names the tiebreaker.\n- The small print starts with **how often your starter outscores the other player** this week, from both players' ranges: 50\u201355% is a coin flip (go with the latest news), 55\u201365% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **5th-most WR points allowed** is the opponent's rank against that position this season, said one way everywhere: 1 = the most points allowed, the matchup you want; the higher the number, the tougher.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
    "movers": [],
    "availability": null,
    "lineup_value": 120.31,
