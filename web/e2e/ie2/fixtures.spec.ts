@@ -91,7 +91,8 @@ test("the trade result: assets → effect → starters in / out → backup → t
   await expect(page.getByTestId("trade-their-side")).toContainText(d.their_effect_words);
   await expect(page.getByTestId("trade-alternative")).toContainText(d.alternative.words); // was trade-hold (IR-2: one alternative line)
   // the order on the page (top to bottom) and the arithmetic below it
-  const order = ["trade-assets", "trade-effect", "trade-alternative", "trade-starters", "trade-backup", "trade-their-side", "why", "lineups-x"];
+  // IZ-2 (on purpose): the five questions' order — your starters, theirs, the cost beyond the package, the other ways
+  const order = ["trade-assets", "trade-effect", "trade-starters", "trade-their-side", "trade-backup", "trade-alternative", "why", "lineups-x"];
   const ys = [];
   for (const t of order) ys.push(await top(page, t));
   console.log(`IE-2 ${info.project.name}: result order y = ${ys.map((y) => Math.round(y)).join(" < ")}`);

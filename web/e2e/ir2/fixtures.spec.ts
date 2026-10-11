@@ -92,19 +92,19 @@ test("Folk for Stafford + Reichard: one basis, the slots paired, one depth sente
   // (1) the tiles, the card and the recommendation read one basis
   const tiles = page.getByTestId("fit-tiles");
   const tileTexts = await tiles.innerText();
-  const card = page.getByTestId("calc-trade-card");
-  const yourEffect = await card.getByTestId("card-your-effect").innerText();
-  const theirEffect = await card.getByTestId("card-their-effect").innerText();
+  // IZ-2 (on purpose): the calculator says the effects once, in "Lineup points" (II-1's card is the Trade Finder's)
+  const lineupPts = await page.getByTestId("apart-lineup").innerText();
+  const [yourEffect, theirEffect] = lineupPts.split(";");
   const tileNums = (tileTexts.replace(/\u2212/g, "-").match(/[+-]\d+\.\d|no change/g) ?? []).map(num);
   // the four tiles' values: you this week, you window, them this week, them window (the captions are totals, unsigned)
   expect(tileNums.length).toBeGreaterThanOrEqual(4);
   const [youWeek, youWin, themWeek, themWin] = tileNums;
   // IT-1: one minus sign — the card's sentences say a negative number as the tiles do ("−0.3", never "-0.3")
   const sgn = (x: number) => `${x > 0 ? "+" : "\u2212"}${Math.abs(x).toFixed(1)}`;
-  expect(yourEffect).toContain(youWeek === 0 ? "no change this week" : `${sgn(youWeek)} this week`);
-  expect(yourEffect).toContain(youWin === 0 ? "no change over" : `${sgn(youWin)} over weeks`);
-  expect(theirEffect).toContain(themWeek === 0 ? "no change this week" : `${sgn(themWeek)} this week`);
-  expect(theirEffect).toContain(themWin === 0 ? "no change over" : `${sgn(themWin)} over weeks`);
+  const s1 = (x: number) => (Math.abs(x) < 0.05 ? "+0.0" : sgn(x));
+  expect(yourEffect).toContain(`you ${s1(youWin)} over weeks`);
+  expect(yourEffect).toContain(`(${s1(youWeek)} this week)`);
+  expect(theirEffect).toContain(`${s1(themWin)} (${s1(themWeek)} this week)`);
   for (const t of [yourEffect, theirEffect, await page.getByTestId("verdict").innerText(), await page.getByTestId("recommendation").innerText()])
     expect(t, "a hyphen as a minus sign").not.toMatch(/(^|[\s(])-\d/);
   // IT-1: the tiles say which total they are, the roster-only total other screens show named beside them
@@ -115,12 +115,10 @@ test("Folk for Stafford + Reichard: one basis, the slots paired, one depth sente
   if (themWin > 2) expect(label).toMatch(/Improves/);
   await expect(page.getByTestId("basis")).toContainText("Against realistic replacements");
   const rec = (await page.getByTestId("recommendation").innerText()).split(":")[0];
-  await expect(page.getByTestId("calc-card")).toContainText(`Worth proposing? ${rec}`);
+  expect(rec).toMatch(/^(Worth proposing|Not worth proposing)$/); // IZ-2: one recommendation (the card under it is gone)
 
   // (2) one depth definition: the backup line and the card's depth line are one sentence
   const backup = (await page.getByTestId("trade-backup").innerText()).replace(/^Backup coverage: /, "").replace(/\.$/, "");
-  const depth = await card.getByTestId("card-depth").innerText();
-  expect(depth.toLowerCase()).toContain(backup.split(";")[0].toLowerCase());
   expect(backup).toContain("who can play in week");
 
   // the roster-only result is there, labelled as an explanation

@@ -130,12 +130,12 @@ test("the calculator: a kicker for a starter is labelled implausible, from the s
   // ANOTA ONE's starting QB (Dak Prescott); their kicker is as good as the free pool's best, so a kicker is not worth a
   // starter to them
   await page.goto(`/trade-calc?league=${SCRUBS}&team=2&partner=10&give=650&get=3294`);
-  const card = page.getByTestId("calc-trade-card");
-  await expect(card.getByTestId("card-plausibility")).toHaveText("Implausible", { timeout: WAIT });
-  await expect(card.getByTestId("card-refuse")).toContainText("A K for a starter (Dak Prescott)");
-  await expect(card.getByTestId("card-alternatives")).toContainText("Yours:");
-  await expect(card.getByTestId("card-alternatives")).toContainText("Theirs:");
-  await expect(card.getByTestId("card-credible")).toHaveCount(0);
+  // IZ-2 (on purpose): the calculator says the card's parts in its five questions (the card is the Trade Finder's)
+  await expect(page.getByTestId("five-plausibility")).toHaveText("Implausible", { timeout: WAIT });
+  await expect(page.getByTestId("five-refuse")).toContainText("A K for a starter (Dak Prescott)");
+  await expect(page.getByTestId("trade-alternative")).toContainText("Against your best waiver move:");
+  await expect(page.getByTestId("three-ways")).toBeVisible();
+  await expect(page.getByTestId("recommendation")).not.toContainText(/^Worth proposing/);
   await noSidewaysScroll(page);
   await shot(page, "scrubs2-calc-k-for-qb", info.project.name);
 });
