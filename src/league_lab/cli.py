@@ -833,6 +833,40 @@ def ingest_sleeper_projections_cmd(
     raise typer.Exit(1 if _print_results(results) else 0)
 
 
+# ---- IZ-1 (Wave I-Z): Sleeper's projections for past weeks (docs/METRICS.md § hh1.0); exit 0 unless it crashes
+@ingest_app.command("sleeper-history")
+def ingest_sleeper_history_cmd(
+    offline: bool = typer.Option(False, help="Only replay data/raw/sleeper/projections_history into the weeks not held; no network"),
+):
+    """IZ-1: Sleeper's line for every past week it still serves (2023-2025 weeks 1-18, and the current season's weeks
+    with no snapshot saved before kickoff) -> ops.sleeper_history, marked as served after the week (never the record's
+    input). Weeks already held are never asked again; a failed week is asked again the next night (exit 0)."""
+    from .ingest.sleeper_history import report_lines, run_history
+
+    with connect() as conn:
+        migrate(conn)
+        res = run_history(conn, offline=offline)
+    for line in report_lines(res):
+        console.print(line, markup=False, highlight=False)
+
+
+@app.command("h2h")
+def h2h_cmd(
+    md: Path | None = typer.Option(None, help="Also write the summary table (markdown) to this file"),
+    ours: bool = typer.Option(True, help="Build the live model's walk-forward rows first when they are missing or another version's"),
+):
+    """IZ-1: hh1.0 -- us against Sleeper on the weeks Sleeper still serves (ops.sleeper_h2h) and the one table the
+    nightly's summary shows. Exit 0 unless it crashes (no history yet = an empty grade, said so)."""
+    from .h2h import run
+
+    text = run(build_ours=ours)
+    if md is not None:
+        md.parent.mkdir(parents=True, exist_ok=True)
+        md.write_text(text)
+    print(text, end="")
+# ---- end IZ-1
+
+
 # ---- IQ-4 (Wave I-Q): the trust guard — every public list audited (league_lab.audit); exit 0 always
 @app.command("audit-lists")
 def audit_lists_cmd():
