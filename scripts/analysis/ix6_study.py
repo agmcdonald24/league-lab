@@ -47,7 +47,7 @@ def half_ppr():
 
     with connect() as conn:
         refs = P.reference_scorings(conn)
-    key = next(k for k in refs if "half" in k.lower())
+    key = next(k for k, v in refs.items() if v[0].lower().startswith("half ppr"))
     return key, refs[key][1]
 
 
