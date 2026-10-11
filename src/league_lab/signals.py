@@ -80,7 +80,7 @@ log = logging.getLogger(__name__)
 
 # ra1.2 (projection v3, 2026-10-01): same rule; int_player_game_role now keeps the Raiders 2016-19 and the Chargers
 # 2016 (one code per franchise), so every season is recomputed once under the new version
-SIGNALS_VERSION = "ra1.2"
+SIGNALS_VERSION = "ra1.3"   # IX-6: a game left hurt is not a role change (ra1.2 read it as a smaller role)
 
 # ------------------------------------------------------------------------------ the alert rule (fixed constants: a change is a new version)
 POSITION_METRICS: dict[str, tuple[str, ...]] = {
@@ -155,6 +155,7 @@ class Game:
     report_status: str | None = None
     roster_status: str | None = None
     game_id: str | None = None
+    hurt_early: bool = False          # ---- IX-6: left early with the injury note naming him (lf1.0's LE-A)
 
     def share(self, metric: str) -> float | None:
         if metric == "snap_share":
@@ -469,8 +470,10 @@ def alerts_for_season(games: list[Game], prev_level: dict[str, float], next_repo
     next_reports = next_reports or {}
     for gid in sorted(by_player):
         full = sorted(by_player[gid], key=lambda g: g.week)
-        seq = [g for g in full if g.status != "out_injured"]
-        hurt = [g.week for g in full if g.status == "out_injured"]
+        # ---- IX-6: a game he left hurt (the injury note named him; lf1.0's LE-A) is an injury, not a role: like a game
+        # missed injured, it raises no alert, is no "before" game for a later one, and the game after it is a return
+        seq = [g for g in full if g.status != "out_injured" and not g.hurt_early]
+        hurt = [g.week for g in full if g.status == "out_injured" or g.hurt_early]
         after_injury = [j > 0 and any(seq[j - 1].week < w < seq[j].week for w in hurt) for j in range(len(seq))]
         for i in range(1, len(seq)):
             g = seq[i]
@@ -553,10 +556,22 @@ def alert_rows(alerts: list[Alert], run_at: datetime | None = None) -> pd.DataFr
 
 # ------------------------------------------------------------------------------ loading
 ROLE_SQL = """
-select gsis_id, season, week, game_id, team, position, player_name, status, report_status, roster_status,
-       snap_share::float8, route_share::float8, targets::float8, team_targets::float8, carries::float8, team_carries::float8,
-       team_margin::float8
-from intermediate.int_player_game_role where season = any(%s) order by season, gsis_id, week"""
+select r.gsis_id, r.season, r.week, r.game_id, r.team, r.position, r.player_name, r.status, r.report_status, r.roster_status,
+       r.snap_share::float8, r.route_share::float8, r.targets::float8, r.team_targets::float8, r.carries::float8,
+       r.team_carries::float8, r.team_margin::float8, {hurt} as hurt_early
+from intermediate.int_player_game_role as r {join}
+where r.season = any(%s) order by r.season, r.gsis_id, r.week"""
+# ---- IX-6: the game he left hurt (int_player_game_on_field.left_early_a: the snap drop and the injury note naming him)
+HURT_JOIN = ("left join intermediate.int_player_game_on_field as lf on lf.gsis_id = r.gsis_id and lf.game_id = r.game_id",
+             "coalesce(lf.left_early_a, false)")
+
+
+def role_sql(cur: psycopg.Cursor) -> str:
+    """ROLE_SQL with the left-hurt mark when the model is built (a database before IX-1's model: no game is marked)."""
+    cur.execute("select to_regclass('intermediate.int_player_game_on_field') is not null")
+    join, hurt = HURT_JOIN if cur.fetchone()[0] else ("", "false")
+    return ROLE_SQL.format(join=join, hurt=hurt)
+# ---- end IX-6
 
 PREV_SQL = """
 select gsis_id, season, percentile_cont(0.5) within group (order by snap_share)::float8 as level
@@ -617,7 +632,8 @@ def load_games(conn: psycopg.Connection, seasons: list[int], routes: bool = True
     """The rule's inputs. ``routes=False`` drops the route share: the rule as it runs in season (the NFL
     publishes participation after the season), for the calibration and the precision numbers."""
     with conn.cursor() as cur:
-        cur.execute(ROLE_SQL if routes else ROLE_SQL.replace("route_share::float8", "null::float8 as route_share"), (seasons,))
+        sql = role_sql(cur)                                                                   # ---- IX-6
+        cur.execute(sql if routes else sql.replace("r.route_share::float8", "null::float8 as route_share"), (seasons,))
         names = [d.name for d in cur.description]
         by_season: dict[int, list[Game]] = defaultdict(list)
         for r in cur.fetchall():
@@ -627,7 +643,7 @@ def load_games(conn: psycopg.Connection, seasons: list[int], routes: bool = True
                 player_name=d["player_name"], status=d["status"], snap_share=_none(d["snap_share"]), route_share=_none(d["route_share"]),
                 targets=float(d["targets"] or 0), team_targets=_none(d["team_targets"]), carries=float(d["carries"] or 0),
                 team_carries=_none(d["team_carries"]), team_margin=_none(d["team_margin"]), report_status=d["report_status"],
-                roster_status=d["roster_status"], game_id=d["game_id"]))
+                roster_status=d["roster_status"], game_id=d["game_id"], hurt_early=bool(d.get("hurt_early"))))
         cur.execute(PREV_SQL, ([s - 1 for s in seasons],))
         prev = {(g, int(s) + 1): float(v) for g, s, v in cur.fetchall() if v is not None}
         cur.execute(NEXT_REPORT_SQL, (seasons, seasons))
