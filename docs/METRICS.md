@@ -6082,7 +6082,7 @@ snaps). The screen says 2026's is an estimate.
 
 **By the rule, LE-B ships** (the higher F1). Plainly: LE-B's mark is right less than half the time (the "no touch after
 half-time" arm also catches a player pulled from a lost role or a blowout), while LE-A is right 19 times in 20 but finds
-one left-early game in seven (the play-by-play names an injured player on fewer than one play in five of these games).
+one left-early game in seven (386 of the 1,465 true cases carry an injury note that names him by the play's own ids; 816 show the snap drop).
 The reason says which signal fired ("hurt on a play in the 2nd quarter" / "no target or carry after half-time"), so the
 screen never says "hurt" without the note. LE-A's precision per season: 0.86 – 1.00 (2016 – 2025). IX-6 may prefer
 LE-A's precision for the projection; that is its rule to write.
