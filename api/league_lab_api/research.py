@@ -1092,7 +1092,7 @@ def players(league_id: str, *, season: int | None = None, position: str | None =
             "total": total, "offset": off, "players": _records(page), "howto": PLAYERS_HOWTO,
             "scoring_note": REF_NOTE.format(ref=reference_name()),
             "catalogue": (cat := ST.catalogue(season)), "presets": ST.presets(cat),          # ---- II-3 (additive)
-            "groups": ST.GROUPS}                                                             # ---- IM-1
+            "groups": ST.groups_for(cat)}                                                    # ---- IM-1; IX-3
 
 
 # ---- II-3: the Stats Explorer's frame (the fifth review § 4; docs/METRICS.md § "The Stats Explorer") ------------------
@@ -1161,7 +1161,7 @@ def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None
     return {**ctx.meta(), "season": season, "season_type": season_type, "positions": pos, "window": desc,
             "situation": sit_desc,                                                              # ---- IX-3
             "who": wh, "team": team, "nfl": nfl, "min_games": min_games, "total": total, "offset": off,
-            "players": _records(page), "catalogue": cat, "presets": ST.presets(cat), "groups": ST.GROUPS,  # IM-1
+            "players": _records(page), "catalogue": cat, "presets": ST.presets(cat), "groups": ST.groups_for(cat),  # IM-1; IX-3
             "views": {k: ST.views(k, cat) for k in ("wrte", "rb", "qb", "all")},                   # ---- IX-3
             "howto": STATS_HOWTO}
 # ---- end II-3

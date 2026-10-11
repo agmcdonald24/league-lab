@@ -231,7 +231,7 @@
             data-c={c.id}
             class="ll-label bg-raised px-0.5 py-1 text-right whitespace-nowrap {starts.has(c.id) ? 'll-gstart' : ''} {sortId === c.id ? 'll-sorted' : ''}"
             aria-sort={sortId === c.id ? (dir === "asc" ? "ascending" : "descending") : undefined}
-            title={`${title(c, mode)} — ${c.definition}${c.denominator ? ` Denominator: ${c.denominator}.` : ""}`}
+            title={`${title(c, mode)} — ${c.definition}${c.denominator ? ` Out of: ${c.denominator}.` : ""}`}
           >
             <button type="button" class="ll-sortbtn inline-flex min-h-8 items-center gap-0.5 rounded-sm px-1 uppercase {sortId === c.id ? 'text-ink' : ''}" onclick={() => onsort(c)} data-testid={`sort-${c.id}`}
               >{head(c, mode)}<span class="ll-arrow" aria-hidden="true">{sortId === c.id ? (dir === "asc" ? "▲" : "▼") : ""}</span><span class="sr-only"> {title(c, mode)}</span></button

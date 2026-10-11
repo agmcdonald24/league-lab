@@ -76,10 +76,12 @@ def test_ngs_columns_are_derived_with_their_inventory_rows_and_in_the_presets():
         c = ST.CAT[cid]
         assert c["status"] == "derived" and c["source"] == ST.NGS and "never a mean of means" in c["definition"], cid
         assert "unknown, not zero" in c["reason"], cid
-    presets = {p["key"]: p for p in ST.PRESETS}
-    assert {"time_to_throw", "cpoe"} <= set(presets["qb"]["columns"])
-    assert "ryoe_per_attempt" in presets["rb"]["columns"]
-    assert {"separation", "yac_over_expected"} <= set(presets["wrte"]["columns"])
+    # IX-3 (Wave I-X), on purpose: Key stats is eight columns; the NGS columns are in the named views (Efficiency,
+    # Advanced) one tap away
+    named = {k: {c for v in ST.views(k) for c in v["columns"]} for k in ("qb", "rb", "wrte")}
+    assert {"time_to_throw", "cpoe"} <= named["qb"]
+    assert "ryoe_per_attempt" in named["rb"]
+    assert {"separation", "yac_over_expected"} <= named["wrte"]
 
 
 def test_time_to_throw_is_the_attempt_weighted_mean_and_unqualified_is_null(client, sql):

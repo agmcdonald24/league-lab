@@ -600,7 +600,7 @@
         />
         <dl class="space-y-1.5 text-sm" data-testid="stats-definitions">
           {#each cols as c (c.id)}
-            <div><dt class="inline font-semibold">{title(c)}</dt> <dd class="inline text-ink-2">— {c.definition}{c.denominator ? ` Denominator: ${c.denominator}.` : ""} Source: {c.source}.</dd></div>
+            <div><dt class="inline font-semibold">{title(c)}</dt> <dd class="inline text-ink-2">— {c.definition}{c.denominator ? ` Out of: ${c.denominator}.` : ""} Source: {c.source}.</dd></div>
           {/each}
         </dl>
         <!-- ---- IP-3 fix round (Wave I-P): the Role change group's grade, once (the record's sentence; absent without it) -->

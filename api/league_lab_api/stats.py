@@ -133,9 +133,9 @@ def _c(id_, label, short, kind, fmt, definition, numerator=None, denominator=Non
 
 NFLV = "nflverse weekly player stats"
 RECV = ("RB", "WR", "TE")          # IM-1: receiving columns apply to the positions that run routes
-PBP = "nflverse play-by-play (fct_play)"
+PBP = "nflverse play-by-play"                                  # IX-3: no internal name on screen
 FTN = "FTN charting via nflverse (CC BY-SA 4.0)"
-PART = "nflverse participation (bridge_play_participation)"
+PART = "nflverse participation: who was on the field each play"
 GAMES_AGG = "summed over his game rows in the window"
 SHARE_AGG = "summed numerator / summed denominator over the games he played in the window (never a mean of weekly %)"
 RATE_AGG = "summed numerator / summed denominator over the window"
@@ -148,7 +148,7 @@ ROUTES_REASON = ("Routes: nflverse publishes participation after the season (202
                  "season is blank until then; no licensed routes feed is connected.")
 CHART_REASON = "FTN charting starts in 2022 and covers only the games charted so far this season."
 # ---- IL-1: Next Gen Stats (mart_player_ngs_week): the source, the qualification words, the reasons for a dash
-NGS = "NFL Next Gen Stats via nflverse (mart_player_ngs_week)"
+NGS = "NFL Next Gen Stats via nflverse"
 NGS_AGG = ("mean of NGS's weekly values weighted by the denominator NGS states, over his weeks in the window that NGS "
            "published (never a mean of means)")
 NGS_QUAL = {"pass": "15+ pass attempts", "rush": "10+ carries, running backs only",
@@ -159,8 +159,8 @@ NGS_OFF = "Next Gen Stats here cover the regular season, 2016 onward; none for t
 NGS_NOT_BUILT = "Next Gen Stats arrive with the nightly update; they are not on this copy yet."
 # ---- end IL-1
 # ---- IM-1 (Wave I-M): the advanced mart's sources and reasons
-ADV_SRC = "nflverse play-by-play (fct_play, via mart_player_game_advanced)"
-PFR = "Pro Football Reference advanced stats, weekly, via nflverse (mart_player_game_advanced)"
+ADV_SRC = "nflverse play-by-play, summed per game"            # IX-3: distinct from PBP (catalogue() tells them apart)
+PFR = "Pro Football Reference advanced stats, weekly, via nflverse"
 ADV_REASON = "no dropback turned into a run"
 PFR_REASON = ("Pro Football Reference has no row for his games in this window (it lists a player once he has a target, "
               "carry or pass), so this is unknown, not zero.")
@@ -179,14 +179,14 @@ CATALOGUE: list[dict] = [
     _c("expected_points_per_game", "Expected fantasy points per game", "xPts/G", "rate", "pts",
        "What his targets and carries were worth on average (an opportunity-based estimate of past games, not next "
        "week's projection), in this league's scoring.", "expected points in the window", "games with an expected value",
-       RATE_AGG, source="mart_player_expected_points (play-by-play opportunity model)", status="derived",
+       RATE_AGG, source="our expected-points model over nflverse play-by-play", status="derived",
        reason="no expected value for his games (a kicker, or games before the opportunity model)"),
     # receiving
     _c("targets", "Targets", "Tgt", "count", "int", "Passes thrown to him.", "targets", None, GAMES_AGG,
        source=NFLV, status="present", per_game=True, positions=RECV),
     _c("target_share", "Target share", "Tgt %", "share", "pct",
        "His targets / his team's targets in the games he played (a game he missed is not counted against him).",
-       "targets", "team targets in the games he played", SHARE_AGG, source=NFLV + " (team totals: fct_team_game)",
+       "targets", "team targets in the games he played", SHARE_AGG, source=NFLV + " (team totals: his team's game totals)",
        status="derived", reason="no team targets in his games", positions=RECV),
     _c("receptions", "Receptions", "Rec", "count", "int", "Catches.", "receptions", None, GAMES_AGG, source=NFLV,
        status="present", per_game=True, positions=RECV),
@@ -256,7 +256,7 @@ CATALOGUE: list[dict] = [
     # ---- end IL-1
     _c("routes", "Routes run", "Routes", "count", "int",
        "Routes run from a licensed charting feed. None is connected (FTN and PFF sell one; see docs/DATA_INVENTORY.md).",
-       "routes run", None, GAMES_AGG, source="licensed routes feed (routes_feed): not connected",
+       "routes run", None, GAMES_AGG, source="a licensed routes feed: not connected",
        status="unavailable", positions=("RB", "WR", "TE"), per_game=True,
        reason="No licensed routes feed is connected; nflverse participation is published after the season."),
     # rushing
@@ -266,7 +266,7 @@ CATALOGUE: list[dict] = [
     _c("carry_share", "Carry share", "Car %", "share", "pct",
        "His carries / his team's carries in the games he played. The team's carries include quarterback scrambles and "
        "kneel-downs (nflverse carries); two-point tries are excluded. The card's Carry share is this number.",
-       "carries", "team carries in the games he played", SHARE_AGG, source=NFLV + " (team totals: fct_team_game)",
+       "carries", "team carries in the games he played", SHARE_AGG, source=NFLV + " (team totals: his team's game totals)",
        status="derived", reason="no team carries in his games"),
     # ---- IX-1 (Wave I-X), lf1.0: on the field (docs/METRICS.md § "A game left early")
     _c("on_field_target_share", "Target share on the field", "Tgt % on", "share", "pct",
@@ -496,13 +496,13 @@ CATALOGUE: list[dict] = [
        "What his targets and carries were worth on average (an opportunity-based estimate of past games, not next "
        "week's projection), in this league's scoring, added up over his games with an expected value.",
        "expected points in the window", None, GAMES_AGG,
-       source="mart_player_expected_points (play-by-play opportunity model)", status="derived",
+       source="our expected-points model over nflverse play-by-play", status="derived",
        reason="no expected value for his games (a kicker, or games before the opportunity model)"),
     _c("points_over_expected", "Points over expected", "Pts vs xPts", "count", "pts",
        "His fantasy points minus his expected fantasy points, over the same games (the games he played with an "
        "expected value), in this league's scoring. Positive: he scored more than his opportunities usually bring.",
        "fantasy points − expected points, same games", None, "summed over the games with an expected value; per game "
-       "divides by those games", source="this league's scoring + mart_player_expected_points", status="derived",
+       "divides by those games", source="this league's scoring and our expected-points model", status="derived",
        per_game=True, reason="no expected value for his games (a kicker, or games before the opportunity model)"),
     # Next Gen Stats (the rest of what nflverse's NGS files carry)
     _c("cushion", "Average cushion (yards)", "Cush", "rate", "dec1",
@@ -606,7 +606,7 @@ CATALOGUE: list[dict] = [
        "18 % to 23 % of the targets. The measure DFS's role trend reads (a change of 5 points or more counts there).",
        "targets / team targets in his last 2 games, minus the same in his games before them",
        "his games played in the window: the last 2, and 2 or more before them", ROLE_AGG,
-       source=NFLV + " (team totals: fct_team_game); league_lab.role_trend", status="derived", positions=RECV,
+       source=NFLV + " (team totals: his team's game totals); the measure DFS's role trend reads", status="derived", positions=RECV,
        reason=ROLE_REASON),
     _c("carry_share_change", "Carry share change", "Car % chg", "share", "pct",
        "His carry share in his last 2 games played in the window minus his carry share in his games before them (at "
@@ -614,7 +614,7 @@ CATALOGUE: list[dict] = [
        "(a change of 10 points or more counts there).",
        "carries / team carries in his last 2 games, minus the same in his games before them",
        "his games played in the window: the last 2, and 2 or more before them", ROLE_AGG,
-       source=NFLV + " (team totals: fct_team_game); league_lab.role_trend", status="derived", positions=("RB",),
+       source=NFLV + " (team totals: his team's game totals); the measure DFS's role trend reads", status="derived", positions=("RB",),
        reason="Running backs only. " + ROLE_REASON),
     _c("snap_share_change", "Snap share change", "Snap % chg", "share", "pct",
        "His snap share in his last 2 games played in the window minus his snap share in his games before them (at "
@@ -624,7 +624,7 @@ CATALOGUE: list[dict] = [
        "counts there).",
        "offensive snaps / team offensive snaps in his last 2 games, minus the same in his games before them",
        "his games played in the window: the last 2, and 2 or more before them", ROLE_AGG,
-       source="nflverse snap counts; league_lab.role_trend", status="derived", positions=RECV, reason=ROLE_REASON),
+       source="nflverse snap counts; the measure DFS's role trend reads", status="derived", positions=RECV, reason=ROLE_REASON),
     # ---- end IO-4
 ]
 
@@ -824,7 +824,7 @@ def catalogue(season: int, frame: pd.DataFrame | None = None, through: int | Non
                                else f"NGS publishes this from {NGS_FIRST[c['id']]}; none for {season}.")
             elif frame is not None:
                 weeks = sorted({int(w) for w in frame.loc[frame[fam].notna(), "week"]})
-                c["coverage"] = f"NGS weeks {weeks[0]}–{weeks[-1]}" if weeks else None
+                c["coverage"] = f"Next Gen Stats weeks {weeks[0]}–{weeks[-1]}" if weeks else None
         elif c["source"] in (ADV_SRC, PFR):                              # ---- IM-1
             adv = frame.attrs.get("adv") if frame is not None else None
             if c["source"] == ADV_SRC:
@@ -857,7 +857,23 @@ def catalogue(season: int, frame: pd.DataFrame | None = None, through: int | Non
             c["graded"] = role_words
         # ---- end IP-3
         out.append(c)
+    # ---- IX-3 (Wave I-X): a season with no route column available names the group "Snaps" (the review's § Analytics:
+    # snap counts are never labelled routes)
+    if not any(c["available"] for c in out if c["id"] in ROUTE_COLS):
+        out = [{**c, "group": SNAPS_ONLY} if c.get("group") == "Snaps and routes" else c for c in out]
     return out
+
+
+# ---- IX-3 (Wave I-X): the group's name follows what the season has
+ROUTE_COLS = ("route_participation", "tprr_proxy", "yprr_proxy", "routes")
+SNAPS_ONLY = "Snaps"
+
+
+def groups_for(cat: list[dict]) -> list[str]:
+    """GROUPS as this season's catalogue names them ("Snaps" when no route column is available)."""
+    named = {c.get("group") for c in cat}
+    return [SNAPS_ONLY if g == "Snaps and routes" and g not in named and SNAPS_ONLY in named else g for g in GROUPS]
+# ---- end IX-3
 
 
 # ---- IP-3 fix round (Wave I-P)

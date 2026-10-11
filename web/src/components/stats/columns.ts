@@ -115,12 +115,15 @@ export function groupOf(c: StatsColumn): string {
   return BY_ID.find(([re]) => re.test(c.id))?.[1] ?? OTHER;
 }
 
+// ---- IX-3: the group's name in a season with no route column
+const ROUTE_COLS = ["route_participation", "tprr_proxy", "yprr_proxy", "routes"];
+export const SNAPS = "Snaps";
 /** The order the groups read in for a position (the position's own stats first). */
 const ORDER: Record<PosGroup, string[]> = {
-  wrte: ["Games and points", "Receiving", "Air yards", "Red zone", "Efficiency", "Expected points", "Next Gen Stats", "Charting", "Snaps and routes", "Role change", "Advanced (PFR)", "Rushing", "Passing"],
-  rb: ["Games and points", "Rushing", "Receiving", "Red zone", "Efficiency", "Expected points", "Next Gen Stats", "Snaps and routes", "Role change", "Advanced (PFR)", "Air yards", "Charting", "Passing"],
-  qb: ["Games and points", "Passing", "Rushing", "Efficiency", "Expected points", "Next Gen Stats", "Advanced (PFR)", "Red zone", "Receiving", "Air yards", "Charting", "Snaps and routes", "Role change"],
-  all: [...GROUP_NAMES],
+  wrte: ["Games and points", "Receiving", "Air yards", "Red zone", "Efficiency", "Expected points", "Next Gen Stats", "Charting", "Snaps and routes", "Snaps", "Role change", "Advanced (PFR)", "Rushing", "Passing"],
+  rb: ["Games and points", "Rushing", "Receiving", "Red zone", "Efficiency", "Expected points", "Next Gen Stats", "Snaps and routes", "Snaps", "Role change", "Advanced (PFR)", "Air yards", "Charting", "Passing"],
+  qb: ["Games and points", "Passing", "Rushing", "Efficiency", "Expected points", "Next Gen Stats", "Advanced (PFR)", "Red zone", "Receiving", "Air yards", "Charting", "Snaps and routes", "Snaps", "Role change"],
+  all: [...GROUP_NAMES.slice(0, 11), "Snaps", ...GROUP_NAMES.slice(11)],
 };
 
 /** The position's columns with each group together (a group header spans them), the groups in the position's order,
@@ -147,9 +150,12 @@ export function arrange(cols: StatsColumn[], pos: PosGroup): StatsColumn[] {
 export function fullColumns(catalogue: StatsColumn[], preset: StatsPreset | null, positions: string[], pos: PosGroup): StatsColumn[] {
   const byId = new Map(catalogue.map((c) => [c.id, c]));
   const listed = preset?.full;
-  const cols = Array.isArray(listed)
+  const listedCols = Array.isArray(listed)
     ? listed.map((id) => byId.get(id)).filter((c): c is StatsColumn => !!c && c.available !== false)
     : catalogue.filter((c) => c.available && (positions.length === 0 || c.positions.some((p) => positions.includes(p))));
+  // ---- IX-3 (Wave I-X): no route column this season → the group is "Snaps" (snap counts are never labelled routes)
+  const routes = listedCols.some((c) => ROUTE_COLS.includes(c.id));
+  const cols = routes ? listedCols : listedCols.map((c) => (groupOf(c) === "Snaps and routes" ? { ...c, group: SNAPS } : c));
   return arrange(cols, pos);
 }
 

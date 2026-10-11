@@ -113,3 +113,26 @@ def test_stats_by_situation_on_this_copy(client, sql):
                   if p["gsis_id"] == CHASE)["targets"] or 0 for k in ("trailing", "close", "leading")}
     whole = next(p for p in allp["players"] if p["gsis_id"] == CHASE)
     assert abs(sum(by.values()) - whole["targets"]) <= 2          # play-by-play's targets against the box score's
+
+
+INTERNAL = r"\b(fct|mart|dim|bridge|int|stg)_[a-z_]+|league_lab\.|analytics\.|\bops\.|routes_feed|_proxy\b"
+
+
+def test_no_internal_name_in_what_the_screen_prints(client):
+    import re
+    d = client.get("/api/players", params={"league": "ref:half", "window": "season", "position": "WR,TE",
+                                           "limit": 5}).json()
+    for c in d["catalogue"]:
+        for k in ("label", "short", "definition", "numerator", "denominator", "aggregation", "source", "reason",
+                  "coverage", "graded"):
+            assert not re.search(INTERNAL, c.get(k) or ""), (c["id"], k, c.get(k))
+    assert not re.search(INTERNAL, d["howto"])
+    # 2026 has no route column (participation arrives after the season): the group is "Snaps"
+    assert not any(c["available"] for c in d["catalogue"] if c["id"] in ST.ROUTE_COLS)
+    assert {c["group"] for c in d["catalogue"] if c["id"] == "snap_share"} == {"Snaps"}
+    assert "Snaps" in d["groups"] and "Snaps and routes" not in d["groups"]
+    # a season with participation keeps the whole name
+    old = client.get("/api/players", params={"league": "ref:half", "window": "season", "position": "WR,TE", "limit": 5,
+                                             "season": 2024}).json()
+    if any(c["available"] for c in old["catalogue"] if c["id"] in ST.ROUTE_COLS):
+        assert {c["group"] for c in old["catalogue"] if c["id"] == "snap_share"} == {"Snaps and routes"}
