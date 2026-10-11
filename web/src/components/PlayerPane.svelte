@@ -308,6 +308,10 @@
     {/if}
     {#if data?.situations}<Situations s={data.situations} testid="pane-situations" />{/if}
     <!-- ---- end IX-2 -->
+    <!-- ---- IX-6: the projected target share, one line of context (lf1.1: over his quarterback's projected passes) -->
+    {#if data?.projected_target_share?.words}
+      <p class="text-sm leading-snug text-ink-3" data-testid="pane-projected-target-share">{data.projected_target_share.words}</p>
+    {/if}
     {#if usage}
       <SectionBox section={usage} {ctx} testid="pane-section-usage" />
     {:else}

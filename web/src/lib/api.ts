@@ -3069,15 +3069,15 @@ export interface PlayAvailability {
 /** The model's own forecast of his share of the team's targets this week: his projected targets / the projected targets
  * of his team's players the model projects that week (the live week's rows before each kickoff). RB / WR / TE. */
 export interface ProjectedTargetShare {
-  share: number; // 0-1
+  share: number; // 0-1: his projected targets / his team's projected starting quarterback's projected pass attempts (lf1.1, IX-6)
   targets: number; // his projected targets, one decimal
-  team_targets: number; // his team's projected targets (the players the model projects), one decimal
+  team_attempts: number; // the projected starter's projected pass attempts, one decimal
   week: number;
-  players: number; // his team's players with projected targets
-  words: string; // "8.0 of his team's 46.3 projected targets in week 5 (17%): the model's own forecast …"
+  quarterback: string | null; // the projected starter's name
+  words: string; // "7.9 of the 33.8 passes we project Joe Burrow to throw in week 5 (23%): the model's own forecast …"
 }
 export interface PlayerCard {
-  projected_target_share?: ProjectedTargetShare | null; // null: no line, a QB, he sits, or a team total of 0
+  projected_target_share?: ProjectedTargetShare | null; // null: no line, a QB, he sits, no starter's line this week
 }
 export interface GameRow {
   left_early?: boolean; // knowable when the game ended: his snaps fell to half his usual and he was hurt or had no touch after half-time

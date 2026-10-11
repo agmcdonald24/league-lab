@@ -945,7 +945,7 @@ sentence of its own, only where they appear.
 | Stats cell's sample (the web's `why`) | "3 of 10.6 team targets on the plays he was on the field in his 1 game (estimated from his snap share)" | |
 | A cell with no snap count | — "no snap count for his games" | 0 |
 | Game log row, a game left early | "15 snaps (20% of the team's; usually 94%); hurt on a play in the 2nd quarter" / "…; no target or carry after half-time"; once his team's next game is in and he did not play it: "…; then missed week 5" | "injured" when no injury note named him; "benched" |
-| Card (RB / WR / TE), the projected target share | "8.0 of his team's 46.3 projected targets in week 5 (17%): the model's own forecast of his share of the team's targets this week." Nothing for a quarterback, a player who sits, or a player with no projection. | "expected share", a share for a player who sits |
+| Card's Usage tab (RB / WR / TE), the projected target share (lf1.1, IX-6) | "7.9 of the 33.8 passes we project Joe Burrow to throw in week 5 (23%): the model's own forecast of his share of the team's targets this week." Nothing for a quarterback, a player who sits, or a week without his starter's line. (lf1.0's "8.0 of his team's 46.3 projected targets" divided by every listed player: gone.) | "expected share", a share over every listed player, a share for a player who sits |
 <!-- ---- end IX-1 -->
 <!-- ---- IX-2 -->
 ## The player card: who he is, a shorter Overview, his splits (IX-2, Wave I-X, 2026-10-11)

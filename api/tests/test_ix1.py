@@ -47,19 +47,28 @@ def test_a_frame_without_the_columns_is_unknown_never_zero():
     assert pd.isna(a["on_field_target_share"]) and a["on_field_basis"] is None and a["left_early_games"] == 0
 
 
-def test_the_projected_target_share_is_his_lines_over_his_teams(monkeypatch):
-    monkeypatch.setattr(OF, "query", lambda sql, params: pd.DataFrame([{"proj_targets": 8.0, "team_proj_targets": 46.3,
-                                                                         "players": 13}]))
+def test_the_projected_target_share_is_his_lines_over_his_quarterbacks_passes(monkeypatch):
+    """lf1.1 (IX-6): over the projected starter's projected pass attempts — lf1.0's sum of every listed player (40 - 47 a
+    team against 29 - 33 real targets) understated every starter (the old words pinned here were changed on purpose)."""
+    seen = []
+
+    def q(sql, params):
+        seen.append(params)
+        return pd.DataFrame([{"proj_targets": 7.9, "team_attempts": 33.8, "projected_qb_id": "00-0036442",
+                              "projected_name": "Joe Burrow"}])
+    monkeypatch.setattr(OF, "query", q)
     d = OF.projected_target_share("00-0036900", "WR", 2026, 5)
-    assert d["share"] == round(8 / 46.3, 4) and d["week"] == 5 and d["players"] == 13
-    assert d["words"] == ("8.0 of his team's 46.3 projected targets in week 5 (17%): the model's own forecast of his "
-                          "share of the team's targets this week.")
+    assert d["share"] == round(7.9 / 33.8, 4) and d["week"] == 5 and d["quarterback"] == "Joe Burrow"
+    assert d["words"] == ("7.9 of the 33.8 passes we project Joe Burrow to throw in week 5 (23%): the model's own "
+                          "forecast of his share of the team's targets this week.")
+    assert seen[0] == (2026, 5, "00-0036900", 2026, 5, 2026, 5, 2026, 5)
     assert "from ops.projection_lines as l" in OF.PTS_SQL                # the live week rewrites this form (db._run)
+    assert "mart_starter_check" in OF.PTS_SQL                            # the starter the projection uses
     assert OF.projected_target_share("x", "QB", 2026, 5) is None         # no quarterback share
     assert OF.projected_target_share("x", "WR", 2026, 5, sits=True) is None
-    monkeypatch.setattr(OF, "query", lambda sql, params: pd.DataFrame([{"proj_targets": 0.0, "team_proj_targets": 0.0,
-                                                                         "players": 0}]))
-    assert OF.projected_target_share("x", "WR", 2026, 5) is None         # a team total of 0: no share, never 0 / 0
+    monkeypatch.setattr(OF, "query", lambda sql, params: pd.DataFrame([{"proj_targets": 3.0, "team_attempts": None,
+                                                                         "projected_qb_id": None, "projected_name": None}]))
+    assert OF.projected_target_share("x", "WR", 2026, 5) is None         # no starter's line: no share, never 3 / 0
 
 
 def test_the_game_log_marks_a_game_left_early_and_adds_a_missed_next_week_for_display(monkeypatch):

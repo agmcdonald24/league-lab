@@ -1,12 +1,14 @@
 """IX-1 (Wave I-X), lf1.0: a game left early, and the projected target share (docs/METRICS.md § "A game left early").
 
-* ``projected_target_share(gsis, position, season, week)`` — the card's (``/api/player/{gsis}``): his projected targets ÷
-  the projected targets of his team's players that week (``ops.projection_lines``, through ``db._run``: the live week's
-  rows for the games not yet kicked off). The denominator holds every player of his team the model projects that week
-  (quarterbacks, running backs, receivers and tight ends; a player who cannot play counts 0); players the model does not
-  project (no line) are not in it, so the share reads slightly high against the team's real total. His team = his
-  newest team (``dim_player.latest_team``: the week under way). RB / WR / TE only; None when he has no line, sits, or
-  the team's total is 0.
+* ``projected_target_share(gsis, position, season, week)`` — the card's (``/api/player/{gsis}``), lf1.1 (IX-6): his
+  projected targets ÷ **the projected pass attempts of his team's projected starting quarterback** that week
+  (``ops.projection_lines``, through ``db._run``: the live week's rows for the games not yet kicked off; the starter =
+  ``mart_starter_check.projected_qb_id``, the rule the projection uses). lf1.0 divided by the sum of every projected
+  player listed on his team — 40 – 47 targets a team against 29 – 33 in a real game, because each backup's line is an
+  "if he plays" number — and so understated every starter. On 2026 weeks 1 – 4 the starters' projected attempts average
+  30.4 against 31.2 real team targets, and the share is 0.056 from his real target share on average (docs/METRICS.md
+  § "A game left early", lf1.1). His team = his newest team (``dim_player.latest_team``). RB / WR / TE only; None when he
+  has no line, sits, his team's next game is not this week, or the starter has no line.
 * ``game_log_marks(games, gsis, season)`` — the game log's (``/api/player/{gsis}/games``): ``left_early`` and
   ``left_early_reason`` per game (knowable when the game ended), the display-only "then missed week N" when he did not
   play his team's next game, and the on-field shares with their basis.
@@ -21,22 +23,28 @@ from .db import query
 POSITIONS = ("RB", "WR", "TE")
 
 PTS_SQL = """
-with l as (
+with me as (
     select distinct on (l.gsis_id) l.gsis_id, l.proj_targets, d.latest_team as team
     from ops.projection_lines as l
     join analytics.dim_player as d on d.gsis_id = l.gsis_id
+    where l.season = %s and l.week = %s and l.gsis_id = %s
+    order by l.gsis_id, l.fitted_at desc
+),
+qb as (
+    select distinct on (l.gsis_id) l.gsis_id, l.proj_attempts
+    from ops.projection_lines as l
     where l.season = %s and l.week = %s
+      and l.gsis_id in (select m.projected_qb_id from analytics.mart_starter_check as m where m.season = %s and m.week = %s)
     order by l.gsis_id, l.fitted_at desc
 )
-select me.proj_targets,
-       (select sum(coalesce(o.proj_targets, 0)) from l as o where o.team = me.team)          as team_proj_targets,
-       (select count(*) from l as o where o.team = me.team and coalesce(o.proj_targets, 0) > 0) as players
-from l as me
-where me.gsis_id = %s
+select me.proj_targets, qb.proj_attempts as team_attempts, m.projected_qb_id, m.projected_name
+from me
+join analytics.mart_starter_check as m on m.team = me.team and m.season = %s and m.week = %s
+left join qb on qb.gsis_id = m.projected_qb_id
 """
 
-WORDS = ("{targets:.1f} of his team's {team:.1f} projected targets in week {week} ({pct}%): the model's own forecast "
-         "of his share of the team's targets this week.")
+WORDS = ("{targets:.1f} of the {att:.1f} passes we project {team_qb} to throw in week {week} ({pct}%): the model's own "
+         "forecast of his share of the team's targets this week.")
 
 
 def projected_target_share(gsis: str, position: str | None, season: int | None, week: int | None,
@@ -44,18 +52,20 @@ def projected_target_share(gsis: str, position: str | None, season: int | None, 
     if position not in POSITIONS or season is None or week is None or sits:
         return None
     try:
-        df = query(PTS_SQL, (int(season), int(week), gsis))
-    except Exception:  # noqa: BLE001 — no lines on this copy: no share (never a 500 for a card's extra)
+        p = (int(season), int(week))
+        df = query(PTS_SQL, (*p, gsis, *p, *p, *p))
+    except Exception:  # noqa: BLE001 — no lines or no starter mart on this copy: no share (never a 500 for a card's extra)
         return None
-    if df.empty or pd.isna(df.iloc[0]["proj_targets"]) or pd.isna(df.iloc[0]["team_proj_targets"]):
+    if df.empty or pd.isna(df.iloc[0]["proj_targets"]) or pd.isna(df.iloc[0]["team_attempts"]):
         return None
-    mine, team = float(df.iloc[0]["proj_targets"]), float(df.iloc[0]["team_proj_targets"])
-    if team <= 0:
+    mine, att = float(df.iloc[0]["proj_targets"]), float(df.iloc[0]["team_attempts"])
+    if att <= 0:
         return None
-    share = round(mine / team, 4)
-    return {"share": share, "targets": round(mine, 1), "team_targets": round(team, 1), "week": int(week),
-            "players": int(df.iloc[0]["players"]),
-            "words": WORDS.format(targets=mine, team=team, week=int(week), pct=round(100 * share))}
+    share = round(min(1.0, mine / att), 4)
+    qb = df.iloc[0]["projected_name"] if isinstance(df.iloc[0]["projected_name"], str) else "his quarterback"
+    return {"share": share, "targets": round(mine, 1), "team_attempts": round(att, 1), "week": int(week),
+            "quarterback": qb if qb != "his quarterback" else None,
+            "words": WORDS.format(targets=mine, att=att, team_qb=qb, week=int(week), pct=round(100 * share))}
 
 
 # ---- the game log

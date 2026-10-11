@@ -6112,6 +6112,19 @@ line is not in it). On 2026 weeks 1 – 4 the team's summed projected targets av
 the projected share is 0.051 from the real whole-game share on average (1,281 RB / WR / TE player-weeks) — context, not a
 graded forecast against a baseline.
 
+**The projected target share, lf1.1 (IX-6, 2026-10-11)** — lf1.0's denominator (every projected player listed on his
+team) summed to 40 – 47 targets a team (week 5: median 40.1, max 50.3; weeks 1 – 4: 43.6 – 47.1) against 29 – 33 in a
+real game: the lines hold about 18.6 players a team (three quarterbacks, every backup), and each line is an "if he
+plays" number, so the backups' few targets each add up; a share over that total understated every starter. **The
+projection does not hand out too many targets**: summed over the players who did play, weeks 1 – 4's projected
+targets average 31.7 a team against 31.2 real. lf1.1: **his projected targets ÷ the projected pass attempts of his
+team's projected starting quarterback** (`mart_starter_check.projected_qb_id`, the starter the projection uses; the
+live week's lines before kickoff), capped at 1; None when the starter has no line that week. Checked on 2026 weeks
+1 – 4 (frozen lines; 1,195 RB / WR / TE player-weeks he played): the starters' projected attempts average 30.4 against
+31.2 real team targets (32.9 real attempts); the share is **0.056** from his real target share on average, **+0.009**
+on average (it reads a little high: a pass attempt is not always a target). Context, not graded against a baseline: the
+card's Usage tab shows it as one line.
+
 ## Stats by game situation (IX-3, Wave I-X, 2026-10-11) — the Stats table's situation filter
 
 Andrew, 2026-10-11 00:31: "Can we see stats based on certain conditions? Like in the lead or trailing?" The card's Usage
