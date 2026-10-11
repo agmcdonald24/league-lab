@@ -466,7 +466,10 @@ def test_a_failing_store_never_fails_a_request(client, on, overlay, briefs, monk
     monkeypatch.setattr(events, "write", boom)
     monkeypatch.setattr(events, "db", SimpleNamespace(query=boom, fresh=boom))     # the readers too (events' own reads)
     r = client.get(f"/api/my-week?league={SCRUBS}&team=2")
-    assert r.status_code == 200 and r.json()["changed"]["lines"]
+    # IZ-4 (on purpose): a line about a player in a decision sits on that decision (`news`), not in the feed
+    d = r.json()
+    moved = [n for k in ("actions", "more_actions", "review") for x in d.get(k) or [] for n in x.get("news") or []]
+    assert r.status_code == 200 and (d["changed"]["lines"] or moved)
     assert client.get(f"/api/player/{JEFFERSON}?league={SCRUBS}&team=2").status_code == 200
     assert events.flush(10) and events.stats["failed"] >= 1
     s = client.get("/api/status").json()["events"]
