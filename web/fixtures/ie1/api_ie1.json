@@ -16666,13 +16666,13 @@
      "fit_horizon": 0.23
     }
    },
-   "buy_line": "**Buy low: ask Uh, Winning! about Quinshon Judkins (RB).** He scores 2.9 a game below what his usage is worth, adds **+0.0** to your week-4 lineup and costs them **0.0** (fit **+2.0** over weeks 4\u20137).",
-   "sell_line": "**Sell high: shop Tre Tucker (WR) to Stick it to the Man.** He scores 6.5 a game above what his usage is worth. Their week-4 lineup gains **+1.4**, yours loses **0.1** (fit **+6.0** over weeks 4\u20137).",
+   "buy_line": "**Buy low: ask Uh, Winning! about Quinshon Judkins (RB).** He scores 2.9 a game below what his usage is worth, adds **+0.0** to your week-4 lineup and costs them **0.0** (net **+2.0** lineup points over weeks 4\u20137).",
+   "sell_line": "**Sell high: shop Tre Tucker (WR) to Stick it to the Man.** He scores 6.5 a game above what his usage is worth. Their week-4 lineup gains **+1.4**, yours loses **0.1** (net **+6.0** lineup points over weeks 4\u20137).",
    "weeks": "weeks 4\u20137",
    "howto": [
     "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG \u2212 xPPG**, points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports.",
     "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week and the next four, in your league's scoring.",
-    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
+    "**Net lineup points** is what his new team's best lineup gains minus what his old team's loses, over the next four weeks. A big positive number means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
     "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade Finder."
    ],
    "source": "sleeper",

@@ -503,8 +503,8 @@ def _trade(my_w, my_h, th_w, th_h, po, pi, unknown=()):
 
 def test_fit_line_market_line_and_verdict():
     t = _trade(4.2, 10.3, -1.1, -3.0, 85, 60)
-    assert fit_line(t, "weeks 4–7") == ("**Fit** (what the best lineups gain): you **+4.2** this week and **+10.3** over "
-                                        "weeks 4–7; them **-1.1** and **-3.0**.")
+    assert fit_line(t, "weeks 4–7") == ("**Improvement to your starting lineup** (best lineup each week): you **+4.2** "
+                                        "this week and **+10.3** over weeks 4–7; them **-1.1** and **-3.0**.")   # IX-5: was **Fit**
     assert fairness_line(t) == ("**Market** (season points above the best free agent at the position): you give **85**, "
                                 "you get **60**: you give 25 more.")
     # the plan's example: helps me, costs their lineup, I give up more season value (Wave I-E words: the lineup effect

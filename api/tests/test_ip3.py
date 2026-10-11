@@ -193,8 +193,8 @@ def test_the_trade_cards_never_say_buy_or_sell_on_the_gap():
          "diff_per_game": -1.5, "gain_week": 8.0, "loss_week": 7.9, "fit_horizon": 9.9}
     b = DC.below_line(t, "weeks 4–7", 4)
     assert b == ("**Kenneth Walker III (RB, Run Bijan Run) scores 1.5 per game below his work.** He would add **+8.0** to "
-                 "your week-4 lineup and cost them **7.9** (fit **+9.9** over weeks 4–7): the fit, from the projections, "
-                 "is the reason to ask about him — not the gap.")
+                 "your week-4 lineup and cost them **7.9** (net **+9.9** lineup points over weeks 4–7: your gain minus "
+                 "their loss): that, from the projections, is the reason to ask about him — not the gap.")   # IX-5: was "fit"
     a = DC.above_line({**t, "player": {"player_name": "Patrick Mahomes", "position": "QB"}, "team_name": "GoodGameBuddy",
                        "diff_per_game": 5.0}, "weeks 4–7", 4)
     never = re.compile(r"\b(buy|sell|due|bargain|regression|turn around|running hot)\b", re.I)

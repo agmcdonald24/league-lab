@@ -147,7 +147,7 @@ def gap_line(trend: dict | None = None) -> str | None:
             parts.append(f"players {word} their work finished {abs(v):.1f} points {'above' if v > 0 else 'below'} the rest "
                          f"against their projection ({_sg(c.get('lo'))} to {_sg(c.get('hi'))})")
     return (f"Their projections already expect the gap to close part-way; graded on {n:,} games{where}, "
-            + " and ".join(parts) + ". The lists are ordered by lineup fit, not by the gap.")
+            + " and ".join(parts) + ". The lists are ordered by net lineup points, not by the gap.")
 
 
 # ---- IP-3 (Wave I-P)

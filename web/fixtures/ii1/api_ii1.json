@@ -819,13 +819,13 @@
      "fit_horizon": 3.7
     }
    },
-   "buy_line": "**Buy low: ask Run Bijan Run about Kenneth Walker III (RB).** He scores 1.5 a game below what his usage is worth, adds **+8.0** to your week-4 lineup and costs them **7.9** (fit **+9.9** over weeks 4\u20137).",
-   "sell_line": "**Sell high: shop Patrick Mahomes (QB) to GoodGameBuddy.** He scores 5.0 a game above what his usage is worth. Their week-4 lineup gains **+5.5**, yours loses **2.1** (fit **+2.6** over weeks 4\u20137).",
+   "buy_line": "**Buy low: ask Run Bijan Run about Kenneth Walker III (RB).** He scores 1.5 a game below what his usage is worth, adds **+8.0** to your week-4 lineup and costs them **7.9** (net **+9.9** lineup points over weeks 4\u20137).",
+   "sell_line": "**Sell high: shop Patrick Mahomes (QB) to GoodGameBuddy.** He scores 5.0 a game above what his usage is worth. Their week-4 lineup gains **+5.5**, yours loses **2.1** (net **+2.6** lineup points over weeks 4\u20137).",
    "weeks": "weeks 4\u20137",
    "howto": [
     "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG \u2212 xPPG**, points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports.",
     "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week and the next four, in your league's scoring.",
-    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
+    "**Net lineup points** is what his new team's best lineup gains minus what his old team's loses, over the next four weeks. A big positive number means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
     "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade Finder."
    ],
    "source": "database",
@@ -9790,13 +9790,13 @@
      "fit_horizon": 1.32
     }
    },
-   "buy_line": "**Buy low: ask Team 7 about Caleb Williams (QB).** He scores 0.0 a game below what his usage is worth, adds **+0.0** to your week-4 lineup and costs them **0.0** (fit **+7.8** over weeks 4\u20137).",
-   "sell_line": "**Sell high: shop Derrick Henry (RB) to Team 7.** He scores 7.8 a game above what his usage is worth. Their week-4 lineup gains **+0.0**, yours loses **0.0** (fit **+19.9** over weeks 4\u20137).",
+   "buy_line": "**Buy low: ask Team 7 about Caleb Williams (QB).** He scores 0.0 a game below what his usage is worth, adds **+0.0** to your week-4 lineup and costs them **0.0** (net **+7.8** lineup points over weeks 4\u20137).",
+   "sell_line": "**Sell high: shop Derrick Henry (RB) to Team 7.** He scores 7.8 a game above what his usage is worth. Their week-4 lineup gains **+0.0**, yours loses **0.0** (net **+19.9** lineup points over weeks 4\u20137).",
    "weeks": "weeks 4\u20137",
    "howto": [
     "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG \u2212 xPPG**, points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports.",
     "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week and the next four, in your league's scoring.",
-    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
+    "**Net lineup points** is what his new team's best lineup gains minus what his old team's loses, over the next four weeks. A big positive number means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
     "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade Finder."
    ],
    "source": "sleeper",
@@ -23241,13 +23241,13 @@
      "fit_horizon": 9.03
     }
    },
-   "buy_line": "**Mark Andrews (TE, Taco Corp.) scores 1.0 per game below his work.** He would add **+0.2** to your week-5 lineup and cost them **0.3** (fit **+9.0** over weeks 5\u20138): the fit, from the projections, is the reason to ask about him \u2014 not the gap.",
-   "sell_line": "**Ollie Gordon II (RB) scores 4.5 per game above his work.** Them GriDDy Njigba\u2019s's week-5 lineup would gain **+2.4**, yours lose **0.0** (fit **+11.1** over weeks 5\u20138): the fit is the reason to offer him \u2014 not the gap.",
+   "buy_line": "**Mark Andrews (TE, Taco Corp.) scores 1.0 per game below his work.** He would add **+0.2** to your week-5 lineup and cost them **0.3** (net **+9.0** lineup points over weeks 5\u20138: your gain minus their loss): that, from the projections, is the reason to ask about him \u2014 not the gap.",
+   "sell_line": "**Ollie Gordon II (RB) scores 4.5 per game above his work.** Them GriDDy Njigba\u2019s's week-5 lineup would gain **+2.4**, yours lose **0.0** (net **+11.1** lineup points over weeks 5\u20138: their gain minus your loss): that is the reason to offer him \u2014 not the gap.",
    "weeks": "weeks 5\u20138",
    "howto": [
-    "**Scoring below his work**: players on other teams scoring *less* than their work is usually worth (**PPG \u2212 xPPG**, points minus expected points per game, below zero). **Scoring above his work**: your players scoring *more*. That is what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect it, so it is no reason to trade on its own. Both lists are ordered by **Fit**, from the projections.",
+    "**Scoring below his work**: players on other teams scoring *less* than their work is usually worth (**PPG \u2212 xPPG**, points minus expected points per game, below zero). **Scoring above his work**: your players scoring *more*. That is what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect it, so it is no reason to trade on its own. Both lists are ordered by **net lineup points**, from the projections.",
     "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week and the next four, in your league's scoring.",
-    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
+    "**Net lineup points** is what his new team's best lineup gains minus what his old team's loses, over the next four weeks. A big positive number means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
     "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade Finder."
    ],
    "source": "database",
@@ -23262,7 +23262,7 @@
     "below": "Scoring below his work",
     "above": "Scoring above his work"
    },
-   "gap_line": "What happened, not a forecast: his projection already counts his work and his points. Ordered by lineup fit, from the projections.",
+   "gap_line": "What happened, not a forecast: his projection already counts his work and his points. Ordered by net lineup points, from the projections.",
    "gap_graded": false
   }
  },

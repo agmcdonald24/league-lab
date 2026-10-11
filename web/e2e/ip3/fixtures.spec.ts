@@ -112,7 +112,7 @@ test("Trades: the lists named for what they are, the record's line under the hea
   expect(tl.gap_line).toMatch(/^Their projections already expect the gap to close part-way: no edge in buying or selling on it — graded on 4,282 games/);
   await expect(page.getByTestId("buy-low")).toContainText("Scoring below his work");
   await expect(page.getByTestId("sell-high")).toContainText("Scoring above his work");
-  await expect(page.getByTestId("buy-line")).toContainText("the fit, from the projections, is the reason to ask about him — not the gap");
+  await expect(page.getByTestId("buy-line")).toContainText("that, from the projections, is the reason to ask about him — not the gap"); // IX-5: "fit" said as net lineup points
   await page.getByTestId("howto").locator("summary, button").first().click();
   await expect(page.getByTestId("howto")).toContainText("so it is no reason to trade on its own");
   expect((await page.locator("main").innerText()).match(NEVER_TRADE)).toBeNull();

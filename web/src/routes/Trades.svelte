@@ -289,7 +289,7 @@
       <section class="space-y-3" data-testid="buy-sell">
         <!-- ---- IP-3 fix round (Wave I-P): named for what they are (graded: the gap is already in the projection) -->
         <h2 class="text-xl font-bold">Scoring below or above their work</h2>
-        <p class="text-sm text-ink-3">Players scoring below (or above) what their work is usually worth, in {scoring}, ordered by how much they fit a lineup.</p>
+        <p class="text-sm text-ink-3">Players scoring below (or above) what their work is usually worth, in {scoring}, ordered by net lineup points over {tl.weeks ?? "the next four weeks"}: what his new team's lineup gains minus what his old team's loses.</p>
         {#if tl.gap_line}<p class="text-sm text-ink-2" data-testid="gap-line">{tl.gap_line}</p>{/if}
         <!-- ---- end IP-3 -->
         <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
@@ -305,7 +305,7 @@
                       href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
                       context={`${r.team_name ?? "another team"} · ${s1(r.diff_per_game)} per game vs his work · you gain ${s1(r.gain_week)} this week`}
                       value={s1(r.fit_horizon)}
-                      valueLabel="Fit"
+                      valueLabel={tl.weeks ? `Net lineup points, ${tl.weeks}` : "Net lineup points"}
                       testid="buy-best"
                     />
                   </li>
@@ -322,9 +322,9 @@
                     <PlayerRow
                       player={{ ...r.player, player_name: r.player.player_name ?? "" }}
                       href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
-                      context={`${s1(r.diff_per_game)} per game vs his work · best fit ${r.team_name ?? "—"}`}
+                      context={`${s1(r.diff_per_game)} per game vs his work · worth most to ${r.team_name ?? "—"}`}
                       value={s1(r.fit_horizon)}
-                      valueLabel="Fit"
+                      valueLabel={tl.weeks ? `Net lineup points, ${tl.weeks}` : "Net lineup points"}
                       testid="sell-row"
                     />
                   </li>
@@ -343,7 +343,7 @@
                     href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
                     context={`${r.team_name ?? "—"} · PPG ${f1(r.ppg)} vs ${f1(r.xppg)} expected · you gain ${s1(r.gain_week)}, they lose ${f1(r.loss_week)}`}
                     value={s1(r.fit_horizon)}
-                    valueLabel={tl.weeks ? `Fit ${tl.weeks}` : "Fit"}
+                    valueLabel={tl.weeks ? `Net lineup points, ${tl.weeks}` : "Net lineup points"}
                     testid="buy-row"
                   />
                 </li>
@@ -362,11 +362,11 @@
             "- **The strip** under each trade is the starter points it adds each week, for you and for them: a gain over four weeks can hide a loss this week.\n" +
             "- **The weeks**: this week, the next four (the default: graded for running backs, receivers and tight ends; a lean for quarterbacks; a rough guide for kickers and defenses), the rest of the season (every week to this league's final) or the playoffs. A longer span sees more of the season and is less sure.\n" +
             "- **Left out**: a trade that gives away much more rest-of-season value than it brings back (over a quarter of what you give), or that works only because our projection for a player you give is far under Sleeper's (under 65% of it), is never suggested, however much it helps the lineups.\n" +
-            "- **Try it** opens the trade calculator with the trade filled in: tick players both ways and the dial shows the **effect on their starters** — what the other team's best lineup gains or loses over the weeks you picked, by our numbers (about even under 2 points, improves 2 to 6, a lot over 6). It is lineup fit, not a guess at whether they would accept.\n" +
-            "- **Fit** is what the starting lineups gain. **Market** is what the players are worth on the market: their projected points for the rest of the season above the best free agent at their position. They are never added together: a player can be worth a lot and still sit on your bench. The verdict reads both. It knows nothing of draft picks, next season or what the other manager believes.\n" +
+            "- **Try it** opens the trade calculator with the trade filled in: tick players both ways and the dial shows the **effect on their starters** — what the other team's best lineup gains or loses over the weeks you picked, by our numbers (about even under 2 points, improves 2 to 6, a lot over 6). It is the effect on their lineup, not a guess at whether they would accept.\n" +
+            "- **Improvement to your starting lineup** is what the best lineups gain over the weeks. **Market** is what the players are worth on the market: their projected points for the rest of the season above the best free agent at their position. They are never added together: a player can be worth a lot and still sit on your bench. The verdict reads both. It knows nothing of draft picks, next season or what the other manager believes.\n" +
             "- **Roster size**: if a team gets more players than it gives, it has to cut someone: the player it would miss least, and that loss is in the numbers.\n" +
             // ---- IP-3 fix round (Wave I-P): graded — what the gap is, never a reason to buy or sell on its own
-            "- **Scoring below his work**: players on other teams scoring *less* than their work is usually worth (points minus expected points per game, below zero); **Scoring above his work**: your players scoring *more*. That is what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect it, so it is no reason to trade on its own. Both lists are ordered by **Fit**: what the new team's lineup gains minus what the old team's loses over the next four weeks, from the projections.",
+            "- **Scoring below his work**: players on other teams scoring *less* than their work is usually worth (points minus expected points per game, below zero); **Scoring above his work**: your players scoring *more*. That is what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect it, so it is no reason to trade on its own. Both lists are ordered by **net lineup points**: what the new team's lineup gains minus what the old team's loses over the next four weeks, from the projections.",
         )}
       </div>
     </Expander>

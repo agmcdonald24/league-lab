@@ -64,7 +64,7 @@ def sim_state(at) -> dict:
     md = [m.value for m in at.markdown]
     return {
         "verdict": next((m for m in md if m.startswith("**You give ")), None),
-        "fit": next((m for m in md if m.startswith("**Fit**")), None),
+        "fit": next((m for m in md if m.startswith("**Improvement to your starting lineup**")), None),   # IX-5: was **Fit**
         "fair": next((m for m in md if m.startswith("**Market**")), None),
         "rank": next((m for m in md if m.startswith("League rank")), None),
         "size": next((m for m in md if m.startswith("Roster size")), None),

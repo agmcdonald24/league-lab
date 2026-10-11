@@ -5572,13 +5572,13 @@
      "fit_horizon": 8.1
     }
    },
-   "buy_line": "**Michael Wilson (WR, Rock33) scores 4.6 per game below his work.** He would add **+4.2** to your week-4 lineup and cost them **2.7** (fit **+12.0** over weeks 4\u20137): the fit, from the projections, is the reason to ask about him \u2014 not the gap.",
-   "sell_line": "**Bhayshul Tuten (RB) scores 0.3 per game above his work.** Knight Train's week-4 lineup would gain **+9.9**, yours lose **0.0** (fit **+20.9** over weeks 4\u20137): the fit is the reason to offer him \u2014 not the gap.",
+   "buy_line": "**Michael Wilson (WR, Rock33) scores 4.6 per game below his work.** He would add **+4.2** to your week-4 lineup and cost them **2.7** (net **+12.0** lineup points over weeks 4\u20137: your gain minus their loss): that, from the projections, is the reason to ask about him \u2014 not the gap.",
+   "sell_line": "**Bhayshul Tuten (RB) scores 0.3 per game above his work.** Knight Train's week-4 lineup would gain **+9.9**, yours lose **0.0** (net **+20.9** lineup points over weeks 4\u20137: their gain minus your loss): that is the reason to offer him \u2014 not the gap.",
    "weeks": "weeks 4\u20137",
    "howto": [
-    "**Scoring below his work**: players on other teams scoring *less* than their work is usually worth (**PPG \u2212 xPPG**, points minus expected points per game, below zero). **Scoring above his work**: your players scoring *more*. That is what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect it, so it is no reason to trade on its own. Both lists are ordered by **Fit**, from the projections.",
+    "**Scoring below his work**: players on other teams scoring *less* than their work is usually worth (**PPG \u2212 xPPG**, points minus expected points per game, below zero). **Scoring above his work**: your players scoring *more*. That is what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect it, so it is no reason to trade on its own. Both lists are ordered by **net lineup points**, from the projections.",
     "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week and the next four, in your league's scoring.",
-    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
+    "**Net lineup points** is what his new team's best lineup gains minus what his old team's loses, over the next four weeks. A big positive number means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
     "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade Finder."
    ],
    "source": "sleeper",
@@ -5593,7 +5593,7 @@
     "below": "Scoring below his work",
     "above": "Scoring above his work"
    },
-   "gap_line": "What happened, not a forecast: his projection already counts his work and his points. Ordered by lineup fit, from the projections.",
+   "gap_line": "What happened, not a forecast: his projection already counts his work and his points. Ordered by net lineup points, from the projections.",
    "gap_graded": false
   }
  },

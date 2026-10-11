@@ -801,7 +801,8 @@ def fit_line(trade: Trade, span: str) -> str:
     """The fit (T-01): what both best lineups gain, this week and over ``span`` ("weeks 4–7"), one decimal - the
     numbers of the lineup headers."""
     m, t = trade.mine, trade.theirs
-    return (f"**Fit** (what the best lineups gain): you **{_s1(m.gain_week)}** this week and **{_s1(m.gain_horizon)}** over "
+    return (f"**Improvement to your starting lineup** (best lineup each week): you **{_s1(m.gain_week)}** this week and "
+            f"**{_s1(m.gain_horizon)}** over "
             f"{span}; them **{_s1(t.gain_week)}** and **{_s1(t.gain_horizon)}**.")
 
 

@@ -4245,13 +4245,14 @@ TRADE_HOWTO = (
     "**Scoring below his work**: players on other teams scoring *less* than their work is usually worth (**PPG − xPPG**, "
     "points minus expected points per game, below zero). **Scoring above his work**: your players scoring *more*. That is "
     "what happened, not a forecast: graded on past weeks, the gap closes part-way and their projections already expect "
-    "it, so it is no reason to trade on its own. Both lists are ordered by **Fit**, from the projections.",
+    "it, so it is no reason to trade on its own. Both lists are ordered by **net lineup points**, from the projections.",
     # ---- end IP-3
     "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your "
     "bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for "
     "this week and the next four, in your league's scoring.",
-    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other "
-    "team than to his own: an easier ask when you buy, a better sale when you sell.",
+    "**Net lineup points** is what his new team's best lineup gains minus what his old team's loses, "
+    "over the next four weeks. A big positive number means he matters more to the other team than to his own: an easier "
+    "ask when you buy, a better sale when you sell.",
     "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade "
     "Finder.",
 )
@@ -4477,7 +4478,7 @@ def _trade_lists(league_id: str, team: int, is_house: bool, od_info: dict) -> di
 # projections; the gap only decides who is in a list and breaks exact ties): what changes is what they are called.
 LIST_TITLES = {"below": "Scoring below his work", "above": "Scoring above his work"}
 GAP_LINE_NO_RECORD = ("What happened, not a forecast: his projection already counts his work and his points. Ordered by "
-                      "lineup fit, from the projections.")
+                      "net lineup points, from the projections.")
 
 
 def below_line(t: dict | None, span: str, wk) -> str:
@@ -4487,8 +4488,8 @@ def below_line(t: dict | None, span: str, wk) -> str:
                 f"lineup than he is worth to his own over {span}.")
     return (f"**{t['player']['player_name']} ({t['player']['position']}, {t['team_name']}) scores "
             f"{abs(t['diff_per_game']):.1f} per game below his work.** He would add **{t['gain_week']:+.1f}** to your "
-            f"week-{wk} lineup and cost them **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** over {span}): the "
-            "fit, from the projections, is the reason to ask about him — not the gap.")
+            f"week-{wk} lineup and cost them **{t['loss_week']:.1f}** (net **{t['fit_horizon']:+.1f}** lineup points over "
+            f"{span}: your gain minus their loss): that, from the projections, is the reason to ask about him — not the gap.")
 
 
 def above_line(t: dict | None, span: str, wk) -> str:
@@ -4498,8 +4499,8 @@ def above_line(t: dict | None, span: str, wk) -> str:
                 f"lineup than to yours over {span}.")
     return (f"**{t['player']['player_name']} ({t['player']['position']}) scores {t['diff_per_game']:.1f} per game above "
             f"his work.** {t['team_name']}'s week-{wk} lineup would gain **{t['gain_week']:+.1f}**, yours lose "
-            f"**{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** over {span}): the fit is the reason to offer him "
-            "— not the gap.")
+            f"**{t['loss_week']:.1f}** (net **{t['fit_horizon']:+.1f}** lineup points over {span}: their gain minus your "
+            "loss): that is the reason to offer him — not the gap.")
 
 
 def gap_words() -> dict:

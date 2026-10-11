@@ -167,3 +167,23 @@ def test_waivers_three_put_kickers_and_defenses_last_on_this_week(client, league
             assert not c.get("guide")
     src = (r.json().get("recent_adds") or {}).get("source")              # 5. no internal names on Waivers
     assert src is None or ("mart_" not in src and "analytics." not in src and src.endswith(" transactions")), src
+
+
+# ------------------------------------------------------------------------------------------------ 4. "Fit", said as what it is
+def test_fit_is_net_lineup_points_with_its_weeks():
+    from league_lab_api import decisions as DC
+    t = {"player": {"player_name": "Kenneth Walker III", "position": "RB"}, "team_name": "Run Bijan Run",
+         "diff_per_game": -1.5, "gain_week": 8.0, "loss_week": 7.9, "fit_horizon": 9.9}
+    b = DC.below_line(t, "weeks 5–8", 5)
+    assert "(net **+9.9** lineup points over weeks 5–8: your gain minus their loss)" in b
+    a = DC.above_line({**t, "diff_per_game": 5.0}, "weeks 5–8", 5)
+    assert "(net **+9.9** lineup points over weeks 5–8: their gain minus your loss)" in a
+    for line in (a, b, *DC.TRADE_HOWTO, DC.GAP_LINE_NO_RECORD):
+        assert not re.search(r"\bfit\b", line, re.I), line
+
+
+def test_no_screen_says_fit():
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[2] / "web" / "src" / "routes"
+    trades = (root / "Trades.svelte").read_text()
+    assert 'valueLabel="Fit"' not in trades and "**Fit**" not in trades and "best fit" not in trades
