@@ -1,0 +1,27 @@
+version: 2
+
+# ---- IX-3 (Wave I-X): Stats by game situation (docs/METRICS.md § "Stats by game situation")
+models:
+  - name: mart_player_game_situation
+    description: "Player x game x game situation (trailing by 9+, within 8 either way, leading by 9+): his targets, receptions, receiving yards, carries and rushing yards next to his team's targets, carries and dropbacks in the same plays of the same game."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id, situation]
+      - expression_is_true:
+          arguments:
+            expression: "targets <= team_targets and carries <= team_carries"
+      - expression_is_true:
+          arguments:
+            expression: "receptions <= targets and team_plays = team_dropbacks + team_carries and team_plays >= 0"
+    columns:
+      - name: situation
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["trailing", "close", "leading"]
+      - name: gsis_id
+        tests: [not_null]
+      - name: game_id
+        tests: [not_null]

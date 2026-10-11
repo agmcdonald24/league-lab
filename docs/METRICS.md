@@ -6092,3 +6092,27 @@ his team's players the model projects that week (QB / RB / WR / TE lines; a play
 line is not in it). On 2026 weeks 1 – 4 the team's summed projected targets average 32.8 against 31.2 real targets, and
 the projected share is 0.051 from the real whole-game share on average (1,281 RB / WR / TE player-weeks) — context, not a
 graded forecast against a baseline.
+
+## Stats by game situation (IX-3, Wave I-X, 2026-10-11) — the Stats table's situation filter
+
+Andrew, 2026-10-11 00:31: "Can we see stats based on certain conditions? Like in the lead or trailing?" The card's Usage
+tab answers it for one player (IX-2); the Stats table answers it for every player over any window.
+
+* **The groups are IX-2's, in its words** (`player.SITUATIONS`, `stats.SITUATION_WORDS`): **When trailing** = his
+  team behind by 9 or more when the play began; **Within a score** = 8 points or fewer either way, tied included; **When
+  leading** = his team ahead by 9 or more. From the play's pre-play score state (`int_play_context_long`, context
+  `score_state`: `trailing_9plus` · `trailing_1_8`, `tied`, `leading_1_8` · `leading_9plus`).
+* **The model**: `analytics.mart_player_game_situation`, player × game × situation for every game he played (QB / RB /
+  WR / TE): his targets, receptions, receiving yards, carries and rushing yards in those plays; his team's targets,
+  carries and dropbacks in the same plays of the same game; `team_plays` = dropbacks + carries (IX-2's "plays of his
+  team's"). The same play set and team join as `mart_player_context`; summed by player, season and group it equals that
+  mart's five buckets exactly (0 of 20,306 player-season-situation rows differ, 2016 – 2026).
+* **The window**: the Stats window's games he played (season, last 3 / 5 games played or calendar weeks, a week range);
+  counts summed; a share = summed numerator ÷ summed denominator in the same plays (rule 1), **null under 20 of his
+  team's plays** in the group (IX-2's floor: "too few to read"); a count is null when his team was never in the group in
+  his games (unknown, not 0). Per game = the group's total ÷ his games played in the window.
+* **Split**: targets, target share, receptions, receiving yards, carries, carry share, rushing yards. **Not split**
+  (null with the reason, never the all-plays number): points (the box score is not split by play), snap share and
+  target / carry share on the field (snaps are per game), air yards share, red-zone, efficiency, Next Gen Stats, Pro
+  Football Reference, charting and the role changes (each from whole-game or weekly files), and the value column.
+  Games stays: it is the window's sample.

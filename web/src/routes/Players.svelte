@@ -74,6 +74,15 @@
   const minOpp = $derived(Math.max(0, Number(params.get("minopp") ?? "0") || 0));
   const opps = (p: StatsRow) => (num(p.targets) ?? 0) + (num(p.carries) ?? 0) + (p.position === "QB" ? (num(p.attempts) ?? 0) : 0);
 
+  // ---- IX-3 (Wave I-X): the game situation (IX-2's three groups) — `sit=` in the URL, `situation=` to the API
+  const SITS = [
+    { key: "all", label: "All plays" },
+    { key: "trailing", label: "When trailing" },
+    { key: "close", label: "Within a score" },
+    { key: "leading", label: "When leading" },
+  ];
+  const sitKey = $derived(SITS.some((x) => x.key === params.get("sit")) ? params.get("sit")! : "all");
+  // ---- end IX-3
   const r = new Remote<StatsFrame>();
   const path = $derived(
     statsPath(league, {
@@ -81,7 +90,7 @@
       window: win === "last3w" ? "last3" : win === "last5w" ? "last5" : win,
       basis: win === "last3w" || win === "last5w" ? "weeks" : win === "last3" || win === "last5" ? "games" : undefined,
       weeks: win === "weeks" ? `${range[0]}-${range[1]}` : undefined,
-    }),
+    }) + (sitKey === "all" ? "" : `&situation=${sitKey}`), // ---- IX-3
   );
   $effect(() => r.load(path, onauth, true));
 
@@ -128,7 +137,20 @@
   const off = $derived((params.get("off") ?? "").split(",").filter(Boolean));
   const groupNames = $derived([...new Set(fullAll.map((c) => groupOf(c)))]);
   const fullCols = $derived(fullAll.filter((c) => !hidden.includes(groupOf(c)) && !off.includes(c.id)));
-  const cols = $derived<StatsColumn[]>(view === "full" ? fullCols : keyCols);
+  // ---- IX-3: under a situation, the split columns read "when trailing" and every other one is — with the reason (an
+  // answer without the split — an older server — splits nothing: never the all-plays number)
+  const sitInfo = $derived(sitKey === "all" ? null : (r.data?.situation ?? null));
+  const sitLabel = $derived(SITS.find((x) => x.key === sitKey)?.label ?? "");
+  const splitSet = $derived(new Set(sitInfo?.columns ?? []));
+  const cols = $derived<StatsColumn[]>(
+    (view === "full" ? fullCols : keyCols).map((c) =>
+      sitKey === "all" || c.id === "games"
+        ? c
+        : splitSet.has(c.id)
+          ? { ...c, situation: sitLabel }
+          : { ...c, unsplit: true, reason: sitInfo?.reason ?? "Not split by game situation: this server does not split it yet. Pick All plays to see it." },
+    ),
+  );
   const roleGraded = $derived(cols.find((c) => c.graded)?.graded ?? null); // ---- IP-3 fix round: the Role change grade
   function toggleGroup(g: string) {
     const next = hidden.includes(g) ? hidden.filter((x) => x !== g) : [...hidden, g];
@@ -236,7 +258,7 @@
       nfl,
       q: q.trim(),
       min: minGames,
-    }),
+    }) + (sitKey === "all" ? "" : `&situation=${sitKey}`), // ---- IX-3
   );
   const fileName = $derived(
     `${APP_NAME}-stats-${r.data?.season ?? ""}-${win === "weeks" ? `weeks-${range[0]}-${range[1]}` : win}-${(POS.find((x) => x.key === position)?.label ?? "all").toLowerCase().replace(/[^a-z]+/g, "-")}${view === "full" ? "-full" : ""}.csv`.replace(/-+/g, "-"),
@@ -302,7 +324,7 @@
   }
   function openView(v: View) {
     const want = Object.fromEntries(new URLSearchParams(v.qs));
-    const clear = Object.fromEntries(["position", "who", "nfl", "window", "weeks", "mode", "min", "minopp", "cols", "sort", "dir", "q", "view", "hide", "off"].map((k) => [k, null])); // ---- IM-2: + view, hide, off
+    const clear = Object.fromEntries(["position", "who", "nfl", "window", "weeks", "mode", "min", "minopp", "cols", "sort", "dir", "q", "view", "hide", "off", "sit"].map((k) => [k, null])); // ---- IM-2: + view, hide, off; IX-3: + sit
     setParams({ ...clear, ...want });
     q = want.q ?? "";
   }
@@ -327,7 +349,7 @@
     {#snippet answer()}
       {#if leader && sortCol}
         <span data-testid="players-answer"
-          ><strong>{dir === "asc" ? "Lowest" : "Highest"} {title(sortCol).toLowerCase()}: {leader.player_name}, {show(sortCol, leader)}</strong>
+          ><strong>{dir === "asc" ? "Lowest" : "Highest"} {title(sortCol).toLowerCase()}{sitKey === "all" ? "" : ` ${sitLabel.toLowerCase()}`}: {leader.player_name}, {show(cols.find((c) => c.id === sortCol.id) ?? sortCol, leader)}</strong>
           ({leader.games} game{leader.games === 1 ? "" : "s"}{cols.some((c) => c.id === "receiving_yards") && sortCol.id !== "receiving_yards" && (leader.position === "WR" || leader.position === "TE")
             ? `, ${fmt.pts(num(leader.receiving_yards_per_game))} receiving yards per game`
             : ""}) · {filtered.length} player{filtered.length === 1 ? "" : "s"} · {r.data?.window.label}.</span
@@ -412,6 +434,16 @@
         </select>
       </span>
     </div>
+    <!-- ---- IX-3: the game situation; what it splits, under it -->
+    <div class="ll-chiprow">
+      <Chips label="Game situation" testid="sit" current={sitKey} onpick={(k) => setParams({ sit: k === "all" ? null : k })} items={SITS} />
+    </div>
+    {#if sitKey !== "all" && r.data}
+      <p class="text-sm text-ink-2" data-testid="stats-situation-note">
+        <strong class="text-ink">{sitLabel}</strong>: {sitInfo?.means ?? ""}{sitInfo?.means ? ". " : ""}Split by it: targets, target share, receptions, receiving yards, carries, carry share and rushing yards, in
+        those plays. A share needs {sitInfo?.min_plays ?? 20} of his team's plays (fewer: too few to read). Every other column shows — here: it comes from whole-game stats.
+      </p>
+    {/if}
     {#if r.data}
       <p class="text-sm text-ink-2" data-testid="stats-window-label">
         <strong>{r.data.window.label}</strong>{r.data.window.note ? ` · ${r.data.window.note}` : ""}{r.data.window.through_week
@@ -542,7 +574,7 @@
         {sel}
         onselect={toggleSel}
         owner={owned ? ownerOf : null}
-        caption={`${POS.find((x) => x.key === position)?.label ?? "All"} players, ${r.data.window.label}: ${view === "full" ? "full table" : (activeDef?.label ?? "Key stats").toLowerCase()}${sortCol ? `, sorted by ${title(sortCol).toLowerCase()}` : ""}`}
+        caption={`${POS.find((x) => x.key === position)?.label ?? "All"} players, ${r.data.window.label}${sitKey === "all" ? "" : `, ${sitLabel.toLowerCase()}`}: ${view === "full" ? "full table" : (activeDef?.label ?? "Key stats").toLowerCase()}${sortCol ? `, sorted by ${title(sortCol).toLowerCase()}` : ""}`}
         dim={r.loading}
       />
     {/key}

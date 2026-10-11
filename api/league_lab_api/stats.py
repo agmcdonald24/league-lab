@@ -1480,3 +1480,80 @@ def csv_lines(d: dict, columns: list[str], per_game: bool = False):
     for p in d["players"]:
         yield ",".join(_csv_cell(p.get(f)) for f in fields_) + "\r\n"
 # ---- end IM-1
+
+
+# ---- IX-3 (Wave I-X): Stats by game situation (docs/METRICS.md § "Stats by game situation") — IX-2's three groups
+# (player.SITUATIONS, the card's Usage tab), from analytics.mart_player_game_situation (player x game x situation), summed
+# over the window's games he played. Only the columns the plays can split carry a number; every other column is null
+# (the screen shows a dash with SITUATION_REASON), never the all-plays number.
+SITUATION_REL = "mart_player_game_situation"
+SITUATION_KEYS = ("all", "trailing", "close", "leading")
+SITUATION_WORDS = {"trailing": ("When trailing", "his team behind by 9 or more"),
+                   "close": ("Within a score", "8 points or fewer either way, tied included"),
+                   "leading": ("When leading", "his team ahead by 9 or more")}
+SITUATION_MIN_PLAYS = 20           # IX-2's floor: under 20 of his team's plays a share reads "too few to read"
+SITUATION_COUNTS = ["targets", "receptions", "receiving_yards", "carries", "rushing_yards"]
+SITUATION_COLS = ["targets", "target_share", "receptions", "receiving_yards", "carries", "carry_share", "rushing_yards"]
+SITUATION_REASON = ("Not split by game situation: this number comes from whole-game stats, so it is left out here. "
+                    "Pick All plays to see it.")
+SITUATION_SQL = """select gsis_id, game_id, situation, team_plays, team_targets, team_carries,
+                          targets, receptions, receiving_yards, carries, rushing_yards
+                   from analytics.mart_player_game_situation where season = %s and season_type = %s"""
+_KEEP = {"gsis_id", "player_name", "position", "team", "headshot_url", "rostered_by_roster_id", "rostered_by_team",
+         "games", "first_week", "last_week"}
+
+
+def situation_rows(season: int, season_type: str) -> pd.DataFrame | None:
+    """The season's player x game x situation rows (cached like the season frame); None when this copy has no mart."""
+    key = (int(season), season_type, "situation")
+    hit = _frames.get(key)
+    if hit is not None:
+        return hit
+    try:
+        if missing_relations((SITUATION_REL,)):
+            return None
+        df = query(SITUATION_SQL, (int(season), season_type))
+    except Exception:  # noqa: BLE001 - no mart on this copy: the filter says so, the frame never fails
+        return None
+    for c in ["team_plays", "team_targets", "team_carries", *SITUATION_COUNTS]:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+    return _frames.put(key, df, ttl=TTL_S)
+
+
+def situation_desc(key: str, built: bool = True) -> dict:
+    label, means = SITUATION_WORDS[key]
+    return {"key": key, "label": label, "means": means, "columns": SITUATION_COLS if built else [],
+            "reason": SITUATION_REASON if built else "Game situations arrive with the nightly update; they are not on "
+                                                        "this copy yet.",
+            "min_plays": SITUATION_MIN_PLAYS}
+
+
+def with_situation(agg: pd.DataFrame, games: pd.DataFrame, key: str, sit: pd.DataFrame | None) -> pd.DataFrame:
+    """The window's rows with only the situation's numbers: his targets, receptions, receiving yards, carries and
+    rushing yards in the plays of that situation, summed over ``games`` (his played games in the window: gsis_id,
+    game_id); the shares are summed numerator / summed denominator in the same plays, null under SITUATION_MIN_PLAYS of
+    his team's plays; every other column null. ``situation_plays`` = his team's dropbacks + carries in them."""
+    out = agg[[c for c in agg.columns if c in _KEEP]].copy()
+    out = out.join(pd.DataFrame(np.nan, index=out.index, columns=[c for c in agg.columns if c not in _KEEP]))
+    if sit is None or out.empty:
+        out["situation_plays"] = np.nan
+        return out
+    s = sit[sit["situation"] == key].merge(games[["gsis_id", "game_id"]].drop_duplicates(), on=["gsis_id", "game_id"])
+    by = s.groupby("gsis_id")[["team_plays", "team_targets", "team_carries", *SITUATION_COUNTS]].sum()
+    by = by.rename(columns={"team_plays": "situation_plays"})
+    out = out.drop(columns=[c for c in by.columns if c in out.columns]).merge(by, left_on="gsis_id", right_index=True,
+                                                                               how="left")
+    plays = out["situation_plays"]
+    seen = plays.fillna(0) > 0                     # his team was in the situation in his games: a 0 is a real 0
+    for c in SITUATION_COUNTS + ["team_targets", "team_carries"]:
+        out[c] = out[c].where(seen)
+    enough = plays.fillna(0) >= SITUATION_MIN_PLAYS
+    out["target_share"] = ratio(out["targets"], out["team_targets"]).where(enough)
+    out["carry_share"] = ratio(out["carries"], out["team_carries"]).where(enough)
+    g = pd.to_numeric(out["games"], errors="coerce")
+    for c in SITUATION_COUNTS:
+        if CAT.get(c, {}).get("per_game"):
+            out[f"{c}_per_game"] = (out[c] / g.where(g > 0)).round(2)
+    out["situation_plays"] = plays.where(plays.notna(), 0).astype(float)
+    return out.copy()
+# ---- end IX-3

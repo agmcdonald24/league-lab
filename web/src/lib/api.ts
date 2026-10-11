@@ -3109,4 +3109,8 @@ export interface StatsFrame {
   views?: Record<string, StatsViewDef[]>;
   situation?: StatsSituation | null;
 }
+export interface StatsColumn {
+  unsplit?: boolean; // the screen's mark under a situation: the column is not split by it (— with `reason`)
+  situation?: string; // the screen's mark under a situation: split, read "when trailing"
+}
 // ---- end IX-3

@@ -1060,7 +1060,8 @@ def players(league_id: str, *, season: int | None = None, position: str | None =
             dir: str | None = None, limit: int | None = None, offset: int = 0, q: str | None = None,
             season_type: str = "REG", min_games: int = 1, source: str | None = None,
             window: str | None = None, basis: str | None = None, weeks: str | None = None, who: str | None = None,
-            team: int | None = None, nfl: str | None = None) -> dict:            # ---- II-3: the Stats frame's params
+            team: int | None = None, nfl: str | None = None,
+            situation: str | None = None) -> dict:            # ---- II-3: the Stats frame's params; IX-3: situation
     ctx = context(league_id, source)
     season = int(season or ctx.season)
     st = (season_type or "REG").upper()
@@ -1070,7 +1071,7 @@ def players(league_id: str, *, season: int | None = None, position: str | None =
     if window is not None:
         return stats_frame(ctx, season=season, season_type=st, position=position, window=window, basis=basis, weeks=weeks,
                            who=who, team=team, nfl=nfl, q=q, min_games=min_games, sort=sort, dir=dir, limit=limit,
-                           offset=offset)
+                           offset=offset, situation=situation)
     # ---- end II-3
     pos = _positions(position, POSITIONS)
     cols = list(dict.fromkeys(c for p in pos for c in POSITION_COLUMNS[p]))
@@ -1108,8 +1109,11 @@ STATS_HOWTO = (
 
 def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None, window: str, basis: str | None,
                 weeks: str | None, who: str | None, team: int | None, nfl: str | None, q: str | None, min_games: int,
-                sort: str | None, dir: str | None, limit: int | None, offset: int) -> dict:
+                sort: str | None, dir: str | None, limit: int | None, offset: int, situation: str | None = None) -> dict:
     w = (window or "season").lower()
+    sk = (situation or "all").lower()                                                      # ---- IX-3: a closed set
+    if sk not in ST.SITUATION_KEYS:
+        raise BadRequest("situation is all, trailing, close or leading")
     if w not in ST.WINDOWS:
         raise BadRequest(f"window is one of {', '.join(ST.WINDOWS)}")
     b = (basis or "games").lower()
@@ -1134,6 +1138,12 @@ def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None
         agg = agg.merge(ST.points(lg, mine[mine["gsis_id"].isin(agg["gsis_id"])], ctx.scoring), on="gsis_id",
                         how="left")                                                    # IM-1: + the league's scoring
         agg = agg[agg["games"] >= max(0, int(min_games if min_games is not None else 1))]
+    sit_desc = None
+    if sk != "all":                                                                      # ---- IX-3: by game situation
+        sit = ST.situation_rows(season, season_type)
+        sit_desc = ST.situation_desc(sk, built=sit is not None)
+        if not agg.empty:
+            agg = ST.with_situation(agg, mine[mine["played"]], sk, sit)                   # ---- end IX-3
     if agg.empty:
         agg = pd.DataFrame(columns=["gsis_id", "player_name", "position", "games"])
     if q and len(q.strip()) >= 2:
@@ -1147,8 +1157,9 @@ def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None
     n = max(1, min(int(limit if limit is not None else ST.STATS_LIMIT), ST.STATS_LIMIT))
     default = next((p["sort"] for p in ST.PRESETS if p["positions"] == pos), "points")
     page = _sort(df, sort, dir, default).iloc[off: off + n]
-    page = page[[c for c in ST.fields(pos) if c in page.columns]]
+    page = page[[c for c in ST.fields(pos) + (["situation_plays"] if sit_desc else []) if c in page.columns]]
     return {**ctx.meta(), "season": season, "season_type": season_type, "positions": pos, "window": desc,
+            "situation": sit_desc,                                                              # ---- IX-3
             "who": wh, "team": team, "nfl": nfl, "min_games": min_games, "total": total, "offset": off,
             "players": _records(page), "catalogue": cat, "presets": ST.presets(cat), "groups": ST.GROUPS,  # IM-1
             "views": {k: ST.views(k, cat) for k in ("wrte", "rb", "qb", "all")},                   # ---- IX-3

@@ -172,6 +172,7 @@ export const head = (c: StatsColumn, mode: Mode) => (c.per_game && mode === "gam
 export const title = (c: StatsColumn, mode: Mode) => (c.per_game && mode === "game" ? `${c.label} per game` : c.label);
 
 export function show(c: StatsColumn, p: StatsRow, mode: Mode): string {
+  if (c.unsplit) return "—"; // ---- IX-3: never the all-plays number under a situation
   const v = num(p[field(c, mode)]);
   if (v === null) return "—";
   if (SHARE_CHANGE.has(c.id)) return sharePts(v); // ---- IO-4
@@ -211,9 +212,21 @@ export function small(c: StatsColumn, p: StatsRow, mode: Mode): string | null {
 /** The reason a cell is —, or the sample behind a number ("23 of 57 team carries in his 2 games"). */
 export function why(c: StatsColumn, p: StatsRow, mode: Mode): string {
   const v = num(p[field(c, mode)]);
-  if (v === null) return c.reason ?? "not available";
   const g = `${p.games} game${p.games === 1 ? "" : "s"}`;
   const n = (k: string) => num(p[k]);
+  // ---- IX-3 (Wave I-X): under a game situation, a column not split by it says so; a split one says its plays
+  if (c.unsplit) return c.reason ?? "Not split by game situation.";
+  if (c.situation) {
+    const where = c.situation.toLowerCase();
+    const plays = n("situation_plays");
+    if (plays === null || plays === 0) return `His team was not in this situation (${where}) in his games in this window.`;
+    if (v === null) return `Too few to read: ${plays} plays of his team's ${where}.`;
+    if (c.id === "target_share") return `${n("targets")} of ${n("team_targets")} team targets ${where} (${plays} plays of his team's, his ${g})`;
+    if (c.id === "carry_share") return `${n("carries")} of ${n("team_carries")} team carries ${where} (${plays} plays of his team's, his ${g})`;
+    return `${title(c, mode)} ${where}: ${plays} plays of his team's in his ${g}`;
+  }
+  // ---- end IX-3
+  if (v === null) return c.reason ?? "not available";
   switch (c.id) {
     case "target_share":
       return `${n("targets")} of ${n("team_targets")} team targets in his ${g}`;
@@ -276,6 +289,7 @@ export function csv(rows: StatsRow[], cols: StatsColumn[], mode: Mode, owner?: (
   const lines = [headers.map(cell).join(",")];
   for (const p of rows) {
     const vals = cols.map((c) => {
+      if (c.unsplit) return ""; // ---- IX-3
       const v = num(p[field(c, mode)]);
       if (v === null) return "";
       return c.format === "pct" ? (v * 100).toFixed(1) : show(c, p, mode);

@@ -605,15 +605,27 @@ def matchups_cb(league: str, response: Response, team: int | None = None, limit:
 def players(league: str, response: Response, season: int | None = None, position: str = "ALL", sort: str | None = None,
             dir: str | None = None, limit: int = 50, offset: int = 0, q: str | None = None, season_type: str = "REG",
             min_games: int = 1, source: str | None = None, window: str | None = None, basis: str | None = None,
-            weeks: str | None = None, who: str | None = None, team: int | None = None, nfl: str | None = None):  # ---- II-3
+            weeks: str | None = None, who: str | None = None, team: int | None = None, nfl: str | None = None,
+            situation: str | None = None):  # ---- II-3; IX-3: situation = all | trailing | close | leading
     vsort = refleague.is_reference(league) and window is not None and sort == refleague.VALUE_COLUMN      # ---- IN-2
     out = research.players(league, season=season, position=position, sort=None if vsort else sort, dir=dir,
                            limit=1000 if vsort else limit, offset=0 if vsort else offset, q=q, season_type=season_type,
                            min_games=min_games, source=source, window=window, basis=basis, weeks=weeks, who=who,
-                           team=team, nfl=nfl)
+                           team=team, nfl=nfl, situation=situation)
     if refleague.is_reference(league) and window is not None:                # ---- IN-2: the value column, browsing
         out = refleague.stats_values(out, league, sort, dir, (offset, limit) if vsort else None)   # ---- end IN-2
+    out = _situation_only(out)                                                                    # ---- IX-3
     return _research(out, league, response)                                                       # ---- IM-3
+
+
+# ---- IX-3 (Wave I-X): under a game situation the value column (a forecast, not split by situation) is unknown too
+def _situation_only(out: dict) -> dict:
+    if isinstance(out, dict) and out.get("situation"):
+        for p in out.get("players") or []:
+            if "ros_value" in p:
+                p["ros_value"] = None
+    return out
+# ---- end IX-3
 
 
 # ---- IM-1 (Wave I-M): the Stats table as a CSV — /api/players?window=…'s parameters + the columns (cols= | preset= +
@@ -623,7 +635,8 @@ def players_csv(league: str, season: int | None = None, position: str = "ALL", s
                 dir: str | None = None, limit: int = 1000, offset: int = 0, q: str | None = None, season_type: str = "REG",
                 min_games: int = 1, source: str | None = None, window: str = "season", basis: str | None = None,
                 weeks: str | None = None, who: str | None = None, team: int | None = None, nfl: str | None = None,
-                preset: str | None = None, cols: str | None = None, view: str | None = None, per_game: int = 0):
+                preset: str | None = None, cols: str | None = None, view: str | None = None, per_game: int = 0,
+                situation: str | None = None):                                                     # ---- IX-3
     from fastapi.responses import StreamingResponse
 
     from . import stats as stats_mod
@@ -631,9 +644,10 @@ def players_csv(league: str, season: int | None = None, position: str = "ALL", s
     d = research.players(league, season=season, position=position, sort=None if vsort else sort, dir=dir,
                          limit=1000 if vsort else limit, offset=0 if vsort else offset, q=q, season_type=season_type,
                          min_games=min_games, source=source, window=window, basis=basis, weeks=weeks, who=who,
-                         team=team, nfl=nfl)
+                         team=team, nfl=nfl, situation=situation)                            # ---- IX-3: situation
     if refleague.is_reference(league):                                       # ---- IN-2: the value column, no owner
         d = refleague.public(refleague.stats_values(d, league, sort, dir, (offset, limit) if vsort else None))   # ---- end IN-2
+    d = _situation_only(d)                                                                        # ---- IX-3
     try:
         columns = stats_mod.csv_columns(d, preset=preset, cols=cols, view=view)
     except ValueError as exc:
