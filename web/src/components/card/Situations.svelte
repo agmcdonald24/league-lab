@@ -6,6 +6,9 @@
 
   let { s, testid = "situations" }: { s: Situations; testid?: string } = $props();
   const pct = (v: number | null, few: boolean) => (few || v === null ? "—" : `${Math.round(100 * v)}%`);
+  // a receiver with no carries (or a passer with no targets) gets no column of zeros: the columns that have a number
+  const showT = $derived(s.groups.some((g) => g.targets > 0));
+  const showC = $derived(s.groups.some((g) => g.carries > 0));
 </script>
 
 <section class="rounded-lg border border-line bg-surface p-3" data-testid={testid} aria-labelledby={`${testid}-title`}>
@@ -13,11 +16,9 @@
   <table class="mt-2 w-full table-fixed text-sm" data-testid={`${testid}-table`}>
     <thead>
       <tr class="ll-label text-left">
-        <th class="w-[34%] py-1 font-medium">When</th>
-        <th class="py-1 text-right font-medium">Targets</th>
-        <th class="py-1 text-right font-medium">Share</th>
-        <th class="py-1 text-right font-medium">Carries</th>
-        <th class="py-1 text-right font-medium">Share</th>
+        <th class="w-[40%] py-1 font-medium">When</th>
+        {#if showT}<th class="py-1 pl-1 text-right font-medium">Targets</th><th class="py-1 pl-1 text-right font-medium">Share</th>{/if}
+        {#if showC}<th class="py-1 pl-1 text-right font-medium">Carries</th><th class="py-1 pl-1 text-right font-medium">Share</th>{/if}
       </tr>
     </thead>
     <tbody>
@@ -27,10 +28,8 @@
             <span class="font-semibold">{g.label}</span>
             <span class="block text-xs leading-snug text-ink-3" data-testid={`${testid}-plays`}>{g.words}</span>
           </td>
-          <td class="tabnum py-1.5 text-right">{g.targets}</td>
-          <td class="tabnum py-1.5 text-right">{pct(g.target_share, g.too_few)}</td>
-          <td class="tabnum py-1.5 text-right">{g.carries}</td>
-          <td class="tabnum py-1.5 text-right">{pct(g.carry_share, g.too_few)}</td>
+          {#if showT}<td class="tabnum py-1.5 text-right">{g.targets}</td><td class="tabnum py-1.5 text-right">{pct(g.target_share, g.too_few)}</td>{/if}
+          {#if showC}<td class="tabnum py-1.5 text-right">{g.carries}</td><td class="tabnum py-1.5 text-right">{pct(g.carry_share, g.too_few)}</td>{/if}
         </tr>
       {/each}
     </tbody>
