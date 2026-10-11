@@ -100,6 +100,13 @@
          projection and its range, his value), the ratings and the first chart, then every section the card had,
          reorganised: one column on a phone, two from 900 px, three from 1280 px (lib/card.ts's sections, unchanged) -->
     <CardHead d={data} line={headLine} scoring={scoringWord} testid="player-header" />
+    <!-- ---- IZ-3: what he means for this roster, then at most three reasons -->
+    {#if data.roster_line?.words}<p class="text-base leading-snug font-semibold text-ink" data-testid="player-roster-line" data-kind={data.roster_line.kind}>{data.roster_line.words}</p>{/if}
+    {#if data.reasons?.length}
+      <ul class="list-disc space-y-1 pl-5 text-sm leading-snug text-ink-2" data-testid="player-reasons">
+        {#each data.reasons as r (r.key)}<li data-testid="player-reason" data-key={r.key}>{r.words}</li>{/each}
+      </ul>
+    {/if}
     <div class="grid grid-cols-1 gap-3 wide:grid-cols-12 wide:items-start">
       {#if RATED.includes(data.position)}
         <div class="wide:col-span-5 xl:col-span-4">{#await panels() then P}<P.Ratings gsis={data.gsis_id} position={data.position} {onauth} average={false} />{/await}<!-- IX-2: no plain average --></div>

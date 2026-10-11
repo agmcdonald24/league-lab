@@ -252,6 +252,16 @@
   {/if}
 {/snippet}
 
+{#snippet rosterSay(d: PlayerCard, id: string)}
+  <!-- ---- IZ-3: one line of what he means for this roster (My Week's numbers), then the reasons, each saying where to read more -->
+  {#if d.roster_line?.words}<p class="text-base leading-snug font-semibold text-ink" data-testid={`${id}-roster-line`} data-kind={d.roster_line.kind}>{d.roster_line.words}</p>{/if}
+  {#if d.reasons?.length}
+    <ul class="list-disc space-y-1 pl-5 text-sm leading-snug text-ink-2" data-testid={`${id}-reasons`}>
+      {#each d.reasons as r (r.key)}<li data-testid={`${id}-reason`} data-key={r.key}>{r.words}</li>{/each}
+    </ul>
+  {/if}
+{/snippet}
+
 {#snippet overview(d: PlayerCard)}
   <div class="space-y-3" data-testid="drawer-overview">
     <!-- ---- IP-4 (Wave I-P): the card's head (compact), then the ratings and the first chart, then the sections -->
@@ -259,12 +269,17 @@
     {#if d.why}
       <p class="text-sm leading-snug font-semibold text-ink-2" data-testid="pane-why">{d.why.sentence}</p>
     {/if}
+    <!-- ---- IZ-3: forecast → what he means for this roster → at most three reasons → his status → the actions -->
+    {@render rosterSay(d, "pane")}
+    {#each focused.filter((x) => x.key === "availability") as x (x.key)}
+      <SectionBox section={x.main} {ctx} testid={`pane-section-${x.key}`}><NewsLine card={d} testid="pane-news" /></SectionBox>
+    {/each}
     {@render actionsRow()}
     <!-- ---- end IP-4 -->
     <!-- ---- IX-2 (the review's § 3): the Overview is one forecast (the head), what it means here, the evidence, his
          status and the next action; the ratings move to Usage (without their plain average: not a graded player score)
          and the points chart to the game log -->
-    {#each focused as x (x.key)}
+    {#each focused.filter((x) => x.key !== "availability") as x (x.key)}<!-- IZ-3: availability is the status above -->
       <SectionBox section={x.main} {ctx} testid={`pane-section-${x.key}`}>
         <!-- ---- N1 (Wave I-D): the news line under the availability lines -->
         {#if x.key === "availability"}<NewsLine card={d} testid="pane-news" />{/if}

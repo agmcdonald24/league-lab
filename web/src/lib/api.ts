@@ -182,6 +182,8 @@ export interface Situations {
 // ---- end IX-2
 export interface PlayerCard {
   bio?: PlayerBio | null; // ---- IX-2
+  roster_line?: { kind: string; words: string } | null; // ---- IZ-3: what he means for this roster (no league: none)
+  reasons?: { key: "role" | "matchup" | "form"; words: string }[]; // ---- IZ-3: at most three
   situations?: Situations | null; // ---- IX-2
   gsis_id: string;
   player_name: string;
