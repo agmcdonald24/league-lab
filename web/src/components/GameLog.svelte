@@ -24,6 +24,21 @@
     const v = xs.filter((x): x is number => x !== null);
     return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
   };
+  // ---- IX-2: a game he played far less than usual — "Left early" only when the play-by-play named him hurt
+  // (left_early_kind "hurt"), else the plain fact ("short"); and his target share on the field with its sample: under
+  // 10 offensive snaps a dash and "too few snaps" (the estimate is noise on a handful of snaps)
+  type Mark = { week: number; left_early?: boolean; left_early_kind?: "hurt" | "short" | null; left_early_words?: string | null;
+    on_field_target_share?: number | null; on_field_basis?: string | null; offense_snaps?: number | null; target_share?: number | null };
+  const marked = $derived((played as unknown as Mark[]).filter((g) => g.left_early && g.left_early_words));
+  const ON_FIELD_MIN_SNAPS = 10;
+  const pct = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${Math.round(100 * v)}%`);
+  function onField(g: Mark): string {
+    if (g.on_field_target_share === null || g.on_field_target_share === undefined) return "";
+    if (g.offense_snaps == null || g.offense_snaps < ON_FIELD_MIN_SNAPS) return `Target share on the field: — too few snaps (${g.offense_snaps ?? 0}).`;
+    return `Target share on the field: ${pct(g.on_field_target_share)} (whole game ${pct(g.target_share)}; ${g.offense_snaps} snaps).`;
+  }
+  const estimated = $derived(marked.some((g) => g.on_field_basis === "snaps"));
+  // ---- end IX-2
   const ppg = $derived(avg(played.map((g) => g.points)));
   const xppg = $derived(avg(played.map((g) => g.expected_points)));
 </script>
@@ -58,5 +73,19 @@
         an observed gap, not a forecast){/if}, in {leagueName} scoring.
     </p>
     <LineChart {points} actualLabel="Points" expectedLabel="Expected points" />
+    <!-- ---- IX-2 -->
+    {#if marked.length}
+      <ul class="mt-3 space-y-1 text-sm leading-snug text-ink-2" data-testid="game-log-marks">
+        {#each marked as g (g.week)}
+          <li data-testid="game-log-mark" data-kind={g.left_early_kind}><strong class="text-ink">Week {g.week}</strong>: {g.left_early_words}. {onField(g)}</li>
+        {/each}
+      </ul>
+      <p class="mt-1 text-xs leading-snug text-ink-3" data-testid="game-log-onfield-key">
+        Target share on the field: his targets ÷ his team's targets on the plays he was on the field{estimated
+          ? ` — here an estimate from his share of the team's snaps (who was on the field on each play is published after the season)`
+          : ""}.
+      </p>
+    {/if}
+    <!-- ---- end IX-2 -->
   {/if}
 </Card>

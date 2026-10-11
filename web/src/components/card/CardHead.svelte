@@ -70,6 +70,8 @@
       >
         {name[1]}
       </h2>
+      <!-- ---- IX-2: who he is — height, weight, age, experience, college, draft (a fact we do not have is left out) -->
+      {#if d.bio?.words && d.position !== "DEF"}<p class="mt-1 text-xs leading-snug text-ink-2" data-testid="card-bio">{d.bio.words}</p>{/if}
       <div class="mt-2 flex flex-wrap items-center gap-1.5">
         <PosBadge pos={d.position} size="md" />
         {#if d.position !== "DEF"}<TeamBadge team={d.team} size="md" />{/if}

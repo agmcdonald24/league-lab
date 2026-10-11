@@ -30,6 +30,7 @@
   import { navigate } from "../lib/router.svelte";
   import { canWatch, isWatched, unwatch, watch } from "../lib/watchlist.svelte"; // ---- IL-5: Watch / Watching
   import GameLog from "./GameLog.svelte";
+  import Situations from "./card/Situations.svelte"; // ---- IX-2
   import NewsLine from "./NewsLine.svelte"; // ---- N1
   import CardHead from "./card/CardHead.svelte"; // ---- IP-4
   import { panels } from "./card/lazy"; // ---- IP-4: the ratings and the first chart (a chunk of their own)
@@ -62,6 +63,7 @@
   // the next four, the season tiles and the schedule behind expanders (the full page shows everything open).
   // II-2: Usage and the game log are sections of their own.
   const PANE_ORDER = ["projection", "role", "availability", "value", "signals"]; // ---- IL-1: + role, after the projection
+  const RATED_POS = ["QB", "RB", "WR", "TE"]; // ---- IX-2: the ratings (Usage) cover these
   const focused = $derived(
     sections
       .filter((x) => PANE_ORDER.includes(x.key))
@@ -258,11 +260,10 @@
       <p class="text-sm leading-snug font-semibold text-ink-2" data-testid="pane-why">{d.why.sentence}</p>
     {/if}
     {@render actionsRow()}
-    {#await panels() then P}
-      <P.Ratings gsis={d.gsis_id} position={d.position} compact {onauth} testid="pane-ratings" />
-      <P.PointsChart gsis={d.gsis_id} {league} season={d.season} scoring={isRef(league) ? refScoringLabel(league) : d.league_name} schedule={d.schedule ?? []} position={d.position} testid="pane-points" />
-    {/await}
     <!-- ---- end IP-4 -->
+    <!-- ---- IX-2 (the review's § 3): the Overview is one forecast (the head), what it means here, the evidence, his
+         status and the next action; the ratings move to Usage (without their plain average: not a graded player score)
+         and the points chart to the game log -->
     {#each focused as x (x.key)}
       <SectionBox section={x.main} {ctx} testid={`pane-section-${x.key}`}>
         <!-- ---- N1 (Wave I-D): the news line under the availability lines -->
@@ -301,6 +302,12 @@
 
 {#snippet usagePanel()}
   <div class="space-y-3" data-testid="drawer-usage">
+    <!-- ---- IX-2: the ratings (no average) and his usage by game situation -->
+    {#if data && RATED_POS.includes(data.position)}
+      {#await panels() then P}<P.Ratings gsis={data.gsis_id} position={data.position} compact {onauth} average={false} testid="pane-ratings" />{/await}
+    {/if}
+    {#if data?.situations}<Situations s={data.situations} testid="pane-situations" />{/if}
+    <!-- ---- end IX-2 -->
     {#if usage}
       <SectionBox section={usage} {ctx} testid="pane-section-usage" />
     {:else}
@@ -315,6 +322,10 @@
       <!-- ---- IP-4 fix round: a team defense has no player game log; its points by week are the Overview's chart -->
       <p class="ll-empty" data-testid="drawer-gamelog-unit">A team defense's points by week are in the Overview's chart.</p>
     {:else}
+    <!-- ---- IX-2: the points against the projection live with the game log (they were the Overview's) -->
+    {#await panels() then P}
+      <P.PointsChart gsis={d.gsis_id} {league} season={d.season} scoring={isRef(league) ? refScoringLabel(league) : d.league_name} schedule={d.schedule ?? []} position={d.position} testid="pane-points" />
+    {/await}
     <GameLog gsis={d.gsis_id} {league} season={d.season} {onauth} leagueName={isRef(league) ? refScoringLabel(league) : d.league_name} /><!-- IN-2: the scoring -->
     {/if}
   </div>

@@ -6,12 +6,15 @@
   // are" holds how they are made. They describe the season so far: they are not a forecast, and say it.
   import { ApiError, cardPaths, get, peek, Unauthorized, type Rating, type Ratings } from "../../lib/api";
 
-  let { gsis, position, compact = false, onauth, testid = "card-ratings" }: {
+  // ---- IX-2 (the review's § 3): `average` false leaves out the plain average of the ratings (it is not a graded player
+  // score); the card passes false everywhere, the ratings themselves stay (on the Usage tab in the drawer)
+  let { gsis, position, compact = false, onauth, testid = "card-ratings", average = true }: {
     gsis: string;
     position: string;
     compact?: boolean;
     onauth?: () => void;
     testid?: string;
+    average?: boolean;
   } = $props();
 
   const RATED = ["QB", "RB", "WR", "TE"];
@@ -60,7 +63,7 @@
           Where he ranks this season among {plural(position)}{#if data?.population}&nbsp;with {data.population}{/if}, 0–99. Not a projection.
         </p>
       </div>
-      {#if data}
+      {#if data && average}
         <div class="shrink-0 text-center" data-testid="ratings-overall" title={data.overall_words ?? ""}>
           <div
             class="grid h-14 w-14 place-items-center rounded-lg text-2xl font-black tracking-tight tabular-nums"

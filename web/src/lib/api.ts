@@ -152,7 +152,37 @@ export interface Section {
   blocks: Block[];
 }
 
+// ---- IX-2 (Wave I-X): who he is, and his usage by game situation (the card's answer, every league kind)
+export interface PlayerBio {
+  height?: string;
+  weight?: string;
+  age?: string;
+  experience?: string;
+  college?: string;
+  draft?: string;
+  words: string;
+}
+export interface SituationGroup {
+  key: "trailing" | "close" | "leading";
+  label: string;
+  means: string;
+  plays: number;
+  too_few: boolean;
+  targets: number;
+  carries: number;
+  target_share: number | null;
+  carry_share: number | null;
+  words: string;
+}
+export interface Situations {
+  season: number;
+  groups: SituationGroup[];
+  how: string;
+}
+// ---- end IX-2
 export interface PlayerCard {
+  bio?: PlayerBio | null; // ---- IX-2
+  situations?: Situations | null; // ---- IX-2
   gsis_id: string;
   player_name: string;
   position: string;

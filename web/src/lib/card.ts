@@ -17,7 +17,9 @@ const RANKED = ["QB", "RB", "WR", "TE", "K", "DEF"];
 function projection(d: PlayerCard): Section | undefined {
   const sec = d.sections.projection;
   if (!sec) return sec;
-  const blocks = [...sec.blocks];
+  // ---- IX-2 (the review's § 3: one forecast): the head carries this week's projection and its range; the section's
+  // four tiles (projected, typical range, low-end, high-end) said it a second time — they leave, on the drawer and the page
+  const blocks = sec.blocks.filter((b) => !(b.metrics ?? []).some((m) => m.label === "Projected"));
   const has = blocks.some((b) => (b.text ?? "").startsWith("Rest of season"));
   if (!has && d.ros?.line) blocks.push({ kind: "markdown", text: d.ros.line });
   // ---- IF-3: the matchup evidence right under "Next: week 4 @ CAR …" (the line that gives the rank)
@@ -34,7 +36,7 @@ export function cardSections(d: PlayerCard): { key: SectionKey; sec: Section }[]
   return SECTION_ORDER.map((k) => ({ key: k, sec: k === "projection" ? projection(d) : d.sections[k] }))
     .filter((x): x is { key: SectionKey; sec: Section } => !!x.sec)
     .map((x) => ({ key: x.key, sec: dictionary(x.sec) })) // ---- IE-2
-    .map((x) => ({ key: x.key, sec: clearer(x.key, x.sec, d) })); // ---- IF-4
+    .map((x) => ({ key: x.key, sec: clearer(x.key, x.sec) })); // ---- IF-4
 }
 
 // ---- IF-4 (Wave I-F, the decision-quality review's table): the card's words made exact, on the web (the API's card is
@@ -58,27 +60,17 @@ const TILE_DEFS: Record<string, string> = {
 };
 const NOT_AVAILABLE = "Not available for this player: no charted plays for him yet (unknown, not zero).";
 
-function gamesFrom(d: PlayerCard): number | null {
-  if (typeof d.games_played === "number") return d.games_played;
-  const cap = (d.sections.usage?.blocks ?? []).map((b) => b.text ?? "").find((t) => /Season to date, \d+ game/.test(t));
-  const m = cap?.match(/Season to date, (\d+) game/);
-  return m ? Number(m[1]) : null;
-}
 
-export function roleWords(text: string, games: number | null): string {
-  const NO_CHANGE = /Role: \*\*no role change detected\*\* in his last three games: his share of the snaps, targets and carries is where it has been\./;
-  if (!NO_CHANGE.test(text)) return text;
-  const said =
-    games !== null && games < 4
-      ? `Role: **not enough games to say** — ${games} game${games === 1 ? "" : "s"} so far; a change is called against his own earlier games, from his fourth game.`
-      : `Role: **role steady over ${games ?? "his"} games** — no change in his share of the snaps, targets or carries past his usual swing in the last three.`;
-  return text.replace(NO_CHANGE, said);
-}
+const NO_ALERT = /Role: \*\*no role change detected\*\* in his last three games/; // ---- IX-2
 
-function clearer(key: SectionKey, sec: Section, d: PlayerCard): Section {
+
+function clearer(key: SectionKey, sec: Section): Section {
   if (key === "signals") {
-    const g = gamesFrom(d);
-    return { ...sec, blocks: sec.blocks.map((b) => (b.text ? { ...b, text: roleWords(b.text, g) } : b)) };
+    // ---- IX-2 (one role vocabulary): what the card says about his role comes from one detector — the Role section's
+    // (rising / falling / steady / too early to say, with the games it is called from). "No alert" is no longer
+    // rewritten here into "role steady over N games" (absence of a detected change is not proof of stability): that
+    // block leaves; an alert that fired is still shown. The detectors' rules are under "How to read this".
+    return { ...sec, blocks: sec.blocks.filter((b) => !(b.text && NO_ALERT.test(b.text))) };
   }
   if (key === "usage") {
     return {
