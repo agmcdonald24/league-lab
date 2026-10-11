@@ -461,7 +461,11 @@ def test_the_database_down_leaves_the_files(api, folder, monkeypatch):
     monkeypatch.setattr(blog_store.db, "pool", lambda: Down())
     blog_store.reset()
     assert [p["slug"] for p in api.get("/api/blog").json()["posts"]] == ["from-a-file"]
-    assert blog_store.published_body("anything") is None
+    # IY-3: a body that could not be read is not "no post": Unread (the address answers 503, never 404)
+    with pytest.raises(blog_store.Unread):
+        blog_store.published_body("anything")
+    assert api.get("/api/blog/anything").status_code == 503
+    assert api.get("/api/blog/from-a-file").status_code == 200
 
 
 def test_the_script_is_idempotent_and_grants_only_its_tables():
