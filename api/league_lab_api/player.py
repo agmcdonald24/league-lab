@@ -792,3 +792,91 @@ def _role_blocks(sec: dict, league_id: str, gsis: str, pos: str, team, season: i
                                         scoring=league_name)["words"])
     cap(sec, ROLE_CAPTION)
 # ---- end IL-1
+
+
+# ---- IX-2 (Wave I-X): who he is, and his usage by game situation — for every league kind and no league (the card's
+# answer gains ``bio`` and ``situations`` in the route, after the house or on-demand card is built)
+BIO_SQL = """select birth_date, height, weight, college_name, rookie_season, draft_year, draft_round, draft_pick, position
+             from analytics.dim_player where gsis_id = %s"""
+SITUATION_SQL = """select bucket, sum(games) as games, sum(targets) as targets, sum(team_targets) as team_targets,
+                          sum(carries) as carries, sum(team_carries) as team_carries, sum(team_dropbacks) as team_dropbacks
+                   from analytics.mart_player_context
+                   where gsis_id = %s and season = %s and season_type = 'REG' and context_type = 'score_state'
+                   group by bucket"""
+# the three groups (IX-3's Stats filter uses the same words): from the mart's five score-state buckets
+SITUATIONS = (("trailing", "When trailing", "his team behind by 9 or more", ("trailing_9plus",)),
+              ("close", "Within a score", "8 points or fewer either way, tied included", ("trailing_1_8", "tied", "leading_1_8")),
+              ("leading", "When leading", "his team ahead by 9 or more", ("leading_9plus",)))
+SITUATION_MIN_PLAYS = 20          # fewer of his team's plays in a group: shown, but said to be too few to read
+
+
+def _ordinal(n: int) -> str:
+    return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
+def bio(gsis: str) -> dict | None:
+    """One compact line of who he is: height, weight, age (whole years on the league clock), experience ("6th season" /
+    "Rookie"), college, draft ("2021 · round 1, pick 5"). A fact we do not have is left out (never 0, never "N/A");
+    "Undrafted" is never guessed from a missing draft row. None when nothing is known (a team defense)."""
+    try:
+        d = query(BIO_SQL, (str(gsis),))
+    except Exception:  # noqa: BLE001 - no bio on this copy: no line
+        return None
+    if d.empty:
+        return None
+    r = d.iloc[0]
+    now = pd.Timestamp(clock.now())
+    season = now.year if now.month >= 3 else now.year - 1
+    out: dict = {}
+    if is_num(r["height"]) and float(r["height"]) > 0:
+        h = int(r["height"])
+        out["height"] = f"{h // 12}'{h % 12}\""
+    if is_num(r["weight"]) and float(r["weight"]) > 0:
+        out["weight"] = f"{int(r['weight'])} lb"
+    if r["birth_date"] is not None and not (isinstance(r["birth_date"], float) and pd.isna(r["birth_date"])):
+        b = pd.Timestamp(r["birth_date"])
+        if not pd.isna(b):
+            age = now.year - b.year - ((now.month, now.day) < (b.month, b.day))
+            if 18 <= age <= 50:
+                out["age"] = f"{age} years old"
+    if is_num(r["rookie_season"]) and 1990 <= int(r["rookie_season"]) <= season:
+        n = season - int(r["rookie_season"]) + 1
+        out["experience"] = "Rookie" if n == 1 else f"{_ordinal(n)} season"
+    if isinstance(r["college_name"], str) and r["college_name"].strip():
+        out["college"] = " / ".join(x.strip() for x in r["college_name"].split(";") if x.strip())
+    if is_num(r["draft_year"]) and is_num(r["draft_round"]) and is_num(r["draft_pick"]):
+        out["draft"] = f"{int(r['draft_year'])} · round {int(r['draft_round'])}, pick {int(r['draft_pick'])}"
+    if not out:
+        return None
+    out["words"] = " · ".join(out[k] for k in ("height", "weight", "age", "experience", "college", "draft") if k in out)
+    return out
+
+
+def situations(gsis: str, season) -> dict | None:
+    """His targets, target share, carries and carry share by game situation this season (regular season), with his
+    team's plays behind each group so a small sample shows; None when the season has no rows for him."""
+    try:
+        d = query(SITUATION_SQL, (str(gsis), int(season)))
+    except Exception:  # noqa: BLE001 - no context mart on this copy: no splits
+        return None
+    if d.empty:
+        return None
+    by = {str(r["bucket"]): r for r in d.to_dict("records")}
+    groups = []
+    for key, label, means, buckets in SITUATIONS:
+        rows = [by[b] for b in buckets if b in by]
+        s = {c: sum(float(x[c] or 0) for x in rows) for c in ("targets", "team_targets", "carries", "team_carries", "team_dropbacks")}
+        plays = int(round(s["team_dropbacks"] + s["team_carries"]))
+        few = plays < SITUATION_MIN_PLAYS
+        groups.append({"key": key, "label": label, "means": means, "plays": plays, "too_few": few,
+                       "targets": int(s["targets"]), "carries": int(s["carries"]),
+                       "target_share": round(s["targets"] / s["team_targets"], 4) if s["team_targets"] else None,
+                       "carry_share": round(s["carries"] / s["team_carries"], 4) if s["team_carries"] else None,
+                       "words": (f"{plays} plays of his team's: too few to read" if few else f"{plays} plays of his team's")})
+    if all(g["plays"] == 0 for g in groups):
+        return None
+    return {"season": int(season), "groups": groups,
+            "how": "His team's score when the play began: trailing by 9 or more, within 8 points either way (tied "
+                   "included), leading by 9 or more. Shares are his targets ÷ his team's targets (and carries ÷ carries) "
+                   "in those plays, this regular season."}
+# ---- end IX-2

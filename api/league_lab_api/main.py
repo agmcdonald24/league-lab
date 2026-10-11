@@ -462,6 +462,10 @@ def player_card(gsis: str, league: str, response: Response, team: int | None = N
     else:
         out = player.player_card(league, gsis)
     out["viewer_roster_id"] = team
+    # ---- IX-2: who he is and his usage by game situation, the same for every league kind and no league
+    out["bio"] = player.bio(gsis)
+    out["situations"] = player.situations(gsis, out.get("season")) if out.get("season") is not None else None
+    # ---- end IX-2
     if refleague.is_reference(league):                         # ---- IN-2: the scoring in the head, the value, no owner
         out = refleague.card(out, league)                      # ---- end IN-2
     out = provenance.with_card(out)                                                               # ---- IR-4

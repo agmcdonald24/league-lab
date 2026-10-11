@@ -85,7 +85,7 @@ def game_log_marks(games: pd.DataFrame, gsis: str, season: int) -> pd.DataFrame:
     """``games`` (the game log's rows, with game_id, team, week, season_type, played) + the IX-1 fields."""
     cols = ["left_early", "left_early_reason", "on_field_target_share", "on_field_carry_share", "on_field_basis"]
     if games.empty:
-        return games.assign(**{c: None for c in cols})
+        return games.assign(**{c: None for c in [*cols, "left_early_kind", "left_early_words"]})  # ---- IX-2
     of = query(ONFIELD_SQL, (gsis, int(season)))
     out = games.merge(of, on="game_id", how="left") if not of.empty else games.assign(**{c: None for c in cols})
     out["left_early"] = out["left_early"].astype("boolean").fillna(False).astype(bool)
@@ -101,4 +101,35 @@ def game_log_marks(games: pd.DataFrame, gsis: str, season: int) -> pd.DataFrame:
                 out.at[i, "left_early_reason"] = f"{r['left_early_reason']}; then missed week {int(nxt.iloc[0]['week'])}"
     for c in ("on_field_target_share", "on_field_carry_share"):
         out[c] = pd.to_numeric(out[c], errors="coerce")
+    # ---- IX-2 (the PO's decision): which case the mark is, as a closed field the screens read — "hurt" when the
+    # play-by-play named him hurt (the reason says so), else "short" — and the words each case may use: "Left early"
+    # only with the injury note (lf1.0's mark is right less than half the time without it: precision 0.437 against
+    # 0.955 with the note); otherwise the plain fact, never "left early", never "hurt"
+    kinds, words = [], []
+    for le, reason in zip(out["left_early"], out["left_early_reason"], strict=True):
+        k, w = left_early_case(bool(le), reason if isinstance(reason, str) else None)
+        kinds.append(k)
+        words.append(w)
+    out["left_early_kind"] = kinds
+    out["left_early_words"] = words
+    # ---- end IX-2
     return out
+
+
+HURT_MARK = "; hurt on a play in the "          # the one form int_player_game_on_field writes for the injury note
+SHORT_WORDS = "Played far less than usual: {fact}"
+HURT_WORDS = "Left early: {reason}"
+
+
+def left_early_case(left_early: bool, reason: str | None) -> tuple[str | None, str | None]:
+    """(``left_early_kind``: "hurt" | "short" | None, the words). The reason's first part is the snap fact ("15 snaps
+    (20% of the team's; usually 94%)"); the injury note is the closed suffix the model writes."""
+    if not left_early or not reason:
+        return None, None
+    if HURT_MARK in reason:
+        return "hurt", HURT_WORDS.format(reason=reason)
+    fact, _, rest = reason.partition("); ")
+    fact = fact + ")" if rest else fact
+    missed = rest.split("; then missed ", 1)
+    tail = f"; then missed {missed[1]}" if len(missed) == 2 else ""
+    return "short", SHORT_WORDS.format(fact=fact + tail)
