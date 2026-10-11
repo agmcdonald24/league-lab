@@ -59,7 +59,8 @@ test.describe("md.ts: embeds and links", () => {
     const html = embed(`https://youtu.be/${YT}`)!;
     expect(html).toContain(`data-yt-play="${YT}"`);
     expect(html).toContain(`href="https://www.youtube.com/watch?v=${YT}" rel="noopener noreferrer nofollow ugc" target="_blank"`);
-    expect(html).not.toMatch(/<iframe|<script|youtube-nocookie|ytimg|<img/); // nothing asked of YouTube until the tap
+    expect(html).not.toMatch(/<iframe|<script|youtube-nocookie/); // the player: nothing until the tap
+    expect(html).toContain(`<img class="ll-embed-still" src="https://i.ytimg.com/vi/${YT}/hqdefault.jpg" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`); // IY-2: its still
     // in a document: only a line on its own; inside a sentence, or a look-alike, it stays text
     const doc = mdDoc(`Words.\n\nhttps://youtu.be/${YT}\n\nSee https://youtu.be/${YT} here.\n\nhttps://youtu.be.evil.example/${YT}`);
     expect(doc.match(/data-yt-play=/g)?.length).toBe(1);
@@ -268,7 +269,8 @@ test.describe("the blog with a cover and embeds, on the real API", () => {
     const body = page.getByTestId("post-body");
     const play = body.locator(`button[data-yt-play="${YT}"]`);
     await expect(play).toBeVisible();
-    await expect(body.locator("iframe")).toHaveCount(0);
+    await expect(body.locator("iframe:not([data-x-frame])")).toHaveCount(0); // IY-2: X's frame may be waiting, out of sight
+    await expect(body.locator('iframe[data-x-frame="shown"]')).toHaveCount(0); // X's address is refused here: never shown
     // IY-1 / IY-2: the card is our block, with "Open on X"; no button (X's frame swaps in by itself when X answers)
     const xFig = body.locator("figure.ll-embed-x");
     await expect(xFig.locator(".ll-embed-card")).toContainText("@NFL");
@@ -288,7 +290,7 @@ test.describe("the blog with a cover and embeds, on the real API", () => {
     await page.screenshot({ path: join(SHOTS, `iu6-post-${w}.jpg`), type: "jpeg", quality: 70, fullPage: true });
     // the tap: then, and only then, the player — youtube-nocookie, sandboxed, lazy, its referrer policy, a title
     await play.click();
-    const frame = body.locator("iframe");
+    const frame = body.locator("figure.ll-embed-yt iframe"); // IY-2: X's own frame may also be in the page, waiting
     await expect(frame).toHaveCount(1);
     await expect(frame).toHaveAttribute("src", `https://www.youtube-nocookie.com/embed/${YT}?autoplay=1`);
     await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation allow-popups");
