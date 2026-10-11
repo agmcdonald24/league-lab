@@ -361,8 +361,9 @@
   </ScreenHead>
 
   <div class="space-y-2.5">
-    <label class="sr-only" for="ll-players-q">Find a player</label>
-    <input id="ll-players-q" class="ll-input w-full" type="search" placeholder="Find a player" autocomplete="off" bind:value={q} oninput={onq} data-testid="players-search" />
+    <!-- ---- IX-3: the table's own box says what it does (the app's search, in the top bar, is unchanged) -->
+    <label class="sr-only" for="ll-players-q">Filter this table by player name</label>
+    <input id="ll-players-q" class="ll-input w-full" type="search" placeholder="Filter this table by name" autocomplete="off" bind:value={q} oninput={onq} data-testid="players-search" />
     <!-- on a phone each chip row scrolls sideways inside itself (the page never does); from 640 px they wrap -->
     <div class="ll-chiprow">
       <Chips
