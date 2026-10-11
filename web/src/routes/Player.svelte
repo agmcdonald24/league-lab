@@ -82,7 +82,7 @@
     onclick={() => back(home)}
     data-testid="back"
   >
-    <span aria-hidden="true" class="text-xl leading-none">‹</span>{route.current.depth > 0 ? "Back" : browsing ? "Players" : "My week"}
+    <span aria-hidden="true" class="text-xl leading-none">‹</span>{route.current.depth > 0 ? "Back" : browsing ? "Research" : "My week"}<!-- IX-5: the menu's name (was Players) -->
   </button>
 </div>
 

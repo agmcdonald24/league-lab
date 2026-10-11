@@ -86,7 +86,7 @@
   });
 
   const TOOLS = [
-    { key: "players", title: "Players", what: "Every player's stats, trends and this week's projection.", href: link("/players") },
+    { key: "players", title: "Research", what: "Every player's stats, trends and this week's projection.", href: link("/players") },
     { key: "trade", title: "Trade calculator", what: "Weigh a trade in PPR, Half PPR or Standard.", href: link("/trade-calc") },
     { key: "matchups", title: "Matchups", what: "Who each receiver faces this week, and how tough it is.", href: link("/matchups") },
     { key: "dfs", title: "DFS", what: "DraftKings and FanDuel values for this week's slate.", href: link("/dfs") },
