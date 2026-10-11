@@ -32,17 +32,20 @@ def _mfl_fixtures(monkeypatch):
 
 @needs_db
 def test_lineup_rows_say_what_the_call_says(client, overlay):
-    """Team 8: the call keeps Addison and Nabers ahead of McConkey (questionable); the table is still the best lineup on
-    paper (McConkey at WR/TE 3), so its two rows say so instead of contradicting the call."""
+    """Team 8: the call keeps Addison and Nabers ahead of McConkey (questionable). IX-4 (Wave I-X, on purpose): the
+    table is the recommendation — Addison is IN McConkey's slot and McConkey on its bench, with no "the call above
+    keeps …" flag (was: the best lineup on paper with two rows that said so)."""
     d = client.get(f"/api/my-week?league={KEY}&team=8").json()
     sw = d.get("swaps") or []
     if not sw:
         pytest.skip("no injury tiebreak on this fixture week")
     assert sw[0]["in_name"] == "Addison" and sw[0]["out_name"] == "McConkey"
-    rows = {r["player_name"]: r for r in d["lineup_full"]}
-    assert rows["Ladd McConkey"]["role"] == "starter"
-    assert rows["Ladd McConkey"]["flag"] == "Questionable — the call above keeps Addison here for now"
-    assert rows["Jordan Addison"]["role"] == "bench" and rows["Jordan Addison"]["flag"] == "starts for McConkey by the call above"
+    rec = d["recommended"]
+    starters = {r["player_name"]: r for r in rec["rows"] if r["player_name"]}
+    bench = {r["player_name"]: r for r in rec["bench"]}
+    assert "Jordan Addison" in starters and starters["Jordan Addison"]["by_call"] is True
+    assert "Ladd McConkey" in bench and "Ladd McConkey" not in starters
+    assert not any("the call above" in (r.get("flag") or "") for r in d["lineup_full"] + rec["rows"] + rec["bench"])
     assert all("key" in r for r in d["lineup"])
 
 

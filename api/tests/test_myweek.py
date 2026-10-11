@@ -72,7 +72,10 @@ def test_my_week_matches_the_lineup_mart(client, sql, league):
          float(m["lineup_margin"]) if m["lineup_margin"] is not None else None) for m in rows]
     lv = float(rows[0]["lineup_value"])
     assert d["lineup_value"] == pytest.approx(lv)
-    assert f"**{lv:.2f}**" in d["league_line"]
+    # IX-4 (Wave I-X, on purpose): the total is the matchup summary's ("you project …"), never printed twice — the
+    # league line keeps the rank only (was "Your best lineup projects **{lv:.2f}** …")
+    assert f"{lv:.2f}" not in d["league_line"]
+    assert d["league_line"] == "" or d["league_line"].startswith("Your best lineup ranks ")
     # the full list adds the bench and the players who cannot play, from ops.lineups (same run)
     bench = sql("""select count(*) as n from ops.lineups where league_id = %s and season = %s and week = %s and roster_id = %s
                      and not is_realised and role in ('bench', 'unplayable')""", (league, season, week, team))[0]["n"]
@@ -124,7 +127,7 @@ def test_worked_example_dynasty_12(client):
     c = d["cards"][0]
     assert c["slot"] and c["player_name"] and c["alt_name"] and c["verdict"]
     assert c["value"] >= c["alt_value"] and c["margin"] == pytest.approx(round(c["value"] - c["alt_value"], 2), abs=0.011)
-    assert d["league_line"].startswith("Your best lineup projects **")
+    assert d["league_line"] == "" or d["league_line"].startswith("Your best lineup ranks ")      # IX-4
 
 
 def test_unknown_team_and_league(client, monkeypatch):
