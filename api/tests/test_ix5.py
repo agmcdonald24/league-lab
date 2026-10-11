@@ -187,3 +187,49 @@ def test_no_screen_says_fit():
     root = Path(__file__).resolve().parents[2] / "web" / "src" / "routes"
     trades = (root / "Trades.svelte").read_text()
     assert 'valueLabel="Fit"' not in trades and "**Fit**" not in trades and "best fit" not in trades
+
+
+# ------------------------------------------------------------------------------------------------ 8. the known trade stays fixed
+SCRUBS = "1389709692405551104"
+FOLK, STAFFORD, REICHARD = "650", "421", "11792"
+
+
+@needs_db
+def test_the_known_trade_stays_fixed(monkeypatch):
+    """The review's case (League of Scrubs, team 2 gives Folk to team 3 for Stafford + Reichard, the next four weeks):
+    the headline, the summary and the weekly table agree; no explanation crosses positions; the package stays rejected
+    as implausible; its trust line names the quarterback's and the kicker's verdicts separately."""
+    from league_lab_api import decisions as D
+
+    from .test_ir2 import assert_reconciles, assert_slot_pairs
+    monkeypatch.setenv("LEAGUE_LAB_AVAILABILITY", "off")
+    D.clear_memo()
+    ctx = D.trade_context(SCRUBS)
+    if ctx.board.owner(FOLK) != 2 or ctx.board.owner(STAFFORD) != 3 or ctx.board.owner(REICHARD) != 3:
+        pytest.skip("the database's rosters do not hold the Folk package")
+    out = D.evaluate(SCRUBS, 2, 3, [FOLK], [STAFFORD, REICHARD], window="next4")
+    d = out["decision"]
+    assert_reconciles(d, out["card"])                                    # the weekly table, the strip, the totals
+    span = d["span"]
+    for k in ("mine", "theirs"):
+        g = d[k]["gain_window"]
+        assert sum(d["strip"][k]) == pytest.approx(g, abs=0.03)
+        assert out["fit"]["window"][k] == g                              # the summary tiles read the decision
+    gm, gt = d["mine"]["gain_window"], d["theirs"]["gain_window"]
+    v = d["verdict"]                                                     # the headline says the same numbers
+    assert f"{gm:+.1f} over {span}".replace("-", "−") in v or f"{gm:+.1f} over {span}" in v, v
+    assert f"{abs(gt):.1f} over {span}" in v, v
+    assert out["verdict"] == v
+    assert_slot_pairs(d, ctx.slots)                                      # no explanation crosses positions
+    for k in ("mine", "theirs"):
+        for ch in d["changes"][k]:
+            pin, pout = ch.get("in_player") or {}, ch.get("out_player") or {}
+            if pin.get("position") and pout.get("position") and ch["slot_word"] in ("QB", "K"):
+                assert pin["position"] == pout["position"] == ch["slot_word"], ch["words"]
+    assert out["card"]["plausibility"]["key"] == "implausible"           # rejected as implausible
+    assert out["card"]["credible"] is False and d["recommendation"]["credible"] is False
+    assert d["recommendation"]["plausibility"] == "Implausible"
+    from league_lab_api import provenance as PV
+    w = PV.with_trade(out)["provenance"]["words"]
+    assert "two to eight weeks ahead: quarterbacks weak, kickers no better than chance" in w, w
+    assert "two to eight weeks ahead no better than chance, quarterbacks weak" not in w
