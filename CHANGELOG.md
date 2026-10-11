@@ -4,6 +4,11 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-11 — Wave I-Y
 
+- IY-3: a published post never disappears because one read of the database failed: the list, a post and its pictures
+  are served from the last good read while reads fail (tried again within 5 seconds, logged once by kind); a server
+  that has never read the posts says "This post did not load. Try again in a few seconds." (503, never kept by a
+  cache) instead of "No post at that address.", with Try again on the page. X's frame has no scrollbar (no white bar
+  beside the card), lets its video go full screen, and a post opened in a background tab still shows when you look.
 - IY-2: the post from X shows by itself. No button: our card (the words, the author, the date, "Open on X") from the
   first paint; X's frame is made out of sight as the block nears the screen and takes the card's place at X's own size
   once X has laid the post out (no empty box, no jump), at most 550 px wide with no white backdrop on a dark page. If
