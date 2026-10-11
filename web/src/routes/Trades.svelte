@@ -305,7 +305,7 @@
                       href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
                       context={`${r.team_name ?? "another team"} · ${s1(r.diff_per_game)} per game vs his work · you gain ${s1(r.gain_week)} this week`}
                       value={s1(r.fit_horizon)}
-                      valueLabel={tl.weeks ? `Net lineup points, ${tl.weeks}` : "Net lineup points"}
+                      valueLabel="Net lineup points"
                       testid="buy-best"
                     />
                   </li>
@@ -324,7 +324,7 @@
                       href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
                       context={`${s1(r.diff_per_game)} per game vs his work · worth most to ${r.team_name ?? "—"}`}
                       value={s1(r.fit_horizon)}
-                      valueLabel={tl.weeks ? `Net lineup points, ${tl.weeks}` : "Net lineup points"}
+                      valueLabel="Net lineup points"
                       testid="sell-row"
                     />
                   </li>
@@ -343,7 +343,7 @@
                     href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
                     context={`${r.team_name ?? "—"} · PPG ${f1(r.ppg)} vs ${f1(r.xppg)} expected · you gain ${s1(r.gain_week)}, they lose ${f1(r.loss_week)}`}
                     value={s1(r.fit_horizon)}
-                    valueLabel={tl.weeks ? `Net lineup points, ${tl.weeks}` : "Net lineup points"}
+                    valueLabel="Net lineup points"
                     testid="buy-row"
                   />
                 </li>

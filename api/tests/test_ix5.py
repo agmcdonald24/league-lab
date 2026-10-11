@@ -145,8 +145,9 @@ def test_the_intro_says_the_guide():
     from league_lab_api import decisions as D
     rb = {"move": {"weekly_gain": 1.0}, "this_week": 1.0}
     df = {"move": {"weekly_gain": 0.8}, "this_week": 0.8, "guide": D.KD_GUIDE_WORDS}
-    assert D.top_intro([rb, df], 5, 8) == ("The two strongest claims below: each helps this week. Each card's total is "
-                                           "its gain over weeks 5–8. The kicker or defense counts this week only: a rough guide.")
+    assert D.top_intro([rb, df], 5, 8) == ("The strongest claim below: it helps this week. Each card's total is its gain "
+                                           "over weeks 5–8. After them, a kicker or defense for this week only: a rough guide.")
+    assert D.top_intro([df], 5, 8) == "This week's kicker or defense claim below: it counts this week only, a rough guide."
     assert D.top_intro([rb], 5, 8).endswith("weeks 5–8.")
 
 
@@ -159,7 +160,7 @@ def test_waivers_three_put_kickers_and_defenses_last_on_this_week(client, league
     top = r.json().get("top3") or []
     kd = [((c.get("move") or {}).get("add") or {}).get("position") in D.KD_GUIDE_POSITIONS for c in top]
     assert kd == sorted(kd), "a kicker or defense listed before a graded position"
-    for c, is_kd in zip(top, kd):
+    for c, is_kd in zip(top, kd, strict=True):
         if is_kd:
             assert c.get("guide") and c["gain"] == c["this_week"] and not c.get("total_words")
             assert (c["this_week"] or 0) >= D.GAIN_EPS

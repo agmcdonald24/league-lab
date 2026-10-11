@@ -78,6 +78,10 @@ export function horizonOf(c: WaiverCard, week: number): Horizon {
 /** The intro above the top claims: what each one does and over which weeks (never "each adds this week" when it does not). */
 export function topIntro(cards: WaiverCard[], week: number, last: number): string {
   if (!cards.length) return "";
+  const kd = cards.filter((c) => !!c.guide).length; // ---- IX-5: kickers and defenses are judged on this week, after
+  if (kd === cards.length)
+    return kd > 1 ? "This week's kicker and defense claims below: each counts this week only, a rough guide." : "This week's kicker or defense claim below: it counts this week only, a rough guide.";
+  cards = cards.filter((c) => !c.guide);
   const hs = cards.map((c) => horizonOf(c, week));
   const n = cards.length;
   const head = n === 1 ? "The strongest claim" : `The ${n === 2 ? "two" : "three"} strongest claims`;
@@ -94,8 +98,7 @@ export function topIntro(cards: WaiverCard[], week: number, last: number): strin
   if (later.length) parts.push(`${later.length} help${later.length === 1 ? "s" : ""} later in the window`);
   if (stash) parts.push(`${stash} ${stash === 1 ? "is an upside stash" : "are upside stashes"}`);
   const span = last > week ? `weeks ${week}–${last}` : `week ${week}`;
-  const kd = cards.filter((c) => !!c.guide).length; // ---- IX-5: a kicker or defense is judged on this week only
-  const tail = !kd ? "" : kd === 1 ? " The kicker or defense counts this week only: a rough guide." : " The kickers and defenses count this week only: a rough guide.";
+  const tail = !kd ? "" : kd === 1 ? " After them, a kicker or defense for this week only: a rough guide." : " After them, kickers and defenses for this week only: a rough guide.";
   return `${head} below: ${parts.join(", ")}. Each card's total is its gain over ${span}.${tail}`;
 }
 

@@ -5037,6 +5037,11 @@ def top_intro(cards: list[dict], week: int, last: int) -> str:
     """The intro above the top claims — the web's `feed.topIntro`, word for word: what each one does and over which weeks."""
     if not cards:
         return ""
+    kd = sum(1 for c in cards if c.get("guide"))                       # ---- IX-5: kickers and defenses, after
+    if kd == len(cards):
+        return ("This week's kicker and defense claims below: each counts this week only, a rough guide."
+                if kd > 1 else "This week's kicker or defense claim below: it counts this week only, a rough guide.")
+    cards = [c for c in cards if not c.get("guide")]
     hs = [claim_horizon(c, week) for c in cards]
     n = len(cards)
     head = "The strongest claim" if n == 1 else f"The {'two' if n == 2 else 'three'} strongest claims"
@@ -5057,9 +5062,8 @@ def top_intro(cards: list[dict], week: int, last: int) -> str:
     if stash:
         parts.append(f"{stash} {'is an upside stash' if stash == 1 else 'are upside stashes'}")
     span = f"weeks {week}–{last}" if last > week else f"week {week}"
-    kd = sum(1 for c in cards if c.get("guide"))                       # ---- IX-5
-    tail = "" if not kd else (" The kicker or defense counts this week only: a rough guide." if kd == 1
-                              else " The kickers and defenses count this week only: a rough guide.")
+    tail = "" if not kd else (" After them, a kicker or defense for this week only: a rough guide." if kd == 1
+                              else " After them, kickers and defenses for this week only: a rough guide.")
     return f"{head} below: {', '.join(parts)}. Each card's total is its gain over {span}.{tail}"
 
 
