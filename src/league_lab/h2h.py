@@ -546,16 +546,35 @@ def grade(inp: Inputs, built_at: datetime | None = None) -> pd.DataFrame:
     return df[[c for c, _ in GRADE_COLUMNS]]
 
 
+def _cell(v: Any, kind: str) -> Any:
+    """One value as the column's type (pandas makes an integer column with a gap float: 2024.0 is not an integer)."""
+    if v is None or (isinstance(v, (float, np.floating)) and np.isnan(v)) or v is pd.NaT:
+        return None
+    if kind == "integer":
+        return int(v)
+    if kind == "double precision":
+        return float(v)
+    if kind == "boolean":
+        return bool(v)
+    if isinstance(v, pd.Timestamp):
+        return v.to_pydatetime()
+    return v
+
+
+def rows_for_copy(df: pd.DataFrame) -> list[list[Any]]:
+    kinds = [t for _, t in GRADE_COLUMNS]
+    return [[_cell(v, k) for v, k in zip(rec, kinds, strict=True)]
+            for rec in df[[c for c, _ in GRADE_COLUMNS]].itertuples(index=False)]
+
+
 def write_grade(conn: psycopg.Connection, df: pd.DataFrame) -> int:
     cols = [c for c, _ in GRADE_COLUMNS]
     with conn.cursor() as cur:
         cur.execute(GRADE_DDL)
         cur.execute(f"truncate {GRADE_TABLE}")
         with cur.copy(f"copy {GRADE_TABLE} ({', '.join(cols)}) from stdin") as cp:
-            for rec in df[cols].itertuples(index=False):
-                cp.write_row([None if (v is None or (isinstance(v, float) and np.isnan(v))) else
-                              (int(v) if isinstance(v, np.integer) else float(v) if isinstance(v, np.floating) else
-                               bool(v) if isinstance(v, np.bool_) else v) for v in rec])
+            for row in rows_for_copy(df):
+                cp.write_row(row)
     conn.commit()
     return len(df)
 

@@ -221,3 +221,16 @@ def test_the_record_reads_only_its_own_snapshots():
     sources = set(re.findall(r"source\('(\w+)', '(\w+)'\)", sql))
     assert ("raw", "sleeper_projections") in sources and not any("history" in t for _, t in sources)
     assert "p.fetched_at < k.first_kickoff_at" in sql
+
+
+def test_the_rows_written_carry_the_columns_types():
+    # pandas holds an integer column with a gap (the pooled rows' season) as floats: 2024.0 would not COPY as integer
+    df = h2h.grade(inputs(population(2.0, 6.0, seasons=(2023, 2024, 2025), weeks=range(1, 4))))
+    rows = h2h.rows_for_copy(df)
+    i = {c: k for k, (c, _) in enumerate(h2h.GRADE_COLUMNS)}
+    seasons = {r[i["season"]] for r in rows}
+    assert None in seasons and {s for s in seasons if s is not None} == {2023, 2024, 2025}
+    assert all(type(s) is int for s in seasons if s is not None)
+    assert all(r[i["n_weeks"]] is None or type(r[i["n_weeks"]]) is int for r in rows)
+    assert all(type(r[i["headline"]]) is bool for r in rows)
+    assert all(r[i["diff"]] is None or type(r[i["diff"]]) is float for r in rows)
