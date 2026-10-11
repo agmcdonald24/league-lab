@@ -222,7 +222,10 @@ export function xPaste(inner: string): { handle: string; id: string; words: stri
   for (let k = links.length - 1; k >= 0; k--) {
     const m = X_STATUS.exec(links[k][1].replace(/&amp;/gi, "&"));
     if (!m) continue;
-    const words = plainText(/<p\b[^>]*>([\s\S]*?)<\/p\s*>/i.exec(inner)?.[1] ?? "").slice(0, 1000);
+    // PO (Wave I-Y): the media pointer X leaves at the end of a post's words (one or more trailing https://t.co/… links)
+    // is dropped: the frame shows the media, and the bare short link reads as noise in our block
+    const words = plainText(/<p\b[^>]*>([\s\S]*?)<\/p\s*>/i.exec(inner)?.[1] ?? "").slice(0, 1000)
+      .replace(/(?:\s*https:\/\/t\.co\/[A-Za-z0-9]{1,20})+\s*$/, "");
     const after = inner.slice(inner.search(/<\/p\s*>/i) >= 0 ? inner.search(/<\/p\s*>/i) : 0, links[k].index);
     const who = plainText(after).replace(/^[\s—–-]+/, "");
     const named = /^(.{1,80}?)\s*\(@[A-Za-z0-9_]{1,15}\)$/.exec(who);

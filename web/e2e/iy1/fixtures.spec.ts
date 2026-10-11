@@ -19,7 +19,7 @@ const SHOTS = join(import.meta.dirname, "..", "..", "..", "docs", "handbacks", "
 const PASTE =
   '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">This is awesome: Here\'s the call #Cardinals GM Monti Ossenfort had with the #Texans when he traded out of No. 3 on draft night. Access to the blockbuster trade while they were on the clock. This content is INCREDIBLE. (via Cardinals Flight Plan on YT) https://t.co/taUindXEfy</p>&mdash; Ari Meirov (@MySportsUpdate) <a href="https://x.com/MySportsUpdate/status/1666992852084092930?ref_src=twsrc%5Etfw">June 9, 2023</a></blockquote> <script async src="https://platform.x.com/widgets.js" charset="utf-8"></script>';
 const WORDS =
-  "This is awesome: Here's the call #Cardinals GM Monti Ossenfort had with the #Texans when he traded out of No. 3 on draft night. Access to the blockbuster trade while they were on the clock. This content is INCREDIBLE. (via Cardinals Flight Plan on YT) https://t.co/taUindXEfy";
+  "This is awesome: Here's the call #Cardinals GM Monti Ossenfort had with the #Texans when he traded out of No. 3 on draft night. Access to the blockbuster trade while they were on the clock. This content is INCREDIBLE. (via Cardinals Flight Plan on YT)";
 const ID = "1666992852084092930";
 const YT = "dQw4w9WgXcQ";
 const YT_PASTE = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${YT}?si=Ab_c-12" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
