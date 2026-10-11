@@ -666,33 +666,119 @@ assert len(CATALOGUE) == len(_BY_ID), sorted(set(_BY_ID) - {c["id"] for c in CAT
 CAT = {c["id"]: c for c in CATALOGUE}
 
 PRESETS = [
-    # ---- IM-1 (Wave I-M): the columns a manager reads first (10–14), `extra` for the picker, `full` = every column that
+    # ---- IM-1 (Wave I-M): the columns a manager reads first, `extra` for the picker, `full` = every column that
     # applies to the position and is available, in catalogue order (presets() recomputes it from the season's
     # availability; the module-level one counts every present / derived column)
+    # ---- IX-3 (Wave I-X): Key stats is at most eight columns (games included); the named views (VIEWS below) each
+    # answer one question in at most eight columns
     {"key": "wrte", "label": "WR / TE", "positions": ["WR", "TE"],
-     "columns": ["games", "points", "targets", "target_share", "receptions", "receiving_yards", "receiving_tds", "adot",
-                 "air_yards_share", "wopr", "epa_per_target", "snap_share", "separation", "yac_over_expected"],
-     "extra": ["route_participation", "tprr_proxy", "yprr_proxy", "routes", "first_read_target_share",
+     "columns": ["games", "points", "targets", "target_share", "receptions", "receiving_yards", "receiving_tds",
+                 "snap_share"],
+     "extra": ["adot", "air_yards_share", "wopr", "epa_per_target", "separation", "yac_over_expected",
+               "route_participation", "tprr_proxy", "yprr_proxy", "routes", "first_read_target_share",
                "red_zone_targets", "catchable_rate", "deep_targets", "racr", "receiving_success_rate", "drop_rate",
                "expected_points_per_game", "points_over_expected", "target_share_change", "snap_share_change"],  # IO-4
      "sort": "target_share"},
     {"key": "rb", "label": "RB", "positions": ["RB"],
-     "columns": ["games", "points", "carries", "carry_share", "rushing_yards", "yards_per_carry", "rushing_tds",
-                 "targets", "target_share", "receiving_yards", "snap_share", "inside_10_carries", "epa_per_carry",
-                 "ryoe_per_attempt"],
-     "extra": ["rb_carry_share", "inside_5_carries", "inside_5_carry_share", "red_zone_opportunities", "route_participation",
-               "tprr_proxy", "rushing_success_rate", "yards_after_contact_per_carry", "broken_tackle_rate",
-               "yards_per_touch", "expected_points_per_game", "points_over_expected", "carry_share_change",
-               "target_share_change", "snap_share_change"],                                          # ---- IO-4
+     "columns": ["games", "points", "carries", "carry_share", "rushing_yards", "targets", "target_share", "snap_share"],
+     "extra": ["yards_per_carry", "rushing_tds", "receiving_yards", "inside_10_carries", "epa_per_carry",
+               "ryoe_per_attempt", "rb_carry_share", "inside_5_carries", "inside_5_carry_share", "red_zone_opportunities",
+               "route_participation", "tprr_proxy", "rushing_success_rate", "yards_after_contact_per_carry",
+               "broken_tackle_rate", "yards_per_touch", "expected_points_per_game", "points_over_expected",
+               "carry_share_change", "target_share_change", "snap_share_change"],                    # ---- IO-4
      "sort": "carry_share"},
     {"key": "qb", "label": "QB", "positions": ["QB"],
-     "columns": ["games", "points", "attempts", "completion_rate", "passing_yards", "passing_tds", "passing_interceptions",
-                 "adjusted_yards_per_attempt", "epa_per_dropback", "carries", "rushing_yards", "rushing_points_share",
-                 "time_to_throw", "cpoe"],
-     "extra": ["ngs_cpoe", "scrambles", "scramble_yards", "pressure_rate", "bad_throw_rate", "sack_rate",
-               "passing_success_rate", "aggressiveness", "pressure_splits"],
+     "columns": ["games", "points", "attempts", "passing_yards", "passing_tds", "passing_interceptions", "carries",
+                 "rushing_yards"],
+     "extra": ["completion_rate", "adjusted_yards_per_attempt", "epa_per_dropback", "rushing_points_share",
+               "time_to_throw", "cpoe", "ngs_cpoe", "scrambles", "scramble_yards", "pressure_rate", "bad_throw_rate",
+               "sack_rate", "passing_success_rate", "aggressiveness", "pressure_splits"],
      "sort": "points"},
 ]
+
+# ---- IX-3 (Wave I-X): the named views — each answers one question (its caption) in at most eight columns per
+# position, games included; Key stats is the preset's `columns`. A column the season does not have drops out on the
+# screen; a view left with games alone is not offered (a quarterback has no role-change column).
+VIEW_KEYS = ("key", "production", "opportunity", "role", "efficiency", "advanced")
+VIEW_WORDS = {
+    "key": ("Key stats", "The numbers to read first: what he scores and how much of the offence is his."),
+    "production": ("Production", "What has he produced?"),
+    "opportunity": ("Opportunity", "How much of his team's offence comes his way?"),
+    "role": ("Role changes", "Is his role growing or shrinking?"),
+    "efficiency": ("Efficiency", "What does he do with each chance?"),
+    "advanced": ("Advanced", "What do tracking and charting add?"),
+}
+VIEWS: dict[str, dict[str, list[str]]] = {
+    "wrte": {
+        "production": ["games", "points", "receptions", "receiving_yards", "receiving_tds", "receiving_first_downs",
+                       "yards_per_reception", "yac_per_reception"],
+        "opportunity": ["games", "targets", "target_share", "on_field_target_share", "air_yards_share", "wopr",
+                        "red_zone_targets", "snap_share"],
+        "role": ["games", "target_share", "target_share_change", "snap_share", "snap_share_change",
+                 "route_participation", "first_read_target_share"],
+        "efficiency": ["games", "catch_rate", "yards_per_target", "epa_per_target", "receiving_success_rate",
+                       "first_downs_per_target", "racr", "points_over_expected"],
+        "advanced": ["games", "separation", "cushion", "yac_over_expected", "adot", "catchable_rate", "drop_rate",
+                     "tprr_proxy"],
+    },
+    "rb": {
+        "production": ["games", "points", "rushing_yards", "rushing_tds", "receptions", "receiving_yards",
+                       "receiving_tds", "yards_per_touch"],
+        "opportunity": ["games", "carries", "carry_share", "on_field_carry_share", "targets", "target_share",
+                        "on_field_target_share", "inside_10_carries"],
+        "role": ["games", "carry_share", "carry_share_change", "target_share", "target_share_change", "snap_share",
+                 "snap_share_change", "rb_carry_share"],
+        "efficiency": ["games", "yards_per_carry", "epa_per_carry", "rushing_success_rate", "first_downs_per_carry",
+                       "yards_per_target", "epa_per_target", "points_over_expected"],
+        "advanced": ["games", "ryoe_per_attempt", "rush_efficiency", "stacked_box_rate", "time_to_los",
+                     "yards_before_contact_per_carry", "yards_after_contact_per_carry", "broken_tackle_rate"],
+    },
+    "qb": {
+        "production": ["games", "points", "completions", "passing_yards", "passing_tds", "passing_interceptions",
+                       "rushing_yards", "rushing_tds"],
+        "opportunity": ["games", "attempts", "dropbacks", "carries", "scrambles", "red_zone_carries",
+                        "rushing_points_share"],
+        "role": ["games", "snap_share"],
+        "efficiency": ["games", "completion_rate", "yards_per_attempt", "adjusted_yards_per_attempt",
+                       "epa_per_dropback", "passing_success_rate", "cpoe", "sack_rate"],
+        "advanced": ["games", "time_to_throw", "ngs_cpoe", "aggressiveness", "ngs_pass_intended_air_yards",
+                     "pressure_rate", "bad_throw_rate", "times_pressured"],
+    },
+    "all": {
+        "key": ["games", "points", "ros_value", "targets", "target_share", "carries", "carry_share", "snap_share"],
+        "production": ["games", "points", "passing_yards", "passing_tds", "rushing_yards", "rushing_tds",
+                       "receiving_yards", "receiving_tds"],
+        "opportunity": ["games", "attempts", "carries", "carry_share", "targets", "target_share", "red_zone_opportunities",
+                        "snap_share"],
+        "role": ["games", "target_share", "target_share_change", "carry_share", "carry_share_change", "snap_share",
+                 "snap_share_change"],
+        "efficiency": ["games", "epa_per_dropback", "epa_per_carry", "epa_per_target", "yards_per_carry",
+                       "yards_per_target", "points_over_expected"],
+        "advanced": ["games", "separation", "yac_over_expected", "ryoe_per_attempt", "time_to_throw", "ngs_cpoe",
+                     "broken_tackle_rate", "drop_rate"],
+    },
+}
+VIEW_MAX = 8
+
+
+def views(key: str, cat: list[dict] | None = None) -> list[dict]:
+    """IX-3: the named views of a position group (``wrte`` | ``rb`` | ``qb`` | ``all``): key, label, the question it
+    answers and its columns (at most eight, games included) — only the columns this season has; a view left with games
+    alone is not offered."""
+    have = None if cat is None else {c["id"] for c in cat if c.get("available")}
+    preset = next((p for p in PRESETS if p["key"] == key), None)
+    out = []
+    for vk in VIEW_KEYS:
+        cols = VIEWS.get(key, {}).get(vk) or (preset["columns"] if preset and vk == "key" else [])
+        cols = [c for c in cols if c in CAT or c == "ros_value"]
+        if have is not None:
+            cols = [c for c in cols if c in have or c == "ros_value"]
+        if vk != "key" and len([c for c in cols if c != "games"]) < 2:
+            continue
+        label, question = VIEW_WORDS[vk]
+        out.append({"key": vk, "label": label, "question": question, "columns": cols[:VIEW_MAX]})
+    return out
+# ---- end IX-3
 
 
 def full_columns(positions: list[str], cat: list[dict] | None = None) -> list[str]:
@@ -703,8 +789,8 @@ def full_columns(positions: list[str], cat: list[dict] | None = None) -> list[st
 
 
 def presets(cat: list[dict] | None = None) -> list[dict]:
-    """The presets with ``full`` for this season's catalogue (IM-2's Full table)."""
-    return [{**p, "full": full_columns(p["positions"], cat)} for p in PRESETS]
+    """The presets with ``full`` for this season's catalogue (IM-2's Full table) and IX-3's named ``views``."""
+    return [{**p, "full": full_columns(p["positions"], cat), "views": views(p["key"], cat)} for p in PRESETS]
 
 
 for _p in PRESETS:
@@ -1358,7 +1444,9 @@ def csv_columns(d: dict, preset: str | None = None, cols: str | None = None, vie
         if p is None:
             out = full_columns(d["positions"], d["catalogue"])
         else:
-            out = p["full"] if (view or "").lower() == "full" else p["columns"]
+            vk = (view or "").lower()
+            named = next((v["columns"] for v in p.get("views") or views(p["key"], d["catalogue"]) if v["key"] == vk), None)
+            out = p["full"] if vk == "full" else named if named else p["columns"]          # ---- IX-3: a named view
     return [c for c in out if c != "games" and c in cat and cat[c].get("available", True) and c not in NO_FIELD]
 
 

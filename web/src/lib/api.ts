@@ -3086,3 +3086,27 @@ export interface GameRow {
   on_field_basis?: "participation" | "snaps" | null; // participation: counted play by play (2016-2025); snaps: estimated (2026)
 }
 // ---- end IX-1
+// ---- IX-3 (Wave I-X): Stats — the named views (each answers one question in at most eight columns) and the situation
+// filter (GET /api/players?window=…&situation=trailing|close|leading)
+export interface StatsViewDef {
+  key: string;
+  label: string;
+  question: string;
+  columns: string[];
+}
+export interface StatsPreset {
+  views?: StatsViewDef[];
+}
+export interface StatsSituation {
+  key: "trailing" | "close" | "leading";
+  label: string; // "When trailing"
+  means: string; // "his team behind by 9 or more"
+  columns: string[]; // the columns split by situation; every other column is — with `reason`
+  reason: string;
+  min_plays: number; // under this many of his team's plays a share reads "too few to read"
+}
+export interface StatsFrame {
+  views?: Record<string, StatsViewDef[]>;
+  situation?: StatsSituation | null;
+}
+// ---- end IX-3

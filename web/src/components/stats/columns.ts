@@ -284,3 +284,68 @@ export function csv(rows: StatsRow[], cols: StatsColumn[], mode: Mode, owner?: (
   }
   return lines.join("\r\n") + "\r\n";
 }
+
+// ---- IX-3 (Wave I-X): the named views — each answers one question (its caption) in at most eight columns per
+// position, games included. The answer's `views` (api/league_lab_api/stats.py VIEWS) wins; an older answer without them
+// reads this mirror. A column the season does not have drops out; a view left with games alone is not offered.
+export type ViewKey = "key" | "production" | "opportunity" | "role" | "efficiency" | "advanced";
+export interface ViewDef {
+  key: string;
+  label: string;
+  question: string;
+  columns: string[];
+}
+export const VIEW_KEYS: ViewKey[] = ["key", "production", "opportunity", "role", "efficiency", "advanced"];
+export const VIEW_MAX = 8;
+const VIEW_WORDS: Record<ViewKey, [string, string]> = {
+  key: ["Key stats", "The numbers to read first: what he scores and how much of the offence is his."],
+  production: ["Production", "What has he produced?"],
+  opportunity: ["Opportunity", "How much of his team's offence comes his way?"],
+  role: ["Role changes", "Is his role growing or shrinking?"],
+  efficiency: ["Efficiency", "What does he do with each chance?"],
+  advanced: ["Advanced", "What do tracking and charting add?"],
+};
+const VIEWS: Record<PosGroup, Record<ViewKey, string[]>> = {
+  wrte: {
+    key: ["games", "points", "targets", "target_share", "receptions", "receiving_yards", "receiving_tds", "snap_share"],
+    production: ["games", "points", "receptions", "receiving_yards", "receiving_tds", "receiving_first_downs", "yards_per_reception", "yac_per_reception"],
+    opportunity: ["games", "targets", "target_share", "on_field_target_share", "air_yards_share", "wopr", "red_zone_targets", "snap_share"],
+    role: ["games", "target_share", "target_share_change", "snap_share", "snap_share_change", "route_participation", "first_read_target_share"],
+    efficiency: ["games", "catch_rate", "yards_per_target", "epa_per_target", "receiving_success_rate", "first_downs_per_target", "racr", "points_over_expected"],
+    advanced: ["games", "separation", "cushion", "yac_over_expected", "adot", "catchable_rate", "drop_rate", "tprr_proxy"],
+  },
+  rb: {
+    key: ["games", "points", "carries", "carry_share", "rushing_yards", "targets", "target_share", "snap_share"],
+    production: ["games", "points", "rushing_yards", "rushing_tds", "receptions", "receiving_yards", "receiving_tds", "yards_per_touch"],
+    opportunity: ["games", "carries", "carry_share", "on_field_carry_share", "targets", "target_share", "on_field_target_share", "inside_10_carries"],
+    role: ["games", "carry_share", "carry_share_change", "target_share", "target_share_change", "snap_share", "snap_share_change", "rb_carry_share"],
+    efficiency: ["games", "yards_per_carry", "epa_per_carry", "rushing_success_rate", "first_downs_per_carry", "yards_per_target", "epa_per_target", "points_over_expected"],
+    advanced: ["games", "ryoe_per_attempt", "rush_efficiency", "stacked_box_rate", "time_to_los", "yards_before_contact_per_carry", "yards_after_contact_per_carry", "broken_tackle_rate"],
+  },
+  qb: {
+    key: ["games", "points", "attempts", "passing_yards", "passing_tds", "passing_interceptions", "carries", "rushing_yards"],
+    production: ["games", "points", "completions", "passing_yards", "passing_tds", "passing_interceptions", "rushing_yards", "rushing_tds"],
+    opportunity: ["games", "attempts", "dropbacks", "carries", "scrambles", "red_zone_carries", "rushing_points_share"],
+    role: ["games", "snap_share"],
+    efficiency: ["games", "completion_rate", "yards_per_attempt", "adjusted_yards_per_attempt", "epa_per_dropback", "passing_success_rate", "cpoe", "sack_rate"],
+    advanced: ["games", "time_to_throw", "ngs_cpoe", "aggressiveness", "ngs_pass_intended_air_yards", "pressure_rate", "bad_throw_rate", "times_pressured"],
+  },
+  all: {
+    key: ["games", "points", "ros_value", "targets", "target_share", "carries", "carry_share", "snap_share"],
+    production: ["games", "points", "passing_yards", "passing_tds", "rushing_yards", "rushing_tds", "receiving_yards", "receiving_tds"],
+    opportunity: ["games", "attempts", "carries", "carry_share", "targets", "target_share", "red_zone_opportunities", "snap_share"],
+    role: ["games", "target_share", "target_share_change", "carry_share", "carry_share_change", "snap_share", "snap_share_change"],
+    efficiency: ["games", "epa_per_dropback", "epa_per_carry", "epa_per_target", "yards_per_carry", "yards_per_target", "points_over_expected"],
+    advanced: ["games", "separation", "yac_over_expected", "ryoe_per_attempt", "time_to_throw", "ngs_cpoe", "broken_tackle_rate", "drop_rate"],
+  },
+};
+
+/** The position's named views: the answer's when it has them, else the mirror — only the columns this season has. */
+export function viewsFor(pos: PosGroup, catalogue: StatsColumn[], answer?: ViewDef[] | null): ViewDef[] {
+  const have = new Set(catalogue.filter((c) => c.available !== false).map((c) => c.id));
+  const list: ViewDef[] = answer?.length ? answer : VIEW_KEYS.map((k) => ({ key: k, label: VIEW_WORDS[k][0], question: VIEW_WORDS[k][1], columns: VIEWS[pos][k] }));
+  return list
+    .map((v) => ({ ...v, columns: v.columns.filter((c) => have.has(c)).slice(0, VIEW_MAX) }))
+    .filter((v) => v.key === "key" || v.columns.filter((c) => c !== "games").length >= 2);
+}
+// ---- end IX-3

@@ -70,18 +70,21 @@ def test_every_new_column_says_how_it_adds_up_and_why_it_can_be_null():
         assert not re.search(r"\b(a|an) (game|target|carry|attempt|dropback|touch)\b", c["label"]), c["label"]
 
 
-def test_presets_lead_with_10_to_14_columns_and_carry_the_full_table():
+def test_presets_lead_with_at_most_8_columns_and_carry_the_full_table():
+    # IX-3 (Wave I-X), on purpose: Key stats is at most eight columns (was 10-14; the review's § 2)
     pre = {p["key"]: p for p in ST.PRESETS}
     assert set(pre) == {"wrte", "rb", "qb"}
     for p in ST.PRESETS:
-        assert 10 <= len(p["columns"]) <= 14, p["key"]
+        assert 6 <= len(p["columns"]) <= 8, p["key"]
         assert all(ST.CAT[c]["status"] in ("present", "derived") for c in p["columns"]), p["key"]
         order = [c["id"] for c in ST.CATALOGUE]
         assert p["full"] == sorted(p["full"], key=order.index)                     # catalogue order
         assert set(p["columns"]) <= set(p["full"])
         for cid in p["full"]:
             assert set(ST.CAT[cid]["positions"]) & set(p["positions"]) and ST.CAT[cid]["status"] != "unavailable"
-    assert {"adot", "air_yards_share", "epa_per_target", "separation", "yac_over_expected"} <= set(pre["wrte"]["columns"])
+    # IX-3: the five deeper receiver columns moved from Key stats to the named views (Opportunity, Efficiency, Advanced)
+    named = {c for v in ST.views("wrte") for c in v["columns"]}
+    assert {"adot", "air_yards_share", "epa_per_target", "separation", "yac_over_expected"} <= named
     assert "attempts" not in pre["wrte"]["full"] and "targets" not in pre["qb"]["full"]     # positions that apply
 
 

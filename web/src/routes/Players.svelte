@@ -27,6 +27,7 @@
   import ErrorCard from "../components/ErrorCard.svelte"; // ---- IH-1: the API down / a 500 / still waiting
   import StatsTable from "../components/stats/StatsTable.svelte"; // ---- IM-2
   import { csv, field as fieldOf, fullColumns, groupOf, show as showOf, title as titleOf, why as whyOf, type Mode, type PosGroup } from "../components/stats/columns"; // ---- IM-2
+  import { viewsFor, type ViewDef } from "../components/stats/columns"; // ---- IX-3: the named views
   import { accountPrefs, type StatsView } from "../lib/prefs"; // ---- IK-4: the saved views through prefs (an account keeps them)
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
@@ -89,23 +90,35 @@
   // ---- IN-2: + the value while browsing (`ros_value`: only a reference key's catalogue has it; elsewhere it drops out)
   const ALL_COLS = ["games", "points", "ros_value", "targets", "target_share", "carries", "carry_share", "snap_share"];
   const preset = $derived(r.data?.presets.find((p) => p.key === group) ?? null);
-  const defaults = $derived(preset ? preset.columns : ALL_COLS);
+  // ---- IX-3 (Wave I-X): the named views of the position (Key stats, Production, Opportunity, Role changes,
+  // Efficiency, Advanced: each one question, at most eight columns), then the Full table one tap away
+  const viewDefs = $derived<ViewDef[]>(r.data ? viewsFor(group, r.data.catalogue, r.data.views?.[group] ?? preset?.views ?? null) : []);
+  const activeDef = $derived<ViewDef | null>(viewDefs.find((v) => v.key === view) ?? viewDefs[0] ?? null);
+  const defaults = $derived(activeDef ? activeDef.columns : preset ? preset.columns.slice(0, 8) : ALL_COLS);
+  // ---- end IX-3
   const picked = $derived((params.get("cols") ?? "").split(",").filter((c) => c && cat.has(c)));
   const keyCols = $derived<StatsColumn[]>((picked.length ? picked : defaults).map((c) => cat.get(c)).filter((c): c is StatsColumn => !!c));
   const offered = $derived(
     (r.data?.catalogue ?? []).filter((c) => c.id !== "games" && c.positions.some((p) => (fetchPos === "ALL" ? true : fetchPos.split(",").includes(p)))),
   );
 
-  // ---- IM-2: the two views. `view=` in the URL (a tap writes it: shareable, kept by a saved view); without it the view
-  // last picked on this device, else Full table from 900 px and Key stats on a phone (the PO's call).
+  // ---- IM-2: the views. `view=` in the URL (a tap writes it: shareable, kept by a saved view); without it the view
+  // last picked on this device.
+  // ---- IX-3 (Wave I-X): Key stats first on every width (no more Full table from 900 px); the named views
+  const VIEW_NAMES = ["key", "production", "opportunity", "role", "efficiency", "advanced", "full"];
   const remembered = accountPrefs.statsTable();
-  const wideAtOpen = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(min-width: 900px)").matches;
-  const view = $derived<"key" | "full">(params.get("view") === "full" ? "full" : params.get("view") === "key" ? "key" : (remembered ?? (wideAtOpen ? "full" : "key")));
+  const askedView = $derived.by<string>(() => {
+    const v = params.get("view") ?? "";
+    return VIEW_NAMES.includes(v) ? v : (remembered ?? "key");
+  });
+  // a named view the position does not have (a quarterback has no role-change column) reads as Key stats
+  const view = $derived<string>(askedView === "full" || !r.data || viewDefs.some((d) => d.key === askedView) ? askedView : "key");
   function setView(v: string) {
-    const next = v === "full" ? "full" : "key";
-    setParams({ view: next });
-    accountPrefs.setStatsTable(next);
+    const next = VIEW_NAMES.includes(v) ? v : "key";
+    setParams({ view: next, cols: null });
+    accountPrefs.setStatsTable(next === "full" ? "full" : "key");
   }
+  // ---- end IX-3
   // the Full table: the answer's `full` list (IM-1) or every available column for the position, grouped; minus the
   // groups toggled off (`hide=`, group names) and the columns unticked in the picker (`off=`, column ids)
   const fullPositions = $derived(fetchPos === "ALL" ? [] : position === "WR" || position === "TE" ? [position] : fetchPos.split(","));
@@ -471,10 +484,7 @@
     <!-- ---- IM-2: the view (Key stats · Full table), the CSV, the group toggles, the table, every player -->
     <div class="flex flex-wrap items-center gap-x-3 gap-y-2" data-testid="stats-toolbar">
       <Tabs
-        items={[
-          { key: "key", label: "Key stats" },
-          { key: "full", label: "Full table" },
-        ]}
+        items={[...viewDefs.map((d) => ({ key: d.key, label: d.label })), { key: "full", label: "Full table" }]}
         current={view}
         onpick={setView}
         size="sm"
@@ -492,6 +502,10 @@
         data-testid="stats-csv"><span aria-hidden="true">↓</span> Download CSV</a
       >
     </div>
+    <!-- ---- IX-3: the question the view answers -->
+    <p class="text-sm text-ink-2" data-testid="stats-view-question">
+      {#if view === "full"}<strong class="text-ink">Full table:</strong> every column we have for the position, grouped. Tap a group to hide or show it.{:else if activeDef}<strong class="text-ink">{activeDef.label}:</strong> {activeDef.question}{/if}
+    </p>
     {#if view === "full" && groupNames.length > 1}
       <div class="ll-chiprow">
         <div class="flex flex-wrap gap-1.5" role="group" aria-label="Column groups: tap to hide or show" data-testid="stats-groups">
@@ -527,7 +541,7 @@
         {sel}
         onselect={toggleSel}
         owner={owned ? ownerOf : null}
-        caption={`${POS.find((x) => x.key === position)?.label ?? "All"} players, ${r.data.window.label}: ${view === "full" ? "full table" : "key stats"}${sortCol ? `, sorted by ${title(sortCol).toLowerCase()}` : ""}`}
+        caption={`${POS.find((x) => x.key === position)?.label ?? "All"} players, ${r.data.window.label}: ${view === "full" ? "full table" : (activeDef?.label ?? "Key stats").toLowerCase()}${sortCol ? `, sorted by ${title(sortCol).toLowerCase()}` : ""}`}
         dim={r.loading}
       />
     {/key}
@@ -549,7 +563,7 @@
           block
           text={r.data.howto +
             `\n- Points are in ${leagueName} scoring. Tap a column to sort by it; tap a name for his card; tick 2–4 players to see them side by side.` +
-            `\n- **Key stats** are the numbers to read first. **Full table** shows every column we have for the position, grouped (Receiving, Air yards, Red zone…): tap a group above the table to hide or show it. A greyed number rests on a small sample: tap it, or a dash, for the reason.`}
+            `\n- **Key stats** are the numbers to read first. **Production**, **Opportunity**, **Role changes**, **Efficiency** and **Advanced** each answer one question, said under the switch. **Full table** shows every column we have for the position, grouped (Receiving, Air yards, Red zone…): tap a group above the table to hide or show it. A greyed number rests on a small sample: tap it, or a dash, for the reason.`}
         />
         <dl class="space-y-1.5 text-sm" data-testid="stats-definitions">
           {#each cols as c (c.id)}

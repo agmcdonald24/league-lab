@@ -1151,6 +1151,7 @@ def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None
     return {**ctx.meta(), "season": season, "season_type": season_type, "positions": pos, "window": desc,
             "who": wh, "team": team, "nfl": nfl, "min_games": min_games, "total": total, "offset": off,
             "players": _records(page), "catalogue": cat, "presets": ST.presets(cat), "groups": ST.GROUPS,  # IM-1
+            "views": {k: ST.views(k, cat) for k in ("wrte", "rb", "qb", "all")},                   # ---- IX-3
             "howto": STATS_HOWTO}
 # ---- end II-3
 
