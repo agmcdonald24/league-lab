@@ -2455,6 +2455,15 @@ the exact percent. It is not a forecast to bet on. 2026 has two graded
 weeks (22 matchups): too few to say more, and nothing in them is badly off, so the line shows the percentage (the
 "early: N weeks graded" fallback, `myweek.WIN_EARLY`, stays off).
 
+**My Week's one summary (IX-4, Wave I-X, 2026-10-11; `myweek.matchup_summary`).** Before either side's first kickoff
+the summary prints each side's best lineup by our projections (`lineup_value`, `opponent.lineup_value`: the same sums
+`lineup_win_probability` calls `mine` / `theirs` before any game is in) and the chance; once a starter of either side
+has kicked off (`kickoff_at` ≤ the request's clock, counted per side as `n_started` / `opp_n_started` on `win`) it prints
+`win.mine` / `win.theirs` (points in plus projections still to play) with how many have played; when every starter of
+both sides has played, the score. The league line keeps the rank only. The recommended lineup's total (the table's last
+row) is the sum of the recommended starters' projections: the best lineup's total unless a close call's injury tiebreak
+put a bench player in a slot.
+
 ### Odds grades (og1.0, IL-3, Wave I-L, 2026-10-05; `league_lab.odds_grade`, `league-lab grade-odds`, `analytics.odds_grades`, `/api/status` `odds_grades`)
 
 IH-3 calibrated the week's win probability once, by hand. This grades it **every night on the decision record** — the
@@ -5639,6 +5648,16 @@ depends on a quarterback set **by hand** (`starters.corrected`) is **softened**:
 sentence saying whom it assumes (the correction rests on evidence — he led the dropbacks — but a person made it). A
 receiver, back or tight end of such a team carries nothing: their projections do not read the QB inputs. The flag is
 the decision's first week's (the market week); later weeks of a window are assumed to follow it.
+
+**On My Week (IX-4, Wave I-X, 2026-10-11; `myweek.rule_calls`).** The same rule on a lineup call, in a lineup's
+words: a call (an action, a card, a "no clear upgrade" line) whose players include a quarterback or an MFL team-QB unit
+of a flagged team is **withheld** when the starter is unclear — "X or Y at QB: check who starts first.", no "Start", the
+caveat's sentence as its reason — and, when the sources disagree on the data rule's pick, a **lean**; a lean that is not
+a clear call (the card's strength lean or coin flip: under 3 points and under 70%; without a card, a change under 3
+points) is worded "check who starts first" too, because a starter's week against his backup's (about 10 points) is larger
+than the gap. The numbers and the recommended lineup stay; the row of that player says "Check who starts for <team>
+before kickoff". The review's case: Big Mac Attack, Chicago team QB over Houston team QB by 1.9 points, Chicago's
+starter projected by the data rule (Caleb Williams; the schedule lists Case Keenum).
 
 ### The "useful decision" grade (ud1.0) — definition written at 10:29 ET 2026-10-08, before any of its numbers was read
 

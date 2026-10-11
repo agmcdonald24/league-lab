@@ -984,3 +984,29 @@ sentence of its own, only where they appear.
 | a column's source (definitions under How to read this) | nflverse play-by-play · nflverse play-by-play, summed per game · nflverse participation: who was on the field each play · NFL Next Gen Stats via nflverse · Pro Football Reference advanced stats, weekly, via nflverse · our expected-points model over nflverse play-by-play · this league's scoring and our expected-points model · nflverse weekly player stats (team totals: his team's game totals); the measure DFS's role trend reads · a licensed routes feed: not connected | a table, model or module name (`fct_play`, `mart_…`, `bridge_…`, `league_lab.role_trend`, `routes_feed`) |
 | the share's other part in a definition | "Out of: team targets in the games he played." | "Denominator:" |
 <!-- ---- end IX-3 -->
+<!-- ---- IX-4 -->
+## My Week: one matchup number, the lineup it is, three decisions (IX-4, Wave I-X, 2026-10-11; `myweek.matchup_summary`, `recommend`, `rule_calls`; `routes/MyWeek.svelte`, `lib/week.ts`)
+
+The review of 10 October § 1: three figures (125 against 105, then 118 to 117, then "best lineup 125.07"), none
+labelled, and a table headed "Your lineup" that was the best lineup on paper. Now one summary says what its numbers
+are, the table is the recommendation and says so, and an unclear starter sits on the call it affects.
+
+| Where | Words | Never |
+|---|---|---|
+| the summary, before either side's first kickoff | "Week 5 vs **GoodGameBuddy**: you project 98, they project 122." · under it "Each side's best lineup by our projections." · then the chance "You're a clear underdog this week: 31%." (IH-3's words without the totals; the assumption on hover) | a second total for the same thing; "projects 108 — you project 112" |
+| the summary, once a game of either side has kicked off | "Week 4 vs **GoodGameBuddy**: 122 to 183 expected." · "Points scored so far plus projections for players still to play (9 of your 10 have played, 8 of theirs)." · the chance · a game under way with no points in yet: "(a game has kicked off; no points are in yet)" | the before line beside it |
+| the summary, every starter on both sides has played | "Week 5 vs **X**: 132 to 99." · "Points scored: every starter on both sides has played." (no chance) | 0% / 100% |
+| the summary, live scores not read (an MFL league without its live scoring) | the projection line with "Each side's best lineup by our projections; this league's live scores are not read yet." | a guessed score |
+| a double header | one summary per game, each naming its opponent | — |
+| the league rank (detail, under the summary; house leagues) | "Your best lineup ranks 10th of 10 in the league in week 5." (was "Your best lineup projects **125.07** in week 5, 10th of 10 …"; the console's Home line is the same function, `cards.league_line`) | the total again |
+| the lineup table's heading and caption | **Recommended lineup** · "Who we would start, by our projections and the calls above — tap a name for his card." (was **Your lineup**) | "Your lineup" over a lineup we chose |
+| the line above the table (the provider's submitted lineup known) | "✓ Matches your Sleeper lineup." · "≠ 2 changes from your Sleeper lineup." · MFL: "1 change from your MFL lineup." — nothing when the submitted lineup is not known | — |
+| a row that differs (under the name) | "≠ In Sleeper now: Jefferson" · "≠ Open in Sleeper now" (nobody in that slot there) · "≠ In Sleeper now: a player no longer on your roster" · an empty slot of ours: "≠ In Sleeper now: Mahomes" | colour alone |
+| a close call that keeps a bench player (an injury tiebreak) | he is IN the slot; the other on the bench (was "Questionable — the call above keeps Addison here for now" / "starts for McConkey by the call above") | "the call above keeps …" |
+| the table's total (its last row) | **Total** 98.2 (the recommended starters' projections, one decimal) | — |
+| a call on a quarterback or a team-QB slot whose starter is unclear, or a close one (not a clear call) whose starter the sources disagree on | the action: "Chicago Bears QB or Houston Texans QB at team QB: check who starts first." · its reason: the caveat's sentence ("We project Caleb Williams to start for Chicago, not the listed Case Keenum: Chicago Bears QB's projection assumes Williams starts.") + "By our projections Chicago Bears QB is about 1.9 points ahead: less than a starter's week against his backup's (about 10 points)." · its chip **Close call** · "Your MFL lineup has Houston Texans QB there now." · its row in the table: "? Check who starts for Chicago before kickoff" | "Start Chicago Bears QB …" with the caveat in a lower paragraph only |
+| a clear call whose starter the sources disagree on | the call stands; its reason ends "Read it as a lean. We project … assumes Williams starts." | — |
+| a close call the lineup follows ("No clear upgrade") on such a team | its words + the caveat's sentence + "So check who starts first." | — |
+| more than three decisions | the three most urgent (a starter who cannot play, a change for points, a call to re-check before a kickoff, a claim before waivers run), then **More: 4 other calls** (the rest, opened in place) | a fourth card in view |
+| the news feed with nothing in it | no card and no line (was "Nothing has changed since the morning build.": it implied every feed was checked) | "Nothing has changed" |
+<!-- ---- end IX-4 -->

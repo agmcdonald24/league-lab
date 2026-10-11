@@ -4,6 +4,16 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-11 — Wave I-X
 
+- **IX-4 — My Week: one matchup number, the lineup it is, three decisions.** One summary in place of three figures:
+  before the first kickoff "Week 5 vs X: you project 98, they project 122" labelled "Each side's best lineup by our
+  projections", with the chance (no second total); once a game of either side has kicked off the live line (points in
+  plus projections still to play, how many have played); the league line keeps the rank only (`cards.league_line`, the
+  console's Home too). The table is **Recommended lineup**: a close call that keeps a bench player puts him in the slot
+  (no "the call above keeps …" flag), its own total, and where the provider's lineup is known "Matches your Sleeper
+  lineup" / "2 changes from your Sleeper lineup" with "In Sleeper now: X" on each row that differs. A call on a
+  quarterback or team-QB slot whose starter is unclear — or a close one whose starter the sources disagree on — says
+  "check who starts first" in the call (the review's Chicago team QB over Houston by 1.9). Three decisions first, the
+  rest behind **More**; no news card without news. Both paths (`myweek.finish` / `rule_calls`; house and on-demand).
 - **IX-3 — Stats: a table that opens on an answer.** Every width opens on **Key stats** (eight columns, was 14; the
   desktop opened on the 97-column Full table); named views **Production · Opportunity · Role changes · Efficiency ·
   Advanced** each answer one question (the line under the switch) in at most eight columns, IX-1's on-field shares in
