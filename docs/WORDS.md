@@ -1137,3 +1137,11 @@ News feed's own (`myweek.decision_feed`, II-4); IZ-4 moves them, it writes no se
 | My Week, a reason the build names that no other word covers | "… cannot play this week because he is listed doubtful" / "… cannot play this week: <reason>" (was "can't play (<reason>)") | — |
 | the trade's section 5, a player's role note (QB, RB, WR, TE) | "Role: Too early to say: 4 games with a snap so far this season; …" (the card's Role headline, `roles.role_change`) · with a game cut short: "· Week 4: Left early: 15 snaps (20% of the team's; usually 94%); hurt on a play in the 2nd quarter" (the game log's words) | a role read that the card does not show; a note on a kicker or a defense |
 <!-- ---- end JA-4 -->
+<!-- ---- JA-5 -->
+## Stats on a desktop: one control row (JA-5, Wave J-A, 2026-10-12; `routes/Players.svelte`, `WeekSlider.svelte`)
+
+| Where | Words | Never |
+|---|---|---|
+| the control row from 900 px | the positions · the weeks' one line "Season · weeks 1–4 ▾" / "Weeks 3–4 against weeks 1–2 ▾" (opens the slider in place) · a select **All plays / When trailing / Within a score / When leading** (its name "Game situation") · **Filters** (named when closed: "Filters: When trailing · Free agents · At least 2 games") | a filter in force hidden without its name |
+| behind Filters (every width now) | the name filter, Everyone / Yours / Free agents / Other teams, the NFL team, Per game / Totals, the minimums, the situation chips and their line, the window line, Columns and saved views, the role cards | — |
+<!-- ---- end JA-5 -->
