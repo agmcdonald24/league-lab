@@ -2579,6 +2579,11 @@ def ir2_depth(ctx: TradeContext, board: RosterBoard, team: int, week: int | None
         reason = reason if isinstance(reason, str) and reason else "no projection that week" if r is None else "cannot play"
         return None if is_no_slot(reason) else IR2_CANNOT.get(reason, reason)
     whose = "your" if who == "you" else "their"
+
+    def raw_reason(q: str) -> str:                                                                  # ---- JA-4
+        r = board.row(q, week)
+        reason = None if r is None else r.get("reason")
+        return reason if isinstance(reason, str) and reason else "no projection that week" if r is None else "cannot play"
     lost, bits = [], []
     for p in [*gives, *cuts]:
         if p in starters_b:
@@ -2588,11 +2593,14 @@ def ir2_depth(ctx: TradeContext, board: RosterBoard, team: int, week: int | None
         cannot = [(q, why_not(q)) for q in after_roster if q not in seated and ctx.pos(q) == pos]
         cannot = [(q, w) for q, w in cannot if w is not None]
         playing = p in {q.id for q in lb.bench}
-        what = f"a backup {pos}" if playing else f"{_a_pos(pos)} who cannot play in week {week} ({why_not(p) or 'out'})"
+        # ---- JA-4 (Wave J-A): sentences, not a status in brackets ("… in week 4 (game started (bench)) … (Jaylen Warren
+        # game started (bench) cannot)", IZ-2's find): "because his game has started" / "Jaylen Warren's game has
+        # started, so he cannot be moved this week"
+        what = f"a backup {pos}" if playing else f"{_a_pos(pos)} who cannot play in week {week} because {because_words(raw_reason(p))}"
         line = (f"{who} lose {ctx.name(p)}, {what}: {len(usable) if usable else 'no'} {pos} left on {whose} bench who "
                 f"can play in week {week}")
         if cannot:
-            line += " (" + _and([f"{ctx.name(q)} {w}" for q, w in cannot]) + " cannot)"
+            line += "; " + "; ".join(cannot_sentence(ctx.name(q), raw_reason(q), week) for q, _ in cannot)
         bits.append(line)
         lost.append({"player": ctx.player(p), "position": pos, "usable": [ctx.name(q.id) for q in usable],
                      "cannot_play": [{"player_name": ctx.name(q), "why": w} for q, w in cannot], "words": line})
@@ -2600,6 +2608,31 @@ def ir2_depth(ctx: TradeContext, board: RosterBoard, team: int, week: int | None
     for q in joins_:
         bits.append(f"{_who(ctx, q.id)} joins {whose} bench as a backup {q.position}")
     return {"words": "; ".join(bits) if bits else None, "lost": lost, "joins": [ctx.name(q.id) for q in joins_]}
+
+
+# ---- JA-4 (Wave J-A): why a player cannot play, as a clause and as a sentence a person would write (the lineup build's
+# reasons, `lineup.py`, and the availability codes); never "(game started (bench))" or "(Breece Hall Out cannot)"
+BECAUSE = {"game started (bench)": "his game has started", "bye": "he is on a bye", "nfl injured reserve": "he is on injured reserve",
+           "ir slot": "he is in the IR slot", "taxi squad": "he is on the taxi squad", "no nfl team": "he has no NFL team",
+           "no projection that week": "he has no projection that week", "cannot play": "he cannot play",
+           "out": "he is ruled out", "doubtful": "he is listed doubtful", "ir": "he is on injured reserve",
+           "pup": "he is on the PUP list", "sus": "he is suspended", "suspended": "he is suspended",
+           "inactive": "he is not on an active roster", "na": "he is not on an active roster"}
+
+
+def because_words(reason: str | None) -> str:
+    """'his game has started' / 'he is ruled out' — the clause after "because"."""
+    r = str(reason or "").strip()
+    return BECAUSE.get(r.lower(), f"he is listed {r.lower()}" if r else "he cannot play")
+
+
+def cannot_sentence(name: str, reason: str | None, week: int | None) -> str:
+    """"Jaylen Warren's game has started, so he cannot be moved this week" / "Breece Hall cannot play in week 4: he is
+    ruled out"."""
+    if str(reason or "").strip().lower() == "game started (bench)":
+        return f"{name}'s game has started, so he cannot be moved this week"
+    return f"{name} cannot play{f' in week {week}' if week is not None else ''}: {because_words(reason)}"
+# ---- end JA-4
 
 
 def _a_pos(pos: str | None) -> str:

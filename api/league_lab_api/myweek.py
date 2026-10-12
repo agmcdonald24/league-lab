@@ -771,7 +771,11 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
         why = str(r.get("reason") or "").lower()
         if s not in CANT_WORDS and why in REASON_WORDS:                 # ---- IN-5: the build's reason in words
             return REASON_WORDS[why]
-        return CANT_WORDS.get("BYE" if why == "bye" else s, f"can't play ({r.get('reason') or s.lower() or 'not active'})")
+        # ---- JA-4: the fallback as a sentence (was "can't play (<reason>)")
+        from .decisions import BECAUSE, because_words
+        raw = str(r.get("reason") or s.lower() or "")
+        tail = f"because {because_words(raw)}" if raw.lower() in BECAUSE else (f": {raw}" if raw else "")
+        return CANT_WORDS.get("BYE" if why == "bye" else s, f"cannot play this week{(" " + tail) if tail.startswith("because") else tail}")
 
     # the groups: cards that share a player (union-find over the keys); the submitted lineup's differences join them
     parent: dict[str, str] = {}

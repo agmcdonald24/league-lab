@@ -274,8 +274,9 @@ def test_depth_has_one_definition_and_names_who_cannot_play():
     b = two(a=a, a6=a6)
     d, card = decide(b, free({5: FREE, 6: FREE}), 1, ["arb5"], ["bwr3"])
     words = d["depth"]["mine"]["words"]
-    assert words.startswith("you lose arb5, a backup RB: no RB left on your bench who can play in week 5 "
-                            "(arb4 in the IR slot cannot)")
+    # JA-4 (Wave J-A, on purpose): a sentence, not "(arb4 in the IR slot cannot)"
+    assert words.startswith("you lose arb5, a backup RB: no RB left on your bench who can play in week 5; "
+                            "arb4 cannot play in week 5: he is in the IR slot")
     assert words.endswith("bwr3 joins your bench as a backup WR")
     lost = d["depth"]["mine"]["lost"][0]["words"]
     assert card["depth_cost"]["mine"].startswith(lost[0].upper() + lost[1:] + ".")       # the same sentence

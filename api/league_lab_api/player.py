@@ -946,7 +946,10 @@ def roster_line(league_id: str, gsis: str, team: int | None, card: dict, *, hous
         why = str(mine.get("flag") or mine.get("reason") or "").strip()
         if why.startswith("game started"):
             return {"kind": "bench", "words": "On your bench this week; his game has started."}
-        return {"kind": "out", "words": f"Can't play for you this week ({why or 'he cannot play'})."}
+        # ---- JA-4 (Wave J-A): a sentence, not a status in brackets (was "Can't play for you this week (bye).")
+        from .decisions import BECAUSE, because_words
+        said = because_words(why) if why.lower() in BECAUSE else why
+        return {"kind": "out", "words": f"Can't play for you this week: {said}." if said else "Can't play for you this week."}
     # a free agent: would he start for you, over whom, by how much this week (his projection against the starter's —
     # the head's number and My Week's table's number); an empty starting spot that admits him: he would fill it
     if not card.get("is_free_agent"):

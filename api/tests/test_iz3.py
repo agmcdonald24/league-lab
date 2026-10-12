@@ -59,7 +59,7 @@ def test_a_bench_player_says_whom_he_sits_behind_and_a_player_who_cannot_play_sa
     _ctx(monkeypatch, ROWS, FULL)
     line = P.roster_line("L", "g4", 2, _card(), house=True)
     assert line == {"kind": "bench", "behind": ["Ann Able", "Bo Bell"], "words": "On your bench this week, behind Ann Able and Bo Bell."}
-    assert P.roster_line("L", "g5", 2, _card(position="TE"), house=True)["words"] == "Can't play for you this week (bye)."
+    assert P.roster_line("L", "g5", 2, _card(position="TE"), house=True)["words"] == "Can't play for you this week: he is on a bye."   # JA-4 (on purpose): a sentence, not "(bye)"
 
 
 def test_a_free_agent_who_would_start_names_the_starter_and_the_gain(monkeypatch):
