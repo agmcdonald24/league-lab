@@ -1,2 +1,3 @@
 2026-10-11 wave-iz-1 (21:25 ET)
 The last commit of every delivery touches this file: Render's buildFilter (render.yaml: api/**) deploys on it.
+The trigger keeps its dashboard variables on a deploy (keep_vars).

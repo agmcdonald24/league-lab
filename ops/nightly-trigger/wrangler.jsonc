@@ -4,6 +4,11 @@
   "name": "isuckatfantasy-nightly-trigger",
   "main": "src/index.js",
   "compatibility_date": "2026-09-01",
+  // PO (2026-10-11): a deploy must never drop what was set in the dashboard. Twice in two days a `wrangler deploy` left
+  // the Worker without its GITHUB_TOKEN (set there as a variable), and the nightly did not start. With this, variables
+  // set in the dashboard survive a deploy; the token itself belongs in `wrangler secret put GITHUB_TOKEN` (a secret is
+  // kept by every deploy).
+  "keep_vars": true,
   // :37 = the morning run and its re-checks; :37 and :52 = the game-day slots (GAME_SLOTS_ET, Wave I-W)
   "triggers": { "crons": ["37 * * * *", "52 * * * *"] },
   "vars": {

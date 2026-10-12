@@ -34,3 +34,11 @@ Cloudflare → Workers & Pages → **KV** → Create namespace `isuckatfantasy-n
 **Bindings** → Add → KV namespace → variable name `STATE`, that namespace → Deploy. Or in `wrangler.jsonc`:
 `"kv_namespaces": [{ "binding": "STATE", "id": "<the namespace id>" }]`. Without it the Worker works as before and
 the page says the dispatch is not recorded. Offline checks (GitHub mocked, KV faked): `node ops/nightly-trigger/test.mjs`.
+
+## After a deploy: check the token (2026-10-11)
+
+Open the Worker's address: the second or third line must say `token: set`. If it says `token: MISSING`, the nightly will
+not start: run `npx wrangler secret put GITHUB_TOKEN` in this folder and paste the fine-grained token (Actions: read and
+write on this repository). A secret set this way is kept by every later `wrangler deploy`; a token typed into the
+dashboard as a plain variable was dropped by a deploy twice (10 and 11 October). `keep_vars` in `wrangler.jsonc` now
+keeps dashboard variables too.
