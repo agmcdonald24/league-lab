@@ -180,6 +180,7 @@ export const title = (c: StatsColumn, mode: Mode) => (c.per_game && mode === "ga
 export function show(c: StatsColumn, p: StatsRow, mode: Mode): string {
   if (c.unsplit) return "—"; // ---- IX-3: never the all-plays number under a situation
   const v = num(p[field(c, mode)]);
+  if (c.id === "trend" && v !== null) return v > 0 ? "▲" : v < 0 ? "▼" : "–"; // ---- JA-1: by week's trend mark
   if (v === null) return "—";
   if (SHARE_CHANGE.has(c.id)) return sharePts(v); // ---- IO-4
   if (c.format === "pct") return fmt.pct(v, 1);
@@ -222,6 +223,10 @@ export function why(c: StatsColumn, p: StatsRow, mode: Mode): string {
   const n = (k: string) => num(p[k]);
   // ---- IX-3 (Wave I-X): under a game situation, a column not split by it says so; a split one says its plays
   if (c.unsplit) return c.reason ?? "Not split by game situation.";
+  // ---- JA-1: by week — a week without a number says why (bye, did not play); the trend mark says what it is
+  const own = p[`${c.id}__why`];
+  if (v === null && typeof own === "string") return own;
+  if (c.id === "trend") return v === null ? "Under two weeks with a number: no trend." : `${c.definition}`;
   if (c.situation) {
     const where = c.situation.toLowerCase();
     const plays = n("situation_plays");

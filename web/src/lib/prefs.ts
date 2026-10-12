@@ -118,7 +118,7 @@ const KEY_STATS_VIEWS = "ll.stats.views";
 const KEY_STATS_TABLE = "ll.stats.table"; // ---- IM-2
 const KEY_STATS_TABLES = "ll.stats.tables"; // ---- IX-3: per position group
 const STATS_POS_GROUPS = ["wrte", "rb", "qb", "all"];
-const STATS_VIEW_NAMES = ["key", "production", "opportunity", "role", "efficiency", "advanced", "full"];
+const STATS_VIEW_NAMES = ["key", "production", "opportunity", "role", "efficiency", "advanced", "byweek", "full"]; // JA-1: + byweek
 
 /** A league as the account saves it (PUT /api/account/leagues). */
 export interface SavedLeagueIn {

@@ -29,6 +29,7 @@
   import { csv, field as fieldOf, fullColumns, groupOf, show as showOf, title as titleOf, why as whyOf, type Mode, type PosGroup } from "../components/stats/columns"; // ---- IM-2
   import { viewsFor, type ViewDef } from "../components/stats/columns"; // ---- IX-3: the named views
   import WeekSlider from "../components/stretch/WeekSlider.svelte"; // ---- JA-1: the weeks you choose
+  import { NOT_COMPARED } from "../components/stats/columns"; // ---- JA-1
   import { rangeName, readStretch, words as stretchWords } from "../lib/stretch"; // ---- JA-1
   import { accountPrefs, type StatsView } from "../lib/prefs"; // ---- IK-4: the saved views through prefs (an account keeps them)
 
@@ -70,6 +71,12 @@
   const minOpp = $derived(Math.max(0, Number(params.get("minopp") ?? "0") || 0));
   const opps = (p: StatsRow) => (num(p.targets) ?? 0) + (num(p.carries) ?? 0) + (p.position === "QB" ? (num(p.attempts) ?? 0) : 0);
 
+  // ---- JA-1: the stat the By week view reads (`stat=`; the API validates it), by default the position's sort
+  const statId = $derived.by(() => {
+    const s = params.get("stat") ?? "";
+    return /^[a-z0-9_]{1,40}$/.test(s) ? s : group === "wrte" ? "target_share" : group === "rb" ? "carry_share" : "points";
+  });
+  const byStat = $derived((params.get("view") ?? accountPrefs.statsTableFor(group)) === "byweek" ? statId : null);
   // ---- IX-3 (Wave I-X): the game situation (IX-2's three groups) — `sit=` in the URL, `situation=` to the API
   const SITS = [
     { key: "all", label: "All plays" },
@@ -88,7 +95,8 @@
       weeks: win === "weeks" ? `${range[0]}-${range[1]}` : undefined,
     }) +
       (sitKey === "all" ? "" : `&situation=${sitKey}`) + // ---- IX-3
-      (vsRange ? `&vs=${vsRange[0]}-${vsRange[1]}` : ""), // ---- JA-1
+      (vsRange ? `&vs=${vsRange[0]}-${vsRange[1]}` : "") + // ---- JA-1
+      (byStat ? `&by=${encodeURIComponent(byStat)}` : ""), // ---- JA-1: one stat by week
   );
   $effect(() => r.load(path, onauth, true));
 
@@ -112,7 +120,7 @@
   // ---- IM-2: the views. `view=` in the URL (a tap writes it: shareable, kept by a saved view); without it the view
   // last picked on this device.
   // ---- IX-3 (Wave I-X): Key stats first on every width (no more Full table from 900 px); the named views
-  const VIEW_NAMES = ["key", "production", "opportunity", "role", "efficiency", "advanced", "full"];
+  const VIEW_NAMES = ["key", "production", "opportunity", "role", "efficiency", "advanced", "byweek", "full"]; // JA-1: + byweek
   // ---- IX-3: remembered per position group (lib/prefs.ts `ll.stats.tables`; IM-2's one key carried over once)
   const remembered = $derived(accountPrefs.statsTableFor(group));
   const askedView = $derived.by<string>(() => {
@@ -120,10 +128,10 @@
     return VIEW_NAMES.includes(v) ? v : (remembered ?? "key");
   });
   // a named view the position does not have (a quarterback has no role-change column) reads as Key stats
-  const view = $derived<string>(askedView === "full" || !r.data || viewDefs.some((d) => d.key === askedView) ? askedView : "key");
+  const view = $derived<string>(askedView === "full" || askedView === "byweek" || !r.data || viewDefs.some((d) => d.key === askedView) ? askedView : "key");
   function setView(v: string) {
     const next = VIEW_NAMES.includes(v) ? v : "key";
-    setParams({ view: next, cols: null });
+    setParams({ view: next, cols: null, ...(next === "byweek" || view === "byweek" ? { sort: null, dir: null, sortby: null } : {}) });
     accountPrefs.setStatsTableFor(group, next);
   }
   // ---- end IX-3
@@ -140,7 +148,20 @@
   const sitInfo = $derived(sitKey === "all" ? null : (r.data?.situation ?? null));
   const sitLabel = $derived(SITS.find((x) => x.key === sitKey)?.label ?? "");
   const splitSet = $derived(new Set(sitInfo?.columns ?? []));
+  // ---- JA-1: the By week columns (the weeks, the stretch's value, the trend)
+  const bw = $derived(view === "byweek" ? (r.data?.byweek ?? null) : null);
+  const bwCol = $derived(bw ? (cat.get(bw.column) ?? null) : null);
+  const bwCols = $derived.by<StatsColumn[]>(() => {
+    if (!bw || !bwCol) return [];
+    const plain = { ...bwCol, per_game: false, group: undefined, unsplit: undefined, situation: undefined };
+    return [
+      ...bw.weeks.map((w) => ({ ...plain, id: `w${w}`, label: `${bwCol.label}, week ${w}`, short: `W${w}`, definition: `${bwCol.label} in week ${w}: his game that week.`, reason: "no number for this week" })),
+      { ...bwCol, id: "total", label: `${titleOf(bwCol, mode)}, ${aName}`, short: win === "season" ? "Season" : "Stretch", per_game: false, group: undefined, definition: `${titleOf(bwCol, mode)} over ${aName}: the stretch's own sums.` },
+      { ...plain, id: "trend", label: "Trend", short: "Trend", format: "int" as const, definition: "The direction of a straight line through his weeks: ▲ up, ▼ down, – flat." },
+    ];
+  });
   const cols = $derived<StatsColumn[]>(
+    view === "byweek" ? (bwCol && sitKey !== "all" && !splitSet.has(bwCol.id) ? bwCols.map((c) => ({ ...c, unsplit: true, reason: sitInfo?.reason ?? "" })) : bwCols) :
     (view === "full" ? fullCols : keyCols).map((c) =>
       sitKey === "all" || c.id === "games"
         ? c
@@ -157,6 +178,28 @@
   // ---- end IM-2
   const field = (c: StatsColumn) => fieldOf(c, mode);
   const title = (c: StatsColumn) => titleOf(c, mode);
+  // ---- JA-1 (Wave J-A): a stat week by week (view=byweek&stat=<column>): the weeks of the stretch as columns, his value
+  // over the stretch and a trend mark at the end; a week without a game is a dash with its reason, never 0
+  const byOptions = $derived(offered.filter((c) => c.available && !NOT_COMPARED.has(c.id)));
+  const bwKey = $derived(view === "byweek" ? (/^(w\d+|total|trend)$/.test(params.get("sort") ?? "") ? params.get("sort")! : "total") : null);
+  function bwVal(p: StatsRow, key: string): number | null {
+    if (!bw || !bwCol) return null;
+    if (key === "total") return num(p[fieldOf(bwCol, mode)]);
+    if (key === "trend") return bw.trend[p.gsis_id] ?? null;
+    const i = bw.weeks.indexOf(Number(key.slice(1)));
+    return i >= 0 ? (bw.values[p.gsis_id]?.[i] ?? null) : null;
+  }
+  function bwRow(p: StatsRow): StatsRow {
+    if (!bw) return p;
+    const out: StatsRow = { ...p, total: bwVal(p, "total"), trend: bwVal(p, "trend") };
+    bw.weeks.forEach((w, i) => {
+      out[`w${w}`] = bw.values[p.gsis_id]?.[i] ?? null;
+      const y = bw.why[p.gsis_id]?.[i] ?? (bw.values[p.gsis_id] ? null : "out");
+      if (y) out[`w${w}__why`] = `Week ${w}: ${bw.reasons[y] ?? y}.`;
+    });
+    return out;
+  }
+  // ---- end JA-1
 
   const sortKey = $derived(params.get("sort") ?? preset?.sort ?? "points");
   const sortCol = $derived(cat.get(sortKey) ?? cat.get(sortKey.replace(/_per_game$/, "")) ?? null);
@@ -199,7 +242,7 @@
     );
     const key = sortCol ? field(sortCol) : "points";
     const sign = dir === "asc" ? 1 : -1;
-    const val = (p: StatsRow) => (sortChg && sortCol ? chgOf(sortCol, p) : num(p[key])); // ---- JA-1: or by the change
+    const val = (p: StatsRow) => (bwKey ? bwVal(p, bwKey) : sortChg && sortCol ? chgOf(sortCol, p) : num(p[key])); // ---- JA-1: by week, or by the change
     // the whole filtered set is sorted before the page is cut ("Show more" never hides a better row)
     return [...xs].sort((a, b) => {
       const av = val(a);
@@ -221,7 +264,7 @@
   const why = (c: StatsColumn, p: StatsRow) => whyOf(c, p, mode);
 
   function onsort(c: StatsColumn) {
-    setParams({ sort: c.id, dir: c.id === sortCol?.id && !sortChg && dir === "desc" ? "asc" : "desc", sortby: null });
+    setParams({ sort: c.id, dir: c.id === (bwKey ?? sortCol?.id) && !sortChg && dir === "desc" ? "asc" : "desc", sortby: null });
   }
   // ---- JA-1: sort by the change from the other weeks
   function onsortChg(c: StatsColumn) {
@@ -302,7 +345,7 @@
     if (csvBusy) return;
     csvBusy = true;
     try {
-      if (csvRoute !== false) {
+      if (csvRoute !== false && view !== "byweek") { // ---- JA-1: the by-week grid is built here
         try {
           const res = await fetch(csvHref, { credentials: "same-origin", headers: { Accept: "text/csv" } });
           if (res.ok && /csv/i.test(res.headers.get("content-type") ?? "")) {
@@ -385,7 +428,14 @@
 <main class="space-y-4" data-testid="players">
   <ScreenHead eyebrow="Research · Stats" title={r.data ? `Stats, ${r.data.season}` : "Stats"}>
     {#snippet answer()}
-      {#if leader && sortCol && sortChg && chgOf(sortCol, leader) !== null}
+      {#if leader && bwKey && bwCol}
+        <!-- ---- JA-1: by week -->
+        {@const bc = cols.find((c) => c.id === bwKey)}
+        <span data-testid="players-answer"
+          ><strong>{bwKey === "trend" ? `Trend of ${title(bwCol).toLowerCase()}, ${aName}` : `${dir === "asc" ? "Lowest" : "Highest"} ${title(bwCol).toLowerCase()}${bwKey === "total" ? `, ${aName}` : ` in week ${bwKey.slice(1)}`}`}: {leader.player_name}, {bc ? showOf(bc, bwRow(leader), mode) : "—"}</strong>
+          · {filtered.length} player{filtered.length === 1 ? "" : "s"} · {r.data?.window.label}.</span
+        >
+      {:else if leader && sortCol && sortChg && chgOf(sortCol, leader) !== null}
         <!-- ---- JA-1: the headline answers the new question -->
         {@const sc = cols.find((c) => c.id === sortCol.id) ?? sortCol}
         {@const bp = vsRow(leader)!}
@@ -569,7 +619,7 @@
     <div class="flex flex-wrap items-center gap-x-3 gap-y-2" data-testid="stats-toolbar">
       <div class="ll-viewtabs min-w-0 max-w-full"><!-- ---- IX-3 round 2: one row on a phone, scrolling inside itself -->
         <Tabs
-          items={[...viewDefs.map((d) => ({ key: d.key, label: d.label })), { key: "full", label: "Full table" }]}
+          items={[...viewDefs.map((d) => ({ key: d.key, label: d.label })), { key: "byweek", label: "By week" }, { key: "full", label: "Full table" }]}
           current={view}
           onpick={setView}
           size="sm"
@@ -590,8 +640,18 @@
     </div>
     <!-- ---- IX-3: the question the view answers -->
     <p class="text-sm text-ink-2" data-testid="stats-view-question">
-      {#if view === "full"}<strong class="text-ink">Full table:</strong> every column we have for the position, grouped. Tap a group to hide or show it.{:else if activeDef}<strong class="text-ink">{activeDef.label}:</strong> {activeDef.question}{/if}
+      {#if view === "full"}<strong class="text-ink">Full table:</strong> every column we have for the position, grouped. Tap a group to hide or show it.{:else if view === "byweek"}<strong class="text-ink">By week:</strong> one number across the weeks, his value over the stretch and its trend at the end.{:else if activeDef}<strong class="text-ink">{activeDef.label}:</strong> {activeDef.question}{/if}
     </p>
+    {#if view === "byweek"}
+      <!-- ---- JA-1: the stat the weeks show -->
+      <div class="flex flex-wrap items-center gap-2">
+        <label class="text-sm font-semibold" for="ll-stats-bystat">Stat</label>
+        <select id="ll-stats-bystat" class="ll-input min-w-0 py-1.5 text-sm" value={statId} onchange={(e) => setParams({ stat: e.currentTarget.value, sort: null, dir: null })} data-testid="stats-byweek-stat">
+          {#each byOptions as c (c.id)}<option value={c.id}>{c.label}</option>{/each}
+        </select>
+        {#if hasVs}<span class="text-sm text-ink-2">The weeks of A only (the other weeks are not shown by week).</span>{/if}
+      </div>
+    {/if}
     {#if view === "full" && groupNames.length > 1}
       <div class="ll-chiprow">
         <div class="flex flex-wrap gap-1.5" role="group" aria-label="Column groups: tap to hide or show" data-testid="stats-groups">
@@ -614,12 +674,12 @@
     {/if}
     {#key view}
       <StatsTable
-        rows={filtered}
+        rows={view === "byweek" ? filtered.map(bwRow) : filtered}
         {cols}
         grouped={view === "full"}
         {mode}
         limit={showAll ? Infinity : PAGE}
-        sortId={sortCol?.id ?? null}
+        sortId={bwKey ?? sortCol?.id ?? null}
         {dir}
         {onsort}
         {href}
