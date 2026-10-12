@@ -99,6 +99,7 @@
   // where a week sits on the track (the thumb is 22 px wide: its centre runs from 11 px to 100% − 11 px)
   const at = (w: number) => (span ? (w - first) / span : 0.5);
   const pos = (w: number) => `calc(${at(w) * 100}% + ${(0.5 - at(w)) * 22}px)`;
+  const AGAINST = " against "; // its spaces survive the template
 </script>
 
 <div class="space-y-2" data-testid={testid}>
@@ -106,7 +107,7 @@
     <Chips label="Weeks" testid={`${testid}-quick`} current={quick} onpick={pick} items={QUICK} />
   </div>
   <p class="text-sm" aria-live="polite" data-testid={`${testid}-words`}>
-    <span class="font-semibold text-ink">{#if b}<span class="ll-key ll-key-a" aria-hidden="true"></span>{"A: "}{/if}{said}</span>{#if b}<span class="text-ink-2">{" against "}</span><span class="font-semibold text-ink"
+    <span class="font-semibold text-ink">{#if b}<span class="ll-key ll-key-a" aria-hidden="true"></span>{/if}{b ? `A: ${said}` : said}</span>{#if b}<span class="text-ink-2">{AGAINST}</span><span class="font-semibold text-ink"
         ><span class="ll-key ll-key-b" aria-hidden="true"></span>{`B: ${rangeWords(b)}`}</span
       >{/if}
   </p>
