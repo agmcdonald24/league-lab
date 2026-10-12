@@ -124,3 +124,47 @@ def with_trade(ans):
     if isinstance(ans, dict):
         ans["news"] = for_trade(ans)
     return ans
+
+
+# ---- JA-4 (Wave J-A): the news line on Waivers' top claims, without making Waivers wait. The claims answer as before
+# (`/api/waivers` reads no news); the screen then asks for the claim players' lines here — at most MAX_IDS players (the
+# claims shown), the feed's own reader (`news.recent`: its per-player cache, at most one second for what is not cached),
+# the `read` bucket. A line arrives or does not; nothing reads it.
+import re  # noqa: E402 - the block stays self-contained
+
+from fastapi import APIRouter, HTTPException  # noqa: E402
+
+router = APIRouter()
+MAX_IDS = 4                                  # the three strongest claims and the one in focus
+GSIS = re.compile(r"^\d{2}-\d{7}$")
+
+
+def lines_for(ids: list[str]) -> dict[str, list[dict]]:
+    """{gsis: [line]} — the feed's newest item of the last 24 hours about each player, in the feed's line shape
+    (`myweek.decision_feed`; `why_here` dropped: a free agent is in no lineup). {} when the feed is off or has nothing."""
+    from . import news
+    from .myweek import decision_feed
+    items = news.recent(list(ids))
+    lines = [{"kind": "news", "gsis_id": g, "player_name": None, "text": it.get("headline") or "", "source": it.get("source"),
+              "at": it.get("date"), "url": it.get("url"), "about": it.get("about")}
+             for g, it in items if it.get("about") == "player"]
+    out: dict[str, list[dict]] = {}
+    for ln in decision_feed(lines, None, None, None) if lines else []:
+        ln["why_here"] = None
+        out.setdefault(str(ln["gsis_id"]), []).append(ln)
+    return out
+
+
+@router.get("/api/news/players")
+def news_players(ids: str = ""):
+    want = list(dict.fromkeys(x.strip() for x in str(ids)[:200].split(",") if x.strip()))
+    if not want or len(want) > MAX_IDS or not all(GSIS.match(x) for x in want):
+        raise HTTPException(status_code=400, detail=f"ids: one to {MAX_IDS} player ids (00-0012345), comma-separated")
+    from fastapi.responses import JSONResponse
+    try:
+        body = {"lines": lines_for(want)}
+    except Exception:  # noqa: BLE001 - a news line never costs the screen: no line, and the screen says nothing
+        log.warning("decision_news.news_players failed", exc_info=True)
+        body = {"lines": {}}
+    return JSONResponse(body, headers={"Cache-Control": "private, max-age=60"})
+# ---- end JA-4

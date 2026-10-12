@@ -1,4 +1,6 @@
 <script lang="ts">
+  import DecisionNews from "../../components/news/DecisionNews.svelte"; // ---- JA-4
+  import type { ChangedLine } from "../../lib/api"; // ---- JA-4
   // IB-2 (Wave I-B): one claim, short — the unit Waivers leads with (the three strongest moves) and lists in its views.
   // The free agent (headshot, name, position, team, this week's projection) with the lineup gain as the number, ONE
   // reason (a fact: the role, the bye, the slot), the claim's cost ("Drop Croskey-Merritt: he sits anyway" — the drop is
@@ -21,7 +23,8 @@
     compact = false,
     focus = false,
     testid = "claim",
-  }: { card: WaiverCard; ctx: LinkContext; rank?: number | null; compact?: boolean; focus?: boolean; testid?: string } = $props();
+    news = null,
+  }: { card: WaiverCard; ctx: LinkContext; rank?: number | null; compact?: boolean; focus?: boolean; testid?: string; news?: ChangedLine[] | null } = $props();
 
   const m = $derived(c.move);
   // the number: the bye week's gain in Bye coverage, else the horizon's; this week's beside it when it differs
@@ -77,6 +80,8 @@
   <p class="mt-1 text-sm leading-snug text-ink-3" data-testid="claim-cost">
     {c.cost}{#if !c.lead && c.this_week != null && c.this_week >= 0.05 && Math.abs(c.this_week - (big ?? 0)) >= 0.05}<span class="ml-1">{`· this week ${s1(c.this_week)}`}</span>{/if}
   </p>
+  <!-- ---- JA-4: the news about the player claimed (the feed's line, asked after the claims show; nothing reads it) -->
+  {#if news?.length}<div class="mt-2" data-testid="claim-news"><DecisionNews lines={news} names={false} /></div>{/if}
   {#if m.drop_starts}
     <div class="mt-2 rounded-md bg-warn-soft px-3 py-2 text-sm leading-snug text-ink" data-testid="keep-alt">
       <strong>{m.drop_starts.text}.</strong>

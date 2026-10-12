@@ -183,6 +183,10 @@ def bucket_for(method: str, path: str, query: str = "") -> str | None:
     if path == "/api/ready":
         return "read"
     # ---- end IR-3
+    # ---- JA-4 (Wave J-A): the claim players' news lines (at most four players, the feed's cache): a cheap read
+    if path == "/api/news/players":
+        return "read"
+    # ---- end JA-4
     return "read"
 
 

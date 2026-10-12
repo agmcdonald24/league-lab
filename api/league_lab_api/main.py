@@ -1011,6 +1011,11 @@ from . import ready as ready_mod  # noqa: E402 - the block stays self-contained
 
 app.include_router(ready_mod.router)
 # ---- end IR-3
+# ---- JA-4 (Wave J-A): the claim players' news lines, asked by Waivers after its claims show (decision_news.py)
+from . import decision_news as decision_news_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(decision_news_mod.router, dependencies=[Depends(require_auth)])
+# ---- end JA-4
 
 
 # ---- IM-3 (Wave I-M): the public site's doors. The rate limiter (ratelimit.py) inside the Guard (security.py: cross-site

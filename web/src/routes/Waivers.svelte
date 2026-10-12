@@ -17,6 +17,7 @@
   import Card from "../components/Card.svelte";
   import ProvenanceLine from "../components/provenance/ProvenanceLine.svelte"; // ---- IT-3
   import type { DecisionCaveat, Provenance } from "../lib/api"; // ---- IT-3
+  import type { ChangedLine } from "../lib/api"; // ---- JA-4
   import Chips from "../components/Chips.svelte";
   import Expander from "../components/Expander.svelte";
   import ListDetail from "../components/ListDetail.svelte";
@@ -106,6 +107,22 @@
     return { move: m, reason: m.words?.why ?? "", cost, gain: m.horizon_gain, gain_label: span > 1 ? `weeks ${wk}–${last}` : `week ${wk}`, this_week: m.weekly_gain };
   });
   const focusFa = $derived(focusAdd && !focus ? ((data?.free_agents ?? []).find((f) => f.sleeper_id === focusAdd) ?? null) : null);
+  // ---- JA-4 (Wave J-A): the news about the players claimed (the three strongest and the one in focus) — asked AFTER the
+  // claims show, one small read (`/api/news/players`, the feed's cache); it arrives or it does not, and nothing reads it
+  let claimNews = $state<Record<string, ChangedLine[]>>({});
+  const claimIds = $derived(
+    [...new Set([...top3, ...(focus ? [focus] : [])].map((c) => c.move.add.gsis_id).filter((g): g is string => !!g))].slice(0, 4).sort().join(","),
+  );
+  $effect(() => {
+    const ids = claimIds;
+    claimNews = {};
+    if (!ids) return;
+    get<{ lines: Record<string, ChangedLine[]> }>(`/api/news/players?ids=${encodeURIComponent(ids)}`)
+      .then((r) => claimIds === ids && (claimNews = r.lines ?? {}))
+      .catch(() => {});
+  });
+  const newsOf = (c: WaiverCard) => (c.move.add.gsis_id ? (claimNews[c.move.add.gsis_id] ?? null) : null);
+  // ---- end JA-4
   $effect(() => {
     if (focusFa) picked = focusFa.gsis_id ?? focusFa.sleeper_id ?? null;
   });
@@ -206,7 +223,7 @@
       <!-- the research pane's "Evaluate add / drop" (?add=): the claim for him, first -->
       <section class="space-y-2" data-testid="claim-focus">
         <h2 class="ll-label">The claim you asked about</h2>
-        <ClaimCard card={focus} {ctx} focus testid="claim-focused" />
+        <ClaimCard card={focus} {ctx} focus testid="claim-focused" news={newsOf(focus)} />
       </section>
     {:else if focusFa}
       <p class="rounded-lg bg-raised p-3 text-sm text-ink" data-testid="claim-focus">
@@ -224,7 +241,7 @@
             {@const h = horizonOf(c, data.week ?? 0)}
             <div class="space-y-1" data-testid="top-move-wrap">
               <span class="inline-block rounded-sm px-2 py-0.5 text-xs font-bold {h.key === 'now' && !c.guide ? 'bg-accent-soft text-accent' : 'bg-raised text-ink-2'}" data-testid="top-move-horizon" data-horizon={h.key}>{c.guide ? `${h.label}: a rough guide` : h.label}</span>
-              <ClaimCard card={c} {ctx} rank={i + 1} testid="top-move" />
+              <ClaimCard card={c} {ctx} rank={i + 1} testid="top-move" news={newsOf(c)} />
             </div>
           {/each}
         </div>
