@@ -4,6 +4,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-12 — Wave J-A
 
+- **JA-3 — a request never waits for a database connection it could have had.** The server's pool is 10 connections
+  (it was 4 — the four CPU slots alone could take all of them, so the blog and other small reads waited behind slow
+  statements after a publish); one wait for every caller (8 s; the blog's 5 s is gone); a wait over a second is one log
+  line with how long, how many were in use and the route; `/api/status` shows the pool. Measured through a transaction
+  pooler: no connection is held across CPU work or a provider call.
+
 - **JA-2 — the same weeks on Compare and Matchups.** JA-1's week control closes on a phone to one line naming what is
   in force ("Weeks 3–4 against weeks 1–2 ▾"; three table rows at 375 × 812) and offers one preset when "the weeks
   before" and "the rest of the season" are the same weeks. **Compare** shows the two players' usage and production over
