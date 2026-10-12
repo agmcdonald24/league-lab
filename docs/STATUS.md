@@ -22247,3 +22247,579 @@ of in a separate feed."
 
 A recorded trade with a news item (from the nightly's feed) to screen section 5's line; Waivers' line if the PO accepts
 the read.
+
+## Wave J-A (Iteration 37) — the weeks you choose on Stats, Compare and Matchups; the connection pool; small faults
+
+### PO merge — Wave J-A, 2026-10-12 (Monday 00:33 – 03:55 ET)
+
+* **Why**: Andrew, 00:33: "Could we proceed with another wave overnight … One thing I'd like to also add is filters in
+  some of these bigger stat tables to narrow down … to report, like week over week, and even customize, like kind of a
+  slider to say, oh, if I want to look at weeks one to two versus weeks three to four, or just look at week one or look
+  at week two. That would be awesome to do within, like, the stats table and research, and also within compare." At
+  00:34 the site was on Wave I-Z (`03bc1af`) and the trigger showed its token and the game-day slots; the 07:37 run is
+  the first that can reach Sleeper for the head-to-head.
+* **How it ran**: six packages one after another in one worktree (`wt-iq4`, `league_lab_iq4`): JA-1 00:36–01:11, JA-2
+  01:11–01:33, JA-3 01:33–01:55, JA-4 01:55–02:20, JA-5 02:21–02:33, JA-6 02:34–02:42. The brief is
+  `/home/claude/waveJA/BRIEF.md`; JA-5 and JA-6 were added by the PO from what the first four showed.
+* **What was built** (the hand-backs below):
+  * **JA-1 — Stats: the weeks you choose.** A slider over the season's played weeks, two handles (drag, tap, arrow
+    keys; one on the other = a single week), the choice said in words, quick picks one tap away; it replaces the
+    week-range select. **Compare with other weeks**: a second stretch on the same track (hatched, square handles: not
+    colour alone), presets "the weeks before" and "the rest of the season"; under each value the change from the other
+    stretch, sortable by the change, small samples greyed with their sizes, a headline that answers the question
+    ("Biggest rise in target share, weeks 3–4 against weeks 1–2: …"). **By week**: one column across the weeks, the
+    stretch's value and a trend mark. One API call (`/api/players` with `vs=` and `by=`), the CSV and its file name
+    follow. **The arithmetic is tested**: a constructed player with 1 of 2 team targets one week and 9 of 30 the next
+    reads 31.3% (10/32), not the 40% the two weekly shares average to; a week without a game is a dash.
+  * **JA-2 — the same weeks on Compare and Matchups.** Compare: the two players over the stretch, and with a second
+    stretch "his early weeks against his recent ones" (A, the change, B per row); the forecast rows say they are
+    forecasts and do not move. Matchups: what each defense gave up over the stretch and its rank (1 = gives up the
+    most), with a second stretch the change in rank; one game in a stretch is "too few to rank". **No number a decision
+    reads changes**: the card's, My Week's and the trade's matchup words keep the season's rank (tested with the weeks
+    in the address). On a phone the control closes to one line that names what is in force.
+  * **JA-3 — the connection pool.** Measured first: nothing holds a connection across CPU work or a provider call;
+    **the fault was the count** — four CPU slots let four heavy requests each hold a connection while a statement ran,
+    and with four connections every other read (the blog, a card, readiness, the post-publish check) queued behind
+    them. The pool is **ten** (four for the slots, six for everything else; `LEAGUE_LAB_POOL_SIZE`), **one wait of 8
+    seconds for every caller** (the blog's separate 5 is gone), a log line for any wait over a second, and the pool's
+    counts in `/api/status`. With a slow database stood in: pool 4 — four waits over a second (longest 1.22 s), 547
+    reads served; pool 10 — none (0.11 s), 660. At the sandbox's own speed the pool never ran out at either size: said
+    plainly, the gain shows only when statements are slow, which is when both live faults happened.
+  * **JA-4 — small faults.** News on Waivers' top claims (a second small request after the claims show; the answer does
+    not wait and no number moves); "(game started (bench)) … cannot)" and its relatives are sentences ("Jaylen
+    Warren's game has started, so he cannot be moved this week"); the trade's last section carries each player's role
+    note and a game he left early.
+  * **JA-5 — the Stats table back above the fold on a desktop.** The slider had pushed the table's header about 880 px
+    down at 1300 wide (no rows on the first screen). From 900 px the controls are one row — positions, the weeks as one
+    line that opens the slider, a situation select, one Filters button naming what is in force — and the first row sits
+    at 416 px with eight rows showing, in every state.
+  * **JA-6 — the CPU-slot limiter made visible.** JA-3 found that under a slow database every "busy" answer came from
+    the limiter (a slot is held for the whole request, statements included), none from the pool. Not changed tonight
+    (it protects a one-CPU server): `/api/status` gains `slots` (in use, waiting, the longest wait and hold with their
+    route shapes, busy answers by route) and a log line, so the decision is made on what the live site shows.
+* **The PO's glue** (commit `ce1ef6f` and the docs commit): `scripts/post_deploy_check.py` prints one informational
+  line after the trade check — the pool's and the slots' peak and longest wait since the process started.
+* **The PO's decisions**:
+  * **The review's rule held against the PO's own feature**: the slider was the owner's ask and the PO's first design
+    put it, open, above the table. JA-5 exists because the developer's screenshot showed the table gone from the first
+    screen. A control the owner asks for still has to leave the answer on the first screen.
+  * **The slot limiter is measured before it is changed.** Read `slots` in `/api/status` after a busy Sunday.
+* **Verified**: on the merged tree, by the PO (`/home/claude/waveJA/verify.sh`, nothing else running beside it):
+  `fresh_db_check` (31 state tables); the copy standard clean; `scripts/gate.sh` GATE PASSED; the nightly's middle with
+  the live week on (`chain.sh`, `league_lab_iq4`): ERROR 0 in every step, both availability guards, the audit's first
+  line 0; `project` a second time: seven projection tables hash identically; the head-to-head's two steps offline rc 0;
+  `context-record`, `starter-record` rc 0; the root suite 4 failed / 1,793 passed, 0 new; **the API suite 105 failed /
+  1,682 passed, 0 names outside the known list**; **the full e2e, both projects: 697 passed / 37 skipped / 0 failed**
+  (16.5 min); the pooler check passed in both modes. On a local API the PO then called the new parameters and routes:
+  two stretches on Stats (0.85 s, 1.4 MB for every receiver and tight end), a situation with a by-week grid (0.37 s),
+  Compare and Matchups with two stretches, the claim-news route; **bad input answers 400 in words** (weeks not played
+  yet, a reversed range, letters, six ids where four are allowed); `/api/status` showed `pool` (size 10, wait limit 8 s)
+  and `slots`. This wave adds no table or column, so there is no deploy-to-refresh gap to drill. **Not checked**: the
+  pool against Neon (the sandbox's stand-in is PgBouncer on one machine; the gain was shown only with a slowed
+  database); the slider with a finger on a real phone; week 5 and later in the slider (the copy holds weeks 1–4)
+* **Not done / next** (in the order the PO would take them):
+  1. **Read the 07:37 run**: the head-to-head table against Sleeper (Wave I-Z), the `info load` line, the trigger.
+  2. The CPU-slot limiter: release a slot while a statement runs, if `slots` shows busy answers on the live site.
+  3. Matchups' stretch view is a table, not a second heatmap; "Last 3 weeks" there means calendar weeks; the by-week
+     view has no server CSV (the screen builds the file).
+  4. One saved partners answer still holds the bracketed words (no spec reads them).
+  5. Waiting on Andrew: the blend decision once the numbers exist; the privacy page and Google Analytics; a real phone.
+
+### JA-1 — Stats: the weeks you choose, one stretch against another, and a stat week by week (Wave J-A)
+
+**Start 00:36 ET, Monday 2026-10-12 (read from `date`); end 01:11.** Branch `dev/JA1` (from `main` `03bc1af`),
+`/home/claude/wt-iq4`, database `league_lab_iq4`.
+
+#### 1. Done / not done / cut
+
+* **Done — 1. The slider** (`web/src/components/stretch/WeekSlider.svelte`; URL keys in `web/src/lib/stretch.ts`:
+  `window` = season | last3 | last5 | last3w | last5w | weeks, `weeks` = A "3-4", `vs` = B "1-2"; the parent writes
+  what `onchange` hands it, `readStretch(params)` reads them — JA-2 reuses both as they are). One track of the played
+  weeks, two labelled `input type="range"` handles (drag, arrow keys, `aria-valuetext` "Week 3"), the week numbers as
+  buttons (a tap moves the nearer handle), one handle on the other = one week, the choice in words ("Weeks 3–4 · 2
+  weeks"), quick picks Season · Last 3 weeks · Last 5 weeks · This week · Last 3 games · Last 5 games (one row on a
+  phone). It replaces the week-range select; on a phone it sits outside the Filters fold whenever it is not the season.
+* **Done — 2. Compare with other weeks**: B on its own lane of the same track (hatched fill, square handles; A round
+  and solid — colour is not the only carrier); presets "The weeks before" and "The rest of the season"; under each
+  value the change from B (a share in points of share), ± buttons sort by the change; a change on one game or a small
+  sample on either side is greyed with its sizes; under G "B: 2"; the headline "Biggest rise in target share, weeks
+  3–4 against weeks 1–2: …". Not compared (says why): the role changes, the value column.
+* **Done — 3. By week** (`view=byweek&stat=<column>`): W1 … Wn, the stretch's value (Season / Stretch) and a trend mark
+  (▲ ▼ –: the sign of a line through his weeks); sortable by any week; a bye or a missed game is a dash with its reason.
+* **Done — 4. The API**: `/api/players?…&vs=1-2&by=<column>` — one call, validated (`weeks` / `vs` within the played
+  weeks, a range like 1-2; `by` one available catalogue column for the positions, not a role change; `limit` ≤ 1000 as
+  before), the windows cached as before (`stats_agg`), the by-week grid in a new region `stats_byweek` (≤ 24 × ~60 KB);
+  `research` bucket. The CSV carries A, B and the change per column and names the weeks, B and the situation.
+* **Done — 5.** Tests, WORDS, How to read this, METRICS § "Stretches of weeks", DEPLOY's region line, CHANGELOG.
+* **Not done**: the browser-built CSV of the By week view is the screen's grid (the server's CSV has no by-week form);
+  the phone's first screen with a stretch in force carries the slider (about 300 px) above the table.
+
+#### 2. Commits
+
+`1d9e9af` (4, the API) · `3bce0e2` (1) · `51f5637` (2) · `52674f5` (3) · `e11a11c`, `f39ec4b`, `0118e1a` (5) · this file.
+
+#### 3. Evidence (League of Scrubs, `league_lab_iq4`, fixture API; weeks 3–4 against weeks 1–2; two games each side)
+
+* **Target share, biggest rises** (RB / WR / TE, ≥ 8 targets in the four weeks): Aaron Jones MIN 2.4% → 24.1%,
+  Jakobi Meyers JAX 6.1% → 24.0%, Brenton Strange JAX 10.2% → 26.0%, Kenyon Sadiq NYJ 10.2% → 23.5%, Chris Bell MIA
+  6.0% → 19.2%. **Biggest falls**: Parker Washington JAX 36.7% → 16.0%, Kenneth Walker III KC 23.5% → 6.0%, Brian
+  Thomas Jr. JAX 22.4% → 6.0%, Dalton Kincaid BUF 25.0% → 8.9%, Dalton Schultz HOU 25.3% → 9.8% (132 players compared).
+* **Carries (totals over the two weeks), rises**: Kyle Monangai CHI 20 → 40, Chuba Hubbard CAR 22 → 39, Jeremiyah Love
+  ARI 20 → 35, Javonte Williams DAL 24 → 38, Jaylen Warren PIT 21 → 34. **Falls**: Chase Brown CIN 36 → 22, Tyler
+  Allgeier ARI 22 → 10, Blake Corum LA 22 → 11, Kaelon Black SF 21 → 10, Omarion Hampton LAC 35 → 24 (55 RBs).
+* **The arithmetic**: a constructed receiver with 1 of 2 team targets (week 1) and 9 of 30 (week 2) reads **31.3%**
+  (10 / 32) over the stretch, not 40% (the mean of 50% and 30%); his by-week cells are 50.0% and 30.0%, week 3 a dash
+  ("bye" / "did not play"), trend ▼ (`test_ja1`). On the copy, every B target share checked equals Σ targets / Σ team
+  targets over his weeks 1–2 games (≥ 10 players).
+* **Cost of the heaviest call** (all positions, two stretches, a situation, by week): 0.83 s with both windows new
+  (the season frame loaded), 0.27–0.5 s warm; ~2.0 MB (2.4 MB with the season as A). A plain stretch: 0.15 s, 1.9 MB.
+* **Before → after on screen**: a select "Week range (calendar)" + two week selects inside the phone's fold → the
+  slider (screens `docs/handbacks/ja1/`: `ja1-slider-open-375/1300`, `ja1-slider-closed-375` (Filters closed, the
+  slider and the table showing), `ja1-a-against-b-375/1300`, `ja1-by-week-375/1300`). No sideways scroll at 375.
+
+#### 4. Tests
+
+* New: `api/tests/test_ja1.py` **12 passed** (the constructed player, the trend, B beside A against the copy, seven
+  validation cases, by week against the game rows, the CSV and its name). `web/e2e/ja1` **6 passed** (phone and
+  desktop: the slider by keyboard, quick picks, a tap on a week, the URL round trip, folded only for the season; A
+  against B, sort by the change, the presets, the headline; by week with a dash's reason and a sort by week).
+* API files of the changed modules and routes (`check_api.sh`: ja1, ix3, im1, ii3, il1, in2, im3, io4, ip3, ix1,
+  research, i0b, il4, ip4, parity): **305 passed, 2 failed, 2 skipped; 0 new** (`test_research::test_trends_route` ×2,
+  known).
+* e2e that open Stats, both projects: ja1, ix3, im2, ii3, il1, in2, ip3, io4, ib1 → **88 passed**; ip4, im3, ii6, in1,
+  ii2, `fixtures.spec.ts` → **103 passed, 7 skipped**. **Updated on purpose**: `ii3` (the window select → the slider's
+  quick picks), `ix3` (the Filters label no longer names the weeks; `stats-weeks` folded for the season).
+* Ruff, the copy standard, `npm run lint` (eslint + svelte-check + tsc): clean; the build. `scripts/gate.sh` (run last):
+  **GATE PASSED** (81 s).
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/research.py` (`stats_frame`: `vs`, `by`, the validation, STATS_HOWTO's new bullet),
+`api/league_lab_api/main.py` (the two Stats routes pass `vs`; `/api/players` passes `by`), `stats.py` (the JA-1 block,
+the CSV), `web/src/routes/Players.svelte`, `web/src/components/stats/StatsTable.svelte` (the change line, the ± sort),
+`columns.ts` (`change`, the trend mark, a row's own reason), `web/src/lib/api.ts` (types, end), `web/src/lib/prefs.ts`
+(+ byweek), `web/e2e/ii3`, `ix3`, docs WORDS / METRICS / DEPLOY, CHANGELOG. New: `WeekSlider.svelte`, `lib/stretch.ts`,
+`api/tests/test_ja1.py`, `web/e2e/ja1/`, `web/fixtures/ja1/` (2.2 MB: four answers trimmed to 120 rows),
+`web/fixtures/save_ja1_fixtures.py`.
+
+#### 6. PO lines
+
+None: no new table (the stretches are the existing per-game rows), no workflow, render or nightly line. The new cache
+region `stats_byweek` is in DEPLOY § Memory (≤ 24 × ~60 KB). `app/whats_new.md` (PO): "Stats: pick any weeks with a
+slider, compare one stretch of weeks with another (who gained or lost target share), and see one stat week by week."
+
+#### 7. Found, not mine
+
+* With a stretch in force the phone's first screen carries the slider (~300 px) and shows fewer table rows than
+  IX-3 round 2's three; a compact closed form of the slider (the words and the track, quick picks behind a tap) would
+  give them back.
+* "The weeks before" and "the rest of the season" are the same weeks when A ends the season (both offered, as asked).
+* The CSV served by the API has no by-week form (the screen builds that file itself).
+
+#### 8. Next
+
+JA-2: Compare and Matchups reuse `WeekSlider` and `readStretch` / `stretchParams` (`window`, `weeks`, `vs`).
+
+### JA-2 — the same weeks on Compare and Matchups (Wave J-A)
+
+**Start 01:11 ET, Monday 2026-10-12 (read from `date`); end 01:33.** Branch `dev/JA2` (from `integ/JA` = JA-1),
+`/home/claude/wt-iq4`, database `league_lab_iq4`.
+
+#### 1. Done / not done / cut
+
+* **Done — 1. The compact closed form**: below 900 px a chosen stretch closes the week control to one line naming what
+  is in force ("Weeks 3–4 against weeks 1–2 ▾", a real button with `aria-expanded`, opens in place; it stays open while
+  the visitor works it — a quick pick, a handle, the switch). Stats' phone toolbar shares the question's row with "↓ CSV"
+  (the column count from 640 px). **At 375 × 812 with weeks 3–4 against weeks 1–2: 3 whole table rows** (before: 2;
+  round 2's season view: now 4).
+* **Done — 2.** One preset when "the weeks before" and "the rest of the season" are the same weeks: "The weeks before".
+* **Done — 3. Compare**: a card "Over the weeks you pick" with the same control and keys (`window`, `weeks`, `vs`); with
+  other weeks "His early weeks against his recent ones": each player's A, the change and B for Games, Points per game,
+  Targets per game, Target share, Receptions / Receiving yards per game, Carries per game, Carry share, Rushing yards per
+  game, Pass attempts / Passing yards per game (QB), Snap share — the Stats frame's own arithmetic
+  (`/api/compare/weeks`, `research` bucket). The forecasts (this week, the next 4 weeks, the rest of the season) stay on
+  `/api/compare`, which takes no weeks, and a line says they are forecasts, not history.
+* **Done — 4. Matchups**: a card "Defenses, weeks 3–4 against weeks 1–2" (the control without the games picks; a
+  position chip): each defense's points per game to the position over the stretch, its rank (among those with two
+  games or more; 1 = gives up the most), B's rank and the change ("▲ up 15" = gives up more now), "1 game: too few to
+  rank". `/api/matchups/defense` with `window` / `weeks` / `vs` returns everything it returned before, unchanged, plus
+  `stretch`; the screen's season heatmap and your starters' matchups come from the request without weeks.
+* **Done — 5.** Stats' side by side opens Compare with `window`, `weeks`, `vs`.
+* **Not done**: the Matchups card is a table per position (not a second heatmap); "Last 3 weeks" there means calendar
+  weeks (a defense has no "games played" window).
+
+**What reads the season's rank (unchanged by a stretch)**: the card's "Next:" line and its matchup evidence
+(`player.py` 148, 586: `mart_defense_vs_position_current.rank_std`); My Week's and the trade's reasons
+(`app/lib/cards.py` 182–190: the same `rank_std` as `opp_rank`); Compare's opponent rows (`league_dvp`, the season);
+Matchups' heatmap and starters (`matchups_defense`, no weeks). None of these routes reads `window`, `weeks` or `vs`;
+`test_ja2` checks `/api/player/{gsis}` and `/api/my-week` answer the same with and without them, and that the
+defense route's season `teams` are identical with a stretch.
+
+#### 2. Commits
+
+`c5c8fbb` (1–2) · `29b5a02` (3–4, the API) · `5e2a26d` (3–5, the screens) · the WORDS / CHANGELOG commit · this file.
+
+#### 3. Evidence (League of Scrubs, the fixture API; weeks 3–4 against weeks 1–2)
+
+* **Compare, Justin Jefferson against Parker Washington**: target share 8.0% (1 game) against 35.7% in weeks 1–2:
+  −27.7 pts; Washington 16.0% against 36.7%: −20.7 pts; points per game 4.2 / 17.1 and 6.5 / 15.1.
+* **Matchups, WR**: Houston #1 in both stretches (37.5 points per game to WRs), Detroit #2 (was #4), Dallas #3 (was
+  #18: ▲ up 15), Pittsburgh #8 (was #31: ▲ up 23), Indianapolis #24 (was #2: ▼ down 22); two defenses with one game in
+  weeks 3–4 are not ranked.
+* The phone with weeks 3–4 against 1–2: the control is one line, 3 table rows above the bottom menu
+  (`docs/handbacks/ja2/ja2-stats-compact-375.jpg`). Screens: `ja2-compare-two-stretches-375/1300`,
+  `ja2-matchups-change-in-rank-375/1300`. No sideways scroll.
+
+#### 4. Tests
+
+* New: `api/tests/test_ja2.py` **5 passed** (Compare's rows equal the Stats frame's A and B; validation; the forecasts
+  identical with weeks in the address; the defenses' stretch — 32 per position, rank 1 = the most, change = B − A,
+  one game unranked — and the season `teams` identical; `/api/player` and `/api/my-week` identical with the weeks).
+  `web/e2e/ja2` **6 passed**; `web/e2e/ja1` 8 passed (updated on purpose: a phone opens a chosen stretch closed — the
+  specs tap `slider-toggle`; one preset when the two are the same weeks; a new test: ≥ 3 rows at 375 × 812).
+* API files of the changed routes (`check_api.sh`: ja2, ja1, i0b, ib3, if3, im3, in2, io4, research, parity, ix3,
+  im1): **253 passed, 5 failed — 0 new** (all in the known list).
+* e2e, both projects — Compare and Matchups (ib1, ix5, io4, if3, in2, if4, ib3, in3, ir1, inf1, ia1, ja2): **92
+  passed**; Stats (ja1, ix3, im2, ii3, il1, ip3, ip4, im3, ii6, in1, ii2, `fixtures.spec.ts`): **169 passed, 7
+  skipped**.
+* Ruff, the copy standard, `npm run lint`: clean; the build. `scripts/gate.sh` (run last): **GATE PASSED** (73 s).
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/research.py` (a JA-2 block at the end), `main.py` (the defense route's weeks; `/api/compare/weeks`),
+`ratelimit.py` (`/api/compare/weeks` in `research`), `web/src/routes/Compare.svelte`, `Matchups.svelte`,
+`Players.svelte` (the toolbar, the link to Compare), `web/src/lib/api.ts` (types and paths at the end), WORDS,
+CHANGELOG. New: `api/tests/test_ja2.py`, `web/e2e/ja2/`, `web/fixtures/ja2/` (390 KB), `save_ja2_fixtures.py`.
+
+#### 6. PO lines
+
+None (no table, no workflow or nightly line). `app/whats_new.md` (PO): "Compare two players over the weeks you pick —
+their early weeks against their recent ones — and see which defenses have given up more or less lately."
+
+#### 7. Found, not mine
+
+* Nothing new. (JA-1's: the Stats CSV served by the API has no by-week form.)
+
+#### 8. Next
+
+JA-3 (the connection pool). The control's keys are stable for any further screen: `window`, `weeks`, `vs`.
+
+### JA-3 — a request never waits for a database connection it could have had
+
+Start 01:33 ET, end 01:55 ET (2026-10-12). Branch `dev/JA3` from `integ/JA` (JA-2's finished branch), worktree
+`/home/claude/wt-iq4`, database `league_lab_iq4` (read only for this package: nothing written). The measurements ran
+through a standing PgBouncer in transaction mode on 8921 (pool 20 server connections, so the pooler is never the
+bottleneck), the fixture API on 8920 (provider fixtures, news / availability / usage off), pool traced per checkout.
+
+#### 1. Done, not done, cut
+
+* **Measured** (section 3): every pooled checkout's wait and hold, by route, at pool 4, eight and sixteen visitors, at
+  the sandbox's speed and with a slow database stood in (every statement +0.15 s / +0.3 s while its connection is
+  held — Neon right after a publish, cold storage, no statistics yet).
+* **What holds connections, and why.** Nothing holds a pooled connection across CPU work or a provider call: the only
+  pooled callers are `db._run_pooled` (one statement and its fetch; the DataFrame is built after the connection is
+  back — now tested) and the blog's reads (two or three short statements on one connection). The trace's longest
+  holds are single statements: the board's inputs (`select a.sleeper_id, … p.week`, 1.39 s on a trade evaluation,
+  1.09 s on Trades partners), `mart_waiver_moves` (0.78 s), the blog's first list read (1.10 s, three statements). The
+  fault is the **count**: four CPU slots (`ratelimit.Slots`) let four research / heavy requests run at once, each
+  holding a connection while its statement runs, and at **4 connections** every read outside a slot (the blog, a card's
+  small reads, readiness / health reads, the post-publish check) waited behind them — with seconds-long statements
+  after a publish, past the blog's 5 s and the rest's 12 s: Sunday's blog and Saturday's trade.
+* **Fixed**: the pool is **10** (`LEAGUE_LAB_POOL_SIZE`, 2–32): the 4 slotted + 6 for reads. **One wait for every
+  caller: 8 s** (`db.POOL_WAIT_S`; the blog's 5 s is gone — it goes through `db.connection()` like everything else):
+  the longest single statement measured is 1.4 s, Neon's compute waking takes a few seconds, and a connection that has
+  not come in 8 s with 10 in the pool means the database is stalled — 503 "busy" in words, the blog its last good
+  answer, instead of hanging.
+* **Never silent**: a wait over a second is one log line — `waited 1.2 s for a database connection (3 of 4 in use) on
+  /api/players; the statement began: select gsis_id, game_id, season, season_type, week,` (the route with every segment
+  that carries a digit as `*`; the statement's first six words; never the rest, never a DSN). `/api/status` gains
+  `pool`: `size, wait_limit_s, in_use, waiting, peak_in_use, checkouts, waited_over_1s, longest_wait_s,
+  longest_wait_route, longest_wait_at, longest_hold_s, longest_hold_route` (since the process started).
+* **Not done**: the swap drill could not be re-run — this wave allows no new database (IU-4's `test_iu4` passes; what
+  it proved depended on per-statement holds, which are unchanged). Not changed: `ratelimit.Slots` (section 7).
+
+#### 2. Commits — `git log integ/JA..dev/JA3`.
+
+#### 3. Evidence
+
+**The busy minute, the sandbox's speed** (16 visitors at once, each walking My Week house + MFL, a card, Stats with a
+stretch against another, Waivers, Trades partners, the trade evaluation, the blog list and a post; a fresh process each
+run, so first visits; n / 503 / p95 s):
+
+| Route | before: pool 4 | after: pool 10 |
+|---|---|---|
+| blog list | 54 / 0 / 0.15 | 50 / 0 / 0.13 |
+| blog post | 51 / 0 / 0.16 | 50 / 0 / 0.12 |
+| card | 53 / 0 / 8.42 | 51 / 2 / 13.15 |
+| My Week (house) | 52 / 0 / 16.42 | 51 / 0 / 18.26 |
+| My Week (MFL) | 51 / 0 / 11.46 | 53 / 1 / 11.46 |
+| Stats, a stretch vs another | 50 / 0 / 11.29 | 49 / 1 / 16.36 |
+| trade evaluate | 52 / 0 / 11.31 | 51 / 1 / 15.58 |
+| Trades partners | 53 / 1 / 15.37 | 50 / 1 / 13.10 |
+| Waivers | 52 / 0 / 14.09 | 52 / 1 / 7.46 |
+| **pool**: peak in use · waits > 1 s · longest wait | 4 · 0 · 0.16 s | 4 · 0 · 0.21 s |
+
+At the sandbox's speed the pool never ran out at 4: the p95s and every 503 are the CPU slots (20 s, then "busy" —
+no `no pooled connection` line in either log) and move run to run on two shared cores. The pool matters when the
+database is slow:
+
+**A slow database** (every statement +0.3 s while its connection is held; 4 visitors on the slotted heavy routes and 4
+on a small uncached read — a player's past projections — for 45 s):
+
+| | pool 4 | pool 10 |
+|---|---|---|
+| reads served | 547 | 660 |
+| read p95 / max | 0.77 / 5.04 s | 0.69 / 3.09 s |
+| waits over 1 s | 4 (longest 1.22 s, "3 of 4 in use") | 0 (longest 0.11 s) |
+| peak in use | 4 | 8 |
+
+With +0.15 s statements and the 16-visitor minute, both sizes ended in the CPU slots' 503s (32 at 4, 28 at 10): the
+slots, not the pool, bound the heavy routes.
+
+**Cost**: 10 connections through the pooler: +0.2 MB RSS here (no TLS); with TLS to Neon a few hundred kB each —
+a few MB of the 2 GB process. Database: through Neon's pooled endpoint the client connections are multiplexed — a
+backend is used only while a statement runs (peak 8 here). The repository's docs only say to use the `-pooler` host
+(DEPLOY.md step 1); Neon's own limit on pooled client connections is not in the repository and could not be read here.
+
+`scripts/pooler_check.sh` (ports 8924 / 8925, API 8926): **POOLER CHECK PASSED IN BOTH MODES** (every post-deploy check
+ok in both).
+
+#### 4. Tests
+
+`api/tests/test_ja3.py` 7 passed: the connection is back in the pool before the rows become a DataFrame; every pooled
+caller takes the one wait (the blog's read included; no `pool().connection(` left in `blog_store`); a wait over a
+second is one log line with the counts, the route and the first words only (no table name past them, no DSN); a short
+wait is silent; `in_use` is given back when the statement fails; `/api/status` carries the pool and no DSN; the size's
+bounds. Changed stand-ins (behaviour unchanged): `test_iu4`'s fake pool takes the wait argument; `test_iy3`'s broken
+`db` hands `connection()` through its broken pool. With `test_iw0`, `test_iu4`, `test_it4`, `test_is4`, `test_ir3`,
+`test_io3`, `test_iu6`, `test_iy3`, `test_h0`, `test_ih1`: 99 passed. `check_api.sh` on every test file that opens a
+pooled connection (ik4, inf2, io3, iu4, iu6, iv1, iw0, ix1, iy3, ja3 + h0, ih1, im3, static): 172 passed, **0 new
+failures**. `scripts/gate.sh` (last, everything): **GATE PASSED**, 823 ran, web lint + build ok. ruff, the copy standard clean.
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/main.py` (a marked JA-3 middleware setting the route for the log line; `out["pool"]` in
+`/api/status`), `api/league_lab_api/blog_store.py` (three `db.pool().connection(timeout=5)` → `db.connection("blog")`),
+the two test stand-ins above, `CHANGELOG.md`.
+
+#### 6. The PO's lines
+
+`render.yaml`: nothing (the size is 10 in the code; `LEAGUE_LAB_POOL_SIZE` exists if it must move without a deploy).
+`scripts/post_deploy_check.py`: worth one line, never a failure — the pool's longest wait since the process started
+(the PO reads it after a publish without opening Render's logs):
+
+```diff
+     j.line(code == 200 and isinstance(b, dict) and b.get("ready") is True, "ready", code, secs, text)
++    code, secs, st = j.call("GET", "/api/status")
++    pool = st.get("pool") if isinstance(st, dict) else None
++    if isinstance(pool, dict):
++        print(f"info pool       {code:>3} {secs:5.2f}s  {pool.get('size')} connections, peak {pool.get('peak_in_use')} in use, "
++              f"longest wait {pool.get('longest_wait_s')} s on {pool.get('longest_wait_route')}, {pool.get('waited_over_1s')} over 1 s", flush=True)
+```
+
+#### 7. Found, not mine
+
+* **The CPU slot is held across database statements** (`ratelimit.Slots`: four slots, 20 s, then 503 "busy"). A
+  research request inside a slow statement keeps one of the four slots, so on a slow database the heavy routes 503
+  while the CPU is idle (the +0.15 s and +0.3 s runs: every 503 was a slot, none the pool). Worth a look: a slot per
+  CPU-bound step rather than per request.
+* The pool checks each connection on checkout (`check=ConnectionPool.check_connection`): one more round trip per
+  statement — a card is about 15 statements. Cheap in Neon's region; not changed.
+
+#### 8. Next
+
+The slot question above; the post-publish check's pool line; a look at the card's ~15 statements (one query could
+carry most of them).
+
+---
+
+### JA-6 — the CPU-slot limiter made visible (start 02:34 ET, end 02:42 ET; branch `dev/JA6`)
+
+**Done.** Nothing any request is answered changed: the limiter (`ratelimit.Slots`, `LEAGUE_LAB_CPU_SLOTS` 4, 20 s, then
+503 "busy") only counts and says what it does.
+
+* `/api/status` gains `slots` beside `pool` (since the process started; the route is the path's shape — its lower-case
+  words, every other segment `*`; never a query string, an id, a team or a key; `busy_by_route` at most 24 shapes, the
+  rest `other`):
+
+  ```json
+  "slots": {"size": 4, "wait_limit_s": 20.0, "in_use": 1, "waiting": 0, "peak_in_use": 4, "waited": 12,
+            "longest_wait_s": 19.98, "longest_wait_route": "/api/trades/partners", "busy_answers": 3,
+            "busy_by_route": {"/api/my-week": 1, "/api/trades/partners": 2},
+            "longest_hold_s": 18.4, "longest_hold_route": "/api/trades/evaluate"}
+  ```
+
+  (The existing `ratelimit.cpu` counters stay as they were.)
+* One log line, the pool line's form: `waited 1.2 s for a CPU slot (4 of 4 in use) on /api/trades/partners`, and
+  `answered busy after 20.0 s waiting for a CPU slot (4 of 4 in use) on /api/players`.
+* **The PO's diff** for `scripts/post_deploy_check.py` (one informational line after the trade check, never a failure;
+  it replaces the pool-only diff above):
+
+  ```diff
+       j.line(ok, "trade", code, secs, text)
+  +    # JA-6: the pool's and the CPU slots' peak and longest wait since the process started (information, never a failure)
+  +    code, secs, st = j.call("GET", "/api/status")
+  +    if isinstance(st, dict):
+  +        p, s = st.get("pool") or {}, st.get("slots") or {}
+  +        print(f"info load       {code:>3} {secs:5.2f}s  pool {p.get('peak_in_use')}/{p.get('size')} at peak, longest wait "
+  +              f"{p.get('longest_wait_s')} s on {p.get('longest_wait_route')}; CPU slots {s.get('peak_in_use')}/{s.get('size')} "
+  +              f"at peak, longest wait {s.get('longest_wait_s')} s on {s.get('longest_wait_route')}, "
+  +              f"{s.get('busy_answers')} answered busy", flush=True)
+  ```
+
+* **Tests**: `api/tests/test_ja6.py` 7 passed (a slot taken at once: in use, peak, its hold; a wait over a second: one
+  line in the pool's form; a busy answer: counted by route, logged, still refused; the by-route count bounded; the
+  route a shape, never an id / team / key; slots off untouched; `/api/status` carries `slots` beside `pool` with the
+  research request's route and no query). Every API test file that names `ratelimit` or `/api/status` (42 files) +
+  `test_ja3` / `test_ja6` through `check_api.sh`: 724 passed, 28 failed — all on the known list, **0 new**.
+  `scripts/gate.sh` (last): **GATE PASSED**, 823 ran, web lint + build ok. ruff, the copy standard clean.
+* **Edits**: `api/league_lab_api/ratelimit.py` (marked JA-6: `Slots` counters, `status()`, `route_shape`, the shape
+  passed by the middleware), `api/league_lab_api/main.py` (`out["slots"]`), `CHANGELOG.md`.
+
+### JA-4 — small faults on game-day screens (Wave J-A)
+
+**Start 01:55 ET, Monday 2026-10-12 (read from `date`); end 02:20.** Branch `dev/JA4` (from `integ/JA` = IZ-4 merged +
+JA-1 … JA-3, `bdc4e87`), `/home/claude/wt-iq4`, database `league_lab_iq4`. The app only on provider fixtures; news off
+or stubbed (the tests stub `news.recent`; the e2e routes the news read).
+
+#### 1. Done / not done / cut
+
+* **Done — 1. News on Waivers' top claims, without making Waivers wait.** `/api/waivers` is unchanged (it reads no
+  news). After the claims show, the screen asks `GET /api/news/players?ids=…` for the claim players (the three strongest
+  and the one in focus: at most four gsis ids, validated; the `read` bucket, explicit in `bucket_for`; `Cache-Control:
+  private, max-age=60`): the feed's own reader (`news.recent` — the per-player cache My Week's reads fill, at most one
+  second for what is not cached). A line lands on its claim through My Week's component (`DecisionNews`, IZ-4's words);
+  no line, or a failed read, is no line. The claims render while the read waits (e2e holds the answer back).
+* **Done — 2. Sentences, not a status in brackets**: the trade's depth / refuse reason (`decisions.ir2_depth`, II-1's
+  words via IR-2) — `because_words` / `cannot_sentence`; the other places that built a reason that way: the card's
+  roster line (IZ-3's "(bye)") and My Week's fallback (`cant_words`, "can't play (…)"). Grepped: `TradeCalc.svelte`'s
+  struck-through drop "(why)" and `Trades.svelte`'s rejected row "(partner team)" are labels, not a status in a sentence:
+  left.
+* **Done — 3. The trade's section 5, a role note per player** (QB / RB / WR / TE): `roles.role_change`'s headline (the
+  card's Role block reads the same function on the same rows) and his latest game cut short this season (the game log's
+  `left_early` and `onfield.left_early_case` words), as `roles` on `/api/trades/evaluate`; one line under the player
+  ("Role: … · Week 4: Left early: …"). Nothing new computed; a kicker or defense has none; a failed read is no line.
+* **Checked — 4.** JA-1's Stats CSV name already carries the weeks, the comparison and the situation
+  (`Players.svelte:327`: `…-stats-2026-weeks-3-4-wrs-vs-weeks-1-2-when-trailing.csv`): nothing to do.
+* **Not done**: the saved partners answer `web/fixtures/trades_partners_9000000000000000001_3_RB.json` still holds the
+  old bracketed words (a recording; no spec reads them; re-recording it would change much more than the words).
+
+#### 2. Commits
+
+`JA-4: 1.` the news read · `JA-4: 2.` the sentences (test_ir2, test_iz3 on purpose) · `JA-4: 3.` the role note and
+test_ja4 · `1bd1355` e2e/ja4, the recording, the screens, WORDS, CHANGELOG · the hand-back.
+
+#### 3. Evidence — each sentence before and after
+
+* Trade depth, a player whose game started: "they lose Jaylen Warren, an RB who cannot play in week 4 (game started
+  (bench)): no RB left on their bench who can play in week 4 (Jaylen Warren game started (bench) cannot)" → "they lose
+  Jaylen Warren, an RB who cannot play in week 4 because his game has started: no RB left on their bench who can play in
+  week 4; Jaylen Warren's game has started, so he cannot be moved this week".
+* A bench player ruled out: "… who can play in week 4 (Breece Hall Out cannot)" → "…; Breece Hall cannot play in week
+  4: he is ruled out". IR slot: "(arb4 in the IR slot cannot)" → "; arb4 cannot play in week 5: he is in the IR slot".
+* The card's roster line: "Can't play for you this week (bye)." → "Can't play for you this week: he is on a bye."
+* My Week's fallback (a reason none of its words covers): "<name> can't play (<reason>)" → "<name> cannot play this week
+  because he is listed doubtful" for a known status, "<name> cannot play this week: <reason>" otherwise.
+* Section 5, Stafford (the Folk trade): (no line) → "Role: Too early to say: 4 games with a snap so far this season; a
+  change is called from his last 2 games against at least 3 before them (5 games)."; Ja'Marr Chase (test): "… · Week 4:
+  Left early: 15 snaps (20% of the team's; usually 94%); hurt on a play in the 2nd quarter".
+* Waivers: the claims, then (when the feed has an item about a claim player) "News <headline> · <source> ↗ · N h ago" and
+  "Context only: not in the projection" under the claim. No recorded news exists about a fixture claim player, so the
+  screens show the real state (no line) and the e2e's line is a labelled test line.
+* Screens: `docs/handbacks/ja4/ja4-{waivers-claims,trade-section5}-{375,1300}.jpg`; no sideways scroll at 375 (asserted).
+
+#### 4. Tests
+
+* New: `api/tests/test_ja4.py` 6 passed (the claim news route: bounded, validated, the `read` bucket, a failed read is no
+  line; **the Waivers answer identical with the news on and off**; the sentences have no bracket; the role note is the
+  card's headline and the game log's words, none for a kicker, a failed read is no note).
+* The API files of the changed code (test_ir2, test_iz3, test_iz4, test_ja4, test_ix5 — the Folk trade —, test_in5,
+  test_ix4, test_ii1, test_if1, test_ib2): 276 passed, 10 failed; the 10 re-run with `bdc4e87`'s sources: 10 failed —
+  **no new failure**. Updated on purpose: test_ir2 (the IR-slot depth sentence), test_iz3 (the roster line). **Cut for
+  the clock**: the broad set of every file that calls `/api/waivers`, `/api/my-week` or the trade route (71 files, about
+  22 minutes here; started, stopped at 15 % without a comparison against the base) — the PO's full run covers it.
+* e2e on fixtures, both projects, the 48 spec files that open Waivers, the calculator, My Week or the card (ja4
+  included): **438 passed**, 0 failed. Other packages' screenshots it rewrote (in1, in5) restored.
+* ruff, the copy standard, `npm run lint`, `npm run build`: clean. `scripts/gate.sh`: ok (79 s, exit 0).
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/main.py` (the router, a marked block; the trade route's one line), `ratelimit.py` (`bucket_for`, a
+marked block), `decisions.py` (the depth sentence and its two helpers), `myweek.py` (`cant_words`' fallback),
+`player.py` (the roster line's "out" words), `web/src/routes/Waivers.svelte`, `decisions/ClaimCard.svelte`,
+`decisions/TradeFive.svelte`, `docs/WORDS.md`, `CHANGELOG.md`.
+
+#### 6. PO lines
+
+None needed. `app/whats_new.md` (optional): "A claim on Waivers now shows the latest news about the player, and a trade
+names each player's role trend."
+
+#### 7. Found, not mine
+
+* `web/fixtures/trades_partners_9000000000000000001_3_RB.json` (a saved answer) keeps the bracketed words until it is
+  re-recorded.
+* A role note is read from `fct_player_game` through the week before the trade's first week; the card reads through
+  the week itself — the same rows (an unplayed week has none).
+
+#### 8. Next
+
+Re-record the partners answer with the next fixture refresh.
+
+### JA-5 — Stats opens on the table on a desktop too (Wave J-A)
+
+**Start 02:21 ET, Monday 2026-10-12 (read from `date`); end 02:33.** Branch `dev/JA5` (from `integ/JA`).
+
+#### 1. Done / not done / cut
+
+* **Done**: from 900 px the controls are one row — the positions, the weeks as one line (`WeekSlider collapse="always"`:
+  "Season · weeks 1–4 ▾", the slider and its quick picks open in place), the situation as a select (`stats-sit-pick`;
+  the chips stay behind Filters), and the one **Filters** button (the phone's, now on every width: named when closed —
+  "Filters: When trailing · Free agents · At least 2 games" — opening the name filter, ownership, NFL team, per game /
+  totals, the minimums, the situation chips, the window line, columns and saved views, the role cards in place). The
+  view's caption stays one line under the tabs. Nothing removed; URL keys unchanged; a link with filters opens with
+  them applied and named.
+* **The phone unchanged**: round 2's and JA-2's tests pass (≥ 3 rows at 375 × 812 with a stretch and a comparison).
+* **Not done**: the weeks' one-line box is a few pixels taller than the chips beside it.
+
+#### 2. Commits
+
+The JA-5 screen commit, the WORDS / CHANGELOG commit, this file.
+
+#### 3. Evidence (1300 × 900, League of Scrubs, WR / TE)
+
+* **Before**: the table's header at about 880 px (`docs/handbacks/ja1/ja1-slider-open-1300.jpg`): no row on the first
+  screen. **After**: nothing chosen — the first row's top at **416 px, 8 whole rows**; weeks 3–4 against weeks 1–2,
+  when trailing, free agents, at least 2 games — the closed row reads "Weeks 3–4 against weeks 1–2 ▾ · When trailing ·
+  Filters: When trailing · Free agents · At least 2 games", **416 px, 8 rows**.
+* Screens (`docs/handbacks/ja5/`): `ja5-nothing-chosen-1300`, `ja5-everything-closed-1300`, `ja5-filters-open-1300`,
+  `ja5-phone-375`.
+
+#### 4. Tests
+
+* New `web/e2e/ja5`: 3 passed (the two 1300 × 900 states with the thresholds 520 px / 6 rows and 5 rows; Filters and
+  the weeks open in place; the phone unchanged).
+* Specs updated on purpose: `ja1` (the weeks open closed on a desktop too: an `openWeeks` helper; the desktop branches),
+  `ii3` (`openWeeks` before the quick picks), `ix3` (the desktop has the Filters button now). The existing
+  `openFilters` helpers already act on a desktop (they click the button when it is visible).
+* e2e that open Stats, both projects: ja1, ii3, ja2, ja5 → 27 passed, 3 skipped (ja5's per-project skips); ix3, im2,
+  il1, in2, ip3, io4, ib1 → 71 passed + ix3's desktop test updated and re-run (2 passed); ip4, im3, ii6, in1, ii2,
+  `fixtures.spec.ts` → 102 passed, 7 skipped, 1 failed and passed alone (`ip4` "the card: rookie", desktop: a card
+  test, timing).
+* Lint, the build, the copy standard: clean. `scripts/gate.sh` (run last): **GATE PASSED** (85 s).
+
+#### 5. Edits outside my files
+
+`web/src/routes/Players.svelte`, `web/src/components/stretch/WeekSlider.svelte` (`collapse` prop), the specs above,
+WORDS, CHANGELOG. New: `web/e2e/ja5/`, `web/fixtures/ja5/` (one answer, 520 KB).
+
+#### 6. PO lines
+
+None.
+
+#### 7. Found, not mine
+
+* `ip4` "the card: rookie" (desktop) failed once in a long run and passed alone.
+
+#### 8. Next
+
+—

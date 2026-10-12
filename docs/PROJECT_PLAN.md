@@ -598,6 +598,16 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 37 — Wave J-A, the weeks you choose (2026-10-12, Monday 00:33 – morning ET)
+
+Andrew asked for a slider to look at any weeks, and one stretch against another, on the stat tables and Compare.
+**JA-1** Stats: the week slider, a second stretch with the change under each value, a by-week view. **JA-2** the same
+control on Compare ("his early weeks against his recent ones") and Matchups (what a defense gave up lately, the change
+in rank). **JA-3** the connection pool measured and widened to ten, one wait for every caller. **JA-4** news on waiver
+claims, status reasons as sentences, a role note in the trade's last section. **JA-5** the Stats controls in one row so
+the table stays on the first screen. **JA-6** the CPU-slot limiter's counts in the status answer. Evidence:
+`docs/STATUS.md` § "Wave J-A". **Next**: the head-to-head's first numbers; the slot limiter if the live counts say so.
+
 ### Iteration 36 — Wave I-Z, the head-to-head on three seasons and the review's Pass 2 (2026-10-11, Sunday evening ET)
 
 Andrew: "Lets go ahead and continue with the roadmap." **IZ-1** us against Sleeper's projections on every week its

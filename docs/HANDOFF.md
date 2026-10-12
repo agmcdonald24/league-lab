@@ -386,6 +386,20 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave J-A (2026-10-12, Monday overnight; STATUS § "Wave J-A (Iteration 37)")**: Andrew asked for **weeks you
+  choose** — "kind of a slider … weeks one to two versus weeks three to four" — on Stats, Compare and Matchups. One
+  component (`web/src/components/stretch/WeekSlider.svelte`, `lib/stretch.ts`; URL keys `window`, `weeks`, `vs`):
+  two handles over the played weeks, a second stretch to compare with, the change under each value and sortable, and
+  on Stats a "By week" view. **A rate over a stretch is that stretch's summed parts, never an average of weekly
+  rates** (tested on a constructed player), and **no number a decision reads follows the slider** (the card's, My
+  Week's and the trade's matchup words keep the season's rank). The Stats screen's controls are one row at every
+  width — positions, the weeks as one line, the situation, one Filters button that names what is in force: **a new
+  control never pushes the table off the first screen** (the slider did, on the desktop, until JA-5). **The pool is
+  ten connections with one 8-second wait for every caller** (it was four: four heavy requests each held one and
+  everything else queued — Saturday's hang and Sunday's vanished post); `/api/status` shows `pool` and `slots`, and the
+  post-publish check prints them (`info load`). **Open**: the CPU-slot limiter holds a slot across statements, so a
+  slow database answers "busy" with the CPU idle — measured in the sandbox, not yet seen live; read `slots` before
+  changing it.
 * **Wave I-Z (2026-10-11, Sunday evening; STATUS § "Wave I-Z (Iteration 36)")**: **roadmap item 2 is built: us
   against Sleeper's projections on about sixty weeks, not one.** Sleeper's endpoint still serves every week back to
   2023 (its rows are touched once, minutes after each week closes: they cannot be proved pre-kickoff — say so wherever

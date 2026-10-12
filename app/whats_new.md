@@ -3,6 +3,21 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 12 · pick your weeks
+
+- **A week slider on Stats.** Drag two handles to look at any stretch of the season: weeks 1–2, just week 3, the last
+  three weeks.
+- **One stretch against another.** Turn on "Compare with other weeks" and every number shows how it changed, for
+  example weeks 3–4 against weeks 1–2. Sort by the change to see who gained or lost the most.
+- **A stat week by week.** The "By week" view lays one stat out across the weeks for every player.
+- **The same slider on Compare and Matchups.** Compare a player's early weeks with his recent ones, and see which
+  defenses have given up more or less lately.
+- **Stats fits on one screen again.** The filters sit in one row, so the table starts near the top on a computer and a
+  phone.
+- **News on waiver claims.** A recent note about a player you could claim shows under the claim.
+- **Clearer reasons on trades.** "His game has started, so he cannot be moved this week" replaces a clipped note.
+- **Fewer "busy" moments.** The site can now serve more people at once when it is under load.
+
 ## Oct 11 (evening) · trades in five questions, and a scorecard against Sleeper
 
 - **A trade now answers five questions in order.** What changes in your starters, what the other team gets, what it

@@ -4,6 +4,8 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-12 — Wave J-A
 
+- **PO — the merge.** `scripts/post_deploy_check.py` prints the pool's and the CPU slots' peak and longest wait after
+  the trade check (information, never a failure). docs/STATUS.md § "Wave J-A".
 - **JA-6 — the CPU-slot limiter, visible.** `/api/status` shows `slots` beside `pool`: size, in use, waiting, and since
   the process started the longest wait for a slot, the requests answered "busy" by route, the longest hold; a wait over
   a second or a "busy" answer is one log line. Nothing a request is answered changed.
