@@ -38,7 +38,7 @@ The JA-5 screen commit, the WORDS / CHANGELOG commit, this file.
   il1, in2, ip3, io4, ib1 → 71 passed + ix3's desktop test updated and re-run (2 passed); ip4, im3, ii6, in1, ii2,
   `fixtures.spec.ts` → 102 passed, 7 skipped, 1 failed and passed alone (`ip4` "the card: rookie", desktop: a card
   test, timing).
-* Lint, the build, the copy standard: clean. `scripts/gate.sh`: see the final message.
+* Lint, the build, the copy standard: clean. `scripts/gate.sh` (run last): **GATE PASSED** (85 s).
 
 ## 5. Edits outside my files
 
