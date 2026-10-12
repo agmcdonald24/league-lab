@@ -215,7 +215,7 @@ test("a phone opens on the answer: Filters folded (named when in force), the vie
   await expect(toggle).toBeVisible();
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByTestId("stats-filters-label")).toHaveText("Filters");
-  for (const id of ["players-search", "who-all", "players-team", "stats-window-pick", "mode-game", "stats-min", "stats-minopp", "sit-all", "stats-columns", "role-cards"]) await expect(page.getByTestId(id), id).toBeHidden();
+  for (const id of ["players-search", "who-all", "players-team", "stats-weeks", "mode-game", "stats-min", "stats-minopp", "sit-all", "stats-columns", "role-cards"]) await expect(page.getByTestId(id), id).toBeHidden();
   await expect(page.getByTestId("pos-WRTE")).toBeInViewport();
   // the view tabs in one row: every tab on the same line, the page never wider than the screen
   const tops = await page.getByTestId("stats-table-view").locator("button").evaluateAll((bs) => bs.map((b) => Math.round(b.getBoundingClientRect().top)));
@@ -241,7 +241,9 @@ test("a phone opens on the answer: Filters folded (named when in force), the vie
   // a filter in force is named on the closed button
   await page.goto(url("&position=WRTE&sit=trailing&who=fa&window=last5w"));
   await expect(rows(page).first()).toBeVisible().catch(() => undefined);
-  await expect(page.getByTestId("stats-filters-label")).toHaveText("Filters: When trailing · Free agents · Last 5 calendar weeks");
+  // JA-1 (Wave J-A), on purpose: the weeks are named by the week slider, which stays outside the fold when not the season
+  await expect(page.getByTestId("stats-filters-label")).toHaveText("Filters: When trailing · Free agents");
+  // (this address is not recorded: no table, so no slider — e2e/ja1 checks the slider outside the fold)
   await expect(page.getByTestId("stats-filters-toggle")).toHaveAttribute("aria-expanded", "false");
   await page.screenshot({ path: join(SHOTS, "ix3r2-closed-filtered-375.jpg"), quality: 70, fullPage: false });
   void info;

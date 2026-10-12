@@ -90,12 +90,13 @@ test("windows: last 3 games played vs last 3 calendar weeks vs a week range; tot
   await page.goto(scrubs("&position=WRTE"));
   await expect(page.getByTestId("stats-window-label")).toContainText("Season (weeks 1–3)");
   await openFilters(page); // IX-3 round 2
-  await page.getByTestId("stats-window-pick").selectOption("last3");
+  // JA-1 (Wave J-A), on purpose: the window select is the week slider's quick picks now
+  await tap(page, page.getByTestId("slider-quick-last3"), isMobile);
   await expect(page).toHaveURL(/window=last3/);
   await expect(page.getByTestId("stats-window-label")).toContainText("Last 3 games played");
   await expect(page.getByTestId("stats-window-label")).toContainText("the G column says how many");
   await openFilters(page); // IX-3 round 2
-  await page.getByTestId("stats-window-pick").selectOption("last3w");
+  await tap(page, page.getByTestId("slider-quick-last3w"), isMobile);
   await expect(page.getByTestId("stats-window-label")).toContainText(/Last 3 calendar weeks \(weeks 1–3\)/);
   await page.goto(scrubs("&position=RB&window=weeks&weeks=1-2"));
   await expect(page.getByTestId("stats-window-label")).toContainText("Weeks 1–2 (calendar weeks)");
