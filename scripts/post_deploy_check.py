@@ -234,6 +234,17 @@ def main(argv: list[str] | None = None) -> int:
     code, secs, b = j.call("POST", "/api/trades/evaluate", body)
     ok, text, fwd = check_trade(b) if code == 200 else (False, _why(b)[:200], None)
     j.line(ok, "trade", code, secs, text)
+    # JA-6: the pool's and the CPU slots' peak and longest wait since the process started (information, never a failure)
+    try:
+        code, secs, st = j.call("GET", "/api/status")
+        if isinstance(st, dict):
+            p, s = st.get("pool") or {}, st.get("slots") or {}
+            print(f"info load       {code:>3} {secs:5.2f}s  pool {p.get('peak_in_use')}/{p.get('size')} at peak, longest wait "
+                  f"{p.get('longest_wait_s')} s on {p.get('longest_wait_route')}; CPU slots {s.get('peak_in_use')}/{s.get('size')} "
+                  f"at peak, longest wait {s.get('longest_wait_s')} s on {s.get('longest_wait_route')}, "
+                  f"{s.get('busy_answers')} answered busy", flush=True)
+    except Exception as exc:  # noqa: BLE001 - information only: the check's verdict never depends on it
+        print(f"info load       not read ({type(exc).__name__})", flush=True)
 
     if fwd is not None:
         rbody = {"league": league, "team": partner_i, "partner": team_i, "give": get_l, "get": give_l}
