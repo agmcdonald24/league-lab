@@ -598,6 +598,16 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 36 — Wave I-Z, the head-to-head on three seasons and the review's Pass 2 (2026-10-11, Sunday evening ET)
+
+Andrew: "Lets go ahead and continue with the roadmap." **IZ-1** us against Sleeper's projections on every week its
+endpoint still serves (2023–2026): the nightly pulls the history once, builds the live model's walk-forward rows, and
+grades by position and on the close start / sit calls; the blend is measured, not shipped. **IZ-2** a trade answers
+five questions in order with both lineups side by side and keep / claim / trade on one basis. **IZ-3** the card says
+what a player means for your roster, and three reasons. **IZ-4** news sits on the decision it affects. Evidence:
+`docs/STATUS.md` § "Wave I-Z". **Next**: read the first night's table; Andrew's decision on the blend; week 5's clean
+record on Tuesday.
+
 ### Iteration 35 — Wave I-Y, pasted embed code in a blog post (2026-10-11, Sunday 12:36 – 13:40 ET)
 
 Andrew's published post printed X's embed code as text. One package, **IY-1**: X's and YouTube's pasted embed code is

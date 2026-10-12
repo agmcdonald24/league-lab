@@ -4,6 +4,8 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-11 — Wave I-Z
 
+- **PO — the merge.** `scripts/nightly.sh`: `sleeper-history` and `h2h` (soft), four state tables, the head-to-head's
+  table in the run's summary. docs/STATUS.md § "Wave I-Z".
 - **IZ-4 — news on the decision it affects.** On My Week a news item about a player in a decision (either player of a
   close call, the player a roster alert names, a "no clear upgrade" line's two) sits on that decision — its words, source,
   how long ago and what the projection does with it ("Context only: not in the projection") — at most two, the newest

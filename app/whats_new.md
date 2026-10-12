@@ -3,6 +3,20 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 11 (evening) · trades in five questions, and a scorecard against Sleeper
+
+- **A trade now answers five questions in order.** What changes in your starters, what the other team gets, what it
+  costs beyond the players named, whether a waiver claim or standing pat does as well, and what could change the
+  answer. Both lineups are shown side by side, before and after.
+- **Keep, claim or trade, in one row.** The calculator puts the three totals next to each other on the same basis.
+- **A player's card says what he means for your team.** Whether he starts for you and by how much, who he sits behind,
+  or whether a free agent would start, followed by up to three reasons.
+- **News sits on the decision it affects.** A note about a player in one of your calls now appears on that call, with
+  its source and age.
+- **A scorecard against Sleeper's projections is on its way.** We are grading our projections against the ones in the
+  Sleeper app for every week since 2023, by position and on close start/sit calls. The result will appear on the
+  About page after the next update.
+
 ## Oct 11 (afternoon) · posts from X show up in the blog
 
 - **Paste the embed code and it works.** A blog post now understands the embed code X and YouTube give you, as well as

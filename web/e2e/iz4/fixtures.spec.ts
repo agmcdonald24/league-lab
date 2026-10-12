@@ -4,7 +4,7 @@
 // The answers: League of Scrubs team 2's saved My Week answer of web/fixtures/ig2/api_ig2.json (Jefferson ruled out,
 // the call "Start Wilson at FLEX … in place of Jefferson", two Jefferson lines and a Ferguson line in the News feed) —
 // "before" as it was saved; "after" = the same answer put through the API's own `decision_news.attach`
-// (web/fixtures/iz4/my-week_scrubs_2.json; the recipe in docs/handbacks/IZ-4.md). No news is invented: the lines are
+// (web/fixtures/iz4/my-week_scrubs_2.json; the recipe in docs/STATUS.md § "Wave I-Z" (IZ-4)). No news is invented: the lines are
 // the saved feed's, moved.
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { readFileSync } from "node:fs";

@@ -386,6 +386,22 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **Wave I-Z (2026-10-11, Sunday evening; STATUS § "Wave I-Z (Iteration 36)")**: **roadmap item 2 is built: us
+  against Sleeper's projections on about sixty weeks, not one.** Sleeper's endpoint still serves every week back to
+  2023 (its rows are touched once, minutes after each week closes: they cannot be proved pre-kickoff — say so wherever
+  history is used; the clean record from our own snapshots starts at week 5 of 2026 and the two are never one number).
+  The nightly pulls them once (`ingest sleeper-history` → `ops.sleeper_history`), builds the live model's walk-forward
+  rows once per `MODEL_VERSION` (`ops.h2h_ours`, 8.5 minutes; `ops.calibration_oof` is NOT the live model's — it is
+  the component projection, labelled with the version of the day it was built) and grades by position and on close
+  start / sit calls (`league-lab h2h`, `ops.sleeper_h2h`, hh1.0). **Read the table in the run's summary the morning
+  after the push and tell Andrew where we are ahead, level and behind.** The blend (bl1.0) is measured there and
+  **never shipped without his word** (a third party's number, an undocumented endpoint). Only the nightly can make
+  these numbers: neither the sandbox nor the device shell reaches Sleeper. Also in this wave, the review's Pass 2: the
+  trade calculator answers five questions in order with a two-team lineup panel and keep / claim / trade on one basis
+  (`TradeFive.svelte`; nothing re-priced), the card's roster line and three reasons, news attached to the decision it
+  affects (no number moves on a headline). **An interrupted launch marks the agent stopped for good: a rejected spawn
+  is the user wanting to say something, not a veto of the work — read what he says, and if it does not say stop, ask
+  in one line whether to go on rather than assuming either way** (the PO first assumed "go", then "stop"; both wrong).
 * **Wave I-Y (2026-10-11, Sunday midday; STATUS § "Wave I-Y (Iteration 35)")**: a blog post understands **the embed
   code X and YouTube hand a writer**, not only a bare link (Andrew pasted X's blockquote + script into a published post
   and it printed as text). `md.ts` reads the code by strict patterns and never passes pasted HTML through; an X post
