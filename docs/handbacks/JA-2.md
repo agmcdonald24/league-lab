@@ -60,7 +60,7 @@ defense route's season `teams` are identical with a stretch.
 * e2e, both projects — Compare and Matchups (ib1, ix5, io4, if3, in2, if4, ib3, in3, ir1, inf1, ia1, ja2): **92
   passed**; Stats (ja1, ix3, im2, ii3, il1, ip3, ip4, im3, ii6, in1, ii2, `fixtures.spec.ts`): **169 passed, 7
   skipped**.
-* Ruff, the copy standard, `npm run lint`: clean; the build. `scripts/gate.sh`: see the final message.
+* Ruff, the copy standard, `npm run lint`: clean; the build. `scripts/gate.sh` (run last): **GATE PASSED** (73 s).
 
 ## 5. Edits outside my files
 
@@ -76,9 +76,7 @@ their early weeks against their recent ones — and see which defenses have give
 
 ## 7. Found, not mine
 
-* Matchups' season heatmap names "weeks 1–N" from `weeks_used` but its ranks come from the mart's own season; with the
-  league's scoring they can differ from the stretch card's season row by a place (the card ranks only defenses with two
-  games or more).
+* Nothing new. (JA-1's: the Stats CSV served by the API has no by-week form.)
 
 ## 8. Next
 
