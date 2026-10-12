@@ -1126,3 +1126,14 @@ News feed's own (`myweek.decision_feed`, II-4); IZ-4 moves them, it writes no se
 | Matchups, the card | **Defenses over weeks 3–4** / **Defenses, weeks 3–4 against weeks 1–2**; columns Rank · Defense · G · Points per game to WR · weeks 1–2 · Rank change; "#1"; "▲ up 15" (gives up more now) · "▼ down 7" · "same"; "1 game: too few to rank" | "toughest", a rank from one game |
 | Matchups, its note | "Over the weeks you pick: points his position scored against the defense per game in those weeks, in this league's scoring; the rank among 32, #1 = gives up the most. Fewer than two games: too few to rank. The season's rank (the matchup words on the card, My Week and the trade) does not move." | — |
 <!-- ---- end JA-2 -->
+<!-- ---- JA-4 -->
+## Small faults on game-day screens (JA-4, Wave J-A, 2026-10-12; `decision_news.py`, `decisions.cannot_sentence`)
+
+| Where | Words | Never |
+|---|---|---|
+| Waivers, a top claim whose player has a news item (asked after the claims show) | the News line of My Week's decisions (IZ-4): "News Jefferson (ankle) ruled out for Sunday · Minnesota Vikings via PlayerWire ↗ · 8 d ago" and its forecast words; nothing when he has none | a claim held back for the news; a number moved by a headline |
+| the trade's depth / refuse reason, a player who cannot play | "they lose Jaylen Warren, an RB who cannot play in week 4 because his game has started: no RB left on their bench who can play in week 4; Jaylen Warren's game has started, so he cannot be moved this week" · "…; Breece Hall cannot play in week 4: he is ruled out" · "…: he is on a bye / he is in the IR slot / he is on the taxi squad / he has no NFL team / he is listed doubtful" (was "(game started (bench))", "(Breece Hall Out cannot)", "(arb4 in the IR slot cannot)") | a status in brackets inside a sentence |
+| the card's roster line, a player who cannot play | "Can't play for you this week: he is on a bye." (was "… this week (bye).") | — |
+| My Week, a reason the build names that no other word covers | "… cannot play this week because he is listed doubtful" / "… cannot play this week: <reason>" (was "can't play (<reason>)") | — |
+| the trade's section 5, a player's role note (QB, RB, WR, TE) | "Role: Too early to say: 4 games with a snap so far this season; …" (the card's Role headline, `roles.role_change`) · with a game cut short: "· Week 4: Left early: 15 snaps (20% of the team's; usually 94%); hurt on a play in the 2nd quarter" (the game log's words) | a role read that the card does not show; a note on a kicker or a defense |
+<!-- ---- end JA-4 -->

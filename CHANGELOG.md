@@ -4,6 +4,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-12 — Wave J-A
 
+- **JA-4 — small faults on game-day screens.** Waivers' top claims carry their player's news line (My Week's component and
+  words), asked after the claims show (`/api/news/players`: at most four players, the feed's cache, the `read` bucket) —
+  the claims never wait and no number moves on a headline. Why a player cannot play is a sentence everywhere it was a
+  status in brackets: the trade's depth and refuse reason ("because his game has started"; "Jaylen Warren's game has
+  started, so he cannot be moved this week"; was "(game started (bench))", "(Breece Hall Out cannot)"), the card's
+  roster line, My Week's fallback. The trade's section 5 says each player's role note where the card has one (the
+  Role headline, a game cut short). The Stats CSV's name already says the weeks, the comparison and the situation (JA-1).
 - **JA-3 — a request never waits for a database connection it could have had.** The server's pool is 10 connections
   (it was 4 — the four CPU slots alone could take all of them, so the blog and other small reads waited behind slow
   statements after a publish); one wait for every caller (8 s; the blog's 5 s is gone); a wait over a second is one log

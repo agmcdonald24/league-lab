@@ -1,0 +1,2103 @@
+{
+ "after": {
+  "mine": {
+   "bench": 0.0,
+   "by_week": [
+    126.58,
+    122.7,
+    112.66,
+    121.95
+   ],
+   "horizon": 483.89,
+   "this_week": 126.58
+  },
+  "theirs": {
+   "bench": 8.51,
+   "by_week": [
+    121.34,
+    121.96,
+    122.45,
+    122.45
+   ],
+   "horizon": 488.2,
+   "this_week": 121.34
+  }
+ },
+ "alternative": {
+  "availability": "claim",
+  "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+  "by_week": [
+   4.87,
+   1.05,
+   0.0,
+   0.79
+  ],
+  "covered_by_week": [
+   4.87,
+   1.05,
+   0.0,
+   0.79
+  ],
+  "covered_week": 4.87,
+  "covered_window": 6.71,
+  "drop": {
+   "gsis_id": "00-0039150",
+   "player_name": "Bryce Young",
+   "position": "QB",
+   "sleeper_id": "9228"
+  },
+  "drop_cost": {
+   "cost": 0.0,
+   "depth_lost": 0.0,
+   "excess": 0.0,
+   "lineup_loss": 0.0,
+   "net_week": 4.87,
+   "net_window": 6.71,
+   "piece": null,
+   "season_value": 0.0
+  },
+  "gain_week": 4.87,
+  "gain_window": 6.71,
+  "kind": "waiver",
+  "note": null,
+  "open_spot": false,
+  "player": {
+   "gsis_id": null,
+   "player_name": "Washington Commanders",
+   "position": "DEF",
+   "sleeper_id": "WAS"
+  },
+  "roster_only_pick": {
+   "covered_gross_window": -5.22,
+   "covered_window": -5.22,
+   "drop": {
+    "gsis_id": "00-0039150",
+    "headshot_url": null,
+    "player_name": "Bryce Young",
+    "position": "QB",
+    "sleeper_id": "9228",
+    "team": null
+   },
+   "gain_window": 14.99,
+   "player": {
+    "gsis_id": "00-0039917",
+    "headshot_url": null,
+    "player_name": "Michael Penix Jr.",
+    "position": "QB",
+    "sleeper_id": "11559",
+    "team": "ATL"
+   }
+  },
+  "source": "basis search",
+  "span": "weeks 5\u20138",
+  "weeks": [
+   5,
+   6,
+   7,
+   8
+  ],
+  "words": "add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+ },
+ "alternative_words": "+1.8 over weeks 5\u20138, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "backup_words": "Backup coverage: you lose Bryce Young, a QB who cannot play in week 5 (on a bye): no QB left on your bench who can play in week 5 (Patrick Mahomes on a bye cannot).",
+ "beats_alternative": false,
+ "before": {
+  "mine": {
+   "bench": 0.0,
+   "by_week": [
+    125.57,
+    122.6,
+    112.18,
+    121.75
+   ],
+   "horizon": 482.1,
+   "this_week": 125.57
+  },
+  "theirs": {
+   "bench": 0.0,
+   "by_week": [
+    121.44,
+    122.46,
+    123.21,
+    122.65
+   ],
+   "horizon": 489.76,
+   "this_week": 121.44
+  }
+ },
+ "beyond_alternative": -4.92,
+ "card": {
+  "beyond": {
+   "margin": 1.0,
+   "mine": -4.92,
+   "theirs": -8.6
+  },
+  "credible": false,
+  "depth_cost": {
+   "horizon": null,
+   "mine": "You lose Bryce Young, a QB who cannot play in week 5 (on a bye): no QB left on your bench who can play in week 5 (Patrick Mahomes on a bye cannot). You use 1 more roster spot.",
+   "roster_spots": 1,
+   "season_value": {
+    "get": 8,
+    "give": 0
+   },
+   "theirs": null
+  },
+  "drops": {
+   "mine": [
+    {
+     "player": {
+      "cannot_play": "bye",
+      "gsis_id": "00-0039150",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+      "market_price": 0,
+      "player_name": "Bryce Young",
+      "position": "QB",
+      "roster_id": 2,
+      "season_points": 209,
+      "sleeper_id": "9228",
+      "team": "CAR",
+      "this_week": null
+     },
+     "words": "You must cut Bryce Young."
+    }
+   ],
+   "theirs": []
+  },
+  "get": [
+   {
+    "cannot_play": null,
+    "gsis_id": "00-0026498",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+    "market_price": 8,
+    "player_name": "Matthew Stafford",
+    "position": "QB",
+    "roster_id": 3,
+    "season_points": 228,
+    "sleeper_id": "421",
+    "team": "LA",
+    "this_week": 20.31
+   },
+   {
+    "cannot_play": null,
+    "gsis_id": "00-0039404",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wv1h4umuddkfss96uutw",
+    "market_price": 0,
+    "player_name": "Will Reichard",
+    "position": "K",
+    "roster_id": 3,
+    "season_points": 112,
+    "sleeper_id": "11792",
+    "team": "MIN",
+    "this_week": 8.27
+   }
+  ],
+  "give": [
+   {
+    "cannot_play": null,
+    "gsis_id": "00-0025565",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+    "market_price": 0,
+    "player_name": "Nick Folk",
+    "position": "K",
+    "roster_id": 2,
+    "season_points": 113,
+    "sleeper_id": "650",
+    "team": "ATL",
+    "this_week": 8.51
+   }
+  ],
+  "guardrails": [
+   {
+    "positions": [
+     "K"
+    ],
+    "receiver": 3,
+    "rule": "streamable_for_starter",
+    "starter": "421",
+    "words": "a K for a starter (Matthew Stafford): they have a K and the free pool holds one about as good, so a K is not worth a starter to them"
+   }
+  ],
+  "legal": {
+   "checks": [
+    "ownership (trades.clean_package)",
+    "roster limits and required cuts (trades._after)",
+    "locked players (RosterBoard.is_locked)",
+    "position requirements (lineup.solve)",
+    "trade deadline (league settings)"
+   ],
+   "notes": [
+    "Will Reichard's game has started: he changes teams after this week.",
+    "You must cut Bryce Young to make room.",
+    "You would have nobody for K in weeks 5 and 6: counted with the best free agent there, not as an empty slot.",
+    "Run Bijan Run would have nobody for QB in week 5: counted with the best free agent there, not as an empty slot."
+   ],
+   "ok": true
+  },
+  "partner": 3,
+  "plausibility": {
+   "key": "implausible",
+   "label": "Implausible",
+   "reasons": [
+    "a K for a starter (Matthew Stafford): they have a K and the free pool holds one about as good, so a K is not worth a starter to them"
+   ]
+  },
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "plausibility": "Implausible",
+   "words": "Not worth proposing: your starters end 4.9 behind your best waiver move over weeks 5\u20138 (the bar is 1 point); Run Bijan Run's starters end 8.6 behind their own best move over weeks 5\u20138; a K for a starter (Matthew Stafford): they have a K and the free pool holds one about as good, so a K is not worth a starter to them."
+  },
+  "their_effect": {
+   "by_week": [
+    -0.1,
+    -0.5,
+    -0.76,
+    -0.2
+   ],
+   "raw_window": -12.96,
+   "this_week": -0.1,
+   "window": -1.56,
+   "words": "Run Bijan Run's starters: \u22120.1 this week, \u22121.6 over weeks 5\u20138 (\u221213.0 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+  },
+  "waiver_alternative": {
+   "mine": {
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "by_week": [
+     4.87,
+     1.05,
+     0.0,
+     0.79
+    ],
+    "covered_by_week": [
+     4.87,
+     1.05,
+     0.0,
+     0.79
+    ],
+    "covered_week": 4.87,
+    "covered_window": 6.71,
+    "drop": {
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB",
+     "sleeper_id": "9228"
+    },
+    "drop_cost": {
+     "cost": 0.0,
+     "depth_lost": 0.0,
+     "excess": 0.0,
+     "lineup_loss": 0.0,
+     "net_week": 4.87,
+     "net_window": 6.71,
+     "piece": null,
+     "season_value": 0.0
+    },
+    "gain_week": 4.87,
+    "gain_window": 6.71,
+    "kind": "waiver",
+    "note": null,
+    "open_spot": false,
+    "player": {
+     "gsis_id": null,
+     "player_name": "Washington Commanders",
+     "position": "DEF",
+     "sleeper_id": "WAS"
+    },
+    "roster_only_pick": {
+     "covered_gross_window": -5.22,
+     "covered_window": -5.22,
+     "drop": {
+      "gsis_id": "00-0039150",
+      "headshot_url": null,
+      "player_name": "Bryce Young",
+      "position": "QB",
+      "sleeper_id": "9228",
+      "team": null
+     },
+     "gain_window": 14.99,
+     "player": {
+      "gsis_id": "00-0039917",
+      "headshot_url": null,
+      "player_name": "Michael Penix Jr.",
+      "position": "QB",
+      "sleeper_id": "11559",
+      "team": "ATL"
+     }
+    },
+    "source": "basis search",
+    "span": "weeks 5\u20138",
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "words": "the Washington Commanders defense claim gives +6.7 over weeks 5\u20138 (drop Bryce Young)"
+   },
+   "theirs": {
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "by_week": [
+     1.9,
+     1.49,
+     1.1,
+     2.55
+    ],
+    "covered_by_week": [
+     1.9,
+     1.49,
+     1.1,
+     2.55
+    ],
+    "covered_week": 1.9,
+    "covered_window": 7.04,
+    "drop": {
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "sleeper_id": "BAL"
+    },
+    "drop_cost": {
+     "cost": 0.0,
+     "depth_lost": 0.0,
+     "excess": 0.0,
+     "lineup_loss": -5.85,
+     "net_week": 1.9,
+     "net_window": 7.04,
+     "piece": null,
+     "season_value": 0.0
+    },
+    "gain_week": 1.9,
+    "gain_window": 7.04,
+    "kind": "waiver",
+    "note": null,
+    "open_spot": false,
+    "player": {
+     "gsis_id": "00-0035228",
+     "player_name": "Kyler Murray",
+     "position": "QB",
+     "sleeper_id": "5849"
+    },
+    "source": "basis search",
+    "span": "weeks 5\u20138",
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "words": "the Kyler Murray claim gives +7.0 over weeks 5\u20138 (drop Baltimore Ravens)"
+   },
+   "words": "Yours: add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: add Kyler Murray, drop Baltimore Ravens: +7.0 over weeks 5\u20138 (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+  },
+  "why_consider": [
+   "Nick Folk starts for them in weeks 6, 7 and 8.",
+   "It frees 1 roster spot for them."
+  ],
+  "why_refuse": [
+   "Their starters lose 0.1 this week.",
+   "It does not improve their starters over weeks 5\u20138 (\u22121.6).",
+   "A K for a starter (Matthew Stafford): they have a K and the free pool holds one about as good, so a K is not worth a starter to them."
+  ],
+  "your_effect": {
+   "by_week": [
+    1.01,
+    0.1,
+    0.48,
+    0.2
+   ],
+   "raw_window": 3.77,
+   "this_week": 1.01,
+   "window": 1.79,
+   "words": "Your starters: +1.0 this week, +1.8 over weeks 5\u20138 (+3.8 if an empty slot were left empty: the difference is bye cover the free pool gives anyway)."
+  }
+ },
+ "caveat_effect": null,
+ "caveat_rule": "A decision that depends on a quarterback whose team's starter is unclear is withheld; one that depends on a starter the sources disagree on is a lean, never a firm call.",
+ "caveats": [],
+ "cut": [
+  {
+   "player": {
+    "cannot_play": "bye",
+    "gsis_id": "00-0039150",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+    "market_price": 0,
+    "player_name": "Bryce Young",
+    "position": "QB",
+    "roster_id": 2,
+    "season_points": 209,
+    "sleeper_id": "9228",
+    "team": "CAR",
+    "this_week": null
+   },
+   "season_points": 209,
+   "words": "You must cut Bryce Young to make room (he does not start for you: no lineup points lost)."
+  }
+ ],
+ "decision": {
+  "alternative": {
+   "beats": false,
+   "beyond": {
+    "mine": -4.92,
+    "theirs": -8.6
+   },
+   "mine": {
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "by_week": [
+     4.87,
+     1.05,
+     0.0,
+     0.79
+    ],
+    "covered_by_week": [
+     4.87,
+     1.05,
+     0.0,
+     0.79
+    ],
+    "covered_week": 4.87,
+    "covered_window": 6.71,
+    "drop": {
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB",
+     "sleeper_id": "9228"
+    },
+    "drop_cost": {
+     "cost": 0.0,
+     "depth_lost": 0.0,
+     "excess": 0.0,
+     "lineup_loss": 0.0,
+     "net_week": 4.87,
+     "net_window": 6.71,
+     "piece": null,
+     "season_value": 0.0
+    },
+    "gain_week": 4.87,
+    "gain_window": 6.71,
+    "kind": "waiver",
+    "note": null,
+    "open_spot": false,
+    "player": {
+     "gsis_id": null,
+     "player_name": "Washington Commanders",
+     "position": "DEF",
+     "sleeper_id": "WAS"
+    },
+    "roster_only_pick": {
+     "covered_gross_window": -5.22,
+     "covered_window": -5.22,
+     "drop": {
+      "gsis_id": "00-0039150",
+      "headshot_url": null,
+      "player_name": "Bryce Young",
+      "position": "QB",
+      "sleeper_id": "9228",
+      "team": null
+     },
+     "gain_window": 14.99,
+     "player": {
+      "gsis_id": "00-0039917",
+      "headshot_url": null,
+      "player_name": "Michael Penix Jr.",
+      "position": "QB",
+      "sleeper_id": "11559",
+      "team": "ATL"
+     }
+    },
+    "source": "basis search",
+    "span": "weeks 5\u20138",
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "words": "add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "other_objective": null,
+   "theirs": {
+    "availability": "claim",
+    "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you",
+    "by_week": [
+     1.9,
+     1.49,
+     1.1,
+     2.55
+    ],
+    "covered_by_week": [
+     1.9,
+     1.49,
+     1.1,
+     2.55
+    ],
+    "covered_week": 1.9,
+    "covered_window": 7.04,
+    "drop": {
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "sleeper_id": "BAL"
+    },
+    "drop_cost": {
+     "cost": 0.0,
+     "depth_lost": 0.0,
+     "excess": 0.0,
+     "lineup_loss": -5.85,
+     "net_week": 1.9,
+     "net_window": 7.04,
+     "piece": null,
+     "season_value": 0.0
+    },
+    "gain_week": 1.9,
+    "gain_window": 7.04,
+    "kind": "waiver",
+    "note": null,
+    "open_spot": false,
+    "player": {
+     "gsis_id": "00-0035228",
+     "player_name": "Kyler Murray",
+     "position": "QB",
+     "sleeper_id": "5849"
+    },
+    "source": "basis search",
+    "span": "weeks 5\u20138",
+    "weeks": [
+     5,
+     6,
+     7,
+     8
+    ],
+    "words": "add Kyler Murray, drop Baltimore Ravens: +7.0 over weeks 5\u20138 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you"
+   },
+   "words": "+1.8 over weeks 5\u20138, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points."
+  },
+  "basis": "replacement",
+  "basis_label": "Against realistic replacements",
+  "basis_words": "Every number here fills an empty starting slot (a bye, a cut, a player traded away) with the best free agent who can play it that week, for both teams and never the same free agent for both, and compares the trade with each team's best waiver move.",
+  "changes": {
+   "mine": [
+    {
+     "in": "421",
+     "in_from": null,
+     "in_how": "trade",
+     "in_player": {
+      "cannot_play": null,
+      "gsis_id": "00-0026498",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+      "market_price": 8,
+      "player_name": "Matthew Stafford",
+      "position": "QB",
+      "roster_id": 3,
+      "season_points": 228,
+      "sleeper_id": "421",
+      "team": "LA",
+      "this_week": 20.31
+     },
+     "in_value": 20.31,
+     "order": 1,
+     "out": "3257",
+     "out_player": {
+      "gsis_id": "00-0033119",
+      "player_name": "Jacoby Brissett",
+      "position": "QB",
+      "sleeper_id": "3257"
+     },
+     "out_to": null,
+     "out_value": 20.21,
+     "out_why": "free agent no longer needed",
+     "slot": "QB",
+     "slot_type": "QB",
+     "slot_word": "QB",
+     "words": "Matthew Stafford (from the trade) starts at QB in place of Jacoby Brissett (the free agent who would have covered it)"
+    },
+    {
+     "in": "3451",
+     "in_from": null,
+     "in_how": "free agent",
+     "in_player": {
+      "gsis_id": "00-0032726",
+      "player_name": "Ka'imi Fairbairn",
+      "position": "K",
+      "sleeper_id": "3451"
+     },
+     "in_value": 9.42,
+     "order": 9,
+     "out": "650",
+     "out_player": {
+      "cannot_play": null,
+      "gsis_id": "00-0025565",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+      "market_price": 0,
+      "player_name": "Nick Folk",
+      "position": "K",
+      "roster_id": 2,
+      "season_points": 113,
+      "sleeper_id": "650",
+      "team": "ATL",
+      "this_week": 8.51
+     },
+     "out_to": null,
+     "out_value": 8.51,
+     "out_why": "traded",
+     "slot": "K",
+     "slot_type": "K",
+     "slot_word": "K",
+     "words": "Ka'imi Fairbairn (a free agent for the week) starts at K in place of Nick Folk (traded)"
+    }
+   ],
+   "theirs": [
+    {
+     "in": "3257",
+     "in_from": null,
+     "in_how": "free agent",
+     "in_player": {
+      "gsis_id": "00-0033119",
+      "player_name": "Jacoby Brissett",
+      "position": "QB",
+      "sleeper_id": "3257"
+     },
+     "in_value": 20.21,
+     "order": 1,
+     "out": "421",
+     "out_player": {
+      "cannot_play": null,
+      "gsis_id": "00-0026498",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+      "market_price": 8,
+      "player_name": "Matthew Stafford",
+      "position": "QB",
+      "roster_id": 3,
+      "season_points": 228,
+      "sleeper_id": "421",
+      "team": "LA",
+      "this_week": 20.31
+     },
+     "out_to": null,
+     "out_value": 20.31,
+     "out_why": "traded",
+     "slot": "QB",
+     "slot_type": "QB",
+     "slot_word": "QB",
+     "words": "Jacoby Brissett (a free agent for the week) starts at QB in place of Matthew Stafford (traded)"
+    }
+   ],
+   "words": {
+    "mine": [
+     "Matthew Stafford (from the trade) starts at QB in place of Jacoby Brissett (the free agent who would have covered it)",
+     "Ka'imi Fairbairn (a free agent for the week) starts at K in place of Nick Folk (traded)"
+    ],
+    "theirs": [
+     "Jacoby Brissett (a free agent for the week) starts at QB in place of Matthew Stafford (traded)"
+    ]
+   }
+  },
+  "depth": {
+   "mine": {
+    "joins": [],
+    "lost": [
+     {
+      "cannot_play": [
+       {
+        "player_name": "Patrick Mahomes",
+        "why": "on a bye"
+       }
+      ],
+      "player": {
+       "cannot_play": "bye",
+       "gsis_id": "00-0039150",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+       "market_price": 0,
+       "player_name": "Bryce Young",
+       "position": "QB",
+       "roster_id": 2,
+       "season_points": 209,
+       "sleeper_id": "9228",
+       "team": "CAR",
+       "this_week": null
+      },
+      "position": "QB",
+      "usable": [],
+      "words": "you lose Bryce Young, a QB who cannot play in week 5 (on a bye): no QB left on your bench who can play in week 5 (Patrick Mahomes on a bye cannot)"
+     }
+    ],
+    "words": "you lose Bryce Young, a QB who cannot play in week 5 (on a bye): no QB left on your bench who can play in week 5 (Patrick Mahomes on a bye cannot)"
+   },
+   "theirs": {
+    "joins": [
+     "Nick Folk"
+    ],
+    "lost": [],
+    "words": "Folk joins their bench as a backup K"
+   }
+  },
+  "dial": {
+   "caption": "their starters over weeks 5\u20138, against realistic replacements",
+   "label": "Makes their lineup weaker",
+   "need": "puts Jacoby Brissett at their QB in place of Stafford",
+   "score": 18,
+   "their_gain": -1.56,
+   "title": "Effect on their starters",
+   "you": 1.79
+  },
+  "effect_words": "Your starting lineup: about 1.0 more points this week, about 1.8 more points in total over weeks 5\u20138.",
+  "fills": {
+   "mine": {
+    "rows": [
+     {
+      "player": {
+       "gsis_id": "00-0033119",
+       "player_name": "Jacoby Brissett",
+       "position": "QB",
+       "sleeper_id": "3257"
+      },
+      "state": "before",
+      "value": 20.21,
+      "week": 5
+     },
+     {
+      "player": {
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE",
+       "sleeper_id": "5844"
+      },
+      "state": "before",
+      "value": 8.68,
+      "week": 5
+     },
+     {
+      "player": {
+       "gsis_id": "00-0032726",
+       "player_name": "Ka'imi Fairbairn",
+       "position": "K",
+       "sleeper_id": "3451"
+      },
+      "state": "after",
+      "value": 9.42,
+      "week": 5
+     },
+     {
+      "player": {
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE",
+       "sleeper_id": "5844"
+      },
+      "state": "after",
+      "value": 8.68,
+      "week": 5
+     },
+     {
+      "player": {
+       "gsis_id": "00-0037224",
+       "player_name": "Cameron Dicker",
+       "position": "K",
+       "sleeper_id": "8259"
+      },
+      "state": "after",
+      "value": 8.81,
+      "week": 6
+     },
+     {
+      "player": {
+       "gsis_id": null,
+       "player_name": "Carolina Panthers",
+       "position": "DEF",
+       "sleeper_id": "CAR"
+      },
+      "state": "before",
+      "value": 8.2,
+      "week": 7
+     },
+     {
+      "player": {
+       "gsis_id": null,
+       "player_name": "Carolina Panthers",
+       "position": "DEF",
+       "sleeper_id": "CAR"
+      },
+      "state": "after",
+      "value": 8.2,
+      "week": 7
+     }
+    ],
+    "words": "Assumed pickups for your empty slots: without the trade, Jacoby Brissett (QB, week 5), T.J. Hockenson (TE, week 5) and Carolina Panthers (DEF, week 7); with it, Ka'imi Fairbairn (K, week 5), T.J. Hockenson (TE, week 5), Cameron Dicker (K, week 6) and Carolina Panthers (DEF, week 7). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   },
+   "theirs": {
+    "rows": [
+     {
+      "player": {
+       "gsis_id": "00-0036139",
+       "player_name": "Rico Dowdle",
+       "position": "RB",
+       "sleeper_id": "7021"
+      },
+      "state": "before",
+      "value": 9.3,
+      "week": 5
+     },
+     {
+      "player": {
+       "gsis_id": "00-0033119",
+       "player_name": "Jacoby Brissett",
+       "position": "QB",
+       "sleeper_id": "3257"
+      },
+      "state": "after",
+      "value": 20.21,
+      "week": 5
+     },
+     {
+      "player": {
+       "gsis_id": "00-0036139",
+       "player_name": "Rico Dowdle",
+       "position": "RB",
+       "sleeper_id": "7021"
+      },
+      "state": "after",
+      "value": 9.3,
+      "week": 5
+     },
+     {
+      "player": {
+       "gsis_id": "00-0037224",
+       "player_name": "Cameron Dicker",
+       "position": "K",
+       "sleeper_id": "8259"
+      },
+      "state": "before",
+      "value": 8.81,
+      "week": 6
+     },
+     {
+      "player": {
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE",
+       "sleeper_id": "5844"
+      },
+      "state": "before",
+      "value": 9.01,
+      "week": 8
+     },
+     {
+      "player": {
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE",
+       "sleeper_id": "5844"
+      },
+      "state": "after",
+      "value": 9.01,
+      "week": 8
+     }
+    ],
+    "words": "Assumed pickups for Run Bijan Run's empty slots: without the trade, Rico Dowdle (RB, week 5), Cameron Dicker (K, week 6) and T.J. Hockenson (TE, week 8); with it, Jacoby Brissett (QB, week 5), Rico Dowdle (RB, week 5) and T.J. Hockenson (TE, week 8). Each is an assumed pickup, not a sure one: another team can add him first, and on waivers (rolling waivers) a claim can be lost to a team ahead; on a full roster it also takes a bench spot for that week (not counted)."
+   }
+  },
+  "fit_words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+1.0** this week and **+1.8** over weeks 5\u20138; them **\u22120.1** and **\u22121.6**.",
+  "headline": "**You give [Nick Folk](/player/00-0025565); you get [Matthew Stafford](/player/00-0026498) and [Will Reichard](/player/00-0039404).** Helps your lineup +1.0 this week (+1.8 over weeks 5\u20138), costs their lineup 0.1 (1.6 over weeks 5\u20138); about even by season value: a lineup loss for them.",
+  "mine": {
+   "after": {
+    "by_week": [
+     126.58,
+     122.7,
+     112.66,
+     121.95
+    ],
+    "this_week": 126.58,
+    "window": 483.89
+   },
+   "before": {
+    "by_week": [
+     125.57,
+     122.6,
+     112.18,
+     121.75
+    ],
+    "this_week": 125.57,
+    "window": 482.1
+   },
+   "by_week": [
+    1.01,
+    0.1,
+    0.48,
+    0.2
+   ],
+   "cuts": [
+    {
+     "cannot_play": "bye",
+     "gsis_id": "00-0039150",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+     "market_price": 0,
+     "player_name": "Bryce Young",
+     "position": "QB",
+     "roster_id": 2,
+     "season_points": 209,
+     "sleeper_id": "9228",
+     "team": "CAR",
+     "this_week": null
+    }
+   ],
+   "gain_week": 1.01,
+   "gain_window": 1.79
+  },
+  "out_indefinitely": null,
+  "recommendation": {
+   "credible": false,
+   "key": "not_worth_proposing",
+   "label": "Not worth proposing",
+   "plausibility": "Implausible",
+   "words": "Not worth proposing: your starters end 4.9 behind your best waiver move over weeks 5\u20138 (the bar is 1 point); Run Bijan Run's starters end 8.6 behind their own best move over weeks 5\u20138; a K for a starter (Matthew Stafford): they have a K and the free pool holds one about as good, so a K is not worth a starter to them."
+  },
+  "span": "weeks 5\u20138",
+  "story": {
+   "by_week": [
+    {
+     "change": 1.01,
+     "week": 5
+    },
+    {
+     "change": 0.1,
+     "week": 6
+    },
+    {
+     "change": 0.48,
+     "week": 7
+    },
+    {
+     "change": 0.2,
+     "week": 8
+    }
+   ],
+   "this_week": {
+    "change": 1.01,
+    "kind": "gain",
+    "week": 5
+   },
+   "window": {
+    "change": 1.79,
+    "kind": "gain"
+   },
+   "words": "Your lineup gains 1.0 this week and 1.8 over weeks 5\u20138 in total."
+  },
+  "strip": {
+   "mine": [
+    1.01,
+    0.1,
+    0.48,
+    0.2
+   ],
+   "theirs": [
+    -0.1,
+    -0.5,
+    -0.76,
+    -0.2
+   ],
+   "weeks": [
+    5,
+    6,
+    7,
+    8
+   ]
+  },
+  "their_effect_words": "Run Bijan Run's starting lineup: about 0.1 fewer points this week, about 1.6 fewer points in total over weeks 5\u20138.",
+  "theirs": {
+   "after": {
+    "by_week": [
+     121.34,
+     121.96,
+     122.45,
+     122.45
+    ],
+    "this_week": 121.34,
+    "window": 488.2
+   },
+   "before": {
+    "by_week": [
+     121.44,
+     122.46,
+     123.21,
+     122.65
+    ],
+    "this_week": 121.44,
+    "window": 489.76
+   },
+   "by_week": [
+    -0.1,
+    -0.5,
+    -0.76,
+    -0.2
+   ],
+   "cuts": [],
+   "gain_week": -0.1,
+   "gain_window": -1.56
+  },
+  "this_week": 5,
+  "unfilled": {
+   "label": "If empty slots were left empty",
+   "mine": {
+    "after": {
+     "this_week": 108.48,
+     "window": 448.78
+    },
+    "before": {
+     "this_week": 96.68,
+     "window": 445.01
+    },
+    "by_week": [
+     11.8,
+     -8.71,
+     0.48,
+     0.2
+    ],
+    "gain_week": 11.8,
+    "gain_window": 3.77
+   },
+   "theirs": {
+    "after": {
+     "this_week": 91.83,
+     "window": 449.68
+    },
+    "before": {
+     "this_week": 112.14,
+     "window": 462.64
+    },
+    "by_week": [
+     -20.31,
+     8.31,
+     -0.76,
+     -0.2
+    ],
+    "gain_week": -20.31,
+    "gain_window": -12.96
+   },
+   "words": "With nobody added for an empty slot (it counts 0): your starters +11.8 this week, +3.8 over weeks 5\u20138; Run Bijan Run's \u221220.3 and \u221213.0. The difference from the numbers above is the cover the free pool gives anyway: an explanation, not the verdict."
+  },
+  "verdict": "Helps your lineup +1.0 this week (+1.8 over weeks 5\u20138), costs their lineup 0.1 (1.6 over weeks 5\u20138); about even by season value: a lineup loss for them.",
+  "weeks": [
+   5,
+   6,
+   7,
+   8
+  ],
+  "window": "next4"
+ },
+ "effect_words": "Your starting lineup: about 1.0 more points this week, about 1.8 more points in total over weeks 5\u20138.",
+ "fill_players": {
+  "3257": {
+   "gsis_id": "00-0033119",
+   "player_name": "Jacoby Brissett",
+   "position": "QB",
+   "sleeper_id": "3257"
+  }
+ },
+ "fit": {
+  "next_4": {
+   "mine": 1.79,
+   "theirs": -1.56
+  },
+  "this_week": {
+   "mine": 1.01,
+   "theirs": -0.1
+  },
+  "window": {
+   "mine": 1.79,
+   "theirs": -1.56
+  },
+  "words": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+1.0** this week and **+1.8** over weeks 5\u20138; them **\u22120.1** and **\u22121.6**."
+ },
+ "get": [
+  {
+   "cannot_play": null,
+   "gsis_id": "00-0026498",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+   "market_price": 8,
+   "player_name": "Matthew Stafford",
+   "position": "QB",
+   "roster_id": 3,
+   "season_points": 228,
+   "sleeper_id": "421",
+   "team": "LA",
+   "this_week": 20.31
+  },
+  {
+   "cannot_play": null,
+   "gsis_id": "00-0039404",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wv1h4umuddkfss96uutw",
+   "market_price": 0,
+   "player_name": "Will Reichard",
+   "position": "K",
+   "roster_id": 3,
+   "season_points": 112,
+   "sleeper_id": "11792",
+   "team": "MIN",
+   "this_week": 8.27
+  }
+ ],
+ "give": [
+  {
+   "cannot_play": null,
+   "gsis_id": "00-0025565",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+   "market_price": 0,
+   "player_name": "Nick Folk",
+   "position": "K",
+   "roster_id": 2,
+   "season_points": 113,
+   "sleeper_id": "650",
+   "team": "ATL",
+   "this_week": 8.51
+  }
+ ],
+ "headline": "**You give [Nick Folk](/player/00-0025565); you get [Matthew Stafford](/player/00-0026498) and [Will Reichard](/player/00-0039404).** Helps your lineup +1.0 this week (+1.8 over weeks 5\u20138), costs their lineup 0.1 (1.6 over weeks 5\u20138); about even by season value: a lineup loss for them.",
+ "hold": {
+  "hold": null,
+  "waiver": "+1.8 over weeks 5\u20138, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+  "waiver_gain": 6.71
+ },
+ "hold_words": "+1.8 over weeks 5\u20138, not more than your best waiver move (add Washington Commanders defense, drop Bryce Young: +6.7 over weeks 5\u20138 on the same basis; a waiver claim (rolling waivers): it can be lost to a team ahead of you): the trade does not beat it on starter points.",
+ "how": {
+  "fit": "**Improvement to your starting lineup** (best lineup each week, empty slots filled from the free pool): you **+1.0** this week and **+1.8** over weeks 5\u20138; them **\u22120.1** and **\u22121.6**.",
+  "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **0**, you get **8**: about even.",
+  "ranks": "League rank, week 5: you 9th \u2192 **5th** of 10, Run Bijan Run 3rd \u2192 9th; weeks 5\u20138: you 4th \u2192 **4th** of 10, Run Bijan Run 3rd \u2192 3rd; depth: you 3rd \u2192 **4th** of 10, Run Bijan Run 3rd \u2192 1st.",
+  "ros": "Rest-of-season projected points (weeks 5\u201316), all positions added up \u2014 not a fairness test: you give 95, you get 288.",
+  "season_value": "Season value above replacement: you give 0, you get 8 (about even). You get 2 players for 1: 1 more roster spot used.",
+  "size": "Roster size: you must cut [Bryce Young](/player/00-0039150) (QB, 209 season points; costs 0.0 over weeks 5\u20138) to stay at 15 players; they open a spot: the best free agent for it is [Jacoby Brissett](/player/00-0033119) (QB, +21.4 over weeks 5\u20138)."
+ },
+ "interest": {
+  "caption": "their starters over weeks 5\u20138, against realistic replacements",
+  "label": "Makes their lineup weaker",
+  "need": "puts Jacoby Brissett at their QB in place of Stafford",
+  "score": 18,
+  "their_gain": -1.56,
+  "title": "Effect on their starters",
+  "you": 1.79
+ },
+ "league_id": "1389709692405551104",
+ "lineup_words": "Matthew Stafford (from the trade) starts at QB in place of Jacoby Brissett (the free agent who would have covered it); Ka'imi Fairbairn (a free agent for the week) starts at K in place of Nick Folk (traded).",
+ "lineups": {
+  "mine": {
+   "closest_call": "Buffalo Bills at DEF, 4.48 ahead of the next option",
+   "notes": [
+    "Matthew Stafford (from the trade) starts at QB in place of Jacoby Brissett (the free agent who would have covered it).",
+    "Ka'imi Fairbairn (a free agent for the week) starts at K in place of Nick Folk (traded)."
+   ],
+   "out": [
+    {
+     "change": -20.21,
+     "gsis_id": "00-0033119",
+     "player_name": "Jacoby Brissett",
+     "slot": "QB",
+     "value": 20.21,
+     "why": "free agent no longer needed"
+    },
+    {
+     "change": -8.51,
+     "gsis_id": "00-0025565",
+     "player_name": "Nick Folk",
+     "slot": "K",
+     "value": 8.51,
+     "why": "traded"
+    }
+   ],
+   "reshuffled": [],
+   "slots": [
+    {
+     "change": 20.31,
+     "fill": false,
+     "gsis_id": "00-0026498",
+     "no_projection": false,
+     "player_name": "Matthew Stafford (new)",
+     "slot": "QB",
+     "status": "new",
+     "value": 20.31
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0037840",
+     "no_projection": false,
+     "player_name": "Kyren Williams",
+     "slot": "RB1",
+     "status": null,
+     "value": 19.12
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0040242",
+     "no_projection": false,
+     "player_name": "Jacory Croskey-Merritt",
+     "slot": "RB2",
+     "status": null,
+     "value": 8.99
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0038559",
+     "no_projection": false,
+     "player_name": "Michael Wilson",
+     "slot": "WR1",
+     "status": null,
+     "value": 14.0
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0038606",
+     "no_projection": false,
+     "player_name": "Parker Washington",
+     "slot": "WR2",
+     "status": null,
+     "value": 11.66
+    },
+    {
+     "change": null,
+     "fill": true,
+     "gsis_id": "00-0035229",
+     "no_projection": false,
+     "player_name": "T.J. Hockenson (free agent for the week)",
+     "slot": "TE",
+     "status": null,
+     "value": 8.68
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0039075",
+     "no_projection": false,
+     "player_name": "Puka Nacua",
+     "slot": "FLEX1",
+     "status": null,
+     "value": 17.98
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0040666",
+     "no_projection": false,
+     "player_name": "Omarion Hampton",
+     "slot": "FLEX2",
+     "status": null,
+     "value": 11.94
+    },
+    {
+     "change": 9.42,
+     "fill": true,
+     "gsis_id": "00-0032726",
+     "no_projection": false,
+     "player_name": "Ka'imi Fairbairn (free agent for the week)",
+     "slot": "K",
+     "status": "in",
+     "value": 9.42
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": null,
+     "no_projection": false,
+     "player_name": "Buffalo Bills",
+     "slot": "DEF",
+     "status": null,
+     "value": 4.48
+    }
+   ],
+   "total": {
+    "after": 126.58,
+    "before": 125.57,
+    "change": 1.01
+   }
+  },
+  "theirs": {
+   "closest_call": "Baltimore Ravens at DEF, 7.45 ahead of the next option",
+   "notes": [
+    "Jacoby Brissett (a free agent for the week) starts at QB in place of Matthew Stafford (traded)."
+   ],
+   "out": [
+    {
+     "change": -20.31,
+     "gsis_id": "00-0026498",
+     "player_name": "Matthew Stafford",
+     "slot": "QB",
+     "value": 20.31,
+     "why": "traded"
+    }
+   ],
+   "reshuffled": [],
+   "slots": [
+    {
+     "change": 20.21,
+     "fill": true,
+     "gsis_id": "00-0033119",
+     "no_projection": false,
+     "player_name": "Jacoby Brissett (free agent for the week)",
+     "slot": "QB",
+     "status": "in",
+     "value": 20.21
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0038542",
+     "no_projection": false,
+     "player_name": "Bijan Robinson",
+     "slot": "RB1",
+     "status": null,
+     "value": 19.56
+    },
+    {
+     "change": null,
+     "fill": true,
+     "gsis_id": "00-0036139",
+     "no_projection": false,
+     "player_name": "Rico Dowdle (free agent for the week)",
+     "slot": "RB2",
+     "status": null,
+     "value": 9.3
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0037238",
+     "no_projection": false,
+     "player_name": "Drake London",
+     "slot": "WR1",
+     "status": null,
+     "value": 13.14
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0038997",
+     "no_projection": false,
+     "player_name": "Josh Downs",
+     "slot": "WR2",
+     "status": null,
+     "value": 9.4
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0033288",
+     "no_projection": false,
+     "player_name": "George Kittle",
+     "slot": "TE",
+     "status": null,
+     "value": 8.16
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0036275",
+     "no_projection": false,
+     "player_name": "D'Andre Swift",
+     "slot": "FLEX1",
+     "status": null,
+     "value": 13.75
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0039064",
+     "no_projection": false,
+     "player_name": "Zay Flowers",
+     "slot": "FLEX2",
+     "status": null,
+     "value": 12.1
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": "00-0039404",
+     "no_projection": false,
+     "player_name": "Will Reichard",
+     "slot": "K",
+     "status": null,
+     "value": 8.27
+    },
+    {
+     "change": null,
+     "fill": false,
+     "gsis_id": null,
+     "no_projection": false,
+     "player_name": "Baltimore Ravens",
+     "slot": "DEF",
+     "status": null,
+     "value": 7.45
+    }
+   ],
+   "total": {
+    "after": 121.34,
+    "before": 121.44,
+    "change": -0.1
+   }
+  }
+ },
+ "market": {
+  "get": 8,
+  "give": 0,
+  "players": [
+   {
+    "cannot_play": null,
+    "goes_to": "Run Bijan Run",
+    "gsis_id": "00-0025565",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+    "market_price": 0,
+    "player_name": "Nick Folk",
+    "position": "K",
+    "roster_id": 2,
+    "season_points": 113,
+    "sleeper_id": "650",
+    "team": "ATL",
+    "this_week": 8.51
+   },
+   {
+    "cannot_play": null,
+    "goes_to": "You",
+    "gsis_id": "00-0026498",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+    "market_price": 8,
+    "player_name": "Matthew Stafford",
+    "position": "QB",
+    "roster_id": 3,
+    "season_points": 228,
+    "sleeper_id": "421",
+    "team": "LA",
+    "this_week": 20.31
+   },
+   {
+    "cannot_play": null,
+    "goes_to": "You",
+    "gsis_id": "00-0039404",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wv1h4umuddkfss96uutw",
+    "market_price": 0,
+    "player_name": "Will Reichard",
+    "position": "K",
+    "roster_id": 3,
+    "season_points": 112,
+    "sleeper_id": "11792",
+    "team": "MIN",
+    "this_week": 8.27
+   }
+  ],
+  "replacement": {
+   "DEF": {
+    "player_name": "Washington Commanders",
+    "season_points": 105
+   },
+   "K": {
+    "player_name": "Cameron Dicker",
+    "season_points": 121
+   },
+   "QB": {
+    "player_name": "Jacoby Brissett",
+    "season_points": 221
+   },
+   "RB": {
+    "player_name": "Rico Dowdle",
+    "season_points": 115
+   },
+   "TE": {
+    "player_name": "T.J. Hockenson",
+    "season_points": 104
+   },
+   "WR": {
+    "player_name": "Adonai Mitchell",
+    "season_points": 122
+   }
+  },
+  "season_points_get": 340,
+  "season_points_give": 113,
+  "unknown": [],
+  "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **0**, you get **8**: about even."
+ },
+ "other_objective": null,
+ "partner": 3,
+ "partner_team": "Run Bijan Run",
+ "provenance": {
+  "beta": true,
+  "checks": [
+   {
+    "mae": 3.77,
+    "order": 0.095,
+    "position": "K",
+    "ref": "docs/METRICS.md \u00a7 Kickers and defenses beyond next week (IQ-4)",
+    "span": "next",
+    "status": "graded_weak",
+    "words": "Kickers next week: graded, weak (order 0.10)"
+   },
+   {
+    "mae": 6.44,
+    "order": 0.587,
+    "position": "QB",
+    "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+    "span": "next",
+    "status": "graded",
+    "words": "Quarterbacks next week: graded (order 0.59)"
+   },
+   {
+    "mae": 3.75,
+    "order": 0.028,
+    "position": "K",
+    "ref": "docs/METRICS.md \u00a7 Kickers and defenses beyond next week (IQ-4)",
+    "span": "later",
+    "status": "chance",
+    "words": "Kickers two to eight weeks ahead: no better than chance (order 0.03)"
+   },
+   {
+    "mae": 7.41,
+    "order": 0.495,
+    "position": "QB",
+    "ref": "docs/METRICS.md \u00a7 v3.5 (IQ-1) and \u00a7 v3.6 (IQ-3): the horizon study",
+    "span": "later",
+    "status": "graded_weak",
+    "words": "Quarterbacks two to eight weeks ahead: graded, weak (order 0.49)"
+   },
+   {
+    "mae": null,
+    "order": null,
+    "position": null,
+    "ref": "docs/METRICS.md \u00a7 What each number has been checked against (IR-4)",
+    "span": "trade_gap",
+    "status": "not_graded",
+    "words": "The trade's range: not graded"
+   }
+  ],
+  "horizon": {
+   "first": 5,
+   "last": 8,
+   "market_week": 5,
+   "words": "weeks 5\u20138"
+  },
+  "kd_model_version": "kd1.0",
+  "model_version": "v3.6",
+  "published_at": "2026-10-11T22:38:01.396964+00:00",
+  "status": "not_graded",
+  "words": "Beta \u00b7 Model v3.6 (kickers and defenses kd1.0), data published 11 Oct, 6:38 pm ET \u00b7 weeks 5\u20138 \u00b7 checked on 2021\u20132025: next week graded, kickers weak; two to eight weeks ahead: quarterbacks weak, kickers no better than chance; the trade's range not graded."
+ },
+ "ranks": {
+  "bench_value": {
+   "mine": [
+    3,
+    4
+   ],
+   "n": 10,
+   "theirs": [
+    3,
+    1
+   ]
+  },
+  "horizon_value": {
+   "mine": [
+    4,
+    4
+   ],
+   "n": 10,
+   "theirs": [
+    3,
+    3
+   ]
+  },
+  "lineup_value": {
+   "mine": [
+    9,
+    5
+   ],
+   "n": 10,
+   "theirs": [
+    3,
+    9
+   ]
+  },
+  "words": "League rank, week 5: you 9th \u2192 **5th** of 10, Run Bijan Run 3rd \u2192 9th; weeks 5\u20138: you 4th \u2192 **4th** of 10, Run Bijan Run 3rd \u2192 3rd; depth: you 3rd \u2192 **4th** of 10, Run Bijan Run 3rd \u2192 1st."
+ },
+ "roles": {
+  "421": {
+   "left_early": null,
+   "role": "Too early to say: 4 games with a snap so far this season; a change is called from his last 2 games against at least 3 before them (5 games).",
+   "status": "too_early"
+  },
+  "9228": {
+   "left_early": null,
+   "role": "Too early to say: 4 games with a snap so far this season; a change is called from his last 2 games against at least 3 before them (5 games).",
+   "status": "too_early"
+  }
+ },
+ "ros": {
+  "fairness": false,
+  "get": 288,
+  "give": 95,
+  "label": "Rest-of-season projected points",
+  "window": "weeks 5\u201316",
+  "words": "Rest-of-season projected points (weeks 5\u201316), all positions added up \u2014 not a fairness test: you give 95, you get 288."
+ },
+ "roster_id": 2,
+ "sanity": null,
+ "sides": {
+  "mine": {
+   "after": {
+    "bench": 0.0,
+    "by_week": [
+     108.48,
+     113.89,
+     104.46,
+     121.95
+    ],
+    "horizon": 448.78,
+    "this_week": 108.48
+   },
+   "before": {
+    "bench": 0.0,
+    "by_week": [
+     96.68,
+     122.6,
+     103.98,
+     121.75
+    ],
+    "horizon": 445.01,
+    "this_week": 96.68
+   },
+   "cuts": [
+    {
+     "horizon_loss": 0.0,
+     "player": {
+      "cannot_play": "bye",
+      "gsis_id": "00-0039150",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+      "market_price": 0,
+      "player_name": "Bryce Young",
+      "position": "QB",
+      "roster_id": 2,
+      "season_points": 209,
+      "sleeper_id": "9228",
+      "team": "CAR",
+      "this_week": null
+     },
+     "season_points": 209
+    }
+   ],
+   "fill": null,
+   "gain_horizon": 3.77,
+   "gain_week": 11.8,
+   "gets": [
+    {
+     "cannot_play": null,
+     "gsis_id": "00-0026498",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+     "market_price": 8,
+     "player_name": "Matthew Stafford",
+     "position": "QB",
+     "roster_id": 3,
+     "season_points": 228,
+     "sleeper_id": "421",
+     "team": "LA",
+     "this_week": 20.31
+    },
+    {
+     "cannot_play": null,
+     "gsis_id": "00-0039404",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wv1h4umuddkfss96uutw",
+     "market_price": 0,
+     "player_name": "Will Reichard",
+     "position": "K",
+     "roster_id": 3,
+     "season_points": 112,
+     "sleeper_id": "11792",
+     "team": "MIN",
+     "this_week": 8.27
+    }
+   ],
+   "gives": [
+    {
+     "cannot_play": null,
+     "gsis_id": "00-0025565",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+     "market_price": 0,
+     "player_name": "Nick Folk",
+     "position": "K",
+     "roster_id": 2,
+     "season_points": 113,
+     "sleeper_id": "650",
+     "team": "ATL",
+     "this_week": 8.51
+    }
+   ],
+   "limit": 15,
+   "opened": 0,
+   "points_in": 340,
+   "points_out": 113,
+   "price_in": 8,
+   "price_out": 0,
+   "roster_id": 2,
+   "sits": [
+    {
+     "cannot_play": null,
+     "gsis_id": "00-0025565",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+     "market_price": 0,
+     "player_name": "Nick Folk",
+     "position": "K",
+     "roster_id": 2,
+     "season_points": 113,
+     "sleeper_id": "650",
+     "team": "ATL",
+     "this_week": 8.51
+    }
+   ],
+   "size_after": 15,
+   "size_before": 15,
+   "starts": [
+    {
+     "cannot_play": null,
+     "gsis_id": "00-0026498",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+     "market_price": 8,
+     "player_name": "Matthew Stafford",
+     "position": "QB",
+     "roster_id": 3,
+     "season_points": 228,
+     "sleeper_id": "421",
+     "team": "LA",
+     "this_week": 20.31
+    }
+   ],
+   "team_name": "MacZaddy",
+   "weeks": [
+    5,
+    6,
+    7,
+    8
+   ]
+  },
+  "theirs": {
+   "after": {
+    "bench": 8.51,
+    "by_week": [
+     91.83,
+     121.96,
+     122.45,
+     113.44
+    ],
+    "horizon": 449.68,
+    "this_week": 91.83
+   },
+   "before": {
+    "bench": 0.0,
+    "by_week": [
+     112.14,
+     113.65,
+     123.21,
+     113.64
+    ],
+    "horizon": 462.64,
+    "this_week": 112.14
+   },
+   "cuts": [],
+   "fill": {
+    "horizon_gain": 21.35,
+    "sleeper_id": "3257",
+    "week_gains": [
+     20.21,
+     1.06,
+     0.06,
+     0.02
+    ]
+   },
+   "gain_horizon": -12.96,
+   "gain_week": -20.31,
+   "gets": [
+    {
+     "cannot_play": null,
+     "gsis_id": "00-0025565",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+     "market_price": 0,
+     "player_name": "Nick Folk",
+     "position": "K",
+     "roster_id": 2,
+     "season_points": 113,
+     "sleeper_id": "650",
+     "team": "ATL",
+     "this_week": 8.51
+    }
+   ],
+   "gives": [
+    {
+     "cannot_play": null,
+     "gsis_id": "00-0026498",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+     "market_price": 8,
+     "player_name": "Matthew Stafford",
+     "position": "QB",
+     "roster_id": 3,
+     "season_points": 228,
+     "sleeper_id": "421",
+     "team": "LA",
+     "this_week": 20.31
+    },
+    {
+     "cannot_play": null,
+     "gsis_id": "00-0039404",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wv1h4umuddkfss96uutw",
+     "market_price": 0,
+     "player_name": "Will Reichard",
+     "position": "K",
+     "roster_id": 3,
+     "season_points": 112,
+     "sleeper_id": "11792",
+     "team": "MIN",
+     "this_week": 8.27
+    }
+   ],
+   "limit": 15,
+   "opened": 1,
+   "points_in": 113,
+   "points_out": 340,
+   "price_in": 0,
+   "price_out": 8,
+   "roster_id": 3,
+   "sits": [
+    {
+     "cannot_play": null,
+     "gsis_id": "00-0026498",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+     "market_price": 8,
+     "player_name": "Matthew Stafford",
+     "position": "QB",
+     "roster_id": 3,
+     "season_points": 228,
+     "sleeper_id": "421",
+     "team": "LA",
+     "this_week": 20.31
+    }
+   ],
+   "size_after": 14,
+   "size_before": 15,
+   "starts": [],
+   "team_name": "Run Bijan Run",
+   "weeks": [
+    5,
+    6,
+    7,
+    8
+   ]
+  }
+ },
+ "size_words": "Roster size: you must cut [Bryce Young](/player/00-0039150) (QB, 209 season points; costs 0.0 over weeks 5\u20138) to stay at 15 players; they open a spot: the best free agent for it is [Jacoby Brissett](/player/00-0033119) (QB, +21.4 over weeks 5\u20138).",
+ "source": "database",
+ "span": "weeks 5\u20138",
+ "starters_in": [
+  {
+   "how": "trade",
+   "player": {
+    "cannot_play": null,
+    "gsis_id": "00-0026498",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+    "market_price": 8,
+    "player_name": "Matthew Stafford",
+    "position": "QB",
+    "roster_id": 3,
+    "season_points": 228,
+    "sleeper_id": "421",
+    "team": "LA",
+    "this_week": 20.31
+   },
+   "slot": "QB",
+   "value": 20.31
+  },
+  {
+   "how": "free_agent",
+   "player": {
+    "gsis_id": "00-0032726",
+    "player_name": "Ka'imi Fairbairn",
+    "position": "K",
+    "sleeper_id": "3451"
+   },
+   "slot": "K",
+   "value": 9.42
+  }
+ ],
+ "starters_out": [
+  {
+   "player": {
+    "gsis_id": "00-0033119",
+    "player_name": "Jacoby Brissett",
+    "position": "QB",
+    "sleeper_id": "3257"
+   },
+   "slot": "QB",
+   "value": 20.21,
+   "why": "free agent no longer needed"
+  },
+  {
+   "player": {
+    "cannot_play": null,
+    "gsis_id": "00-0025565",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+    "market_price": 0,
+    "player_name": "Nick Folk",
+    "position": "K",
+    "roster_id": 2,
+    "season_points": 113,
+    "sleeper_id": "650",
+    "team": "ATL",
+    "this_week": 8.51
+   },
+   "slot": "K",
+   "value": 8.51,
+   "why": "traded"
+  }
+ ],
+ "story": {
+  "by_week": [
+   {
+    "change": 1.01,
+    "week": 5
+   },
+   {
+    "change": 0.1,
+    "week": 6
+   },
+   {
+    "change": 0.48,
+    "week": 7
+   },
+   {
+    "change": 0.2,
+    "week": 8
+   }
+  ],
+  "this_week": {
+   "change": 1.01,
+   "kind": "gain",
+   "week": 5
+  },
+  "window": {
+   "change": 1.79,
+   "kind": "gain"
+  },
+  "words": "Your lineup gains 1.0 this week and 1.8 over weeks 5\u20138 in total."
+ },
+ "strip": {
+  "mine": [
+   1.01,
+   0.1,
+   0.48,
+   0.2
+  ],
+  "theirs": [
+   -0.1,
+   -0.5,
+   -0.76,
+   -0.2
+  ],
+  "weeks": [
+   5,
+   6,
+   7,
+   8
+  ]
+ },
+ "their_change": {
+  "effect_words": "Run Bijan Run's starting lineup: about 0.1 fewer points this week, about 1.6 fewer points in total over weeks 5\u20138.",
+  "gain_week": -0.1,
+  "gain_window": -1.56,
+  "lineup_words": "Jacoby Brissett (a free agent for the week) starts at QB in place of Matthew Stafford (traded).",
+  "starters_in": [
+   {
+    "how": "free agent",
+    "player": {
+     "gsis_id": "00-0033119",
+     "player_name": "Jacoby Brissett",
+     "position": "QB",
+     "sleeper_id": "3257"
+    },
+    "slot": "QB",
+    "value": 20.21
+   }
+  ],
+  "starters_out": [
+   {
+    "player": {
+     "cannot_play": null,
+     "gsis_id": "00-0026498",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+     "market_price": 8,
+     "player_name": "Matthew Stafford",
+     "position": "QB",
+     "roster_id": 3,
+     "season_points": 228,
+     "sleeper_id": "421",
+     "team": "LA",
+     "this_week": 20.31
+    },
+    "slot": "QB",
+    "value": 20.31,
+    "why": "traded"
+   }
+  ]
+ },
+ "values": {
+  "depth": {
+   "label": "Backup coverage",
+   "mine": {
+    "after": 0.0,
+    "before": 0.0
+   },
+   "theirs": {
+    "after": 8.51,
+    "before": 0.0
+   },
+   "words": "Backup coverage: you lose Bryce Young, a QB who cannot play in week 5 (on a bye): no QB left on your bench who can play in week 5 (Patrick Mahomes on a bye cannot)."
+  },
+  "projected_points": {
+   "label": "Projected points",
+   "words": "One player's forecast for one week, in this league's scoring (the lineup tables)."
+  },
+  "ros_points": {
+   "fairness": false,
+   "get": 288,
+   "give": 95,
+   "label": "Rest-of-season projected points",
+   "window": "weeks 5\u201316",
+   "words": "Rest-of-season projected points (weeks 5\u201316), all positions added up \u2014 not a fairness test: you give 95, you get 288."
+  },
+  "season_value": {
+   "fairness": true,
+   "get": 8,
+   "give": 0,
+   "label": "Season value above replacement",
+   "unknown": [],
+   "words": "Season value above replacement: you give 0, you get 8 (about even). You get 2 players for 1: 1 more roster spot used."
+  },
+  "starter_points": {
+   "label": "Starter points",
+   "mine": 1.79,
+   "theirs": -1.56,
+   "this_week": {
+    "mine": 1.01,
+    "theirs": -0.1
+   },
+   "words": "Your starting lineup: about 1.0 more points this week, about 1.8 more points in total over weeks 5\u20138."
+  }
+ },
+ "verdict": "Helps your lineup +1.0 this week (+1.8 over weeks 5\u20138), costs their lineup 0.1 (1.6 over weeks 5\u20138); about even by season value: a lineup loss for them.",
+ "week": 5,
+ "weeks": [
+  5,
+  6,
+  7,
+  8
+ ],
+ "window": "next4",
+ "window_label": "Next 4",
+ "window_why": "the next four weeks: running backs, receivers and tight ends graded; quarterbacks a lean, level with their own record; kickers and defenses a rough guide, no better than chance after next week",
+ "window_words": "over weeks 5\u20138 in total",
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)"
+}
