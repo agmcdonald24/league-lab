@@ -170,6 +170,9 @@ summary() {
       # ---- IU-2 (Wave I-U): fr1.0's shadow, when it ran (who would move if the started week's unplayed games were re-projected)
       if [ -s logs/freeze_shadow.md ]; then echo; echo "<details><summary>Freeze shadow (fr1.0): the live week's games not kicked off</summary>"; echo; cat logs/freeze_shadow.md; echo; echo "</details>"; fi
       # ---- end IU-2
+      # ---- IZ-1 (Wave I-Z): us against Sleeper on past weeks, one table (open, not folded: the PO reads it every morning)
+      if [ -s logs/sleeper_h2h.md ]; then echo; cat logs/sleeper_h2h.md; fi
+      # ---- end IZ-1
       # ---- IQ-4 (Wave I-Q): the list audit, whole (about 100 lines of markdown), when it ran
       if [ -s logs/list_audit.md ]; then echo; echo "<details><summary>List audit (the trust guard)</summary>"; echo; cat logs/list_audit.md; echo; echo "</details>"; fi
       # ---- end IQ-4
@@ -298,6 +301,12 @@ RECORD_TABLES="$RECORD_TABLES ops.starter_record"
 # `db migrate` creates them; a copy that does not have them yet is "not published there"; empty with the switch unset.
 STATE_TABLES="$STATE_TABLES ops.projection_live ops.projection_lines_live ops.projection_ranges_live ops.kd_lines_live ops.kd_ranges_live"
 # ---- end IV-1
+# ---- IZ-1 (Wave I-Z): Sleeper's past weeks (ops.sleeper_history, ops.sleeper_history_weeks: pulled once, ~6 MB), the live
+# model's walk-forward rows (ops.h2h_ours: built once per MODEL_VERSION, ~4 MB, ~8-9 CPU-min) and the grade (ops.sleeper_h2h,
+# rebuilt every night, < 0.2 MB). State, not record: restored so no week is asked twice and the model is not refit each
+# night; when the hosted copy has none, `ingest sleeper-history` replays data/raw/sleeper/projections_history first.
+STATE_TABLES="$STATE_TABLES ops.sleeper_history ops.sleeper_history_weeks ops.h2h_ours ops.sleeper_h2h"
+# ---- end IZ-1
 
 is_record() { case " $RECORD_TABLES " in *" $1 "*) return 0;; esac; return 1; }
 
@@ -576,12 +585,27 @@ if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then
 else
   SOFT_WHY="the week keeps its earlier snapshots; the record uses the last one saved before kickoff" soft fetch-projections uv run league-lab ingest sleeper-projections
 fi
+# ---- IZ-1 (Wave I-Z): Sleeper's line for every past week it still serves (2023-2025 weeks 1-18, this season's weeks with no
+# snapshot saved before kickoff), once: weeks held are never asked again, a failed week is asked the next night (exit 0).
+# Never the record's input (another table, another archive folder; dbt test assert_record_reads_no_history).
+if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then
+  SOFT_WHY="the weeks held stay; the archive is replayed only" soft sleeper-history uv run league-lab ingest sleeper-history --offline
+else
+  SOFT_WHY="the weeks held stay; the missing ones are asked the next night" soft sleeper-history uv run league-lab ingest sleeper-history
+fi
+# ---- end IZ-1
 soft save-record save_record
 # the projection marts on tonight's projections (+ mart_projection_backtest+: dbt's view swap
 # cascades to mart_projection_drift, which must be rebuilt or it never reaches the hosted copy)
 # and the lineup mart on the lineups `project` solved last (plan B1)
 hard projection-marts dbt_step projection-marts build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside mart_player_ros_projection mart_projection_record
 soft drift drift_if_unscored
+# ---- IZ-1 (Wave I-Z): us against Sleeper on past weeks (hh1.0; docs/METRICS.md): the live model's walk-forward rows when
+# missing (once per model version), the grade (ops.sleeper_h2h, /api/record `history`, About's sentence) and the one table
+# the run's summary shows (logs/sleeper_h2h.md). Soft: the hosted copy keeps last night's grade.
+rm -f logs/sleeper_h2h.md
+SOFT_WHY="the hosted copy keeps last night's grade" soft h2h uv run league-lab h2h --md logs/sleeper_h2h.md
+# ---- end IZ-1
 # ---- V-1 (Wave I-G): the decision record graded (the marts /api/record's `decisions` and the console's Record page read)
 SOFT_WHY="the hosted copy keeps last night's grade; the record itself is saved" soft decision-marts dbt_step decision-marts build --select mart_decision_record mart_decision_calls
 # ---- end V-1
