@@ -11,6 +11,13 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { serveFixtures, SCRUBS } from "../fixtures";
 
+// ---- JA-5: the weeks' one line (Stats opens it closed from 900 px, and on a phone once a stretch is chosen) — open it
+// before a control inside it (a no-op when it is open or absent)
+async function openWeeks(page: import("@playwright/test").Page) {
+  const t = page.getByTestId("slider-toggle");
+  if ((await t.count()) && (await t.isVisible()) && (await t.getAttribute("aria-expanded")) !== "true") await t.click();
+}
+
 const DIR = join(import.meta.dirname, "..", "..", "fixtures", "ja1");
 type Row = Record<string, unknown> & { gsis_id: string; player_name: string; games: number };
 type Frame = { players: Row[]; vs: { players: Record<string, Row> } | null; byweek: { weeks: number[]; values: Record<string, (number | null)[]>; why: Record<string, (string | null)[]> } | null };
@@ -64,6 +71,7 @@ test("the slider: season by default (folded on a phone), a quick pick, the handl
     await expect(slider).toBeHidden(); // the season: inside the Filters fold
     await openFilters(page);
   }
+  await openWeeks(page); // JA-5 (on purpose): from 900 px the weeks open closed, one line
   await expect(page.getByTestId("slider-words")).toHaveText("Season · weeks 1–4");
   await expect(page.getByTestId("slider-quick-season")).toHaveAttribute("aria-pressed", "true");
   await shot(page, "slider-open", info);
@@ -102,14 +110,13 @@ test("weeks 3–4 against weeks 1–2: the change under each value, sort by the 
   const api = await serve(context);
   await page.goto(url("&window=weeks&weeks=3-4"));
   await expect(rows(page).first()).toBeVisible();
-  // JA-2: on a phone a chosen stretch opens closed, one line naming it; a tap opens it in place
-  if (isMobile) {
-    await expect(page.getByTestId("slider-toggle")).toHaveText(/Weeks 3–4/);
-    await expect(page.getByTestId("slider-toggle")).toHaveAttribute("aria-expanded", "false");
-    await expect(page.getByTestId("slider-compare")).toBeHidden();
-    await tap(page, page.getByTestId("slider-toggle"), isMobile);
-    await expect(page.getByTestId("slider-toggle")).toHaveAttribute("aria-expanded", "true");
-  } else await expect(page.getByTestId("slider-toggle")).toBeHidden();
+  // JA-2: on a phone a chosen stretch opens closed, one line naming it; a tap opens it in place (JA-5, on purpose: on a
+  // desktop too)
+  await expect(page.getByTestId("slider-toggle")).toHaveText(/Weeks 3–4/);
+  await expect(page.getByTestId("slider-toggle")).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByTestId("slider-compare")).toBeHidden();
+  await tap(page, page.getByTestId("slider-toggle"), isMobile);
+  await expect(page.getByTestId("slider-toggle")).toHaveAttribute("aria-expanded", "true");
   await tap(page, page.getByTestId("slider-compare"), isMobile);
   await expect(page).toHaveURL(/[?&]vs=1-2/); // "the weeks before": the same length, ending where A starts
   await expect.poll(() => api.calls.some((c) => c.includes("vs=1-2"))).toBe(true);
@@ -170,8 +177,9 @@ test("a phone with weeks 3–4 against weeks 1–2: the control is one line and 
   await expect(rows(page).first()).toBeVisible();
   const toggle = page.getByTestId("slider-toggle");
   if (!isMobile) {
-    await expect(toggle).toBeHidden();
-    await expect(page.getByTestId("slider-a-lo")).toBeVisible();
+    // JA-5 (on purpose): a desktop opens closed too, one line naming what is in force
+    await expect(toggle).toHaveText(/Weeks 3–4 against weeks 1–2/);
+    await expect(page.getByTestId("slider-a-lo")).toBeHidden();
     return;
   }
   await expect(toggle).toHaveText(/Weeks 3–4 against weeks 1–2/);

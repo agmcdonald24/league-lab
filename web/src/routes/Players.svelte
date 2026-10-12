@@ -458,7 +458,9 @@
     {/snippet}
   </ScreenHead>
 
-  <div class="space-y-2.5">
+  <!-- ---- JA-5 (Wave J-A): from 900 px the controls are one row — the positions, the weeks (one line), the situation, and
+       one Filters button that names what is in force and opens the rest in place; a phone keeps its stack (round 2) -->
+  <div class="ll-controls space-y-2.5">
     <!-- ---- IX-3 round 2: the phone's one Filters button (aria-expanded), naming what is in force while closed -->
     <button
       type="button"
@@ -475,7 +477,7 @@
       <input id="ll-players-q" class="ll-input w-full" type="search" placeholder="Filter this table by name" autocomplete="off" bind:value={q} oninput={onq} data-testid="players-search" />
     </div>
     <!-- on a phone each chip row scrolls sideways inside itself (the page never does); from 640 px they wrap -->
-    <div class="ll-chiprow">
+    <div class="ll-chiprow ll-c-pos">
       <Chips
         label="Position"
         testid="pos"
@@ -486,10 +488,17 @@
     </div>
     <!-- ---- JA-1: the weeks you choose (outside the phone's fold when a stretch other than the season is in force) -->
     {#if r.data}
-      <div class="ll-weeksbox rounded-md border border-line bg-surface px-3 py-2 {sliderFolded ? `ll-fold ${filtersOpen ? 'll-open' : ''}` : ''}" data-testid="stats-weeks">
-        <WeekSlider first={1} last={through} {stretch} onchange={(k) => setParams({ ...k, sortby: k.vs ? (params.get("sortby") ?? null) : null })} />
+      <div class="ll-weeksbox rounded-md border border-line bg-surface px-3 py-2 {sliderFolded ? `ll-fold-phone ${filtersOpen ? 'll-open' : ''}` : ''}" data-testid="stats-weeks">
+        <WeekSlider first={1} last={through} {stretch} collapse="always" onchange={(k) => setParams({ ...k, sortby: k.vs ? (params.get("sortby") ?? null) : null })} />
       </div>
     {/if}
+    <!-- ---- JA-5: the situation in the desktop's row (the chips stay in the Filters panel, and on a phone) -->
+    <div class="ll-c-sit hidden">
+      <label class="sr-only" for="ll-stats-sit">Game situation</label>
+      <select id="ll-stats-sit" class="ll-input py-1.5 text-sm" value={sitKey} onchange={(e) => setParams({ sit: e.currentTarget.value === "all" ? null : e.currentTarget.value })} data-testid="stats-sit-pick">
+        {#each SITS as x (x.key)}<option value={x.key}>{x.label}</option>{/each}
+      </select>
+    </div>
     <div id="ll-stats-filters-b" class="ll-fold space-y-2.5 {filtersOpen ? 'll-open' : ''}"><!-- ---- IX-3 round 2: folded on a phone -->
     {#if owned}<!-- ---- IM-2: no ownership in the answer (a reference league): no "whose" chips -->
       <div class="ll-chiprow">
@@ -757,9 +766,51 @@
       flex-shrink: 0;
     }
   }
-  @media (min-width: 900px) {
-    .ll-filters-toggle {
+  /* ---- JA-5: the panels behind Filters are folded on every width now; the weeks' box only on a phone (season) */
+  .ll-fold:not(.ll-open) {
+    display: none;
+  }
+  @media (max-width: 899px) {
+    .ll-fold-phone:not(.ll-open) {
       display: none;
+    }
+  }
+  /* ---- JA-5: from 900 px, one control row: positions · weeks · situation · Filters; the panels open under it */
+  @media (min-width: 900px) {
+    .ll-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 0.75rem;
+    }
+    .ll-controls > :global(*) {
+      margin: 0 !important;
+    }
+    .ll-c-pos {
+      order: 1;
+    }
+    .ll-controls .ll-weeksbox {
+      order: 2;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    .ll-controls .ll-weeksbox:has(:global([aria-expanded="true"][data-testid="slider-toggle"])) {
+      flex-basis: 100%;
+      padding-bottom: 0.5rem;
+    }
+    .ll-c-sit {
+      display: block;
+      order: 3;
+    }
+    .ll-filters-toggle {
+      order: 4;
+      width: auto;
+      max-width: 26rem;
+    }
+    #ll-stats-filters-a,
+    #ll-stats-filters-b {
+      order: 5;
+      flex-basis: 100%;
     }
   }
   /* ---- JA-2: on a phone the weeks' box is tight when it is closed to its one line */

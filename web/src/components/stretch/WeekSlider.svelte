@@ -15,6 +15,7 @@
     onchange,
     compare = true,
     games = true,
+    collapse = "phone",
     testid = "slider",
   }: {
     first: number;
@@ -23,6 +24,8 @@
     onchange: (keys: Record<string, string | null>) => void;
     compare?: boolean; // offer "Compare with" (a second stretch)
     games?: boolean; // offer "his last 3 / 5 games played"
+    // ---- JA-5: "always" = from 900 px too it opens closed, one line ("Season · weeks 1–4 ▾"), the full control in place
+    collapse?: "phone" | "always";
     testid?: string;
   } = $props();
 
@@ -58,12 +61,15 @@
   const inForce = $derived(stretch.win !== "season" || !!stretch.vs);
   let open = $state(false);
   let touched = $state(false);
+  // ---- JA-5: on a desktop (900 px and wider) with collapse="always" it opens closed whatever is chosen
+  const wide = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(min-width: 900px)").matches;
+  const wideClosed = $derived(collapse === "always" && wide);
   $effect(() => {
-    if (!inForce && !touched) open = true; // the season: nothing to fold (the parent's Filters fold holds it)
+    if (!inForce && !touched && !wideClosed) open = true; // the season: nothing to fold (the parent's Filters fold holds it)
   });
   const summary = $derived.by(() => {
     const a0 = weeksOf(stretch, first, last);
-    const head = isGames ? words(stretch, first, last) : stretch.win === "season" ? "Season" : a0 ? rangeName(a0).replace(/^w/, "W") : "Season";
+    const head = isGames ? words(stretch, first, last) : stretch.win === "season" ? (vsUrl ? "Season" : words(stretch, first, last)) : a0 ? rangeName(a0).replace(/^w/, "W") : "Season";
     return vsUrl ? `${head} against ${rangeName(vsUrl)}` : head;
   });
   const said = $derived(isGames ? words(stretch, first, last) : stretch.win === "season" && !b ? words(stretch, first, last) : rangeWords(a));
@@ -118,18 +124,19 @@
 </script>
 
 <div class="space-y-2" data-testid={testid}>
-  {#if inForce}
-    <!-- ---- JA-2: the compact closed form on a phone (a real button; hidden from 900 px, where the control is always open) -->
+  {#if inForce || wideClosed}
+    <!-- ---- JA-2: the compact closed form on a phone (a real button; hidden from 900 px, where the control is always open)
+         ---- JA-5: with collapse="always" it is there from 900 px too -->
     <button
       type="button"
-      class="ll-stoggle flex min-h-10 w-full items-center gap-2 text-left text-sm font-semibold text-ink"
+      class="ll-stoggle {wideClosed ? 'll-stoggle-wide' : ''} flex min-h-10 w-full items-center gap-2 text-left text-sm font-semibold text-ink"
       aria-expanded={open}
       aria-controls={`${testid}-body`}
       onclick={() => (open = !open)}
       data-testid={`${testid}-toggle`}><span class="min-w-0 flex-1 truncate">{summary}</span><span aria-hidden="true" class="text-ink-2">{open ? "▴" : "▾"}</span></button
     >
   {/if}
-  <div id={`${testid}-body`} class="ll-sbody space-y-2 {inForce ? 'll-can-close' : ''} {open ? 'll-open' : ''}">
+  <div id={`${testid}-body`} class="ll-sbody space-y-2 {inForce ? 'll-can-close' : ''} {wideClosed ? 'll-can-close-wide' : ''} {open ? 'll-open' : ''}">
   <div class="ll-chiprow">
     <Chips label="Weeks" testid={`${testid}-quick`} current={quick} onpick={pick} items={QUICK} />
   </div>
@@ -256,7 +263,10 @@
     }
   }
   @media (min-width: 900px) {
-    .ll-stoggle {
+    .ll-stoggle:not(.ll-stoggle-wide) {
+      display: none;
+    }
+    .ll-can-close-wide:not(.ll-open) {
       display: none;
     }
   }

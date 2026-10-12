@@ -13,6 +13,13 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { serveFixtures, SCRUBS } from "../fixtures";
 
+// ---- JA-5: the weeks' one line (Stats opens it closed from 900 px, and on a phone once a stretch is chosen) — open it
+// before a control inside it (a no-op when it is open or absent)
+async function openWeeks(page: import("@playwright/test").Page) {
+  const t = page.getByTestId("slider-toggle");
+  if ((await t.count()) && (await t.isVisible()) && (await t.getAttribute("aria-expanded")) !== "true") await t.click();
+}
+
 // ---- IX-3 round 2 (Wave I-X): under 900 px the Stats filters fold behind one "Filters" button — a phone test opens it
 // before it uses a folded control (a no-op on a desktop, or when it is open)
 async function openFilters(page: import("@playwright/test").Page) {
@@ -91,11 +98,13 @@ test("windows: last 3 games played vs last 3 calendar weeks vs a week range; tot
   await expect(page.getByTestId("stats-window-label")).toContainText("Season (weeks 1–3)");
   await openFilters(page); // IX-3 round 2
   // JA-1 (Wave J-A), on purpose: the window select is the week slider's quick picks now
+  await openWeeks(page); // JA-5
   await tap(page, page.getByTestId("slider-quick-last3"), isMobile);
   await expect(page).toHaveURL(/window=last3/);
   await expect(page.getByTestId("stats-window-label")).toContainText("Last 3 games played");
   await expect(page.getByTestId("stats-window-label")).toContainText("the G column says how many");
   await openFilters(page); // IX-3 round 2
+  await openWeeks(page); // JA-5
   await tap(page, page.getByTestId("slider-quick-last3w"), isMobile);
   await expect(page.getByTestId("stats-window-label")).toContainText(/Last 3 calendar weeks \(weeks 1–3\)/);
   await page.goto(scrubs("&position=RB&window=weeks&weeks=1-2"));

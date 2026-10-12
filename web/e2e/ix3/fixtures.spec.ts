@@ -206,10 +206,10 @@ test("a phone opens on the answer: Filters folded (named when in force), the vie
   await expect(rows(page).first()).toBeVisible();
   const toggle = page.getByTestId("stats-filters-toggle");
   if (!isMobile) {
-    // 1300: nothing changes — no Filters button, every control in place
-    await expect(toggle).toBeHidden();
-    await expect(page.getByTestId("players-search")).toBeVisible();
-    await expect(page.getByTestId("sit-all")).toBeVisible();
+    // JA-5 (Wave J-A), on purpose: from 900 px the controls are one row with the same Filters button (e2e/ja5)
+    await expect(toggle).toBeVisible();
+    await expect(page.getByTestId("players-search")).toBeHidden();
+    await expect(page.getByTestId("stats-sit-pick")).toBeVisible();
     return;
   }
   await expect(toggle).toBeVisible();
