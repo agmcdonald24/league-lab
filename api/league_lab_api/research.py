@@ -1061,7 +1061,8 @@ def players(league_id: str, *, season: int | None = None, position: str | None =
             season_type: str = "REG", min_games: int = 1, source: str | None = None,
             window: str | None = None, basis: str | None = None, weeks: str | None = None, who: str | None = None,
             team: int | None = None, nfl: str | None = None,
-            situation: str | None = None) -> dict:            # ---- II-3: the Stats frame's params; IX-3: situation
+            situation: str | None = None, vs: str | None = None,
+            by: str | None = None) -> dict:            # ---- II-3: the Stats frame's params; IX-3: situation; JA-1: vs, by
     ctx = context(league_id, source)
     season = int(season or ctx.season)
     st = (season_type or "REG").upper()
@@ -1071,7 +1072,7 @@ def players(league_id: str, *, season: int | None = None, position: str | None =
     if window is not None:
         return stats_frame(ctx, season=season, season_type=st, position=position, window=window, basis=basis, weeks=weeks,
                            who=who, team=team, nfl=nfl, q=q, min_games=min_games, sort=sort, dir=dir, limit=limit,
-                           offset=offset, situation=situation)
+                           offset=offset, situation=situation, vs=vs, by=by)
     # ---- end II-3
     pos = _positions(position, POSITIONS)
     cols = list(dict.fromkeys(c for p in pos for c in POSITION_COLUMNS[p]))
@@ -1109,7 +1110,8 @@ STATS_HOWTO = (
 
 def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None, window: str, basis: str | None,
                 weeks: str | None, who: str | None, team: int | None, nfl: str | None, q: str | None, min_games: int,
-                sort: str | None, dir: str | None, limit: int | None, offset: int, situation: str | None = None) -> dict:
+                sort: str | None, dir: str | None, limit: int | None, offset: int, situation: str | None = None,
+                vs: str | None = None, by: str | None = None) -> dict:
     w = (window or "season").lower()
     sk = (situation or "all").lower()                                                      # ---- IX-3: a closed set
     if sk not in ST.SITUATION_KEYS:
@@ -1125,25 +1127,49 @@ def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None
     wh = (who or "all").lower()
     if wh not in ("all", "mine", "fa", "others", "rostered"):
         raise BadRequest("who is all, mine, fa, others or rostered")
+    vk = None                                                                              # ---- JA-1: the second stretch
+    if vs is not None and vs != "":
+        vk = ST.parse_weeks(vs)
+        if vk is None:
+            raise BadRequest("vs is a range of calendar weeks like 1-2")
     pos = _positions(position, SKILL)
     rows = ST.season_rows(season, season_type)
-    frame, desc = ST.window_rows(rows, w, b, wk)
+    # ---- JA-1: the weeks asked must be weeks of this season that have been played (a stretch is at most the season)
+    if not rows.empty:
+        first, through = int(rows["week"].min()), int(rows["week"].max())
+        for name, rng in (("weeks", wk if w == "weeks" else None), ("vs", vk)):
+            if rng is not None and (rng[0] < first or rng[0] > through or rng[1] > max(through, 18 if season_type == "REG" else 22)):
+                raise BadRequest(f"{name}: weeks {first}–{through} have been played this season")
+        if vk is not None:
+            vk = (vk[0], min(vk[1], through))
+    elif vk is not None:
+        raise BadRequest("vs: no week of this season has been played yet")
     cat = ST.catalogue(season, rows)
-    mine = frame[frame["position"].isin(SKILL)] if not frame.empty else frame
-    agg = ST.aggregate_window(mine, (season, season_type, w, b, wk, id(rows), len(mine)))     # IM-1: cached per window
-    if not agg.empty:
-        agg = agg[agg["position"].isin(pos)]
-        lg = league_games(ctx, season, None if len(agg) > 200 else list(agg["gsis_id"]))
-        lg = lg[lg["season_type"] == season_type]
-        agg = agg.merge(ST.points(lg, mine[mine["gsis_id"].isin(agg["gsis_id"])], ctx.scoring), on="gsis_id",
-                        how="left")                                                    # IM-1: + the league's scoring
-        agg = agg[agg["games"] >= max(0, int(min_games if min_games is not None else 1))]
-    sit_desc = None
-    if sk != "all":                                                                      # ---- IX-3: by game situation
-        sit = ST.situation_rows(season, season_type)
-        sit_desc = ST.situation_desc(sk, built=sit is not None)
+    if by is not None and by != "":                                                         # ---- JA-1: by week
+        c = next((c for c in cat if c["id"] == by), None)
+        if (c is None or not c.get("available") or not set(c["positions"]) & set(pos) or by in ST.NO_FIELD
+                or by in ST.NOT_BY_WEEK):
+            raise BadRequest("by is one available column of the catalogue for these positions (not a role change)")
+    sit = ST.situation_rows(season, season_type) if sk != "all" else None
+    sit_desc = ST.situation_desc(sk, built=sit is not None) if sk != "all" else None
+
+    def stretch(sw: str, sb: str, swk, games_min: int):
+        frame, desc = ST.window_rows(rows, sw, sb, swk)
+        mine = frame[frame["position"].isin(SKILL)] if not frame.empty else frame
+        agg = ST.aggregate_window(mine, (season, season_type, sw, sb, swk, id(rows), len(mine)))  # IM-1: cached per window
+        lg = None
         if not agg.empty:
-            agg = ST.with_situation(agg, mine[mine["played"]], sk, sit)                   # ---- end IX-3
+            agg = agg[agg["position"].isin(pos)]
+            lg = league_games(ctx, season, None if len(agg) > 200 else list(agg["gsis_id"]))
+            lg = lg[lg["season_type"] == season_type]
+            agg = agg.merge(ST.points(lg, mine[mine["gsis_id"].isin(agg["gsis_id"])], ctx.scoring), on="gsis_id",
+                            how="left")                                                # IM-1: + the league's scoring
+            agg = agg[agg["games"] >= max(0, int(games_min))]
+        if sk != "all" and not agg.empty:                                              # ---- IX-3: by game situation
+            agg = ST.with_situation(agg, mine[mine["played"]], sk, sit)
+        return agg, desc, mine, lg
+
+    agg, desc, mine, lg = stretch(w, b, wk, min_games if min_games is not None else 1)
     if agg.empty:
         agg = pd.DataFrame(columns=["gsis_id", "player_name", "position", "games"])
     if q and len(q.strip()) >= 2:
@@ -1157,13 +1183,32 @@ def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None
     n = max(1, min(int(limit if limit is not None else ST.STATS_LIMIT), ST.STATS_LIMIT))
     default = next((p["sort"] for p in ST.PRESETS if p["positions"] == pos), "points")
     page = _sort(df, sort, dir, default).iloc[off: off + n]
-    page = page[[c for c in ST.fields(pos) + (["situation_plays"] if sit_desc else []) if c in page.columns]]
-    return {**ctx.meta(), "season": season, "season_type": season_type, "positions": pos, "window": desc,
-            "situation": sit_desc,                                                              # ---- IX-3
-            "who": wh, "team": team, "nfl": nfl, "min_games": min_games, "total": total, "offset": off,
-            "players": _records(page), "catalogue": cat, "presets": ST.presets(cat), "groups": ST.groups_for(cat),  # IM-1; IX-3
-            "views": {k: ST.views(k, cat) for k in ("wrte", "rb", "qb", "all")},                   # ---- IX-3
-            "howto": STATS_HOWTO}
+    keep = ST.fields(pos) + (["situation_plays"] if sit_desc else [])
+    page = page[[c for c in keep if c in page.columns]]
+    out = {**ctx.meta(), "season": season, "season_type": season_type, "positions": pos, "window": desc,
+           "situation": sit_desc,                                                              # ---- IX-3
+           "who": wh, "team": team, "nfl": nfl, "min_games": min_games, "total": total, "offset": off,
+           "players": _records(page), "catalogue": cat, "presets": ST.presets(cat), "groups": ST.groups_for(cat),  # IM-1; IX-3
+           "views": {k: ST.views(k, cat) for k in ("wrte", "rb", "qb", "all")},                   # ---- IX-3
+           "howto": STATS_HOWTO, "vs": None, "byweek": None}
+    ids = set(page["gsis_id"]) if not page.empty else set()
+    if vk is not None:                                                                     # ---- JA-1: the second stretch
+        agg_b, desc_b, _, _ = stretch("weeks", "weeks", vk, 0)
+        agg_b = agg_b[agg_b["gsis_id"].isin(ids)] if not agg_b.empty else agg_b
+        out["vs"] = {"window": desc_b, "not_compared": sorted(ST.NOT_COMPARED),
+                     "players": ST.compact(agg_b, [c for c in keep if c not in ("gsis_id", "player_name", "position",
+                                                                                  "team", "headshot_url")])}
+    if by:                                                                                 # ---- JA-1: one stat by week
+        lo, hi = (int(desc["weeks"][0]), int(desc["weeks"][1])) if desc.get("weeks") else (0, -1)
+        hi = min(hi, int(desc.get("through_week") or hi))
+        wks = sorted({int(x) for x in mine["week"]}) if desc.get("basis") == "games" and not mine.empty else list(range(lo, hi + 1))
+        sub = mine[mine["gsis_id"].isin(ids)] if not mine.empty else mine
+        grid = ST.byweek_grid(sub, rows, lg, ctx.scoring, by, wks,
+                              (season, season_type, w, b, wk, id(rows), len(sub), hash(frozenset(ids)), by, sk,
+                               ctx.league_id), sk, sit) if not sub.empty else \
+            {"values": {}, "why": {}, "trend": {}}
+        out["byweek"] = {"column": by, "weeks": wks, "reasons": ST.BYWEEK_REASON, **grid}
+    return out
 # ---- end II-3
 
 

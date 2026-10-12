@@ -1471,9 +1471,16 @@ def csv_filename(d: dict) -> str:
     key = w.get("key") or "season"
     weeks = w.get("weeks") or []
     span = f"-weeks-{weeks[0]}-{weeks[1]}" if len(weeks) == 2 and weeks[0] is not None else ""
+    if key == "weeks":                                             # ---- JA-1: "weeks-3-4", not "weeks-weeks-3-4"
+        key, span = span.lstrip("-") or "weeks", ""
     pos = "-".join(p.lower() for p in d.get("positions") or []) or "all"
     st = "" if d.get("season_type", "REG") == "REG" else "-playoffs"
-    return f"isuckatfantasy-stats-{d['season']}{st}-{pos}-{key}{span}.csv"
+    # ---- JA-1: the second stretch and the game situation in the name
+    vw = ((d.get("vs") or {}).get("window") or {}).get("weeks") or []
+    vs_part = f"-vs-weeks-{vw[0]}-{vw[1]}" if len(vw) == 2 else ""
+    sit = d.get("situation") or {}
+    sit_part = "-" + re.sub(r"[^a-z]+", "-", sit["label"].lower()).strip("-") if sit.get("label") else ""
+    return f"isuckatfantasy-stats-{d['season']}{st}-{pos}-{key}{span}{vs_part}{sit_part}.csv"
 
 
 def csv_lines(d: dict, columns: list[str], per_game: bool = False):
@@ -1484,17 +1491,38 @@ def csv_lines(d: dict, columns: list[str], per_game: bool = False):
     ident = [(k, lab) for k, lab in CSV_IDENTITY
              if k != "rostered_by_team" or any("rostered_by_team" in p for p in d["players"]) or not d["players"]]
     fields_, labels = [k for k, _ in ident], [lab for _, lab in ident]
+    vs = d.get("vs") or None                                   # ---- JA-1: with a second stretch, its value and the change
+    vw = ((vs or {}).get("window") or {}).get("weeks") or []
+    vname = (f"weeks {vw[0]}–{vw[1]}" if vw[0] != vw[1] else f"week {vw[0]}") if len(vw) == 2 else "the other weeks"
+    comp: list[tuple[str, str]] = []                          # (field, kind): kind "a" | "b" | "chg"
     for cid in columns:
         c = cat[cid]
-        if per_game and c.get("per_game"):
-            fields_.append(f"{cid}_per_game")
-            labels.append(f"{c['label']} per game")
-        else:
-            fields_.append(cid)
-            labels.append(c["label"])
+        f = f"{cid}_per_game" if per_game and c.get("per_game") else cid
+        fields_.append(f)
+        labels.append(f"{c['label']} per game" if f != cid else c["label"])
+        comp.append((f, "a"))
+        if vs and cid not in NOT_COMPARED:
+            fields_ += [f, f]
+            labels += [f"{labels[-1]} ({vname})", f"{labels[-1]}: change from {vname}"]
+            comp += [(f, "b"), (f, "chg")]
     yield ",".join(_csv_cell(x) for x in labels) + "\r\n"
+    other = (vs or {}).get("players") or {}
     for p in d["players"]:
-        yield ",".join(_csv_cell(p.get(f)) for f in fields_) + "\r\n"
+        if not vs:
+            yield ",".join(_csv_cell(p.get(f)) for f in fields_) + "\r\n"
+            continue
+        o = other.get(str(p.get("gsis_id")), {})
+        cells = []
+        for (f, kind), f2 in zip([(k, "a") for k in fields_[:len(ident)]] + comp, fields_, strict=True):
+            a, bv = p.get(f2), o.get(f2)
+            if kind == "b":
+                cells.append(bv)
+            elif kind == "chg":
+                ok = isinstance(a, (int, float)) and isinstance(bv, (int, float)) and not isinstance(a, bool)
+                cells.append(round(a - bv, 4) if ok else None)
+            else:
+                cells.append(a)
+        yield ",".join(_csv_cell(x) for x in cells) + "\r\n"
 # ---- end IM-1
 
 
@@ -1573,3 +1601,91 @@ def with_situation(agg: pd.DataFrame, games: pd.DataFrame, key: str, sit: pd.Dat
     out["situation_plays"] = plays.where(plays.notna(), 0).astype(float)
     return out.copy()
 # ---- end IX-3
+
+
+# ---- JA-1 (Wave J-A): the weeks you choose — one stretch against another (``vs=``) and a stat week by week (``by=``).
+# A stretch's rates are its own summed numerators over its own summed denominators (aggregate() over its game rows);
+# a week with no game for him is unknown (a dash and the reason), never a zero.
+NOT_BY_WEEK = {"target_share_change", "carry_share_change", "snap_share_change"}   # already a change between his games
+NOT_COMPARED = NOT_BY_WEEK | {"ros_value"}            # a forecast is not a stretch of history
+BYWEEK_REASON = {"bye": "his team's bye week", "out": "he did not play this week", "none": "no number for this week"}
+_byweek = memo.region("stats_byweek", ttl=TTL_S, max_entries=24, published=True)   # ≤ 24 grids x ≤ ~60 KB (one column)
+
+
+def compact(rows: pd.DataFrame, keep: list[str]) -> dict[str, dict]:
+    """``{gsis_id: {field: value}}`` for the fields in ``keep`` that are known (unknown fields are left out: the screen
+    reads a missing field as unknown) — the second stretch's numbers beside the first's rows."""
+    out: dict[str, dict] = {}
+    if rows.empty:
+        return out
+    cols = [c for c in keep if c in rows.columns]
+    for rec in rows[["gsis_id", *cols]].to_dict("records"):
+        d = {}
+        for k in cols:
+            v = rec[k]
+            if v is None or (isinstance(v, float) and np.isnan(v)):
+                continue
+            d[k] = v.item() if isinstance(v, np.generic) else v
+        out[str(rec["gsis_id"])] = d
+    return out
+
+
+def _trend(vals: list) -> int | None:
+    """The direction of a least-squares line through his weeks with a number (1 up, -1 down, 0 flat); None under 2."""
+    pts = [(i, float(v)) for i, v in enumerate(vals) if v is not None]
+    if len(pts) < 2:
+        return None
+    n = len(pts)
+    mx = sum(i for i, _ in pts) / n
+    my = sum(v for _, v in pts) / n
+    den = sum((i - mx) ** 2 for i, _ in pts)
+    slope = sum((i - mx) * (v - my) for i, v in pts) / den if den else 0.0
+    return 0 if abs(slope) < 1e-9 else (1 if slope > 0 else -1)
+
+
+def byweek_grid(mine: pd.DataFrame, rows: pd.DataFrame, lg: pd.DataFrame | None, scoring: dict | None, column: str,
+                weeks: list[int], key: tuple, situation: str = "all", sit: pd.DataFrame | None = None) -> dict:
+    """One catalogue column for every player across the stretch's weeks: ``{"values": {gsis: [v per week]},
+    "why": {gsis: [None | "bye" | "out" | "none"]}, "trend": {gsis: 1 | 0 | -1 | None}}``. Each week's value is
+    aggregate() over his game rows of that week alone (one game: a rate is that game's numerator over its
+    denominator); points from the league's scoring. Cached per (window, column, situation, scoring)."""
+    hit = _byweek.get(key)
+    if hit is not None:
+        return hit
+    g = mine.copy()
+    g["_gsis"] = g["gsis_id"]
+    g["gsis_id"] = g["gsis_id"].astype(str) + "#" + g["week"].astype(int).astype(str)
+    agg = aggregate(g)
+    if column in POINT_COLS or column in ("expected_points", "expected_points_per_game", "rushing_points_share"):
+        if lg is not None and not lg.empty:
+            m = g[["_gsis", "game_id", "gsis_id"]].rename(columns={"gsis_id": "_c", "_gsis": "gsis_id"})
+            lgc = lg.merge(m, on=["gsis_id", "game_id"], how="inner").drop(columns="gsis_id").rename(columns={"_c": "gsis_id"})
+            agg = agg.merge(points(lgc, g, scoring), on="gsis_id", how="left")
+    if situation != "all":
+        sc = None
+        if sit is not None:
+            wk = g[["_gsis", "game_id", "gsis_id"]].rename(columns={"gsis_id": "_c", "_gsis": "gsis_id"})
+            sc = sit.merge(wk, on=["gsis_id", "game_id"], how="inner").drop(columns="gsis_id").rename(columns={"_c": "gsis_id"})
+        agg = with_situation(agg, g[g["played"]].drop(columns="_gsis"), situation, sc)
+    values: dict[str, list] = {}
+    why: dict[str, list] = {}
+    if not agg.empty and column in agg.columns:
+        parts = agg["gsis_id"].str.rsplit("#", n=1, expand=True)
+        agg = agg.assign(_g=parts[0], _w=pd.to_numeric(parts[1], errors="coerce"))
+        played = pd.to_numeric(agg["games"], errors="coerce").fillna(0) > 0
+        val = pd.to_numeric(agg[column], errors="coerce").where(played)
+        cell = {(gid, int(w)): (None if pd.isna(v) else float(v), bool(p))
+                for gid, w, v, p in zip(agg["_g"], agg["_w"], val, played, strict=True)}
+        team_weeks = set(zip(rows.loc[rows["played"], "team"], rows.loc[rows["played"], "week"].astype(int), strict=True))
+        team_of = mine.sort_values("week").groupby("gsis_id")["team"].last()
+        for gid in agg["_g"].unique():
+            vs, ws = [], []
+            for w in weeks:
+                v, p = cell.get((gid, w), (None, False))
+                vs.append(round(v, 4) if v is not None else None)
+                ws.append(None if v is not None else
+                          "none" if p else "bye" if (team_of.get(gid), w) not in team_weeks else "out")
+            values[gid], why[gid] = vs, ws
+    out = {"values": values, "why": why, "trend": {k: _trend(v) for k, v in values.items()}}
+    return _byweek.put(key, out)
+# ---- end JA-1

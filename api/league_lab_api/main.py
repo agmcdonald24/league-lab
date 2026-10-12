@@ -615,12 +615,13 @@ def players(league: str, response: Response, season: int | None = None, position
             dir: str | None = None, limit: int = 50, offset: int = 0, q: str | None = None, season_type: str = "REG",
             min_games: int = 1, source: str | None = None, window: str | None = None, basis: str | None = None,
             weeks: str | None = None, who: str | None = None, team: int | None = None, nfl: str | None = None,
-            situation: str | None = None):  # ---- II-3; IX-3: situation = all | trailing | close | leading
+            situation: str | None = None, vs: str | None = None,
+            by: str | None = None):  # ---- II-3; IX-3: situation = all | trailing | close | leading; JA-1: vs, by
     vsort = refleague.is_reference(league) and window is not None and sort == refleague.VALUE_COLUMN      # ---- IN-2
     out = research.players(league, season=season, position=position, sort=None if vsort else sort, dir=dir,
                            limit=1000 if vsort else limit, offset=0 if vsort else offset, q=q, season_type=season_type,
                            min_games=min_games, source=source, window=window, basis=basis, weeks=weeks, who=who,
-                           team=team, nfl=nfl, situation=situation)
+                           team=team, nfl=nfl, situation=situation, vs=vs, by=by)   # ---- JA-1: vs, by
     if refleague.is_reference(league) and window is not None:                # ---- IN-2: the value column, browsing
         out = refleague.stats_values(out, league, sort, dir, (offset, limit) if vsort else None)   # ---- end IN-2
     out = _situation_only(out)                                                                    # ---- IX-3
@@ -645,7 +646,7 @@ def players_csv(league: str, season: int | None = None, position: str = "ALL", s
                 min_games: int = 1, source: str | None = None, window: str = "season", basis: str | None = None,
                 weeks: str | None = None, who: str | None = None, team: int | None = None, nfl: str | None = None,
                 preset: str | None = None, cols: str | None = None, view: str | None = None, per_game: int = 0,
-                situation: str | None = None):                                                     # ---- IX-3
+                situation: str | None = None, vs: str | None = None):                             # ---- IX-3; JA-1
     from fastapi.responses import StreamingResponse
 
     from . import stats as stats_mod
@@ -653,7 +654,7 @@ def players_csv(league: str, season: int | None = None, position: str = "ALL", s
     d = research.players(league, season=season, position=position, sort=None if vsort else sort, dir=dir,
                          limit=1000 if vsort else limit, offset=0 if vsort else offset, q=q, season_type=season_type,
                          min_games=min_games, source=source, window=window, basis=basis, weeks=weeks, who=who,
-                         team=team, nfl=nfl, situation=situation)                            # ---- IX-3: situation
+                         team=team, nfl=nfl, situation=situation, vs=vs)                     # ---- IX-3; JA-1: vs
     if refleague.is_reference(league):                                       # ---- IN-2: the value column, no owner
         d = refleague.public(refleague.stats_values(d, league, sort, dir, (offset, limit) if vsort else None))   # ---- end IN-2
     d = _situation_only(d)                                                                        # ---- IX-3
