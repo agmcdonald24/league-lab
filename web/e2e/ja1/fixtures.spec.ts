@@ -102,6 +102,14 @@ test("weeks 3–4 against weeks 1–2: the change under each value, sort by the 
   const api = await serve(context);
   await page.goto(url("&window=weeks&weeks=3-4"));
   await expect(rows(page).first()).toBeVisible();
+  // JA-2: on a phone a chosen stretch opens closed, one line naming it; a tap opens it in place
+  if (isMobile) {
+    await expect(page.getByTestId("slider-toggle")).toHaveText(/Weeks 3–4/);
+    await expect(page.getByTestId("slider-toggle")).toHaveAttribute("aria-expanded", "false");
+    await expect(page.getByTestId("slider-compare")).toBeHidden();
+    await tap(page, page.getByTestId("slider-toggle"), isMobile);
+    await expect(page.getByTestId("slider-toggle")).toHaveAttribute("aria-expanded", "true");
+  } else await expect(page.getByTestId("slider-toggle")).toBeHidden();
   await tap(page, page.getByTestId("slider-compare"), isMobile);
   await expect(page).toHaveURL(/[?&]vs=1-2/); // "the weeks before": the same length, ending where A starts
   await expect.poll(() => api.calls.some((c) => c.includes("vs=1-2"))).toBe(true);
@@ -120,9 +128,8 @@ test("weeks 3–4 against weeks 1–2: the change under each value, sort by the 
   await expect(rows(page).first().locator('[data-col="target_share"] [data-testid="chg"]')).toHaveText(`${chg >= 0 ? "+" : "−"}${Math.abs(chg * 100).toFixed(1)} pts`);
   void first;
   await shot(page, "a-against-b", info);
-  // the other preset
-  await tap(page, page.getByTestId("slider-preset-rest"), isMobile);
-  await expect(page).toHaveURL(/[?&]vs=1-2/); // weeks 3-4 end the season: the rest of it is weeks 1-2 too
+  // JA-2: weeks 3–4 end the season, so "the rest of the season" is weeks 1–2 too: one preset, "The weeks before"
+  await expect(page.getByTestId("slider-preset-rest")).toHaveCount(0);
   // off again: no second stretch
   await tap(page, page.getByTestId("slider-compare"), isMobile);
   await expect(page).not.toHaveURL(/[?&]vs=/);
@@ -154,4 +161,33 @@ test("by week: one stat across the weeks, the season's value and a trend mark; a
   await expect(page).toHaveURL(/[?&]sort=w1/);
   await noSidewaysScroll(page);
   await shot(page, "by-week", info);
+});
+
+// ---- JA-2: the compact closed form — with a stretch and a comparison in force, a phone's first screen still shows rows
+test("a phone with weeks 3–4 against weeks 1–2: the control is one line and the table's first rows are on the first screen", async ({ page, context, isMobile }) => {
+  await serve(context);
+  await page.goto(url("&window=weeks&weeks=3-4&vs=1-2"));
+  await expect(rows(page).first()).toBeVisible();
+  const toggle = page.getByTestId("slider-toggle");
+  if (!isMobile) {
+    await expect(toggle).toBeHidden();
+    await expect(page.getByTestId("slider-a-lo")).toBeVisible();
+    return;
+  }
+  await expect(toggle).toHaveText(/Weeks 3–4 against weeks 1–2/);
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  const seen = await rows(page).evaluateAll((rs) => {
+    const bar = [...document.querySelectorAll<HTMLElement>("body *")].find((e) => getComputedStyle(e).position === "fixed" && e.getBoundingClientRect().bottom >= window.innerHeight - 1 && e.getBoundingClientRect().top > window.innerHeight / 2);
+    const limit = bar ? bar.getBoundingClientRect().top : window.innerHeight;
+    return rs.filter((r) => r.getBoundingClientRect().bottom <= limit).length;
+  });
+  console.log(`JA2 rows on the first screen at 375x812 with a stretch and a comparison: ${seen}`);
+  mkdirSync(process.env.JA2_SHOTS ?? SHOTS, { recursive: true });
+  await page.screenshot({ path: join(process.env.JA2_SHOTS ?? SHOTS, "ja2-stats-compact-375.jpg"), quality: 70, fullPage: false });
+  expect(seen).toBeGreaterThanOrEqual(3);
+  // keyboard: Enter opens it in place
+  await toggle.focus();
+  await page.keyboard.press("Enter");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByTestId("slider-a-lo")).toBeVisible();
 });

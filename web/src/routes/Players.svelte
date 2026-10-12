@@ -484,7 +484,7 @@
     </div>
     <!-- ---- JA-1: the weeks you choose (outside the phone's fold when a stretch other than the season is in force) -->
     {#if r.data}
-      <div class="rounded-md border border-line bg-surface px-3 py-2 {sliderFolded ? `ll-fold ${filtersOpen ? 'll-open' : ''}` : ''}" data-testid="stats-weeks">
+      <div class="ll-weeksbox rounded-md border border-line bg-surface px-3 py-2 {sliderFolded ? `ll-fold ${filtersOpen ? 'll-open' : ''}` : ''}" data-testid="stats-weeks">
         <WeekSlider first={1} last={through} {stretch} onchange={(k) => setParams({ ...k, sortby: k.vs ? (params.get("sortby") ?? null) : null })} />
       </div>
     {/if}
@@ -627,21 +627,22 @@
           testid="stats-table-view"
         />
       </div>
-      <span class="text-sm text-ink-2" data-testid="stats-col-count">{cols.length} column{cols.length === 1 ? "" : "s"}</span>
+      <span class="hidden text-sm text-ink-2 sm:inline" data-testid="stats-col-count">{cols.length} column{cols.length === 1 ? "" : "s"}</span>
+      <!-- ---- IX-3: the question the view answers (JA-2: on a phone it shares its row with the CSV link; from 640 px its own line) -->
+      <p class="line-clamp-2 min-w-0 flex-1 text-sm text-ink-2 sm:order-last sm:line-clamp-none sm:basis-full" data-testid="stats-view-question">
+        {#if view === "full"}<strong class="text-ink">Full table:</strong> every column we have for the position, grouped. Tap a group to hide or show it.{:else if view === "byweek"}<strong class="text-ink">By week:</strong> one number across the weeks, his value over the stretch and its trend at the end.{:else if activeDef}<strong class="text-ink">{activeDef.label}:</strong> {activeDef.question}{/if}
+      </p>
       <a
-        class="ml-auto inline-flex min-h-9 items-center gap-1 rounded-md border border-line px-2.5 text-sm font-semibold text-accent {csvBusy ? 'opacity-60' : ''}"
+        class="ml-auto inline-flex min-h-9 shrink-0 items-center gap-1 self-start rounded-md border border-line px-2.5 text-sm font-semibold text-accent {csvBusy ? 'opacity-60' : ''}"
         href={csvHref}
         download={fileName}
         onclick={downloadCsv}
         aria-busy={csvBusy}
         data-from={csvFrom ?? undefined}
-        data-testid="stats-csv"><span aria-hidden="true">↓</span> Download CSV</a
+        aria-label="Download CSV"
+        data-testid="stats-csv"><span aria-hidden="true">↓</span> <span class="hidden sm:inline">Download</span> CSV</a
       >
     </div>
-    <!-- ---- IX-3: the question the view answers -->
-    <p class="text-sm text-ink-2" data-testid="stats-view-question">
-      {#if view === "full"}<strong class="text-ink">Full table:</strong> every column we have for the position, grouped. Tap a group to hide or show it.{:else if view === "byweek"}<strong class="text-ink">By week:</strong> one number across the weeks, his value over the stretch and its trend at the end.{:else if activeDef}<strong class="text-ink">{activeDef.label}:</strong> {activeDef.question}{/if}
-    </p>
     {#if view === "byweek"}
       <!-- ---- JA-1: the stat the weeks show -->
       <div class="flex flex-wrap items-center gap-2">
@@ -757,6 +758,13 @@
   @media (min-width: 900px) {
     .ll-filters-toggle {
       display: none;
+    }
+  }
+  /* ---- JA-2: on a phone the weeks' box is tight when it is closed to its one line */
+  @media (max-width: 899px) {
+    .ll-weeksbox:has(:global([aria-expanded="false"][data-testid="slider-toggle"])) {
+      padding-top: 0;
+      padding-bottom: 0;
     }
   }
 </style>

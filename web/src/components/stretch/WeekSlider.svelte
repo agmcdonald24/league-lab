@@ -53,9 +53,24 @@
         ]
       : []),
   ]);
+  // ---- JA-2: below 900 px a chosen stretch closes to one line that names it ("Weeks 3–4 against weeks 1–2 ▾") and opens
+  // in place on a tap; it stays open while the visitor works it (a quick pick, a handle, the switch)
+  const inForce = $derived(stretch.win !== "season" || !!stretch.vs);
+  let open = $state(false);
+  let touched = $state(false);
+  $effect(() => {
+    if (!inForce && !touched) open = true; // the season: nothing to fold (the parent's Filters fold holds it)
+  });
+  const summary = $derived.by(() => {
+    const a0 = weeksOf(stretch, first, last);
+    const head = isGames ? words(stretch, first, last) : stretch.win === "season" ? "Season" : a0 ? rangeName(a0).replace(/^w/, "W") : "Season";
+    return vsUrl ? `${head} against ${rangeName(vsUrl)}` : head;
+  });
   const said = $derived(isGames ? words(stretch, first, last) : stretch.win === "season" && !b ? words(stretch, first, last) : rangeWords(a));
 
   function emit(win: Win, nextA: Range | null, nextB: Range | null) {
+    touched = true;
+    open = true; // ---- JA-2: working it keeps it open
     onchange(stretchParams(win, nextA, nextB, first, last));
   }
   const otherFor = (r: Range): Range | null => weeksBefore(r, first) ?? restOfSeason(r, first, last);
@@ -103,6 +118,18 @@
 </script>
 
 <div class="space-y-2" data-testid={testid}>
+  {#if inForce}
+    <!-- ---- JA-2: the compact closed form on a phone (a real button; hidden from 900 px, where the control is always open) -->
+    <button
+      type="button"
+      class="ll-stoggle flex min-h-10 w-full items-center gap-2 text-left text-sm font-semibold text-ink"
+      aria-expanded={open}
+      aria-controls={`${testid}-body`}
+      onclick={() => (open = !open)}
+      data-testid={`${testid}-toggle`}><span class="min-w-0 flex-1 truncate">{summary}</span><span aria-hidden="true" class="text-ink-2">{open ? "▴" : "▾"}</span></button
+    >
+  {/if}
+  <div id={`${testid}-body`} class="ll-sbody space-y-2 {inForce ? 'll-can-close' : ''} {open ? 'll-open' : ''}">
   <div class="ll-chiprow">
     <Chips label="Weeks" testid={`${testid}-quick`} current={quick} onpick={pick} items={QUICK} />
   </div>
@@ -207,16 +234,32 @@
             const r = k === "before" ? before : rest;
             if (r) emit("weeks", a, r);
           }}
-          items={[...(before ? [{ key: "before", label: `The weeks before (${rangeName(before)})` }] : []), ...(rest ? [{ key: "rest", label: `The rest of the season (${rangeName(rest)})` }] : [])]}
+          items={[
+            ...(before ? [{ key: "before", label: `The weeks before (${rangeName(before)})` }] : []),
+            // ---- JA-2: one preset when the two are the same weeks (A ends the season): "The weeks before"
+            ...(rest && !(before && before[0] === rest[0] && before[1] === rest[1]) ? [{ key: "rest", label: `The rest of the season (${rangeName(rest)})` }] : []),
+          ]}
         />
       {:else if !canCompare}
         <span class="text-sm text-ink-2">{isGames ? "Pick weeks to compare (his last games are not a fixed stretch)." : "One week played: nothing to compare yet."}</span>
       {/if}
     </div>
   {/if}
+  </div>
 </div>
 
 <style>
+  /* ---- JA-2: closed to one line below 900 px once a stretch is chosen; always open from 900 px */
+  @media (max-width: 899px) {
+    .ll-can-close:not(.ll-open) {
+      display: none;
+    }
+  }
+  @media (min-width: 900px) {
+    .ll-stoggle {
+      display: none;
+    }
+  }
   /* on a phone the quick picks keep one row, scrolling inside themselves (the page never does) */
   @media (max-width: 639px) {
     .ll-chiprow :global([role="group"]) {
