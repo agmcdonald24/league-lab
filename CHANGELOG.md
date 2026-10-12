@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-12 — Wave J-A
+
+- **JA-1 — Stats: the weeks you choose, one stretch against another, and a stat week by week.** A week slider
+  (`components/stretch/WeekSlider.svelte`; URL `window`, `weeks`, `vs`) replaces the week-range select: two handles
+  over the played weeks (drag, a tap on a week number, arrow keys), a single week when they meet, the choice in words,
+  quick picks (Season, Last 3 / 5 weeks, This week, Last 3 / 5 games); outside the phone's Filters fold whenever it is
+  not the season. **Compare with other weeks** adds a second stretch (its own hatched lane; presets "the weeks before",
+  "the rest of the season"): under each value its change (a share in points of share), sort by the change, a thin
+  side greyed with its sizes, a headline "Biggest rise in target share, weeks 3–4 against weeks 1–2". **By week**: one
+  column across the weeks, the stretch's value and a trend mark; a bye or a missed game is a dash with its reason.
+  `/api/players` takes `vs=` and `by=` in the same call (validated, cached); the CSV carries both stretches and names
+  the weeks and the situation.
+
 ## 2026-10-11 — Wave I-Z
 
 - **PO — the merge.** `scripts/nightly.sh`: `sleeper-history` and `h2h` (soft), four state tables, the head-to-head's

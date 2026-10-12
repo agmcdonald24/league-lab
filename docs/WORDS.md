@@ -1094,3 +1094,22 @@ News feed's own (`myweek.decision_feed`, II-4); IZ-4 moves them, it writes no se
 | the trade calculator's section 5, a player with an item | the same line under his row (his name is the row's) | "Your lineup this week" on a player you would receive |
 | Waivers' top claims | nothing (cut: the Waivers answer has no news read; adding one costs up to three uncached ESPN reads, about a second, on every Waivers visit) | — |
 <!-- ---- end IZ-4 -->
+<!-- ---- JA-1 -->
+## Stats: the weeks you choose (JA-1, Wave J-A, 2026-10-12; `components/stretch/WeekSlider.svelte`, `lib/stretch.ts`, `routes/Players.svelte`)
+
+| Where | Words | Never |
+|---|---|---|
+| the quick picks over the slider | **Season** · **Last 3 weeks** · **Last 5 weeks** · **This week** · **Last 3 games** · **Last 5 games** | "Week range (calendar)" (the old select) |
+| the choice in words, beside the track | "Season · weeks 1–4" · "Weeks 3–4 · 2 weeks" · "Week 2 · 1 week" · "His last 3 games played (any weeks)"; with a second stretch: "A: Weeks 3–4 · 2 weeks against B: Weeks 1–2 · 2 weeks" | "W3-W4", a date range |
+| the handles (screen reader) | "First week" / "Last week" ("A, first week" … "B, last week" with a second stretch), each read as "Week 3"; the week numbers under the track are buttons "Week 3" | an unlabeled slider |
+| the second stretch | **Compare with other weeks** (a switch); presets **The weeks before (weeks 1–2)** · **The rest of the season (weeks 1–2)**; B's lane is hatched with square handles (A: round, solid) | colour alone for A and B |
+| when it cannot compare | "Pick weeks to compare (his last games are not a fixed stretch)." · "One week played: nothing to compare yet." | — |
+| under each value with a second stretch | the change: "+12.3 pts" (a share, in points of share), "+2.5" (per game), "+4" (a total); under G: "B: 2" (his games in B); on hover: "Change from weeks 1–2: +12.3 pts (weeks 1–2: 18.0%)"; greyed: "Small sample on one side: 1 game here, 2 in weeks 1–2, so this change moves a lot." · "No game in weeks 1–2: nothing to compare." · "Not compared: this column is already a change between his games, or a forecast." | a % of a % |
+| the sort by the change | the ± button beside a column's name, "Sort by the change in target share from weeks 1–2" | — |
+| the headline, sorted by the change | "Biggest rise in target share, weeks 3–4 against weeks 1–2: Drake London, 43.5% against 18.0% (1 game against 2) · 120 players." / "Biggest drop in …" | "trending", "breakout" |
+| the view switch | **By week** (between Advanced and Full table); under it "**By week:** one number across the weeks, his value over the stretch and its trend at the end." and **Stat** (a select of the position's columns) | — |
+| the By week columns | **W1** … **Wn**, **Season** (or **Stretch**), **Trend** (▲ up, ▼ down, – flat: "The direction of a straight line through his weeks"); a dash: "Week 4: his team's bye week." / "Week 4: he did not play this week." / "Week 4: no number for this week." | 0 for a week without a game |
+| How to read this (added) | "**The weeks**: drag the two handles, or tap a week number, to pick any weeks; one handle on the other is a single week. **Compare with other weeks** adds a second stretch … **By week** shows one number across the weeks … a dash is a bye or a game he did not play, never 0." | — |
+| the phone's Filters label (IX-3 round 2, changed) | no longer names the weeks: the slider names them, outside the fold whenever they are not the season | — |
+| the CSV | `isuckatfantasy-stats-2026-wr-te-weeks-3-4-vs-weeks-1-2-when-trailing.csv`; columns "Target share", "Target share (weeks 1–2)", "Target share: change from weeks 1–2" | — |
+<!-- ---- end JA-1 -->

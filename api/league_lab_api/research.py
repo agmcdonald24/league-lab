@@ -1105,7 +1105,13 @@ STATS_HOWTO = (
     "- A share over several games is the summed numerator over the summed denominator, never an average of weekly "
     "percentages.\n"
     "- A dash means the number cannot be worked out here (no targets, a season without charting, routes in season); "
-    "hover it for the reason. Never zero.")
+    "hover it for the reason. Never zero.\n"
+    # ---- JA-1 (Wave J-A): the weeks you choose
+    "- **The weeks**: drag the two handles, or tap a week number, to pick any weeks; one handle on the other is a single "
+    "week. **Compare with other weeks** adds a second stretch: under each number, its change from those weeks (a share "
+    "in points of share), each stretch from its own sums; a greyed change rests on one game or a small sample on one "
+    "side. **By week** shows one number across the weeks, then the stretch's own value and its trend: a dash is a bye "
+    "or a game he did not play, never 0.")
 
 
 def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None, window: str, basis: str | None,

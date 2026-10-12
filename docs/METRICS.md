@@ -6381,3 +6381,19 @@ new-team scales, before anything is priced: the line × (1 − w) + Sleeper's la
 w and its rule version stored with the board); a player Sleeper has no line for keeps ours; a night Sleeper does not
 answer is ours alone. Turning the switch off gives the model's own line the next night; the weeks already frozen keep
 what they published (B5). Not built.
+
+## Stretches of weeks and a stat week by week (JA-1, Wave J-A, 2026-10-12) — the Stats table's week slider
+
+* **A stretch** is a set of calendar weeks of the season (`window=weeks&weeks=3-4`; Season, Last 3 / 5 weeks and This
+  week are stretches too; his last 3 / 5 games played are not, and cannot be compared). Its numbers are aggregate()
+  over the game rows he played in those weeks: a count is summed, **a rate or share is the stretch's summed numerator
+  over its summed denominator for the same games, never an average of weekly rates** (rule 4: a receiver with 1 of 2
+  team targets in week 1 and 9 of 30 in week 2 has 10 / 32 = 31.3%, not the 40% the weekly shares average to;
+  `api/tests/test_ja1.py`). Per game = the stretch's total ÷ his games in it. A week he did not play adds nothing and
+  is not a zero; a player with no game in a stretch has no numbers there (dashes).
+* **Against another stretch** (`vs=1-2`): the same arithmetic over B's own games; the change = A − B (a share in points
+  of share). Not compared: the role-change columns (already a change between his games) and the rest-of-season value
+  (a forecast). A change is greyed when either side has one game or falls under the screen's small-sample sizes.
+* **By week** (`by=<column>`): each week's value is aggregate() over his one game that week; a week without a number
+  says why — his team's bye, he did not play, or no number for that game (e.g. a share with no team targets). The trend
+  mark is the sign of a least-squares line through his weeks with a number (two or more). Context, not a forecast.
