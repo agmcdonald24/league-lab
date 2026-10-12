@@ -509,6 +509,21 @@ def search(league: str, q: str, response: Response, source: str | None = None):
     return _json(player.search(league, q), response)
 
 
+# ---- JA-3 (Wave J-A): the route a pooled connection is taken for (db.route: a slow wait's log line names it). The path
+# with every segment that carries a digit as `*` — a closed shape, never a player id or a league in the log.
+import re as _re_ja3  # noqa: E402
+
+
+@app.middleware("http")
+async def _route_for_pool(request: Request, call_next):
+    token = db.route.set("/".join("*" if _re_ja3.search(r"\d", seg) else seg for seg in request.url.path.split("/"))[:60])
+    try:
+        return await call_next(request)
+    finally:
+        db.route.reset(token)
+# ---- end JA-3
+
+
 @app.get("/api/status", dependencies=[Depends(require_auth)])
 def status(response: Response):
     out = myweek.status()
@@ -532,6 +547,7 @@ def status(response: Response):
     out["nightly"] = _status_nightly()      # ---- IH-1: {as_of, age_hours, stale, limit_hours, words}
     out["sleeper"] = A.sleeper().stats()
     out["board_source"] = A.board_source()
+    out["pool"] = db.pool_status()          # ---- JA-3: size, in use, waiting, the longest wait since the process started
     try:                                    # QA: the setting is "auto"; say which board the current week really uses
         season = int(ui.current_season())
         week = cards.decision_week(season)

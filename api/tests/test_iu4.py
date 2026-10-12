@@ -31,7 +31,7 @@ def test_a_missing_table_makes_the_next_ready_probe_at_once(monkeypatch):
             return Cur()
 
     class Pool:
-        def connection(self):
+        def connection(self, timeout=None):     # JA-3: every caller passes the one wait
             return Conn()
     monkeypatch.setattr(db, "pool", lambda: Pool())
     try:

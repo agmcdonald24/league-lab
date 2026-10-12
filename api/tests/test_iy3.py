@@ -43,6 +43,9 @@ class _Broken:
                 return real.connection(timeout=timeout)
         return _P()
 
+    def connection(self, what: str = ""):          # JA-3: blog_store takes db.connection() (the one wait) - same stand-in
+        return self.pool().connection(timeout=db.POOL_WAIT_S)
+
     def __getattr__(self, name):
         return getattr(db, name)
 

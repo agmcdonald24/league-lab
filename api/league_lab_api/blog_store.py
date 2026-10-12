@@ -739,7 +739,7 @@ def _published() -> tuple[bool, list[dict[str, Any]], bool]:
 
 def _read_published() -> tuple[bool, list[dict[str, Any]], bool]:
     """Raises when the read fails; (False, [], False) when it succeeds and the table or the right is not there."""
-    with db.pool().connection(timeout=5) as c:
+    with db.connection("blog") as c:   # JA-3: the one wait (was 5 s)
         if c.execute("select has_table_privilege(to_regclass(%s), 'select')", TABLES[:1]).fetchone()[0] is not True:
             return False, [], False
         has_cover = cover_on(c)                                      # IU-6: the cover is the post's `image`
@@ -764,7 +764,7 @@ def published_body(slug: str) -> str | None:
     hit = _pub.get(key)
     if hit is None:
         try:
-            with db.pool().connection(timeout=5) as c:
+            with db.connection("blog") as c:   # JA-3: the one wait (was 5 s)
                 r = c.execute("select body from blog.posts where slug = %s and status = 'published'", (slug,)).fetchone()
         except Exception as exc:                                     # noqa: BLE001
             _failed("a post's body", exc)
@@ -911,7 +911,7 @@ def image(image_id: str) -> tuple[str, bytes] | None:
     if hit is not None:
         return hit
     try:
-        with db.pool().connection(timeout=5) as c:
+        with db.connection("blog") as c:   # JA-3: the one wait (was 5 s)
             if c.execute("select has_table_privilege(to_regclass(%s), 'select')", TABLES[2:3]).fetchone()[0] is not True:
                 return None
             r = c.execute("select kind, bytes from blog.images where id = %s", (image_id,)).fetchone()

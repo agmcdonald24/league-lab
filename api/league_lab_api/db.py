@@ -19,11 +19,14 @@
 from __future__ import annotations
 
 import atexit
+import contextvars  # ---- JA-3
 import json  # ---- IS-4
 import logging  # ---- IS-4
+import os  # ---- JA-3
 import sys
 import threading
 import time  # ---- IS-4
+from contextlib import contextmanager  # ---- JA-3
 from decimal import Decimal
 
 import numpy as np
@@ -53,7 +56,7 @@ class DataNotReady(RuntimeError):
 # trade evaluation after a publication waited the pool's 30 s and came back a 500 (psycopg_pool.PoolTimeout: every
 # connection busy that long). The wait is now POOL_WAIT_S, and running out of it is said in words: 503 "busy", with
 # the pool's own counts in the log.
-POOL_WAIT_S = 12.0
+POOL_WAIT_S = 8.0     # JA-3: one wait for every caller (the blog's 5 s and the rest's 12 s were two rules; see below)
 
 
 class Busy(DataNotReady):
@@ -69,7 +72,7 @@ def pool() -> ConnectionPool:
     global _pool
     with _pool_lock:
         if _pool is None:
-            _pool = ConnectionPool(app_dsn(), min_size=1, max_size=4, open=True, timeout=POOL_WAIT_S,   # PO (Wave I-W)
+            _pool = ConnectionPool(app_dsn(), min_size=1, max_size=POOL_SIZE, open=True, timeout=POOL_WAIT_S,  # JA-3: size
                                    kwargs={"autocommit": True, "prepare_threshold": None},   # IT-4: no server-side prepared statements
                                    check=ConnectionPool.check_connection,
                                    max_idle=240, name="league-lab-api", configure=_numeric_as_float)
@@ -154,6 +157,85 @@ def _live_sql(cur, sql: str) -> str:
 # ---- end IV-1
 
 
+# ---- JA-3 (Wave J-A): a request never waits for a connection it could have had. Every pooled read goes through
+# `connection()`: one wait for every caller (POOL_WAIT_S, the blog's included), the wait and the hold measured, a wait
+# over a second said in one log line (how long, how many in use, the route, the statement's first words — never the
+# SQL text beyond them, never a DSN), and the pool's counts for /api/status (`pool_status`). The connection is held
+# only while a statement runs and its rows are fetched: the DataFrame is built after it is back in the pool.
+# Size 10 (LEAGUE_LAB_POOL_SIZE, 2..32): the CPU slots (ratelimit.Slots, 4) let four research / heavy requests run at
+# once and each holds a connection while its statement runs, so at 4 connections every read outside a slot (the blog,
+# a card's sections, the readiness and health reads, the post-publish check) waited behind them; 10 = the 4 slotted +
+# 6 for reads. The wait, 8 s for everyone: the longest single statement measured is 1.4 s (a board's inputs, trades);
+# Neon's compute waking takes a few seconds; a connection that has not come in 8 s with 10 in the pool means the
+# database is stalled, and the caller says so (503 "busy"; the blog serves its last good answer) instead of hanging.
+POOL_SIZE = max(2, min(int(os.environ.get("LEAGUE_LAB_POOL_SIZE", "10") or 10), 32))
+SLOW_WAIT_S = 1.0
+route: contextvars.ContextVar[str] = contextvars.ContextVar("league_lab_route", default="-")
+_pstats: dict = {"checkouts": 0, "waited_over_1s": 0, "longest_wait_s": 0.0, "longest_wait_route": None,
+                 "longest_wait_at": None, "longest_hold_s": 0.0, "longest_hold_route": None, "in_use": 0, "waiting": 0,
+                 "peak_in_use": 0}
+_pstats_lock = threading.Lock()
+TRACE = os.environ.get("LEAGUE_LAB_POOL_TRACE") == "1"     # measurement only: one line per checkout (route, wait, hold)
+
+
+def _first_words(sql: str, n: int = 6) -> str:
+    return " ".join(" ".join(sql.split()).split(" ")[:n])[:80]
+
+
+@contextmanager
+def connection(what: str = ""):
+    """A pooled connection for one statement or a few short ones — never across CPU work or a provider call."""
+    t0 = time.monotonic()
+    with _pstats_lock:
+        _pstats["waiting"] += 1
+    try:
+        cm = pool().connection(timeout=POOL_WAIT_S)
+        conn = cm.__enter__()
+    finally:
+        with _pstats_lock:
+            _pstats["waiting"] -= 1
+    waited = time.monotonic() - t0
+    r = route.get()
+    with _pstats_lock:
+        _pstats["checkouts"] += 1
+        _pstats["in_use"] += 1
+        in_use = _pstats["in_use"]
+        _pstats["peak_in_use"] = max(_pstats["peak_in_use"], in_use)
+        if waited > _pstats["longest_wait_s"]:
+            _pstats.update(longest_wait_s=round(waited, 3), longest_wait_route=r,
+                           longest_wait_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+        if waited > SLOW_WAIT_S:
+            _pstats["waited_over_1s"] += 1
+    if waited > SLOW_WAIT_S:
+        log.warning("waited %.1f s for a database connection (%d of %d in use) on %s; the statement began: %s",
+                    waited, in_use, POOL_SIZE, r, _first_words(what))
+    t1 = time.monotonic()
+    exc_info = (None, None, None)
+    try:
+        yield conn
+    except BaseException as exc:
+        exc_info = (type(exc), exc, exc.__traceback__)
+        raise
+    finally:
+        cm.__exit__(*exc_info)
+        held = time.monotonic() - t1
+        with _pstats_lock:
+            _pstats["in_use"] -= 1
+            if held > _pstats["longest_hold_s"]:
+                _pstats.update(longest_hold_s=round(held, 3), longest_hold_route=r)
+        if TRACE:
+            log.warning("pool-trace route=%s wait=%.3f hold=%.3f sql=%s", r, waited, held, _first_words(what))
+
+
+def pool_status() -> dict:
+    """/api/status: the pool's size, in use, waiting, and the longest wait since the process started (no DSN)."""
+    with _pstats_lock:
+        out = {k: _pstats[k] for k in ("in_use", "waiting", "peak_in_use", "checkouts", "waited_over_1s", "longest_wait_s",
+                                       "longest_wait_route", "longest_wait_at", "longest_hold_s", "longest_hold_route")}
+    return {"size": POOL_SIZE, "wait_limit_s": POOL_WAIT_S, **out}
+# ---- end JA-3
+
+
 def _run(sql: str, params: tuple) -> pd.DataFrame:
     # ---- PO (Wave I-W): no connection within POOL_WAIT_S is "busy" in words, never a 500 after half a minute
     try:
@@ -168,7 +250,7 @@ def _run(sql: str, params: tuple) -> pd.DataFrame:
 
 
 def _run_pooled(sql: str, params: tuple) -> pd.DataFrame:
-    with pool().connection() as conn, conn.cursor() as cur:
+    with connection(sql) as conn, conn.cursor() as cur:       # ---- JA-3: measured, one wait
         try:
             cur.execute(_live_sql(cur, sql), params)            # ---- IV-1: _live_sql
         except psycopg.errors.UndefinedTable as exc:
