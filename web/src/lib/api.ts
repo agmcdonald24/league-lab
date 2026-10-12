@@ -3235,3 +3235,50 @@ export interface StatsFrame {
   byweek?: StatsByWeek | null;
 }
 // ---- end JA-1
+// ---- JA-2 (Wave J-A): Compare over the weeks chosen — GET /api/compare/weeks?league&a&b&window&weeks&vs
+export interface CompareWeeksCell {
+  a: number | null; // the stretch chosen (A)
+  b: number | null; // the other weeks (B), with vs
+}
+export interface CompareWeeks {
+  season: number;
+  window: StatsWindow;
+  vs: StatsWindow | null;
+  players: Record<string, { name: string | null; position: string | null; games: number; games_vs: number | null }>;
+  rows: { id: string; label: string; format: "int" | "dec1" | "pct"; a: CompareWeeksCell; b: CompareWeeksCell }[];
+  note: string;
+}
+export const compareWeeksPath = (league: string, a: string, b: string, keys: URLSearchParams) => {
+  const qs = new URLSearchParams({ league, a, b });
+  for (const k of ["window", "weeks", "vs"]) if (keys.get(k)) qs.set(k, keys.get(k)!);
+  return `/api/compare/weeks?${qs.toString()}`;
+};
+// ---- end JA-2
+// ---- JA-2: Matchups over the weeks chosen — /api/matchups/defense?…&window&weeks&vs adds `stretch`
+export interface DefenseStretchCell {
+  defense: string;
+  position: string;
+  games: number;
+  ppg: number;
+  rank: number | null; // among the defenses with two games or more; 1 = gives up the most
+  few: boolean; // fewer than two games in the stretch
+  vs_games?: number;
+  vs_ppg?: number | null;
+  vs_rank?: number | null;
+  rank_change?: number | null; // B's rank − A's: positive = gives up more now
+}
+export interface DefenseStretch {
+  weeks: [number, number];
+  words: string;
+  vs: [number, number] | null;
+  vs_words: string | null;
+  cells: DefenseStretchCell[];
+  note: string;
+}
+export const defenseWeeksPath = (league: string, team: number | null, keys: URLSearchParams) => {
+  const qs = new URLSearchParams({ league, window: keys.get("window") ?? "season" });
+  if (team != null) qs.set("team", String(team));
+  for (const k of ["weeks", "vs"]) if (keys.get(k)) qs.set(k, keys.get(k)!);
+  return `/api/matchups/defense?${qs.toString()}`;
+};
+// ---- end JA-2

@@ -423,6 +423,8 @@
   const through = $derived(Math.max(r.data?.window.through_week ?? 1, 1)); // ---- JA-1: the newest played week
   // ---- JA-1: the slider sits outside the phone's fold whenever a stretch other than the season is in force
   const sliderFolded = $derived(win === "season" && !vsRange);
+  // ---- JA-2: opening Compare from the side-by-side keeps the weeks (the slider's keys)
+  const stretchQs = $derived(["window", "weeks", "vs"].map((k) => (params.get(k) ? `&${k}=${encodeURIComponent(params.get(k)!)}` : "")).join(""));
 </script>
 
 <main class="space-y-4" data-testid="players">
@@ -587,7 +589,7 @@
       <div class="mb-2 flex flex-wrap items-center gap-2">
         <h2 class="text-base font-semibold">Side by side ({selected.length} of 4)</h2>
         {#if selected.length >= 2}
-          <a class="text-sm text-accent underline" href={withContext(`/compare?a=${selected[0].gsis_id}&b=${selected[1].gsis_id}`, ctx)} data-testid="stats-open-compare"
+          <a class="text-sm text-accent underline" href={withContext(`/compare?a=${selected[0].gsis_id}&b=${selected[1].gsis_id}${stretchQs}`, ctx)} data-testid="stats-open-compare"
             >Open {selected[0].player_name} and {selected[1].player_name} in Compare</a
           >
         {:else}<span class="text-sm text-ink-2">Pick one to four more.</span>{/if}

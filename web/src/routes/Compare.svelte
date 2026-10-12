@@ -20,6 +20,9 @@
   import StartAnswer from "../components/rankings/StartAnswer.svelte"; // ---- IP-2: "Who should I start?" first
   import { compareIds } from "../components/rankings/rank"; // ---- IP-2
   import { isRef, refLabel } from "../lib/refleague"; // ---- IP-2: the scoring's name while browsing
+  import WeekSlider from "../components/stretch/WeekSlider.svelte"; // ---- JA-2: the weeks you choose (JA-1's control)
+  import { rangeName, readStretch } from "../lib/stretch"; // ---- JA-2
+  import { compareWeeksPath, type CompareWeeks } from "../lib/api"; // ---- JA-2
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -33,6 +36,20 @@
   const a = $derived(params.get("a"));
   const b = $derived(params.get("b"));
   const startIds = $derived(compareIds(params)); // ---- IP-2: a, b and up to two more (c, d) from the rankings' picks
+  // ---- JA-2 (Wave J-A): the two players' usage and production over the weeks chosen (URL window, weeks, vs), and with
+  // a second stretch "his early weeks against his recent ones"; the forecasts above do not move with the weeks
+  const stretch = $derived(readStretch(params));
+  const wk = new Remote<CompareWeeks>();
+  $effect(() => wk.load(a && b ? compareWeeksPath(league, a, b, params) : null, onauth, true));
+  const wkThrough = $derived(Math.max(wk.data?.window.through_week ?? 1, 1));
+  const wkFmt = (f: string, v: number | null | undefined) => (v === null || v === undefined ? "—" : f === "pct" ? fmt.pct(v, 1) : f === "int" ? String(Math.round(v)) : fmt.pts(v, 1));
+  const wkChg = (f: string, x: number | null, y: number | null) => {
+    if (x === null || y === null) return "—";
+    const d = f === "pct" ? (x - y) * 100 : x - y;
+    const t = `${d > 0 ? "+" : d < 0 ? "−" : "±"}${Math.abs(d).toFixed(f === "int" ? 0 : 1)}`;
+    return f === "pct" ? `${t} pts` : t;
+  };
+  // ---- end JA-2
 
   // no pair in the URL: your closest call this week, else the two best at the most common position
   $effect(() => {
@@ -329,6 +346,46 @@
     {/if}
     <!-- ---- end IF-3 -->
 
+    <!-- ---- JA-2: over the weeks you pick (history), and against other weeks -->
+    <Card title={wk.data?.vs ? "His early weeks against his recent ones" : "Over the weeks you pick"} testid="compare-weeks">
+      <div class="space-y-3">
+        {#if wk.data}
+          <WeekSlider first={1} last={wkThrough} {stretch} onchange={(k) => setParams(k)} />
+          <table class="tabnum w-full text-sm" data-testid="compare-weeks-table">
+            <thead>
+              <tr class="ll-label text-left">
+                <th class="py-1 font-semibold">{wk.data.window.label}{wk.data.vs ? ` · against ${rangeName(wk.data.vs.weeks ?? [1, 1])}` : ""}</th>
+                {#each [a, b] as g, i (i)}
+                  {@const pl = wk.data.players[g ?? ""]}
+                  <th class="py-1 text-right font-semibold" style="color:{i === 0 ? colorA : colorB}">{(pl?.name ?? "").split(" ").slice(-1)[0]}</th>
+                {/each}
+              </tr>
+            </thead>
+            <tbody>
+              {#each wk.data.rows as row (row.id)}
+                <tr class="border-t border-line" data-testid="compare-weeks-row" data-row={row.id}>
+                  <td class="py-1.5 pr-2">{row.label}</td>
+                  {#each [row.a, row.b] as cell, i (i)}
+                    <td class="py-1.5 text-right" data-side={i === 0 ? "a" : "b"}
+                      >{wkFmt(row.format, cell.a)}{#if wk.data.vs}<span class="block text-xs text-ink-2" data-testid="compare-weeks-chg"
+                          >{wkChg(row.format, cell.a, cell.b)} · B {wkFmt(row.format, cell.b)}</span
+                        >{/if}</td
+                    >
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+          <p class="text-xs text-ink-3" data-testid="compare-weeks-note">{wk.data.note}</p>
+        {:else if wk.error}
+          <p class="text-sm text-ink-2">{wk.error}</p>
+        {:else}
+          <div class="ll-skel h-24"></div>
+        {/if}
+      </div>
+    </Card>
+    <p class="text-center text-sm text-ink-2" data-testid="compare-forecast-note">This week, the next 4 weeks and the rest of the season are forecasts, not history: they do not change with the weeks you pick.</p>
+    <!-- ---- end JA-2 -->
     <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-ink-2" data-testid="compare-legend">
       <span class="inline-flex items-center gap-1.5"><span class="h-2 w-4 rounded-sm" style="background:{colorA}"></span>{A.player_name}</span>
       <span class="inline-flex items-center gap-1.5"><span class="h-2 w-4 rounded-sm" style="background:{colorB}"></span>{B.player_name}</span>

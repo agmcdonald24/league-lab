@@ -24,6 +24,9 @@
   import Board from "../components/matchups/Board.svelte";
   import { isRef, refLabel } from "../lib/refleague";
   import { route, setParams } from "../lib/router.svelte";
+  import WeekSlider from "../components/stretch/WeekSlider.svelte"; // ---- JA-2: the weeks you choose (JA-1's control)
+  import { readStretch } from "../lib/stretch"; // ---- JA-2
+  import { defenseWeeksPath, type DefenseStretch } from "../lib/api"; // ---- JA-2
   // ---- end IN-3
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
@@ -34,6 +37,26 @@
   $effect(() => c.load(team === null ? null : researchPaths.cb(league, team), onauth));
 
   const ctx = $derived({ league, team });
+  // ---- JA-2 (Wave J-A): what each defense gave up over the weeks chosen (URL window, weeks, vs), its rank among 32
+  // (1 = gives up the most) and with other weeks the change in rank. A request of its own: the heatmap, your starters'
+  // matchups and every word a decision reads keep the season's numbers.
+  const sp = $derived(route.current.params);
+  const stretch = $derived(readStretch(sp));
+  const dw = new Remote<DefenseMatrix & { stretch?: DefenseStretch | null }>();
+  $effect(() => dw.load(defenseWeeksPath(league, team, sp), onauth, true));
+  const dwThrough = $derived(Math.max(...((dw.data?.weeks_used as number[] | undefined) ?? [1]), 1));
+  const dPos = $derived.by(() => {
+    const ps = (dw.data?.positions ?? []) as string[];
+    const want = sp.get("dpos") ?? "";
+    return ps.includes(want) ? want : (ps[0] ?? "WR");
+  });
+  const dwRows = $derived(
+    (dw.data?.stretch?.cells ?? [])
+      .filter((x) => x.position === dPos)
+      .sort((x, y) => (x.rank ?? 99) - (y.rank ?? 99) || y.ppg - x.ppg || x.defense.localeCompare(y.defense)),
+  );
+  const moved = (ch: number | null | undefined) => (ch === null || ch === undefined ? "—" : ch > 0 ? `▲ up ${ch}` : ch < 0 ? `▼ down ${-ch}` : "same");
+  // ---- end JA-2
   // ---- IN-3: browsing says the scoring ("Half PPR"), never a league name it does not have
   const leagueName = $derived(isRef(league) ? refLabel(league) : (options.find((o) => o.league_id === league)?.name ?? "this league"));
   const browsing = $derived(isRef(league) || team === null);
@@ -187,6 +210,45 @@
       <Heatmap {rows} {cols} cell={heatCell} marked={view === "mine" ? marked : {}} tones />
     </Card>
   {/if}
+  <!-- ---- JA-2: over the weeks you pick -->
+  {#if dw.data?.stretch}
+    {@const st = dw.data.stretch}
+    <Card title={st.vs_words ? `Defenses, ${st.words} against ${st.vs_words}` : `Defenses over ${st.words}`} testid="defense-weeks">
+      <div class="space-y-3">
+        <WeekSlider first={1} last={dwThrough} {stretch} games={false} onchange={(k) => setParams(k)} />
+        <Chips label="Position" testid="dpos" current={dPos} onpick={(p) => setParams({ dpos: p })} items={((dw.data.positions ?? []) as string[]).map((p) => ({ key: p, label: p }))} />
+        <div class="overflow-x-auto">
+          <table class="tabnum w-full text-sm" data-testid="defense-weeks-table">
+            <thead>
+              <tr class="ll-label text-left">
+                <th class="py-1 font-semibold">Rank</th>
+                <th class="py-1 font-semibold">Defense</th>
+                <th class="py-1 text-right font-semibold">G</th>
+                <th class="py-1 text-right font-semibold">Points per game to {dPos}</th>
+                {#if st.vs}<th class="py-1 text-right font-semibold">{st.vs_words}</th><th class="py-1 text-right font-semibold">Rank change</th>{/if}
+              </tr>
+            </thead>
+            <tbody>
+              {#each dwRows as x (x.defense)}
+                <tr class="border-t border-line" data-testid="defense-weeks-row" data-defense={x.defense}>
+                  <td class="py-1.5" data-col="rank">{x.rank !== null ? `#${x.rank}` : "—"}</td>
+                  <td class="py-1.5">{teamLabel(x.defense) ?? x.defense}{#if x.few}<span class="ml-1 text-xs text-ink-3" data-testid="defense-weeks-few">{x.games} game: too few to rank</span>{/if}</td>
+                  <td class="py-1.5 text-right">{x.games}</td>
+                  <td class="py-1.5 text-right">{fmt.pts(x.ppg, 1)}</td>
+                  {#if st.vs}
+                    <td class="py-1.5 text-right" data-col="vs-rank">{x.vs_rank != null ? `#${x.vs_rank}` : (x.vs_games ?? 0) < 2 ? `${x.vs_games ?? 0} game${x.vs_games === 1 ? "" : "s"}` : "—"}</td>
+                    <td class="py-1.5 text-right whitespace-nowrap" data-col="rank-change" title="Places on the list since the other weeks: ▲ up = he gives up more now">{moved(x.rank_change)}</td>
+                  {/if}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs text-ink-3" data-testid="defense-weeks-note">{st.note}</p>
+      </div>
+    </Card>
+  {/if}
+  <!-- ---- end JA-2 -->
 {/snippet}
 
 <main class="space-y-5" data-testid="matchups">
