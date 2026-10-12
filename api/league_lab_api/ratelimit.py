@@ -95,6 +95,7 @@ HEAVY_EXACT = frozenset({
 RESEARCH_EXACT = frozenset({
     "/api/players", "/api/players.csv", "/api/trends", "/api/matchups/defense", "/api/matchups/cb", "/api/compare",
     "/api/receivers", "/api/about", "/api/record", "/api/ros", "/api/dfs/projections",
+    "/api/compare/weeks",                          # ---- JA-2: Compare over the weeks chosen (prices the Stats frame)
 })
 RESEARCH_PREFIX = ("/api/player/",)
 # ---- IN-2 (Wave I-N): the trade calculator without a league prices two sides on request

@@ -601,8 +601,12 @@ def trends(league: str, response: Response, position: str = "ALL", limit: int = 
 
 
 @app.get("/api/matchups/defense", dependencies=[Depends(require_auth)])
-def matchups_defense(league: str, response: Response, position: str = "ALL", source: str | None = None, team: int | None = None):
-    return _research(research.matchups_defense(league, position=position, source=source, team=team), league, response)
+def matchups_defense(league: str, response: Response, position: str = "ALL", source: str | None = None, team: int | None = None,
+                     window: str | None = None, weeks: str | None = None, vs: str | None = None):   # ---- JA-2: the weeks
+    if window is None and weeks is None and vs is None:
+        return _research(research.matchups_defense(league, position=position, source=source, team=team), league, response)
+    return _research(research.matchups_defense_weeks(league, position=position, window=window, weeks=weeks, vs=vs,
+                                                     source=source, team=team), league, response)   # ---- end JA-2
 
 
 @app.get("/api/matchups/cb", dependencies=[Depends(require_auth)])
@@ -673,6 +677,16 @@ def receivers(league: str, response: Response, season: int | None = None, limit:
               weeks: str | None = None, players: str | None = None, context: str = "half", source: str | None = None):
     return _research(research.receivers(league, season=season, limit=limit, season_type=season_type, weeks=weeks,
                                         players=players, context_type=context, source=source), league, response)
+
+
+# ---- JA-2 (Wave J-A): Compare's rows over the weeks chosen with the slider (window, weeks, vs); the forecasts stay on
+# /api/compare, which takes no weeks
+@app.get("/api/compare/weeks", dependencies=[Depends(require_auth)])
+def compare_weeks(league: str, a: str, b: str, response: Response, window: str | None = None, weeks: str | None = None,
+                  vs: str | None = None, source: str | None = None):
+    return _research(research.compare_weeks(league, a, b, window=window, weeks=weeks, vs=vs, source=source), league,
+                     response)
+# ---- end JA-2
 
 
 @app.get("/api/compare", dependencies=[Depends(require_auth)])

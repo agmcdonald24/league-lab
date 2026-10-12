@@ -1883,3 +1883,133 @@ def search_on_demand(league_id: str, q: str, *, source: str | None = None) -> li
                     "is_free_agent": rid is None,
                     "label": f"{name} · {pos} · {team or 'no team'} · " + ("free agent" if rid is None else f"{tname}")})
     return out
+
+
+# ---- JA-2 (Wave J-A): the same weeks on Compare and Matchups — the week slider's keys (window, weeks, vs; JA-1)
+def _stretch_keys(window: str | None, weeks: str | None, vs: str | None) -> tuple[str, str, tuple | None, tuple | None]:
+    """(window, basis, A's weeks, B's weeks) from the slider's URL keys, validated as /api/players validates them
+    (last3w / last5w are calendar weeks; last3 / last5 his games played)."""
+    w = (window or "season").lower()
+    if w in ("last3w", "last5w"):
+        w, basis = w[:-1], "weeks"
+    elif w in ("last3", "last5"):
+        basis = "games"
+    else:
+        basis = "weeks"
+    if w not in ST.WINDOWS:
+        raise BadRequest("window is season, last3, last5, last3w, last5w or weeks")
+    wk = ST.parse_weeks(weeks) if w == "weeks" else None
+    if w == "weeks" and wk is None:
+        raise BadRequest("weeks is a range like 2-4 (calendar weeks)")
+    vk = ST.parse_weeks(vs) if vs else None
+    if vs and vk is None:
+        raise BadRequest("vs is a range of calendar weeks like 1-2")
+    return w, basis, wk, vk
+
+
+COMPARE_WEEKS_ROWS = [  # (field, label, format, positions it applies to)
+    ("games", "Games", "int", SKILL), ("points_per_game", "Points per game", "dec1", SKILL),
+    ("targets_per_game", "Targets per game", "dec1", ("RB", "WR", "TE")), ("target_share", "Target share", "pct", ("RB", "WR", "TE")),
+    ("receptions_per_game", "Receptions per game", "dec1", ("RB", "WR", "TE")),
+    ("receiving_yards_per_game", "Receiving yards per game", "dec1", ("RB", "WR", "TE")),
+    ("carries_per_game", "Carries per game", "dec1", SKILL), ("carry_share", "Carry share", "pct", ("RB",)),
+    ("rushing_yards_per_game", "Rushing yards per game", "dec1", SKILL),
+    ("attempts_per_game", "Pass attempts per game", "dec1", ("QB",)), ("passing_yards_per_game", "Passing yards per game", "dec1", ("QB",)),
+    ("snap_share", "Snap share", "pct", SKILL)]
+COMPARE_WEEKS_NOTE = ("History over the weeks you pick: each stretch from its own sums (a share is his targets over his "
+                      "team's targets in those games, never an average of weeks). This week, the next 4 weeks and the rest "
+                      "of the season above are forecasts: they do not change with the weeks.")
+
+
+def compare_weeks(league_id: str, a: str, b: str, *, window: str | None = None, weeks: str | None = None,
+                  vs: str | None = None, source: str | None = None) -> dict:
+    """Compare's usage and production rows over the weeks chosen with the slider (A) and, with ``vs``, another stretch
+    (B): the Stats frame's own arithmetic (stats_frame) read for the two players. No forecast here."""
+    if not a or not b or a == b:
+        raise BadRequest("compare needs two players: a=<gsis_id> and b=<gsis_id>")
+    ctx = context(league_id, source)
+    w, basis, _, _ = _stretch_keys(window, weeks, vs)
+    d = stats_frame(ctx, season=ctx.season, season_type="REG", position="ALL", window=w, basis=basis, weeks=weeks,
+                    who=None, team=None, nfl=None, q=None, min_games=0, sort=None, dir=None, limit=ST.STATS_LIMIT,
+                    offset=0, vs=vs or None)
+    rows_a = {p["gsis_id"]: p for p in d["players"]}
+    other = (d.get("vs") or {}).get("players") or {}
+    pos = {g: (rows_a.get(g) or {}).get("position") for g in (a, b)}
+    out = []
+    for f, label, fmt, applies in COMPARE_WEEKS_ROWS:
+        if not any(pos[g] in applies for g in (a, b) if pos[g]) and f != "games":
+            continue
+        out.append({"id": f, "label": label, "format": fmt,
+                    "a": {"a": (rows_a.get(a) or {}).get(f) if pos[a] in applies else None,
+                          "b": other.get(a, {}).get(f) if d.get("vs") and pos[a] in applies else None},
+                    "b": {"a": (rows_a.get(b) or {}).get(f) if pos[b] in applies else None,
+                          "b": other.get(b, {}).get(f) if d.get("vs") and pos[b] in applies else None}})
+    return {**ctx.meta(), "season": d["season"], "window": d["window"], "vs": (d.get("vs") or {}).get("window"),
+            "players": {g: {"name": (rows_a.get(g) or {}).get("player_name"), "position": pos[g],
+                            "games": (rows_a.get(g) or {}).get("games") or 0,
+                            "games_vs": (other.get(g) or {}).get("games") or 0 if d.get("vs") else None} for g in (a, b)},
+            "rows": out, "note": COMPARE_WEEKS_NOTE}
+
+
+DVP_STRETCH_NOTE = ("Over the weeks you pick: points his position scored against the defense per game in those weeks, "
+                    "in this league's scoring; the rank among 32, #1 = gives up the most. Fewer than two games: too few "
+                    "to rank. The season's rank (the matchup words on the card, My Week and the trade) does not move.")
+
+
+def defense_stretch(ctx: Ctx, season: int, pos: list[str], wk: tuple[int, int]) -> pd.DataFrame:
+    """Per defense and position over calendar weeks ``wk``: games, points allowed per game (the weeks' summed points
+    over the weeks' games), the rank among the defenses with two games or more (1 = gives up the most); fewer than two
+    games: no rank (``few``)."""
+    g = league_games(ctx, season)
+    g = g[(g["season_type"] == "REG") & g["position"].isin(pos) & g["week"].between(wk[0], wk[1])]
+    cols = ["defense", "position", "games", "points", "ppg", "rank", "few"]
+    if g.empty:
+        return pd.DataFrame(columns=cols)
+    pg = (g.assign(points=pd.to_numeric(g["points"], errors="coerce"))
+          .groupby(["opponent_team", "game_id", "position"], as_index=False)["points"].sum(min_count=1)
+          .rename(columns={"opponent_team": "defense"}))
+    by = pg.groupby(["defense", "position"], as_index=False).agg(games=("game_id", "nunique"), points=("points", "sum"))
+    by["ppg"] = (by["points"] / by["games"]).round(2)
+    by["few"] = by["games"] < 2
+    by["rank"] = by[~by["few"]].groupby("position")["ppg"].rank(ascending=False, method="min")
+    return by[cols]
+
+
+def matchups_defense_weeks(league_id: str, *, position: str | None = None, window: str | None = None,
+                           weeks: str | None = None, vs: str | None = None, source: str | None = None,
+                           team: int | None = None) -> dict:
+    """``matchups_defense`` (every season number as it is) + ``stretch``: each defense over the weeks chosen (A) and,
+    with ``vs``, another stretch (B) and the change in rank (B's rank − A's: positive = gives up more now)."""
+    out = matchups_defense(league_id, position=position, source=source, team=team)
+    w, _, wk, vk = _stretch_keys(window, weeks, vs)
+    if w not in ("season", "weeks", "last3", "last5"):
+        raise BadRequest("window is season, last3w, last5w or weeks here")
+    played = out.get("weeks_used") or []
+    if not played:
+        out["stretch"] = None
+        return out
+    first, through = min(played), max(played)
+    a = (first, through) if w == "season" else wk if w == "weeks" else (max(first, through - (2 if w == "last3" else 4)), through)
+    for name, rng in (("weeks", a), ("vs", vk)):
+        if rng is not None and (rng[0] < first or rng[0] > through):
+            raise BadRequest(f"{name}: weeks {first}–{through} have been played this season")
+    a = (a[0], min(a[1], through))
+    vk = (vk[0], min(vk[1], through)) if vk else None
+    ctx = context(league_id, source)
+    sa = defense_stretch(ctx, out["season"], out["positions"], a)
+    rows = {(r["defense"], r["position"]): r for r in sa.to_dict("records")}
+    sb = {(r["defense"], r["position"]): r for r in defense_stretch(ctx, out["season"], out["positions"], vk).to_dict("records")} if vk else {}
+    rk = lambda v: int(v) if v is not None and not (isinstance(v, float) and np.isnan(v)) else None  # noqa: E731
+    cells = []
+    for (d, p), r in rows.items():
+        o = sb.get((d, p))
+        ra, rb = rk(r["rank"]), (rk(o["rank"]) if o else None)
+        cells.append({"defense": d, "position": p, "games": int(r["games"]), "ppg": float(r["ppg"]), "rank": ra,
+                      "few": bool(r["few"]),
+                      **({"vs_games": int(o["games"]) if o else 0, "vs_ppg": float(o["ppg"]) if o else None, "vs_rank": rb,
+                          "rank_change": (rb - ra) if ra is not None and rb is not None else None} if vk else {})})
+    words = lambda r: f"week {r[0]}" if r[0] == r[1] else f"weeks {r[0]}–{r[1]}"  # noqa: E731
+    out["stretch"] = {"weeks": list(a), "words": words(a), "vs": list(vk) if vk else None, "vs_words": words(vk) if vk else None,
+                      "cells": cells, "note": DVP_STRETCH_NOTE}
+    return out
+# ---- end JA-2
