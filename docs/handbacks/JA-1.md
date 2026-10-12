@@ -1,6 +1,6 @@
 # JA-1 — Stats: the weeks you choose, one stretch against another, and a stat week by week (Wave J-A)
 
-**Start 00:36 ET, Monday 2026-10-12 (read from `date`); end 01:12.** Branch `dev/JA1` (from `main` `03bc1af`),
+**Start 00:36 ET, Monday 2026-10-12 (read from `date`); end 01:11.** Branch `dev/JA1` (from `main` `03bc1af`),
 `/home/claude/wt-iq4`, database `league_lab_iq4`.
 
 ## 1. Done / not done / cut
@@ -62,8 +62,8 @@
 * e2e that open Stats, both projects: ja1, ix3, im2, ii3, il1, in2, ip3, io4, ib1 → **88 passed**; ip4, im3, ii6, in1,
   ii2, `fixtures.spec.ts` → **103 passed, 7 skipped**. **Updated on purpose**: `ii3` (the window select → the slider's
   quick picks), `ix3` (the Filters label no longer names the weeks; `stats-weeks` folded for the season).
-* Ruff, the copy standard, `npm run lint` (eslint + svelte-check + tsc): clean; the build. `scripts/gate.sh`: see the
-  final message.
+* Ruff, the copy standard, `npm run lint` (eslint + svelte-check + tsc): clean; the build. `scripts/gate.sh` (run last):
+  **GATE PASSED** (81 s).
 
 ## 5. Edits outside my files
 
