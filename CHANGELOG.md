@@ -4,6 +4,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-12 — Wave J-A
 
+- **JA-6 — the CPU-slot limiter, visible.** `/api/status` shows `slots` beside `pool`: size, in use, waiting, and since
+  the process started the longest wait for a slot, the requests answered "busy" by route, the longest hold; a wait over
+  a second or a "busy" answer is one log line. Nothing a request is answered changed.
+
 - **JA-5 — Stats opens on the table on a desktop too.** From 900 px the controls are one row: the positions, the weeks
   as one line ("Season · weeks 1–4 ▾", the slider in place), the situation as a select, and one Filters button that
   names what is in force and opens the rest in place (the same fold as the phone's). At 1300 × 900 the first row sits

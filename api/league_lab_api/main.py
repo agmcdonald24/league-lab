@@ -548,6 +548,7 @@ def status(response: Response):
     out["sleeper"] = A.sleeper().stats()
     out["board_source"] = A.board_source()
     out["pool"] = db.pool_status()          # ---- JA-3: size, in use, waiting, the longest wait since the process started
+    out["slots"] = ratelimit.slots().status()   # ---- JA-6: the CPU-slot limiter beside the pool (a 503 "busy" is its)
     try:                                    # QA: the setting is "auto"; say which board the current week really uses
         season = int(ui.current_season())
         week = cards.decision_week(season)

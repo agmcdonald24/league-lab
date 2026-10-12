@@ -124,3 +124,49 @@ the two test stand-ins above, `CHANGELOG.md`.
 
 The slot question above; the post-publish check's pool line; a look at the card's ~15 statements (one query could
 carry most of them).
+
+---
+
+### JA-6 — the CPU-slot limiter made visible (start 02:34 ET, end 02:42 ET; branch `dev/JA6`)
+
+**Done.** Nothing any request is answered changed: the limiter (`ratelimit.Slots`, `LEAGUE_LAB_CPU_SLOTS` 4, 20 s, then
+503 "busy") only counts and says what it does.
+
+* `/api/status` gains `slots` beside `pool` (since the process started; the route is the path's shape — its lower-case
+  words, every other segment `*`; never a query string, an id, a team or a key; `busy_by_route` at most 24 shapes, the
+  rest `other`):
+
+  ```json
+  "slots": {"size": 4, "wait_limit_s": 20.0, "in_use": 1, "waiting": 0, "peak_in_use": 4, "waited": 12,
+            "longest_wait_s": 19.98, "longest_wait_route": "/api/trades/partners", "busy_answers": 3,
+            "busy_by_route": {"/api/my-week": 1, "/api/trades/partners": 2},
+            "longest_hold_s": 18.4, "longest_hold_route": "/api/trades/evaluate"}
+  ```
+
+  (The existing `ratelimit.cpu` counters stay as they were.)
+* One log line, the pool line's form: `waited 1.2 s for a CPU slot (4 of 4 in use) on /api/trades/partners`, and
+  `answered busy after 20.0 s waiting for a CPU slot (4 of 4 in use) on /api/players`.
+* **The PO's diff** for `scripts/post_deploy_check.py` (one informational line after the trade check, never a failure;
+  it replaces the pool-only diff above):
+
+  ```diff
+       j.line(ok, "trade", code, secs, text)
+  +    # JA-6: the pool's and the CPU slots' peak and longest wait since the process started (information, never a failure)
+  +    code, secs, st = j.call("GET", "/api/status")
+  +    if isinstance(st, dict):
+  +        p, s = st.get("pool") or {}, st.get("slots") or {}
+  +        print(f"info load       {code:>3} {secs:5.2f}s  pool {p.get('peak_in_use')}/{p.get('size')} at peak, longest wait "
+  +              f"{p.get('longest_wait_s')} s on {p.get('longest_wait_route')}; CPU slots {s.get('peak_in_use')}/{s.get('size')} "
+  +              f"at peak, longest wait {s.get('longest_wait_s')} s on {s.get('longest_wait_route')}, "
+  +              f"{s.get('busy_answers')} answered busy", flush=True)
+  ```
+
+* **Tests**: `api/tests/test_ja6.py` 7 passed (a slot taken at once: in use, peak, its hold; a wait over a second: one
+  line in the pool's form; a busy answer: counted by route, logged, still refused; the by-route count bounded; the
+  route a shape, never an id / team / key; slots off untouched; `/api/status` carries `slots` beside `pool` with the
+  research request's route and no query). Every API test file that names `ratelimit` or `/api/status` (42 files) +
+  `test_ja3` / `test_ja6` through `check_api.sh`: 724 passed, 28 failed — all on the known list, **0 new**.
+  `scripts/gate.sh` (last): **GATE PASSED**, 823 ran, web lint + build ok. ruff, the copy standard clean.
+* **Edits**: `api/league_lab_api/ratelimit.py` (marked JA-6: `Slots` counters, `status()`, `route_shape`, the shape
+  passed by the middleware), `api/league_lab_api/main.py` (`out["slots"]`), `CHANGELOG.md`.
+

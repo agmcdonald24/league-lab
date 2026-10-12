@@ -45,6 +45,7 @@ import json
 import logging
 import math
 import os
+import re  # ---- JA-6
 import secrets
 import threading
 import time
@@ -238,6 +239,13 @@ class Slots:
         self.refused = 0
         self.waited = 0
         self._lock = threading.Lock()
+        # ---- JA-6 (Wave J-A): what the limiter does, visible (status() and one log line); it answers nothing new
+        self.waiting = 0
+        self.peak = 0
+        self.longest_wait = (0.0, None)          # (seconds, route)
+        self.longest_hold = (0.0, None)
+        self.busy_by_route: dict[str, int] = {}
+        # ---- end JA-6
 
     def _try(self) -> bool:
         with self._lock:
@@ -246,30 +254,82 @@ class Slots:
                 return True
             return False
 
-    async def acquire(self) -> bool:
+    async def acquire(self, route: str = "-") -> bool:
         if self.n <= 0:
             return True
         if self._try():
+            self._note_in(route, 0.0)
             return True
         self.waited += 1
         import asyncio
-        deadline = time.monotonic() + self.wait_s
-        while time.monotonic() < deadline:
-            await asyncio.sleep(0.05)
-            if self._try():
-                return True
+        t0 = time.monotonic()
+        deadline = t0 + self.wait_s
+        with self._lock:
+            self.waiting += 1
+        try:
+            while time.monotonic() < deadline:
+                await asyncio.sleep(0.05)
+                if self._try():
+                    self._note_in(route, time.monotonic() - t0)
+                    return True
+        finally:
+            with self._lock:
+                self.waiting -= 1
+        waited = time.monotonic() - t0
         with self._lock:
             self.refused += 1
+            key = route if (route in self.busy_by_route or len(self.busy_by_route) < BUSY_ROUTES_MAX) else "other"
+            self.busy_by_route[key] = self.busy_by_route.get(key, 0) + 1
+            in_use = self.busy
+            if waited > self.longest_wait[0]:
+                self.longest_wait = (round(waited, 3), route)
+        log.warning("answered busy after %.1f s waiting for a CPU slot (%d of %d in use) on %s", waited, in_use, self.n, route)
         return False
 
-    def release(self) -> None:
+    def release(self, route: str = "-", held_s: float | None = None) -> None:
         if self.n <= 0:
             return
         with self._lock:
             self.busy = max(0, self.busy - 1)
+            if held_s is not None and held_s > self.longest_hold[0]:
+                self.longest_hold = (round(held_s, 3), route)
+
+    # ---- JA-6 (Wave J-A)
+    def _note_in(self, route: str, waited: float) -> None:
+        with self._lock:
+            self.peak = max(self.peak, self.busy)
+            in_use = self.busy
+            if waited > self.longest_wait[0]:
+                self.longest_wait = (round(waited, 3), route)
+        if waited > SLOW_SLOT_WAIT_S:
+            log.warning("waited %.1f s for a CPU slot (%d of %d in use) on %s", waited, in_use, self.n, route)
+
+    def status(self) -> dict:
+        """/api/status `slots`: size, in use, waiting, and since the process started the longest wait (its route), the
+        requests answered busy (by route: the heavy routes' shapes, at most BUSY_ROUTES_MAX, the rest "other") and the
+        longest hold (its route). No user data, no query string, no id."""
+        with self._lock:
+            return {"size": self.n, "wait_limit_s": self.wait_s, "in_use": self.busy, "waiting": self.waiting,
+                    "peak_in_use": self.peak, "waited": self.waited,
+                    "longest_wait_s": self.longest_wait[0], "longest_wait_route": self.longest_wait[1],
+                    "busy_answers": self.refused, "busy_by_route": dict(sorted(self.busy_by_route.items())),
+                    "longest_hold_s": self.longest_hold[0], "longest_hold_route": self.longest_hold[1]}
+    # ---- end JA-6
 
     def info(self) -> dict:
         return {"slots": self.n, "busy": self.busy, "waited": self.waited, "refused": self.refused, "wait_s": self.wait_s}
+
+
+# ---- JA-6: the route a slot is counted under - the path's lower-case words, any other segment (an id, a team, a key)
+# `*`: a closed set of shapes (the research / heavy routes), never a value a visitor typed
+SLOW_SLOT_WAIT_S = 1.0
+BUSY_ROUTES_MAX = 24
+_WORD = re.compile(r"[a-z][a-z_.-]{0,30}")
+
+
+def route_shape(path: str) -> str:
+    return "/".join(seg if (not seg or _WORD.fullmatch(seg)) else "*" for seg in str(path).split("/")[:6])[:80]
+# ---- end JA-6
 
 
 def slots_from_env() -> Slots:
@@ -653,9 +713,11 @@ class RateLimit:
 
     async def _admitted(self, scope, receive, send, name: str, league: str | None) -> None:
         gate = slots() if name in ("research", "heavy") else None
-        if gate is not None and not await gate.acquire():
+        shape = route_shape(scope.get("path") or "") if gate is not None else "-"          # ---- JA-6
+        if gate is not None and not await gate.acquire(shape):
             return await _send(send, *busy(30.0))
         held = gate is not None
+        t_in = time.monotonic()                                                            # ---- JA-6
         status = 0
 
         async def send_and_release(message):
@@ -664,14 +726,14 @@ class RateLimit:
                 status = int(message.get("status") or 0)
                 if held:
                     held = False
-                    gate.release()
+                    gate.release(shape, time.monotonic() - t_in)                           # ---- JA-6
             await send(message)
 
         try:
             await self.app(scope, receive, send_and_release)
         finally:
             if held:
-                gate.release()
+                gate.release(shape, time.monotonic() - t_in)                               # ---- JA-6
         if league is not None and status == 200:
             SEEN.mark(league)
 
