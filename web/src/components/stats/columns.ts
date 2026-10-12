@@ -369,3 +369,34 @@ export function viewsFor(pos: PosGroup, catalogue: StatsColumn[], answer?: ViewD
     .filter((v) => v.key === "key" || v.columns.filter((c) => c !== "games").length >= 2);
 }
 // ---- end IX-3
+
+// ---- JA-1 (Wave J-A): one stretch against another — the change from B under A's value (A − B, each from its own sums)
+export const NOT_COMPARED = new Set([...SHARE_CHANGE, "ros_value"]);
+const signed = (d: number, digits: number) => `${d > 0 ? "+" : d < 0 ? "−" : "±"}${Math.abs(d).toFixed(digits)}`;
+export interface Change {
+  text: string;
+  v: number | null;
+  why: string;
+  small: string | null;
+}
+export function change(c: StatsColumn, a: StatsRow, b: StatsRow | null, mode: Mode, bName: string): Change {
+  if (NOT_COMPARED.has(c.id)) return { text: "", v: null, why: "Not compared: this column is already a change between his games, or a forecast.", small: null };
+  if (c.unsplit) return { text: "", v: null, why: c.reason ?? "", small: null };
+  const f = field(c, mode);
+  const av = num(a[f]);
+  const bv = b ? num(b[f]) : null;
+  if (!b) return { text: "—", v: null, why: `No game in ${bName}: nothing to compare.`, small: null };
+  if (av === null || bv === null) return { text: "—", v: null, why: `Unknown in one of the two stretches (${bName}: ${show(c, b, mode)}).`, small: null };
+  const d = av - bv;
+  const text = SHARE_CHANGE.has(c.id) || c.format === "pct" ? `${signed(d * 100, 1)} pts` : c.format === "dec2" ? signed(d, 2) : c.format === "int" && !(c.per_game && mode === "game") ? signed(d, 0) : signed(d, 1);
+  const sa = small(c, a, mode);
+  const sb = small(c, b, mode);
+  const s = SMALL[c.id];
+  const ga = num(a.games) ?? 0;
+  const gb = num(b.games) ?? 0;
+  // the screen's small-sample rule on either side, and one game on either side (a single game's number moves a lot)
+  const sizes = s ? `${fmt.whole(num(a[s[0]]))} ${s[2]} here, ${fmt.whole(num(b[s[0]]))} in ${bName}` : `${ga} game${ga === 1 ? "" : "s"} here, ${gb} in ${bName}`;
+  const thin = sa || sb || ga < 2 || gb < 2;
+  return { text, v: d, why: `Change from ${bName}: ${text} (${bName}: ${show(c, b, mode)})`, small: thin ? `Small sample on one side: ${sizes}, so this change moves a lot.` : null };
+}
+// ---- end JA-1

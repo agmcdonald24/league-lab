@@ -106,8 +106,8 @@
     <Chips label="Weeks" testid={`${testid}-quick`} current={quick} onpick={pick} items={QUICK} />
   </div>
   <p class="text-sm" aria-live="polite" data-testid={`${testid}-words`}>
-    <span class="font-semibold text-ink">{#if b}<span class="ll-key ll-key-a" aria-hidden="true"></span>A: {/if}{said}</span>{#if b}<span class="text-ink-2"> against </span><span class="font-semibold text-ink"
-        ><span class="ll-key ll-key-b" aria-hidden="true"></span>B: {rangeWords(b)}</span
+    <span class="font-semibold text-ink">{#if b}<span class="ll-key ll-key-a" aria-hidden="true"></span>{"A: "}{/if}{said}</span>{#if b}<span class="text-ink-2">{" against "}</span><span class="font-semibold text-ink"
+        ><span class="ll-key ll-key-b" aria-hidden="true"></span>{`B: ${rangeWords(b)}`}</span
       >{/if}
   </p>
   {#if span >= 1}

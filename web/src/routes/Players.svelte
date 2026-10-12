@@ -161,6 +161,21 @@
   const sortKey = $derived(params.get("sort") ?? preset?.sort ?? "points");
   const sortCol = $derived(cat.get(sortKey) ?? cat.get(sortKey.replace(/_per_game$/, "")) ?? null);
   const dir = $derived(params.get("dir") === "asc" ? "asc" : "desc");
+  // ---- JA-1: one stretch against another — B's row beside A's, sort by the change (A − B)
+  const vsRow = (p: StatsRow): StatsRow | null => (r.data?.vs?.players?.[p.gsis_id] as StatsRow | undefined) ?? null;
+  const hasVs = $derived(!!vsRange && !!r.data?.vs);
+  const sortChg = $derived(hasVs && params.get("sortby") === "chg");
+  const aWeeks = $derived((r.data?.window.weeks ?? null) as [number, number] | null);
+  const aName = $derived(win === "season" ? "the season" : aWeeks ? rangeName(aWeeks) : "these weeks");
+  const bName = $derived(vsRange ? rangeName(vsRange) : "");
+  const chgOf = (c: StatsColumn, p: StatsRow): number | null => {
+    const bp = vsRow(p);
+    const f = fieldOf(c, mode);
+    const a = num(p[f]);
+    const b = bp ? num(bp[f]) : null;
+    return a === null || b === null ? null : a - b;
+  };
+  // ---- end JA-1
 
   let q = $state(new URLSearchParams(location.search).get("q") ?? "");
   const PAGE = 50; // ---- IM-2: the first 50, then "Show all" (every row of the answer: the frame carries up to 1000)
@@ -184,10 +199,11 @@
     );
     const key = sortCol ? field(sortCol) : "points";
     const sign = dir === "asc" ? 1 : -1;
+    const val = (p: StatsRow) => (sortChg && sortCol ? chgOf(sortCol, p) : num(p[key])); // ---- JA-1: or by the change
     // the whole filtered set is sorted before the page is cut ("Show more" never hides a better row)
     return [...xs].sort((a, b) => {
-      const av = num(a[key]);
-      const bv = num(b[key]);
+      const av = val(a);
+      const bv = val(b);
       if (av === null && bv === null) return a.player_name.localeCompare(b.player_name);
       if (av === null) return 1;
       if (bv === null) return -1;
@@ -205,7 +221,11 @@
   const why = (c: StatsColumn, p: StatsRow) => whyOf(c, p, mode);
 
   function onsort(c: StatsColumn) {
-    setParams({ sort: c.id, dir: c.id === sortCol?.id && dir === "desc" ? "asc" : "desc" });
+    setParams({ sort: c.id, dir: c.id === sortCol?.id && !sortChg && dir === "desc" ? "asc" : "desc", sortby: null });
+  }
+  // ---- JA-1: sort by the change from the other weeks
+  function onsortChg(c: StatsColumn) {
+    setParams({ sort: c.id, dir: c.id === sortCol?.id && sortChg && dir === "desc" ? "asc" : "desc", sortby: "chg" });
   }
   let timer: ReturnType<typeof setTimeout> | undefined;
   function onq() {
@@ -365,7 +385,15 @@
 <main class="space-y-4" data-testid="players">
   <ScreenHead eyebrow="Research · Stats" title={r.data ? `Stats, ${r.data.season}` : "Stats"}>
     {#snippet answer()}
-      {#if leader && sortCol}
+      {#if leader && sortCol && sortChg && chgOf(sortCol, leader) !== null}
+        <!-- ---- JA-1: the headline answers the new question -->
+        {@const sc = cols.find((c) => c.id === sortCol.id) ?? sortCol}
+        {@const bp = vsRow(leader)!}
+        <span data-testid="players-answer"
+          ><strong>{dir === "asc" ? "Biggest drop" : "Biggest rise"} in {title(sortCol).toLowerCase()}{sitKey === "all" ? "" : ` ${sitLabel.toLowerCase()}`}, {aName} against {bName}: {leader.player_name}, {show(sc, leader)} against {show(sc, bp)}</strong>
+          ({leader.games} game{leader.games === 1 ? "" : "s"} against {bp.games ?? 0}) · {filtered.length} player{filtered.length === 1 ? "" : "s"}.</span
+        >
+      {:else if leader && sortCol}
         <span data-testid="players-answer"
           ><strong>{dir === "asc" ? "Lowest" : "Highest"} {title(sortCol).toLowerCase()}{sitKey === "all" ? "" : ` ${sitLabel.toLowerCase()}`}: {leader.player_name}, {show(cols.find((c) => c.id === sortCol.id) ?? sortCol, leader)}</strong>
           ({leader.games} game{leader.games === 1 ? "" : "s"}{cols.some((c) => c.id === "receiving_yards") && sortCol.id !== "receiving_yards" && (leader.position === "WR" || leader.position === "TE")
@@ -599,7 +627,11 @@
         {sel}
         onselect={toggleSel}
         owner={owned ? ownerOf : null}
-        caption={`${POS.find((x) => x.key === position)?.label ?? "All"} players, ${r.data.window.label}${sitKey === "all" ? "" : `, ${sitLabel.toLowerCase()}`}: ${view === "full" ? "full table" : (activeDef?.label ?? "Key stats").toLowerCase()}${sortCol ? `, sorted by ${title(sortCol).toLowerCase()}` : ""}`}
+        vs={hasVs ? vsRow : null}
+        vsName={bName}
+        {sortChg}
+        onsortChg={hasVs ? onsortChg : undefined}
+        caption={`${POS.find((x) => x.key === position)?.label ?? "All"} players, ${r.data.window.label}${hasVs ? `, against ${bName}` : ""}${sitKey === "all" ? "" : `, ${sitLabel.toLowerCase()}`}: ${view === "full" ? "full table" : (activeDef?.label ?? "Key stats").toLowerCase()}${sortCol ? `, sorted by ${title(sortCol).toLowerCase()}` : ""}`}
         dim={r.loading}
       />
     {/key}

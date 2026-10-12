@@ -13,6 +13,7 @@
   import PosBadge from "../PosBadge.svelte";
   import TeamBadge from "../TeamBadge.svelte";
   import { head, runs, show, small, title, why, type Mode } from "./columns";
+  import { change, NOT_COMPARED } from "./columns"; // ---- JA-1: one stretch against another
 
   let {
     rows,
@@ -30,6 +31,10 @@
     owner = null,
     caption,
     dim = false,
+    vs = null,
+    vsName = "",
+    sortChg = false,
+    onsortChg,
   }: {
     rows: StatsRow[]; // the whole filtered, sorted set
     cols: StatsColumn[];
@@ -46,7 +51,13 @@
     owner?: ((p: StatsRow) => string) | null;
     caption: string;
     dim?: boolean;
+    // ---- JA-1: with a second stretch, each value carries the change from it (and a header button sorts by the change)
+    vs?: ((p: StatsRow) => StatsRow | null) | null;
+    vsName?: string; // "weeks 1–2"
+    sortChg?: boolean;
+    onsortChg?: (c: StatsColumn) => void;
   } = $props();
+  const compared = (c: StatsColumn) => !!vs && c.id !== "games" && !NOT_COMPARED.has(c.id) && !c.unsplit;
 
   // ---- every row, without a long frame: up to WINDOW_FROM rows render as they are; past that ("Show all": 450 rows x
   // 45 columns = 20,000 cells, each name cell a sticky layer the browser re-places on every scroll frame) only the rows
@@ -230,12 +241,19 @@
             scope="col"
             data-c={c.id}
             class="ll-label bg-raised px-0.5 py-1 text-right whitespace-nowrap {starts.has(c.id) ? 'll-gstart' : ''} {sortId === c.id ? 'll-sorted' : ''}"
-            aria-sort={sortId === c.id ? (dir === "asc" ? "ascending" : "descending") : undefined}
+            aria-sort={sortId === c.id && !sortChg ? (dir === "asc" ? "ascending" : "descending") : undefined}
             title={`${title(c, mode)} — ${c.definition}${c.denominator ? ` Out of: ${c.denominator}.` : ""}`}
           >
             <button type="button" class="ll-sortbtn inline-flex min-h-8 items-center gap-0.5 rounded-sm px-1 uppercase {sortId === c.id ? 'text-ink' : ''}" onclick={() => onsort(c)} data-testid={`sort-${c.id}`}
-              >{head(c, mode)}<span class="ll-arrow" aria-hidden="true">{sortId === c.id ? (dir === "asc" ? "▲" : "▼") : ""}</span><span class="sr-only"> {title(c, mode)}</span></button
-            >
+              >{head(c, mode)}<span class="ll-arrow" aria-hidden="true">{sortId === c.id && !sortChg ? (dir === "asc" ? "▲" : "▼") : ""}</span><span class="sr-only"> {title(c, mode)}</span></button
+            >{#if compared(c) && onsortChg}<button
+                type="button"
+                class="ll-sortbtn ml-0.5 inline-flex min-h-7 items-center rounded-sm px-1 text-xs normal-case {sortId === c.id && sortChg ? 'text-ink' : ''}"
+                aria-label={`Sort by the change in ${title(c, mode).toLowerCase()} from ${vsName}`}
+                aria-pressed={sortId === c.id && sortChg}
+                onclick={() => onsortChg(c)}
+                data-testid={`sort-chg-${c.id}`}>±{sortId === c.id && sortChg ? (dir === "asc" ? "▲" : "▼") : ""}</button
+              >{/if}
           </th>
         {/each}
         {#if owner && !grouped}<th scope="col" data-owner class="ll-label hidden bg-raised px-2 py-2 pr-3 text-left sm:table-cell">Team in league</th>{/if}
@@ -271,7 +289,17 @@
           {#each cols as c, j (j)}
             {@const t = show(c, p, mode)}
             {@const sm = t === "—" ? null : small(c, p, mode)}
-            {#if t === "—" || sm}
+            {#if vs && c.id === "games"}
+              <!-- ---- JA-1: his games in B under his games in A (the sample on each side) -->
+              <td class={colClass[j]} title={`${p.games} game${p.games === 1 ? "" : "s"} here, ${vs(p)?.games ?? 0} in ${vsName}`} data-col={c.id}
+                >{t}<span class="block text-xs leading-tight text-ink-2" data-testid="chg">B: {vs(p)?.games ?? 0}</span></td
+              >
+            {:else if compared(c)}
+              {@const ch = change(c, p, vs!(p), mode, vsName)}
+              <td class="{colClass[j]} {t === '—' || sm ? 'll-why text-ink-3' : ''}" title={`${why(c, p, mode)}${sm ? `. ${sm}` : ""}. ${ch.why}${ch.small ? ` ${ch.small}` : ""}`} data-col={c.id} data-why=""
+                >{t}<span class="block text-xs leading-tight {ch.small || ch.v === null ? 'text-ink-3' : ch.v > 0 ? 'text-good' : ch.v < 0 ? 'text-bad' : 'text-ink-2'}" data-testid="chg">{ch.text}</span></td
+              >
+            {:else if t === "—" || sm}
               <td class="{colClass[j]} ll-why text-ink-3" title={sm ? `${why(c, p, mode)}. ${sm}` : why(c, p, mode)} data-col={c.id} data-why="">{t}</td>
             {:else}
               <td class={colClass[j]} title={why(c, p, mode)} data-col={c.id}>{t}</td>

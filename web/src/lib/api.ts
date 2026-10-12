@@ -3216,3 +3216,22 @@ export interface TradeEval {
   news?: Record<string, ChangedLine[]>; // sleeper id → the feed's newest item about him
 }
 // ---- end IZ-4
+// ---- JA-1 (Wave J-A): Stats — a second stretch (`vs=`) and one stat week by week (`by=`) in the same answer
+export interface StatsVs {
+  window: StatsWindow; // B's weeks and label
+  not_compared: string[]; // columns that cannot be compared (a role change, the value)
+  players: Record<string, StatsRow>; // B's numbers by gsis_id (unknown fields left out); no entry = no game in B
+}
+export interface StatsByWeek {
+  column: string;
+  weeks: number[];
+  reasons: Record<string, string>; // "bye" | "out" | "none" → words
+  values: Record<string, (number | null)[]>;
+  why: Record<string, (string | null)[]>;
+  trend: Record<string, number | null>; // 1 up, 0 flat, -1 down (a straight line through his weeks); null under 2 weeks
+}
+export interface StatsFrame {
+  vs?: StatsVs | null;
+  byweek?: StatsByWeek | null;
+}
+// ---- end JA-1
