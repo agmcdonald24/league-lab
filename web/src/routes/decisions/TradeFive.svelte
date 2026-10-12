@@ -51,6 +51,12 @@
   // ---- IZ-2 → IZ-4: a news line per player in section 5 — the feed's newest item about him (the answer's `news`, by
   // Sleeper id; the same line as on My Week's decisions: the words, the source, how long ago, what the projection does
   // with it). Nothing is read from it.
+  // ---- JA-4: each player's role note where the card has one (his recent role against his earlier one; his latest game
+  // cut short this season) — the card's own words, by Sleeper id
+  const roleFor = (key: string) => {
+    const n = (r as TradeEval & { roles?: Record<string, { role: string | null; status: string | null; left_early: string | null }> }).roles?.[key];
+    return n && (n.role || n.left_early) ? n : null;
+  };
   const newsFor = (key: string): ChangedLine[] | null => {
     const l = r.news?.[key];
     return l && l.length ? l : null;
@@ -183,6 +189,9 @@
         <li data-testid="five-player" data-key={p.key}>
           <span class="font-semibold">{p.name}</span> <span class="text-sm text-ink-3">({p.side === "give" ? "you give" : p.side === "get" ? "you get" : "cut"})</span>: {p.words ?? "nothing flagged on his report"}.
           <!-- ---- IZ-2 → IZ-4: the news line for this player (source, how long ago, "context only: not in the projection") -->
+          {#if roleFor(p.key)}{@const rn = roleFor(p.key)!}<span class="block text-sm text-ink-2" data-testid="trade-role" data-status={rn.status ?? ""}
+              >{[rn.role ? `Role: ${rn.role}` : null, rn.left_early].filter(Boolean).join(" · ")}</span
+            >{/if}<!-- ---- JA-4 -->
           {#if newsFor(p.key)}<div class="mt-1" data-testid="trade-news"><DecisionNews lines={newsFor(p.key)!} names={false} testid="trade-news-lines" /></div>{/if}
         </li>
       {/each}

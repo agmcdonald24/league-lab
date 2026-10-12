@@ -764,6 +764,7 @@ def trades_evaluate(body: TradeBody, response: Response, source: str | None = No
     from . import decision_news
     out = decision_news.with_trade(out)
     # ---- end IZ-4
+    out = decision_news.with_trade_roles(out)                 # ---- JA-4: section 5's role note per player (the card's)
     response.headers["Cache-Control"] = "no-store"
     return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
 

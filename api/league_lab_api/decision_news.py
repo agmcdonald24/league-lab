@@ -168,3 +168,68 @@ def news_players(ids: str = ""):
         body = {"lines": {}}
     return JSONResponse(body, headers={"Cache-Control": "private, max-age=60"})
 # ---- end JA-4
+
+
+# ---- JA-4 (Wave J-A): the trade's section 5 says each player's role note where the card has one — his recent role
+# against his earlier one (`roles.role_change`, the card's Role block's headline) and his latest game cut short this
+# season (the game log's mark and words, `onfield.left_early_case`). Read the way the card reads them; nothing new is
+# computed and no number of the trade reads them.
+LEFT_EARLY_SQL = """
+select g.week, (to_jsonb(p) ->> 'left_early')::boolean as left_early, to_jsonb(p) ->> 'left_early_reason' as left_early_reason
+from analytics.fct_player_game as p
+join analytics.dim_game as g on g.game_id = p.game_id
+where p.gsis_id = %s and p.season = %s and p.season_type = 'REG' and g.week <= %s
+order by g.week desc
+"""
+ROLE_POSITIONS = ("QB", "RB", "WR", "TE")
+
+
+def role_note(gsis: str, pos: str | None, season: int, through: int) -> dict | None:
+    """{role, status, left_early} for one player (None: no note — a kicker, a defense, no games)."""
+    from league_lab import roles
+
+    from .db import query
+    from .onfield import left_early_case
+    if str(pos or "").upper() not in ROLE_POSITIONS:
+        return None
+    rc = roles.role_change(query(roles.PLAYER_SEASON_SQL, (gsis, int(season), int(through))), str(pos).upper())
+    le = None
+    df = query(LEFT_EARLY_SQL, (gsis, int(season), int(through)))
+    hit = df[df["left_early"].fillna(False).astype(bool)] if not df.empty else df
+    if not hit.empty:
+        r = hit.iloc[0]
+        _, w = left_early_case(True, r["left_early_reason"] if isinstance(r["left_early_reason"], str) else None)
+        le = f"Week {int(r['week'])}: {w}" if w else None
+    return {"role": rc.get("headline"), "status": rc.get("status"), "left_early": le}
+
+
+def role_notes(ans: dict) -> dict[str, dict]:
+    """{sleeper id: note} for the players given, received and cut. {} on a failure (logged): a note never costs the
+    trade, and the screen then shows no role line rather than a wrong one."""
+    try:
+        from . import provenance
+        season = provenance._season_now()
+        wk = ans.get("week")
+        through = int(wk) - 1 if isinstance(wk, int) and wk > 1 else 18
+        ps = []
+        for side in ("give", "get"):
+            v = ans.get(side)
+            ps += [p for p in ((v.get("players") if isinstance(v, dict) else v) or []) if isinstance(p, dict)]
+        ps += [c["player"] for c in ans.get("cut") or [] if isinstance(c, dict) and isinstance(c.get("player"), dict)]
+        out = {}
+        for p in ps:
+            if p.get("gsis_id"):
+                n = role_note(str(p["gsis_id"]), p.get("position"), season, through)
+                if n:
+                    out[str(p.get("sleeper_id") or p["gsis_id"])] = n
+        return out
+    except Exception:  # noqa: BLE001
+        log.warning("decision_news.role_notes failed", exc_info=True)
+        return {}
+
+
+def with_trade_roles(ans):
+    if isinstance(ans, dict):
+        ans["roles"] = role_notes(ans)
+    return ans
+# ---- end JA-4
