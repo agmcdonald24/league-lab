@@ -63,6 +63,7 @@ async function todaysRuns(env, now) {
   const j = await r.json();
   return (j.workflow_runs || []).map((x) => ({
     number: x.run_number, event: x.event, status: x.status, conclusion: x.conclusion, created: x.created_at,
+    updated: x.updated_at,                                 // PO (2026-10-12): a finished run's last update = when it ended
   }));
 }
 
@@ -162,6 +163,97 @@ export function gameSlot(now, spec) {
 }
 // ---- end PO
 
+// ---- PO (2026-10-12): "token: set" is not "the token can start a run". Twice (11 and 12 October) the page said
+// `token: set` while every dispatch failed: the new token could read Actions but not write, so the run list worked and
+// the morning run never started — and with no STATE binding nothing said so. Two additions to the status page, neither
+// needing a binding:
+//   1. `can start a run: yes | NO`: a dispatch asked for a branch that does not exist. GitHub checks the token's
+//      permission before the branch, so a token that may dispatch is answered 422 ("No ref found") and nothing starts;
+//      one that may not is answered 401 / 403 / 404. Kept five minutes in memory (the page is public: a visitor
+//      reloading it must not spend the token's request allowance).
+//   2. `due today`: for the morning run and each game-day slot already past, whether a dispatched run was created at
+//      that minute — read from the run list, so a dispatch that failed shows as "NO RUN STARTED".
+const PROBE_REF = "refs/heads/trigger-permission-probe--no-such-branch";
+const PROBE_TTL_MS = 5 * 60 * 1000;
+let probeCache = null;
+export function _resetProbe() { probeCache = null; }
+
+export function probeWords(status, body) {
+  if (status === 422 || status === 204) return { ok: true, line: "can start a run: yes" };
+  const said = String(body || "").replace(/\s+/g, " ").slice(0, 120);
+  const why = status === 401 ? "the token is wrong or expired"
+    : status === 403 ? "the token may read Actions but not write: set its repository permission Actions to \"Read and write\" (\"Workflows\" is a different permission)"
+    : status === 404 ? "the token does not reach this repository or workflow"
+    : "an answer this page does not know";
+  return { ok: false, line: `can start a run: NO — HTTP ${status}: ${why}${said ? ` [GitHub: ${said}]` : ""}` };
+}
+
+async function canDispatch(env, nowMs) {
+  if (probeCache && probeCache.token === env.GITHUB_TOKEN && nowMs - probeCache.at < PROBE_TTL_MS) return probeCache.result;
+  let result;
+  try {
+    const r = await fetch(`${API}/repos/${env.GITHUB_REPO}/actions/workflows/${env.WORKFLOW_FILE}/dispatches`, {
+      method: "POST",
+      headers: { ...headers(env), "Content-Type": "application/json" },
+      body: JSON.stringify({ ref: PROBE_REF }),
+    });
+    result = probeWords(r.status, r.status === 204 ? "" : await r.text());
+  } catch (e) {
+    result = { ok: false, line: `can start a run: not checked (${String(e.message || e).slice(0, 120)})` };
+  }
+  probeCache = { token: env.GITHUB_TOKEN, at: nowMs, result };
+  return result;
+}
+
+/** The dispatches due since 07:30 New York and already past: [{label, at (ms)}], oldest first. */
+export function dueToday(now, env) {
+  const sinceMs = Date.parse(morningSince(now));                     // 07:30 New York, as UTC
+  const at = (h, m) => sinceMs + ((h * 60 + m) - (7 * 60 + 30)) * 60000;
+  const due = hours(env.FIRE_HOUR_ET, [7]).map((h) => ({ label: `${h}:${MORNING_MINUTE} the morning run`, at: at(h, MORNING_MINUTE) }));
+  const day = etClock(new Date(sinceMs)).weekday;
+  const spec = env.GAME_SLOTS_ET === undefined || env.GAME_SLOTS_ET === null ? DEFAULT_GAME_SLOTS : env.GAME_SLOTS_ET;
+  for (const slot of String(spec).split(",").map((x) => x.trim()).filter(Boolean)) {
+    const m = /^(Sun|Mon|Tue|Wed|Thu|Fri|Sat) (\d{1,2}):(\d{2})$/.exec(slot);
+    if (m && m[1] === day && Number(m[2]) * 60 + Number(m[3]) >= 7 * 60 + 30) due.push({ label: `${m[2]}:${m[3]} a game-day refresh`, at: at(Number(m[2]), Number(m[3])) });
+  }
+  return due.filter((d) => d.at <= now.getTime() - 3 * 60000).sort((a, b) => a.at - b.at);   // three minutes' grace
+}
+
+export function dueLines(now, env, runs) {
+  return dueToday(now, env).map((d) => {
+    // a run going at a slot's minute is left to do the slot's work (the scheduled handler): that is not a miss
+    const mine = runs.find((r) => r.event === "workflow_dispatch" && Date.parse(r.created) >= d.at - 60000 && Date.parse(r.created) <= d.at + 10 * 60000);
+    const going = runs.find((r) => Date.parse(r.created) < d.at - 60000 && (r.status !== "completed" || Date.parse(r.updated || r.created) >= d.at));
+    return mine ? `  ${d.label}: started (#${mine.number})`
+      : going && /game-day/.test(d.label) ? `  ${d.label}: no new run (#${going.number} was still going; a slot is left to it)`
+      : `  ${d.label}: NO RUN STARTED`;
+  });
+}
+// ---- end PO (2026-10-12)
+
+/** The status page's text at `now` (PO, 2026-10-12: a function of the clock, so the tests can fix it). */
+export async function statusText(env, now) {
+  const lines = [
+    `isuckatfantasy nightly trigger: dispatches ${env.GITHUB_REPO} / ${env.WORKFLOW_FILE} at ` +
+      `${hours(env.FIRE_HOUR_ET, [7]).map((x) => `${x}:37`).join(", ")} America/New_York; re-checks at ` +
+      `${hours(env.CHECK_HOURS_ET, [9, 11]).map((x) => `${x}:37`).join(", ")} (dispatches only when nothing succeeded or is running since 07:30 New York).`,
+    `game-day refreshes (always, unless a run is going): ${String(env.GAME_SLOTS_ET === undefined || env.GAME_SLOTS_ET === null ? DEFAULT_GAME_SLOTS : env.GAME_SLOTS_ET) || "none"} America/New_York.`, // ---- PO (Wave I-W)
+    `now: ${etStamp(now)}; token: ${env.GITHUB_TOKEN ? "set" : "MISSING"}`,
+    (await lastDispatch(env)).line, // ---- IH-1
+  ];
+  if (env.GITHUB_TOKEN) {
+    lines.splice(3, 0, (await canDispatch(env, now.getTime())).line);   // ---- PO (2026-10-12): under the token line
+    try {
+      const runs = await todaysRuns(env, now);
+      lines.push(runs.length ? `runs since ${morningSince(now)}:` : `runs since ${morningSince(now)}: none yet`);
+      for (const r of runs) lines.push(`  #${r.number} ${r.event} ${r.status} ${r.conclusion || ""} ${r.created}`);
+      const due = dueLines(now, env, runs);                             // ---- PO (2026-10-12)
+      if (due.length) lines.push("due today:", ...due);
+    } catch (e) { lines.push(`could not list today's runs: ${e.message}`); }
+  }
+  return lines.join("\n") + "\n";
+}
+
 export default {
   async scheduled(event, env, ctx) {
     const now = new Date(event.scheduledTime);
@@ -205,22 +297,6 @@ export default {
   },
 
   async fetch(request, env) {
-    const now = new Date();
-    const lines = [
-      `isuckatfantasy nightly trigger: dispatches ${env.GITHUB_REPO} / ${env.WORKFLOW_FILE} at ` +
-        `${hours(env.FIRE_HOUR_ET, [7]).map((x) => `${x}:37`).join(", ")} America/New_York; re-checks at ` +
-        `${hours(env.CHECK_HOURS_ET, [9, 11]).map((x) => `${x}:37`).join(", ")} (dispatches only when nothing succeeded or is running since 07:30 New York).`,
-      `game-day refreshes (always, unless a run is going): ${String(env.GAME_SLOTS_ET === undefined || env.GAME_SLOTS_ET === null ? DEFAULT_GAME_SLOTS : env.GAME_SLOTS_ET) || "none"} America/New_York.`, // ---- PO (Wave I-W)
-      `now: ${etStamp(now)}; token: ${env.GITHUB_TOKEN ? "set" : "MISSING"}`,
-      (await lastDispatch(env)).line, // ---- IH-1
-    ];
-    if (env.GITHUB_TOKEN) {
-      try {
-        const runs = await todaysRuns(env, now);
-        lines.push(runs.length ? `runs since ${morningSince(now)}:` : `runs since ${morningSince(now)}: none yet`);
-        for (const r of runs) lines.push(`  #${r.number} ${r.event} ${r.status} ${r.conclusion || ""} ${r.created}`);
-      } catch (e) { lines.push(`could not list today's runs: ${e.message}`); }
-    }
-    return new Response(lines.join("\n") + "\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
+    return new Response(await statusText(env, new Date()), { headers: { "content-type": "text/plain; charset=utf-8" } });
   },
 };

@@ -5,7 +5,7 @@
 // Worker's own log marks the invocation failed); a re-check hour with a success today dispatches nothing and records
 // nothing; no token at a trigger hour is recorded as such.
 import assert from "node:assert/strict";
-import worker, { gameSlot, morningSince } from "./src/index.js";
+import worker, { _resetProbe, dueLines, dueToday, gameSlot, morningSince, probeWords, statusText } from "./src/index.js";
 
 const ENV = { GITHUB_REPO: "owner/league-lab", WORKFLOW_FILE: "nightly.yml", GIT_REF: "main", FIRE_HOUR_ET: "7", CHECK_HOURS_ET: "9,11", GITHUB_TOKEN: "t" };
 // 07:37 EDT = 11:37 UTC; 09:37 EDT = 13:37 UTC (2026-10-05, a Monday)
@@ -18,10 +18,14 @@ function kv() {
 }
 
 let dispatchStatus = 204;
+let probeStatus = 422;                                     // PO (2026-10-12): the status page's permission probe
+let probeBody = '{"message":"No ref found for: refs/heads/trigger-permission-probe--no-such-branch"}';
 let runs = [];
 const calls = [];
 globalThis.fetch = async (url, init = {}) => {
-  calls.push(`${init.method || "GET"} ${url}`);
+  const probe = String(url).endsWith("/dispatches") && /no-such-branch/.test(String(init.body || ""));
+  calls.push(`${probe ? "PROBE" : init.method || "GET"} ${url}`);
+  if (probe) return new Response(probeBody, { status: probeStatus });
   if (String(url).endsWith("/dispatches")) return new Response(dispatchStatus === 204 ? null : '{"message":"Bad credentials"}', { status: dispatchStatus });
   if (String(url).includes("/runs?")) return Response.json({ workflow_runs: runs });
   return new Response("not mocked", { status: 599 });
@@ -115,8 +119,55 @@ try {
   assert.equal(gameSlot(new Date(Date.UTC(2026, 11, 6, 15, 52))), null);                            // 10:52 EST: not a slot
   assert.match(await page({ ...ENV }), /game-day refreshes \(always, unless a run is going\): Sun 11:52,Sun 15:37,Sun 18:52,Mon 18:52,Thu 18:52/);
 
+  // 9. PO (2026-10-12): "token: set" is not "can start a run". The page asks GitHub for a dispatch on a branch that does
+  // not exist: 422 = the token may dispatch (nothing starts); 403 = it may read but not write — said in words, with the
+  // permission's name; never a real dispatch; the answer is kept five minutes.
+  runs = [];
+  _resetProbe();
+  probeStatus = 422;
+  let posts9 = calls.filter((c) => c.startsWith("POST")).length;
+  let text = await page({ ...ENV });
+  assert.match(text, /token: set\ncan start a run: yes\n/);
+  const probes = calls.filter((c) => c.startsWith("PROBE")).length;
+  await page({ ...ENV });                                                                // within five minutes: not asked again
+  assert.equal(calls.filter((c) => c.startsWith("PROBE")).length, probes);
+  _resetProbe();
+  probeStatus = 403;
+  probeBody = '{"message":"Resource not accessible by personal access token"}';
+  text = await page({ ...ENV });
+  assert.match(text, /can start a run: NO — HTTP 403: the token may read Actions but not write: set its repository permission Actions to "Read and write"/);
+  assert.match(text, /\[GitHub: \{"message":"Resource not accessible by personal access token"/);
+  assert.equal(calls.filter((c) => c.startsWith("POST")).length, posts9);                 // the probe never dispatches
+  assert.doesNotMatch(await page({ ...ENV, GITHUB_TOKEN: "" }), /can start a run/);       // no token: the MISSING line says it
+  assert.equal(probeWords(401, "").ok, false);
+  assert.match(probeWords(404, "").line, /does not reach this repository/);
+  _resetProbe();
+  probeStatus = 422;
+
+  // 10. PO (2026-10-12): what was due today and whether it started — from the run list, no binding. Monday 12 October
+  // 2026 as it happened: nothing at 07:37, a run by hand at 08:39.
+  const NOW12 = new Date(Date.UTC(2026, 9, 12, 13, 51));                                 // 09:51 EDT
+  const hand = [{ number: 41, event: "workflow_dispatch", status: "completed", conclusion: "success", created: "2026-10-12T12:39:02Z", updated: "2026-10-12T13:14:14Z" }];
+  assert.deepEqual(dueToday(NOW12, ENV).map((d) => d.label), ["7:37 the morning run"]);
+  assert.deepEqual(dueLines(NOW12, ENV, hand), ["  7:37 the morning run: NO RUN STARTED"]);
+  assert.deepEqual(dueLines(NOW12, ENV, [{ number: 42, event: "workflow_dispatch", status: "completed", conclusion: "success", created: "2026-10-12T11:37:21Z", updated: "2026-10-12T11:55:00Z" }]),
+    ["  7:37 the morning run: started (#42)"]);
+  const EVENING = new Date(Date.UTC(2026, 9, 12, 23, 0));                                // Monday 19:00 EDT: the 18:52 slot is past
+  assert.deepEqual(dueToday(EVENING, ENV).map((d) => d.label), ["7:37 the morning run", "18:52 a game-day refresh"]);
+  assert.equal(dueLines(EVENING, ENV, hand)[1], "  18:52 a game-day refresh: NO RUN STARTED");
+  assert.equal(dueLines(EVENING, ENV, [...hand, { number: 43, event: "workflow_dispatch", status: "in_progress", conclusion: null, created: "2026-10-12T22:52:20Z", updated: "2026-10-12T22:53:00Z" }])[1],
+    "  18:52 a game-day refresh: started (#43)");
+  assert.equal(dueLines(EVENING, ENV, [...hand, { number: 43, event: "workflow_dispatch", status: "in_progress", conclusion: null, created: "2026-10-12T22:40:00Z", updated: "2026-10-12T22:41:00Z" }])[1],
+    "  18:52 a game-day refresh: no new run (#43 was still going; a slot is left to it)");
+  assert.deepEqual(dueToday(new Date(Date.UTC(2026, 9, 12, 11, 38)), ENV), []);          // 07:38: inside the three minutes' grace
+  assert.deepEqual(dueToday(new Date(Date.UTC(2026, 9, 13, 11, 0)), ENV).map((d) => d.label), ["7:37 the morning run", "18:52 a game-day refresh"]);  // Tue 07:00: still Monday's day
+  assert.deepEqual(dueToday(EVENING, { ...ENV, GAME_SLOTS_ET: "" }).map((d) => d.label), ["7:37 the morning run"]);
+  runs = [{ run_number: 41, event: "workflow_dispatch", status: "completed", conclusion: "success", created_at: "2026-10-12T12:39:02Z", updated_at: "2026-10-12T13:14:14Z" }];
+  assert.match(await statusText({ ...ENV }, NOW12), /token: set\ncan start a run: yes\n[^]*#41 workflow_dispatch completed success[^]*due today:\n {2}7:37 the morning run: NO RUN STARTED\n$/);
+  runs = [];
+
   console.log = quiet.log;
-  console.log("nightly-trigger: 8 checks passed");
+  console.log("nightly-trigger: 10 checks passed");
 } catch (e) {
   console.log = quiet.log;
   console.error = quiet.error;

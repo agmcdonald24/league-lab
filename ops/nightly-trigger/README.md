@@ -37,7 +37,15 @@ the page says the dispatch is not recorded. Offline checks (GitHub mocked, KV fa
 
 ## After a deploy: check the token (2026-10-11)
 
-Open the Worker's address: the second or third line must say `token: set`. If it says `token: MISSING`, the nightly will
+Open the Worker's address and read two lines (2026-10-12: `token: set` alone proved nothing — a token that could read
+Actions but not write listed the runs and started none, two mornings running):
+
+* `can start a run: yes` — the token may dispatch. `can start a run: NO — HTTP 403 …`: on GitHub, the token →
+  Repository permissions → **Actions → Read and write** ("Workflows" is a different permission) → Update. The token's
+  value does not change: nothing to paste again.
+* `due today:` — the morning run and each game-day slot already past, `started (#N)` or `NO RUN STARTED`.
+
+If the page says `token: MISSING`, the nightly will
 not start: run `npx wrangler secret put GITHUB_TOKEN` in this folder and paste the fine-grained token (Actions: read and
 write on this repository). A secret set this way is kept by every later `wrangler deploy`; a token typed into the
 dashboard as a plain variable was dropped by a deploy twice (10 and 11 October). `keep_vars` in `wrangler.jsonc` now

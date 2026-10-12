@@ -386,6 +386,13 @@ output, row counts, reconciliation numbers, the headless page check, a browser w
 leagues), data partitions touched, unresolved limitations, next task. Honest, no varnish: if a
 number is worse, say so and show it.
 
+* **The trigger, 12 October (STATUS § "The trigger, 12 October")**: the morning run did not start on Sunday or Monday
+  — the Worker's new token could read Actions but not write, and its page said `token: set`. **Read `can start a run`
+  and `due today` on the trigger's page, never `token: set`.** Lessons the PO paid for: (1) a check that proves
+  something exists is not a check that it works; (2) when Andrew reports a fault, make the state readable **now** —
+  do not answer with "the next slot will tell us"; (3) read `/api/health` twice before saying a push has not happened
+  (a deploy takes five minutes). Neon is on the **Launch** plan since 12 October (usage-based; a $10 spending alert;
+  the Free plan's 5 GB of transfer would have suspended the database mid-month).
 * **Wave J-A (2026-10-12, Monday overnight; STATUS § "Wave J-A (Iteration 37)")**: Andrew asked for **weeks you
   choose** — "kind of a slider … weeks one to two versus weeks three to four" — on Stats, Compare and Matchups. One
   component (`web/src/components/stretch/WeekSlider.svelte`, `lib/stretch.ts`; URL keys `window`, `weeks`, `vs`):

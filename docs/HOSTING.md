@@ -622,6 +622,15 @@ morning run` or `last dispatch: FAILED at … — the morning run: HTTP 401 …`
 write"; 404: the repository or the workflow file; 422: the branch). Without the binding it works as before and says
 "not recorded". Set-up: `ops/nightly-trigger/README.md`; offline checks: `node ops/nightly-trigger/test.mjs`.
 
+**"token: set" is not "the token can start a run" (2026-10-12).** On 11 and 12 October the page said `token: set`,
+listed the runs, and no morning run started: the new fine-grained token had **Actions: Read-only** (and "Workflows:
+Read and write", which only lets a token edit workflow files). Starting a run needs **Actions: Read and write** on the
+repository. The page now prints, under the token line, `can start a run: yes` or `can start a run: NO — HTTP 403: …`
+(it asks GitHub for a dispatch on a branch that does not exist: nothing ever starts; kept five minutes), and under
+`due today` each dispatch that was due since 07:30 New York with `started (#N)` or `NO RUN STARTED`. **After any
+change to the token or a deploy of the Worker, read that page: both lines, not `token: set`.** Changing a fine-grained
+token's permissions on GitHub keeps its value: nothing to paste again in Cloudflare.
+
 ## The domain
 
 *(2026-10-04.)* The product answers at **https://isuckatfantasy.io** (and `www.`, which Render redirects to the root);

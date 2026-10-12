@@ -22248,6 +22248,41 @@ of in a separate feed."
 A recorded trade with a news item (from the nightly's feed) to screen section 5's line; Waivers' line if the PO accepts
 the read.
 
+## The trigger, 12 October — the morning run did not start two days running; the page now says why
+
+### PO — 2026-10-12 (Monday 08:30 – 11:30 ET)
+
+* **What Andrew saw**: 08:30, "I don't think the data is up to date". He was right: the hosted copy was Sunday 17:47
+  ET's; the 07:37 run never started. He started run #41 by hand at 08:39 (35 min, 0 failed steps, published 08:59).
+* **Cause**: the Worker's new token (made Sunday) has **Actions: Read-only**. The status page could list runs with it,
+  so it said `token: set` and showed nothing wrong; every dispatch was refused. The Worker has started no run since
+  Saturday 07:37 — every refresh on Sunday and Monday was Andrew's click. Confirmed from the permissions Andrew pasted
+  at 08:38 (actions in the read list; "workflows" in the read-and-write list); the Worker's own log is behind his
+  Cloudflare sign-in and was not read.
+* **The PO's faults**: at 00:34 the PO read `token: set` and called the trigger fine; at 08:34 it told Andrew
+  `wave-ja-1` was not pushed (it was, at 08:30: the deploy was still rolling); and it answered the fault three times
+  with "wait for the next slot" instead of making the state readable at once. Andrew, 11:20: "How about you actually
+  fix it for once instead of keep waiting for the next cycle to confirm the same thing each time".
+* **What changed** (`ops/nightly-trigger/src/index.js`, `test.mjs`, the README): `can start a run: yes | NO` on the
+  status page (a dispatch asked for a branch that does not exist; 422 = may dispatch, 401 / 403 / 404 = may not, with
+  the permission's name in words; never a real dispatch; five minutes in memory) and `due today` (the morning run and
+  each game-day slot already past: `started (#N)`, `NO RUN STARTED`, or left to a run that was going). No KV binding
+  needed. 10 offline checks.
+* **Not verified**: that GitHub answers 422 before 403 is its documented order (authorisation, then validation), not
+  something the sandbox could try: it holds no token. The first read of the live page after Andrew's deploy is the
+  check; a real dispatched run (Monday 18:52's slot) is the proof.
+* **What only Andrew can do**: the token's permission (GitHub asks for his password to open a token: the PO stops
+  there) and `npx wrangler deploy`.
+* **Also this morning**: Neon was at 4.04 GB of the Free plan's 5 GB of network transfer on day 12 (about 0.35 GB a
+  day: the database would have been suspended until 1 November within three days). Andrew moved to **Launch**
+  (usage-based: about $7 a month at today's usage; 500 GB of transfer included) and asked for a spending alert: set at
+  $10 (emails at 80% and 100%; nothing is paused). The compute's maximum is still 2 CU: his call ("just set up an
+  alert for now"). Each refresh downloads about 42 MB of state from the hosted copy (measured on the sandbox).
+* **The first head-to-head against Sleeper** (run #41, 55 weeks, League of Scrubs): QB level (5.85 / 5.79), RB behind
+  (4.42 / 4.17; close calls 42.7%), WR behind (4.08 / 3.94; 47.0%), TE behind (3.08 / 2.99; 46.2%); 2026's four weeks
+  on our pre-kickoff board: RB and WR ahead, TE level, QB behind. The blend gains at RB and WR at w = 0.80–0.95 (Sleeper's
+  weight). Told to Andrew as it is; borrowing is his decision.
+
 ## Wave J-A (Iteration 37) — the weeks you choose on Stats, Compare and Matchups; the connection pool; small faults
 
 ### PO merge — Wave J-A, 2026-10-12 (Monday 00:33 – 03:55 ET)

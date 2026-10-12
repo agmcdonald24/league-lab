@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-12 — the trigger says whether its token can start a run
+
+- **PO — `ops/nightly-trigger`.** The status page read `token: set` on 11 and 12 October while no morning run started:
+  the new token could read Actions but not write. The page now says **`can start a run: yes | NO — HTTP 403: …`** (a
+  dispatch asked for a branch that does not exist: nothing starts; GitHub answers 422 to a token that may dispatch and
+  403 to one that may not) and, under **`due today`**, whether the morning run and each game-day slot already past
+  started a run (`NO RUN STARTED`). No binding needed. `node ops/nightly-trigger/test.mjs`: 10 checks.
+  docs/STATUS.md § "The trigger, 12 October".
+
 ## 2026-10-12 — Wave J-A
 
 - **PO — the merge.** `scripts/post_deploy_check.py` prints the pool's and the CPU slots' peak and longest wait after
