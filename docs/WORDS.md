@@ -1113,3 +1113,16 @@ News feed's own (`myweek.decision_feed`, II-4); IZ-4 moves them, it writes no se
 | the phone's Filters label (IX-3 round 2, changed) | no longer names the weeks: the slider names them, outside the fold whenever they are not the season | — |
 | the CSV | `isuckatfantasy-stats-2026-wr-te-weeks-3-4-vs-weeks-1-2-when-trailing.csv`; columns "Target share", "Target share (weeks 1–2)", "Target share: change from weeks 1–2" | — |
 <!-- ---- end JA-1 -->
+<!-- ---- JA-2 -->
+## The same weeks on Compare and Matchups (JA-2, Wave J-A, 2026-10-12; `WeekSlider.svelte`, `routes/Compare.svelte`, `routes/Matchups.svelte`)
+
+| Where | Words | Never |
+|---|---|---|
+| the week control closed on a phone (once a stretch is chosen; a button, `aria-expanded`) | "Weeks 3–4 against weeks 1–2 ▾" · "Weeks 3–4 ▾" · "Week 4 ▾" · "His last 3 games played (any weeks) ▾" | a closed control that hides what is in force |
+| its presets when A ends the season | one: **The weeks before (weeks 1–2)** (the same weeks as the rest of the season) | two chips for the same weeks |
+| Stats' toolbar on a phone | "↓ CSV" (its name "Download CSV"); the column count from 640 px | — |
+| Compare, the card | **Over the weeks you pick**; with other weeks **His early weeks against his recent ones**; rows Games · Points per game · Targets per game · Target share · Receptions per game · Receiving yards per game · Carries per game · Carry share · Rushing yards per game · Pass attempts per game · Passing yards per game · Snap share; under a value "−27.7 pts · B 35.7%" | an average of weekly shares |
+| Compare, under the card | "History over the weeks you pick: each stretch from its own sums (a share is his targets over his team's targets in those games, never an average of weeks). This week, the next 4 weeks and the rest of the season above are forecasts: they do not change with the weeks." · "This week, the next 4 weeks and the rest of the season are forecasts, not history: they do not change with the weeks you pick." | a forecast that moves with the slider |
+| Matchups, the card | **Defenses over weeks 3–4** / **Defenses, weeks 3–4 against weeks 1–2**; columns Rank · Defense · G · Points per game to WR · weeks 1–2 · Rank change; "#1"; "▲ up 15" (gives up more now) · "▼ down 7" · "same"; "1 game: too few to rank" | "toughest", a rank from one game |
+| Matchups, its note | "Over the weeks you pick: points his position scored against the defense per game in those weeks, in this league's scoring; the rank among 32, #1 = gives up the most. Fewer than two games: too few to rank. The season's rank (the matchup words on the card, My Week and the trade) does not move." | — |
+<!-- ---- end JA-2 -->

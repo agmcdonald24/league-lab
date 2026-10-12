@@ -4,6 +4,14 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-12 — Wave J-A
 
+- **JA-2 — the same weeks on Compare and Matchups.** JA-1's week control closes on a phone to one line naming what is
+  in force ("Weeks 3–4 against weeks 1–2 ▾"; three table rows at 375 × 812) and offers one preset when "the weeks
+  before" and "the rest of the season" are the same weeks. **Compare** shows the two players' usage and production over
+  the weeks picked and, with other weeks, A, B and the change ("his early weeks against his recent ones";
+  `/api/compare/weeks`); the forecasts say they are forecasts and do not move. **Matchups** shows each defense over the
+  weeks (points per game to the position, the rank, 1 = gives up the most, the change in rank, one game said;
+  `/api/matchups/defense` with `window` / `weeks` / `vs`); the season's heatmap and every matchup word a decision reads
+  keep the season. Stats' side by side opens Compare with the same weeks.
 - **JA-1 — Stats: the weeks you choose, one stretch against another, and a stat week by week.** A week slider
   (`components/stretch/WeekSlider.svelte`; URL `window`, `weeks`, `vs`) replaces the week-range select: two handles
   over the played weeks (drag, a tap on a week number, arrow keys), a single week when they meet, the choice in words,
