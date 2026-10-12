@@ -28,6 +28,8 @@
   import StatsTable from "../components/stats/StatsTable.svelte"; // ---- IM-2
   import { csv, field as fieldOf, fullColumns, groupOf, show as showOf, title as titleOf, why as whyOf, type Mode, type PosGroup } from "../components/stats/columns"; // ---- IM-2
   import { viewsFor, type ViewDef } from "../components/stats/columns"; // ---- IX-3: the named views
+  import WeekSlider from "../components/stretch/WeekSlider.svelte"; // ---- JA-1: the weeks you choose
+  import { rangeName, readStretch, words as stretchWords } from "../lib/stretch"; // ---- JA-1
   import { accountPrefs, type StatsView } from "../lib/prefs"; // ---- IK-4: the saved views through prefs (an account keeps them)
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
@@ -55,19 +57,13 @@
   type Who = "all" | "mine" | "fa" | "others";
   const who = $derived((["all", "mine", "fa", "others"].includes(params.get("who") ?? "") ? params.get("who") : params.get("who") === "rostered" ? "others" : "all") as Who);
   const nfl = $derived(params.get("nfl") ?? "");
-  const WINDOWS = [
-    { key: "season", label: "Season" },
-    { key: "last3", label: "Last 3 games played" },
-    { key: "last5", label: "Last 5 games played" },
-    { key: "last3w", label: "Last 3 calendar weeks" },
-    { key: "last5w", label: "Last 5 calendar weeks" },
-    { key: "weeks", label: "Week range (calendar)" },
-  ];
-  const win = $derived(WINDOWS.some((w) => w.key === params.get("window")) ? params.get("window")! : "season");
-  const range = $derived.by<[number, number]>(() => {
-    const m = (params.get("weeks") ?? "").match(/^(\d{1,2})-(\d{1,2})$/);
-    return m ? [Number(m[1]), Number(m[2])] : [1, 18];
-  });
+  // ---- JA-1 (Wave J-A): the weeks come from the slider's URL keys (lib/stretch.ts: window, weeks, vs)
+  const stretch = $derived(readStretch(params));
+  const win = $derived<string>(stretch.win);
+  const range = $derived<[number, number]>(stretch.weeks ?? [1, 18]);
+  const weekBased = $derived(win === "season" || win === "last3w" || win === "last5w" || win === "weeks");
+  const vsRange = $derived(weekBased ? stretch.vs : null); // B: a second stretch to compare with
+  // ---- end JA-1
   const mode = $derived<Mode>(params.get("mode") === "total" ? "total" : "game");
   const minGames = $derived(Math.max(1, Number(params.get("min") ?? "1") || 1));
   // opportunities = targets + carries (+ pass attempts for a quarterback) in the window
@@ -90,7 +86,9 @@
       window: win === "last3w" ? "last3" : win === "last5w" ? "last5" : win,
       basis: win === "last3w" || win === "last5w" ? "weeks" : win === "last3" || win === "last5" ? "games" : undefined,
       weeks: win === "weeks" ? `${range[0]}-${range[1]}` : undefined,
-    }) + (sitKey === "all" ? "" : `&situation=${sitKey}`), // ---- IX-3
+    }) +
+      (sitKey === "all" ? "" : `&situation=${sitKey}`) + // ---- IX-3
+      (vsRange ? `&vs=${vsRange[0]}-${vsRange[1]}` : ""), // ---- JA-1
   );
   $effect(() => r.load(path, onauth, true));
 
@@ -258,10 +256,12 @@
       nfl,
       q: q.trim(),
       min: minGames,
-    }) + (sitKey === "all" ? "" : `&situation=${sitKey}`), // ---- IX-3
+    }) +
+      (sitKey === "all" ? "" : `&situation=${sitKey}`) + // ---- IX-3
+      (vsRange ? `&vs=${vsRange[0]}-${vsRange[1]}` : ""), // ---- JA-1
   );
   const fileName = $derived(
-    `${APP_NAME}-stats-${r.data?.season ?? ""}-${win === "weeks" ? `weeks-${range[0]}-${range[1]}` : win}-${(POS.find((x) => x.key === position)?.label ?? "all").toLowerCase().replace(/[^a-z]+/g, "-")}${view === "full" ? "-full" : ""}.csv`.replace(/-+/g, "-"),
+    `${APP_NAME}-stats-${r.data?.season ?? ""}-${win === "weeks" ? `weeks-${range[0]}-${range[1]}` : win}-${(POS.find((x) => x.key === position)?.label ?? "all").toLowerCase().replace(/[^a-z]+/g, "-")}${vsRange ? `-vs-weeks-${vsRange[0]}-${vsRange[1]}` : ""}${sitKey === "all" ? "" : `-${sitLabel.toLowerCase().replace(/[^a-z]+/g, "-")}`}${view === "full" ? "-full" : ""}.csv`.replace(/-+/g, "-"),
   );
   let csvBusy = $state(false);
   let csvFrom = $state<"server" | "browser" | null>(null);
@@ -317,14 +317,14 @@
     keep.delete("league");
     keep.delete("team");
     keep.delete("sel");
-    const name = viewName.trim() || `${POS.find((x) => x.key === position)?.label} · ${WINDOWS.find((w) => w.key === win)?.label}`;
+    const name = viewName.trim() || `${POS.find((x) => x.key === position)?.label} · ${stretchWords(stretch, 1, through)}${vsRange ? ` vs ${rangeName(vsRange)}` : ""}`;
     views = [...views.filter((v) => v.name !== name), { name, qs: keep.toString() }].slice(-8);
     viewName = "";
     accountPrefs.setStatsViews(views); // ---- IK-4 (a private window: the view stays for this visit)
   }
   function openView(v: View) {
     const want = Object.fromEntries(new URLSearchParams(v.qs));
-    const clear = Object.fromEntries(["position", "who", "nfl", "window", "weeks", "mode", "min", "minopp", "cols", "sort", "dir", "q", "view", "hide", "off", "sit"].map((k) => [k, null])); // ---- IM-2: + view, hide, off; IX-3: + sit
+    const clear = Object.fromEntries(["position", "who", "nfl", "window", "weeks", "vs", "mode", "min", "minopp", "cols", "sort", "dir", "sortby", "stat", "q", "view", "hide", "off", "sit"].map((k) => [k, null])); // ---- IM-2: + view, hide, off; IX-3: + sit
     setParams({ ...clear, ...want });
     q = want.q ?? "";
   }
@@ -348,7 +348,6 @@
       sitKey !== "all" ? sitLabel : "",
       who === "mine" ? "Yours" : who === "fa" ? "Free agents" : who === "others" ? "Other teams" : "",
       nfl ? nfl : "",
-      win === "weeks" ? (range[0] === range[1] ? `Week ${range[0]}` : `Weeks ${range[0]}–${range[1]}`) : win !== "season" ? (WINDOWS.find((w) => w.key === win)?.label ?? "") : "",
       mode === "total" ? "Totals" : "",
       minGames > 1 ? `At least ${minGames} games` : "",
       minOpp > 0 ? `At least ${minOpp} opportunities` : "",
@@ -358,7 +357,9 @@
   const filtersLabel = $derived(inForce.length ? `Filters: ${inForce.join(" · ")}` : "Filters");
   // ---- end IX-3 round 2
   const leader = $derived(filtered[0] ?? null);
-  const weeksMax = $derived(Math.max(r.data?.window.through_week ?? 18, 1));
+  const through = $derived(Math.max(r.data?.window.through_week ?? 1, 1)); // ---- JA-1: the newest played week
+  // ---- JA-1: the slider sits outside the phone's fold whenever a stretch other than the season is in force
+  const sliderFolded = $derived(win === "season" && !vsRange);
 </script>
 
 <main class="space-y-4" data-testid="players">
@@ -403,6 +404,12 @@
         items={POS}
       />
     </div>
+    <!-- ---- JA-1: the weeks you choose (outside the phone's fold when a stretch other than the season is in force) -->
+    {#if r.data}
+      <div class="rounded-md border border-line bg-surface px-3 py-2 {sliderFolded ? `ll-fold ${filtersOpen ? 'll-open' : ''}` : ''}" data-testid="stats-weeks">
+        <WeekSlider first={1} last={through} {stretch} onchange={(k) => setParams({ ...k, sortby: k.vs ? (params.get("sortby") ?? null) : null })} />
+      </div>
+    {/if}
     <div id="ll-stats-filters-b" class="ll-fold space-y-2.5 {filtersOpen ? 'll-open' : ''}"><!-- ---- IX-3 round 2: folded on a phone -->
     {#if owned}<!-- ---- IM-2: no ownership in the answer (a reference league): no "whose" chips -->
       <div class="ll-chiprow">
@@ -426,22 +433,6 @@
         <option value="">Every NFL team</option>
         {#each Object.keys(TEAMS).map((k) => teamLabel(k)!).sort() as t (t)}<option value={t}>{t}</option>{/each}
       </select>
-      <label class="sr-only" for="ll-stats-window">Window</label>
-      <select id="ll-stats-window" class="ll-input min-w-0 flex-1 py-1.5 text-sm sm:flex-none" value={win} onchange={(e) => setParams({ window: e.currentTarget.value === "season" ? null : e.currentTarget.value })} data-testid="stats-window-pick">
-        {#each WINDOWS as w (w.key)}<option value={w.key}>{w.label}</option>{/each}
-      </select>
-      {#if win === "weeks"}
-        <span class="flex items-center gap-1.5">
-          <label class="text-sm text-ink-2" for="ll-stats-lo">Weeks</label>
-          <select id="ll-stats-lo" class="ll-input py-1.5 text-sm" value={range[0]} onchange={(e) => setParams({ weeks: `${Math.min(Number(e.currentTarget.value), range[1])}-${range[1]}` })} data-testid="stats-weeks-lo">
-            {#each Array.from({ length: weeksMax }, (_, i) => i + 1) as w (w)}<option value={w}>{w}</option>{/each}
-          </select>
-          <span class="text-sm text-ink-2">to</span>
-          <select class="ll-input py-1.5 text-sm" aria-label="to week" value={Math.min(range[1], weeksMax)} onchange={(e) => setParams({ weeks: `${range[0]}-${Math.max(Number(e.currentTarget.value), range[0])}` })} data-testid="stats-weeks-hi">
-            {#each Array.from({ length: weeksMax }, (_, i) => i + 1) as w (w)}<option value={w}>{w}</option>{/each}
-          </select>
-        </span>
-      {/if}
       <span class="flex items-center gap-2">
         <Chips
           label="Totals or per game"

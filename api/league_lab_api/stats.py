@@ -1513,7 +1513,7 @@ def csv_lines(d: dict, columns: list[str], per_game: bool = False):
             continue
         o = other.get(str(p.get("gsis_id")), {})
         cells = []
-        for (f, kind), f2 in zip([(k, "a") for k in fields_[:len(ident)]] + comp, fields_, strict=True):
+        for (_f, kind), f2 in zip([(k, "a") for k in fields_[:len(ident)]] + comp, fields_, strict=True):
             a, bv = p.get(f2), o.get(f2)
             if kind == "b":
                 cells.append(bv)
