@@ -6397,3 +6397,69 @@ what they published (B5). Not built.
 * **By week** (`by=<column>`): each week's value is aggregate() over his one game that week; a week without a number
   says why — his team's bye, he did not play, or no number for that game (e.g. a share with no team targets). The trend
   mark is the sign of a least-squares line through his weeks with a number (two or more). Context, not a forecast.
+
+## Where we lose to Sleeper (gp1.0, JB-1, Wave J-B, 2026-10-14) — the rule, written before any number
+
+Written at 11:12 ET on 2026-10-14, before any number of this section was computed. The question (Andrew's roadmap
+item 2, "fix or borrow where we lose"): hh1.0 says we are behind Sleeper at RB, WR and TE on the history; **where** is
+the gap, and what is the first fix? Nothing here puts Sleeper's number into ours (bl1.0 stays measured, not shipped).
+
+**The population** (hh1.0's, League of Scrubs' scoring — the reference Half PPR the site opens on): QB / RB / WR / TE
+player-weeks with both numbers and an actual — Sleeper's history line (`ops.sleeper_history`, priced flat) matched to
+ours by id (`analytics.player_id_map`), the player played (and, for the current season, was rankable). Ours = v3.6 on
+every row: `ops.h2h_ours` (the live model walk-forward, 2023–2025) and the board frozen at kickoff (2026: week 4 only —
+weeks 1–3 are refit boards, never graded; week 5's actuals are not on this database). 2023–2025 is the study; 2026 week
+4 is shown as its own season row and is left out of anything a candidate is judged on (it cannot be refitted).
+
+**The gap.** Per player-week, **excess = |ours − actual| − |Sleeper − actual|** (points; > 0 = we missed by more). A
+slice's **gap** = its mean excess; its **share** = its summed excess ÷ the population's summed excess (a family of slices
+that partitions the population has shares summing to one; a slice can hold more than 100% when others are negative).
+Beside each: n (player-weeks), the share of rows, the mean signed error ours (ours − actual) and Sleeper's (the
+**sign**: do we over- or under-project the slice), and the close calls (hh1.0's definition) whose player **we rank
+higher** is in the slice, with our share right. **Intervals**: 95%, percentile bootstrap over weeks (season × week drawn
+with replacement, 2,000 draws, seed 20261014; the gap and every share of a family recomputed on the same draws).
+
+**The slices** (each family a partition; "unknown" is its own slice, never folded into another):
+
+* **position × tier**: our rank at the position among the population's rows of that league-week (our projection,
+  highest first, ties by id): top-12, 13–24, 25–36, 37+. Sixteen cells.
+* **first game back**: he played; his previous feature row of the season (his team's previous game week) says he did
+  not play — back / not.
+* **role**: a role alert (`ops.player_role_alerts`, ra1.2) for him raised in weeks W−3 … W−1 of the season (known
+  before W) — role up / role down / both or other / none; separately, **his team's starting quarterback changed**
+  (`pn_qb_changed`) — yes / no.
+* **experience**: rookie (season = `dim_player.rookie_season`), second year, veteran, unknown.
+* **history**: played regular-season games before the week (`fct_player_game`): 0–2 (a cold start, `COLD_N` 3), 3–7,
+  8+ (a career begun before 2016 counts as 8+).
+* **season stage**: weeks 1–4 / 5–18.
+* **venue**: home / away (`is_home`).
+* **game total**: the betting total (`total_line`) in thirds — tertiles of the population's held totals — and "not
+  held".
+* **season**: 2023, 2024, 2025, 2026 (week 4).
+* **by component** (2023–2025; needs our stat line, so the walk-forward is re-run with the line kept — the same code
+  and inputs as `ops.h2h_ours`, its priced points checked against the stored rows): per component c of passing yards,
+  passing TDs, interceptions, rushing yards, rushing TDs, receptions, receiving yards, receiving TDs and fumbles lost,
+  excess_c = |w_c| × (|ours_c − actual_c| − |Sleeper_c − actual_c|), w_c League of Scrubs' points per unit; a
+  component's share = its summed excess ÷ the components' summed excess (the components do not add up to the points
+  gap — a line's errors offset — so this says which part of the line carries the miss, not how many points).
+
+**"Holds most of the gap"**: the two **position × tier cells** with the largest share (a partition, so the shares are
+comparable), each named with n, gap, share and interval, and described by the other families inside the cell (its
+component, sign, first game back, role, experience, history). The other families are reported whole beside them (the
+six largest by share in the run's summary).
+
+**The first fix (the rule a candidate ships by, fixed now; the candidates are written in a later commit after the
+diagnosis and before any candidate number).** At most three candidates, each behind a switch unset by default; each
+re-run walk-forward on 2023–2025 (`h2h.build_ours`: fitted only on the seasons before; one run at a time) against the
+**baseline = the same run with every switch unset, on the same database state**. On the population (2023–2025, League
+of Scrubs' scoring), a candidate **ships** (as `fx1.0`) when, at its target position, **(a)** its error (mean |ours −
+actual|) is lower than the baseline's in **each** of 2023, 2024 and 2025, and its order (the mean weekly Spearman) is no
+more than 0.002 lower in any of them; and **(b)** at each of the other three positions, pooled over the three seasons,
+its error is no more than 0.005 worse and its order no more than 0.002 lower (lf2.0's standard). Several passing: the
+lowest pooled error at its target position ships. None passing: nothing ships, each stays behind its switch with its
+numbers. If one ships, `MODEL_VERSION` is bumped and `ops.h2h_ours` is rebuilt once by the nightly. Reported for every
+candidate: the error and order by season and position, and the gap to Sleeper (hh1.0's pooled error difference) at
+its target position before and after.
+
+**Where it shows**: the run's summary (`league-lab h2h --md`) gains the six largest slices under the head-to-head;
+`/api/record` `history` gains `gap` (the same rows).
