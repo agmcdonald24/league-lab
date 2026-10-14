@@ -154,6 +154,7 @@
       {/each}
       {#if league && RATED.includes(data.position)}{#await panels() then P}<P.RoleChart gsis={data.gsis_id} {league} season={data.season} position={data.position} />{/await}{/if}
       {#if data.situations}<Situations s={data.situations} testid="player-situations" />{/if}<!-- ---- IX-2 -->
+      {#if data.expected_line?.words}<p class="text-sm leading-snug text-ink-2" data-testid="player-expected-line">{data.expected_line.words}</p>{/if}<!-- ---- JB-4 -->
       {#if league && data.position !== "DEF"}<GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={browsing ? refScoringLabel(league) : data.league_name} />{/if}<!-- IN-2: the scoring -->
       {#each rest as x (x.key)}
         <SectionBox section={x.sec} {ctx} testid={`section-${x.key}`} />

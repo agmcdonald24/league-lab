@@ -184,6 +184,7 @@ export interface PlayerCard {
   bio?: PlayerBio | null; // ---- IX-2
   roster_line?: { kind: string; words: string } | null; // ---- IZ-3: what he means for this roster (no league: none)
   reasons?: { key: "role" | "matchup" | "form"; words: string }[]; // ---- IZ-3: at most three
+  expected_line?: { kind: "receiver" | "back"; words: string; targets: number; carries: number; expected: number; actual: number; games: number } | null; // ---- JB-4: points over expected, one sentence (Usage)
   situations?: Situations | null; // ---- IX-2
   gsis_id: string;
   player_name: string;

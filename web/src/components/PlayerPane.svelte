@@ -327,6 +327,10 @@
     {#if data?.projected_target_share?.words}
       <p class="text-sm leading-snug text-ink-3" data-testid="pane-projected-target-share">{data.projected_target_share.words}</p>
     {/if}
+    <!-- ---- JB-4: points over expected in one sentence, by the role lines (season to date, his played games summed) -->
+    {#if data?.expected_line?.words}
+      <p class="text-sm leading-snug text-ink-2" data-testid="pane-expected-line">{data.expected_line.words}</p>
+    {/if}
     {#if usage}
       <SectionBox section={usage} {ctx} testid="pane-section-usage" />
     {:else}

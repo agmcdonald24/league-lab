@@ -483,6 +483,13 @@ def player_card(gsis: str, league: str, response: Response, team: int | None = N
         out["roster_line"] = None
     out["reasons"] = player.reasons(out)
     # ---- end IZ-3
+    # ---- JB-4: points over expected in one sentence (Usage), season to date in this league's scoring; none: no line
+    try:
+        from . import poe
+        out["expected_line"] = poe.card_line(league, gsis, out.get("season"), out.get("position"), source=source)
+    except Exception:  # noqa: BLE001 - a line never costs the card
+        out["expected_line"] = None
+    # ---- end JB-4
     out = provenance.with_card(out)                                                               # ---- IR-4
     return _research(out, league, response)                                                       # ---- IM-3
 
