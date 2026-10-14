@@ -4,6 +4,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-14 — Wave J-B
 
+- **JB-2 — the clean record on the screen.** A close call on My Week says when Sleeper's pre-kickoff numbers lean the
+  other way: "Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close calls where we have disagreed,
+  Sleeper was right 8 times, we 4." — only from the week's snapshot fetched before the first kickoff, the tally only from
+  10 graded disagreements (the record's season row; About's count), nothing moves; both paths (`sleeper_lean.py`, sl1.0).
+  About shows the record week by week — the miss ours · Sleeper's and the close calls (ours · Sleeper's · both ·
+  neither), by position on tap, labelled "both numbers frozen before kickoff" — the week's lineups in one line ("In week 5
+  our recommended lineups scored 1,251.1; managers' own 1,287.3; Sleeper's numbers would have scored 1,323.0."), and
+  the earlier seasons' table labelled "served after the games"; "Our record is not available right now." when it cannot
+  be read.
 - JB-1: where we lose to Sleeper's free projections, and the first fix. The gap is the fringe — receivers and backs we
   rank 37th or lower hold 69% of it, where we project too high and Sleeper too low — and a player's first game back
   after a missed one (35% of it on 12% of the weeks); our top 12 at every position is level with Sleeper (gp1.0, the
