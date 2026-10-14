@@ -1145,3 +1145,12 @@ News feed's own (`myweek.decision_feed`, II-4); IZ-4 moves them, it writes no se
 | the control row from 900 px | the positions · the weeks' one line "Season · weeks 1–4 ▾" / "Weeks 3–4 against weeks 1–2 ▾" (opens the slider in place) · a select **All plays / When trailing / Within a score / When leading** (its name "Game situation") · **Filters** (named when closed: "Filters: When trailing · Free agents · At least 2 games") | a filter in force hidden without its name |
 | behind Filters (every width now) | the name filter, Everyone / Yours / Free agents / Other teams, the NFL team, Per game / Totals, the minimums, the situation chips and their line, the window line, Columns and saved views, the role cards | — |
 <!-- ---- end JA-5 -->
+
+## The card explains "points over expected" (JB-4, Wave J-B, 2026-10-14; `api/league_lab_api/poe.py`, `PlayerPane.svelte` Usage, `routes/Player.svelte`, the Stats catalogue)
+
+| Where | The words | Not |
+|---|---|---|
+| the card's Usage tab (by the role lines) and the full page, a receiver (WR, TE) | "His 44 targets usually bring about 64 points; he has 44. Depth of target is already allowed for." — season to date, his played regular-season games with an expected value, summed; the two numbers in whole points, in this league's scoring (a reference scoring's, on demand the league's) | why the two differ; "unlucky", "due", "underperforming" |
+| a back (RB) | "His 54 carries and 25 targets usually bring about 64 points; he has 79. Depth of target and field position are already allowed for." | |
+| nothing | under 20 targets (a receiver) or 20 carries + targets (a back); a quarterback (his expected points are mostly his passing); no game with an expected value — no line, never a 0 | "0 expected" |
+| the Stats column **Points over expected**, How to read this | "… Positive: he scored more than his opportunities usually bring. Depth of target, field position and down are already allowed for: each target and carry is valued from its air yards, where on the field it came and the down, so short targets carry fewer expected points than deep ones. A bad throw lowers his points, not his expected points." · **Expected fantasy points**: "… Each target and carry is valued from its air yards, field position and down." | the caveat on the card |

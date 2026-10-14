@@ -4,6 +4,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-14 — Wave J-B
 
+- JB-4: the card explains points over expected in one sentence (Usage tab, by the role lines, and the full page): "His 44 targets usually bring about 64 points; he has 44. Depth of target is already allowed for." — season to date in the league's scoring, summed over his played games with an expected value (the Stats column's own games); a back counts carries + targets; under 20, a quarterback or no expected value: no line, never a 0. The Stats column's How-to-read line says depth of target, field position and down are allowed for, and that a bad throw lowers his points, not his expected points.
 - **JB-3 — Sunday keeps answering.** A request waiting on the database holds no CPU slot: its slot is given back while
   a statement runs and taken again after, ahead of new requests (on a slowed database the busy minute went from 31
   "busy" answers to none). After a new publication the server warms the house leagues' heavy screens once, one at a
