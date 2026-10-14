@@ -86,3 +86,19 @@ record against Sleeper's week by week."
 ## 8. Next
 
 A recorded My Week answer with a live close call from the nightly's week 6 to screen the lean end to end.
+
+## JB-2b — sl1.1: the lean before each pair's own kickoffs (13:08–13:13 ET)
+
+* **Why** (the PO, on § 7's finding): under sl1.0 a pull after Thursday night's kickoff hid every lean until the next
+  week — exactly the Friday-to-Sunday window when most calls are made.
+* **The rule now** (`sleeper_lean.snapshots` / `pair_ok`; METRICS § sl1.1 with the reason): the lean shows when the
+  snapshot pricing the two players was fetched before **both** players' own kickoffs (each player's game that week in
+  `dim_game`, by his line's team, one spelling of a team code) and neither game has started at the request. A pair with
+  a started game shows nothing (unchanged); the tally sentence is unchanged (the record is pre-first-kickoff by
+  construction). WORDS: the "nothing when" clause of the My Week row. The words of the lean do not change.
+* **Tests**: `test_jb2` 10 passed — a Thursday-night pair hidden at Saturday's clock while a Sunday pair priced by a
+  Friday snapshot shows (sl1.0 hid it); a mixed Thursday / Sunday pair with a Friday snapshot hidden; a snapshot from
+  before both kickoffs but a game started at the request: nothing; each player's own game (LAR / LA, a bye); this
+  database's week-5 snapshot passes for Boston and Jefferson (their Sunday 11 Oct games). `e2e/jb2` 8 passed (the
+  fixture regenerated: its snapshot field now carries the pair's kickoff). ruff, the copy standard, `scripts/gate.sh`
+  (79 s, exit 0; web too: the spec's comment and the fixture changed).
