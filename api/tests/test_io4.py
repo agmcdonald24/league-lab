@@ -662,6 +662,9 @@ NEEDS_NO_CLIENT = {
     ("api/league_lab_api/outlook_store.py", "offer"): "the outlook snapshots' writer thread: database writes only",
     ("api/league_lab_api/news.py", "recent"): "ESPN's player news: its own bucket (NF.feed), not Sleeper / MFL",
     ("src/league_lab/injury_feed.py", "snapshot"): "the injury feed's background refresh: one copy for everyone, ESPN",
+    # PO (Wave J-B, after JB-3): the warm-up is the server's own pass after a publication — requests to itself on
+    # PORT, bounded, with no visitor behind them; its provider calls are charged to the loopback client by the limiter
+    ("api/league_lab_api/warm.py", "on_publication"): "the warm-up after a publication: the server's own requests, no visitor",
 }
 
 
