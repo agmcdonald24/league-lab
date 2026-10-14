@@ -2786,6 +2786,21 @@ the counts and calls; `week` = the last scored week, `first_week` = the first.
 player Sleeper lists; not Sleeper's own scoring (its line is counted the league's way); a few weeks are noise
 (the page says so under four weeks).
 
+### Sleeper's lean on a close call (sl1.0, JB-2, Wave J-B, 2026-10-14; `api/league_lab_api/sleeper_lean.py`)
+
+A display rule, not a study: it moves no number and changes no call. On My Week, a close call (the card's own rule:
+status "close" or strength "coin flip") whose other player Sleeper's line for the week has higher — by at least 0.05
+points, both players priced in the league's scoring by `why.market_points` (the `market_points` the lineup rows already
+carry) — gains one line: "Sleeper's numbers lean to <name>." **Only** when the week's Sleeper snapshot that line comes
+from (`mart_market_line`: the newest fetched) was fetched before the week's first kickoff (`dim_game`); a later pull
+(mid-week) says nothing — it never reaches back to an older snapshot. A call exists only before its own kickoff (the
+cards skip a locked player). The tally — "This season, on the N close calls where we have disagreed, Sleeper was right M
+times, we K." — is the record's season row for the league (scope `season`, position `ALL`): N = `pairs_disagree`,
+K = `pairs_ours_right_disagree`, M = N − K (a disagreement where Sleeper had the two level and the other player won is
+counted as Sleeper's, as `pairs_disagree` counts it); said only from **10** graded disagreements (fewer: the lean alone);
+an on-demand league has no record, so its lean stands alone. Unreadable (a table missing between a deploy and the
+refresh, a failed read): no line, logged.
+
 ### The decision record (dr1.0, V-1, Wave I-G, 2026-10-04; `ops.lineup_record`, `league_lab.validation`, `mart_decision_record`, `mart_decision_calls`, `league-lab validate`)
 
 The projection record grades the numbers; this grades **the lineups we recommended**. Before it, `lineups()` re-solved

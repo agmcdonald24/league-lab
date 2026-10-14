@@ -1166,3 +1166,15 @@ cells; their labels:
 | A cell | "{position}, our top 12" · "our 13th–24th" · "our 25th–36th" · "our 37th and lower" |
 | Columns | player-weeks · gap a player-week [95%] · share of the gap [95%] · our bias / Sleeper's |
 | Not built | "**Where the gap is**: NOT built tonight ({error})." |
+<!-- ---- JB-2 -->
+## The clean record on the screen (JB-2, Wave J-B, 2026-10-14; `sleeper_lean.py`, `routes/About.svelte`; docs/METRICS.md § sl1.0)
+
+| Where | Words | Never |
+|---|---|---|
+| My Week, a close call Sleeper's pre-kickoff numbers read the other way | "Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close calls where we have disagreed, Sleeper was right 9 times, we 4." (under 10 graded disagreements, or a league with no record: "Sleeper's numbers lean to Justin Jefferson." alone); nothing when Sleeper's snapshot was fetched after the week's first kickoff | "beat", "crushed", "due", "unlucky"; a number on the call that moves |
+| About, the record's table | heading **The record, week by week**; under it "Both numbers frozen before kickoff: ours as the board stood, Sleeper's as last fetched before the week's first game. The miss is in points per player; the calls are the closest start/sit calls on every team."; columns **Week · Miss ours · Sleeper · Calls right ours · Sleeper · Both · neither**; on tap **By position**: "Week 5 · WR: miss 4.2 ours · 4.0 Sleeper's (157 players)" | a verdict word |
+| About, the week's lineups | "In week 5 our recommended lineups scored 1,251.1; managers' own 1,287.3; Sleeper's numbers would have scored 1,323.0." | "lost", "beat" |
+| About, the earlier seasons | heading **Earlier seasons**; "Sleeper's past numbers are served after the games, so this table is kinder to Sleeper than the one above; it is never mixed into it."; columns **Position · Miss ours · Sleeper · Close calls ours right** ("47% of 19,087") | the history added to the clean record |
+| About, the record cannot be read | "Our record is not available right now." | "no record" |
+| nothing graded yet | the table is not drawn (the record's own empty sentence stays) | a table of dashes |
+<!-- ---- end JB-2 -->
