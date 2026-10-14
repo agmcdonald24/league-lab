@@ -2,6 +2,14 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-14 — Wave J-B
+
+- **JB-3 — Sunday keeps answering.** A request waiting on the database holds no CPU slot: its slot is given back while
+  a statement runs and taken again after, ahead of new requests (on a slowed database the busy minute went from 31
+  "busy" answers to none). After a new publication the server warms the house leagues' heavy screens once, one at a
+  time, only while slots are free (`/api/status` `warm`). The after-publish check can pick its trade from the current
+  rosters (`scripts/post_deploy_trade.py`; the PO's line).
+
 ## 2026-10-12 — the trigger says whether its token can start a run
 
 - **PO — `ops/nightly-trigger`.** The status page read `token: set` on 11 and 12 October while no morning run started:
