@@ -3292,7 +3292,6 @@ export interface ReviewLine {
   sleeper_lean?: string | null;
 }
 export interface RecordRow {
-  scope?: string | null;
   pairs_neither_right?: number | null;
 }
 // ---- end JB-2
