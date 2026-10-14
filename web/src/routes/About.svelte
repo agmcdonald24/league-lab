@@ -42,6 +42,21 @@
 
   // ---- V-1 (Wave I-G): the decision record block (GET /api/record `decisions`)
   const dec = $derived(r.data?.decisions ?? null);
+  // ---- JB-2 (Wave J-B): the clean record's labels, the week's lineup line, the history table's rows
+  const one = (x: number | null | undefined) => (x === null || x === undefined ? "—" : x.toFixed(1));
+  const RECORD_UNAVAILABLE = "Our record is not available right now.";
+  const pts = (x: number) => x.toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const CLEAN_LABEL =
+    "Both numbers frozen before kickoff: ours as the board stood, Sleeper's as last fetched before the week's first game. The miss is in points per player; the calls are the closest start/sit calls on every team.";
+  const HISTORY_LABEL =
+    "Sleeper's past numbers are served after the games, so this table is kinder to Sleeper than the one above; it is never mixed into it.";
+  const lineupLines = $derived(
+    (dec?.weeks ?? [])
+      .filter((w) => (r.data?.from_week ?? Infinity) <= w.week && w.market !== null && w.market !== undefined)
+      .map((w) => `In week ${w.week} our recommended lineups scored ${pts(w.app)}; managers' own ${pts(w.submitted)}; Sleeper's numbers would have scored ${pts(w.market as number)}.`),
+  );
+  const histRows = $derived(r.data?.history?.available ? (r.data.history.by_position ?? []).filter((h) => h.error) : []);
+  // ---- end JB-2
   const signed = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)}`;
   const DECISIONS_HOWTO = [
     "- **Ours** is the lineup we recommended for each team before the week's first kickoff, kept since: later news does not change it.",
@@ -194,7 +209,7 @@
       games whose were closer and who called the start/sit decisions right.
     </p>
     {#if r.error}
-      <p class="ll-error">{r.error}</p>
+      <p class="ll-error" data-testid="record-unavailable">{RECORD_UNAVAILABLE}</p><!-- JB-2: never "no record" -->
     {:else if !view}
       <div class="space-y-3" aria-label="Loading" data-testid="loading"><div class="ll-skel h-24"></div><div class="ll-skel h-32"></div></div>
     {:else}
@@ -217,28 +232,66 @@
       {/if}
       <!-- ---- end IZ-1 -->
 
+      <!-- ---- JB-2 (Wave J-B): the clean record, week by week — both numbers frozen before kickoff: the error of each and
+           the close calls (ours right, Sleeper's right, both, neither), by position on tap; the week's lineups (ours,
+           managers', Sleeper's as a lineup) in one line, no verdict word; then the history, labelled for what it is -->
       {#if view.calls.length}
-        <div class="space-y-2">
-          <h3 class="ll-label">Start/sit calls, week by week</h3>
-          <div class="overflow-hidden rounded-lg border border-line bg-surface">
-            <table class="w-full table-fixed border-collapse text-base" data-testid="record-table">
+        <div class="space-y-2" data-testid="record-weeks">
+          <h3 class="ll-label">The record, week by week</h3>
+          <p class="text-sm leading-snug text-ink-3" data-testid="record-weeks-label">{CLEAN_LABEL}</p>
+          <div class="overflow-x-auto rounded-lg border border-line bg-surface">
+            <table class="w-full border-collapse text-base" data-testid="record-table">
               <thead>
                 <tr class="ll-label border-b border-line bg-raised text-left">
                   <th class="w-[3.25rem] px-3 py-2 font-semibold">Week</th>
-                  <th class="py-2 text-right font-semibold">Calls</th>
-                  <th class="py-2 text-right font-semibold">We got right</th>
-                  <th class="py-2 text-right font-semibold">Sleeper got right</th>
-                  <th class="py-2 pr-3 text-right font-semibold">We differed</th>
+                  <th class="py-2 text-right font-semibold" title="Points per player, ours · Sleeper's">Miss ours · Sleeper</th>
+                  <th class="py-2 text-right font-semibold" title="Close calls each called right">Calls right ours · Sleeper</th>
+                  <th class="py-2 pr-3 text-right font-semibold" title="Close calls both called right · neither did">Both · neither</th>
                 </tr>
               </thead>
               <tbody>
                 {#each view.calls as w, ix (`${w.week}#${ix}`)}
-                  <tr class="border-b border-line last:border-0">
+                  <tr class="border-b border-line last:border-0" data-testid="record-week" data-week={w.week}>
                     <td class="tabnum px-3 py-2">{w.week}</td>
-                    <td class="tabnum py-2 text-right">{num(w.pairs_n)}</td>
-                    <td class="tabnum py-2 text-right font-bold">{num(w.pairs_ours_right)}</td>
-                    <td class="tabnum py-2 text-right">{num(w.pairs_sleeper_right)}</td>
-                    <td class="tabnum py-2 pr-3 text-right">{num(w.pairs_disagree)}</td>
+                    <td class="tabnum py-2 text-right">{one(w.ours_mae)} · {one(w.sleeper_mae)}</td>
+                    <td class="tabnum py-2 text-right"><span class="font-bold">{num(w.pairs_ours_right)}</span> · {num(w.pairs_sleeper_right)} <span class="text-sm text-ink-3">of {num(w.pairs_n)}</span></td>
+                    <td class="tabnum py-2 pr-3 text-right">{num(w.pairs_both_right)} · {num(w.pairs_neither_right)}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+          {#if view.byPosition.length}
+            <Expander title="By position" testid="record-by-position">
+              <ul class="space-y-1 text-base" data-testid="record-position-list">
+                {#each view.byPosition as p, ix (`${p.week}-${p.position}#${ix}`)}
+                  <li class="tabnum" data-testid="record-position">Week {p.week} · {p.position}: miss {one(p.ours_mae)} ours · {one(p.sleeper_mae)} Sleeper's{p.n_both ? ` (${p.n_both} players)` : ""}</li>
+                {/each}
+              </ul>
+            </Expander>
+          {/if}
+          {#each lineupLines as l, i (i)}<p class="text-base leading-snug" data-testid="record-lineups">{l}</p>{/each}
+        </div>
+      {/if}
+      {#if histRows.length}
+        <div class="space-y-2" data-testid="record-history-table">
+          <h3 class="ll-label">Earlier seasons</h3>
+          <p class="text-sm leading-snug text-ink-3" data-testid="record-history-label">{HISTORY_LABEL}</p>
+          <div class="overflow-x-auto rounded-lg border border-line bg-surface">
+            <table class="w-full border-collapse text-base">
+              <thead>
+                <tr class="ll-label border-b border-line bg-raised text-left">
+                  <th class="px-3 py-2 font-semibold">Position</th>
+                  <th class="py-2 text-right font-semibold">Miss ours · Sleeper</th>
+                  <th class="py-2 pr-3 text-right font-semibold">Close calls ours right</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each histRows as h (h.position)}
+                  <tr class="border-b border-line last:border-0" data-testid="record-history-row">
+                    <td class="px-3 py-2 font-semibold">{h.position}</td>
+                    <td class="tabnum py-2 text-right">{one(h.error?.ours)} · {one(h.error?.sleeper)}</td>
+                    <td class="tabnum py-2 pr-3 text-right">{h.close_calls?.share != null ? `${Math.round(100 * h.close_calls.share)}%` : "—"}{h.close_calls?.n ? ` of ${h.close_calls.n.toLocaleString("en-US")}` : ""}</td>
                   </tr>
                 {/each}
               </tbody>
@@ -246,6 +299,7 @@
           </div>
         </div>
       {/if}
+      <!-- ---- end JB-2 -->
       <!-- ---- V-1 (Wave I-G): our lineups against the ones started (GET /api/record `decisions`; METRICS § "The decision record") -->
       {#if dec?.available && dec.season_totals}
         {@const tot = dec.season_totals}

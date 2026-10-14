@@ -1,0 +1,957 @@
+{
+ "_fixture": "JB-2: this database's /api/record answer with week 5 scored from the live record the PO read on 14 Oct (no week-5 actuals here); history and weeks 1-3 of decisions are this database's own",
+ "available": true,
+ "decisions": {
+  "available": true,
+  "calls": {
+   "brier": 0.2278,
+   "coin_flips": {
+    "expected": 22.68,
+    "n": 44,
+    "won": 29.5
+   },
+   "expected": 49.6,
+   "n": 89,
+   "table": [
+    {
+     "bin": 1,
+     "n": 12,
+     "observed": 0.75,
+     "p_hi": 0.5039,
+     "p_lo": 0.4619,
+     "predicted": 0.4819
+    },
+    {
+     "bin": 2,
+     "n": 11,
+     "observed": 0.5,
+     "p_hi": 0.5236,
+     "p_lo": 0.505,
+     "predicted": 0.5174
+    },
+    {
+     "bin": 3,
+     "n": 11,
+     "observed": 0.7273,
+     "p_hi": 0.531,
+     "p_lo": 0.5242,
+     "predicted": 0.5277
+    },
+    {
+     "bin": 4,
+     "n": 11,
+     "observed": 0.7273,
+     "p_hi": 0.5526,
+     "p_lo": 0.5314,
+     "predicted": 0.5413
+    },
+    {
+     "bin": 5,
+     "n": 11,
+     "observed": 0.6364,
+     "p_hi": 0.5732,
+     "p_lo": 0.5527,
+     "predicted": 0.5627
+    },
+    {
+     "bin": 6,
+     "n": 11,
+     "observed": 0.4545,
+     "p_hi": 0.5853,
+     "p_lo": 0.5764,
+     "predicted": 0.5804
+    },
+    {
+     "bin": 7,
+     "n": 11,
+     "observed": 0.9091,
+     "p_hi": 0.6075,
+     "p_lo": 0.5858,
+     "predicted": 0.594
+    },
+    {
+     "bin": 8,
+     "n": 11,
+     "observed": 0.8182,
+     "p_hi": 0.7202,
+     "p_lo": 0.6227,
+     "predicted": 0.6599
+    }
+   ],
+   "won": 61.5
+  },
+  "news": {
+   "edge": null,
+   "regret": null,
+   "roster_weeks": 0,
+   "source": "report"
+  },
+  "note": "Weeks 1\u20134 were played before this record existed: their lineups were rebuilt after kickoff from the projections frozen then, with the final injury report.",
+  "reconstructed_weeks": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "season": 2026,
+  "season_totals": {
+   "app": 4784.4,
+   "edge": -45.06,
+   "market": 1323.04,
+   "market_app": null,
+   "market_submitted": null,
+   "market_weeks": [
+    5
+   ],
+   "optimum": 5420.64,
+   "regret": 591.18,
+   "roster_weeks": 40,
+   "submitted": 4829.46,
+   "weeks": 4
+  },
+  "sentences": {
+   "calls": "The coin flips landed 67% for the side we leaned (52% expected, 44 calls).",
+   "edge": "Weeks 1\u20133: had every team started our lineup, the league would have scored 8.9 points fewer than it did (\u22120.3 per team per week). The best lineups in hindsight beat the ones started by 460.2 points (15.3 per team per week).",
+   "market": null,
+   "news": "No graded lineup had a starter's injury report change after our build (the rebuilt weeks cannot tell: they read the final report)."
+  },
+  "team": null,
+  "weeks": [
+   {
+    "app": 1221.6,
+    "edge": -20.68,
+    "market": null,
+    "news_rosters": 0,
+    "news_source": "report",
+    "optimum": 1417.78,
+    "record_source": "reconstructed",
+    "regret": 175.5,
+    "rosters": 10,
+    "submitted": 1242.28,
+    "week": 1
+   },
+   {
+    "app": 1131.34,
+    "edge": 4.64,
+    "market": null,
+    "news_rosters": 0,
+    "news_source": "report",
+    "optimum": 1264.9,
+    "record_source": "reconstructed",
+    "regret": 138.2,
+    "rosters": 10,
+    "submitted": 1126.7,
+    "week": 2
+   },
+   {
+    "app": 1180.36,
+    "edge": 7.16,
+    "market": null,
+    "news_rosters": 0,
+    "news_source": "report",
+    "optimum": 1319.7,
+    "record_source": "reconstructed",
+    "regret": 146.5,
+    "rosters": 10,
+    "submitted": 1173.2,
+    "week": 3
+   },
+   {
+    "app": 1251.1,
+    "edge": -36.18,
+    "market": 1323.04,
+    "news_rosters": 0,
+    "news_source": "report",
+    "optimum": 1418.26,
+    "record_source": "kickoff",
+    "regret": 130.98,
+    "rosters": 10,
+    "submitted": 1287.28,
+    "week": 5
+   }
+  ]
+ },
+ "from_week": 5,
+ "history": {
+  "available": true,
+  "blend": [
+   {
+    "error": {
+     "blend": 5.899843599409225,
+     "ours": 6.172690632003133,
+     "sleeper": 5.828482825670325
+    },
+    "fitted_on": "2023",
+    "position": "QB",
+    "season": 2024,
+    "w": 0.45
+   },
+   {
+    "error": {
+     "blend": 5.926223716415948,
+     "ours": 5.830874496202969,
+     "sleeper": 5.998175850752663
+    },
+    "fitted_on": "2023, 2024",
+    "position": "QB",
+    "season": 2025,
+    "w": 0.8
+   },
+   {
+    "error": {
+     "blend": 4.121228568030022,
+     "ours": 4.434213116856618,
+     "sleeper": 4.1157465788705085
+    },
+    "fitted_on": "2023",
+    "position": "RB",
+    "season": 2024,
+    "w": 0.9
+   },
+   {
+    "error": {
+     "blend": 4.332215948523207,
+     "ours": 4.487143930530164,
+     "sleeper": 4.3413209072256995
+    },
+    "fitted_on": "2023, 2024",
+    "position": "RB",
+    "season": 2025,
+    "w": 0.95
+   },
+   {
+    "error": {
+     "blend": 4.01224634826047,
+     "ours": 4.191055248144655,
+     "sleeper": 4.007386291506815
+    },
+    "fitted_on": "2023",
+    "position": "WR",
+    "season": 2024,
+    "w": 0.8
+   },
+   {
+    "error": {
+     "blend": 3.8433513439781524,
+     "ours": 3.956880527644757,
+     "sleeper": 3.856726839392412
+    },
+    "fitted_on": "2023, 2024",
+    "position": "WR",
+    "season": 2025,
+    "w": 0.85
+   },
+   {
+    "error": {
+     "blend": 2.9782623065223106,
+     "ours": 3.1419151460716237,
+     "sleeper": 2.9717462607956353
+    },
+    "fitted_on": "2023",
+    "position": "TE",
+    "season": 2024,
+    "w": 0.65
+   },
+   {
+    "error": {
+     "blend": 3.067334943873951,
+     "ours": 3.0725952356325408,
+     "sleeper": 3.108530438018888
+    },
+    "fitted_on": "2023, 2024",
+    "position": "TE",
+    "season": 2025,
+    "w": 0.8
+   }
+  ],
+  "built_at": "2026-10-14T12:23:59.944036+00:00",
+  "by_position": [
+   {
+    "blend": "no gain",
+    "close_calls": {
+     "diff": 0.04252610134963075,
+     "diff_hi": 0.09672739055299528,
+     "diff_lo": -0.015033261711920431,
+     "n": 3927,
+     "share": 0.5212630506748154,
+     "sleeper": 0.4787369493251846,
+     "weeks": 55,
+     "word": "level"
+    },
+    "error": {
+     "diff": 0.0525048458081114,
+     "diff_hi": 0.17456257198208985,
+     "diff_lo": -0.06441900429642247,
+     "n": 1708,
+     "ours": 5.845478584492693,
+     "sleeper": 5.79297373868458,
+     "weeks": 55,
+     "word": "level"
+    },
+    "hit_rate": {
+     "diff": 0.012121212121212118,
+     "diff_hi": 0.034848484848484844,
+     "diff_lo": -0.010606060606060605,
+     "n": 1708,
+     "ours": 0.543939393939394,
+     "sleeper": 0.5318181818181819,
+     "weeks": 55,
+     "word": "level"
+    },
+    "order": {
+     "diff": 0.017469511234357714,
+     "diff_hi": 0.043907070167629215,
+     "diff_lo": -0.009053329227167799,
+     "n": 1708,
+     "ours": 0.38536956615233614,
+     "sleeper": 0.3679000549179784,
+     "weeks": 55,
+     "word": "level"
+    },
+    "position": "QB",
+    "startable_pairs": {
+     "diff": 0.007745124965668772,
+     "diff_hi": 0.020420217097469013,
+     "diff_lo": -0.005903589148103616,
+     "n": 18205,
+     "ours": 0.6047789068937105,
+     "sleeper": 0.5970337819280418,
+     "weeks": 55,
+     "word": "level"
+    },
+    "word": "level"
+   },
+   {
+    "blend": "gains",
+    "close_calls": {
+     "diff": -0.14527528138905854,
+     "diff_hi": -0.11071829687369039,
+     "diff_lo": -0.18058115583282308,
+     "n": 11461,
+     "share": 0.42736235930547073,
+     "sleeper": 0.5726376406945293,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "error": {
+     "diff": 0.242735667838442,
+     "diff_hi": 0.29670505292155913,
+     "diff_lo": 0.1901421376477149,
+     "n": 4127,
+     "ours": 4.4169871994777825,
+     "sleeper": 4.1742515316393405,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "hit_rate": {
+     "diff": -0.012878787878787872,
+     "diff_hi": 0.004545454545454548,
+     "diff_lo": -0.03106060606060604,
+     "n": 4127,
+     "ours": 0.6393939393939395,
+     "sleeper": 0.6522727272727272,
+     "weeks": 55,
+     "word": "level"
+    },
+    "order": {
+     "diff": -0.039908617632647116,
+     "diff_hi": -0.028575228968702546,
+     "diff_lo": -0.051160149366864256,
+     "n": 4127,
+     "ours": 0.6542074934534252,
+     "sleeper": 0.6941161110860723,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "position": "RB",
+    "startable_pairs": {
+     "diff": -0.02469169300899483,
+     "diff_hi": -0.018264685927967796,
+     "diff_lo": -0.031303740622348954,
+     "n": 73709,
+     "ours": 0.6781668452970465,
+     "sleeper": 0.7028585383060413,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "word": "behind"
+   },
+   {
+    "blend": "gains",
+    "close_calls": {
+     "diff": -0.060826740713574634,
+     "diff_hi": -0.029539557223884905,
+     "diff_lo": -0.0907363735578034,
+     "n": 19087,
+     "share": 0.4695866296432127,
+     "sleeper": 0.5304133703567873,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "error": {
+     "diff": 0.14583110358619064,
+     "diff_hi": 0.17679887977621417,
+     "diff_lo": 0.11521599192119604,
+     "n": 6802,
+     "ours": 4.0833231112343364,
+     "sleeper": 3.9374920076481463,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "hit_rate": {
+     "diff": 0.0010101010101010125,
+     "diff_hi": 0.010606060606060614,
+     "diff_lo": -0.008585858585858587,
+     "n": 6802,
+     "ours": 0.5888888888888888,
+     "sleeper": 0.5878787878787879,
+     "weeks": 55,
+     "word": "level"
+    },
+    "order": {
+     "diff": -0.01873689696603159,
+     "diff_hi": -0.01095497034276697,
+     "diff_lo": -0.027179717046827746,
+     "n": 6802,
+     "ours": 0.6049565839382206,
+     "sleeper": 0.6236934809042523,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "position": "WR",
+    "startable_pairs": {
+     "diff": -0.010313997262149212,
+     "diff_hi": -0.005360043039393943,
+     "diff_lo": -0.015376303720916204,
+     "n": 116880,
+     "ours": 0.6268694387405886,
+     "sleeper": 0.6371834360027379,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "word": "behind"
+   },
+   {
+    "blend": "no gain",
+    "close_calls": {
+     "diff": -0.07584392810170981,
+     "diff_hi": -0.015576693970063449,
+     "diff_lo": -0.13914521484972397,
+     "n": 4562,
+     "share": 0.4620780359491451,
+     "sleeper": 0.5379219640508549,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "error": {
+     "diff": 0.08535463722063068,
+     "diff_hi": 0.13909414941139528,
+     "diff_lo": 0.03270543644630832,
+     "n": 3366,
+     "ours": 3.075663299486165,
+     "sleeper": 2.9903086622655346,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "hit_rate": {
+     "diff": -0.015151515151515148,
+     "diff_hi": 0.010606060606060607,
+     "diff_lo": -0.04090909090909091,
+     "n": 3366,
+     "ours": 0.45151515151515154,
+     "sleeper": 0.4666666666666667,
+     "weeks": 55,
+     "word": "level"
+    },
+    "order": {
+     "diff": -0.02176889420536253,
+     "diff_hi": -0.006163155167653506,
+     "diff_lo": -0.0389152209266022,
+     "n": 3366,
+     "ours": 0.5598419410202926,
+     "sleeper": 0.5816108352256552,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "position": "TE",
+    "startable_pairs": {
+     "diff": -0.018674825912639796,
+     "diff_hi": -0.0033987994974010024,
+     "diff_lo": -0.03454863151612968,
+     "n": 18956,
+     "ours": 0.5870173032285292,
+     "sleeper": 0.605692129141169,
+     "weeks": 55,
+     "word": "behind"
+    },
+    "word": "behind"
+   }
+  ],
+  "by_season": [
+   {
+    "position": "QB",
+    "season": 2023,
+    "word": "level"
+   },
+   {
+    "position": "QB",
+    "season": 2024,
+    "word": "behind"
+   },
+   {
+    "position": "QB",
+    "season": 2025,
+    "word": "ahead"
+   },
+   {
+    "position": "QB",
+    "season": 2026,
+    "word": "behind"
+   },
+   {
+    "position": "RB",
+    "season": 2023,
+    "word": "behind"
+   },
+   {
+    "position": "RB",
+    "season": 2024,
+    "word": "behind"
+   },
+   {
+    "position": "RB",
+    "season": 2025,
+    "word": "behind"
+   },
+   {
+    "position": "RB",
+    "season": 2026,
+    "word": "ahead"
+   },
+   {
+    "position": "WR",
+    "season": 2023,
+    "word": "behind"
+   },
+   {
+    "position": "WR",
+    "season": 2024,
+    "word": "behind"
+   },
+   {
+    "position": "WR",
+    "season": 2025,
+    "word": "behind"
+   },
+   {
+    "position": "WR",
+    "season": 2026,
+    "word": "ahead"
+   },
+   {
+    "position": "TE",
+    "season": 2023,
+    "word": "behind"
+   },
+   {
+    "position": "TE",
+    "season": 2024,
+    "word": "behind"
+   },
+   {
+    "position": "TE",
+    "season": 2025,
+    "word": "level"
+   },
+   {
+    "position": "TE",
+    "season": 2026,
+    "word": "level"
+   }
+  ],
+  "caveat": "Ours: our model as it runs today, re-run on each past season with only the seasons before it (2026: our projections as published before kickoff). Sleeper's numbers for past weeks are the ones its site serves now, written after the games, so this favours Sleeper; the record above, from week 5 of 2026, compares numbers saved before kickoff.",
+  "close_calls": {
+   "n": 39037,
+   "share": 0.4615108742987422
+  },
+  "gap": {
+   "available": false,
+   "status": "none"
+  },
+  "league_id": "1389709692405551104",
+  "league_name": "League of Scrubs",
+  "ours": "our model as it runs today, re-run on each past season with only the seasons before it",
+  "ours_source": "live_walk_forward",
+  "ours_version": "v3.6",
+  "rule": "hh1.0",
+  "scored_in": null,
+  "seasons": "2023, 2024, 2025, 2026",
+  "sentence": "Against Sleeper's free projections on 55 past weeks (2023, 2024, 2025, 2026), on the weekly miss and the order of players: level at QB; behind at RB, WR and TE. On the close start / sit calls the two disagreed on, ours was right 46% of 39,037 times.",
+  "status": "graded",
+  "weeks": 55
+ },
+ "league_id": "1389709692405551104",
+ "notice": null,
+ "pricing": {
+  "by_week": {
+   "5": "flat"
+  },
+  "now": "flat",
+  "sentence": null
+ },
+ "season": 2026,
+ "summary": {
+  "board_frozen_at": "2026-10-08T17:14:09Z",
+  "by_position": [
+   {
+    "board_frozen_at": "2026-10-08T23:51:51.372874+00:00",
+    "first_kickoff_at": "2026-10-09T00:15:00+00:00",
+    "first_week": 5,
+    "league_id": "1389709692405551104",
+    "league_name": "League of Scrubs",
+    "model_version": "v3.6",
+    "n_both": 30,
+    "n_players": null,
+    "ours_hit_rate": null,
+    "ours_mae": 6.78,
+    "ours_spearman": 0.586,
+    "pairs_both_right": null,
+    "pairs_disagree": null,
+    "pairs_listed": null,
+    "pairs_n": null,
+    "pairs_neither_right": null,
+    "pairs_no_sleeper": null,
+    "pairs_ours_right": null,
+    "pairs_ours_right_disagree": null,
+    "pairs_push": null,
+    "pairs_sleeper_right": null,
+    "position": "QB",
+    "pricing": "flat",
+    "scope": "season",
+    "season": 2026,
+    "sleeper_fetched_at": "2026-10-05T12:25:32+00:00",
+    "sleeper_hit_rate": null,
+    "sleeper_mae": 6.4,
+    "sleeper_spearman": 0.603,
+    "status": "scored",
+    "top_n": null,
+    "week": 5,
+    "weeks_scored": 1
+   },
+   {
+    "board_frozen_at": "2026-10-08T23:51:51.372874+00:00",
+    "first_kickoff_at": "2026-10-09T00:15:00+00:00",
+    "first_week": 5,
+    "league_id": "1389709692405551104",
+    "league_name": "League of Scrubs",
+    "model_version": "v3.6",
+    "n_both": 97,
+    "n_players": null,
+    "ours_hit_rate": null,
+    "ours_mae": 4.64,
+    "ours_spearman": 0.633,
+    "pairs_both_right": null,
+    "pairs_disagree": null,
+    "pairs_listed": null,
+    "pairs_n": null,
+    "pairs_neither_right": null,
+    "pairs_no_sleeper": null,
+    "pairs_ours_right": null,
+    "pairs_ours_right_disagree": null,
+    "pairs_push": null,
+    "pairs_sleeper_right": null,
+    "position": "RB",
+    "pricing": "flat",
+    "scope": "season",
+    "season": 2026,
+    "sleeper_fetched_at": "2026-10-05T12:25:32+00:00",
+    "sleeper_hit_rate": null,
+    "sleeper_mae": 4.42,
+    "sleeper_spearman": 0.659,
+    "status": "scored",
+    "top_n": null,
+    "week": 5,
+    "weeks_scored": 1
+   },
+   {
+    "board_frozen_at": "2026-10-08T23:51:51.372874+00:00",
+    "first_kickoff_at": "2026-10-09T00:15:00+00:00",
+    "first_week": 5,
+    "league_id": "1389709692405551104",
+    "league_name": "League of Scrubs",
+    "model_version": "v3.6",
+    "n_both": 100,
+    "n_players": null,
+    "ours_hit_rate": null,
+    "ours_mae": 3.26,
+    "ours_spearman": 0.573,
+    "pairs_both_right": null,
+    "pairs_disagree": null,
+    "pairs_listed": null,
+    "pairs_n": null,
+    "pairs_neither_right": null,
+    "pairs_no_sleeper": null,
+    "pairs_ours_right": null,
+    "pairs_ours_right_disagree": null,
+    "pairs_push": null,
+    "pairs_sleeper_right": null,
+    "position": "TE",
+    "pricing": "flat",
+    "scope": "season",
+    "season": 2026,
+    "sleeper_fetched_at": "2026-10-05T12:25:32+00:00",
+    "sleeper_hit_rate": null,
+    "sleeper_mae": 3.01,
+    "sleeper_spearman": 0.576,
+    "status": "scored",
+    "top_n": null,
+    "week": 5,
+    "weeks_scored": 1
+   },
+   {
+    "board_frozen_at": "2026-10-08T23:51:51.372874+00:00",
+    "first_kickoff_at": "2026-10-09T00:15:00+00:00",
+    "first_week": 5,
+    "league_id": "1389709692405551104",
+    "league_name": "League of Scrubs",
+    "model_version": "v3.6",
+    "n_both": 157,
+    "n_players": null,
+    "ours_hit_rate": null,
+    "ours_mae": 4.24,
+    "ours_spearman": 0.521,
+    "pairs_both_right": null,
+    "pairs_disagree": null,
+    "pairs_listed": null,
+    "pairs_n": null,
+    "pairs_neither_right": null,
+    "pairs_no_sleeper": null,
+    "pairs_ours_right": null,
+    "pairs_ours_right_disagree": null,
+    "pairs_push": null,
+    "pairs_sleeper_right": null,
+    "position": "WR",
+    "pricing": "flat",
+    "scope": "season",
+    "season": 2026,
+    "sleeper_fetched_at": "2026-10-05T12:25:32+00:00",
+    "sleeper_hit_rate": null,
+    "sleeper_mae": 4.04,
+    "sleeper_spearman": 0.579,
+    "status": "scored",
+    "top_n": null,
+    "week": 5,
+    "weeks_scored": 1
+   }
+  ],
+  "first_kickoff_at": "2026-10-09T00:15:00Z",
+  "first_week": 5,
+  "league_id": "1389709692405551104",
+  "league_name": "League of Scrubs",
+  "model_version": "v3.6",
+  "n_both": 384,
+  "n_players": 370,
+  "ours_hit_rate": null,
+  "ours_mae": 4.34,
+  "ours_spearman": null,
+  "pairs_both_right": 9,
+  "pairs_disagree": 13,
+  "pairs_listed": 30,
+  "pairs_n": 26,
+  "pairs_neither_right": 5,
+  "pairs_no_sleeper": null,
+  "pairs_ours_right": 13,
+  "pairs_ours_right_disagree": 4,
+  "pairs_push": null,
+  "pairs_sleeper_right": 17,
+  "position": "ALL",
+  "pricing": "flat",
+  "scope": "season",
+  "season": 2026,
+  "sleeper_fetched_at": "2026-10-08T17:18:24Z",
+  "sleeper_hit_rate": null,
+  "sleeper_mae": 4.1,
+  "sleeper_spearman": null,
+  "status": "scored",
+  "top_n": null,
+  "week": 5,
+  "weeks_scored": 1
+ },
+ "weeks": [
+  {
+   "board_frozen_at": "2026-10-08T17:14:09Z",
+   "first_kickoff_at": "2026-10-09T00:15:00Z",
+   "first_week": 5,
+   "league_id": "1389709692405551104",
+   "league_name": "League of Scrubs",
+   "model_version": "v3.6",
+   "n_both": 384,
+   "n_players": 370,
+   "ours_hit_rate": null,
+   "ours_mae": 4.34,
+   "ours_spearman": null,
+   "pairs_both_right": 9,
+   "pairs_disagree": 13,
+   "pairs_listed": 30,
+   "pairs_n": 26,
+   "pairs_neither_right": 5,
+   "pairs_no_sleeper": null,
+   "pairs_ours_right": 13,
+   "pairs_ours_right_disagree": 4,
+   "pairs_push": null,
+   "pairs_sleeper_right": 17,
+   "position": "ALL",
+   "pricing": "flat",
+   "scope": "week",
+   "season": 2026,
+   "sleeper_fetched_at": "2026-10-08T17:18:24Z",
+   "sleeper_hit_rate": null,
+   "sleeper_mae": 4.1,
+   "sleeper_spearman": null,
+   "status": "scored",
+   "top_n": null,
+   "week": 5,
+   "weeks_scored": 1
+  },
+  {
+   "board_frozen_at": "2026-10-08T23:51:51.372874+00:00",
+   "first_kickoff_at": "2026-10-09T00:15:00+00:00",
+   "first_week": 5,
+   "league_id": "1389709692405551104",
+   "league_name": "League of Scrubs",
+   "model_version": "v3.6",
+   "n_both": 30,
+   "n_players": null,
+   "ours_hit_rate": null,
+   "ours_mae": 6.78,
+   "ours_spearman": 0.586,
+   "pairs_both_right": null,
+   "pairs_disagree": null,
+   "pairs_listed": null,
+   "pairs_n": null,
+   "pairs_neither_right": null,
+   "pairs_no_sleeper": null,
+   "pairs_ours_right": null,
+   "pairs_ours_right_disagree": null,
+   "pairs_push": null,
+   "pairs_sleeper_right": null,
+   "position": "QB",
+   "pricing": "flat",
+   "scope": "week",
+   "season": 2026,
+   "sleeper_fetched_at": "2026-10-05T12:25:32+00:00",
+   "sleeper_hit_rate": null,
+   "sleeper_mae": 6.4,
+   "sleeper_spearman": 0.603,
+   "status": "scored",
+   "top_n": null,
+   "week": 5,
+   "weeks_scored": 1
+  },
+  {
+   "board_frozen_at": "2026-10-08T23:51:51.372874+00:00",
+   "first_kickoff_at": "2026-10-09T00:15:00+00:00",
+   "first_week": 5,
+   "league_id": "1389709692405551104",
+   "league_name": "League of Scrubs",
+   "model_version": "v3.6",
+   "n_both": 97,
+   "n_players": null,
+   "ours_hit_rate": null,
+   "ours_mae": 4.64,
+   "ours_spearman": 0.633,
+   "pairs_both_right": null,
+   "pairs_disagree": null,
+   "pairs_listed": null,
+   "pairs_n": null,
+   "pairs_neither_right": null,
+   "pairs_no_sleeper": null,
+   "pairs_ours_right": null,
+   "pairs_ours_right_disagree": null,
+   "pairs_push": null,
+   "pairs_sleeper_right": null,
+   "position": "RB",
+   "pricing": "flat",
+   "scope": "week",
+   "season": 2026,
+   "sleeper_fetched_at": "2026-10-05T12:25:32+00:00",
+   "sleeper_hit_rate": null,
+   "sleeper_mae": 4.42,
+   "sleeper_spearman": 0.659,
+   "status": "scored",
+   "top_n": null,
+   "week": 5,
+   "weeks_scored": 1
+  },
+  {
+   "board_frozen_at": "2026-10-08T23:51:51.372874+00:00",
+   "first_kickoff_at": "2026-10-09T00:15:00+00:00",
+   "first_week": 5,
+   "league_id": "1389709692405551104",
+   "league_name": "League of Scrubs",
+   "model_version": "v3.6",
+   "n_both": 100,
+   "n_players": null,
+   "ours_hit_rate": null,
+   "ours_mae": 3.26,
+   "ours_spearman": 0.573,
+   "pairs_both_right": null,
+   "pairs_disagree": null,
+   "pairs_listed": null,
+   "pairs_n": null,
+   "pairs_neither_right": null,
+   "pairs_no_sleeper": null,
+   "pairs_ours_right": null,
+   "pairs_ours_right_disagree": null,
+   "pairs_push": null,
+   "pairs_sleeper_right": null,
+   "position": "TE",
+   "pricing": "flat",
+   "scope": "week",
+   "season": 2026,
+   "sleeper_fetched_at": "2026-10-05T12:25:32+00:00",
+   "sleeper_hit_rate": null,
+   "sleeper_mae": 3.01,
+   "sleeper_spearman": 0.576,
+   "status": "scored",
+   "top_n": null,
+   "week": 5,
+   "weeks_scored": 1
+  },
+  {
+   "board_frozen_at": "2026-10-08T23:51:51.372874+00:00",
+   "first_kickoff_at": "2026-10-09T00:15:00+00:00",
+   "first_week": 5,
+   "league_id": "1389709692405551104",
+   "league_name": "League of Scrubs",
+   "model_version": "v3.6",
+   "n_both": 157,
+   "n_players": null,
+   "ours_hit_rate": null,
+   "ours_mae": 4.24,
+   "ours_spearman": 0.521,
+   "pairs_both_right": null,
+   "pairs_disagree": null,
+   "pairs_listed": null,
+   "pairs_n": null,
+   "pairs_neither_right": null,
+   "pairs_no_sleeper": null,
+   "pairs_ours_right": null,
+   "pairs_ours_right_disagree": null,
+   "pairs_push": null,
+   "pairs_sleeper_right": null,
+   "position": "WR",
+   "pricing": "flat",
+   "scope": "week",
+   "season": 2026,
+   "sleeper_fetched_at": "2026-10-05T12:25:32+00:00",
+   "sleeper_hit_rate": null,
+   "sleeper_mae": 4.04,
+   "sleeper_spearman": 0.579,
+   "status": "scored",
+   "top_n": null,
+   "week": 5,
+   "weeks_scored": 1
+  }
+ ]
+}
