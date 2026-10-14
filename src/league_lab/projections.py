@@ -71,7 +71,7 @@ from .waivers import waivers_after_project
 
 log = logging.getLogger(__name__)
 
-MODEL_VERSION = "v3.6"   # ---- IL-3: v3.3 = v3.0 + cs1.1 (cold starts, M6) + nt1.0 (the WR new-team scale); IP-1: v3.4 = + pt1.0 (QB passing TDs); IQ-1: v3.5 = + fi1.0 (later weeks' line and personnel); IQ-3: v3.6 = + hb1.0 (QB later weeks blended with his own per-game line)
+MODEL_VERSION = "v3.8"   # ---- IL-3: v3.3 = v3.0 + cs1.1 (cold starts, M6) + nt1.0 (the WR new-team scale); IP-1: v3.4 = + pt1.0 (QB passing TDs); IQ-1: v3.5 = + fi1.0 (later weeks' line and personnel); IQ-3: v3.6 = + hb1.0 (QB later weeks blended with his own per-game line); JB-1: v3.8 = + fx1.0 (f_missed_prev at RB / WR / TE, gp_fix; 'v3.7' is IT-5's unshipped study, so the number is skipped)
 POSITIONS = ("QB", "RB", "WR", "TE")
 QUANTILES = (0.1, 0.5, 0.9)
 # Plan D6 (Wave D): the 50% range ("most weeks"), fitted and calibrated with the same machinery as the
@@ -192,6 +192,15 @@ FEATURES_BY_POSITION: dict[str, list[str]] = {
     "TE": FEATURES + TEAMMATE_INPUTS,
 }
 ALL_FEATURES = list(dict.fromkeys(f for fs in FEATURES_BY_POSITION.values() for f in fs))   # what load_frame reads
+# ---- JB-1 (Wave J-B): gp1.0's C1 behind LEAGUE_LAB_GP_FIX=back_feature (unset: nothing here changes): a computed input,
+# added after ALL_FEATURES (load_frame computes it; it is not a column of the mart)
+from . import gp_fix as _gp  # noqa: E402
+
+GP_MODE = _gp.mode()     # read once, at import: the process's switch (the inputs cannot change under a running fit)
+if GP_MODE == "back_feature":
+    for _p in _gp.POSITIONS:
+        FEATURES_BY_POSITION[_p] = [*FEATURES_BY_POSITION[_p], _gp.BACK_FEATURE]
+# ---- end JB-1
 
 # Fixed hyperparameters (a change is a new MODEL_VERSION). Small trees, strong leaf minimum:
 # weekly fantasy outcomes are noisy and the training sets are a few thousand rows per position.
@@ -223,7 +232,7 @@ def load_frame(conn: psycopg.Connection, seasons: list[int], extra_tables: dict[
         df = _join_feature_table(conn, df, table, extra, seasons)
     if range_target_graded():   # ---- M5: the graded actual's outcome columns (the residual models' target)
         df = join_graded_extras(conn, df, seasons)
-    return df
+    return _gp.add_feature(df)  # ---- JB-1: C1's input when its switch is set; else the frame itself
 
 
 def _join_feature_table(conn: psycopg.Connection, df: pd.DataFrame, table: str, columns: list[str], seasons: list[int]) -> pd.DataFrame:
@@ -965,6 +974,7 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     # ---- end IQ-3
     every = _cal_m6.blend_lines(conn, season, every, models, target, fit, leagues)
     # ---- /M6
+    every = _gp.apply(conn, season, every, models, target, frame, fit, leagues)   # ---- JB-1: C2 / C3 when set; else itself
     lines = nfl_lines(every)
     ranges = every[every["league_id"].isin(list(references))].rename(columns={"league_id": "scoring_name"})[RANGE_COLUMNS]
     pred = house_rows(every, leagues, source)

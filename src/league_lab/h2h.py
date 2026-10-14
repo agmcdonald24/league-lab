@@ -160,6 +160,9 @@ def build_ours(conn: psycopg.Connection, seasons: Iterable[int] = HISTORY_SEASON
         cal.load_oof = _oof            # the scales read the rows of the seasons before s computed here
         try:
             every = cal.blend_lines(conn, s, every, models, target, fit, leagues)
+            # ---- JB-1: gp1.0's C2 / C3 when LEAGUE_LAB_GP_FIX says so; else ``every`` itself
+            from . import gp_fix
+            every = gp_fix.apply(conn, s, every, models, target, frame, fit, leagues)
         finally:
             cal.load_oof = real_load
         rows = _priced_rows(every[every["league_id"] == ref], target, leagues, keep_lines=keep_lines)

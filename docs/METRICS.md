@@ -6511,7 +6511,7 @@ fringe's miss changes sign by era, and a level fitted on the seasons before coul
 seasons). So the first candidates are aimed at the part a level cannot reach: the player who missed his team's previous
 game.
 
-### The candidates (written 11:25 ET, after the diagnosis and before any candidate number; the switch `LEAGUE_LAB_GP_FIX`, unset by default)
+### The candidates (written 11:23 ET, after the diagnosis and before any candidate number; the switch `LEAGUE_LAB_GP_FIX`, unset by default)
 
 Each is judged by gp1.0's ship rule **with RB and with WR as the target** (the two cells; it ships if it passes for
 either: (a) at that position, (b) at the other three). "Back" = he did not play his team's previous game of the
@@ -6526,3 +6526,48 @@ played it); unknown for his first row of the season and for a week whose previou
 * **C3 `fringe_scale`** — a correction: a line projected (League of Scrubs) below the knot — the median over the
   fitting weeks of the 36th-highest projection at the position (RB / WR / TE) — times k_pos chosen the same way on the
   rows below the knot in the three seasons before. (fr1.0 fitted a mean level; this fits the error the rule grades.)
+
+### The candidates' numbers (11:33–12:03 ET, after `28afbd3`), and what ships: fx1.0 = C1
+
+Walk-forward 2023–2025 (`h2h.build_ours`, `scripts/analysis/jb1_gap.py run` / `compare`), each run 9–10 minutes, one at a
+time; the baseline is the same run with the switch unset — it reproduces the stored `ops.h2h_ours` to the cent.
+Population: 15,690 player-weeks (League of Scrubs, 2023–2025). Error = mean |projection − actual|; order = the mean
+weekly Spearman; the gap = our error − Sleeper's.
+
+| | RB error 2023 / 2024 / 2025 (pooled) | RB order (worst season change) | WR error 2023 / 2024 / 2025 (pooled) | WR order (worst) | TE error pooled (order) | gap to Sleeper RB / WR / TE | rule at RB / at WR |
+|---|---|---|---|---|---|---|---|
+| baseline (v3.6) | 4.324 / 4.420 / 4.488 (4.411) | 0.652 | 4.107 / 4.186 / 3.964 (4.086) | 0.604 | 3.072 (0.557) | +0.252 / +0.151 / +0.077 | — |
+| **C1 `back_feature`** | **4.304 / 4.409 / 4.484 (4.400)** | 0.653 (−0.0004) | 4.088 / **4.188** / 3.949 (4.075) | 0.606 (−0.0005) | 3.066 (0.557) | +0.241 / +0.140 / +0.071 | **passes** / fails (2024 +0.002) |
+| C2 `back_scale` | 4.248 / 4.383 / 4.444 (4.359) | 0.651 (**−0.008**) | 4.057 / 4.155 / 3.901 (4.038) | 0.597 (**−0.015**) | 3.037 (0.552) | +0.200 / +0.103 / +0.042 | fails (order) / fails (order) |
+| C3 `fringe_scale` | 4.163 / 4.238 / 4.355 (4.253) | 0.652 (+0.0002) | 3.912 / 4.076 / 3.796 (3.928) | 0.604 (0) | 3.013 (0.557) | +0.094 / −0.007 / +0.018 | passes / passes |
+
+QB is untouched by all three (5.879, 0.386). C2's factors: RB 0.66 / 0.57 / 0.54, WR 0.50 (the bound) every season, TE
+0.52–0.54; C3's knots RB 7.4–7.8, WR 8.6–8.7, TE 3.3–3.5 points and factors RB 0.57–0.62, WR 0.63–0.67, TE 0.55–0.57.
+The gap a player-week (gp1.0's excess, 2023–2025): baseline 0.150 → C1 0.142, C2 0.109, C3 0.030; on the first game back
+0.434 → 0.314 / 0.086 / 0.108; WR 37+ 0.193 → 0.176 / 0.119 / −0.032; RB 37+ 0.347 → 0.347 / 0.253 / 0.057.
+
+**What the rule did not grade** (computed after the candidates' numbers, the same rows): the **mean bias** (projection −
+actual) at RB / WR / TE is −0.10 / +0.07 / −0.25 for the baseline, the same for C1 (−0.10 / +0.09 / −0.25), −0.30 / −0.18 /
+−0.46 for C2 and **−1.07 / −1.09 / −0.69 for C3** (players we rank 37+: +0.18 → −1.30; Sleeper's −0.26). The **order
+across RB / WR / TE** (one weekly ranking of the three, the FLEX call): 0.6215 baseline, 0.6229 C1, 0.6179 C2, **0.6167
+C3**; of 228,513 cross-position pairs projected 4–14 points within 3 of each other, C3 flips 18.8% and gets 57.4% right
+against the baseline's 57.9%.
+
+**What ships, and the one departure from the rule as written.** By gp1.0's tie-break ("several passing: the lowest
+pooled error ships"), C3 would ship. **It does not.** Absolute error is the loss a median minimises: C3 wins it by
+scaling every fringe line by about 0.6, which turns those projections from expected points into something near a
+median — about a point low on average at RB and WR. Our projections are *summed* as expected points (a lineup's total,
+the week's odds, the season outlook, a trade's value), and the FLEX order across positions gets worse. That harm is
+outside what the rule measured, so the tie-break is overridden here and said to be — not presented as the rule's
+result. **C1 passes the same rule (target RB: lower error in each season, order within 0.002; WR, TE no worse) without
+that harm (bias unchanged; the FLEX order a little better) and ships as fx1.0** (`MODEL_VERSION` v3.8 — "v3.7" is IT-5's
+unshipped study's name, so the number is skipped). It is small: it closes about 4% of the RB gap and 7% of the WR gap,
+and 28% of the first-game-back gap. C2 and C3 stay behind the switch with these numbers (`LEAGUE_LAB_GP_FIX=back_scale`
+/ `fringe_scale`); `LEAGUE_LAB_GP_FIX=off` is v3.6's projection to the bit. **The fringe is still where we lose**: the
+next candidate is a mean-unbiased way to say "this player may not see the field" (a probability of playing, not a
+shrunk line) — and the record from week 5 is the test that does not favour Sleeper.
+
+**The switch unset = today's projection, to the bit** (before C1 shipped): two `project` runs on this database — one at
+the code before the candidates, one with the candidates' code and the switch unset — gave the same hashes on all seven
+tables (`ops.projections` 19,364 rows `89937d40…`, `projection_lines` 9,234 `08e5cae5…`, `projection_ranges` 46,170
+`7144af5a…`, `kd_lines` 1,088 `58fe5f8a…`; the three live overlays empty).

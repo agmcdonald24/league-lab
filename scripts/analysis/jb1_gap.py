@@ -68,7 +68,11 @@ def compare(base: str, *cands: str) -> None:
         sl = h2h_gap.sleeper_rows(conn)
     b = pd.read_parquet(base)
     for c in cands:
-        print(h2h_gap.ship_markdown(c, h2h_gap.ship_rule(b, pd.read_parquet(c), sl)))
+        cand = pd.read_parquet(c)
+        rs = {t: h2h_gap.ship_rule(b, cand, sl, target=t) for t in ("RB", "WR")}     # gp1.0's candidates: RB and WR
+        for t, r in rs.items():
+            print(h2h_gap.ship_markdown(f"{c} (target {t})", r))
+        print(f"**{c}: {'SHIPS' if any(r['ships'] for r in rs.values()) else 'does not ship'}**\n")
 
 
 if __name__ == "__main__":

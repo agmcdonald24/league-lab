@@ -526,6 +526,8 @@ VERSIONS = (
                                                         "team's own scoring so far and next week's starters."},
     {"version": "v3.6", "date": "2026-10-07", "words": "A quarterback's weeks after next week blend the model with his "
                                                         "own per-game record."},
+    {"version": "v3.8", "date": "2026-10-14", "words": "Running backs, receivers and tight ends: the model knows when a "
+                                                        "player missed his team's last game."},     # ---- JB-1: fx1.0
 )
 # The trade calculator's windows, graded per position (docs/METRICS.md § "What each number has been checked against
 # (IR-4)"): each week's projection over the window scored against what happened that week (points per game, order =
