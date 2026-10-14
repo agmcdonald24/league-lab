@@ -96,7 +96,7 @@ def test_no_board_no_failure(monkeypatch):
     b = P.board()
     assert b["model_version"] == P.MODEL_VERSION and b["published_at"] is None and b["source"] == "code"
     p = P.block(["QB"], 5, 5, 5)
-    assert p["words"].startswith("Model v3.6 · week 5")         # no publication time: none claimed
+    assert p["words"].startswith(f"Model {P.MODEL_VERSION} · week 5")   # no publication time: none claimed (JB-1: the code's version)
 
 
 def test_unclear_starter_withholds_corrected_softens_receivers_carry_nothing(flags):

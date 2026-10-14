@@ -50,7 +50,7 @@ from .db import query
 log = logging.getLogger(__name__)
 ET = ZoneInfo("America/New_York")
 
-MODEL_VERSION = "v3.6"          # = league_lab.projections.MODEL_VERSION (pinned by api/tests/test_ir4.py)
+MODEL_VERSION = "v3.8"          # = league_lab.projections.MODEL_VERSION (pinned by api/tests/test_ir4.py); JB-1: fx1.0
 KD_MODEL_VERSION = "kd1.0"      # = league_lab.kdef.KD_MODEL_VERSION
 GRADED_ON = ros_grade.GRADED_ON
 
