@@ -2796,8 +2796,9 @@ from (`mart_market_line`: the newest fetched) was fetched before the week's firs
 (mid-week) says nothing — it never reaches back to an older snapshot. A call exists only before its own kickoff (the
 cards skip a locked player). The tally — "This season, on the N close calls where we have disagreed, Sleeper was right M
 times, we K." — is the record's season row for the league (scope `season`, position `ALL`): N = `pairs_disagree`,
-K = `pairs_ours_right_disagree`, M = N − K (a disagreement where Sleeper had the two level and the other player won is
-counted as Sleeper's, as `pairs_disagree` counts it); said only from **10** graded disagreements (fewer: the lean alone);
+K = `pairs_ours_right_disagree`, M = `pairs_sleeper_right` − `pairs_both_right` (Sleeper's right calls where ours was
+wrong — the count About's record line says; a disagreement where Sleeper had the two level is neither's, so K + M can be
+less than N: the live week 5, 13 = 4 + 8 + 1); said only from **10** graded disagreements (fewer: the lean alone);
 an on-demand league has no record, so its lean stands alone. Unreadable (a table missing between a deploy and the
 refresh, a failed read): no line, logged.
 

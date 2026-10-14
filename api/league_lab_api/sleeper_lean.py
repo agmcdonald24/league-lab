@@ -5,7 +5,8 @@ week — the snapshot fetched BEFORE the week's first kickoff, priced in the lea
 numbers `market_points` already carries on the lineup rows) — has the other player higher, the call gains one line:
 "Sleeper's numbers lean to <name>." and, once at least TALLY_MIN disagreements are graded this season, the record's
 tally: "This season, on the N close calls where we have disagreed, Sleeper was right M times, we K." (the record's
-season row: `pairs_disagree`, `pairs_ours_right_disagree`; M = N − K). Nothing when the snapshot was fetched after the
+season row: N = `pairs_disagree`, K = `pairs_ours_right_disagree`, M = `pairs_sleeper_right` − `pairs_both_right`, the
+count About says). Nothing when the snapshot was fetched after the
 first kickoff (a stale or a mid-week number), nothing for a call whose game has started (a call exists only before it),
 nothing when either player has no Sleeper number. No number on the call moves; the order of the calls does not either.
 Never raises: a lean that cannot be read is no line. docs/METRICS.md § "Sleeper's lean on a close call (sl1.0)".
@@ -27,7 +28,8 @@ SNAPSHOT_SQL = """select max(m.fetched_at) as fetched_at,
                          (select min(g.kickoff_at) from analytics.dim_game g
                           where g.season = %s and g.week = %s and g.season_type = 'REG') as first_kickoff_at
                   from analytics.mart_market_line m where m.season = %s and m.week = %s"""
-TALLY_SQL = """select pairs_disagree, pairs_ours_right_disagree from analytics.mart_projection_record
+TALLY_SQL = """select pairs_disagree, pairs_ours_right_disagree, pairs_sleeper_right, pairs_both_right
+               from analytics.mart_projection_record
                where league_id = %s and season = %s and scope = 'season' and position = 'ALL' limit 1"""
 
 
@@ -53,9 +55,14 @@ def season_tally(league_id: str, season: int) -> dict | None:
     df = query(TALLY_SQL, (str(league_id), int(season)))
     if df.empty or pd.isna(df.iloc[0]["pairs_disagree"]):
         return None
-    n = int(df.iloc[0]["pairs_disagree"])
-    k = int(df.iloc[0]["pairs_ours_right_disagree"]) if not pd.isna(df.iloc[0]["pairs_ours_right_disagree"]) else 0
-    return {"n": n, "ours": k, "sleeper": n - k}
+    r = df.iloc[0]
+
+    def i(c) -> int:
+        return 0 if pd.isna(r[c]) else int(r[c])
+    # Sleeper right where the two disagreed = Sleeper's right calls minus the ones both got right (About's own line,
+    # `record.ts`); a disagreement where Sleeper had the two level is neither's (13 = 4 + 8 + 1 in the live week 5)
+    return {"n": i("pairs_disagree"), "ours": i("pairs_ours_right_disagree"),
+            "sleeper": i("pairs_sleeper_right") - i("pairs_both_right")}
 
 
 def _times(n: int) -> str:
@@ -63,7 +70,7 @@ def _times(n: int) -> str:
 
 
 def tally_words(t: dict | None) -> str | None:
-    """"This season, on the 13 close calls where we have disagreed, Sleeper was right 9 times, we 4." — None under
+    """"This season, on the 13 close calls where we have disagreed, Sleeper was right 8 times, we 4." — None under
     TALLY_MIN graded disagreements (the lean then stands alone)."""
     if not t or t["n"] < TALLY_MIN:
         return None

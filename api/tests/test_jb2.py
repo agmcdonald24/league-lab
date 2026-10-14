@@ -29,8 +29,8 @@ def _answer() -> dict:
 
 
 def test_the_tally_sentence_and_its_threshold():
-    assert SL.tally_words({"n": 13, "ours": 4, "sleeper": 9}) == (
-        "This season, on the 13 close calls where we have disagreed, Sleeper was right 9 times, we 4.")
+    assert SL.tally_words({"n": 13, "ours": 4, "sleeper": 8}) == (
+        "This season, on the 13 close calls where we have disagreed, Sleeper was right 8 times, we 4.")
     assert SL.tally_words({"n": 10, "ours": 9, "sleeper": 1}).endswith("Sleeper was right 1 time, we 9.")
     assert SL.tally_words({"n": 9, "ours": 4, "sleeper": 5}) is None          # under 10 graded: the lean alone
     assert SL.tally_words(None) is None
@@ -48,11 +48,11 @@ def test_only_a_close_call_sleeper_reads_the_other_way():
 
 def test_the_line_on_the_call_and_nothing_moves(monkeypatch):
     monkeypatch.setattr(SL, "snapshot_before_kickoff", lambda s, w: SNAP)
-    monkeypatch.setattr(SL, "season_tally", lambda lg, s: {"n": 13, "ours": 4, "sleeper": 9})
+    monkeypatch.setattr(SL, "season_tally", lambda lg, s: {"n": 13, "ours": 4, "sleeper": 8})
     before = _answer()
     out = SL.apply(copy.deepcopy(before), SCRUBS, house=True)
     assert out["actions"][0]["sleeper_lean"] == ("Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close "
-                                                 "calls where we have disagreed, Sleeper was right 9 times, we 4.")
+                                                 "calls where we have disagreed, Sleeper was right 8 times, we 4.")
     assert out["cards"][0]["sleeper_lean"]["snapshot"] == SNAP
     assert "sleeper_lean" not in out["review"][0]
     strip = copy.deepcopy(out)
@@ -101,3 +101,15 @@ def test_both_my_week_paths_ask_for_the_lean(client, monkeypatch, source):
     monkeypatch.setattr(SL, "apply", lambda ans, league, *, house: (seen.append(house), real(ans, league, house=house))[1])
     r = client.get(f"/api/my-week?league={SCRUBS}&team=2{source}")
     assert r.status_code == 200 and seen == [source == ""]
+
+
+def test_the_tally_reads_the_record_as_about_does(monkeypatch):
+    """The live week 5: 13 disagreements, ours right on 4, Sleeper right 17 of 26 calls of which 9 both got right — so
+    Sleeper right on 8 of the disagreements (one was level by Sleeper's numbers), the count About's record line says."""
+    monkeypatch.setattr(SL, "missing_relations", lambda rels: ())
+    monkeypatch.setattr(SL, "query", lambda *a, **k: pd.DataFrame(
+        [{"pairs_disagree": 13, "pairs_ours_right_disagree": 4, "pairs_sleeper_right": 17, "pairs_both_right": 9}]))
+    assert SL.season_tally(SCRUBS, 2026) == {"n": 13, "ours": 4, "sleeper": 8}
+    monkeypatch.setattr(SL, "query", lambda *a, **k: pd.DataFrame(
+        [{"pairs_disagree": None, "pairs_ours_right_disagree": None, "pairs_sleeper_right": None, "pairs_both_right": None}]))
+    assert SL.season_tally(SCRUBS, 2026) is None                          # nothing graded yet: no tally

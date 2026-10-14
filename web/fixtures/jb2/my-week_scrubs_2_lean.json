@@ -160,10 +160,10 @@
     "tally": {
      "n": 13,
      "ours": 4,
-     "sleeper": 9
+     "sleeper": 8
     },
     "to": "00-0036322",
-    "words": "Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close calls where we have disagreed, Sleeper was right 9 times, we 4."
+    "words": "Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close calls where we have disagreed, Sleeper was right 8 times, we 4."
    },
    "slot": "FLEX2",
    "slot_label": "FLEX2",
@@ -898,7 +898,7 @@
      "name": "Jefferson"
     }
    ],
-   "sleeper_lean": "Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close calls where we have disagreed, Sleeper was right 9 times, we 4.",
+   "sleeper_lean": "Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close calls where we have disagreed, Sleeper was right 8 times, we 4.",
    "slot_label": "FLEX2 \u00b7 WR1",
    "slots": [
     "FLEX2",
