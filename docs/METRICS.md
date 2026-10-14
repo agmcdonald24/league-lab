@@ -2786,15 +2786,20 @@ the counts and calls; `week` = the last scored week, `first_week` = the first.
 player Sleeper lists; not Sleeper's own scoring (its line is counted the league's way); a few weeks are noise
 (the page says so under four weeks).
 
-### Sleeper's lean on a close call (sl1.0, JB-2, Wave J-B, 2026-10-14; `api/league_lab_api/sleeper_lean.py`)
+### Sleeper's lean on a close call (sl1.1, JB-2b, Wave J-B, 2026-10-14; was sl1.0, JB-2; `api/league_lab_api/sleeper_lean.py`)
 
 A display rule, not a study: it moves no number and changes no call. On My Week, a close call (the card's own rule:
 status "close" or strength "coin flip") whose other player Sleeper's line for the week has higher — by at least 0.05
 points, both players priced in the league's scoring by `why.market_points` (the `market_points` the lineup rows already
-carry) — gains one line: "Sleeper's numbers lean to <name>." **Only** when the week's Sleeper snapshot that line comes
-from (`mart_market_line`: the newest fetched) was fetched before the week's first kickoff (`dim_game`); a later pull
-(mid-week) says nothing — it never reaches back to an older snapshot. A call exists only before its own kickoff (the
-cards skip a locked player). The tally — "This season, on the N close calls where we have disagreed, Sleeper was right M
+carry) — gains one line: "Sleeper's numbers lean to <name>." **sl1.1: only when the Sleeper snapshot that prices the
+two players (`mart_market_line`: the week's newest fetched) was fetched before BOTH players' own kickoffs** (each
+player's game that week in `dim_game`, by his line's team) **and neither game has started at the request**; it never
+reaches back to an older snapshot. **Why sl1.1** (the PO, JB-2b): sl1.0 asked for a snapshot fetched before the week's
+FIRST kickoff, so once a pull landed after Thursday night's game the lean went quiet for the rest of the week — Friday,
+Saturday and Sunday morning, when managers set most Sunday lineups; a Sunday pair priced by a Friday snapshot is a
+number from before either of its games, which is what "pre-kickoff" has to mean for that call. A pair with a player
+whose game has started shows nothing (unchanged). The tally below is unchanged: it comes from the record, whose lines are
+pre-first-kickoff by construction. The tally — "This season, on the N close calls where we have disagreed, Sleeper was right M
 times, we K." — is the record's season row for the league (scope `season`, position `ALL`): N = `pairs_disagree`,
 K = `pairs_ours_right_disagree`, M = `pairs_sleeper_right` − `pairs_both_right` (Sleeper's right calls where ours was
 wrong — the count About's record line says; a disagreement where Sleeper had the two level is neither's, so K + M can be

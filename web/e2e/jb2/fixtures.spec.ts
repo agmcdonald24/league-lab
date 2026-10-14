@@ -5,7 +5,7 @@
 // on 14 October):
 // * my-week_scrubs_2_lean.json — IX-4's saved My Week (League of Scrubs team 2, week 5, the Boston / Jefferson coin flip
 //   at FLEX2) through the route's own steps: Sleeper's numbers from this database's week-5 snapshot (fetched 5 Oct,
-//   before the 9 Oct first kickoff) priced by why.market_points, the tally the live record's (13 disagreements, ours right 4, Sleeper right 8),
+//   before both players' kickoffs on 11 Oct: sl1.1) priced by why.market_points, the tally the live record's (13 disagreements, ours right 4, Sleeper right 8),
 //   then sleeper_lean.apply.
 // * record_scrubs.json — this database's /api/record answer (the history and weeks 1–3 of the lineups are its own) with
 //   week 5 scored from the live numbers.

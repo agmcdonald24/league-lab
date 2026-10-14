@@ -1,15 +1,14 @@
 """JB-2 (Wave J-B): a close call on My Week says when Sleeper's numbers lean the other way.
 
 On a close call (the screen's own rule: the card's status "close" or strength "coin flip"), when Sleeper's line for the
-week — the snapshot fetched BEFORE the week's first kickoff, priced in the league's scoring (`why.market_points`, the
-numbers `market_points` already carries on the lineup rows) — has the other player higher, the call gains one line:
+week — priced in the league's scoring (`why.market_points`, the `market_points` the lineup rows already carry) from a
+snapshot fetched BEFORE BOTH players' own kickoffs (sl1.1) — has the other player higher, the call gains one line:
 "Sleeper's numbers lean to <name>." and, once at least TALLY_MIN disagreements are graded this season, the record's
 tally: "This season, on the N close calls where we have disagreed, Sleeper was right M times, we K." (the record's
 season row: N = `pairs_disagree`, K = `pairs_ours_right_disagree`, M = `pairs_sleeper_right` − `pairs_both_right`, the
-count About says). Nothing when the snapshot was fetched after the
-first kickoff (a stale or a mid-week number), nothing for a call whose game has started (a call exists only before it),
-nothing when either player has no Sleeper number. No number on the call moves; the order of the calls does not either.
-Never raises: a lean that cannot be read is no line. docs/METRICS.md § "Sleeper's lean on a close call (sl1.0)".
+count About says). Nothing when the snapshot was fetched after either player's kickoff, nothing for a call whose game
+has started, nothing when either player has no Sleeper number. No number on the call moves; nor does their order.
+Never raises: a lean that cannot be read is no line. docs/METRICS.md § "Sleeper's lean on a close call (sl1.1)".
 """
 
 from __future__ import annotations
@@ -24,27 +23,51 @@ log = logging.getLogger(__name__)
 
 TALLY_MIN = 10               # graded disagreements before the tally sentence is said (fewer: the lean alone)
 LEAN_MIN = 0.05              # Sleeper's two numbers must differ by at least this (points) to "lean"
-SNAPSHOT_SQL = """select max(m.fetched_at) as fetched_at,
-                         (select min(g.kickoff_at) from analytics.dim_game g
-                          where g.season = %s and g.week = %s and g.season_type = 'REG') as first_kickoff_at
-                  from analytics.mart_market_line m where m.season = %s and m.week = %s"""
+# ---- JB-2b (sl1.1): the snapshot that prices each player, and his own game's kickoff that week
+SNAPSHOT_SQL = """select gsis_id, team, fetched_at from analytics.mart_market_line
+                  where season = %s and week = %s and gsis_id = any(%s)"""
+GAMES_SQL = """select home_team, away_team, kickoff_at from analytics.dim_game
+               where season = %s and week = %s and season_type = 'REG'"""
 TALLY_SQL = """select pairs_disagree, pairs_ours_right_disagree, pairs_sleeper_right, pairs_both_right
                from analytics.mart_projection_record
                where league_id = %s and season = %s and scope = 'season' and position = 'ALL' limit 1"""
 
 
-def snapshot_before_kickoff(season: int, week: int) -> dict | None:
-    """{fetched_at, first_kickoff_at} when the week's Sleeper line (the snapshot `market_points` prices) was fetched
-    before the week's first kickoff; None otherwise or when it cannot be read."""
-    if missing_relations(("mart_market_line", "dim_game")):
+def snapshots(season: int, week: int, gsis_ids: list[str]) -> dict[str, dict]:
+    """{gsis: {fetched_at, kickoff_at}} — when the Sleeper line that prices him (`mart_market_line`, the week's newest
+    snapshot) was fetched, and when his own game kicks off that week (`dim_game`, his line's team; one spelling of a
+    team code). A player with no line or no game is absent. Raises when it cannot be read (the caller says nothing)."""
+    from .provenance import _team
+    ids = sorted({str(g) for g in gsis_ids if g})
+    if not ids or missing_relations(("mart_market_line", "dim_game")):
+        return {}
+    lines = query(SNAPSHOT_SQL, (int(season), int(week), ids))
+    games = query(GAMES_SQL, (int(season), int(week)))
+    kick: dict[str, pd.Timestamp] = {}
+    for g in games.itertuples():
+        for t in (g.home_team, g.away_team):
+            if isinstance(t, str) and g.kickoff_at is not None and not pd.isna(g.kickoff_at):
+                kick[_team(t)] = pd.Timestamp(g.kickoff_at)
+    out = {}
+    for r in lines.itertuples():
+        k = kick.get(_team(r.team))
+        if k is None or r.fetched_at is None or pd.isna(r.fetched_at):
+            continue
+        out[str(r.gsis_id)] = {"fetched_at": pd.Timestamp(r.fetched_at), "kickoff_at": k}
+    return out
+
+
+def pair_ok(snap: dict[str, dict], a: str, b: str, now: pd.Timestamp) -> dict | None:
+    """sl1.1: the two players' lines were fetched before BOTH players' own kickoffs, and neither game has started at
+    ``now``. {fetched_at, kickoff_at (the earlier of the two)} or None."""
+    sa, sb = snap.get(str(a)), snap.get(str(b))
+    if sa is None or sb is None:
         return None
-    df = query(SNAPSHOT_SQL, (int(season), int(week), int(season), int(week)))
-    if df.empty:
+    first = min(sa["kickoff_at"], sb["kickoff_at"])
+    fetched = max(sa["fetched_at"], sb["fetched_at"])
+    if not fetched < first or not now < first:
         return None
-    f, k = df.iloc[0]["fetched_at"], df.iloc[0]["first_kickoff_at"]
-    if f is None or k is None or pd.isna(f) or pd.isna(k) or not pd.Timestamp(f) < pd.Timestamp(k):
-        return None
-    return {"fetched_at": pd.Timestamp(f).isoformat(), "first_kickoff_at": pd.Timestamp(k).isoformat()}
+    return {"fetched_at": fetched.isoformat(), "kickoff_at": first.isoformat()}
 
 
 def season_tally(league_id: str, season: int) -> dict | None:
@@ -114,13 +137,19 @@ def apply(ans: dict, league_id: str, *, house: bool) -> dict:
         found = leans(cards, market)
         if not found:
             return ans
-        snap = snapshot_before_kickoff(int(season), int(week))
-        if snap is None:                                   # fetched after the first kickoff, or unreadable: nothing
+        # ---- JB-2b (sl1.1): each pair on its own — the line fetched before BOTH players' kickoffs (was: before the
+        # week's first kickoff, which hid every lean from Thursday night to Sunday, when most calls are made)
+        from league_lab import clock
+        now = pd.Timestamp(clock.now())
+        now = now.tz_localize("UTC") if now.tzinfo is None else now.tz_convert("UTC")
+        snap = snapshots(int(season), int(week), [g for i, ln in found.items() for g in (cards[i]["gsis_id"], ln["to"])])
+        found = {i: {**ln, "snapshot": ok} for i, ln in found.items()
+                 if (ok := pair_ok(snap, cards[i]["gsis_id"], ln["to"], now)) is not None}
+        if not found:                                      # fetched after a kickoff, a game started, or unreadable
             return ans
         tally = season_tally(league_id, int(season)) if house else None
         for i, ln in found.items():
-            cards[i]["sleeper_lean"] = {**ln, "words": lean_words(ln["name"], tally), "tally": tally,
-                                        "snapshot": snap}
+            cards[i]["sleeper_lean"] = {**ln, "words": lean_words(ln["name"], tally), "tally": tally}
         for d in (ans.get("actions") or []) + (ans.get("more_actions") or []) + (ans.get("review") or []):
             hit = next((cards[i]["sleeper_lean"] for i in d.get("cards") or [] if i in found), None)
             if hit:
