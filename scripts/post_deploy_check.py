@@ -19,7 +19,8 @@ Checks, in order (each line: ok / FAIL, the check, the HTTP status, the seconds,
   reversed   the same trade from the partner's side: each team's change is the same number
 Writes nothing anywhere (the trade route only reads). Needs python3 (standard library only); no password unless the
 server has its gate on (--password, or POST_DEPLOY_PASSWORD). Exit: 0 all ok · 1 a check failed · 2 usage.
-A trade whose players have since moved answers 400 "on X's roster, not Y's": pass a current one with --trade.
+Without --trade the trade is chosen from the house league's current rosters (scripts/post_deploy_trade.py: two teams,
+a bench player each with a projection this week; the ids printed), so a roster move never fails the check.
 """
 
 from __future__ import annotations
@@ -160,8 +161,9 @@ def check_trade(b: object) -> tuple[bool, str, dict | None]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("base", help="the server's address, e.g. https://isuckatfantasy.io")
-    ap.add_argument("--trade", default=os.environ.get("POST_DEPLOY_TRADE", DEFAULT_TRADE),
-                    help="league:team:partner:give ids:get ids (comma-separated ids), default the review's Folk case")
+    ap.add_argument("--trade", default=os.environ.get("POST_DEPLOY_TRADE", ""),
+                    help="league:team:partner:give ids:get ids (comma-separated ids); default: chosen from the house "
+                         "league's current rosters (scripts/post_deploy_trade.py)")
     ap.add_argument("--expect-version", default=os.environ.get("POST_DEPLOY_VERSION", ""),
                     help="the version /api/health must report (a prefix of it is enough: a short commit)")
     ap.add_argument("--password", default=os.environ.get("POST_DEPLOY_PASSWORD", ""),
@@ -173,10 +175,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--timeout", type=float, default=float(os.environ.get("POST_DEPLOY_TIMEOUT", "90")))
     a = ap.parse_args(argv)
     try:
+        if not a.trade:                     # JB-3: chosen below, from the current rosters
+            raise LookupError
         league, team, partner, give, get = a.trade.split(":")
         team_i, partner_i = int(team), int(partner)
         give_l, get_l = [x for x in give.split(",") if x], [x for x in get.split(",") if x]
         assert league and give_l and get_l
+    except LookupError:
+        league = None
     except (ValueError, AssertionError):
         print("--trade is league:team:partner:give ids:get ids, e.g. " + DEFAULT_TRADE, file=sys.stderr)
         return 2
@@ -202,6 +208,19 @@ def main(argv: list[str] | None = None) -> int:
         j.line(seen == a.expect_publication, "picked up", code, time.monotonic() - t0,
                f"publication {seen} is served" if seen == a.expect_publication
                else f"the server still names {seen or 'no publication'} after {a.wait:.0f} s (expected {a.expect_publication})")
+        # JB-3: the warm-up this publication started (bounded): the screens below are then what a visitor after it reads
+        if seen == a.expect_publication:
+            t1, warm = time.monotonic(), None
+            while time.monotonic() - t1 < 180:
+                _, _, st = j.call("GET", "/api/status")
+                warm = st.get("warm") if isinstance(st, dict) else None
+                done = isinstance(warm, dict) and (warm.get("last") or {}).get("publication") == a.expect_publication
+                if not isinstance(warm, dict) or not warm.get("enabled") or (done and not warm.get("running")):
+                    break
+                time.sleep(5)
+            last = (warm or {}).get("last") or {}
+            print(f"info warm-up     {time.monotonic() - t1:5.2f}s  " + (f"{last.get('warmed')} routes warmed, {last.get('skipped')} "
+                  f"skipped in {last.get('seconds')} s after {last.get('publication')}" if last else "none (off, or no port)"), flush=True)
     # ---- end IT-4
 
     code, secs, b = j.call("GET", "/api/health")
@@ -230,6 +249,16 @@ def main(argv: list[str] | None = None) -> int:
     ok, text = check_rankings(b) if code == 200 else (False, _why(b)[:160])
     j.line(ok, "rankings", code, secs, text)
 
+    if league is None:                      # JB-3: a live trade from the league's current rosters (the ids printed)
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from post_deploy_trade import live_trade
+        picked, words = live_trade(lambda m, p: j.call(m, p))
+        j.line(picked is not None, "trade pick", 200 if picked else 0, 0.0, words)
+        if picked is None:
+            print("All checks passed." if j.fails == 0 else f"FAILED: {j.fails} check(s).")
+            return 1
+        league, team_i, partner_i, give_l, get_l = (picked["league"], picked["team"], picked["partner"],
+                                                    picked["give"], picked["get"])
     body = {"league": league, "team": team_i, "partner": partner_i, "give": give_l, "get": get_l}
     code, secs, b = j.call("POST", "/api/trades/evaluate", body)
     ok, text, fwd = check_trade(b) if code == 200 else (False, _why(b)[:200], None)

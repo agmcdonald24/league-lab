@@ -306,6 +306,7 @@ STATE_TABLES="$STATE_TABLES ops.projection_live ops.projection_lines_live ops.pr
 # rebuilt every night, < 0.2 MB). State, not record: restored so no week is asked twice and the model is not refit each
 # night; when the hosted copy has none, `ingest sleeper-history` replays data/raw/sleeper/projections_history first.
 STATE_TABLES="$STATE_TABLES ops.sleeper_history ops.sleeper_history_weeks ops.h2h_ours ops.sleeper_h2h"
+STATE_TABLES="$STATE_TABLES ops.sleeper_h2h_gap"   # JB-1 (Wave J-B): gp1.0's slices; a failed h2h step keeps last night's
 # ---- end IZ-1
 
 is_record() { case " $RECORD_TABLES " in *" $1 "*) return 0;; esac; return 1; }

@@ -3,6 +3,21 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 14 · how we compare with Sleeper, on the screen
+
+- **A close call says when Sleeper's numbers lean the other way**, and how that has gone this season on the calls
+  where we disagreed. Nothing about the call itself changes.
+- **About shows our record against Sleeper week by week**, both sets of numbers frozen before kickoff, with the
+  lineups each would have scored. Earlier seasons sit under it, labelled for what they are: Sleeper's past numbers
+  are served after the games.
+- **Projections for running backs, receivers and tight ends now know when a player missed his team's last game.**
+  Most of our gap to Sleeper is on players ranked 37th or lower at a position, and on a player's first game back.
+- **The player card says what his targets usually bring.** "His 44 targets usually bring about 64 points; he has 44."
+  Depth of target, field position and down are already allowed for, so a receiver on short routes is not marked down
+  for his routes.
+- **The site stays quick on a busy Sunday**: a request waiting on the database no longer holds up the others, and the
+  heavy screens are warmed as soon as a refresh lands.
+
 ## Oct 12 · pick your weeks
 
 - **A week slider on Stats.** Drag two handles to look at any stretch of the season: weeks 1–2, just week 3, the last
