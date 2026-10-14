@@ -494,13 +494,17 @@ CATALOGUE: list[dict] = [
     # expected points
     _c("expected_points", "Expected fantasy points", "xPts", "count", "pts",
        "What his targets and carries were worth on average (an opportunity-based estimate of past games, not next "
-       "week's projection), in this league's scoring, added up over his games with an expected value.",
+       "week's projection), in this league's scoring, added up over his games with an expected value. Each target "
+       "and carry is valued from its air yards, field position and down.",   # ---- JB-4
        "expected points in the window", None, GAMES_AGG,
        source="our expected-points model over nflverse play-by-play", status="derived",
        reason="no expected value for his games (a kicker, or games before the opportunity model)"),
     _c("points_over_expected", "Points over expected", "Pts vs xPts", "count", "pts",
        "His fantasy points minus his expected fantasy points, over the same games (the games he played with an "
-       "expected value), in this league's scoring. Positive: he scored more than his opportunities usually bring.",
+       "expected value), in this league's scoring. Positive: he scored more than his opportunities usually bring. "
+       "Depth of target, field position and down are already allowed for: each target and carry is valued from its "
+       "air yards, where on the field it came and the down, so short targets carry fewer expected points than deep "
+       "ones. A bad throw lowers his points, not his expected points.",   # ---- JB-4
        "fantasy points − expected points, same games", None, "summed over the games with an expected value; per game "
        "divides by those games", source="this league's scoring and our expected-points model", status="derived",
        per_game=True, reason="no expected value for his games (a kicker, or games before the opportunity model)"),
