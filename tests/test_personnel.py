@@ -131,12 +131,14 @@ SHIPPED = {"personnel", "qb", "teammates"}
 
 
 def test_v3_ships_qb_at_qb_and_teammates_at_rb_wr_te():
+    from league_lab import gp_fix
     from league_lab import projections as P
 
-    assert P.MODEL_VERSION == "v3.6"          # ---- IL-3: v3.3; IP-1: v3.4 (QB passing TDs); IQ-1: v3.5 (later weeks); IQ-3: v3.6 (QB later weeks blended)
+    assert P.MODEL_VERSION == "v3.8"          # ---- IL-3: v3.3; IP-1: v3.4 (QB passing TDs); IQ-1: v3.5 (later weeks); IQ-3: v3.6 (QB later weeks blended); JB-1: v3.8 (fx1.0)
     assert P.FEATURES_BY_POSITION["QB"] == [*P.FEATURES, *PN.QB]
+    back = [gp_fix.BACK_FEATURE] if P.GP_MODE == "back_feature" else []      # ---- JB-1: fx1.0's input (the switch's default)
     for pos in ("RB", "WR", "TE"):
-        assert P.FEATURES_BY_POSITION[pos] == [*P.FEATURES, *PN.TEAMMATES]
+        assert P.FEATURES_BY_POSITION[pos] == [*P.FEATURES, *PN.TEAMMATES, *back]
     assert not set(PN.OLINE + PN.OWN_INJURY) & set(P.ALL_FEATURES)     # dropped by the harness
 
 

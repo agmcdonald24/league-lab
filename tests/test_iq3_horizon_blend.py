@@ -146,7 +146,7 @@ def test_off_and_zero_weights_are_the_identity(blend, monkeypatch):
     assert out is every
     monkeypatch.delenv(C.HORIZON_BLEND_FLAG, raising=False)
     assert C.horizon_blend_enabled() is True and C.HORIZON_BLEND_DEFAULT is True
-    assert P.MODEL_VERSION == "v3.6" and C.HORIZON_BLEND_POSITIONS == ("QB",)
+    assert P.MODEL_VERSION == "v3.8" and C.HORIZON_BLEND_POSITIONS == ("QB",)
 
 
 def test_horizon_rows_build_later_weeks_as_the_nightly():
