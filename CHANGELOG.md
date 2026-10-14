@@ -4,6 +4,14 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-14 — Wave J-B
 
+- JB-1: where we lose to Sleeper's free projections, and the first fix. The gap is the fringe — receivers and backs we
+  rank 37th or lower hold 69% of it, where we project too high and Sleeper too low — and a player's first game back
+  after a missed one (35% of it on 12% of the weeks); our top 12 at every position is level with Sleeper (gp1.0, the
+  rule committed before the numbers). Projections v3.8: running backs, receivers and tight ends now know when a player
+  missed his team's last game (fx1.0: lower error at running back in each of 2023–2025, no position worse). Two other
+  fixes were measured and not shipped (one hurt the order; one lowered the error by shrinking the fringe's numbers
+  about a point below what they score on average). The nightly's summary and `/api/record` `history.gap` show where
+  the gap is.
 - JB-4: the card explains points over expected in one sentence (Usage tab, by the role lines, and the full page): "His 44 targets usually bring about 64 points; he has 44. Depth of target is already allowed for." — season to date in the league's scoring, summed over his played games with an expected value (the Stats column's own games); a back counts carries + targets; under 20, a quarterback or no expected value: no line, never a 0. The Stats column's How-to-read line says depth of target, field position and down are allowed for, and that a bad throw lowers his points, not his expected points.
 - **JB-3 — Sunday keeps answering.** A request waiting on the database holds no CPU slot: its slot is given back while
   a statement runs and taken again after, ahead of new requests (on a slowed database the busy minute went from 31
