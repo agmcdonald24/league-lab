@@ -393,6 +393,23 @@ number is worse, say so and show it.
   do not answer with "the next slot will tell us"; (3) read `/api/health` twice before saying a push has not happened
   (a deploy takes five minutes). Neon is on the **Launch** plan since 12 October (usage-based; a $10 spending alert;
   the Free plan's 5 GB of transfer would have suspended the database mid-month).
+* **Wave J-B (2026-10-14, Wednesday; STATUS § "Wave J-B (Iteration 38)")**: the roadmap's "fixing or borrowing
+  where we lose", after the first clean week put Sleeper ahead at every position. **Where the gap is** (gp1.0, the rule
+  before the numbers): the fringe — receivers and backs we rank 37th or lower hold 69% of it, where we project too
+  high and Sleeper too low — and a player's first game back (35%); **our top 12 at every position is level with
+  Sleeper**. **Projections v3.8** (fx1.0): the line knows he missed his team's last game — a 4% / 7% gain, shipped
+  because it met the rule in every season; a candidate that beat it on error by shrinking the fringe's lines a point
+  low **does not ship** — our numbers are added up (lineups, odds, trades), so the mean matters; **the next rule bounds
+  the bias**. **The clean record is on the screen**: a close call says when Sleeper leans the other way and how that
+  has gone on graded disagreements (sl1.1: before each player's own kickoff, so Saturday's lineup still sees it after
+  Thursday's game); About shows the record week by week, both numbers frozen before kickoff, the earlier seasons
+  labelled "served after the games". **A request waiting on the database holds no CPU slot** (busy answers 31 → 0 on a
+  slowed database), the after-publish check picks a live trade (the Folk players left the league), and the heavy
+  screens are warmed after a publication. **The card says what his targets usually bring** with depth of target
+  already allowed for. What a successor must know: (1) Sleeper's past lines exist only on the hosted copy — the
+  sandbox gets them by Andrew's one paste (`\copy` three tables to `.git-bundles/`, loaded by column name); (2) a
+  study's rule is committed before its numbers, and when the PO overrides the rule's pick it is written as an override
+  in METRICS; (3) borrowing (the blend) is Andrew's decision and has not been given.
 * **Wave J-A (2026-10-12, Monday overnight; STATUS § "Wave J-A (Iteration 37)")**: Andrew asked for **weeks you
   choose** — "kind of a slider … weeks one to two versus weeks three to four" — on Stats, Compare and Matchups. One
   component (`web/src/components/stretch/WeekSlider.svelte`, `lib/stretch.ts`; URL keys `window`, `weeks`, `vs`):

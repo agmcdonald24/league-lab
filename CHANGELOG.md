@@ -4,6 +4,9 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-14 — Wave J-B
 
+- **PO — the merge.** `scripts/nightly.sh` keeps `ops.sleeper_h2h_gap` across nights; `scripts/post_deploy_check.py`
+  picks a live trade when none is given and waits for the warm-up (JB-3's diff); whats_new; the warm-up's thread named
+  in `test_io4`'s list. docs/STATUS.md § "Wave J-B".
 - **JB-2 — the clean record on the screen.** A close call on My Week says when Sleeper's pre-kickoff numbers lean the
   other way: "Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close calls where we have disagreed,
   Sleeper was right 8 times, we 4." — only from the week's snapshot fetched before the first kickoff, the tally only from

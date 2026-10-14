@@ -598,6 +598,18 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 38 — Wave J-B, where we lose to Sleeper and the first fix (2026-10-14, Wednesday 10:04 – afternoon ET)
+
+The roadmap's "fixing or borrowing where we lose": week 5, the first clean week, had Sleeper ahead at every position.
+**JB-1** the gap by slice under a rule committed first — the fringe (ranked 37th or lower) and the first game back hold
+it; our top 12 is level — and the first fix, projections v3.8 (a line knows he missed his team's last game); a larger
+candidate stays behind a flag because it biases the fringe low. **JB-2** the clean record on the screen: the lean on a
+close call with this season's tally, About's record week by week with the lineups each would have scored. **JB-3** a
+request waiting on the database holds no CPU slot; the after-publish check picks a live trade; a warm-up after each
+publication. **JB-4** the card says what his targets usually bring, depth of target allowed for. Evidence:
+`docs/STATUS.md` § "Wave J-B". **Next**: the first night of v3.8; a bias-bounded rule for the fringe; borrowing is
+Andrew's decision.
+
 ### Iteration 37 — Wave J-A, the weeks you choose (2026-10-12, Monday 00:33 – morning ET)
 
 Andrew asked for a slider to look at any weeks, and one stretch against another, on the stat tables and Compare.

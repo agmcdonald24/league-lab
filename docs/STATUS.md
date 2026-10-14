@@ -22858,3 +22858,648 @@ None.
 #### 8. Next
 
 —
+
+## Wave J-B (Iteration 38) — where we lose to Sleeper and the first fix; the clean record on the screen; Sunday keeps answering; the card explains points over expected
+
+### PO merge — Wave J-B, 2026-10-14 (Wednesday 10:04 – 14:35 ET)
+
+* **Why**: Andrew, 10:04: "I'd like to make a bigger push for development today. What's next?" — and "Do it" to the
+  PO's four packages. His roadmap of 10 October, after the head-to-head: **"fixing or borrowing where we lose."** The
+  morning's run #47 had put the first clean week on `/api/record` (both boards frozen before Thursday's kickoff):
+  **Sleeper ahead at every position** — error 4.10 against our 4.34 over 370 player-weeks; of the 13 close calls
+  where the two disagreed, Sleeper right on 9 (8 by About's count, which leaves out a pair Sleeper had level), we on 4;
+  the league's recommended lineups scored 36 points less across ten rosters than what managers submitted, and lineups
+  from Sleeper's numbers would have scored 36 more. The same run's after-publish check **failed** on a trade whose
+  player had left the league, and its `info load` line read `CPU slots 4/4 at peak, longest wait 20.104 s on
+  /api/team, 1 answered busy`. Borrowing (the blend) is a terms question and **Andrew has not said borrow: nothing in
+  this wave puts Sleeper's number into ours.**
+* **The data for the study**: Sleeper's past lines exist only on the hosted copy (this sandbox reaches no provider).
+  Andrew copied three tables out with one paste (`psql … \copy ops.<t> to …csv`; the connection string stayed in his
+  shell) and the PO loaded them into `league_lab_iq4` by column name: 23,200 priced lines over 58 weeks, the week
+  table, the grade. No week-5 actuals are on this database: the study is 2023–2025 plus 2026 weeks 1–4, and says so.
+* **How it ran**: four packages one after another in one worktree on one database, in the order JB-3, JB-4, JB-1,
+  JB-2 (JB-1 waited for the rows), each from the last one's branch; one follow-up (JB-2b) on the PO's reading of a
+  hand-back. JB-3 10:17–10:47, JB-4 10:47–11:06, JB-1 11:07–12:40, JB-2 12:39–13:07, JB-2b 13:08–13:13. All four
+  developers resumed (JA-3/JA-6's, IX-2's, IZ-1's, IZ-4's). The brief is `/home/claude/waveJB/BRIEF.md`.
+* **What was built** (the hand-backs below; the rules in docs/METRICS.md):
+  * **JB-1 — where we lose, and the first fix (gp1.0, fx1.0).** The rule was committed before any number (`ef37fe4`),
+    the candidates before any candidate number (`28afbd3`). Over 15,983 player-weeks we miss by **0.148 points a
+    player-week more than Sleeper** (0.166 in 2023, 0.232 in 2024, 0.055 in 2025). **The gap is the fringe**: receivers
+    we rank 37th or lower hold 39% of it [31%, 48%] and backs ranked 37th or lower 30% [23%, 39%] — on 43% of the rows
+    — where **we project too high (+0.21, +0.25) and Sleeper too low (−0.16, −0.29)**; receiving yards carry 59% of the
+    receivers' share, rushing yards 41% of the backs'. **A player's first game back after a missed game holds 35% of
+    the gap on 12% of the rows** (our bias +0.60). **Our top 12 at every position is level with Sleeper.** Three
+    candidates, walk-forward 2023–2025: **C1 ships** (projections **v3.8**: a back, receiver or tight end's line knows he
+    missed his team's last game — lower error at running back in every season, no position worse; it closes about 4%
+    of the running-back gap, 7% of the receivers', 28% of the first-game-back gap); C2 (scale a returning player's
+    line down) lowered the order and fails the rule; C3 (scale the fringe's lines down) passes the rule and would have
+    won its tie-break on error, **and does not ship** — see the decisions. `LEAGUE_LAB_GP_FIX=off` reproduces v3.6 to
+    the bit. The nightly's summary gains "Where the gap is" (`ops.sleeper_h2h_gap`); `/api/record` `history.gap`.
+  * **JB-2 — the clean record on the screen (sl1.0 → sl1.1).** A close call on My Week says when Sleeper's pre-kickoff
+    numbers lean to the other player, with this season's tally from the record once ten disagreements are graded
+    ("Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close calls where we have disagreed, Sleeper
+    was right 8 times, we 4."); nothing on the call moves; both paths. **JB-2b**: the lean shows when the snapshot that
+    prices the two players was fetched before **each player's own kickoff** (sl1.1) — under sl1.0 a pull after
+    Thursday's game hid every lean for the rest of the week, exactly when Sunday's lineups are set. About shows the
+    record week by week — the miss ours · Sleeper's, the close calls ours · Sleeper's · both · neither, by position on
+    tap, the week's lineups in one line with no verdict word — labelled "both numbers frozen before kickoff", and the
+    earlier seasons under it labelled "served after the games"; "Our record is not available right now." when it
+    cannot be read, never "no record".
+  * **JB-3 — Sunday keeps answering.** A request waiting on the database holds no CPU slot: `db.connection()` gives the
+    slot back while a statement runs and takes one again after, a returning request ahead of new ones and never
+    refused (after three times the wait it goes one over the ceiling instead of answering busy). On a slowed database
+    (every statement +0.15 s, 16 visitors): **"busy" answers 31 → 0, requests answered 110 → 287, the slots' longest
+    wait 20.05 → 8.04 s, a card's p95 44.2 → 19.8 s**; before the change 213 of the slots' 240 slot-seconds were spent
+    inside statements. **The after-publish check picks a live trade** from the house league's current rosters
+    (`scripts/post_deploy_trade.py`: two teams, each giving its best bench player with a projection this week; the
+    ids printed; the Folk case stays a pytest regression). **A warm-up after a publication**: one pass in a daemon
+    thread over Rankings, the league list and each house league's first team's My Week, Team, Trades partners and
+    Waivers — at most 16 requests, 240 s, one at a time, only while two slots are free, to the server's own `PORT`;
+    in the drill the check's rankings read went 5.35 → 0.01 s and visitors' Waivers p95 7.13 → 2.90 s.
+  * **JB-4 — the card explains "points over expected".** One sentence on Usage, season to date over the same games,
+    summed: "His 44 targets usually bring about 64 points; he has 44. Depth of target is already allowed for."
+    (Michael Wilson; a back: "His 54 carries and 25 targets usually bring about 64 points; he has 79. Depth of target
+    and field position are already allowed for."); under 20 touches or no expected value → nothing, never 0; no
+    sentence for a quarterback; never says why. The Stats column's How-to-read line says depth of target, field
+    position and down are allowed for, and carries the one caveat (a bad throw lowers his points, not his expected
+    points). The answer to the friend's "they're all short routes": the expectation already prices the route; Wilson's
+    targets are worth an average receiver's (1.45 expected points a target against 1.45 for all receivers), and he has
+    scored 20 points under them.
+* **The PO's glue** (`2395e7a`): `scripts/nightly.sh` keeps `ops.sleeper_h2h_gap` across nights; JB-3's diff for
+  `scripts/post_deploy_check.py` (the live trade when `--trade` is not given; `info warm-up` after "picked up");
+  `app/whats_new.md`; `api/tests/test_io4.py` names the warm-up's thread as one that carries no visitor (`13de78a`).
+* **The PO's decisions**:
+  * **C3 does not ship, against the rule's tie-break.** It lowers the fringe's error by making their lines about a
+    point low on average (bias −1.07 at running back, −1.09 at receiver). Our projections are added up — lineups, the
+    week's odds, trades, the waiver gain — so a number that is right on average matters more there than one that is
+    close on the median player. The developer wrote this into METRICS as an override of gp1.0, not as its result;
+    **the next rule bounds the mean bias as well as the error** (JB-1 § 7). C3 stays behind its flag with its numbers.
+  * **v3.8 ships on a 4% / 7% gain.** It is small, it met the rule in every season, and it costs the first night
+    about 15 minutes (`ensure_oof`, the backtest, `ops.h2h_ours` rebuilt once). Frozen weeks keep v3.6.
+  * **The lean follows each player's kickoff (sl1.1), not the week's first.** The record's own grade stays
+    pre-first-kickoff by construction; the sentence on the call is for the manager setting Sunday's lineup on
+    Saturday.
+  * **About's older line "beat the ones started by 460.2" stays** this wave (JB-2 § 7): the copy standard's word, on
+    one screen; worth fixing with the sentence it sits in, not alone.
+* **Verified**: on the merged tree, by the PO (`/home/claude/waveJB/verify.sh`, nothing else running beside it, 13:14–14:13 ET):
+  `fresh_db_check` (32 state tables, `ops.sleeper_h2h_gap` among them); the copy standard clean; `scripts/gate.sh` GATE
+  PASSED; the nightly's middle with the live week on (`chain.sh`, `league_lab_iq4`, **v3.8**): ERROR 0 in every step;
+  `project` a second time: **seven projection tables hash identically** (v3.8 is reproducible); the head-to-head
+  offline: 58 weeks held, `ops.h2h_ours` rebuilt for v3.8 (34,592 rows in 527 s) and the grade on it — RB 4.40 / 4.17
+  (4.42 under v3.6), WR 4.08 / 3.94, TE 3.07 / 2.99 (3.08), QB 5.85 / 5.80: the words unchanged, **the fix is as small
+  as JB-1 says** — and "Where the gap is" printed under it (WR 37th and lower 38%, RB 37th and lower 32%);
+  `context-record`, `starter-record` rc 0; the root suite 5 failed / 1,820 passed, **one name outside the known list:
+  `test_every_documented_metric_has_a_registry_row`** (sl1.0 / sl1.1 documented in METRICS without a registry row —
+  the PO added the row; 3 passed); **the API suite 115 failed / 1,710 passed, 12 names outside the known list — all 12
+  fail identically on the pre-wave code (`06d27a4`, detached) against this database** (`test_in6` ×6, `test_io2` ×3,
+  `test_iq4` ×2, `test_ix4` ×1: the copy moved to week 6 and v3.8 under them; added to the list); **the full e2e, both
+  projects: 711 passed / 39 skipped / 0 failed** (15.8 min); the pooler check passed in both modes. **The
+  deploy-to-refresh gap drilled**: with `ops.sleeper_h2h_gap` renamed away and a cold API, `/api/record` answered 200,
+  `history` graded with its four positions and `gap` `{"available": false, "status": "unavailable"}`, no traceback;
+  the lean, the warm-up and the card's sentence read no new relation. `/api/status` on the local API showed `slots`
+  with `released_for_statements` and `longest_retake_wait_s`, and `warm` (off here: no `PORT`). **Not checked**: the
+  slot release against Neon (the sandbox's stand-in is a slowed local database); the warm-up on Render (it needs
+  `PORT`, which Render sets — the first after-publish block shows `info warm-up`); the lean on a live close call (this
+  copy has none at any clock; the e2e uses a saved week-5 answer); the screens on a real phone
+* **Not done / next** (in the order the PO would take them):
+  1. **Read the first night of v3.8** (Thursday 07:37, the trigger's own): `ensure_oof` and the `h2h_ours` rebuild in
+     the step table, "Where the gap is" under the head-to-head, `info warm-up` and `ok trade pick` in the after-publish
+     block; then the clean record's week 6 on About.
+  2. **The fringe**: the next rule (gp1.1) bounds the bias; the candidate is a smaller correction than C3 — Andrew's
+     call whether a fringe projection should be right on average or close on the median.
+  3. **Borrowing**: Andrew's decision, unchanged; the blend would gain at RB and WR on the history, an upper bound.
+  4. The lean reads `mart_market_line`'s newest snapshot; keeping each week's pre-kickoff snapshot beside it would
+     let the lean say which number it priced (JB-2 § 7).
+  5. Cards are not warmed (per player); the per-stat breakdown of the gap lives in the study script, not the nightly.
+  6. Waiting on Andrew: the privacy page and Google Analytics; a real phone on the new screens.
+
+### JB-1 — where we lose to Sleeper, and the first fix
+
+**Start 11:07 EDT · end 12:40 EDT** (2026-10-14; clock 150 minutes). Branch `dev/JB1` from `integ/JB` `13de78a`; database
+`league_lab_iq4` (the PO's loaded `ops.sleeper_history` 23,200 lines / 58 weeks, `ops.sleeper_history_weeks` 58 ok,
+`ops.sleeper_h2h` 296 rows; `ops.h2h_ours` 34,592 v3.6 rows). **No week-5 actuals here: the study is 2023–2025 plus 2026
+week 4** (2026 weeks 1–3 are refit boards, never graded).
+
+#### 1. Done / not done / cut
+
+1. **The rule first** — gp1.0, `ef37fe4` (11:10 ET, before any number): the hh1.0 population in League of Scrubs'
+   scoring; the gap = |ours − actual| − |Sleeper − actual| per player-week, a slice's mean and its share of the summed
+   excess; the slices; 95% intervals resampling weeks (one set of draws per family); "holds most" = the two
+   position × rank cells with the largest share; the ship rule (target position better in each of 2023–2025, order
+   within 0.002; the others no more than 0.005 worse / 0.002 lower). The three candidates written after the diagnosis and
+   before any candidate number (`28afbd3`).
+2. **The diagnosis** (`scripts/analysis/jb1_gap.py diagnose`; `src/league_lab/h2h_gap.py`): every family with n, gap,
+   interval, share, bias and close calls; the walk-forward re-run with the stat line kept matches the stored rows to the
+   cent. **The gap is the fringe** — WR and RB we rank 37th or lower hold 39% and 30% of it — and **the first game back
+   after a missed game** (12% of rows, 35% of the gap). Our top 12 at every position is level with Sleeper.
+3. **The first fix**: three candidates behind `LEAGUE_LAB_GP_FIX`, each walk-forward 2023–2025 (9–10 minutes, one at a
+   time). **fx1.0 = C1 ships** (`back_feature`: the model reads whether he missed his team's last game; RB / WR / TE;
+   `MODEL_VERSION` **v3.8**). C2 (`back_scale`) fails the rule on order. **C3 (`fringe_scale`) passes the rule and would
+   win its tie-break, and does not ship** — see §3: it turns fringe projections into medians (about a point low at RB and
+   WR). That is one departure from the rule as written, said in METRICS, not hidden. `off` = v3.6 to the bit.
+4. **The run summary** (`league-lab h2h --md`) gains "Where the gap is": the six largest position × rank cells under the
+   head-to-head (`ops.sleeper_h2h_gap`, every family's rows); `/api/record` `history.gap` (the same six; `unavailable`
+   when the table is absent or unreadable, `none` when empty).
+5. Tests, METRICS (gp1.0, the diagnosis, the candidates, fx1.0), metric_registry rows, WORDS, this hand-back.
+
+Not done / cut: no screen shows the gap (the brief asked for the summary and the API). K / DEF not studied (no
+out-of-sample K / DEF rows). The by-component family is the study's only (the nightly keeps no walk-forward line).
+
+#### 2. Commits
+
+`ef37fe4` 1. gp1.0 · `28afbd3` 2. the diagnosis + the candidates (rule) · `9e84b2a` 3. fx1.0 ships, v3.8 · `69cb4d9` 3.
+(cont.) provenance's v3.8, test_ir4 · `b311e0a` 4. the summary's gap table, `/api/record` `history.gap` · `a07ee40` 3. (cont.) the version pins ·
+`35ef59c` 5. About's versions e2e and screens · the last commit: hand-back, CHANGELOG.
+
+#### 3. Evidence
+
+* Population 15,983 player-weeks; we miss by **+0.148 points a player-week** more than Sleeper (2023 0.166, 2024 0.232,
+  2025 0.055).
+* **WR ranked 37+**: 4,814 rows (30%), gap 0.192 [0.149, 0.228], **share 39% [31%, 48%]**, bias ours +0.21 / Sleeper −0.16;
+  inside it the first game back holds 35% and the line's receiving yards 59%. **RB ranked 37+**: 2,142 (13%), gap 0.335
+  [0.251, 0.424], **share 30% [23%, 39%]**, bias +0.25 / −0.29; rushing yards 41%, rushing TDs 25%. Top 12: QB −0.057, RB
+  +0.020, WR +0.028, TE +0.036 (each interval holds 0).
+* First game back 1,895 rows: gap 0.431, share 35% [27%, 44%], bias +0.60 / −0.34, close calls 37% ours right (2,474).
+  Role down 5% of rows / 11%; cold starts 4% / 10%; venue, betting total, rookies, weeks 1–4: no concentration.
+* Candidates (pooled 2023–2025 error; gap to Sleeper RB / WR / TE; baseline 4.411 RB, 4.086 WR, 3.072 TE; +0.252 / +0.151
+  / +0.077):
+  C1 RB 4.304 / 4.409 / 4.484 by season (base 4.324 / 4.420 / 4.488), RB 4.400, WR 4.075, TE 3.066 → **+0.241 / +0.140 /
+  +0.071**, passes at RB; bias unchanged; FLEX order 0.6215 → 0.6229; first-game-back gap 0.434 → 0.314.
+  C2 RB 4.359, WR 4.038, TE 3.037 (+0.200 / +0.103 / +0.042) but order −0.008 (RB 2024), −0.015 (WR 2024): fails.
+  C3 RB 4.253, WR 3.928, TE 3.013 (+0.094 / **−0.007** / +0.018), order unchanged: passes at RB and WR — but bias RB −0.10 →
+  **−1.07**, WR +0.07 → **−1.09**, TE −0.25 → −0.69 (37+: +0.18 → −1.30, Sleeper −0.26); FLEX order 0.6215 → 0.6167;
+  18.8% of 228,513 close cross-position pairs flip, 57.9% → 57.4% right. Not shipped.
+* The switch unset = today to the bit: two `project` runs (before the candidates' code / with it, unset) gave the same
+  seven-table hashes (`ops.projections` 19,364 `89937d40…`, `projection_lines` 9,234 `08e5cae5…`, `projection_ranges` 46,170
+  `7144af5a…`, `kd_lines` 1,088 `58fe5f8a…`). After the ship, `LEAGUE_LAB_GP_FIX=off` gives the v3.6 board's numbers on
+  all seven tables (hashes without the version column: `551013ae…`, `c396529b…`, `e9a637e1…`, `325032df…`).
+* The summary's table on this database (written, then rolled back): six cells, WR 37+ 39%, RB 37+ 30%, TE 37+ 7%, RB
+  25–36 7%, RB 13–24 5%, QB 25–36 4%; the head-to-head above it matches the PO's hosted grade (RB 4.41 / 4.17, WR 4.09 /
+  3.94).
+
+#### 4. Tests
+
+* New: `tests/test_jb1_gap.py` **18 passed** (the slices on constructed rows: the tier by our rank, first game back,
+  role, QB change, experience, a pre-2016 career = 8+ games, venue, totals; **each family's shares sum to one** and the
+  gap is the mean; a slice holding all the excess has share 1; close calls belong to the player we rank higher; the
+  component family priced by hand; the ship rule passing, failing (a) on one season, failing (b) on another position, and
+  "no better" not shipping; the summary's six rows and words); `tests/test_jb1_gp_fix.py` **6 passed** (the back flag
+  incl. a game still to come; `off` changes nothing and unset is fx1.0; the input exists only when the switch says so;
+  the factor minimises the absolute error, bounded; the knot); `api/tests/test_jb1.py` **9 passed** (`history.gap`
+  absent / unreadable / empty / filled — the route 200 in every state; with no history, no gap block).
+* **The switch unset = today's numbers to the last bit**: the two-run hash (`/home/claude/waveIX/verify.sh`'s `hashes`) —
+  `project` before the candidates' code and with it (unset): identical on all seven tables; after the ship,
+  `LEAGUE_LAB_GP_FIX=off` reproduces the v3.6 board's numbers (hashes without the version column identical).
+* Root suite (`check_root.sh`): 1,821 passed, 4 failed (known), **no new failure** — after updating, on purpose, the
+  five tests that pin `MODEL_VERSION` (`test_il3_v33`, `test_ip1_pass_td`, `test_iq1_future_inputs`,
+  `test_iq3_horizon_blend`, `test_personnel`: "v3.6" → "v3.8"; personnel's RB / WR / TE inputs + fx1.0's).
+* API: the record route's and About's files (`test_jb1 test_iz1 test_ir4 test_ix5 test_f3 test_m4 test_v1 test_im3
+  test_ic4 test_ig3 test_ih1 test_i0b test_v2`): 408 passed, 12 failed, 5 skipped — the same 12 (`test_f3` × 8, `test_m4` ×
+  4) fail with `main`'s files on this database (IZ-1's hand-back). `test_ir4`'s code-version sentence updated on purpose.
+* e2e (both projects): `jb1 iz1 ir4 h1 ig2 ig3 ik4 im3` **49 passed, 1 skipped**; `jb1` recorded once from the fixture API
+  (port 8930). `docs/handbacks` restored after the run. Web lint 0 / 0, build ok. ruff clean, copy standard clean.
+* `LEAGUE_LAB_FREEZE=game chain.sh` with v3.8 (12:14–12:27): migrate ok; dbt build PASS 755, WARN 5, **ERROR 0**; project
+  ok (weeks 6–18 written, 1–5 kept frozen); projection marts PASS 146, ERROR 0; availability guards PASS 2, ERROR 0; audit
+  ran.
+* `scripts/gate.sh`: **GATE PASSED** (root 783, api 40, ruff, web lint, build; 83 s).
+* Walk-forward runs: baseline 565 s, C1 / C2 / C3 9–10 minutes each, one at a time (11:11–12:02).
+
+#### 5. Edits outside my files
+
+`src/league_lab/projections.py` (MODEL_VERSION v3.8; the switch's input after `ALL_FEATURES`; `load_frame` adds it;
+`project` calls `gp_fix.apply` after `blend_lines`) · `src/league_lab/h2h.py` (`build_ours(keep_lines=)`, `gp_fix.apply` in
+the walk-forward, the gap table in `run`, `ensure_tables`) · `api/league_lab_api/h2h_api.py` (`gap`) ·
+`api/league_lab_api/provenance.py` (MODEL_VERSION, VERSIONS + v3.8) · `api/tests/test_ir4.py` (the code-version sentence) ·
+`docs/METRICS.md`, `docs/WORDS.md`, `dbt/seeds/metric_registry.csv`, `CHANGELOG.md`. New: `src/league_lab/h2h_gap.py`,
+`src/league_lab/gp_fix.py`, `scripts/analysis/jb1_gap.py`, `tests/test_jb1_gap.py`, `tests/test_jb1_gp_fix.py`,
+`api/tests/test_jb1.py`.
+
+#### 6. PO lines
+
+```diff
+--- a/scripts/nightly.sh
++++ b/scripts/nightly.sh
+@@ (after IZ-1's STATE_TABLES line)
+ STATE_TABLES="$STATE_TABLES ops.sleeper_history ops.sleeper_history_weeks ops.h2h_ours ops.sleeper_h2h"
++STATE_TABLES="$STATE_TABLES ops.sleeper_h2h_gap"   # JB-1: gp1.0's slices (a failed h2h step keeps last night's)
+```
+
+Nothing else: the `h2h` step already writes `logs/sleeper_h2h.md`, which now carries the gap table. **The first night of
+v3.8** costs what a model bump costs: `ensure_oof` rebuilds `ops.calibration_oof` (2–5 min), `backtest-v2` runs for v3.8
+(minutes; soft since IR-3), `league-lab h2h` rebuilds `ops.h2h_ours` (about 9.5 min, then the grade is v3.8's). The frozen
+weeks keep v3.6. The way back: `LEAGUE_LAB_GP_FIX=off` in the nightly's environment (v3.6's numbers; the rows say v3.8 —
+revert `MODEL_VERSION` too if it must say v3.6). `ops.sleeper_h2h_gap` is published with `ops` (a few kB).
+`app/whats_new.md` (yours): "Projections for running backs, receivers and tight ends now know when a player missed his
+team's last game."
+
+#### 7. Found, not mine
+
+* gp1.0's ship rule graded absolute error, which a median wins: C3 passed it by making fringe projections a point low.
+  A rule for a number that is summed (lineups, odds, trades) should also bound the mean bias; I did not change the rule
+  after its numbers — I overrode its tie-break once and said so.
+* Sleeper's history lines carry no fumble key for most fringe players (priced 0), and were written after the games: the
+  first-game-back and role-down gaps may partly be hindsight.
+* `api/tests/test_ir4.py` pinned "Model v3.6" in the code-version case (now reads the code's version); recorded web
+  fixtures still say v3.6 (recordings; they do not fail).
+* About's "What each number has been checked against" (IR-4's study numbers) are v3.6's; v3.8 changes RB / WR / TE by a
+  little (§ 3) — the PO's call whether those rows need a re-run.
+* This database's board for weeks 6–18 is now v3.8 (the chain's `project`); `ops.h2h_ours` and `ops.sleeper_h2h` stay
+  v3.6 here (the nightly rebuilds them for v3.8).
+
+#### 8. Next
+
+1. The fringe, without shrinking the mean: a probability that he plays (inactive / healthy scratch) multiplying a
+   played-game line — a candidate that can lower the error and keep the bias.
+2. Bound the mean bias in the next ship rule (gp1.1).
+3. The clean record from week 5 (JB-2's screen) is the test that does not favour Sleeper: read v3.8's weeks there.
+
+### JB-2 — the clean record on the screen (Wave J-B)
+
+**Start 12:39 ET, Wednesday 2026-10-14 (read from `date`); end 13:07.** Branch `dev/JB2` (from `integ/JB` = Wave J-A,
+JB-3, JB-4, JB-1; `7d25c24`), `/home/claude/wt-iq4`, database `league_lab_iq4`. Provider fixtures, news off. **This
+database has no week-5 actuals** (the record's week 5 is `in_play` here), so the record screens are built on a fixture
+shaped like the live record the PO read on 14 October; the lean's numbers are this database's own (below).
+
+#### 1. Done / not done / cut
+
+* **Done — 1. A close call says when Sleeper's numbers lean the other way** (`api/league_lab_api/sleeper_lean.py`, run
+  last in `/api/my-week` on both paths; METRICS § sl1.0). A card that is close by the screen's rule (status "close" or
+  strength "coin flip") whose other player Sleeper's line has higher (≥ 0.05 points, priced in the league's scoring:
+  the `market_points` the lineup rows already carry) gives the call that shows it (an action — also one behind More — or
+  a "no clear upgrade" line) one line: "Sleeper's numbers lean to <name>." plus, from **10** graded disagreements, the
+  record's season tally (`mart_projection_record`, scope season, ALL: N = `pairs_disagree`, ours = `pairs_ours_right_
+  disagree`, Sleeper = `pairs_sleeper_right` − `pairs_both_right`, the count About's record line already says).
+  **Only** when the week's snapshot (`mart_market_line`'s, the newest) was fetched before the week's first kickoff; a
+  call exists only before its kickoff; an on-demand league has no record, so its lean stands alone; unreadable → no
+  line (logged). No number, word or order of the call moves (tested).
+* **Done — 2. The record week by week, on About** (the screen that holds the record): the old "Start/sit calls, week by
+  week" table became **The record, week by week** — Week · Miss ours · Sleeper · Calls right ours · Sleeper (of n) ·
+  Both · neither — labelled "Both numbers frozen before kickoff …", **By position** on tap, the week's lineups in one
+  line from `decisions` ("In week 5 our recommended lineups scored 1,251.1; managers' own 1,287.3; Sleeper's numbers
+  would have scored 1,323.0." — no verdict word), and **Earlier seasons** (the history's error and close calls by
+  position) labelled "Sleeper's past numbers are served after the games …". Nothing until a week is scored (the table is
+  drawn from the scored weeks only); "Our record is not available right now." when `/api/record` cannot be read.
+* **Done — 3.** WORDS § JB-2, METRICS § sl1.0, tests, e2e at 375 and 1300.
+* **Not done**: no screen of the lean from the live API (this database's My Week has no close call at any clock tried
+  today: no cards at all on the house leagues); the e2e's answer is IX-4's saved week-5 answer put through the route's
+  own steps.
+
+#### 2. Commits
+
+`9685dee` / `fed65a6` item 1 · `1c55ceb` item 2 · `65002a8` test_jb2, METRICS, WORDS · `a4e1954` the tally's arithmetic
+(About's count), e2e/jb2, screens · the hand-back.
+
+#### 3. Evidence
+
+* **The Boston / Jefferson call** (IX-4's saved answer: League of Scrubs team 2, week 5, FLEX2, ours Boston 9.87 against
+  Jefferson 9.86 — a coin flip): Sleeper's week-5 snapshot on this database (fetched 5 Oct 12:25 UTC, before the 9 Oct
+  00:15 first kickoff) priced in League of Scrubs scoring: Boston **8.91**, Jefferson **13.82** → the call now reads,
+  under its reason: "Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close calls where we have
+  disagreed, Sleeper was right 8 times, we 4." (the tally from the live record's week 5: 13 disagreements, ours right 4,
+  Sleeper 17 right of 26 of which 9 both → 8; one disagreement was level by Sleeper's numbers). The PO's brief said 9;
+  About's own line has always said 8 from the same columns — the screens agree.
+* **About** (fixture: this database's `/api/record` with week 5 scored from the live numbers): the row "5 · 4.3 · 4.1 ·
+  13 · 17 of 26 · 9 · 5"; by position "Week 5 · QB: miss 6.8 ours · 6.4 Sleeper's (30 players)", RB 4.6 · 4.4, TE 3.3 ·
+  3.0, WR 4.2 · 4.0; the lineups' line as above; Earlier seasons QB 5.8 · 5.8 · 52% of 3,927, RB 4.4 · 4.2 · 43% of
+  11,461, WR 4.1 · 3.9 · 47% of 19,087, TE 3.1 · 3.0 · 46% of 4,562 (this database's `ops.sleeper_h2h`).
+* Screens: `docs/handbacks/jb2/jb2-{myweek-lean,about-record}-{375,1300}.jpg`; no sideways scroll at 375 (asserted).
+
+#### 4. Tests
+
+* New: `api/tests/test_jb2.py` 9 passed — the tally's threshold (13 → the sentence, 10 → "1 time", 9 → the lean alone),
+  only a close call Sleeper reads the other way (agreeing, level, a missing number: nothing), the line on the call with
+  **nothing else in the answer moved**, the on-demand path's lean without a tally, a snapshot fetched after the first
+  kickoff says nothing (the rule on constructed times, and this database's week-5 snapshot passes it), an unreadable lean
+  is no line, the tally's arithmetic as About counts it, both My Week paths ask for the lean.
+* The test files of the routes and modules changed (`/api/my-week`, `/api/record`, `myweek`: 45 files): 582 passed, 60
+  failed, 16 skipped; the 60 re-run with `7d25c24`'s route (main.py, no `sleeper_lean`): 60 failed — **no new failure**.
+* e2e on fixtures, both projects, the 39 spec files that open My Week or About (`jb2` included): **341 passed**, 0
+  failed; no existing spec needed an update (the old week table kept its `record-table` id, its rows and ≤ 5 columns).
+  Other packages' screenshots the run rewrote: restored.
+* ruff, the copy standard, `npm run lint`, `npm run build`: clean. `scripts/gate.sh`: ok (78 s, exit 0).
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/main.py` (the my-week route: one call per path), `web/src/routes/MyWeek.svelte` (the line on the
+action and review cards), `web/src/routes/About.svelte` (the record's table, the lineups' line, the history table, the
+unreadable words), `web/src/lib/api.ts` (the JB-2 block), `docs/METRICS.md`, `docs/WORDS.md`, `CHANGELOG.md`.
+
+#### 6. PO lines
+
+`app/whats_new.md` (optional): "A close call now says when Sleeper's numbers lean the other way, and About shows our
+record against Sleeper's week by week."
+
+#### 7. Found, not mine
+
+* About's decision block says "The best lineups in hindsight beat the ones started by 460.2 points" (V-1's API
+  sentence, `record_decisions`): a verdict word on the same screen; not changed here.
+* The brief's "Sleeper on 9" for week 5 counts a disagreement where Sleeper had the two level as Sleeper's; the record's
+  columns say 8 (About and this line).
+* `mart_market_line` keeps only the newest snapshot: once a pull lands after a week's first kickoff, the lean goes quiet
+  for the rest of that week (by the rule) — a pre-kickoff snapshot kept apart would let it stay.
+
+#### 8. Next
+
+A recorded My Week answer with a live close call from the nightly's week 6 to screen the lean end to end.
+
+#### JB-2b — sl1.1: the lean before each pair's own kickoffs (13:08–13:13 ET)
+
+* **Why** (the PO, on § 7's finding): under sl1.0 a pull after Thursday night's kickoff hid every lean until the next
+  week — exactly the Friday-to-Sunday window when most calls are made.
+* **The rule now** (`sleeper_lean.snapshots` / `pair_ok`; METRICS § sl1.1 with the reason): the lean shows when the
+  snapshot pricing the two players was fetched before **both** players' own kickoffs (each player's game that week in
+  `dim_game`, by his line's team, one spelling of a team code) and neither game has started at the request. A pair with
+  a started game shows nothing (unchanged); the tally sentence is unchanged (the record is pre-first-kickoff by
+  construction). WORDS: the "nothing when" clause of the My Week row. The words of the lean do not change.
+* **Tests**: `test_jb2` 10 passed — a Thursday-night pair hidden at Saturday's clock while a Sunday pair priced by a
+  Friday snapshot shows (sl1.0 hid it); a mixed Thursday / Sunday pair with a Friday snapshot hidden; a snapshot from
+  before both kickoffs but a game started at the request: nothing; each player's own game (LAR / LA, a bye); this
+  database's week-5 snapshot passes for Boston and Jefferson (their Sunday 11 Oct games). `e2e/jb2` 8 passed (the
+  fixture regenerated: its snapshot field now carries the pair's kickoff). ruff, the copy standard, `scripts/gate.sh`
+  (79 s, exit 0; web too: the spec's comment and the fixture changed).
+
+### JB-3 — Sunday keeps answering
+
+Start 10:17 ET, end 10:47 ET (2026-10-14). Branch `dev/JB3` from `integ/JB` (`main` `06d27a4`), worktree
+`/home/claude/wt-iq4`, database `league_lab_iq4` (written: only the `analytics` schema's comment for the simulated
+publication, set back to none). The fixture API on 8930 through a PgBouncer in transaction mode on 8931; a slowed
+database = every statement +0.15 s while its connection is held (JA-3's method: Neon after a publish).
+
+#### 1. Done, not done, cut
+
+* **1. A request waiting on the database holds no CPU slot — done.** Measured first: in the slowed busy minute the
+  four slots spent **213 of their 240 slot-seconds inside database statements** (the pool trace by route: cards 81.9 s,
+  My Week 43.4 s, the trade evaluation 36.7 s, Waivers 27.8 s, Stats 16.2 s, Trades partners 7.6 s). Now
+  `db.connection()` gives the request's slot back while its statement runs (`ratelimit.Lease.pause`) and takes one
+  again after (`resume` → `Slots.take_back`): **a request coming back goes ahead of every new one and is never
+  refused** (past 3 × the wait it goes over the ceiling by one rather than answer "busy" mid-request). The trade: a
+  request may wait twice — to start, and after a statement while four others compute (the longest such wait in the
+  minute: 1.8–3.9 s). A slot's hold is CPU time now. A request that fails mid-statement or ends while its statement
+  still runs never keeps or retakes a slot (tested). `/api/status` `slots` keeps every key and adds
+  `released_for_statements`, `longest_retake_wait_s`, `longest_retake_route`.
+* **2. The after-publish check picks a live trade — done as a module + the PO's diff.** `scripts/post_deploy_trade.py`:
+  the house league's teams in order, the first two with a bench player who has a projection this week (QB / RB / WR / TE,
+  not in an IR slot; the highest projection, ties by key); one for one; the ids printed; the `reversed` check runs on
+  it. The Folk trade stays a pytest regression (`api/tests/test_ix5.py`).
+* **3. Warm after a publish — done.** What the first requests after a publication wait on: every published cache is
+  dropped at once (IS-4) and the first visitors each rebuild the same boards. Now a new publication seen by the watcher
+  **or by `/api/ready`'s probe** (the check waits on it) drops the caches and starts **one** warm-up pass in a daemon
+  thread (`api/league_lab_api/warm.py`): the reference Rankings, the league list, and for the two house leagues their
+  first team's My Week, Team, Trades partners and Waivers — 16 requests at most, 240 s at most, **one at a time and
+  only while two CPU slots are free** (a visitor is never queued behind it), as ordinary requests to this process's own
+  address (`PORT`, which Render sets; none → off). `/api/status` `warm` says whether it ran.
+* **Cut**: a warm-up of per-player cards (a card is per player: there is no "the" card to warm).
+
+#### 2. Commits — `git log integ/JB..dev/JB3`.
+
+#### 3. Evidence
+
+**The busy minute on a slowed database** (16 visitors, 60 s, a fresh process; n / 503 / p95 s):
+
+| Route | before | after |
+|---|---|---|
+| blog list | 12 / 0 / 0.07 | 32 / 0 / 0.20 |
+| blog post | 12 / 0 / 0.04 | 34 / 0 / 0.15 |
+| card | 17 / **8** / 44.23 | 36 / 0 / 19.76 |
+| My Week (house) | 10 / **3** / 22.46 | 29 / 0 / 12.13 |
+| My Week (MFL) | 11 / **3** / 40.64 | 31 / 0 / 18.64 |
+| Stats, a stretch vs another | 13 / **7** / 20.05 | 29 / 0 / 15.26 |
+| trade evaluate | 10 / **2** / 35.77 | 31 / 0 / 13.65 |
+| Trades partners | 13 / **4** / 20.05 | 32 / 0 / 35.41 |
+| Waivers | 12 / **4** / 30.38 | 33 / 0 / 15.99 |
+| **slots**: busy answers · longest wait · peak | **31** · 20.05 s · 4/4 | **0** · 8.04 s · 4/4 |
+| **pool**: peak · waits over 1 s | 4/10 · 0 | 10/10 · 0 |
+
+Requests answered: 110 → 287. **No route answers "busy" that did not before** (none does). Trades partners' p95 rose
+because before most of its requests were refused at 20 s; now they finish.
+
+**After a publication** (a fresh process, the statements slowed, the publication simulated by changing the analytics
+schema's comment as the sync writes it, the after-publish check with `--expect-publication` from the PO's diff, then 8
+visitors for 30 s):
+
+| | warm-up off | warm-up on (the check waits for it) |
+|---|---|---|
+| the check: rankings / trade | 5.35 / 5.24 s | **0.01 / 1.75 s** |
+| warm-up | — | `info warm-up 38.09s  10 routes warmed, 0 skipped in 32.4 s` |
+| visitors' p95: trade evaluate / Waivers / My Week | 5.07 / 7.13 / 2.13 s | **1.73 / 2.90** / 2.04 s |
+| visitors' p95: card / Stats / Trades partners (team 2) | 9.92 / 8.79 / 15.39 s | 11.53 / 13.53 / 15.99 s (not warmed) |
+| `info load` | pool 1/10 · slots 1/4, 0 busy | pool 2/10 · slots 1/4, 0 busy |
+
+(The `info load` line stays low in the sandbox: the check runs alone here; on run #47 other traffic ran with it.)
+
+`scripts/pooler_check.sh` (ports 8934 / 8935, API 8936): **POOLER CHECK PASSED IN BOTH MODES.** The check run on the
+local API with the PO's diff applied (a scratch copy): `ok trade pick … team 1 gives DK Metcalf (WR, key 5846) for team
+6's Jameson Williams (WR, key 8148)` · `ok trade` · `ok reversed` · `All checks passed.`
+
+#### 4. Tests
+
+`api/tests/test_jb3.py` 12 passed: the slot given back during a statement and taken again after (another request
+gets it meanwhile); a returning request ahead of a new one; a failed statement leaks no slot; a request that ended
+mid-statement takes no slot after it; taking it back is never refused; no lease outside a slotted request; a research
+request through the app ends with nothing held; one change path for a publication id; the warm-up off without a port
+and never in the request; a pass bounded, one at a time, yielding to visitors; the pass's routes; `warm`'s status.
+`tests/test_jb3_trade.py` 4 passed (the pick: not a starter, not IR, not a kicker, not zero; a team without one
+skipped; ties stable; no two teams said, not guessed). `check_api.sh` on the 49 API test files that name the limiter,
+`/api/status`, the pool, the blog's reads or readiness: 756 passed, 38 failed — 28 on the known list and **10 not on
+it but failing identically on `integ/JB`'s code** (my four modules checked out from `integ/JB`, the same 10 red:
+`test_in6` × 6, `test_io2` × 3, `test_io4` × 1 — the outlook's and the schedule's data state; not mine), 0 caused here.
+`scripts/gate.sh` (last): **GATE PASSED**, 823 ran, web lint + build ok. ruff, the copy standard clean.
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/ratelimit.py` (marked JB-3: `Slots.take_back` / `given_back`, the returning priority, `Lease`,
+the middleware's lease), `api/league_lab_api/main.py` (`warm.install()`, `out["warm"]`), `api/league_lab_api/ready.py`
+(the probe's publication id to `db.note_publication`), `docs/DEPLOY.md` (two rows), `CHANGELOG.md`.
+
+#### 6. The PO's lines
+
+`scripts/post_deploy_check.py` (the trade from the current rosters when `--trade` / `POST_DEPLOY_TRADE` is not given;
+after "picked up", wait — bounded, 180 s — for this publication's warm-up and print one `info warm-up` line):
+
+```diff
+--- scripts/post_deploy_check.py
++++ scripts/post_deploy_check.py
+@@ -19,7 +19,8 @@
+   reversed   the same trade from the partner's side: each team's change is the same number
+ Writes nothing anywhere (the trade route only reads). Needs python3 (standard library only); no password unless the
+ server has its gate on (--password, or POST_DEPLOY_PASSWORD). Exit: 0 all ok · 1 a check failed · 2 usage.
+-A trade whose players have since moved answers 400 "on X's roster, not Y's": pass a current one with --trade.
++Without --trade the trade is chosen from the house league's current rosters (scripts/post_deploy_trade.py: two teams,
++a bench player each with a projection this week; the ids printed), so a roster move never fails the check.
+ """
+ 
+ from __future__ import annotations
+@@ -160,8 +161,9 @@
+ def main(argv: list[str] | None = None) -> int:
+     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
+     ap.add_argument("base", help="the server's address, e.g. https://isuckatfantasy.io")
+-    ap.add_argument("--trade", default=os.environ.get("POST_DEPLOY_TRADE", DEFAULT_TRADE),
+-                    help="league:team:partner:give ids:get ids (comma-separated ids), default the review's Folk case")
++    ap.add_argument("--trade", default=os.environ.get("POST_DEPLOY_TRADE", ""),
++                    help="league:team:partner:give ids:get ids (comma-separated ids); default: chosen from the house "
++                         "league's current rosters (scripts/post_deploy_trade.py)")
+     ap.add_argument("--expect-version", default=os.environ.get("POST_DEPLOY_VERSION", ""),
+                     help="the version /api/health must report (a prefix of it is enough: a short commit)")
+     ap.add_argument("--password", default=os.environ.get("POST_DEPLOY_PASSWORD", ""),
+@@ -173,10 +175,14 @@
+     ap.add_argument("--timeout", type=float, default=float(os.environ.get("POST_DEPLOY_TIMEOUT", "90")))
+     a = ap.parse_args(argv)
+     try:
++        if not a.trade:                     # JB-3: chosen below, from the current rosters
++            raise LookupError
+         league, team, partner, give, get = a.trade.split(":")
+         team_i, partner_i = int(team), int(partner)
+         give_l, get_l = [x for x in give.split(",") if x], [x for x in get.split(",") if x]
+         assert league and give_l and get_l
++    except LookupError:
++        league = None
+     except (ValueError, AssertionError):
+         print("--trade is league:team:partner:give ids:get ids, e.g. " + DEFAULT_TRADE, file=sys.stderr)
+         return 2
+@@ -202,6 +208,19 @@
+         j.line(seen == a.expect_publication, "picked up", code, time.monotonic() - t0,
+                f"publication {seen} is served" if seen == a.expect_publication
+                else f"the server still names {seen or 'no publication'} after {a.wait:.0f} s (expected {a.expect_publication})")
++        # JB-3: the warm-up this publication started (bounded): the screens below are then what a visitor after it reads
++        if seen == a.expect_publication:
++            t1, warm = time.monotonic(), None
++            while time.monotonic() - t1 < 180:
++                _, _, st = j.call("GET", "/api/status")
++                warm = st.get("warm") if isinstance(st, dict) else None
++                done = isinstance(warm, dict) and (warm.get("last") or {}).get("publication") == a.expect_publication
++                if not isinstance(warm, dict) or not warm.get("enabled") or (done and not warm.get("running")):
++                    break
++                time.sleep(5)
++            last = (warm or {}).get("last") or {}
++            print(f"info warm-up     {time.monotonic() - t1:5.2f}s  " + (f"{last.get('warmed')} routes warmed, {last.get('skipped')} "
++                  f"skipped in {last.get('seconds')} s after {last.get('publication')}" if last else "none (off, or no port)"), flush=True)
+     # ---- end IT-4
+ 
+     code, secs, b = j.call("GET", "/api/health")
+@@ -230,6 +249,16 @@
+     ok, text = check_rankings(b) if code == 200 else (False, _why(b)[:160])
+     j.line(ok, "rankings", code, secs, text)
+ 
++    if league is None:                      # JB-3: a live trade from the league's current rosters (the ids printed)
++        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++        from post_deploy_trade import live_trade
++        picked, words = live_trade(lambda m, p: j.call(m, p))
++        j.line(picked is not None, "trade pick", 200 if picked else 0, 0.0, words)
++        if picked is None:
++            print("All checks passed." if j.fails == 0 else f"FAILED: {j.fails} check(s).")
++            return 1
++        league, team_i, partner_i, give_l, get_l = (picked["league"], picked["team"], picked["partner"],
++                                                    picked["give"], picked["get"])
+     body = {"league": league, "team": team_i, "partner": partner_i, "give": give_l, "get": get_l}
+     code, secs, b = j.call("POST", "/api/trades/evaluate", body)
+     ok, text, fwd = check_trade(b) if code == 200 else (False, _why(b)[:200], None)
+```
+
+`scripts/nightly.sh`, `render.yaml`, the workflows: nothing (Render's `PORT` turns the warm-up on; the nightly's
+check already passes `--expect-publication`).
+
+**What tonight's summary will say**: `ok picked up …`, then `info warm-up  NN.NNs  N routes warmed, 0 skipped in N s
+after <id>`, then the screens, `ok trade pick  …  team A gives <name> (<pos>, key K) for team B's <name> (…)`, `ok
+trade`, `info load …`, `ok reversed`.
+
+#### 7. Found, not mine
+
+* The Folk trade's player (key 650) has left the League of Scrubs on the live site; the sandbox's fixtures still have
+  him, so `scripts/pooler_check.sh`'s post-deploy step passes here with the old default until the PO's diff lands.
+
+#### 8. Next
+
+A per-player card is ~15 statements (the largest share of the slot time measured before the change); one query could
+carry most of them.
+
+### JB-4 — the card explains "points over expected" (Wave J-B)
+
+Start 10:47 ET, end 11:06 ET (2026-10-14). Branch `dev/JB4` from `integ/JB`, worktree `/home/claude/wt-iq4`, database
+`league_lab_iq4` (read only). Ports 8932 (this branch's API: provider fixtures set, availability / usage / news off,
+any other outside call refused by a dead proxy; for the screens), 8937 (e2e).
+
+#### 1. Done / not done / cut
+
+* **1. One sentence on the card — done** (`api/league_lab_api/poe.py`, answered as `expected_line {kind, words,
+  targets, carries, expected, actual, games}` on `/api/player/{gsis}`; drawer: the Usage tab, after the ratings, the
+  game situations and the projected target share, above the Usage section's shares; full page: after the role chart and
+  the situations). Season to date: his played regular-season games with an expected value, the four numbers summed over
+  the same games (AGENTS rule 4); points from `research.league_games` — the Stats column's own source (the league
+  mart for a house league, priced in the scoring for a reference key or an on-demand league). Rounded to whole points
+  (halves up); the gap is in the verb ("he has 44" / "he has 79"). **The rule I picked:** a receiver (WR, TE) counts
+  targets, a back (RB) carries + targets; under 20 of them: nothing; a quarterback: nothing (his expected points are
+  mostly passing, which a count of targets or carries does not describe); a game without an expected value (or with
+  its points unknown) is left out with its targets and carries; none left: nothing — never 0. The sentence never says
+  why.
+* **2. The How-to-read line — done.** The Stats column **Points over expected** now says depth of target, field
+  position and down are allowed for, and the one caveat (a bad throw lowers his points, not his expected points);
+  **Expected fantasy points** says how each target and carry is valued. **About has no expected-points paragraph**
+  (nor a methods page): I said it in `docs/METRICS.md`'s expected-points row instead and did not add a new About
+  section — the PO's call.
+* **3. WORDS, tests, the card's e2e at 375 — done.**
+
+#### 2. Commits
+
+`bd6e169` 1. the sentence (API + drawer + full page) · `62d57e7` 2. the How-to-read line, METRICS · `83bd6a3` 3. words,
+tests, e2e, screens · (this hand-back).
+
+#### 3. Evidence
+
+* **Michael Wilson (WR, ARI), weeks 1–4**, League of Scrubs: "His 44 targets usually bring about 64 points; he has 44.
+  Depth of target is already allowed for." (44 targets, 63.8 expected, 44.3 actual, 4 games — the PO's numbers;
+  `mart_league_player_season`: 63.83 / 44.30 / 4 games with an expected value). Forever Unclean Dynasty: "… about 77
+  points; he has 57." Half PPR (`ref:half`): about 64; he has 44. MFL 70587 (fixtures): about 50; he has 32.
+* Kyren Williams (RB), League of Scrubs: "His 54 carries and 25 targets usually bring about 64 points; he has 79.
+  Depth of target and field position are already allowed for." Puka Nacua (21 targets in 2 games): "… about 32 points;
+  he has 33." Colbie Young (rookie, under 20): no line. Lamar Jackson (QB): no line.
+* The card's Value tile ("From past opportunities 16.0", −4.9) and the Game log chart's "on work worth 16.0" are the
+  same numbers per game (63.8 / 4).
+* Before → after, the Stats How-to-read for **Points over expected**: "… Positive: he scored more than his
+  opportunities usually bring." → "… Positive: he scored more than his opportunities usually bring. Depth of target,
+  field position and down are already allowed for: each target and carry is valued from its air yards, where on the
+  field it came and the down, so short targets carry fewer expected points than deep ones. A bad throw lowers his
+  points, not his expected points."
+* Screens: `docs/handbacks/jb4/jb4_drawer_usage_{phone,desktop}.jpg`, `jb4_page_{phone,desktop}.jpg` (Wilson, live;
+  phone at 375).
+
+#### 4. Tests
+
+* `api/tests/test_jb4.py`: **7 passed** — a receiver's sentence (the sum, whole points, above and below), a back's,
+  the thresholds (19 / 20 targets; 19 / 20 carries + targets; a QB, a kicker, no position), unknown is never 0 (no
+  expected value: nothing; a game without one is left out with its targets; playoffs and games not played left out;
+  halves up), a failure to read costs no card, Wilson on the database against `mart_league_player_season` (and each
+  league its own scoring; a QB without a line), the Stats definitions.
+* The test files of the card's route and of the Stats module (41 files, outside calls refused): **573 passed, 38
+  failed, 10 skipped**; 37 of the failures are the known ones (`/home/claude/waveIP/known_api_failures.txt` and the
+  six that fail on `integ/IZ` itself, IZ-3's hand-back); the new one is JB-3's, not this package's (§ 7).
+* e2e (fixtures, phone and desktop): `ip4`, `ii2`, `iz3`, `ix3`, `jb4` **54 passed**, 10 skipped (the live walks);
+  `jb4` live on 8932: **2 passed** (the screens).
+* `npm run lint` 0 errors; `npm run build` ok; `copy_standard.py --check` clean; ruff clean.
+* `scripts/gate.sh python` last: **GATE PASSED** (root 783 passed, api 40 passed, ruff).
+
+#### 5. Edits outside my files
+
+`api/league_lab_api/main.py` (the card route: one marked block `# ---- JB-4`), `api/league_lab_api/stats.py` (two
+column definitions, marked), `web/src/lib/api.ts` (one field on `PlayerCard`), `web/src/components/PlayerPane.svelte`
+and `web/src/routes/Player.svelte` (one line each, marked), `docs/WORDS.md`, `docs/METRICS.md`, `CHANGELOG.md`.
+
+#### 6. PO lines
+
+* None needed (no PO-owned file). If About should say it too: one sentence for its methods block — "Expected points
+  value each target and carry from its air yards, field position and down, so a receiver on short routes is expected
+  to score less than one on deep ones."
+* The rule for the sentence (20 targets; a back's carries + targets; no quarterback) is in `poe.py`'s docstring and
+  WORDS; change `MIN_TOUCHES` if you want another line.
+
+#### 7. Found, not mine
+
+* `tests/test_io4.py::test_every_pool_carries_the_client_or_says_why_not` fails on this branch: "a thread pool that
+  drops the request's client: [('api/league_lab_api/warm.py', 'on_publication')]" — JB-3's warm-up pool (on
+  `integ/JB` already; this package does not touch `warm.py`). Either carry the client into that pool or list it with
+  its reason in the test's allow-list.
+* About has no expected-points paragraph (§ 1, item 2).
+
+#### 8. Next
+
+* The sentence could name the league-wide comparison the PO quoted (aDOT 9.0 against 11.0 for NFL WRs) — the brief
+  kept it out of the card; it belongs with the role lines if wanted.
