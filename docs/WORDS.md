@@ -1154,3 +1154,15 @@ News feed's own (`myweek.decision_feed`, II-4); IZ-4 moves them, it writes no se
 | a back (RB) | "His 54 carries and 25 targets usually bring about 64 points; he has 79. Depth of target and field position are already allowed for." | |
 | nothing | under 20 targets (a receiver) or 20 carries + targets (a back); a quarterback (his expected points are mostly his passing); no game with an expected value — no line, never a 0 | "0 expected" |
 | the Stats column **Points over expected**, How to read this | "… Positive: he scored more than his opportunities usually bring. Depth of target, field position and down are already allowed for: each target and carry is valued from its air yards, where on the field it came and the down, so short targets carry fewer expected points than deep ones. A bad throw lowers his points, not his expected points." · **Expected fantasy points**: "… Each target and carry is valued from its air yards, field position and down." | the caveat on the card |
+
+## Where we lose to Sleeper (JB-1, Wave J-B, 2026-10-14; `src/league_lab/h2h_gap.py`; docs/METRICS.md § gp1.0)
+
+No screen changes. The nightly's summary (read by the PO) and `/api/record` `history.gap` carry the six largest
+cells; their labels:
+
+| Where | Words |
+|---|---|
+| The table's head | "**Where the gap is** (gp1.0; League of Scrubs' scoring; {n} player-weeks; we miss by {+x} points a player-week more than Sleeper; share = the slice's part of that excess, 95% interval from resampling weeks):" |
+| A cell | "{position}, our top 12" · "our 13th–24th" · "our 25th–36th" · "our 37th and lower" |
+| Columns | player-weeks · gap a player-week [95%] · share of the gap [95%] · our bias / Sleeper's |
+| Not built | "**Where the gap is**: NOT built tonight ({error})." |

@@ -427,6 +427,17 @@ def _pct(x: Any) -> str:
     return "–" if np.isnan(v) else f"{100 * v:.0f}%"
 
 
+TIER_WORDS = {"top-12": "our top 12", "13-24": "our 13th–24th", "25-36": "our 25th–36th", "37+": "our 37th and lower"}
+
+
+def slice_words(family: str, label: str) -> str:
+    """'WR 37+' -> 'WR, our 37th and lower'; another family: '<its words>: <slice>'."""
+    if family == "position × tier" and " " in label:
+        pos, tier = label.split(" ", 1)
+        return f"{pos}, {TIER_WORDS.get(tier, tier)}"
+    return f"{FAMILY_WORDS.get(family, family)}: {label}"
+
+
 def summary_lines(top: pd.DataFrame, n_rows: int, total_excess: float) -> list[str]:
     """The run summary's gap table (markdown)."""
     if top is None or top.empty:
@@ -437,7 +448,7 @@ def summary_lines(top: pd.DataFrame, n_rows: int, total_excess: float) -> list[s
            "| slice | player-weeks | gap a player-week [95%] | share of the gap [95%] | our bias / Sleeper's |",
            "|---|---:|---|---|---|"]
     for r in top.itertuples():
-        out.append(f"| {FAMILY_WORDS.get(r.family, r.family)}: {r.slice} | {r.n:,} | {_f(r.gap)} [{_f(r.gap_lo)}, "
+        out.append(f"| {slice_words(r.family, r.slice)} | {r.n:,} | {_f(r.gap)} [{_f(r.gap_lo)}, "
                    f"{_f(r.gap_hi)}] | {_pct(r.share)} [{_pct(r.share_lo)}, {_pct(r.share_hi)}] | "
                    f"{_f(getattr(r, 'bias_ours', None))} / {_f(getattr(r, 'bias_sleeper', None))} |")
     return out

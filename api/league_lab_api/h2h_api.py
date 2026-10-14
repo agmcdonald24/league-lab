@@ -165,6 +165,48 @@ def history(league_id: str | None) -> dict:
     try:
         if df.empty:
             return {"available": False, "status": "none", "sentence": None, "caveat": None}
-        return block(df, league_id)
+        out = block(df, league_id)
     except Exception:  # noqa: BLE001 - a malformed table (an older build): "not available", never empty, never a 500
         return {"available": False, "status": "unavailable", "sentence": UNAVAILABLE, "caveat": None}
+    out["gap"] = gap()                                                                    # ---- JB-1
+    return out
+
+
+# ---- JB-1 (Wave J-B): gp1.0, where the gap to Sleeper is (ops.sleeper_h2h_gap, `league-lab h2h`): the six largest
+# position × rank cells in League of Scrubs' scoring. Absent / unreadable: "unavailable" (the hours between a deploy and
+# the refresh that brings the table), never an empty list; no row: "none".
+GAP_EXISTS_SQL = "select to_regclass('ops.sleeper_h2h_gap') is not null as present"
+GAP_SQL = """
+select league_id, family, slice, rank, n, row_share, gap, gap_lo, gap_hi, share, share_lo, share_hi, bias_ours,
+       bias_sleeper, mae_ours, mae_sleeper, calls, calls_ours_right, n_population, excess_total, rule, built_at
+from ops.sleeper_h2h_gap
+where family = 'position × tier' and rank <= 6
+order by rank
+"""
+
+
+def gap() -> dict:
+    try:
+        present = query(GAP_EXISTS_SQL)
+        if present.empty or not bool(present.iloc[0]["present"]):
+            return {"available": False, "status": "unavailable"}
+        df = query(GAP_SQL)
+    except Exception:  # noqa: BLE001 - "cannot read" is said as such
+        return {"available": False, "status": "unavailable"}
+    if df.empty:
+        return {"available": False, "status": "none"}
+    try:
+        first = df.iloc[0]
+        rows = [{"slice": _s(r.slice), "player_weeks": _i(r.n), "share_of_rows": _n(r.row_share),
+                 "gap": _n(r.gap), "gap_lo": _n(r.gap_lo), "gap_hi": _n(r.gap_hi), "share": _n(r.share),
+                 "share_lo": _n(r.share_lo), "share_hi": _n(r.share_hi), "bias_ours": _n(r.bias_ours),
+                 "bias_sleeper": _n(r.bias_sleeper), "close_calls": _i(r.calls), "close_calls_ours_right": _n(r.calls_ours_right)}
+                for r in df.itertuples()]
+        n = _i(first["n_population"])
+        tot = _n(first["excess_total"])
+        return {"available": True, "status": "graded", "rule": _s(first["rule"]), "league_id": _s(first["league_id"]),
+                "player_weeks": n, "excess_per_player_week": (tot / n) if (tot is not None and n) else None,
+                "rows": rows, "built_at": first["built_at"]}
+    except Exception:  # noqa: BLE001 - a malformed table: not available, never a 500
+        return {"available": False, "status": "unavailable"}
+# ---- end JB-1

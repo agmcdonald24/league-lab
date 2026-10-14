@@ -139,3 +139,9 @@ def test_the_summary_names_the_largest_slices():
     md = G.summary_lines(top, len(d), float(d["excess"].sum()))
     assert md[1].startswith("**Where the gap is** (gp1.0") and len([x for x in md if x.startswith("| ") and "---" not in x]) == 7
     assert G.leaders(tables)["slice"].tolist() == tables["position × tier"].head(2)["slice"].tolist()
+
+
+def test_the_summarys_slice_words():
+    assert G.slice_words("position × tier", "WR 37+") == "WR, our 37th and lower"
+    assert G.slice_words("position × tier", "RB top-12") == "RB, our top 12"
+    assert G.slice_words("first game back", "first game back") == "first game back after a missed game: first game back"
