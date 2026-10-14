@@ -71,15 +71,19 @@ CAVEAT = ("Sleeper's numbers for past weeks are the ones its site serves now, wr
 
 
 def ensure_tables(conn: psycopg.Connection) -> None:
+    # ---- JB-1: gp1.0's table (ops.sleeper_h2h_gap)
+    from . import h2h_gap
+
     with conn.cursor() as cur:
         cur.execute(OURS_DDL)
         cur.execute(GRADE_DDL)
     conn.commit()
+    h2h_gap.ensure_tables(conn)
 
 
 # ------------------------------------------------------------------------------ ours: the live model, walk-forward
 def _priced_rows(line: pd.DataFrame, target: pd.DataFrame, leagues: Mapping[str, tuple[str, dict[str, float]]],
-                 prefix: str = "proj_") -> pd.DataFrame:
+                 prefix: str = "proj_", keep_lines: bool = False) -> pd.DataFrame:
     """One row per house league x player-week of ``line`` (gsis_id, week, position, proj_*): the line priced in the
     league's scoring and the league's actual points (the outcome columns priced; NaN when he did not play)."""
     from . import projections as P
@@ -92,6 +96,10 @@ def _priced_rows(line: pd.DataFrame, target: pd.DataFrame, leagues: Mapping[str,
     out = []
     for lid, (_name, scoring) in leagues.items():
         o = rows[["gsis_id", "season", "week", "position"]].copy()
+        if keep_lines:      # ---- JB-1: the stat line and the outcome, for gp1.0's by-component family
+            for c in P.ALL_COMPONENTS:
+                o[f"proj_{c}"] = rows[f"{prefix}{c}"].to_numpy(dtype=float)
+                o[f"out_{c}"] = rows[f"out_{c}"].to_numpy(dtype=float)
         o["league_id"] = lid
         o["proj_points"] = P.price(rows, scoring, prefix).to_numpy(dtype=float)
         act = pd.Series(np.nan, index=rows.index)
@@ -102,7 +110,7 @@ def _priced_rows(line: pd.DataFrame, target: pd.DataFrame, leagues: Mapping[str,
     return pd.concat(out, ignore_index=True)
 
 
-def build_ours(conn: psycopg.Connection, seasons: Iterable[int] = HISTORY_SEASONS) -> pd.DataFrame:
+def build_ours(conn: psycopg.Connection, seasons: Iterable[int] = HISTORY_SEASONS, keep_lines: bool = False) -> pd.DataFrame:
     """The live model's walk-forward next-week rows of ``seasons`` (played rows with an actual), every house scoring.
 
     Per season S: the production models fitted on 2016 .. S-1 (``fit_position``, one reference scoring for the ranges:
@@ -154,7 +162,7 @@ def build_ours(conn: psycopg.Connection, seasons: Iterable[int] = HISTORY_SEASON
             every = cal.blend_lines(conn, s, every, models, target, fit, leagues)
         finally:
             cal.load_oof = real_load
-        rows = _priced_rows(every[every["league_id"] == ref], target, leagues)
+        rows = _priced_rows(every[every["league_id"] == ref], target, leagues, keep_lines=keep_lines)
         rows = rows[rows["actual"].notna()].copy()
         rows["train_seasons"] = f"{first}-{s - 1}"
         out.append(rows)
@@ -702,4 +710,14 @@ def run(make_ours: bool = True) -> str:
             if len(src) and src.iloc[0] == "stored_walk_forward":
                 note = (note + "; " if note else "") + "the live model's rows are missing: graded on the stored rows, labelled"
         log.info("%s: %s rows written (%s player-weeks graded)", GRADE_TABLE, n, len(inp.pop))
-        return summary_text(read_weeks(conn), df, inp, note)
+        text = summary_text(read_weeks(conn), df, inp, note)
+        # ---- JB-1 (Wave J-B): gp1.0, where the gap is (ops.sleeper_h2h_gap); never fails the grade above
+        from . import h2h_gap
+        try:
+            gap = h2h_gap.nightly(conn, inp)
+        except Exception as exc:  # noqa: BLE001 - the grade is written; the summary says the gap table is missing
+            conn.rollback()
+            log.exception("gp1.0: the gap table could not be built: %s", exc)
+            gap = ["", f"**Where the gap is**: NOT built tonight ({type(exc).__name__}: {str(exc)[:120]})."]
+        return text + ("\n".join(gap) + "\n" if gap else "")
+        # ---- end JB-1

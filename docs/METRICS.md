@@ -6400,7 +6400,7 @@ what they published (B5). Not built.
 
 ## Where we lose to Sleeper (gp1.0, JB-1, Wave J-B, 2026-10-14) — the rule, written before any number
 
-Written at 11:12 ET on 2026-10-14, before any number of this section was computed. The question (Andrew's roadmap
+Written at 11:10 ET on 2026-10-14 (commit `ef37fe4`), before any number of this section was computed. The question (Andrew's roadmap
 item 2, "fix or borrow where we lose"): hh1.0 says we are behind Sleeper at RB, WR and TE on the history; **where** is
 the gap, and what is the first fix? Nothing here puts Sleeper's number into ours (bl1.0 stays measured, not shipped).
 
@@ -6463,3 +6463,66 @@ its target position before and after.
 
 **Where it shows**: the run's summary (`league-lab h2h --md`) gains the six largest slices under the head-to-head;
 `/api/record` `history` gains `gap` (the same rows).
+
+### The diagnosis (`scripts/analysis/jb1_gap.py diagnose`, 11:19 ET, after `ef37fe4`)
+
+**Population**: 15,983 player-weeks (2023 5,206 · 2024 5,188 · 2025 5,296 · 2026 week 4 293; League of Scrubs). Ours
+misses by **+0.148 points a player-week more than Sleeper** (summed excess +2,361). The walk-forward re-run with the stat
+line kept reproduces the stored `ops.h2h_ours` to the cent on all 15,690 rows of 2023–2025 (same code, same inputs).
+By season the gap is 0.166 / 0.232 / 0.055 (2023 / 2024 / 2025): it narrows in 2025. (This database has no week-5
+actuals: the clean record's week is not in the study.)
+
+**The two cells that hold most of the gap** (position × our rank at the position that week):
+
+| cell | player-weeks | rows | gap a player-week [95%] | share of the gap [95%] | error ours / Sleeper | bias ours / Sleeper | close calls (ours right) |
+|---|---:|---:|---|---|---|---|---|
+| **WR ranked 37+** | 4,814 | 30% | 0.192 [0.149, 0.228] | **39%** [31%, 48%] | 3.35 / 3.16 | **+0.21** / −0.16 | 8,334 (45%) |
+| **RB ranked 37+** | 2,142 | 13% | 0.335 [0.251, 0.424] | **30%** [23%, 39%] | 3.21 / 2.87 | **+0.25** / −0.29 | 3,212 (42%) |
+| TE 37+ | 1,381 | 9% | 0.121 [0.051, 0.193] | 7% [3%, 11%] | 1.98 / 1.86 | −0.03 / −0.59 | 6 |
+| RB 25–36 | 660 | 4% | 0.244 [0.086, 0.404] | 7% [2%, 11%] | 4.96 / 4.71 | +0.07 / +0.07 | 2,981 (38%) |
+| RB 13–24 | 660 | 4% | 0.161 [0.035, 0.292] | 5% [1%, 8%] | 5.53 / 5.36 | −0.94 / −0.48 | 2,716 (45%) |
+| QB 25–36 | 385 | 2% | 0.269 [−0.137, 0.717] | 4% [−2%, 11%] | 5.85 / 5.58 | −1.00 / +0.58 | 55 |
+
+The top twelve at every position are level with Sleeper (each cell's interval holds 0: QB −0.057, RB +0.020, WR +0.028,
+TE +0.036); WR 13–24 +0.013. **The gap is the fringe: players we rank 37th or lower** (69% of it in two cells, 43% of the
+rows) — and there we over-project while Sleeper under-projects.
+
+**Inside them**: in WR 37+, the **first game back after a missed game** (15% of its rows) holds 35% [26%, 44%] of the
+cell's gap (gap 0.436; bias ours +0.74, Sleeper −0.31), a **role-down** alert (7% of rows) 17% (0.451); the parts of the
+line: **receiving yards 59%**, receptions 11%, receiving TDs 10%, fumbles 11% (Sleeper lists no fumble key for most
+fringe players: priced 0). In RB 37+: the line's **rushing yards 41%**, rushing TDs 25%, receiving yards 24%; weeks
+5–18 hold 80% (bias +0.35 there).
+
+**The other families** (whole population): **first game back** 1,895 rows (12%) hold **35%** [27%, 44%] (gap 0.431; bias
+ours +0.60, Sleeper −0.34; close calls 37% ours right of 2,474) — by position RB 0.682 (433 rows, 12.5% of the whole gap,
+bias +0.88 / −0.55), WR 0.400 (807, 13.7%, +0.76 / −0.19), TE 0.265 (552, 6.2%), QB 0.507 (103, 2.2%). Role down 5% of
+rows / 11% (gap 0.323); role up 10% / 12%. A cold start (0–2 games) 4% / 10% (gap 0.335). Rookies 15% / 16%, second year
+15% / 18% (no concentration). QB changed 18% / 21%. Weeks 1–4 24% / 23%; home 54% / away 46%; the betting total's thirds
+35 / 33 / 31% — no concentration. By component (2023–2025, all positions): receiving yards 56%, rushing yards 27%,
+receptions 15%, passing yards 10%, rushing TDs 7%; receiving TDs −11% and passing TDs −5% (we are closer on touchdowns).
+
+**A caveat that matters here**: Sleeper's past lines were rewritten after the games. A player who came back limited, or
+lost his role during the week, is exactly where a line written afterwards can know more than one written before
+kickoff — part of the first-game-back and role-down gap may be that, not our model. The fix below is judged on our own
+error against what happened, not against Sleeper.
+
+**Earlier evidence**: a monotone level on the fringe (fr1.0, v3.1, Wave I-G) was dropped at every position — the
+fringe's miss changes sign by era, and a level fitted on the seasons before could not follow it (WR −0.021 in 3 of 5
+seasons). So the first candidates are aimed at the part a level cannot reach: the player who missed his team's previous
+game.
+
+### The candidates (written 11:25 ET, after the diagnosis and before any candidate number; the switch `LEAGUE_LAB_GP_FIX`, unset by default)
+
+Each is judged by gp1.0's ship rule **with RB and with WR as the target** (the two cells; it ships if it passes for
+either: (a) at that position, (b) at the other three). "Back" = he did not play his team's previous game of the
+season (his previous feature row says not played) while that team game has been played (some player of his team
+played it); unknown for his first row of the season and for a week whose previous team game is still to come.
+
+* **C1 `back_feature`** — a feature: `f_missed_prev` (1 back / 0 not / unknown) added to RB, WR and TE's inputs. The
+  model learns what a return means from the seasons before; the order can change.
+* **C2 `back_scale`** — a correction: a back player's whole stat line (RB / WR / TE) times k_pos, k_pos ∈ {0.50, 0.51,
+  …, 1.20} the factor with the lowest mean |k × projected − actual| (League of Scrubs' points) over the back rows of the
+  three seasons before (the model's own out-of-sample rows; under 100 rows: 1).
+* **C3 `fringe_scale`** — a correction: a line projected (League of Scrubs) below the knot — the median over the
+  fitting weeks of the 36th-highest projection at the position (RB / WR / TE) — times k_pos chosen the same way on the
+  rows below the knot in the three seasons before. (fr1.0 fitted a mean level; this fits the error the rule grades.)
