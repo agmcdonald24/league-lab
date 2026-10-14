@@ -145,7 +145,9 @@ def check(dsn: str | None = None) -> tuple[bool, dict]:
         with psycopg.connect(dsn or app_dsn(), connect_timeout=CONNECT_TIMEOUT_S,
                              application_name="league-lab-ready", prepare_threshold=None) as conn:  # one transaction: `set local` lives in it
             conn.execute(f"set local statement_timeout = {int(STATEMENT_TIMEOUT_MS)}")
-            return probe(conn)
+            ok, body = probe(conn)
+        _note_publication(body)              # ---- JB-3
+        return ok, body
     except psycopg.errors.QueryCanceled as exc:   # ---- IS-4: a statement timeout is an OperationalError in psycopg,
         return False, {"ready": False, "code": "query", "checks": {"database": "ok"},   # but the database did answer
                        "reason": f"A readiness query took longer than {STATEMENT_TIMEOUT_MS // 1000} s ({exc.__class__.__name__})."}
@@ -158,6 +160,19 @@ def check(dsn: str | None = None) -> tuple[bool, dict]:
     except Exception as exc:  # noqa: BLE001 - readiness answers in words, never a 500
         return False, {"ready": False, "code": "error", "checks": {},
                        "reason": f"The readiness check failed ({exc.__class__.__name__})."}
+
+
+def _note_publication(body: dict) -> None:
+    """JB-3: the probe's publication id goes to the API's one change path (db.note_publication): a new publication seen
+    by /api/ready switches the caches and starts the warm-up before the after-publish check's first screen."""
+    pub = (body.get("checks") or {}).get("publication") if isinstance(body, dict) else None
+    if "publication" not in (body.get("checks") or {}):          # the probe stopped before it read one
+        return
+    try:
+        from . import db as _db_jb3
+        _db_jb3.note_publication(pub.get("id") if isinstance(pub, dict) else None)
+    except Exception:  # noqa: BLE001 - readiness answers regardless
+        pass
 
 
 def _fresh() -> bool:

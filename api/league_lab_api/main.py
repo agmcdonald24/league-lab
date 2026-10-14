@@ -318,6 +318,12 @@ def _publication_changed(_new_id) -> None:
 
 
 db.on_publication.append(_publication_changed)
+
+# ---- JB-3 (Wave J-B): one warm-up pass of the heavy screens when a new publication is seen (league_lab_api/warm.py)
+from . import warm as _warm  # noqa: E402
+
+_warm.install()
+# ---- end JB-3
 # ---- end IS-4
 
 
@@ -549,6 +555,7 @@ def status(response: Response):
     out["board_source"] = A.board_source()
     out["pool"] = db.pool_status()          # ---- JA-3: size, in use, waiting, the longest wait since the process started
     out["slots"] = ratelimit.slots().status()   # ---- JA-6: the CPU-slot limiter beside the pool (a 503 "busy" is its)
+    out["warm"] = _warm.status()           # ---- JB-3: the warm-up after a publication (enabled, running, the last pass)
     try:                                    # QA: the setting is "auto"; say which board the current week really uses
         season = int(ui.current_season())
         week = cards.decision_week(season)

@@ -363,17 +363,34 @@ def watch_publication(now: float | None = None) -> bool:
             new = publication_id()
         except Exception:  # noqa: BLE001 - a failed read changes nothing; the next one is in 30 s
             return False
-        changed = _pub["seen"] and new != _pub["id"]
-        _pub.update(id=new, seen=True)
-        if changed:
-            dropped = memo.drop_published()
-            log.info("publication %s: dropped %s", new, ", ".join(dropped))
-            for fn in list(on_publication):
-                try:
-                    fn(new)
-                except Exception:  # noqa: BLE001
-                    log.exception("on_publication callback failed")
-        return changed
+        return _seen(new)
+    finally:
+        _pub_lock.release()
+
+
+def _seen(new) -> bool:
+    """A publication id read (by the watcher, or by /api/ready's probe - JB-3): when it differs from the last one, the
+    published caches drop and the callbacks run (as_of, the warm-up). The first id seen is only remembered."""
+    changed = _pub["seen"] and new != _pub["id"]
+    _pub.update(id=new, seen=True)
+    if changed:
+        dropped = memo.drop_published()
+        log.info("publication %s: dropped %s", new, ", ".join(dropped))
+        for fn in list(on_publication):
+            try:
+                fn(new)
+            except Exception:  # noqa: BLE001
+                log.exception("on_publication callback failed")
+    return changed
+
+
+def note_publication(new) -> bool:
+    """JB-3: /api/ready read the publication id on its own connection; the same change path, no extra query. The
+    after-publish check waits on /api/ready, so the caches switch (and the warm-up starts) before its first screen."""
+    if not _pub_lock.acquire(blocking=False):
+        return False
+    try:
+        return _seen(new)
     finally:
         _pub_lock.release()
 # ---- end IS-4
