@@ -185,6 +185,23 @@ def _first_words(sql: str, n: int = 6) -> str:
 @contextmanager
 def connection(what: str = ""):
     """A pooled connection for one statement or a few short ones — never across CPU work or a provider call."""
+    lease = _cpu_lease()                     # ---- JB-3: the request's CPU slot is given back while the statement runs
+    paused = lease.pause() if lease is not None else False
+    try:
+        with _statement(what) as conn:
+            yield conn
+    finally:
+        if paused:
+            lease.resume()                   # taken again after the statement (ahead of new requests; never refused)
+
+
+def _cpu_lease():
+    from . import ratelimit  # (late: ratelimit is the middleware; db must import without it)
+    return ratelimit.LEASE.get()
+
+
+@contextmanager
+def _statement(what: str = ""):
     t0 = time.monotonic()
     with _pstats_lock:
         _pstats["waiting"] += 1

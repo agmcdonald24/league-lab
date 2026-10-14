@@ -38,6 +38,7 @@ Switches (Render → Environment; read at the first request, ``reset()`` re-read
 
 from __future__ import annotations
 
+import contextvars  # ---- JB-3
 import hashlib
 import hmac
 import ipaddress
@@ -246,13 +247,57 @@ class Slots:
         self.longest_hold = (0.0, None)
         self.busy_by_route: dict[str, int] = {}
         # ---- end JA-6
+        self.returning = 0              # ---- JB-3: requests taking their slot back after a statement (ahead of new ones)
+        self.released_for_statements = 0
+        self.longest_retake = (0.0, None)
 
     def _try(self) -> bool:
         with self._lock:
-            if self.busy < self.n:
+            if self.busy < self.n and self.returning == 0:      # ---- JB-3: a request coming back from a statement first
                 self.busy += 1
                 return True
             return False
+
+    # ---- JB-3 (Wave J-B): a request waiting on the database holds no CPU slot. `db.connection()` gives the request's
+    # slot back while its statement runs (`Lease.pause`) and takes one again after (`Lease.resume` -> `take_back`): a
+    # returning request goes ahead of every new one, and is never refused (past a long safety wait it goes over the
+    # ceiling by one rather than answer "busy" mid-request): so no route answers "busy" that did not before. The trade:
+    # a request may wait twice - once to start, once after a statement while four others compute.
+    def take_back(self, route: str) -> float:
+        """Blocking (a worker thread): a slot again for a request that had one; the seconds waited."""
+        if self.n <= 0:
+            return 0.0
+        t0 = time.monotonic()
+        deadline = t0 + max(self.wait_s, 1.0) * 3
+        with self._lock:
+            self.returning += 1
+        try:
+            while True:
+                with self._lock:
+                    if self.busy < self.n or time.monotonic() >= deadline:
+                        self.busy += 1
+                        self.peak = max(self.peak, self.busy)
+                        waited = time.monotonic() - t0
+                        if waited > self.longest_retake[0]:
+                            self.longest_retake = (round(waited, 3), route)
+                        in_use = self.busy
+                        break
+                time.sleep(0.02)
+        finally:
+            with self._lock:
+                self.returning -= 1
+        if waited > SLOW_SLOT_WAIT_S:
+            log.warning("waited %.1f s for a CPU slot after a statement (%d of %d in use) on %s", waited, in_use, self.n, route)
+        return waited
+
+    def given_back(self, route: str) -> None:
+        """A slot given back while its request's statement runs (not the end of the request)."""
+        if self.n <= 0:
+            return
+        with self._lock:
+            self.busy = max(0, self.busy - 1)
+            self.released_for_statements += 1
+    # ---- end JB-3
 
     async def acquire(self, route: str = "-") -> bool:
         if self.n <= 0:
@@ -313,7 +358,10 @@ class Slots:
                     "peak_in_use": self.peak, "waited": self.waited,
                     "longest_wait_s": self.longest_wait[0], "longest_wait_route": self.longest_wait[1],
                     "busy_answers": self.refused, "busy_by_route": dict(sorted(self.busy_by_route.items())),
-                    "longest_hold_s": self.longest_hold[0], "longest_hold_route": self.longest_hold[1]}
+                    "longest_hold_s": self.longest_hold[0], "longest_hold_route": self.longest_hold[1],
+                    # ---- JB-3: a hold is CPU time now (a request's statements are not in it)
+                    "released_for_statements": self.released_for_statements,
+                    "longest_retake_wait_s": self.longest_retake[0], "longest_retake_route": self.longest_retake[1]}
     # ---- end JA-6
 
     def info(self) -> dict:
@@ -325,6 +373,55 @@ class Slots:
 SLOW_SLOT_WAIT_S = 1.0
 BUSY_ROUTES_MAX = 24
 _WORD = re.compile(r"[a-z][a-z_.-]{0,30}")
+
+
+class Lease:
+    """JB-3: one request's CPU slot - paused around its statements, ended once when the answer starts or the request ends
+    (whichever first); a statement still running when the request ended never takes a slot again (no slot is leaked)."""
+
+    __slots__ = ("gate", "shape", "held", "closed", "t", "cpu_s", "lock")
+
+    def __init__(self, gate: Slots, shape: str) -> None:
+        self.gate, self.shape = gate, shape
+        self.held, self.closed, self.t, self.cpu_s = True, False, time.monotonic(), 0.0
+        self.lock = threading.Lock()
+
+    def pause(self) -> bool:
+        with self.lock:
+            if not self.held or self.closed:
+                return False
+            self.held = False
+            self.cpu_s += time.monotonic() - self.t
+        self.gate.given_back(self.shape)
+        return True
+
+    def resume(self) -> None:
+        with self.lock:
+            if self.closed:
+                return
+        self.gate.take_back(self.shape)
+        with self.lock:
+            if self.closed:                                 # the request ended while we waited: give it straight back
+                give = True
+            else:
+                give = False
+                self.held, self.t = True, time.monotonic()
+        if give:
+            self.gate.given_back(self.shape)
+
+    def end(self) -> None:
+        with self.lock:
+            if self.closed:
+                return
+            self.closed = True
+            held, self.held = self.held, False
+            if held:
+                self.cpu_s += time.monotonic() - self.t
+        if held:
+            self.gate.release(self.shape, self.cpu_s)
+
+
+LEASE: contextvars.ContextVar[Lease | None] = contextvars.ContextVar("league_lab_cpu_lease", default=None)
 
 
 def route_shape(path: str) -> str:
@@ -716,24 +813,24 @@ class RateLimit:
         shape = route_shape(scope.get("path") or "") if gate is not None else "-"          # ---- JA-6
         if gate is not None and not await gate.acquire(shape):
             return await _send(send, *busy(30.0))
-        held = gate is not None
-        t_in = time.monotonic()                                                            # ---- JA-6
+        lease = Lease(gate, shape) if gate is not None else None                           # ---- JB-3
+        token = LEASE.set(lease) if lease is not None else None
         status = 0
 
         async def send_and_release(message):
-            nonlocal held, status
+            nonlocal status
             if message.get("type") == "http.response.start":
                 status = int(message.get("status") or 0)
-                if held:
-                    held = False
-                    gate.release(shape, time.monotonic() - t_in)                           # ---- JA-6
+                if lease is not None:
+                    lease.end()                                                            # ---- JB-3 (JA-6's hold: CPU time)
             await send(message)
 
         try:
             await self.app(scope, receive, send_and_release)
         finally:
-            if held:
-                gate.release(shape, time.monotonic() - t_in)                               # ---- JA-6
+            if lease is not None:
+                lease.end()
+                LEASE.reset(token)
         if league is not None and status == 200:
             SEEN.mark(league)
 
