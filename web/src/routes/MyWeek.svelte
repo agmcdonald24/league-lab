@@ -288,6 +288,8 @@
                       </details>
                     {/if}
                   {/if}
+                  <!-- ---- JB-2: Sleeper's pre-kickoff numbers lean the other way on this close call (and the season's tally) -->
+                  {#if a.sleeper_lean}<p class="text-sm leading-snug text-ink-2" data-testid="sleeper-lean">{a.sleeper_lean}</p>{/if}
                   <!-- ---- IZ-4: the news about this decision's players (at most two, the newest first; the rest under Why) -->
                   {#if a.news?.length}<DecisionNews lines={a.news} />{/if}
                   {#if a.submitted_words}
@@ -332,6 +334,7 @@
                     {#if r.slot_label}<span class="ll-label text-ink-2">{r.slot_label}</span>{/if}
                   </div>
                   <p class="text-base leading-snug" data-testid="review-words"><Md text={r.words} {ctx} /></p>
+                  {#if r.sleeper_lean}<p class="text-sm leading-snug text-ink-2" data-testid="sleeper-lean">{r.sleeper_lean}</p>{/if}<!-- ---- JB-2 -->
                   {#if r.news?.length}<DecisionNews lines={r.news} />{/if}<!-- ---- IZ-4 -->
                   {#if r.news_more?.length}
                     <details class="text-sm" data-testid="review-news-more">

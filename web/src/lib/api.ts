@@ -3283,3 +3283,16 @@ export const defenseWeeksPath = (league: string, team: number | null, keys: URLS
   return `/api/matchups/defense?${qs.toString()}`;
 };
 // ---- end JA-2
+
+// ---- JB-2 (Wave J-B): a close call says when Sleeper's pre-kickoff numbers lean the other way; the clean record week by week
+export interface WeekAction {
+  sleeper_lean?: string | null; // "Sleeper's numbers lean to Justin Jefferson. This season, on the 13 close calls …"
+}
+export interface ReviewLine {
+  sleeper_lean?: string | null;
+}
+export interface RecordRow {
+  scope?: string | null;
+  pairs_neither_right?: number | null;
+}
+// ---- end JB-2

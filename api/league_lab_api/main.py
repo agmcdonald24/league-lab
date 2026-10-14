@@ -451,9 +451,14 @@ def why_market_rows(out: dict, league: str, *, house: bool) -> dict:
 @app.get("/api/my-week", dependencies=[Depends(require_auth), Depends(needs_league)])
 def my_week(league: str, team: int, response: Response, source: str | None = None):
     from . import league_gate as LG  # ---- IS-2 item 3: provenance + the starter caveats (data)
+    from . import (
+        sleeper_lean as SL,  # ---- JB-2: a close call says when Sleeper's pre-kickoff numbers lean the other way
+    )
     if source == "sleeper" or not myweek.known_league(league):
-        return _json(LG.with_lineup(why_market_rows(ondemand.my_week(league, team), league, house=False)), response)   # ---- IA-3
-    return _json(LG.with_lineup(why_market_rows(myweek.my_week(league, team), league, house=True)), response)         # ---- IA-3
+        return _json(SL.apply(LG.with_lineup(why_market_rows(ondemand.my_week(league, team), league, house=False)), league,  # IA-3
+                              house=False), response)
+    return _json(SL.apply(LG.with_lineup(why_market_rows(myweek.my_week(league, team), league, house=True)), league,          # IA-3
+                          house=True), response)
 
 
 @app.get("/api/player/{gsis}", dependencies=[Depends(require_auth)])
