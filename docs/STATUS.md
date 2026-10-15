@@ -22859,6 +22859,32 @@ None.
 
 —
 
+## 15 October — v3.8's first night stopped at projection-marts; the trigger fired three times
+
+### PO — 2026-10-15 (Thursday 08:40 – 09:05 ET)
+
+* **What Andrew saw**: 08:40, "nightly failed again". Run #50 (07:37, the trigger's first run of its own, on
+  `84f17a5`) failed at `projection-marts` after 37 minutes: `projection_importance_component_rows_complete` — "Got 24
+  results". Nothing was published; the hosted copy kept Wednesday's data.
+* **Cause**: fx1.0's input `f_missed_prev` had no entry in `FEATURE_LABELS`, so its importance rows carried the input's
+  own name as the label, which the marts' test refuses. **Why the sandbox did not catch it**: the component importance
+  is computed once per model version, on the night the backtest runs (`backtests` 9m49s on #50; 0m01s on every other
+  night); the sandbox's chain never wrote v3.8's rows, and the Python test that requires a name for every input reads
+  `ALL_FEATURES`, which is built before `gp_fix` appends the input to the per-position lists. JB-1's developer did not
+  know the rule; the PO's verification did not run the path either.
+* **The fix**: the name ("Did not play his team's last game (back this week)"); `relabel_importance` — kept rows take
+  a name added since they were written (idempotent; the sandbox's 324 older rows took today's wording too); the
+  Python test now reads the per-position lists and `gp_fix.BACK_FEATURE`. **Reproduced and verified on the sandbox**:
+  `run_importance(force=True)` wrote the same 24 rows; with the label the nightly's own `projection-marts` selection
+  passed, PASS=146 of 146 (the failing run's count).
+* **The trigger fired three times** (11:37:18, :19, :48 UTC; all `workflow_dispatch`): #51 was cancelled by the
+  workflow's concurrency, #52 ran a second full night after #50 and failed the same way. The cause is not known from
+  here (a cron invocation delivered more than once, or two copies of the Worker — Andrew's Cloudflare account is behind
+  his sign-in). The morning fire now skips when a run was created in the last ten minutes or is queued or going; the
+  re-checks and the game-day slots already did. Andrew deploys the Worker.
+* **Cost**: the 09:37 re-check dispatches again if nothing has succeeded by then; on the old code it fails the same
+  way (37 minutes of CI). The fix pushed before 09:37 makes that run the first good night of v3.8.
+
 ## Wave J-B (Iteration 38) — where we lose to Sleeper and the first fix; the clean record on the screen; Sunday keeps answering; the card explains points over expected
 
 ### PO merge — Wave J-B, 2026-10-14 (Wednesday 10:04 – 14:35 ET)

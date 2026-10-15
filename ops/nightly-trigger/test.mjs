@@ -166,8 +166,22 @@ try {
   assert.match(await statusText({ ...ENV }, NOW12), /token: set\ncan start a run: yes\n[^]*#41 workflow_dispatch completed success[^]*due today:\n {2}7:37 the morning run: NO RUN STARTED\n$/);
   runs = [];
 
+  // 11. PO (2026-10-15): the morning fire never dispatches twice — a run created within ten minutes, or one queued or
+  // going, is this morning's; an old failed run does not stop it
+  runs = [{ run_number: 50, event: "workflow_dispatch", status: "in_progress", conclusion: null, created_at: "2026-10-05T11:37:18Z" }];
+  let p11 = calls.filter((c) => c.startsWith("POST")).length;
+  await worker.scheduled({ scheduledTime: MORNING + 30000 }, { ...ENV }, {});
+  assert.equal(calls.filter((c) => c.startsWith("POST")).length, p11);
+  runs = [{ run_number: 50, event: "workflow_dispatch", status: "completed", conclusion: "failure", created_at: "2026-10-05T11:36:50Z" }];
+  await worker.scheduled({ scheduledTime: MORNING }, { ...ENV }, {});
+  assert.equal(calls.filter((c) => c.startsWith("POST")).length, p11);                    // 10 s old, failed: still this morning's
+  runs = [{ run_number: 49, event: "schedule", status: "completed", conclusion: "failure", created_at: "2026-10-05T07:07:00Z" }];
+  await worker.scheduled({ scheduledTime: MORNING }, { ...ENV }, {});
+  assert.equal(calls.filter((c) => c.startsWith("POST")).length, p11 + 1);                // hours old: dispatched
+  runs = [];
+
   console.log = quiet.log;
-  console.log("nightly-trigger: 10 checks passed");
+  console.log("nightly-trigger: 11 checks passed");
 } catch (e) {
   console.log = quiet.log;
   console.error = quiet.error;

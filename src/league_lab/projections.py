@@ -640,6 +640,9 @@ FEATURE_LABELS: dict[str, str] = {
     "pn_teammate_share_out": "Share of the team's targets out this week",
     "pn_absence_beneficiary": "His role grew when a teammate went out, and that teammate is still out",
     "priced_line": "The projection itself (the interval model's input)",
+    # ---- PO (Wave J-B, after JB-1): fx1.0's input. The marts' test projection_importance_component_rows_complete requires
+    # a label for every feature; the first night of v3.8 (run #50, 2026-10-15) failed at projection-marts without this line
+    "f_missed_prev": "Did not play his team's last game (back this week)",
 }
 
 IMPORTANCE_COLUMNS = ["position", "component", "feature", "feature_label", "unit", "importance", "importance_sd",
@@ -725,6 +728,23 @@ def component_importance(m: PositionModel, rows: pd.DataFrame, scoring: dict[str
     return pd.DataFrame(out, columns=IMPORTANCE_COLUMNS)
 
 
+def relabel_importance(conn: psycopg.Connection) -> int:
+    """PO (Wave J-B, after JB-1): kept importance rows take a plain name added to ``FEATURE_LABELS`` since they were
+    written (the marts' test ``projection_importance_component_rows_complete`` refuses a row whose label is missing or is
+    the input's own name; v3.8's first night, run #50 of 2026-10-15, stopped at projection-marts on ``f_missed_prev``).
+    Idempotent; rows whose label already matches are left alone. Returns the rows changed."""
+    n = 0
+    with conn.cursor() as cur:
+        for feature, label in FEATURE_LABELS.items():
+            cur.execute("""update ops.projection_importance set feature_label = %s
+                           where feature = %s and feature_label is distinct from %s""", (label, feature, label))
+            n += cur.rowcount
+    conn.commit()
+    if n:
+        log.info("importance: %s kept rows took a plain name added since they were written", n)
+    return n
+
+
 def importance_after_project(conn: psycopg.Connection, train: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]],
                              train_seasons: str, force: bool = False) -> pd.DataFrame | None:
     """Side output of ``project`` (plan U-15): what drives the projection, into ``ops.projection_importance``
@@ -749,6 +769,7 @@ def importance_after_project(conn: psycopg.Connection, train: pd.DataFrame, scor
             have = cur.fetchone()[0]
         conn.commit()
         if have and not force:
+            relabel_importance(conn)                                 # ---- PO (Wave J-B): a label added since the rows were written
             log.info("importance: kept (%s rows for %s, trained %s)", have, MODEL_VERSION, train_seasons)
             return None
         ref_id = next(iter(scorings))

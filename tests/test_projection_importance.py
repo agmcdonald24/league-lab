@@ -18,7 +18,11 @@ HALF_PPR = {"rec": 0.5, "rec_yd": 0.1, "rec_td": 6.0, "rush_yd": 0.1, "rush_td":
 
 # ------------------------------------------------------------------------------ plain names
 def test_every_model_input_has_a_plain_name():
-    missing = [f for f in P.ALL_FEATURES if f not in P.FEATURE_LABELS]
+    # PO (Wave J-B): the per-position lists too — gp_fix adds f_missed_prev after ALL_FEATURES is built, and the marts'
+    # test refuses an importance row without a plain name (v3.8's first night stopped on it)
+    from league_lab import gp_fix
+    per_position = {f for fs in P.FEATURES_BY_POSITION.values() for f in fs} | {gp_fix.BACK_FEATURE}
+    missing = [f for f in sorted(per_position | set(P.ALL_FEATURES)) if f not in P.FEATURE_LABELS]
     assert not missing, f"model inputs without a plain name in FEATURE_LABELS: {missing}"
     labels = [P.FEATURE_LABELS[f] for f in P.ALL_FEATURES]
     assert len(set(labels)) == len(labels), "two inputs share a plain name"

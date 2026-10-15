@@ -143,6 +143,7 @@ function hours(s, fallback) {
 // Monday and Thursday games). The Worker's crons are :37 and :52 of every hour (wrangler.jsonc), so a slot's minute is
 // 37 or 52; the morning run and its re-checks answer only the :37 cron. "" turns the slots off (the off-season).
 const MORNING_MINUTE = 37;
+const DOUBLE_FIRE_MS = 10 * 60 * 1000;   // PO (2026-10-15): a run created this recently is this morning's; see the fire path
 export const DEFAULT_GAME_SLOTS = "Sun 11:52,Sun 15:37,Sun 18:52,Mon 18:52,Thu 18:52";
 
 function etClock(d) {
@@ -281,6 +282,16 @@ export default {
     }
     // ---- end PO
     if (fire.includes(h)) {
+      // ---- PO (2026-10-15): never a second dispatch for the same minute. Three dispatched runs appeared within 30 s at
+      // 07:37 on 15 October (#50, #51 cancelled by the workflow's concurrency, #52 ran a second full night after #50);
+      // whatever fires twice — a cron invocation delivered twice, two copies of this Worker — one run a morning is enough
+      const runs = await todaysRuns(env, now);
+      const fresh = runs.find((r) => r.status === "in_progress" || r.status === "queued"
+        || now.getTime() - Date.parse(r.created) < DOUBLE_FIRE_MS);
+      if (fresh) {
+        console.log(`${etStamp(now)}: the morning run is already there (#${fresh.number}, ${fresh.status}); not dispatched again`);
+        return;
+      }
       await dispatchAndRecord(env, now, "the morning run"); // ---- IH-1: recorded in STATE when bound
       console.log(`${etStamp(now)}: dispatched ${env.WORKFLOW_FILE} (the morning run)`);
       return;

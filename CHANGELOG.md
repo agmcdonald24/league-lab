@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-15 — v3.8's first night: the new input's plain name; one morning run, never two
+
+- **PO — fix.** Run #50 (the trigger's first morning run, 07:37) stopped at `projection-marts`: the marts' test
+  `projection_importance_component_rows_complete` refused 24 rows — `f_missed_prev` (fx1.0, v3.8) had no plain name in
+  `FEATURE_LABELS`, and the sandbox never wrote those rows (the importance is computed once per version by the
+  backtest night). The name is added; kept importance rows take a name added since they were written
+  (`relabel_importance`, idempotent); the label test covers the per-position lists. Reproduced on the sandbox
+  (`run_importance(force=True)`: the same 24 rows), then the step passed: PASS=146.
+- **PO — the trigger.** Three dispatched runs appeared within 30 s at 07:37 (#50, #51 cancelled by concurrency, #52 a
+  second full night). The morning fire now skips when a run was created in the last ten minutes or is queued or going
+  (`ops/nightly-trigger`; 11 checks). Deploy: `cd ops/nightly-trigger && npx wrangler deploy`.
+
 ## 2026-10-14 — Wave J-B
 
 - **PO — the merge.** `scripts/nightly.sh` keeps `ops.sleeper_h2h_gap` across nights; `scripts/post_deploy_check.py`
